@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -25,9 +26,9 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public FederationManager(NodeSettings nodeSettings, Network network, PoAMiner miner, ILoggerFactory loggerFactory)
         {
-            this.settings = nodeSettings;
-            this.network = network as PoANetwork;
-            this.miner = miner;
+            this.settings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            this.network = Guard.NotNull(network as PoANetwork, nameof(network));
+            this.miner = Guard.NotNull(miner, nameof(miner));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
