@@ -93,9 +93,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.smartContractStateFactory.Create(state, gasMeter, address, message, repository);
         }
 
-        public void AddInitialBalance(ulong messageAmount, uint160 address)
+        public void AddInitialBalance(TransferInfo initialTransfer)
         {
-            this.BalanceState.AddInitialBalance(messageAmount, address);
+            this.BalanceState.AddInitialBalance(initialTransfer);
         }
 
         /// <summary>

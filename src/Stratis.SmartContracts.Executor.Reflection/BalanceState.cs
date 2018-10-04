@@ -22,18 +22,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         public BalanceState(IBalanceRepository repository, IReadOnlyList<TransferInfo> internalTransfers,
-            (ulong, uint160) initialBalance)
+            TransferInfo initialBalance)
         {
             this.repository = repository;
             this.internalTransfers = internalTransfers;
             this.InitialBalance = initialBalance;
         }
 
-        public (ulong, uint160) InitialBalance { get; private set; }
+        public TransferInfo InitialBalance { get; private set; }
 
-        public void AddInitialBalance(ulong messageAmount, uint160 address)
+        public void AddInitialBalance(TransferInfo transferInfo)
         {
-            this.InitialBalance = (messageAmount, address);
+            this.InitialBalance = transferInfo;
         }
 
         public ulong GetBalance(uint160 address)
@@ -44,9 +44,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private ulong GetPendingBalance(uint160 address)
         {
-            (var balance, var contractAddress) = this.InitialBalance;
-
-            ulong ret = address == contractAddress ? balance : 0UL;
+            ulong ret = this.InitialBalance?.To != null ? this.InitialBalance.Value : 0UL;
 
             foreach (TransferInfo transfer in this.internalTransfers.Where(x => x.To == address))
             {
