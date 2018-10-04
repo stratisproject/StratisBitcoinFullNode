@@ -70,8 +70,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var transfers = new List<TransferInfo>
             {
-                new TransferInfo(),
-                new TransferInfo()
+                new TransferInfo(null, null, 0),
+                new TransferInfo(null, null, 0)
             };
 
             var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, transfers, null, null, null);
@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             ulong initialBalance = 123456;
             uint160 initialAddress = uint160.One;
-            state.AddInitialTransfer(new TransferInfo { Value = initialBalance, To = initialAddress});
+            state.AddInitialTransfer(new TransferInfo(uint160.Zero, initialAddress, initialBalance));
 
             IState newState = state.Snapshot();
 
@@ -144,9 +144,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var newTransfers = new List<TransferInfo>
             {
-                new TransferInfo(),
-                new TransferInfo(),
-                new TransferInfo()
+                new TransferInfo(null, null, 0),
+                new TransferInfo(null, null, 0),
+                new TransferInfo(null, null, 0)
             };
 
             var newLogs = new List<RawLog>
