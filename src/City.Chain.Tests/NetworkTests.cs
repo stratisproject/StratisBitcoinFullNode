@@ -223,7 +223,7 @@ namespace City.Chain.Tests
         {
             Network network = new CityTest();
 
-            Assert.Equal(1, network.Checkpoints.Count);
+            Assert.Equal(2, network.Checkpoints.Count);
             Assert.Equal(3, network.DNSSeeds.Count);
             Assert.Equal(3, network.SeedNodes.Count);
 

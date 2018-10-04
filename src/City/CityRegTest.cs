@@ -93,7 +93,7 @@ namespace City.Networks
                 lastPowBlock: 125000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.Coins(20) // 52 560 000 a year.
+                proofOfStakeReward: Money.Coins(20)
             );
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();

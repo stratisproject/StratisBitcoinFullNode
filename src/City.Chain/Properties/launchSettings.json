@@ -7,7 +7,7 @@
       "commandName": "Project",
       "commandLineArgs": "-datadir=citynode"
     },
-    "City.Chain (Test Network)": {
+    "City.Chain (Test) (Local Data Dir)": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -datadir=citynode"
     },

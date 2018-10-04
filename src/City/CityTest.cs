@@ -89,7 +89,7 @@ namespace City.Networks
                 lastPowBlock: 125000,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.Coins(20) // 52 560 000 a year.
+                proofOfStakeReward: Money.Coins(20)
             );
 
             this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (66) };
@@ -99,6 +99,7 @@ namespace City.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
                 { 0, new CheckpointInfo(new uint256("0x00077765f625cc2cb6266544ff7d5a462f25be14ea1116dc2bd2fec17e40a5e3"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
+                { 2, new CheckpointInfo(new uint256("0xee3dc551120dff10d3be7a35b5b9dd99a98d82cd4e31488e43180b88c6d7a99f"), new uint256("0x315e64b6097a15128b0379c501ef278ff4fa70b062b44ce69a95e604464c46f8")) }, // Premine
             };
 
             this.DNSSeeds = new List<DNSSeedData>

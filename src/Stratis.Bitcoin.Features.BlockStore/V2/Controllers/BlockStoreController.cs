@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -30,6 +31,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
         /// <summary>An interface that provides information about the chain and validation.</summary>
         private readonly IChainState chainState;
 
+        private readonly IStakeChain stakeChain;
+
         /// <summary>
         /// Current network for the active controller instance.
         /// </summary>
@@ -41,6 +44,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
             Network network,
             ILoggerFactory loggerFactory,
             IBlockStore blockStoreCache,
+            IStakeChain stakeChain,
             ConcurrentChain chain,
             IChainState chainState)
         {
@@ -50,6 +54,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
 
             this.network = network;
             this.blockStoreCache = blockStoreCache;
+            this.stakeChain = stakeChain;
             this.chain = chain;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -113,6 +118,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
             }
 
             ChainedHeader chainHeader = null;
+            
 
             if (string.IsNullOrWhiteSpace(id))
             {
@@ -131,11 +137,19 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Controllers
 
             try
             {
+                BlockStake blockStake = this.stakeChain.Get(chainHeader.HashBlock);
                 Block block = await this.blockStoreCache.GetBlockAsync(chainHeader.Header.GetHash()).ConfigureAwait(false);
 
                 if (block == null) return new NotFoundObjectResult("Block not found");
 
                 V2.Models.BlockModel blockModel = new V2.Models.BlockModel(block, chainHeader.Height, this.network);
+
+                if (blockStake != null)
+                {
+                    blockModel.StakeTime = blockStake.StakeTime;
+                    blockModel.StakeModifierV2 = blockStake.StakeModifierV2;
+                    blockModel.HashProof = blockStake.HashProof;
+                }
 
                 return this.Json(blockModel);
             }

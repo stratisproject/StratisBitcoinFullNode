@@ -1,4 +1,4 @@
-# City Chain - Continuous Integration Setup for VSTS
+# City Chain - Continuous Integration Setup for Azure DevOps
 
 parameters:
   name: ''

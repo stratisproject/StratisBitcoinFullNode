@@ -22,6 +22,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Models
 
         public int Height { get; set; }
 
+        public uint256 HashProof { get; set; }
+
+        public uint256 StakeModifierV2 { get; set; }
+
+        public uint StakeTime { get; set; }
+
         public  BlockModel(Block block, int height, Network network)
         {
             this.Height = height;
@@ -37,6 +43,4 @@ namespace Stratis.Bitcoin.Features.BlockStore.V2.Models
             this.Transactions = block.Transactions.Select(trx => new TransactionVerboseModel(trx, network)).ToArray();
         }
     }
-
-    
 }
