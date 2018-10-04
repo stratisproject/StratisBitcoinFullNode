@@ -16,15 +16,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IAddressGenerator AddressGenerator { get; }
 
-        private StateTransitionResult ApplyCreate(IState state, object[] parameters, byte[] code, BaseMessage message, string type = null)
+        private StateTransitionResult ApplyCreate(IState state, object[] parameters, byte[] code, BaseMessage message,
+            uint160 address,
+            string type = null)
         {
             var gasMeter = new GasMeter(message.GasLimit);
 
             gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
-            uint160 address = state.GenerateAddress(this.AddressGenerator);
-
-            state.AddInitialBalance(message.Amount, address);
 
             state.ContractState.CreateAccount(address);
 
@@ -53,7 +51,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(IState state, ExternalCreateMessage message)
         {
-            return this.ApplyCreate(state, message.Parameters, message.Code, message);
+            // We need to generate an address here so that we can set the initial balance.
+            uint160 address = state.GenerateAddress(this.AddressGenerator);
+
+            state.AddInitialBalance(message.Amount, address);
+
+            return this.ApplyCreate(state, message.Parameters, message.Code, message, address);
         }
 
         /// <summary>
@@ -68,7 +71,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             byte[] contractCode = state.ContractState.GetCode(message.From);
 
-            StateTransitionResult result = this.ApplyCreate(state, message.Parameters, contractCode, message, message.Type);
+            uint160 address = state.GenerateAddress(this.AddressGenerator);
+
+            StateTransitionResult result = this.ApplyCreate(state, message.Parameters, contractCode, message, address, message.Type);
 
             // For successful internal creates we need to add the transfer to the internal transfer list.
             // For external creates we do not need to do this.
