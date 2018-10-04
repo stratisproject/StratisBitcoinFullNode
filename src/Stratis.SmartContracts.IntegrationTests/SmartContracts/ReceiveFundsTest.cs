@@ -20,6 +20,6 @@ public class ReceiveFundsTest : SmartContract
 
     public override void Receive()
     {
-        this.PersistentState.SetUInt64("Balance", this.Balance);
+        this.PersistentState.SetUInt64("ReceiveBalance", this.Balance);
     }
 }

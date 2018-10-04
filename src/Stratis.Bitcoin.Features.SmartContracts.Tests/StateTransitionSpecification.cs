@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var state = new Mock<IState>();
             state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
-
+            
             var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
 
             StateTransitionResult result = stateProcessor.Apply(state.Object, externalCallMessage);

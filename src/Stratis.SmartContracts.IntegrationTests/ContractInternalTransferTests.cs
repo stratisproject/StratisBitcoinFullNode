@@ -256,7 +256,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void ExternalTransfer_ReceiveHandler_WithValue()
         {
-            //Regular value transfer
+            // Regular value transfer
             // Ensure fixture is funded.
             this.node1.MineBlocks(1);
 
@@ -279,7 +279,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.node2.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
-            byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddress(this.mockChain.Network), "Balance");
+            byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddress(this.mockChain.Network), "ReceiveBalance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
         }
@@ -301,7 +301,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             uint160 contractAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
 
-            // Stored balance in PersistentState should be only that which was sent (10)
+            // Stored balance in PersistentState should be only that which was sent
             byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddress(this.mockChain.Network), "Balance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
@@ -400,8 +400,8 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
 
-            // Stored balance in PersistentState should be only that which was sent (10)
-            byte[] saved = this.node1.GetStorageValue(contract2Address.ToAddress(this.mockChain.Network), "Balance");
+            // Stored balance in PersistentState should be only that which was sent
+            byte[] saved = this.node1.GetStorageValue(contract2Address.ToAddress(this.mockChain.Network), "ReceiveBalance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.Equal(transferredAmount, savedUlong);
         }
@@ -440,9 +440,11 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
 
-            // Stored balance in PersistentState should be only that which was sent (10)
-            byte[] saved = this.node1.GetStorageValue(contract1Address.ToAddress(this.mockChain.Network), "Balance");
+            // Stored balance in PersistentState should be only that which was sent
+            byte[] saved = this.node1.GetStorageValue(contract1Address.ToAddress(this.mockChain.Network), "ReceiveBalance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
+
+            // Balance should be the same as the initial amount
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
         }
     }
