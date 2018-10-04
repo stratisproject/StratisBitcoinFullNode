@@ -380,5 +380,45 @@ namespace Stratis.SmartContracts.IntegrationTests
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.Equal(transferredAmount, savedUlong);
         }
+
+        [Fact]
+        public void Internal_Nested_Call_To_Self_Balance_Correct()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            ulong amount = 25;
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+            uint160 contract1Address = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
+
+            ulong transferredAmount = 123;
+
+            string[] parameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, response.NewContractAddress),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, transferredAmount)
+            };
+
+            // Invoke call which sends 123 to self. Balance should remain the same.
+            BuildCallContractTransactionResponse callResponse = this.node1.SendCallContractTransaction(
+                nameof(ReceiveFundsTest.TransferFunds),
+                response.NewContractAddress,
+                0,
+                parameters);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+
+            // Stored balance in PersistentState should be only that which was sent (10)
+            byte[] saved = this.node1.GetStorageValue(contract1Address.ToAddress(this.mockChain.Network), "Balance");
+            ulong savedUlong = BitConverter.ToUInt64(saved);
+            Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
+        }
     }
 }
