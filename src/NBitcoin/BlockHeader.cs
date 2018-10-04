@@ -56,6 +56,7 @@ namespace NBitcoin
             }
         }
 
+        [Obsolete("Please use the Load method outside of consensus.")]
         public BlockHeader()
         {
             this.version = this.CurrentVersion;
