@@ -77,7 +77,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     callData.MethodParameters
                 );
 
-
                 result = this.stateProcessor.Apply(newState, message);
             }
             else

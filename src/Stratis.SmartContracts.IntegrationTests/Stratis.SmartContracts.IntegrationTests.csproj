@@ -73,6 +73,9 @@
     <Compile Update="SmartContracts\NonDeterministicContract.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\ReceiveFundsTest.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\ReceiveHandlerContract.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>

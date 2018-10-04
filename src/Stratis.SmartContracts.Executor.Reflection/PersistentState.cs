@@ -37,12 +37,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.Serializer.Deserialize<T>(bytes);
         }
 
-        public byte GetByte(string key)
-        {
-            return this.GetObject<byte>(key);
-        }
-
-        public byte[] GetByteArray(string key)
+        public byte[] GetBytes(string key)
         {
             return this.GetObject<byte[]>(key);
         }
@@ -87,11 +82,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.GetObject<string>(key);
         }
 
-        public sbyte GetSbyte(string key)
-        {
-            return this.GetObject<sbyte>(key);
-        }
-
         public T GetStruct<T>(string key) where T : struct
         {
             return this.GetObject<T>(key);
@@ -103,12 +93,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, this.Serializer.Serialize(obj));
         }
 
-        public void SetByte(string key, byte value)
-        {
-            this.SetObject(key, value);
-        }
-
-        public void SetByteArray(string key, byte[] value)
+        public void SetBytes(string key, byte[] value)
         {
             this.SetObject(key, value);
         }
@@ -149,11 +134,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         public void SetString(string key, string value)
-        {
-            this.SetObject(key, value);
-        }
-
-        public void SetSByte(string key, sbyte value)
         {
             this.SetObject(key, value);
         }
