@@ -22,9 +22,7 @@ namespace Stratis.BitcoinD
         {
             try
             {
-                var network = NodeSettings.FindNetwork(args, () => new BitcoinMain(), () => new BitcoinTest(), () => new BitcoinRegTest());
-
-                var nodeSettings = new NodeSettings(network, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: Networks.Bitcoin, args: args);
 
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)

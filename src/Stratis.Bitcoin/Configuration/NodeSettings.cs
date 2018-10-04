@@ -28,22 +28,6 @@ namespace Stratis.Bitcoin.Configuration
         }
     }
 
-    public class NetworksSelector
-    {
-        public NetworksSelector(Func<Network> mainnet, Func<Network> testnet, Func<Network> regtest)
-        {
-            this.Mainnet = mainnet;
-            this.Testnet = testnet;
-            this.Regtest = regtest;
-        }
-
-        public Func<Network> Mainnet { get; }
-
-        public Func<Network> Testnet { get; }
-
-        public Func<Network> Regtest { get; }
-    }
-
     /// <summary>
     /// Node configuration complied from both the application command line arguments and the configuration file.
     /// </summary>
