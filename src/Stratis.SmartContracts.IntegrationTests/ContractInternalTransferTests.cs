@@ -336,7 +336,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
-        public void Internal_Nested_Call_Balance_Correct()
+        public void Internal_Nested_Transfer_Balance_Correct()
         {
             // Ensure fixture is funded.
             this.node1.MineBlocks(1);
@@ -382,7 +382,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
-        public void Internal_Nested_Call_To_Self_Balance_Correct()
+        public void Internal_Nested_Call_Transfer_To_Self_Balance_Correct()
         {
             // Ensure fixture is funded.
             this.node1.MineBlocks(1);
