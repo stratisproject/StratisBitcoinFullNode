@@ -3,6 +3,7 @@ using System.Linq;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Core.Validation.Validators.Module;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -619,7 +620,7 @@ public class Test : SmartContract
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.IsType<ModuleDefinitionValidationResult>(result.Errors.Single());
+            Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
         }
 
         [Fact]
@@ -648,7 +649,7 @@ public class Test : SmartContract
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.IsType<ModuleDefinitionValidationResult>(result.Errors.Single());
+            Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
         }
     }
 }

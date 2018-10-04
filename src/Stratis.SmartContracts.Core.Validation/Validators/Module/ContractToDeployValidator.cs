@@ -23,8 +23,15 @@ namespace Stratis.SmartContracts.Core.Validation.Validators.Module
 
             // Otherwise it's a problem
             return new[] {
-                new ModuleDefinitionValidationResult("Assembly must contain one contract with the Deploy attribute.")
+                new ContractToDeployValidationResult() 
             };
+        }
+
+        public class ContractToDeployValidationResult : ModuleDefinitionValidationResult
+        {
+            public ContractToDeployValidationResult() : base("Assembly must contain one contract with the Deploy attribute.")
+            {
+            }
         }
     }
 }
