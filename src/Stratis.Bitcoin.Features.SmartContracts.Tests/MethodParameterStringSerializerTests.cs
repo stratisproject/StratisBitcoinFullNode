@@ -49,7 +49,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             };
 
             var serialized = this.Serializer.Serialize(methodParameters);
-            Assert.True(Encoding.UTF8.GetBytes("7#12|1#True|5#te\\|s\\|t|5#te\\#st|5#\\#4\\#te\\#st\\#|4#\\#").SequenceEqual(serialized));
+
+            var methodParamSerializer = new MethodParameterStringSerializer();
+
+            Assert.True(Encoding.UTF8.GetBytes("6#12|1#True|4#te\\|s\\|t|4#te\\#st|4#\\#4\\#te\\#st\\#|3#\\#").SequenceEqual(serialized));
         }
 
         public static IEnumerable<object[]> GetData(int numTests)

@@ -83,10 +83,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(methodParameters.Length, callData.MethodParameters.Length);
 
             Assert.NotNull(callData.MethodParameters[0]);
-            Assert.Equal(methodParameters[0], callData.MethodParameters[0]);
+            Assert.Equal(methodParameters[0], (bool)callData.MethodParameters[0]);
 
             Assert.NotNull(callData.MethodParameters[1]);
-            Assert.Equal(methodParameters[1], (bool)callData.MethodParameters[1]);
+            Assert.Equal(methodParameters[1], callData.MethodParameters[1]);
 
             Assert.NotNull(callData.MethodParameters[2]);
             Assert.Equal(methodParameters[2], callData.MethodParameters[2]);
@@ -96,9 +96,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(callData.MethodParameters[4]);
             Assert.Equal(methodParameters[4], callData.MethodParameters[4]);
-
-            Assert.NotNull(callData.MethodParameters[5]);
-            Assert.Equal(methodParameters[5], callData.MethodParameters[5]);
 
             Assert.Equal(contractTxData.GasPrice, callData.GasPrice);
             Assert.Equal(contractTxData.GasLimit, callData.GasLimit);
