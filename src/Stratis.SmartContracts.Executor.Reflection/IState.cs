@@ -23,5 +23,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         ulong GetBalance(uint160 address);
         uint160 GenerateAddress(IAddressGenerator addressGenerator);
         ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository);
+        void AddInitialTransfer(TransferInfo initialTransfer);
     }
 }

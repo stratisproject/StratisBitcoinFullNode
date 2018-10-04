@@ -54,6 +54,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             StateTransitionResult result = stateProcessor.Apply(state.Object, externalCreateMessage);
 
+            state.Verify(s => s.AddInitialTransfer(It.Is<TransferInfo>(t => t.Value == externalCreateMessage.Amount && t.To == newContractAddress)));
+
             state.Verify(s => s.GenerateAddress(this.addressGenerator.Object), Times.Once);
 
             this.contractStateRoot.Verify(s => s.CreateAccount(newContractAddress), Times.Once);
@@ -140,10 +142,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var state = new Mock<IState>();
             state.SetupGet(s => s.ContractState).Returns(this.contractStateRoot.Object);
-
+            
             var stateProcessor = new StateProcessor(this.vm.Object, this.addressGenerator.Object);
 
             StateTransitionResult result = stateProcessor.Apply(state.Object, externalCallMessage);
+
+            state.Verify(s => s.AddInitialTransfer(It.Is<TransferInfo>(t => t.Value == externalCallMessage.Amount && t.To == externalCallMessage.To)));
 
             this.contractStateRoot.Verify(sr => sr.GetCode(externalCallMessage.To), Times.Once);
 
