@@ -6,7 +6,7 @@ using TracerAttributes;
 namespace Stratis.Bitcoin.Features.PoA.Payloads
 {
     /// <summary>
-    /// Block headers received after a getheaders messages.
+    /// Block headers received as a response to getheaders messages.
     /// </summary>
     [Payload("poahdr")]
     public class PoAHeadersPayload : Payload
@@ -23,23 +23,15 @@ namespace Stratis.Bitcoin.Features.PoA.Payloads
             this.headers = new List<PoABlockHeader>();
         }
 
-        public PoAHeadersPayload(params PoABlockHeader[] headers)
+        public PoAHeadersPayload(IList<PoABlockHeader> headers)
         {
-            this.Headers.AddRange(headers);
+            this.headers = new List<PoABlockHeader>(headers);
         }
 
         [NoTrace]
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            if (stream.Serializing)
-            {
-                stream.ReadWrite(ref this.headers);
-            }
-            else
-            {
-                this.headers.Clear();
-                stream.ReadWrite(ref this.headers);
-            }
+            stream.ReadWrite(ref this.headers);
         }
     }
 }
