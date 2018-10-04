@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     // Check the repository (DBreeze).
                     header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
 
-                    this.TryAddToCache(blockHeight, header);
+                    this.AddToCache(blockHeight, header);
                 }
             }
 
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         {
                             repositoryHeaders.Add(repositoryHeader);
 
-                            this.TryAddToCache(headerNotInCache, repositoryHeader);
+                            this.AddToCache(headerNotInCache, repositoryHeader);
                         }
                     }
 
@@ -338,15 +338,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.Cache.AddOrUpdate(blockHeight, header, (key, value) => { return header; });
 
             this.CacheSizeInBytes += header.HeaderSize;
-        }
-
-        /// <summary> Only add to cache if the item does not already exist.</summary>
-        /// <param name="blockHeight">Block height key.</param>
-        /// <param name="header"><see cref="ProvenBlockHeader"> to add.</param>///
-        private void TryAddToCache(int blockHeight, ProvenBlockHeader header)
-        {
-            if (!this.Cache.TryGetValue(blockHeight, out ProvenBlockHeader cachedHeader))
-                this.AddToCache(blockHeight, header);
         }
 
         private void AddBenchStats(StringBuilder benchLog)
