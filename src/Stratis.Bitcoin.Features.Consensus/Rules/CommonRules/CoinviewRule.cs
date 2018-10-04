@@ -64,12 +64,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         }
 
                         var prevheights = new int[tx.Inputs.Count];
+
                         // Check that transaction is BIP68 final.
-                        // BIP68 lock checks (as opposed to nLockTime checks) must
-                        // be in ConnectBlock because they require the UTXO set.
-                        for (int j = 0; j < tx.Inputs.Count; j++)
+                        // BIP68 lock checks (as opposed to nLockTime checks) must be in FullValidation
+                        // (block connection if we are using bitcoin core terminology)
+                        // because they require the UTXO set.
+                        for (int i = 0; i < tx.Inputs.Count; i++)
                         {
-                            prevheights[j] = (int)view.AccessCoins(tx.Inputs[j].PrevOut.Hash).Height;
+                            prevheights[i] = (int)view.AccessCoins(tx.Inputs[i].PrevOut.Hash).Height;
                         }
 
                         if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
@@ -253,7 +255,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
 
-            if (!transaction.IsCoinStake)
+            if (!transaction.IsProtocolTransaction())
             {
                 if (valueIn < transaction.TotalOut)
                 {
