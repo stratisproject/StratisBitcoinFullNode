@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators.Module
     {
         public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
         {
-            IEnumerable<TypeDefinition> types = module.Types.Where(x => x.BaseType.FullName == InheritsSmartContractValidator.SmartContractType);
+            IEnumerable<TypeDefinition> types = module.GetDevelopedTypes().Where(x => x.BaseType.FullName == InheritsSmartContractValidator.SmartContractType);
 
             // Must either be one contract
             if (types.Count() == 1)

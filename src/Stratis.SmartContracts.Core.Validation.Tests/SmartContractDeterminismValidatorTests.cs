@@ -604,7 +604,6 @@ public class Test : SmartContract
                                                 public Test(ISmartContractState state)
                                                     : base(state) { }
 
-                                                void Finalize() {}
                                             }
 
                                             public class Test2 : SmartContract
@@ -612,7 +611,6 @@ public class Test : SmartContract
                                                 public Test2(ISmartContractState state)
                                                     : base(state) { }
 
-                                                void Finalize() {}
                                             }";
 
             IContractModuleDefinition decompilation = CompileToModuleDef(source);
@@ -635,8 +633,6 @@ public class Test : SmartContract
                                             {                                              
                                                 public Test(ISmartContractState state)
                                                     : base(state) { }
-
-                                                void Finalize() {}
                                             }
 
                                             [Deploy]
@@ -644,8 +640,6 @@ public class Test : SmartContract
                                             {                                              
                                                 public Test2(ISmartContractState state)
                                                     : base(state) { }
-
-                                                void Finalize() {}
                                             }";
 
             IContractModuleDefinition decompilation = CompileToModuleDef(source);
