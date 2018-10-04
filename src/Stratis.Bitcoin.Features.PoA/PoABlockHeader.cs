@@ -3,7 +3,9 @@ using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
+#pragma warning disable 618
     public class PoABlockHeader : BlockHeader
+#pragma warning restore 618
     {
         private BlockSignature blockSignature;
 
@@ -21,34 +23,15 @@ namespace Stratis.Bitcoin.Features.PoA
             stream.ReadWrite(ref this.blockSignature);
         }
 
-        /// <summary>
-        /// Generates the hash of a <see cref="PoABlockHeader"/>.
-        /// </summary>
-        /// <returns>A hash.</returns>
-        public override uint256 GetHash()
+        protected override uint256 CalculateHash()
         {
-            uint256 hash = null;
-            uint256[] hashes = this.hashes;
-
-            if (hashes != null)
-                hash = hashes[0];
-
-            if (hash != null)
-                return hash;
-
             using (var hs = new HashStream())
             {
                 // We are using base serialization to avoid using signature during hash calculation.
                 base.ReadWrite(new BitcoinStream(hs, true));
-                hash = hs.GetHash();
+                uint256 hash = hs.GetHash();
+                return hash;
             }
-
-            hashes = this.hashes;
-
-            if (hashes != null)
-                hashes[0] = hash;
-
-            return hash;
         }
     }
 }

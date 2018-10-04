@@ -1100,7 +1100,15 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
+                // To fix issue https://github.com/stratisproject/StratisBitcoinFullNode/issues/2294#issue-364513736
+                // if there are no samples, assume the worst scenario (you are going to donwload full blocks).
                 long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
+                if (avgSize == 0)
+                {
+                    // TODO: move MaxBlockSize on a common place.
+                    avgSize = Block.MaxBlockSize;
+                }
+
                 int maxBlocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
 
                 if (maxBlocksToAsk > freeSlots)
