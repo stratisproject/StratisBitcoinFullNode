@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Text;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -47,13 +48,16 @@ namespace Stratis.Bitcoin.Features.Api
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             this.logger.LogInformation("API starting on URL '{0}'.", this.apiSettings.ApiUri);
             this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings, this.certificateStore, new WebHostBuilder());
 
             if (this.apiSettings.KeepaliveTimer == null)
-                return;
+            {
+                this.logger.LogTrace("(-)[KEEPALIVE_DISABLED]");
+                return Task.CompletedTask;
+            }
 
             // Start the keepalive timer, if set.
             // If the timer expires, the node will shut down.
@@ -67,6 +71,8 @@ namespace Stratis.Bitcoin.Features.Api
             };
 
             this.apiSettings.KeepaliveTimer.Start();
+            
+            return Task.CompletedTask;
         }
 
         /// <summary>

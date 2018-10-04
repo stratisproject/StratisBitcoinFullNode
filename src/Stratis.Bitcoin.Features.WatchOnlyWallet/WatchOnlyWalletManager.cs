@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             this.fileStorage = new FileStorage<WatchOnlyWallet>(dataFolder.WalletPath);
             this.dateTimeProvider = dateTimeProvider;
         }
-        
+
         /// <inheritdoc />
         public void Dispose()
         {

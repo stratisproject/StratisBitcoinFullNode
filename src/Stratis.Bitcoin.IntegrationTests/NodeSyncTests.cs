@@ -79,11 +79,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork);
-                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork);
+                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork).NotInIBD();
+                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork).NotInIBD();
                 builder.StartAll();
-                node1.NotInIBD();
-                node2.NotInIBD();
+
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
                 RPCClient rpc1 = node1.CreateRPCClient();
@@ -105,11 +104,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork);
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).NotInIBD();
                 CoreNode coreNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
-
-                stratisNode.NotInIBD();
 
                 Block tip = coreNode.FindBlock(10).Last();
                 RPCClient stratisNodeRpcClient = stratisNode.CreateRPCClient();
@@ -136,13 +133,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork);
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.powNetwork);
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).NotInIBD();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.powNetwork).NotInIBD();
                 CoreNode coreCreateNode = builder.CreateBitcoinCoreNode();
                 builder.StartAll();
-
-                stratisNode.NotInIBD();
-                stratisNodeSync.NotInIBD();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
@@ -168,12 +162,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork);
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).NotInIBD();
                 CoreNode coreNodeSync = builder.CreateBitcoinCoreNode();
                 CoreNode coreCreateNode = builder.CreateBitcoinCoreNode();
-                builder.StartAll();
 
-                stratisNode.NotInIBD();
+                builder.StartAll();
 
                 // first seed a core node with blocks and sync them to a stratis node
                 // and wait till the stratis node is fully synced
@@ -201,19 +194,17 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisMiner = builder.CreateStratisPosNode(this.posNetwork);
-                CoreNode stratisSyncer = builder.CreateStratisPosNode(this.posNetwork);
-                CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork);
+                CoreNode stratisMiner = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
+                CoreNode stratisSyncer = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
+                CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
 
                 builder.StartAll();
-                stratisMiner.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
-                stratisSyncer.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
-                stratisReorg.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
+                stratisMiner.WithWallet();
+                stratisReorg.WithWallet();
 
-                TestHelper.MineBlocks(stratisMiner, walletName, walletPassword, walletAccount, 1);
+                TestHelper.MineBlocks(stratisMiner, 1);
 
                 // wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
                 stratisMiner.CreateRPCClient().AddNode(stratisReorg.Endpoint, true);
                 stratisMiner.CreateRPCClient().AddNode(stratisSyncer.Endpoint, true);
 
@@ -227,11 +218,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 stratisSyncer.CreateRPCClient().RemoveNode(stratisReorg.Endpoint);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisReorg));
 
-                TestHelper.MineBlocks(stratisMiner, walletName, walletPassword, walletAccount, 11);
-                TestHelper.MineBlocks(stratisReorg, walletName, walletPassword, walletAccount, 12);
-
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMiner));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisReorg));
+                TestHelper.MineBlocks(stratisMiner, 11);
+                TestHelper.MineBlocks(stratisReorg, 12);
 
                 // make sure the nodes are actually on different chains.
                 Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(2).HashBlock, stratisReorg.FullNode.Chain.GetBlock(2).HashBlock);
@@ -277,20 +265,19 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(this.posNetwork);
+                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
 
                 // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.posNetwork);
+                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
 
                 builder.StartAll();
-                stratisMinerLocal.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
-                stratisMinerRemote.NotInIBD().WithWallet(walletPassword, walletName, walletPassphrase);
+                stratisMinerLocal.WithWallet();
+                stratisMinerRemote.WithWallet();
 
                 // Let's mine block Ap and Bp.
-                TestHelper.MineBlocks(stratisMinerRemote, walletName, walletPassword, walletAccount, 2);
+                TestHelper.MineBlocks(stratisMinerRemote, 2);
 
                 // Wait for block repository for block sync to work.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisMinerRemote));
                 stratisMinerLocal.CreateRPCClient().AddNode(stratisMinerRemote.Endpoint, true);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMinerLocal, stratisMinerRemote));
@@ -300,15 +287,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(stratisMinerRemote));
 
                 // Mine block C2p.
-                stratisMinerRemote.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(stratisMinerRemote, 1);
                 Thread.Sleep(2000);
 
                 // Now reconnect nodes and mine block C1s before C2p arrives.
                 stratisMinerLocal.CreateRPCClient().AddNode(stratisMinerRemote.Endpoint, true);
-                TestHelper.MineBlocks(stratisMinerLocal, walletName, walletPassword, walletAccount, 1);
+                TestHelper.MineBlocks(stratisMinerLocal, 1);
 
                 // Mine block Dp.
-                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, walletName, walletPassword, walletAccount, 1).BlockHashes[0];
+                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, 1).BlockHashes[0];
 
                 // Now we wait until the local node's chain tip has correct hash of Dp.
                 TestHelper.WaitLoop(() => stratisMinerLocal.FullNode.Chain.Tip.HashBlock.Equals(dpHash));
@@ -331,53 +318,44 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void MiningNodeWithOneConnectionAlwaysSynced()
         {
-            const string walletName = "dummyWallet";
-            const string walletPassword = "dummyPassword";
-            const string walletPassphrase = "dummyPassphrase";
-            const string accountName = "account 0";
-
             string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnectionAlwaysSynced));
+
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(testFolderPath))
             {
-                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork);
+                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
                 minerNode.Start();
-                minerNode.NotInIBD();
-                minerNode.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
+                minerNode.WithWallet();
 
-                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork);
+                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
                 connectorNode.Start();
-                connectorNode.NotInIBD();
-                connectorNode.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
+                connectorNode.WithWallet();
 
-                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork);
+                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
                 firstNode.Start();
-                firstNode.NotInIBD();
-                firstNode.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
+                firstNode.WithWallet();
 
                 CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork);
                 secondNode.Start();
-                secondNode.NotInIBD();
-                secondNode.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
+                secondNode.WithWallet();
 
-                TestHelper.ConnectAndSync(minerNode, connectorNode);
-                TestHelper.ConnectAndSync(connectorNode, firstNode);
-                TestHelper.ConnectAndSync(connectorNode, secondNode);
-                TestHelper.ConnectAndSync(firstNode, secondNode);
+                TestHelper.Connect(minerNode, connectorNode);
+                TestHelper.Connect(connectorNode, firstNode);
+                TestHelper.Connect(connectorNode, secondNode);
+                TestHelper.Connect(firstNode, secondNode);
 
                 List<CoreNode> nodes = new List<CoreNode> { minerNode, connectorNode, firstNode, secondNode };
-                TestHelper.WaitForNodeToSync(nodes.ToArray());
 
                 nodes.ForEach(n =>
-                    {
-                        TestHelper.MineBlocks(n, walletName, walletPassword, accountName, 1);
-                        TestHelper.WaitForNodeToSync(nodes.ToArray());
-                    });
+                {
+                    TestHelper.MineBlocks(n, 1);
+                    TestHelper.WaitForNodeToSync(nodes.ToArray());
+                });
 
                 int networkHeight = minerNode.FullNode.Chain.Height;
                 Assert.Equal(networkHeight, nodes.Count);
 
                 // Random node on network generates a block.
-                firstNode.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(firstNode, 1);
 
                 // Wait until connector get the hash of network's block.
                 while ((connectorNode.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != firstNode.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) ||
@@ -389,8 +367,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(connectorNode.FullNode.Chain.Tip.Height, networkHeight + 1);
 
                 // Miner mines the block.
-                minerNode.GenerateStratisWithMiner(1);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(minerNode));
+                TestHelper.MineBlocks(minerNode, 1);
 
                 networkHeight++;
 
@@ -398,7 +375,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(minerNode.FullNode.Chain.Tip.Height, networkHeight);
                 Assert.Equal(connectorNode.FullNode.Chain.Tip.Height, networkHeight);
 
-                connectorNode.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(connectorNode, 1);
                 networkHeight++;
 
                 TestHelper.WaitForNodeToSync(nodes.ToArray());

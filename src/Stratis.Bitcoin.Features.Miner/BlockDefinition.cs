@@ -246,15 +246,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected void AddTransactionToBlock(Transaction transaction)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(transaction), transaction.GetHash());
-
             this.block.AddTransaction(transaction);
             this.BlockTx++;
 
             if (this.NeedSizeAccounting)
                 this.BlockSize += transaction.GetSerializedSize();
-
-            this.logger.LogTrace("(-){0}:{1}, {2}:{3}", nameof(this.BlockTx), this.BlockTx, nameof(this.BlockSize), this.BlockSize);
         }
 
         /// <summary>
@@ -264,13 +260,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected void UpdateBlockStatistics(TxMempoolEntry mempoolEntry)
         {
-            this.logger.LogTrace("({0}.{1}:{2}, {3}.{4}:{5})", nameof(mempoolEntry), nameof(mempoolEntry.SigOpCost), mempoolEntry.SigOpCost, nameof(mempoolEntry), nameof(mempoolEntry.TxWeight), mempoolEntry.TxWeight);
-
             this.BlockSigOpsCost += mempoolEntry.SigOpCost;
             this.BlockWeight += mempoolEntry.TxWeight;
             this.inBlock.Add(mempoolEntry);
-
-            this.logger.LogTrace("(-){0}:{1}, {2}:{3}", nameof(this.BlockWeight), this.BlockWeight, nameof(this.BlockSigOpsCost), this.BlockSigOpsCost);
         }
 
         /// <summary>
@@ -278,11 +270,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         protected void UpdateTotalFees(Money fee)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(fee), fee);
-
             this.fees += fee;
-
-            this.logger.LogTrace("(-){0}:{1}", nameof(this.fees), this.fees);
         }
 
         /// <summary>
@@ -305,7 +293,6 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             nPackagesSelected = 0;
             nDescendantsUpdated = 0;
-            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(nPackagesSelected), nPackagesSelected, nameof(nDescendantsUpdated), nDescendantsUpdated);
 
             // mapModifiedTx will store sorted packages after they are modified
             // because some of their txs are already in the block.
@@ -464,9 +451,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 // Update transactions that depend on each of these
                 nDescendantsUpdated += this.UpdatePackagesForAdded(ancestors, mapModifiedTx);
             }
-
-            this.logger.LogTrace("(-)");
         }
+
         /// <summary>
         /// Remove confirmed <see cref="inBlock"/> entries from given set.
         /// </summary>

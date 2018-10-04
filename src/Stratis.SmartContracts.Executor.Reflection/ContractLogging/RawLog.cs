@@ -32,6 +32,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 
         /// <summary>
         /// Transforms this log into the log type used by consensus.
+        /// 
+        /// TODO: Cache this value.
         /// </summary>
         public Log ToLog(IContractPrimitiveSerializer serializer)
         {

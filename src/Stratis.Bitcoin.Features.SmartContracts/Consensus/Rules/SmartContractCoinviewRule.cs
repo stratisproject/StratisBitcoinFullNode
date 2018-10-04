@@ -31,33 +31,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <inheritdoc />
         public override void Initialize()
         {
-            this.Logger.LogTrace("()");
-
             base.Initialize();
 
             this.generatedTransaction = null;
             this.refundCounter = 1;
             this.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public async override Task RunAsync(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.ValidationContext.BlockToValidate;
             ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
-
-            this.Parent.PerformanceCounter.AddProcessedBlocks(1);
-
+            
             // Start state from previous block's root
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes());
-            IContractState trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+            IStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
 
             this.receipts = new List<Receipt>();
 
@@ -68,7 +60,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
-                this.Parent.PerformanceCounter.AddProcessedTransactions(1);
                 Transaction tx = block.Transactions[txIndex];
                 if (!context.SkipValidation)
                 {
@@ -111,7 +102,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         var txData = new PrecomputedTransactionData(tx);
                         for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
                         {
-                            this.Parent.PerformanceCounter.AddProcessedInputs(1);
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);
@@ -160,23 +150,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ValidateAndStoreReceipts(((SmartContractBlockHeader)block.Header).ReceiptRoot);
 
             this.ContractCoinviewRule.OriginalStateRoot.Commit();
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, NBitcoin.Block block)
         {
-            this.Logger.LogTrace("()");
-
             Money blockReward = fees + this.GetProofOfWorkReward(height);
             if (block.Transactions[0].TotalOut > blockReward)
             {
                 this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
                 ConsensusErrors.BadCoinbaseAmount.Throw();
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
@@ -257,10 +241,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         protected void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
-            ISmartContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
-            ISmartContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.ContractCoinviewRule.OriginalStateRoot, txContext);
+            IContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
+            IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.ContractCoinviewRule.OriginalStateRoot, txContext);
 
-            ISmartContractExecutionResult result = executor.Execute(txContext);
+            IContractExecutionResult result = executor.Execute(txContext);
 
             var receipt = new Receipt(
                 new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
@@ -288,7 +272,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Retrieves the context object to be given to the contract executor.
         /// </summary>
-        private ISmartContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
+        private IContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
         {
             ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeaderToValidate.Height);
 
@@ -304,7 +288,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             Money mempoolFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
-            return new SmartContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+            return new ContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
         }
 
         /// <summary>
@@ -330,20 +314,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
-            this.Logger.LogTrace("({0}:{1})", nameof(refund), refund);
-
             TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
             if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
             {
-                this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.Value), refund.Value, nameof(refundToMatch.Value), refundToMatch.Value);
-                this.Logger.LogTrace("{0}:{1}, {2}:{3}", nameof(refund.ScriptPubKey), refund.ScriptPubKey, nameof(refundToMatch.ScriptPubKey), refundToMatch.ScriptPubKey);
-
                 SmartContractConsensusErrors.UnequalRefundAmounts.Throw();
             }
 
             this.refundCounter++;
-
-            this.Logger.LogTrace("(-){0}:{1}", nameof(this.refundCounter), this.refundCounter);
         }
 
         /// <inheritdoc/>

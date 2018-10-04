@@ -49,8 +49,6 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public async Task LoadAsync()
         {
-            this.logger.LogTrace("()");
-
             uint256 hash = await this.dBreezeCoinView.GetTipHashAsync().ConfigureAwait(false);
             ChainedHeader next = this.chain.GetBlock(hash);
             var load = new List<StakeItem>();
@@ -74,28 +72,19 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             foreach (StakeItem stakeItem in load)
                 this.items.TryAdd(stakeItem.BlockId, stakeItem);
-
-            this.logger.LogTrace("(-)");
         }
 
         public async Task<BlockStake> GetAsync(uint256 blockid)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockid), blockid);
-
             var stakeItem = new StakeItem { BlockId = blockid };
             await this.dBreezeCoinView.GetStakeAsync(new[] { stakeItem }).ConfigureAwait(false);
-
-            if (stakeItem.BlockStake != null) this.logger.LogTrace("(-):*.{0}='{1}'", nameof(stakeItem.BlockStake.HashProof), stakeItem.BlockStake.HashProof);
-            else this.logger.LogTrace("(-):null");
-
+            
             Guard.Assert(stakeItem.BlockStake != null); // if we ask for it then we expect its in store
             return stakeItem.BlockStake;
         }
 
         public virtual BlockStake Get(uint256 blockid)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(blockid), blockid);
-
             if (this.network.GenesisHash == blockid)
             {
                 this.logger.LogTrace("(-)[GENESIS]:*.{0}='{1}'", nameof(this.genesis.HashProof), this.genesis.HashProof);
@@ -110,14 +99,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             BlockStake res = this.GetAsync(blockid).GetAwaiter().GetResult();
-            this.logger.LogTrace("(-):*.{0}='{1}'", nameof(res.HashProof), res.HashProof);
             return res;
         }
 
         public async Task SetAsync(ChainedHeader chainedHeader, BlockStake blockStake)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}')", nameof(chainedHeader), chainedHeader, nameof(blockStake), nameof(blockStake.HashProof), blockStake.HashProof);
-
             if (this.items.ContainsKey(chainedHeader.HashBlock))
             {
                 this.logger.LogTrace("(-)[ALREADY_EXISTS]");
@@ -129,14 +115,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             bool added = this.items.TryAdd(chainedHeader.HashBlock, item);
             if (added)
                 await this.FlushAsync(false).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
 
         public async Task FlushAsync(bool disposeMode)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(disposeMode), disposeMode);
-
             int count = this.items.Count;
             if (disposeMode || (count > this.threshold))
             {
@@ -154,8 +136,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 foreach (KeyValuePair<uint256, StakeItem> olde in oldes)
                     this.items.TryRemove(olde.Key, out unused);
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

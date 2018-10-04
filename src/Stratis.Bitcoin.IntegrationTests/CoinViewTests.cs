@@ -73,7 +73,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Block genesis = ctx.Network.GetGenesis();
                 var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
-                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
+                var dateTimeProvider = new DateTimeProvider();
+
+                var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider));
 
                 cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
                 Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
@@ -104,7 +106,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeContext nodeContext = NodeContext.Create(this))
             {
-                var cacheCoinView = new CachedCoinView(nodeContext.PersistentCoinView, DateTimeProvider.Default, this.loggerFactory);
+                var dateTimeProvider = new DateTimeProvider();
+                var cacheCoinView = new CachedCoinView(nodeContext.PersistentCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider));
                 var tester = new CoinViewTester(cacheCoinView);
 
                 Coin[] coinsA = tester.CreateCoins(5);
@@ -120,7 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 tester.NewBlock();
 
-                // This will save an empty RewindData instance/
+                // This will save an empty RewindData instance
                 tester.NewBlock();
 
                 // Create a new coin set/
@@ -132,9 +135,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.False(tester.Exists(coinsB[0]));
 
                 // We need to rewind 3 times as we are now rewinding one block at a time.
-                tester.Rewind(); // coinsC[0] should not exist any more. 
-                tester.Rewind(); // coinsA[2] should be spendable again. 
-                tester.Rewind(); // coinsB[2] should be spendable again. 
+                tester.Rewind(); // coinsC[0] should not exist any more.
+                tester.Rewind(); // coinsA[2] should be spendable again.
+                tester.Rewind(); // coinsB[2] should be spendable again.
                 Assert.False(tester.Exists(coinsC[0]));
                 Assert.True(tester.Exists(coinsA[2]));
                 Assert.True(tester.Exists(coinsB[0]));
@@ -170,11 +173,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Rewind one block.
                 tester.Rewind();
 
-                // coinsD[1] was never touched, so should remain unchanged. 
-                // coinsD[0] was spent but the block in which the changes happened was not yet rewound to, so it remains unchanged. 
-                // coinsE[0] was spent but the block in which the changes happened was not yet rewound to, so it remains unchanged. 
-                // coinsA[1] was not touched, so should remain unchanged. 
-                // coinsB[1] was not touched, so should remain unchanged. 
+                // coinsD[1] was never touched, so should remain unchanged.
+                // coinsD[0] was spent but the block in which the changes happened was not yet rewound to, so it remains unchanged.
+                // coinsE[0] was spent but the block in which the changes happened was not yet rewound to, so it remains unchanged.
+                // coinsA[1] was not touched, so should remain unchanged.
+                // coinsB[1] was not touched, so should remain unchanged.
                 Assert.True(tester.Exists(coinsD[1]));
                 Assert.False(tester.Exists(coinsD[0]));
                 Assert.False(tester.Exists(coinsE[0]));
@@ -184,8 +187,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Rewind one block.
                 tester.Rewind();
 
-                // coinsD[0] should now not exist in CoinView anymore. 
-                // coinsE[0] should now not exist in CoinView anymore. 
+                // coinsD[0] should now not exist in CoinView anymore.
+                // coinsE[0] should now not exist in CoinView anymore.
                 Assert.False(tester.Exists(coinsD[0]));
                 Assert.False(tester.Exists(coinsE[0]));
             }

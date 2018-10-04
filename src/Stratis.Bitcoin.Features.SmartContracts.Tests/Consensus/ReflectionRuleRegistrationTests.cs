@@ -14,6 +14,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
@@ -26,9 +27,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
             Network network = KnownNetworks.StratisRegTest;
 
             var chain = new ConcurrentChain(network);
-            var contractState = new ContractStateRoot();
-            var executorFactory = new Mock<ISmartContractExecutorFactory>();
+            var contractState = new StateRepositoryRoot();
+            var executorFactory = new Mock<IContractExecutorFactory>();
             var loggerFactory = new ExtendedLoggerFactory();
+
+            var dateTimeProvider = new DateTimeProvider();
+            var callDataSerializer = Mock.Of<ICallDataSerializer>();
 
             var consensusRules = new SmartContractPowConsensusRuleEngine(
                 chain, new Mock<ICheckpoints>().Object, new Configuration.Settings.ConsensusSettings(),
@@ -38,10 +42,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus
                 new Mock<ISenderRetriever>().Object,
                 new Mock<ICoinView>().Object,
                 new Mock<IChainState>().Object,
-                new InvalidBlockHashStore(new DateTimeProvider()));
+                new InvalidBlockHashStore(dateTimeProvider),
+                new NodeStats(dateTimeProvider));
 
-            var feature = new ReflectionVirtualMachineFeature(loggerFactory, network);
-            feature.Initialize();
+            var feature = new ReflectionVirtualMachineFeature(loggerFactory, network, callDataSerializer);
+            feature.InitializeAsync().GetAwaiter().GetResult();
 
             Assert.Single(network.Consensus.FullValidationRules.Where(r => r.GetType() == typeof(SmartContractFormatRule)));
         }

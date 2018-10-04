@@ -51,9 +51,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        /// <summary>Disposable resources that will be disposed when the feature stops.</summary>
-        private readonly List<IDisposable> disposableResources;
-
         /// <summary>Information about node's chain.</summary>
         private readonly IChainState chainState;
 
@@ -113,8 +110,11 @@ namespace Stratis.Bitcoin.Base
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
 
-        /// <inheritdoc cref="IFinalizedBlockInfo"/>
-        private readonly IFinalizedBlockInfo finalizedBlockInfo;
+        /// <inheritdoc cref="IFinalizedBlockInfoRepository"/>
+        private readonly IFinalizedBlockInfoRepository finalizedBlockInfoRepository;
+
+        /// <inheritdoc cref="IPartialValidator"/>
+        private readonly IPartialValidator partialValidator;
 
         public BaseFeature(
             NodeSettings nodeSettings,
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Base
             IChainState chainState,
             IConnectionManager connectionManager,
             IChainRepository chainRepository,
-            IFinalizedBlockInfo finalizedBlockInfo,
+            IFinalizedBlockInfoRepository finalizedBlockInfo,
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Base
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
-            this.finalizedBlockInfo = Guard.NotNull(finalizedBlockInfo, nameof(finalizedBlockInfo));
+            this.finalizedBlockInfoRepository = Guard.NotNull(finalizedBlockInfo, nameof(finalizedBlockInfo));
             this.nodeSettings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.dataFolder = Guard.NotNull(dataFolder, nameof(dataFolder));
             this.nodeLifetime = Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -153,6 +153,7 @@ namespace Stratis.Bitcoin.Base
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.network = network;
+            this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
@@ -165,17 +166,14 @@ namespace Stratis.Bitcoin.Base
             this.loggerFactory = loggerFactory;
             this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.disposableResources = new List<IDisposable>();
         }
 
         /// <inheritdoc />
-        public override void Initialize()
+        public override async Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             this.dbreezeSerializer.Initialize(this.chain.Network);
 
-            this.StartChainAsync().GetAwaiter().GetResult();
+            await this.StartChainAsync().ConfigureAwait(false);
 
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
@@ -196,22 +194,17 @@ namespace Stratis.Bitcoin.Base
                 this.logger.LogDebug("Time synchronization with peers is disabled.");
             }
 
-            this.disposableResources.Add(this.timeSyncBehaviorState as IDisposable);
-            this.disposableResources.Add(this.chainRepository);
-
             // Block store must be initialized before consensus manager.
             // This may be a temporary solution until a better way is found to solve this dependency.
-            this.blockStore.InitializeAsync().GetAwaiter().GetResult();
+            await this.blockStore.InitializeAsync().ConfigureAwait(false);
 
-            this.consensusRules.Initialize().GetAwaiter().GetResult();
+            await this.consensusRules.Initialize().ConfigureAwait(false);
 
             this.consensusRules.Register();
 
-            this.consensusManager.InitializeAsync(this.chain.Tip).GetAwaiter().GetResult();
+            await this.consensusManager.InitializeAsync(this.chain.Tip).ConfigureAwait(false);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -226,8 +219,14 @@ namespace Stratis.Bitcoin.Base
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
 
+            if (!Directory.Exists(this.dataFolder.FinalizedBlockInfoPath))
+            {
+                this.logger.LogInformation("Creating {0}.", this.dataFolder.FinalizedBlockInfoPath);
+                Directory.CreateDirectory(this.dataFolder.FinalizedBlockInfoPath);
+            }
+
             this.logger.LogInformation("Loading finalized block height.");
-            await this.finalizedBlockInfo.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
+            await this.finalizedBlockInfoRepository.LoadFinalizedBlockInfoAsync(this.network).ConfigureAwait(false);
 
             this.logger.LogInformation("Loading chain.");
             ChainedHeader chainTip = await this.chainRepository.LoadAsync(this.chain.Genesis).ConfigureAwait(false);
@@ -285,23 +284,29 @@ namespace Stratis.Bitcoin.Base
                 this.flushChainLoop.Dispose();
             }
 
-            this.logger.LogInformation("Saving chain repository.");
-            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
-
-            foreach (IDisposable disposable in this.disposableResources)
-            {
-                this.logger.LogInformation($"{disposable.GetType().Name}.");
-                disposable.Dispose();
-            }
+            this.logger.LogInformation("Disposing time sync behavior.");
+            this.timeSyncBehaviorState.Dispose();
 
             this.logger.LogInformation("Disposing block puller.");
             this.blockPuller.Dispose();
+
+            this.logger.LogInformation("Disposing partial validator.");
+            this.partialValidator.Dispose();
 
             this.logger.LogInformation("Disposing consensus manager.");
             this.consensusManager.Dispose();
 
             this.logger.LogInformation("Disposing consensus rules.");
             this.consensusRules.Dispose();
+
+            this.logger.LogInformation("Saving chain repository.");
+            this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
+
+            this.logger.LogInformation("Disposing chain repository.");
+            this.chainRepository.Dispose();
+
+            this.logger.LogInformation("Disposing finalized block info repository.");
+            this.finalizedBlockInfoRepository.Dispose();
 
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
@@ -338,7 +343,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);
                     services.AddSingleton<IInvalidBlockHashStore, InvalidBlockHashStore>();
                     services.AddSingleton<IChainState, ChainState>();
-                    services.AddSingleton<IChainRepository, ChainRepository>().AddSingleton<IFinalizedBlockInfo, ChainRepository>(provider => provider.GetService<IChainRepository>() as ChainRepository);
+                    services.AddSingleton<IChainRepository, ChainRepository>();
+                    services.AddSingleton<IFinalizedBlockInfoRepository, FinalizedBlockInfoRepository>();
                     services.AddSingleton<ITimeSyncBehaviorState, TimeSyncBehaviorState>();
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();

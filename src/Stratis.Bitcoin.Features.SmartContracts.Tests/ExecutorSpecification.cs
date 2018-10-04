@@ -1,13 +1,7 @@
-﻿using System.Collections.Generic;
-using CSharpFunctionalExtensions;
-using Microsoft.Extensions.Logging;
-using Moq;
+﻿using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
@@ -18,104 +12,313 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Create_Contract_Success()
         {
-            var network = new SmartContractsRegTest();
-            uint160 newContractAddress = uint160.One;
-            var gasConsumed = (Gas) 100;
-            var code = new byte[] {0xAA, 0xBB, 0xCC};
-            var contractTxData = new ContractTxData(1, 1, (Gas) 1000, code);
-            var refund = new Money(0);
-            const ulong mempoolFee = 2UL; // MOQ doesn't like it when you use a type with implicit conversions (Money)
-            ISmartContractTransactionContext context = Mock.Of<ISmartContractTransactionContext>(c => 
-                c.Data == code &&
-                c.MempoolFee == mempoolFee &&
-                c.Sender == uint160.One &&
-                c.CoinbaseAddress == uint160.Zero);
+            var contractTxData = new ContractTxData(1, 1, (Gas) 1000, new byte[] { 0xAA, 0xBB, 0xCC });
 
-            var logger = new Mock<ILogger>();
-            ILoggerFactory loggerFactory = Mock.Of<ILoggerFactory>
-                    (l => l.CreateLogger(It.IsAny<string>()) == logger.Object);
+            VmExecutionResult vmExecutionResult = VmExecutionResult.Ok(new object(), null);
 
-            var callDataSerializer = new Mock<ICallDataSerializer>();            
-            callDataSerializer
-                .Setup(s => s.Deserialize(It.IsAny<byte[]>()))
-                .Returns(Result.Ok(contractTxData));
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Success.Result);
 
-            var vmExecutionResult = VmExecutionResult.Success(null, null);
+            var fixture = new ExecutorFixture(contractTxData);
+            IState snapshot = fixture.State.Object.Snapshot();
 
-            var contractStateRoot = new Mock<IContractStateRoot>();
-            var transferProcessor = new Mock<ISmartContractResultTransferProcessor>();
-
-            (Money refund, TxOut) refundResult = (refund, null);
-            var refundProcessor = new Mock<ISmartContractResultRefundProcessor>();
-
-            refundProcessor
-                .Setup(r => r.Process(
-                    contractTxData,
-                    mempoolFee,
-                    context.Sender,
-                    It.IsAny<Gas>(),
-                    false))
-                .Returns(refundResult);
-
-            var stateTransitionResult = StateTransitionResult.Ok(gasConsumed, newContractAddress, vmExecutionResult.Result);
-
-            var internalTransfers = new List<TransferInfo>().AsReadOnly();
-            var stateMock = new Mock<IState>();
-            stateMock.Setup(s => s.Apply(It.IsAny<ExternalCreateMessage>()))                
+            fixture.StateProcessor
+                .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCreateMessage>()))
                 .Returns(stateTransitionResult);
-            stateMock.SetupGet(p => p.InternalTransfers).Returns(internalTransfers);
 
-            var stateFactory = new Mock<IStateFactory>();
-            stateFactory.Setup(sf => sf.Create(
-                contractStateRoot.Object,
-                It.IsAny<IBlock>(),
-                context.TxOutValue,
-                context.TransactionHash,
-                contractTxData.GasLimit))
-            .Returns(stateMock.Object);
+            var sut = new ContractExecutor(
+                fixture.LoggerFactory,
+                fixture.CallDataSerializer.Object,
+                fixture.ContractStateRoot.Object,
+                fixture.RefundProcessor.Object,
+                fixture.TransferProcessor.Object,
+                fixture.Network,
+                fixture.StateFactory.Object,
+                fixture.StateProcessor.Object,
+                fixture.ContractPrimitiveSerializer.Object);
 
-            var sut = new Executor(
-                loggerFactory,
-                callDataSerializer.Object,
-                contractStateRoot.Object,
-                refundProcessor.Object,
-                transferProcessor.Object,
-                network,
-                stateFactory.Object);
+            IContractExecutionResult result = sut.Execute(fixture.ContractTransactionContext);
 
-            sut.Execute(context);
-
-            callDataSerializer.Verify(s => s.Deserialize(code), Times.Once);
+            fixture.CallDataSerializer.Verify(s => s.Deserialize(fixture.ContractTransactionContext.Data), Times.Once);
             
-            stateFactory.Verify(sf => sf
+            fixture.StateFactory.Verify(sf => sf
                 .Create(
-                    contractStateRoot.Object,
+                    fixture.ContractStateRoot.Object,
                     It.IsAny<IBlock>(),
-                    context.TxOutValue,
-                    context.TransactionHash,
-                    contractTxData.GasLimit),
+                    fixture.ContractTransactionContext.TxOutValue,
+                    fixture.ContractTransactionContext.TransactionHash),
                 Times.Once);
 
-            stateMock.Verify(sm => sm
-                .Apply(It.IsAny<ExternalCreateMessage>()), Times.Once);
+            // We only apply the message to the snapshot.
+            fixture.StateProcessor.Verify(sm => sm.Apply(snapshot, It.IsAny<ExternalCreateMessage>()), Times.Once);
 
-            transferProcessor.Verify(t => t
+            // Must transition to the snapshot.
+            fixture.State.Verify(sm => sm.TransitionTo(snapshot), Times.Once);
+
+            fixture.TransferProcessor.Verify(t => t
                 .Process(
-                    contractStateRoot.Object, 
-                    newContractAddress, 
-                    context,
-                    internalTransfers,
+                    fixture.ContractStateRoot.Object, 
+                    stateTransitionResult.Success.ContractAddress, 
+                    fixture.ContractTransactionContext,
+                    fixture.State.Object.InternalTransfers,
                     false), 
                 Times.Once);
 
-            refundProcessor.Verify(t => t
+            fixture.RefundProcessor.Verify(t => t
                     .Process(
                         contractTxData,
-                        mempoolFee,
-                        context.Sender,
+                        fixture.MempoolFee,
+                        fixture.ContractTransactionContext.Sender,
                         It.IsAny<Gas>(),
                         false),
                 Times.Once);
+
+            Assert.Null(result.To);
+            Assert.Equal(stateTransitionResult.Success.ContractAddress, result.NewContractAddress);
+            Assert.Null(result.ErrorMessage);
+            Assert.False(result.Revert);
+            Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
+            Assert.Equal(stateTransitionResult.Success.ExecutionResult, result.Return);
+            Assert.Equal(fixture.InternalTransaction, result.InternalTransaction);
+            Assert.Equal(fixture.Fee, (Money)result.Fee);
+            Assert.Equal(fixture.Refund, result.Refund);
+            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
+        }
+
+        [Fact]
+        public void Create_Contract_Failure()
+        {
+            var contractTxData = new ContractTxData(1, 1, (Gas)1000, new byte[] { 0xAA, 0xBB, 0xCC });
+            
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas) 100, StateTransitionErrorKind.VmError);
+            
+            var fixture = new ExecutorFixture(contractTxData);
+            IState snapshot = fixture.State.Object.Snapshot();
+
+            fixture.StateProcessor
+                .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCreateMessage>()))
+                .Returns(stateTransitionResult);
+
+            var sut = new ContractExecutor(
+                fixture.LoggerFactory,
+                fixture.CallDataSerializer.Object,
+                fixture.ContractStateRoot.Object,
+                fixture.RefundProcessor.Object,
+                fixture.TransferProcessor.Object,
+                fixture.Network,
+                fixture.StateFactory.Object,
+                fixture.StateProcessor.Object,
+                fixture.ContractPrimitiveSerializer.Object);
+
+            IContractExecutionResult result = sut.Execute(fixture.ContractTransactionContext);
+
+            fixture.CallDataSerializer.Verify(s => s.Deserialize(fixture.Data), Times.Once);
+
+            fixture.StateFactory.Verify(sf => sf
+                    .Create(
+                        fixture.ContractStateRoot.Object,
+                        It.IsAny<IBlock>(),
+                        fixture.ContractTransactionContext.TxOutValue,
+                        fixture.ContractTransactionContext.TransactionHash),
+                Times.Once);
+
+            // We only apply the message to the snapshot.
+            fixture.StateProcessor.Verify(sm => sm.Apply(fixture.State.Object.Snapshot(),
+                It.Is<ExternalCreateMessage>(m =>
+                    m.Code == contractTxData.ContractExecutionCode
+                    && m.Parameters == contractTxData.MethodParameters)), Times.Once);
+
+            // We do not transition to the snapshot because the applying the message was unsuccessful.
+            fixture.State.Verify(sm => sm.TransitionTo(fixture.State.Object.Snapshot()), Times.Never);
+
+            fixture.TransferProcessor.Verify(t => t
+                    .Process(
+                        fixture.ContractStateRoot.Object,
+                        null,
+                        fixture.ContractTransactionContext,
+                        fixture.State.Object.InternalTransfers,
+                        true),
+                Times.Once);
+
+            fixture.RefundProcessor.Verify(t => t
+                    .Process(
+                        contractTxData,
+                        fixture.MempoolFee,
+                        fixture.ContractTransactionContext.Sender,
+                        It.IsAny<Gas>(),
+                        false),
+                Times.Once);
+
+            Assert.Null(result.To);
+            Assert.Null(result.NewContractAddress);
+            Assert.Equal(stateTransitionResult.Error.VmError, result.ErrorMessage);
+            Assert.True(result.Revert);
+            Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
+            Assert.Null(result.Return);
+            Assert.Equal(fixture.InternalTransaction, result.InternalTransaction);
+            Assert.Equal(fixture.Fee, (Money)result.Fee);
+            Assert.Equal(fixture.Refund, result.Refund);
+            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
+        }
+
+        [Fact]
+        public void Call_Contract_Success()
+        {
+            var parameters = new object[] { };
+            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
+
+            VmExecutionResult vmExecutionResult = VmExecutionResult.Ok(new object(), null);
+
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Success.Result);
+
+            var fixture = new ExecutorFixture(contractTxData);
+            IState snapshot = fixture.State.Object.Snapshot();
+
+            fixture.StateProcessor
+                .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCallMessage>()))
+                .Returns(stateTransitionResult);
+
+            var sut = new ContractExecutor(
+                fixture.LoggerFactory,
+                fixture.CallDataSerializer.Object,
+                fixture.ContractStateRoot.Object,
+                fixture.RefundProcessor.Object,
+                fixture.TransferProcessor.Object,
+                fixture.Network,
+                fixture.StateFactory.Object,
+                fixture.StateProcessor.Object,
+                fixture.ContractPrimitiveSerializer.Object);
+
+            IContractExecutionResult result = sut.Execute(fixture.ContractTransactionContext);
+
+            fixture.CallDataSerializer.Verify(s => s.Deserialize(fixture.ContractTransactionContext.Data), Times.Once);
+
+            fixture.StateFactory.Verify(sf => sf
+                .Create(
+                    fixture.ContractStateRoot.Object,
+                    It.IsAny<IBlock>(),
+                    fixture.ContractTransactionContext.TxOutValue,
+                    fixture.ContractTransactionContext.TransactionHash),
+                Times.Once);
+
+            // We only apply the message to the snapshot.
+            fixture.StateProcessor.Verify(sm => sm.Apply(snapshot, It.Is<ExternalCallMessage>(m =>
+                m.Method.Name == contractTxData.MethodName
+                && m.Method.Parameters == contractTxData.MethodParameters
+                && m.Amount == fixture.ContractTransactionContext.TxOutValue
+                && m.From == fixture.ContractTransactionContext.Sender
+                && m.To == contractTxData.ContractAddress)), Times.Once);
+
+            // Must transition to the snapshot.
+            fixture.State.Verify(sm => sm.TransitionTo(snapshot), Times.Once);
+
+            fixture.TransferProcessor.Verify(t => t
+                .Process(
+                    fixture.ContractStateRoot.Object,
+                    stateTransitionResult.Success.ContractAddress,
+                    fixture.ContractTransactionContext,
+                    fixture.State.Object.InternalTransfers,
+                    false),
+                Times.Once);
+
+            fixture.RefundProcessor.Verify(t => t
+                    .Process(
+                        contractTxData,
+                        fixture.MempoolFee,
+                        fixture.ContractTransactionContext.Sender,
+                        It.IsAny<Gas>(),
+                        false),
+                Times.Once);
+
+            Assert.Equal(contractTxData.ContractAddress, result.To);
+            Assert.Null(result.NewContractAddress);
+            Assert.Null(result.ErrorMessage);
+            Assert.False(result.Revert);
+            Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
+            Assert.Equal(stateTransitionResult.Success.ExecutionResult, result.Return);
+            Assert.Equal(fixture.InternalTransaction, result.InternalTransaction);
+            Assert.Equal(fixture.Fee, (Money)result.Fee);
+            Assert.Equal(fixture.Refund, result.Refund);
+            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
+        }
+
+        [Fact]
+        public void Call_Contract_Failure()
+        {
+            var parameters = new object[] { };
+            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
+
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)100, StateTransitionErrorKind.VmError);
+
+            var fixture = new ExecutorFixture(contractTxData);
+            IState snapshot = fixture.State.Object.Snapshot();
+
+            fixture.StateProcessor
+                .Setup(s => s.Apply(snapshot, It.IsAny<ExternalCallMessage>()))
+                .Returns(stateTransitionResult);
+
+            var sut = new ContractExecutor(
+                fixture.LoggerFactory,
+                fixture.CallDataSerializer.Object,
+                fixture.ContractStateRoot.Object,
+                fixture.RefundProcessor.Object,
+                fixture.TransferProcessor.Object,
+                fixture.Network,
+                fixture.StateFactory.Object,
+                fixture.StateProcessor.Object,
+                fixture.ContractPrimitiveSerializer.Object);
+
+            IContractExecutionResult result = sut.Execute(fixture.ContractTransactionContext);
+
+            fixture.CallDataSerializer.Verify(s => s.Deserialize(fixture.Data), Times.Once);
+
+            fixture.StateFactory.Verify(sf => sf
+                    .Create(
+                        fixture.ContractStateRoot.Object,
+                        It.IsAny<IBlock>(),
+                        fixture.ContractTransactionContext.TxOutValue,
+                        fixture.ContractTransactionContext.TransactionHash),
+                Times.Once);
+
+            // We only apply the message to the snapshot.
+            fixture.StateProcessor.Verify(sm => sm.Apply(snapshot, It.Is<ExternalCallMessage>(m =>
+                m.Method.Name == contractTxData.MethodName
+                && m.Method.Parameters == contractTxData.MethodParameters
+                && m.Amount == fixture.ContractTransactionContext.TxOutValue
+                && m.From == fixture.ContractTransactionContext.Sender
+                && m.To == contractTxData.ContractAddress)), Times.Once);
+
+            // We do not transition to the snapshot because the applying the message was unsuccessful.
+            fixture.State.Verify(sm => sm.TransitionTo(snapshot), Times.Never);
+
+            // Transfer processor is called with null for new contract address and true for reversion required.
+            fixture.TransferProcessor.Verify(t => t
+                    .Process(
+                        fixture.ContractStateRoot.Object,
+                        null,
+                        fixture.ContractTransactionContext,
+                        fixture.State.Object.InternalTransfers,
+                        true),
+                Times.Once);
+
+            fixture.RefundProcessor.Verify(t => t
+                    .Process(
+                        contractTxData,
+                        fixture.MempoolFee,
+                        fixture.ContractTransactionContext.Sender,
+                        stateTransitionResult.GasConsumed,
+                        false),
+                Times.Once);
+
+            Assert.Equal(contractTxData.ContractAddress, result.To);
+            Assert.Null(result.NewContractAddress);
+            Assert.Equal(stateTransitionResult.Error.VmError, result.ErrorMessage);
+            Assert.True(result.Revert);
+            Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
+            Assert.Null(result.Return);
+            Assert.Equal(fixture.InternalTransaction, result.InternalTransaction);
+            Assert.Equal(fixture.Fee, (Money) result.Fee);
+            Assert.Equal(fixture.Refund, result.Refund);
+            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
         }
     }
 }

@@ -3,9 +3,9 @@ using System.Linq;
 using System.Text;
 using DBreeze;
 using DBreeze.DataTypes;
+using FluentAssertions;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -135,6 +135,28 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
                 this.dbreezeSerializer.Deserializer(Encoding.UTF8.GetBytes(test), typeof(string));
             });
+        }
+
+        private class UnknownBitcoinSerialisable : IBitcoinSerializable
+        {
+            public int ReadWriteCalls;
+
+            public void ReadWrite(BitcoinStream stream) { this.ReadWriteCalls++; }
+        }
+
+        [Fact]
+        public void DeserializeAnyIBitcoinSerializableDoesNotThrowException()
+        {
+            var result = (UnknownBitcoinSerialisable)this.dbreezeSerializer.Deserializer(Encoding.UTF8.GetBytes("useless"), typeof(UnknownBitcoinSerialisable));
+            result.ReadWriteCalls.Should().Be(1);
+        }
+
+        [Fact]
+        public void SerializeAnyIBitcoinSerializableDoesNotThrowException()
+        {
+            var serialisable = new UnknownBitcoinSerialisable();
+            this.dbreezeSerializer.Serializer(serialisable);
+            serialisable.ReadWriteCalls.Should().Be(1);
         }
 
         [Fact]

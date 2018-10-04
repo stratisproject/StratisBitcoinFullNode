@@ -13,7 +13,10 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -41,9 +44,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public IChainState ChainState { get; set; }
 
+        public ICallDataSerializer CallDataSerializer { get; set; }
+
         public T CreateRule<T>() where T : ConsensusRuleBase, new()
         {
             T rule = new T();
+            rule.Parent = this.Consensus;
+            rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
+            rule.Initialize();
+            return rule;
+        }
+
+        public SmartContractFormatRule CreateSmartContractFormatRule()
+        {
+            var rule = new SmartContractFormatRule(this.CallDataSerializer);
             rule.Parent = this.Consensus;
             rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
             rule.Initialize();
@@ -82,8 +96,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             NodeDeployments deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
             testRulesContext.Consensus = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
-                testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState, new InvalidBlockHashStore(new DateTimeProvider())).Register();
+                testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, null, testRulesContext.ChainState,
+                new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(new DateTimeProvider())).Register();
 
+            testRulesContext.CallDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
             return testRulesContext;
         }
 

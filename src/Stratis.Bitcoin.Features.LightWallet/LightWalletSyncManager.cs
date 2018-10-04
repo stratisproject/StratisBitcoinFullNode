@@ -160,7 +160,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public void ProcessBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
             if (newTip == null)
@@ -230,8 +229,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -243,8 +240,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void SyncFromDate(DateTime date)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(date), date);
-
             // Before we start syncing we need to make sure that the chain is at a certain level.
             // If the chain is behind the date from which we want to sync, we wait for it to catch up, and then we start syncing.
             // If the chain is already past the date we want to sync from, we don't wait, even though the chain might not be fully downloaded.
@@ -273,15 +268,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 this.logger.LogTrace("Start syncing from {0}", date);
                 this.StartSync(this.chain.GetHeightAtTime(date));
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void SyncFromHeight(int height)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(height), height);
-
             if (height < 0)
             {
                 throw new WalletException($"Invalid block height {height}. The height must be zero or higher.");
@@ -315,8 +306,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 this.logger.LogTrace("Start syncing from height {0}.", height);
                 this.StartSync(height);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

@@ -1,4 +1,5 @@
 ﻿using CSharpFunctionalExtensions;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -7,6 +8,16 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public interface ICallDataSerializer
     {
+        /// <summary>
+        /// Deserializes a <see cref="ContractTxData"/> object from raw bytes of a Transaction's Script.
+        /// </summary>
         Result<ContractTxData> Deserialize(byte[] callData);
+
+        /// <summary>
+        /// Serializes a <see cref="ContractTxData"/> object to raw bytes.
+        /// </summary>
+        byte[] Serialize(ContractTxData contractTxData);
+
+        IMethodParameterSerializer MethodParamSerializer { get; }
     }
 }

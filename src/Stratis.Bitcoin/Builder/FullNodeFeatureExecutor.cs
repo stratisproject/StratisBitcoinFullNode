@@ -10,17 +10,12 @@ namespace Stratis.Bitcoin.Builder
     /// <summary>
     /// Starts and stops all features registered with a full node.
     /// </summary>
-    public interface IFullNodeFeatureExecutor
+    public interface IFullNodeFeatureExecutor : IDisposable
     {
         /// <summary>
         /// Starts all registered features of the associated full node.
         /// </summary>
         void Initialize();
-
-        /// <summary>
-        /// Stops all registered features of the associated full node.
-        /// </summary>
-        void Dispose();
     }
 
     /// <summary>
@@ -51,12 +46,10 @@ namespace Stratis.Bitcoin.Builder
         /// <inheritdoc />
         public void Initialize()
         {
-            this.logger.LogTrace("()");
-
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.Initialize());
+                this.Execute(service => service.InitializeAsync().GetAwaiter().GetResult());
             }
             catch
             {
@@ -64,15 +57,11 @@ namespace Stratis.Bitcoin.Builder
                 this.logger.LogTrace("(-)[INITIALIZE_EXCEPTION]");
                 throw;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             try
             {
                 this.Execute(feature => feature.Dispose(), true);
@@ -83,8 +72,6 @@ namespace Stratis.Bitcoin.Builder
                 this.logger.LogTrace("(-)[DISPOSE_EXCEPTION]");
                 throw;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -95,8 +82,6 @@ namespace Stratis.Bitcoin.Builder
         /// <exception cref="AggregateException">Thrown in case one or more callbacks threw an exception.</exception>
         private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(reverseOrder), reverseOrder);
-
             List<Exception> exceptions = null;
 
             if (this.node.Services == null)
@@ -132,8 +117,6 @@ namespace Stratis.Bitcoin.Builder
                 this.logger.LogTrace("(-)[EXECUTION_FAILED]");
                 throw new AggregateException(exceptions);
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

@@ -22,8 +22,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
     /// </summary>
     public sealed class SmartContractPosConsensusRuleEngine : PosConsensusRuleEngine, ISmartContractCoinviewRule
     {
-        public ISmartContractExecutorFactory ExecutorFactory { get; private set; }
-        public IContractStateRoot OriginalStateRoot { get; private set; }
+        public IContractExecutorFactory ExecutorFactory { get; private set; }
+        public IStateRepositoryRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
         public ISenderRetriever SenderRetriever { get; private set; }
 
@@ -32,19 +32,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
             IDateTimeProvider dateTimeProvider,
-            ISmartContractExecutorFactory executorFactory,
+            IContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
             Network network,
             NodeDeployments nodeDeployments,
-            IContractStateRoot originalStateRoot,
+            IStateRepositoryRoot originalStateRoot,
             IReceiptRepository receiptRepository,
             ISenderRetriever senderRetriever,
             IStakeChain stakeChain,
             IStakeValidator stakeValidator,
             ICoinView utxoSet,
             IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore)
+            IInvalidBlockHashStore invalidBlockHashStore,
+            INodeStats nodeStats)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats)
         {
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;

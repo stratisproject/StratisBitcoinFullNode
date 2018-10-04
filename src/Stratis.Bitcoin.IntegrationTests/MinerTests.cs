@@ -9,14 +9,11 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -25,7 +22,6 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.IntegrationTests.Mempool;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Networks;
@@ -138,11 +134,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 this.chain = new ConcurrentChain(this.network);
                 this.network.Consensus.Options = new ConsensusOptions();
 
-                new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().RegisterRules(this.network.Consensus);
-
                 IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
-                this.cachedCoinView = new CachedCoinView(new InMemoryCoinView(this.chain.Tip.HashBlock), dateTimeProvider, new LoggerFactory());
+                var inMemoryCoinView = new InMemoryCoinView(this.chain.Tip.HashBlock);
+                this.cachedCoinView = new CachedCoinView(inMemoryCoinView, dateTimeProvider, new LoggerFactory(), new NodeStats(dateTimeProvider));
 
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
@@ -171,15 +166,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings,
-                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider)).Register();
+                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider)).Register();
 
-                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network);
+                this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
+
                 await this.consensus.InitializeAsync(chainState.BlockStoreTip);
 
                 this.entry.Fee(11);
                 this.entry.Height(11);
 
-                var dateTimeProviderSet = new MemoryPoolTests.DateTimeProviderSet
+                var dateTimeProviderSet = new DateTimeProviderSet
                 {
                     time = dateTimeProvider.GetTime(),
                     timeutc = dateTimeProvider.GetUtcNow()
@@ -200,7 +196,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 for (int i = 0; i < this.blockinfo.Count; ++i)
                 {
                     Block block = this.network.CreateBlock();
-                    block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
+                    block.Header.HashPrevBlock = this.consensus.Tip.HashBlock;
                     block.Header.Version = 1;
                     block.Header.Time = Utils.DateTimeToUnixTime(this.chain.Tip.GetMedianTimePast()) + 1;
 
@@ -227,7 +223,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                     // Serialization sets the BlockSize property.
                     block = Block.Load(block.ToBytes(), this.network);
 
-                    await this.consensus.BlockMinedAsync(block);
+                    var res = await this.consensus.BlockMinedAsync(block);
+
+                    if (res == null)
+                        throw new InvalidOperationException();
 
                     blocks.Add(block);
                 }
@@ -364,12 +363,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network);
+                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
-                miner.NotInIBD();
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
-                miner.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(miner, 1);
 
                 var txMempoolHelper = new TestMemPoolEntryHelper();
 
@@ -393,7 +391,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     tx.Inputs[0].PrevOut.Hash = tx.GetHash();
                 }
 
-                var error = Assert.Throws<ConsensusException>(() => miner.GenerateStratisWithMiner(1));
+                var error = Assert.Throws<ConsensusException>(() => TestHelper.MineBlocks(miner, 1));
                 Assert.True(error.Message == ConsensusErrors.BadBlockSigOps.Message);
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
@@ -472,12 +470,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network);
+                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
-                miner.NotInIBD();
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
-                miner.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(miner, 1);
 
                 // Create an invalid coinbase transaction to be added to the mempool.
                 var duplicateCoinbase = this.network.CreateTransaction();
@@ -491,7 +488,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var txMempoolEntry = txMempoolHelper.Fee(Money.CENT).Time(DateTimeProvider.Default.GetTime()).SpendsCoinbase(false).FromTx(duplicateCoinbase);
                 miner.FullNode.NodeService<ITxMempool>().AddUnchecked(duplicateCoinbase.GetHash(), txMempoolEntry);
 
-                var error = Assert.Throws<ConsensusException>(() => miner.GenerateStratisWithMiner(1));
+                var error = Assert.Throws<ConsensusException>(() => TestHelper.MineBlocks(miner, 1));
                 Assert.True(error.Message == ConsensusErrors.BadMultipleCoinbase.Message);
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
@@ -510,7 +507,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             tx.AddOutput(new TxOut());
 
             // non - final txs in mempool
-            (context.DateTimeProvider as MemoryPoolTests.DateTimeProviderSet).time = context.chain.Tip.Header.Time + 1;
+            (context.DateTimeProvider as DateTimeProviderSet).time = context.chain.Tip.Header.Time + 1;
             //SetMockTime(chainActive.Tip().GetMedianTimePast() + 1);
             Transaction.LockTimeFlags flags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
             // height map
@@ -687,22 +684,21 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
                 builder.StartAll();
-                node.NotInIBD();
 
                 node.SetDummyMinerSecret(new BitcoinSecret(new Key(), node.FullNode.Network));
 
-                node.GenerateStratisWithMiner(10);
+                TestHelper.MineBlocks(node, 10);
                 node.GetProofOfWorkRewardForMinedBlocks(10).Should().Be(Money.Coins(500));
 
-                node.GenerateStratisWithMiner(90);
+                TestHelper.MineBlocks(node, 90);
                 node.GetProofOfWorkRewardForMinedBlocks(100).Should().Be(Money.Coins(5000));
 
-                node.GenerateStratisWithMiner(100);
+                TestHelper.MineBlocks(node, 100);
                 node.GetProofOfWorkRewardForMinedBlocks(200).Should().Be(Money.Coins(8725));
 
-                node.GenerateStratisWithMiner(200);
+                TestHelper.MineBlocks(node, 200);
                 node.GetProofOfWorkRewardForMinedBlocks(400).Should().Be(Money.Coins((decimal)12462.50));
             }
         }
@@ -712,19 +708,16 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
 
                 builder.StartAll();
-
-                miner.NotInIBD();
-                syncer.NotInIBD();
 
                 miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
 
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
 
-                miner.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(miner, 1);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
             }
@@ -735,16 +728,14 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
 
                 builder.StartAll();
-                miner.NotInIBD();
-                syncer.NotInIBD();
 
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
 
-                miner.GenerateStratisWithMiner(1);
+                TestHelper.MineBlocks(miner, 1);
 
                 miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
