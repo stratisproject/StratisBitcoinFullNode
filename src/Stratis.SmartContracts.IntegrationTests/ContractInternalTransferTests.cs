@@ -334,5 +334,51 @@ namespace Stratis.SmartContracts.IntegrationTests
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
         }
+
+        [Fact]
+        public void Internal_Nested_Call_Balance_Correct()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            double amount = 25;
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+
+            // Deploy second contract
+            BuildCreateContractTransactionResponse response2 = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response2.NewContractAddress));
+            uint160 contract2Address = this.addressGenerator.GenerateAddress(response2.TransactionId, 0);
+
+            ulong transferredAmount = 123;
+
+            string[] parameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, response2.NewContractAddress),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, transferredAmount)
+            };
+
+            // Invoke method on contract1 that calls contract2 and check that balance is correct
+            BuildCallContractTransactionResponse callResponse = this.node1.SendCallContractTransaction(
+                nameof(ReceiveFundsTest.TransferFunds),
+                response.NewContractAddress,
+                0,
+                parameters);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+
+            // Stored balance in PersistentState should be only that which was sent (10)
+            byte[] saved = this.node1.GetStorageValue(contract2Address.ToAddress(this.mockChain.Network), "Balance");
+            ulong savedUlong = BitConverter.ToUInt64(saved);
+            Assert.Equal(transferredAmount, savedUlong);
+        }
     }
 }

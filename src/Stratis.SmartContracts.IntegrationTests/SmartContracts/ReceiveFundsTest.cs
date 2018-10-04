@@ -12,4 +12,14 @@ public class ReceiveFundsTest : SmartContract
     {
         this.PersistentState.SetUInt64("Balance", this.Balance);
     }
+
+    public void TransferFunds(Address other, ulong amount)
+    {
+        Transfer(other, amount);
+    }
+
+    public override void Receive()
+    {
+        this.PersistentState.SetUInt64("Balance", this.Balance);
+    }
 }
