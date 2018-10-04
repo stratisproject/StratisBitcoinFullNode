@@ -884,9 +884,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
                 builder.StartAll();
-                miner.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                miner.WithWallet();
+
                 TestHelper.MineBlocks(miner, 5);
 
                 Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
@@ -899,7 +900,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-
+                
                 CoreNode[] syncers = new CoreNode[]
                 {
                     builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD(),
@@ -908,13 +909,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 builder.StartAll();
+                miner.WithWallet();
 
                 foreach (CoreNode syncer in syncers)
                 {
                     miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
                 }
-
-                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
 
                 Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 0));
 
@@ -935,30 +935,27 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
                 CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+
                 builder.StartAll();
+                miner.WithWallet();
 
                 // Connect syncer.
                 miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
 
                 int initialChainLength = 1;
-
-                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
                 TestHelper.MineBlocks(miner, initialChainLength);
 
                 // Check nodes are in step.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
-                Assert.Equal(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
 
                 // Syncer disconnects and extends its chain by 3 blocks.  Chains now have different tips.
                 miner.CreateRPCClient().RemoveNode(syncer.Endpoint);
-                syncer.NotInIBD().SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
                 TestHelper.MineBlocks(miner, initialChainLength + 3);
                 Assert.NotEqual(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
 
                 // Main re-adds syncer node which has more chainwork.  Nodes sync and chains now have common tip.
-                miner.CreateRPCClient().AddNode(syncer.NotInIBD().Endpoint, true);
+                miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
-                Assert.Equal(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
             }
         }
     }
