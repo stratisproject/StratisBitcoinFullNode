@@ -184,6 +184,38 @@ namespace Stratis.Bitcoin.Features.Wallet
             return context.TransactionFee;
         }
 
+        /// <inheritdoc />
+        //[NoTrace]
+        public void CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration)
+        {
+            Guard.NotNull(walletAccount, nameof(walletAccount));
+            Guard.NotEmpty(walletPassword, nameof(walletPassword));
+            Guard.NotNull(duration, nameof(duration));
+
+            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);  
+            string cacheKey = wallet.EncryptedSeed;
+
+            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
+            { 
+                this.privateKeyCache.Set(cacheKey, secretValue, duration);
+            }
+            else
+            {
+                Key privateKey = Key.Parse(wallet.EncryptedSeed, walletPassword, wallet.Network);
+                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), duration);
+            }
+        }
+
+        /// <inheritdoc />
+        public void ClearCachedSecret(WalletAccountReference walletAccount)
+        {
+            Guard.NotNull(walletAccount, nameof(walletAccount));
+
+            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
+            string cacheKey = wallet.EncryptedSeed;
+            this.privateKeyCache.Remove(cacheKey);
+        }
+
         /// <summary>
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>

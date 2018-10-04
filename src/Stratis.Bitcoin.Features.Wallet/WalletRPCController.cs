@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -8,6 +9,7 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -25,20 +27,60 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet manager.</summary>
         private readonly IWalletManager walletManager;
 
-        public WalletRPCController(IWalletManager walletManager, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
+        /// <summary>Wallet transaction handler.</summary>
+        private readonly IWalletTransactionHandler walletTransactionHandler;
+
+        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
         {
             this.walletManager = walletManager;
+            this.walletTransactionHandler = walletTransactionHandler;
             this.fullNode = fullNode;
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        [ActionName("sendtoaddress")]
-        [ActionDescription("Sends money to a bitcoin address.")]
-        public uint256 SendToAddress(BitcoinAddress bitcoinAddress, Money amount)
+        [ActionName("walletpassphrase")]
+        [ActionDescription("Stores the wallet decryption key in memory for the indicated number of seconds. Issuing the walletpassphrase command while the wallet is already unlocked will set a new unlock time that overrides the old one.")]
+        public void UnlockWallet(WalletPassphraseModel model)
+        {
+            Guard.NotNull(model, nameof(model));
+
+            // As per RPC method definition this should be the max allowable expiry duration.
+            const int maxDurationInSeconds = 1073741824;
+
+            WalletAccountReference account = this.GetAccount();
+
+            // Length of expiry of the unlocking, restricted to max duration.
+            TimeSpan duration = new TimeSpan(0, 0, Math.Min(model.Seconds, maxDurationInSeconds));
+
+            this.walletTransactionHandler.CacheSecret(account, model.Passphrase, duration);
+        }
+
+        [ActionName("walletlock")]
+        [ActionDescription("Removes the wallet encryption key from memory, locking the wallet. After calling this method, you will need to call walletpassphrase again before being able to call any methods which require the wallet to be unlocked.")]
+        public void LockWallet()
         {
             WalletAccountReference account = this.GetAccount();
-            return uint256.Zero;
+            this.walletTransactionHandler.ClearCachedSecret(account);
+        }
+
+        [ActionName("sendtoaddress")]
+        [ActionDescription("Sends money to a bitcoin address. Requires wallet to be unlocked using walletpassphrase.")]
+        public async Task<uint256> SendToAddressAsync(BitcoinAddress bitcoinAddress, Money amount)
+        {
+            WalletAccountReference account = this.GetAccount(); 
+            TransactionBuildContext context = new TransactionBuildContext(this.fullNode.Network)
+            {
+                AccountReference = this.GetAccount(),
+                Recipients = new [] {new Recipient { Amount = amount, ScriptPubKey = bitcoinAddress.ScriptPubKey } }.ToList(),
+                WalletPassword = "_" // Want private key to pull from cache, so pass in non empty string so tx will be signed.
+            };
+
+            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+            await this.broadcasterManager.BroadcastTransactionAsync(transaction);
+
+            uint256 hash = transaction.GetHash();          
+            return hash;
         }
 
         /// <summary>
