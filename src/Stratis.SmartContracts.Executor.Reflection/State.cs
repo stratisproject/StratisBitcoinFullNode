@@ -102,7 +102,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             if (this.BalanceState.InitialTransfer != null)
             {
-                throw new Exception("Cannot add an initial transfer twice!");
+                throw new NotSupportedException("Cannot add an initial transfer twice!");
             }
 
             this.BalanceState.AddInitialTransfer(initialTransfer);
