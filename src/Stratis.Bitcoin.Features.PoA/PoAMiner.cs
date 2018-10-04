@@ -6,7 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
@@ -14,9 +13,6 @@ namespace Stratis.Bitcoin.Features.PoA
     public class PoAMiner : IDisposable
     {
         // TODO POA. First add creation of block template and later apply signatures and other stuff. We need bare minimum to test syncing and payloads
-
-        /// <summary>Builder that creates a proof-of-work block template.</summary> // TODO POA BLOCK PROVIEDR
-        private readonly IBlockProvider blockProvider;
 
         private readonly IConsensusManager consensusManager;
 
@@ -33,22 +29,24 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IInitialBlockDownloadState indState;
 
+        private readonly PoABlockDefinition blockDefinition;
+
         private Task miningTask;
 
         public PoAMiner(
-            IBlockProvider blockProvider,
             IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
             Network network,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState indState)
+            IInitialBlockDownloadState indState,
+            PoABlockDefinition blockDefinition)
         {
-            this.blockProvider = blockProvider;
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
             this.network = network;
             this.indState = indState;
+            this.blockDefinition = blockDefinition;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
@@ -80,6 +78,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 // TODO check that on fresh start we are not in IBD
 
+                // TODO POA check if our timestamp and if not wait for our timestamp
 
 
                 // TODO poa custom block provider that will set nonce and target to const
@@ -88,15 +87,15 @@ namespace Stratis.Bitcoin.Features.PoA
                 //BlockTemplate blockTemplate = this.blockProvider.BuildPowBlock(tip); // TODO
                 BlockTemplate blockTemplate = null; // TODO remove
 
-                //if (this.network.Consensus.IsProofOfStake)
+                //if (this.network.Consensus.IsProofOfStake) //TODO POA make sure we always mine with timestamp greater than prev block
                 //{
                 //    if (context.BlockTemplate.Block.Header.Time <= context.ChainTip.Header.Time)
                 //        return false;
                 //}
 
+                // TODO sign the block with out signature
 
-
-                ChainedHeader chainedHeader = this.consensusManager.BlockMinedAsync(blockTemplate.Block).GetAwaiter().GetResult();
+                ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 
                 if (chainedHeader == null)
                 {
@@ -107,11 +106,9 @@ namespace Stratis.Bitcoin.Features.PoA
                 if (chainedHeader.ChainWork <= tip.ChainWork)
                     continue; // Can this happen POA TODO
 
-                var chainedHeaderBlock = new ChainedHeaderBlock(blockTemplate.Block, chainedHeader);
 
                 // TODO POA Log mined block
             }
-
         }
 
         /// <inheritdoc/>
