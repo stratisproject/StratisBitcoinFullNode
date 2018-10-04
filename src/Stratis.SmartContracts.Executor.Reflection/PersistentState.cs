@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System;
+using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
@@ -87,6 +88,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return this.GetObject<T>(key);
         }
 
+        public T[] GetArray<T>(string key)
+        {
+            return this.GetObject<T[]>(key);
+        }
+
         internal void SetObject<T>(string key, T obj)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
@@ -141,6 +147,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public void SetStruct<T>(string key, T value) where T : struct
         {
             this.SetObject(key, value);
+        }
+
+        public void SetArray(string key, Array a)
+        {
+            this.SetObject(key, a);
         }
     }
 }

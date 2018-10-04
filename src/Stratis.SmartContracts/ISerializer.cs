@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿using System;
+
+namespace Stratis.SmartContracts
 {
     public interface ISerializer
     {
@@ -40,38 +42,50 @@
         byte[] Serialize(string s);
 
         /// <summary>
-        /// Serializes bytes into a boolean via BitConverter.
+        /// Serializes an array into its RLP-encoded format.
+        /// </summary>
+        /// <param name="a">The array to serialize. The DeclaringType of the array must be one of the supported contract primitives.</param>
+        byte[] Serialize(Array a);
+
+        /// <summary>
+        /// Deserializes bytes into a boolean via BitConverter.
         /// </summary>
         bool ToBool(byte[] val);
 
         /// <summary>
-        /// Serializes 20-bytes into an address.
+        /// Deserializes 20-bytes into an address.
         /// </summary>
         Address ToAddress(byte[] val);
 
         /// <summary>
-        /// Serializes first 4 bytes of a byte array into an integer.
+        /// Deserializes first 4 bytes of a byte array into an integer.
         /// </summary>
         int ToInt32(byte[] val);
 
         /// <summary>
-        /// Serializes first 4 bytes of a byte array into an unsigned integer.
+        /// Deserializes first 4 bytes of a byte array into an unsigned integer.
         /// </summary>
         uint ToUInt32(byte[] val);
 
         /// <summary>
-        /// Serializes first 8 bytes of a  byte array into a long. 
+        /// Deserializes first 8 bytes of a  byte array into a long. 
         /// </summary>
         long ToInt64(byte[] val);
 
         /// <summary>
-        /// Serializes first 8 bytes of a byte array into an unsigned long.
+        /// Deserializes first 8 bytes of a byte array into an unsigned long.
         /// </summary>
         ulong ToUInt64(byte[] val);
 
         /// <summary>
-        /// Serializes UTF8-encoded bytes into a string.
+        /// Deserializes UTF8-encoded bytes into a string.
         /// </summary>
         string ToString(byte[] val);
+
+        /// <summary>
+        /// Deserializes RLP-encoded bytes to an array.
+        /// </summary>
+        /// <typeparam name="T">DeclaringType in the array to return. Must be one of the supported contract primitives.</typeparam>
+        T[] ToArray<T>(byte[] val);
     }
 }
