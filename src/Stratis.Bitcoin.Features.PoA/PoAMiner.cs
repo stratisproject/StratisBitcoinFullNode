@@ -78,11 +78,11 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    // TODO check that on fresh start we are not in IBD
 
                     // TODO POA check if our timestamp and if not wait for our timestamp (wait with cancellation token)
 
-                    // TODO poa custom block provider that will set nonce and target to const
+                    // TODO will set nonce and target to const. Check todo in PoABlockDefenition
+
                     ChainedHeader tip = this.consensusManager.Tip;
 
                     BlockTemplate blockTemplate = this.blockDefinition.Build(tip);
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     if (blockTemplate.Block.Header.Time <= tip.Header.Time)
                         continue; // TODO POA Log
 
-                    // TODO sign the block with out signature
+                    // TODO sign the block with our signature
 
                     ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 
