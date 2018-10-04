@@ -17,14 +17,6 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Samples used in calculation of the average value.</summary>
         private CircularArray<double> samples;
 
-        /// <summary>
-        /// Gets a value indicating whether this instance is empty.
-        /// </summary>
-        /// <value>
-        ///   <c>true</c> if this instance is empty; otherwise, <c>false</c>.
-        /// </value>
-        public bool IsEmpty { get { return this.samples.Count == 0; } }
-
         /// <summary>Initializes a new instance of the <see cref="AverageCalculator"/> class.</summary>
         /// <param name="maxSamples">Maximum amount of samples that can be used in the calculation of the average value.</param>
         /// <exception cref="ArgumentException">Thrown if <paramref name="maxSamples"/> is less than 2.</exception>
