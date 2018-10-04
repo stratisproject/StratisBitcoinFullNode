@@ -14,6 +14,8 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         // TODO POA. First add creation of block template and later apply signatures and other stuff. We need bare minimum to test syncing and payloads
 
+        private const bool MineDuringIBD = true; // TODO for tests
+
         private readonly IConsensusManager consensusManager;
 
         private readonly IDateTimeProvider dateTimeProvider;
@@ -68,7 +70,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 // TODO try catch and check for cancellation
 
                 // Don't mine in IBD.
-                if (this.indState.IsInitialBlockDownload())
+                if (this.indState.IsInitialBlockDownload() && !MineDuringIBD)
                 {
                     int attemptDelayMs = 20_000;
                     await Task.Delay(attemptDelayMs, this.cancellation.Token).ConfigureAwait(false);
@@ -80,18 +82,14 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 // TODO POA check if our timestamp and if not wait for our timestamp
 
-
                 // TODO poa custom block provider that will set nonce and target to const
                 ChainedHeader tip = this.consensusManager.Tip;
 
-                //BlockTemplate blockTemplate = this.blockProvider.BuildPowBlock(tip); // TODO
-                BlockTemplate blockTemplate = null; // TODO remove
+                BlockTemplate blockTemplate = this.blockDefinition.Build(tip);
 
-                //if (this.network.Consensus.IsProofOfStake) //TODO POA make sure we always mine with timestamp greater than prev block
-                //{
-                //    if (context.BlockTemplate.Block.Header.Time <= context.ChainTip.Header.Time)
-                //        return false;
-                //}
+                // Timestamp should only greater than prev one.
+                if (blockTemplate.Block.Header.Time <= tip.Header.Time)
+                    continue; // TODO POA Log
 
                 // TODO sign the block with out signature
 
@@ -102,10 +100,6 @@ namespace Stratis.Bitcoin.Features.PoA
                     this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]:false");
                     continue;
                 }
-
-                if (chainedHeader.ChainWork <= tip.ChainWork)
-                    continue; // Can this happen POA TODO
-
 
                 // TODO POA Log mined block
             }
