@@ -86,6 +86,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             this.CheckSignature(header, prevUtxo);
 
             this.CheckStakeKernelHash((PosRuleContext)context, prevUtxo, header, chainedHeader);
+
+            this.CheckCoinstakeMerkleProof(header);
+
+            this.CheckHeaderSignatureWithConinstakeKernel(header, prevUtxo);
         }
 
         private void CheckCoinstakeIsNotNull(ProvenBlockHeader header)
@@ -210,16 +214,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             // TODO: Investigate:
             // The POS protocol should probably put a limit on the max amount that can be staked
             // not a hard limit but a limit that allow any amount to be staked with a max weight value.
-            // the max weight should not exceed the max uint256 array size (array size = 32).
+            // The max weight should not exceed the max uint256 array size (array size = 32).
 
             // Weighted target.
             long valueIn = stakingCoins.Outputs[prevout.N].Value.Satoshi;
             BigInteger weight = BigInteger.ValueOf(valueIn);
             BigInteger weightedTarget = target.Multiply(weight);
 
-            context.TargetProofOfStake = ToUInt256(weightedTarget);
-            this.Logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(target), valueIn, context.TargetProofOfStake);
+            context.TargetProofOfStake = this.ToUInt256(weightedTarget);
+            this.Logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", this.ToUInt256(target), valueIn, context.TargetProofOfStake);
 
+            // ReSharper disable once PossibleNullReferenceException - it is checked above.
             uint256 stakeModifierV2 = prevBlockStake.StakeModifierV2;
 
             // Calculate hash.
@@ -244,6 +249,33 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 this.Logger.LogTrace("(-)[TARGET_MISSED]");
                 ConsensusErrors.StakeHashInvalidTarget.Throw();
             }
+        }
+
+        private void CheckCoinstakeMerkleProof(ProvenBlockHeader header)
+        {
+            if (header.MerkleProof.Check(header.HashMerkleRoot))
+                return;
+
+            this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
+            ConsensusErrors.BadMerkleRoot.Throw();
+        }
+
+        private void CheckHeaderSignatureWithConinstakeKernel(ProvenBlockHeader header, UnspentOutputs stakingCoins)
+        {
+            TxIn input = header.Coinstake.Inputs[0];
+            OutPoint prevout = input.PrevOut;
+
+            Script scriptPubKey = stakingCoins.Outputs[prevout.N].ScriptPubKey;
+            PubKey pubKey = scriptPubKey.GetDestinationPublicKeys(this.PosParent.Network)[0];
+
+            byte[] signature = header.Signature.Signature;
+            uint256 headerHash = header.GetHash();
+
+            if (pubKey.Verify(headerHash, signature))
+                return;
+
+            this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
+            ConsensusErrors.BadBlockSignature.Throw();
         }
 
         /// <summary>
