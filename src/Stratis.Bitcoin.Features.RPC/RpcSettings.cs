@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Networks;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -163,7 +162,7 @@ namespace Stratis.Bitcoin.Features.RPC
             builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default false.");
             builder.AppendLine($"-rpcuser=<string>         Username for JSON-RPC connections");
             builder.AppendLine($"-rpcpassword=<string>     Password for JSON-RPC connections");
-            builder.AppendLine($"-rpcport=<0-65535>        Listen for JSON-RPC connections on <port>. Default: {network.RPCPort} or (reg)testnet: {NetworkRegistration.Register(new BitcoinTest()).RPCPort}");
+            builder.AppendLine($"-rpcport=<0-65535>        Listen for JSON-RPC connections on <port>. Default: {network.RPCPort}");
             builder.AppendLine($"-rpcbind=<ip:port>        Bind to given address to listen for JSON-RPC connections. This option can be specified multiple times. Default: bind to all interfaces");
             builder.AppendLine($"-rpcallowip=<ip>          Allow JSON-RPC connections from specified source. This option can be specified multiple times.");
 

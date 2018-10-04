@@ -13,7 +13,6 @@ using NBitcoin.Networks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
-using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
