@@ -51,6 +51,8 @@ namespace Stratis.Bitcoin.Features.PoA
             base.UpdateBaseHeaders();
 
             this.block.Header.Bits = Target.Difficulty1; // TODO POA use some constant difficulty all the time so chainwork rises
+            // TODO maybe make it a consensus rule to ensure that bits are always constant (!!!!!!)
+            // If we do that we can reuse selecting chain using best chainwork
         }
     }
 }
