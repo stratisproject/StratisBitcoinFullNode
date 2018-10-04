@@ -1,5 +1,7 @@
 ﻿using Stratis.SmartContracts;
 
+using Stratis.SmartContracts;
+
 [Deploy]
 public class BalanceTest : SmartContract
 {
