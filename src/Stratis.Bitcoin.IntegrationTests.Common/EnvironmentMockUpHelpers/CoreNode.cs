@@ -54,6 +54,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public Mnemonic Mnemonic { get; set; }
 
         private bool builderNotInIbd;
+        private bool builderWithWallet;
+        private string builderWalletName;
+        private string builderWalletPassword;
+        private string builderWalletPassphrase;
 
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
@@ -97,9 +101,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
-        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
+        public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
         {
-            return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
+            this.builderWithWallet = true;
+            this.builderWalletName = walletName;
+            this.builderWalletPassphrase = walletPassphrase;
+            this.builderWalletPassword = walletPassword;
+            return this;
         }
 
         public RPCClient CreateRPCClient()
@@ -208,6 +216,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             if (this.builderNotInIbd)
                 ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+
+            if (this.builderWithWallet)
+                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
         }
 
         public void Broadcast(Transaction transaction)
