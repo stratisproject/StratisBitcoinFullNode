@@ -10,12 +10,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// <summary>
     /// Class that handles method parameter serialization.
     /// </summary>
-    public sealed class MethodParameterStringSerializer : IMethodParameterSerializer
+    public sealed class MethodParameterStringSerializer : IMethodParameterStringSerializer
     {
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>
-        public byte[] Serialize(object[] methodParameters)
+        public string Serialize(object[] methodParameters)
         {
             var sb = new List<string>();
 
@@ -24,69 +24,28 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 sb.Add(SerializeObject(obj));
             }
 
-            return Encoding.UTF8.GetBytes(this.EscapeAndJoin(sb.ToArray()));
+            return this.EscapeAndJoin(sb.ToArray());
         }
 
         private static string SerializeObject(object obj)
         {
-            var primitiveType = GetPrimitiveType(obj);
+            var prefix = Prefix.ForObject(obj);
 
             // ToString works fine for all of our data types except byte arrays.
-            var serialized = primitiveType == MethodParameterDataType.ByteArray
+            var serialized = prefix.DataType == MethodParameterDataType.ByteArray
                 ? Encoding.UTF8.GetString((byte[])obj)
                 : obj.ToString();
 
-            return string.Format("{0}#{1}", (int) primitiveType, serialized);
+            return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
         }
-
-        private static MethodParameterDataType GetPrimitiveType(object o)
-        {
-            if (o is bool)
-                return MethodParameterDataType.Bool;
-
-            if (o is byte)
-                return MethodParameterDataType.Byte;
-
-            if (o is byte[])
-                return MethodParameterDataType.ByteArray;
-
-            if (o is char)
-                return MethodParameterDataType.Char;         
-
-            if (o is string)
-                return MethodParameterDataType.String;
-
-            if (o is uint)
-                return MethodParameterDataType.UInt;
-
-            if (o is uint160)
-                return MethodParameterDataType.UInt160;
-
-            if (o is ulong)
-                return MethodParameterDataType.ULong;
-
-            if (o is Address)
-                return MethodParameterDataType.Address;
-
-            if (o is long)
-                return MethodParameterDataType.Long;
-
-            if (o is int)
-                return MethodParameterDataType.Int;
-            
-            // Any other types are not supported.
-            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
-        }
-
+        
         public object[] Deserialize(string[] parameters)
         {
             return StringToObjects(this.EscapeAndJoin(parameters));
         }
 
-        /// <inheritdoc />
-        public object[] Deserialize(byte[] parameterBytes)
+        public object[] Deserialize(string parameters)
         {
-            var parameters = Encoding.UTF8.GetString(parameterBytes);
             return StringToObjects(parameters);
         }
 

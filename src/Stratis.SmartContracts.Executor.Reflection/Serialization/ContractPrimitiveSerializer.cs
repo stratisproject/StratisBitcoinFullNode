@@ -59,6 +59,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (o is string s)
                 return Serialize(s);
+
+            if (o is uint160 u160)
+                return Serialize(u160.ToBytes());
             
             if (o.GetType().IsValueType)
                 return SerializeStruct(o);
@@ -146,7 +149,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return (T) deserialized;
         }
 
-        private object Deserialize(Type type, byte[] stream)
+        public object Deserialize(Type type, byte[] stream)
         {
             if (stream == null || stream.Length == 0)
                 return null;
@@ -184,10 +187,18 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (type == typeof(ulong))
                 return ToUInt64(stream);
 
+            if (type == typeof(uint160))
+                return ToUInt160(stream);
+
             if (type.IsValueType)
                 return DeserializeStruct(type, stream);
                 
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", type.Name));
+        }
+
+        private uint160 ToUInt160(byte[] stream)
+        {
+            return new uint160(stream);
         }
 
         #region Primitive Deserialization
