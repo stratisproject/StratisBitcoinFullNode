@@ -77,13 +77,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
                 CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
 
                 builder.StartAll();
-
-                stratisNodeSync.WithWallet();
 
                 // generate blocks and wait for the downloader to pickup
                 TestHelper.MineBlocks(stratisNodeSync, 10); // coinbase maturity = 10
@@ -119,11 +117,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
 
                 builder.StartAll();
-
-                stratisNodeSync.WithWallet();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -150,13 +146,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
 
                 builder.StartAll();
-
-                stratisNode1.WithWallet();
-                stratisNode2.WithWallet();
 
                 // sync both nodes
                 stratisNodeSync.CreateRPCClient().AddNode(stratisNode1.Endpoint, true);
@@ -200,12 +193,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
 
                 builder.StartAll();
-
-                stratisNode1.WithWallet();
 
                 // sync both nodes
                 stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);

@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿using System;
+
+namespace Stratis.SmartContracts
 {
     /// <summary>
     /// Provides functionality for the saving and retrieval of objects inside smart contracts.
@@ -25,6 +27,8 @@
 
         T GetStruct<T>(string key) where T : struct;
 
+        T[] GetArray<T>(string key);
+
         void SetBytes(string key, byte[] value);
 
         void SetChar(string key, char value);
@@ -44,5 +48,7 @@
         void SetString(string key, string value);
 
         void SetStruct<T>(string key, T value) where T : struct;
+
+        void SetArray(string key, Array a);
     }
 }
