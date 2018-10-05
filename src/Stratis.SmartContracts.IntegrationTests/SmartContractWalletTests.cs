@@ -439,7 +439,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 Assert.True(compilationResult.Success);
 
                 // Create contract and ensure code exists
-                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, new string[] { "10#20" });
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, new string[] { "7#20" });
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
                 Assert.NotNull(receiver.GetCode(response.NewContractAddress));

@@ -190,6 +190,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             return this.GetObject<T>(key);
         }
 
+        public T[] GetArray<T>(string key)
+        {
+            throw new NotImplementedException();
+        }
+
         private void SetObject<T>(string key, T obj)
         {
             this.objects[key] = obj;
@@ -243,6 +248,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SetStruct<T>(string key, T value) where T : struct
         {
             this.SetObject(key, value);
+        }
+
+        public void SetArray(string key, Array a)
+        {
+            throw new NotImplementedException();
         }
     }
 }
