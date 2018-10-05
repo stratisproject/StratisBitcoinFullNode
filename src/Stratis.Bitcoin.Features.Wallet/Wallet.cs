@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.Accounts == null)
                 return null;
 
-            List<HdAccount> unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
+            List<HdAccount> unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.SelectMany(add => add.Transactions).Any() && !acc.InternalAddresses.SelectMany(add => add.Transactions).Any()).ToList();
             if (!unusedAccounts.Any())
                 return null;
 
