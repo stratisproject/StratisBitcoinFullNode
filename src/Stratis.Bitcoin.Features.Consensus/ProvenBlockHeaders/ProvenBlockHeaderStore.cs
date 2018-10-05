@@ -281,16 +281,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             if (this.pendingTipHashHeight == null)
                 return;
 
-            var pendingValues = new List<ProvenBlockHeader>();
-            var pendingKeys = new List<int>();
+            var pendingBatch = new List<KeyValuePair<int, ProvenBlockHeader>>();
 
             HashHeightPair hashHeight = null;
 
             lock (this.lockObject)
             {
-                pendingValues = this.PendingBatch.Values.ToList();
-
-                pendingKeys = this.PendingBatch.Keys.ToList();
+                pendingBatch = this.PendingBatch.ToList();
 
                 this.PendingBatch.Clear();
 
@@ -299,9 +296,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = null;
             }
 
-            IEnumerable<int> sortedBlockHeights = pendingKeys.OrderBy(s => s);
+            List<int> sortedBlockHeights = pendingBatch.OrderBy(s => s.Key).Select(s => s.Key).ToList();
 
-            if (!sortedBlockHeights.SequenceEqual(pendingKeys))
+            if (!sortedBlockHeights.SequenceEqual(pendingBatch.Select(s => s.Key)))
             {
                 this.logger.LogTrace("(-)[PENDING_BATCH_INCORRECT_SEQEUNCE]");
 
@@ -311,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
                 // Save the items to disk.
-                await this.provenBlockHeaderRepository.PutAsync(pendingValues, hashHeight);
+                await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Select(items => items.Value).ToList(), hashHeight);
 
                 this.TipHashHeight = hashHeight;
             }
