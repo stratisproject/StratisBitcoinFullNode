@@ -356,7 +356,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Fact]
-        public void InternalTransfer_CreateMultipleContracts_FromConstructor()
+        public void InternalTransfer_CreateMultipleContracts_FromConstructor_NonceIncreases()
         {
             // Ensure fixture is funded.
             this.node1.MineBlocks(1);
