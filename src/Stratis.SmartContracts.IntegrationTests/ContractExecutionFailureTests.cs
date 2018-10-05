@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 new CallDataSerializer(
                     new MethodParameterByteSerializer(new ContractPrimitiveSerializer(this.mockChain.Network)));
 
-            var txData = serializer.Serialize(new ContractTxData(1, 1, (Gas) 100_000, new uint160(1), "Test"));
+            var txData = serializer.Serialize(new ContractTxData(1, 1, (Gas) (GasPriceList.BaseCost + 1), new uint160(1), "Test"));
 
             var random = new Random();
             byte[] bytes = new byte[101];
