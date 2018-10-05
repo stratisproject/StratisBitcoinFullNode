@@ -96,7 +96,7 @@ namespace NBitcoin
         #endregion
 
         /// <summary>
-        /// Generates the hash of a <see cref="BlockHeader"/>.
+        /// Generates the hash of a <see cref="BlockHeader"/> or uses cached one.
         /// </summary>
         /// <returns>A hash.</returns>
         public virtual uint256 GetHash()
@@ -110,11 +110,7 @@ namespace NBitcoin
             if (hash != null)
                 return hash;
 
-            using (var hs = new HashStream())
-            {
-                this.ReadWrite(new BitcoinStream(hs, true));
-                hash = hs.GetHash();
-            }
+            hash = this.CalculateHash();
 
             hashes = this.hashes;
             if (hashes != null)
@@ -123,6 +119,18 @@ namespace NBitcoin
             }
 
             return hash;
+        }
+
+        /// <summary>Calculates the hash of a <see cref="BlockHeader"/>.</summary>
+        protected virtual uint256 CalculateHash()
+        {
+            using (var hs = new HashStream())
+            {
+                this.ReadWrite(new BitcoinStream(hs, true));
+                uint256 hash = hs.GetHash();
+
+                return hash;
+            }
         }
 
         /// <summary>

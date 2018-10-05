@@ -77,6 +77,9 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\NonceTest.cs">
+            <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\MultipleNestedCalls.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\NonDeterministicContract.cs">
@@ -84,6 +87,9 @@
     </Compile>
     <Compile Update="SmartContracts\PrivateMethod.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+     </Compile>
+    <Compile Update="SmartContracts\ReceiveFundsTest.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\ReceiveHandlerContract.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

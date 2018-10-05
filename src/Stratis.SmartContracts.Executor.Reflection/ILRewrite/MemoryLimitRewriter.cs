@@ -2,6 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
@@ -92,8 +93,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         /// </summary>
         private void CheckArrayCreationSize(Instruction instruction, ILProcessor il, ObserverRewriterContext context)
         {
+            il.Body.SimplifyMacros();
             il.InsertBefore(instruction, il.CreateLdlocBest(context.ObserverVariable));
             il.InsertBefore(instruction, il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryInt32Method));
+            il.Body.OptimizeMacros();
         }
 
         /// <summary>
@@ -102,6 +105,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         private void CheckArrayReturnSize(Instruction instruction, ILProcessor il, ObserverRewriterContext context)
         {
             // TODO: We could do away with the pop on the end and not return anything from the observer method but we would need to cast to long correctly.
+            il.Body.SimplifyMacros();
             il.InsertAfter(instruction,
                 il.Create(OpCodes.Dup),
                 il.Create(OpCodes.Ldlen),
@@ -109,6 +113,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                 il.Create(OpCodes.Call, context.Observer.FlowThroughMemoryInt32Method),
                 il.Create(OpCodes.Pop)
                 );
+            il.Body.OptimizeMacros();
         }
     }
 }

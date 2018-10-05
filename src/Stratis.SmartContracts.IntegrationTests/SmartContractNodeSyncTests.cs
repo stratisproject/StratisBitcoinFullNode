@@ -12,11 +12,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node1 = builder.CreateSmartContractPowNode();
-                var node2 = builder.CreateSmartContractPowNode();
+                var node1 = builder.CreateSmartContractPowNode().NotInIBD();
+                var node2 = builder.CreateSmartContractPowNode().NotInIBD();
                 builder.StartAll();
-                node1.NotInIBD();
-                node2.NotInIBD();
+
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
                 var rpc1 = node1.CreateRPCClient();

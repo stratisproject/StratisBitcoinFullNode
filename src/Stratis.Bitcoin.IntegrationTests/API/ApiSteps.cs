@@ -157,9 +157,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_work_node_with_api_enabled()
         {
-            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
+            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.firstStratisPowApiNode.Start();
-            this.firstStratisPowApiNode.NotInIBD().WithWallet();
+            this.firstStratisPowApiNode.WithWallet();
 
             this.firstStratisPowApiNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
             this.apiUri = this.firstStratisPowApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
@@ -167,9 +167,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_second_proof_of_work_node_with_api_enabled()
         {
-            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
+            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.secondStratisPowApiNode.Start();
-            this.secondStratisPowApiNode.NotInIBD().WithWallet();
+            this.secondStratisPowApiNode.WithWallet();
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
