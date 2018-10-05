@@ -67,13 +67,6 @@ namespace Stratis.Bitcoin.Features.Miner
         public BlockDefinitionOptions BlockDefinitionOptions { get; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public MinerSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -113,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <param name="mainNet">Not used.</param>
         public static void PrintHelp(Network mainNet)
         {
-            NodeSettings defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default(mainNet);
             var builder = new StringBuilder();
 
             builder.AppendLine("-mine=<0 or 1>                      Enable POW mining.");

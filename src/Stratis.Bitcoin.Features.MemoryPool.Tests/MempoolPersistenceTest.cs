@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             var mempoolSettings = new MempoolSettings(settings);
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
-            NodeSettings nodeSettings = NodeSettings.Default();
+            NodeSettings nodeSettings = NodeSettings.Default(settings.Network);
             ILoggerFactory loggerFactory = nodeSettings.LoggerFactory;
             var consensusSettings = new ConsensusSettings(nodeSettings);
             txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);

@@ -28,13 +28,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public int UnusedAddressesBuffer { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public WalletSettings() : this(NodeSettings.Default())
-        {	
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -56,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="mainNet">Not used.</param>
         public static void PrintHelp(Network mainNet)
         {
-            NodeSettings defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default(mainNet);
             var builder = new StringBuilder();
 
             builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: 0.");

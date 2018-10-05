@@ -42,13 +42,6 @@ namespace Stratis.Bitcoin.Features.RPC
         public List<IPAddress> AllowIp { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default node configuration.
-        /// </summary>
-        public RpcSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -156,7 +149,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="network">The network to use.</param>
         public static void PrintHelp(Network network)
         {
-            NodeSettings defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default(network);
             var builder = new StringBuilder();
 
             builder.AppendLine($"-server=<0 or 1>          Accept command line and JSON-RPC commands. Default false.");

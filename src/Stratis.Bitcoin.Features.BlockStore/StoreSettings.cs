@@ -31,13 +31,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public int MaxCacheBlocksCount { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public StoreSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -59,7 +52,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>Prints the help information on how to configure the block store settings to the logger.</summary>
-        public static void PrintHelp()
+        public static void PrintHelp(Network mainNet)
         {
             var builder = new StringBuilder();
 
@@ -68,7 +61,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             builder.AppendLine($"-prune=<0 or 1>           Enable pruning to reduce storage requirements by enabling deleting of old blocks.");
             builder.AppendLine($"-maxCacheBlocksCount=<number> The maximum amount of blocks the cache can contain. Default is {DefaultMaxCacheBlocksCount}.");
 
-            NodeSettings.Default().Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(mainNet).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>
