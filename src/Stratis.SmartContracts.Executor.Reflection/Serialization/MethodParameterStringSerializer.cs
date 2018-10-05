@@ -51,13 +51,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return MethodParameterDataType.ByteArray;
 
             if (o is char)
-                return MethodParameterDataType.Char;
-
-            if (o is sbyte)
-                return MethodParameterDataType.SByte;
-
-            if (o is short)
-                return MethodParameterDataType.Short;
+                return MethodParameterDataType.Char;         
 
             if (o is string)
                 return MethodParameterDataType.String;
@@ -107,44 +101,38 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 string[] parameterSignature = Regex.Split(parameter.Replace(@"\|", "|"), @"(?<!(?<!\\)*\\)\#").ToArray();
                 parameterSignature[1] = parameterSignature[1].Replace(@"\#", "#");
 
-                if (parameterSignature[0] == "1")
+                if (parameterSignature[0] == MethodParameterDataType.Bool.ToString("d"))
                     processedParameters.Add(bool.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "2")
+                else if (parameterSignature[0] == MethodParameterDataType.Byte.ToString("d"))
                     processedParameters.Add(Convert.ToByte(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "3")
-                    processedParameters.Add(Encoding.UTF8.GetBytes(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "4")
+                else if (parameterSignature[0] == MethodParameterDataType.Char.ToString("d"))
                     processedParameters.Add(parameterSignature[1][0]);
 
-                else if (parameterSignature[0] == "5")
-                    processedParameters.Add(Convert.ToSByte(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "6")
-                    processedParameters.Add(short.Parse(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "7")
+                else if (parameterSignature[0] == MethodParameterDataType.String.ToString("d"))
                     processedParameters.Add(parameterSignature[1]);
-
-                else if (parameterSignature[0] == "8")
+                
+                else if (parameterSignature[0] == MethodParameterDataType.UInt.ToString("d"))
                     processedParameters.Add(uint.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "9")
-                    processedParameters.Add(new uint160(parameterSignature[1]));
+                else if (parameterSignature[0] == MethodParameterDataType.Int.ToString("d"))
+                    processedParameters.Add(int.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "10")
+                else if (parameterSignature[0] == MethodParameterDataType.ULong.ToString("d"))
                     processedParameters.Add(ulong.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "11")
-                    processedParameters.Add(new Address(parameterSignature[1]));
-
-                else if (parameterSignature[0] == "12")
+                else if (parameterSignature[0] == MethodParameterDataType.Long.ToString("d"))
                     processedParameters.Add(long.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == "13")
-                    processedParameters.Add(int.Parse(parameterSignature[1]));
+                else if (parameterSignature[0] == MethodParameterDataType.UInt160.ToString("d"))
+                    processedParameters.Add(new uint160(parameterSignature[1]));
+
+               else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
+                    processedParameters.Add(new Address(parameterSignature[1]));
+
+                else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
+                    processedParameters.Add(Encoding.UTF8.GetBytes(parameterSignature[1]));
 
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
