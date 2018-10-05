@@ -108,6 +108,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IVersionProvider, SmartContractVersionProvider>();
 
                         services.AddSingleton<IMethodParameterSerializer, MethodParameterByteSerializer>();
+                        services.AddSingleton<IMethodParameterStringSerializer, MethodParameterStringSerializer>();
                         services.AddSingleton<ICallDataSerializer, CallDataSerializer>();
 
                         // Registers the ScriptAddressReader concrete type and replaces the IScriptAddressReader implementation

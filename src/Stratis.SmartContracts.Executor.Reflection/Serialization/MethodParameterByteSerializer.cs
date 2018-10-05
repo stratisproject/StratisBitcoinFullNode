@@ -34,11 +34,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return RLP.EncodeList(result.Select(RLP.EncodeElement).ToArray());
         }
 
-        public object[] Deserialize(string[] parameters)
-        {
-            throw new NotImplementedException();
-        }
-
         public object[] Deserialize(byte[] bytes)
         {
             RLPCollection list = RLP.Decode(bytes);

@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class MethodParameterStringSerializerTests
     {
-        public IMethodParameterSerializer Serializer = new MethodParameterStringSerializer();
+        public IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer();
 
         [Theory]
         [MemberData(nameof(GetData), parameters: 1)]
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var serialized = this.Serializer.Serialize(methodParameters);
 
-            Assert.True(Encoding.UTF8.GetBytes("6#12|1#True|4#te\\|s\\|t|4#te\\#st|4#\\#4\\#te\\#st\\#|3#\\#").SequenceEqual(serialized));
+            Assert.Equal("6#12|1#True|4#te\\|s\\|t|4#te\\#st|4#\\#4\\#te\\#st\\#|3#\\#", serialized);
         }
 
         public static IEnumerable<object[]> GetData(int numTests)
