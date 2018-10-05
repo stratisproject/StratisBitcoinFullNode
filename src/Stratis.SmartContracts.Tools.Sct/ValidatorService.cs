@@ -134,6 +134,11 @@ namespace Stratis.SmartContracts.Tools.Sct
         {
         }
 
+        public void SetArray(string key, Array a)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte[] GetBytes(string key)
         {
             return new byte[] { };
@@ -182,6 +187,11 @@ namespace Stratis.SmartContracts.Tools.Sct
         public T GetStruct<T>(string key) where T : struct
         {
             return default(T);
+        }
+
+        public T[] GetArray<T>(string key)
+        {
+            throw new NotImplementedException();
         }
 
         public void SetBytes(string key, byte[] value)
