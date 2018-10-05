@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Security;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -78,11 +79,18 @@ namespace Stratis.Bitcoin.Features.Wallet
                 WalletPassword = "_" // Want private key to pull from cache, so pass in non empty string so tx will be signed.
             };
 
-            Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
-            await this.broadcasterManager.BroadcastTransactionAsync(transaction);
+            try
+            {
+                Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+                await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
-            uint256 hash = transaction.GetHash();          
-            return hash;
+                uint256 hash = transaction.GetHash();
+                return hash;
+            }
+            catch (SecurityException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, exception.Message);
+            }
         }
 
         /// <summary>

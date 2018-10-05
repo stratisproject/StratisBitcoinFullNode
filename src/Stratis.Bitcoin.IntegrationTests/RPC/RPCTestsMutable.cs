@@ -1,6 +1,8 @@
 ﻿using System.Linq;
+using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
@@ -58,6 +60,38 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 // Check the output is the right amount.
                 var coin = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == aliceAddress.ScriptPubKey);
                 Assert.Equal(coin.Amount, Money.Coins(1.0m));
+            }        
+        }
+
+        [Fact]
+        public void TestRpcSendToAddressCantSpendWhenLocked()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = KnownNetworks.RegTest;
+                var node = builder.CreateStratisPowNode(network);
+                builder.StartAll();
+                RPCClient rpcClient = node.CreateRPCClient();
+                node.NotInIBD().WithWallet();
+                int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
+                TestHelper.MineBlocks(node, blocksToMine);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
+
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+
+                // Not unlockedcase.                
+                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+
+                // Unlock and lock case.
+                rpcClient.WalletPassphrase("password", 60);
+                rpcClient.SendCommand(RPCOperations.walletlock); // TODO: create a method for walletlock.
+                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+
+                // Unlock timesout case.
+                rpcClient.WalletPassphrase("password", 5);
+                Thread.Sleep(120 * 1000); // 2 minutes.
+                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
             }
         }
     }
