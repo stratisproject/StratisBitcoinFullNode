@@ -45,5 +45,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             this.proofOfStakeSteps.PremineNodeWalletHasEarnedCoinsThroughStaking();
         }
+
+        private void pos_node_adds_peernode_and_propagate_blocks()
+        {
+            this.proofOfStakeSteps.PremineNodeAddsPeerAndBlocksPropagate();
+        }
+
+        private void last_pow_block_height_is_set_to_1()
+        {
+            this.proofOfStakeSteps.SetLastPowBlockHeightToOne();
+        }
+
+        private void pow_too_high_consensus_error_thrown()
+        {
+            this.proofOfStakeSteps.PowTooHighConsensusErrorThrown();
+        }
     }
 }

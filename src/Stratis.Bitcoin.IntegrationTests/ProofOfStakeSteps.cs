@@ -1,14 +1,17 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -23,6 +26,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         public readonly string PremineWalletPassword = "password";
 
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
+
+        public Exception ProofOfStakeStepsException { get; private set; }
 
         public ProofOfStakeSteps(string displayName)
         {
@@ -68,9 +73,16 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void PremineNodeMinesTenBlocksMoreEnsuringTheyCanBeStaked()
         {
-            TestHelper.MineBlocks(this.PremineNodeWithCoins, 10);
+            try
+            {
+                TestHelper.MineBlocks(this.PremineNodeWithCoins, 10);
+            }
+            catch (Exception e)
+            {
+                this.ProofOfStakeStepsException = e;
+            }
         }
-
+        
         public void PremineNodeStartsStaking()
         {
             // Get set of transaction IDs present in wallet before staking is started.
@@ -107,6 +119,30 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 return false;
             });
+        }
+
+        public void PremineNodeAddsPeerAndBlocksPropagate()
+        {
+            CoreNode syncer = this.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest).NotInIBD();
+            this.nodeBuilder.StartAll();
+
+            this.PremineNodeWithCoins.CreateRPCClient().AddNode(syncer.Endpoint, true);
+            Assert.NotEqual(this.PremineNodeWithCoins.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
+
+            // Blocks propagate and both nodes in sync.
+            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.PremineNodeWithCoins, syncer));
+            Assert.Equal(this.PremineNodeWithCoins.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
+        }
+
+        public void SetLastPowBlockHeightToOne()
+        {
+            this.nodeBuilder.Nodes[0].FullNode.Network.Consensus.LastPOWBlock = 1;
+        }
+
+        public void PowTooHighConsensusErrorThrown()
+        {
+            this.ProofOfStakeStepsException.Should().BeOfType<ConsensusException>();
+            this.ProofOfStakeStepsException.Message.Should().Be("proof of work too high");
         }
     }
 }
