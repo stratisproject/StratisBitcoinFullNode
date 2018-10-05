@@ -591,9 +591,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
+                HdAddress hdAddress = null;
+
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    HdAddress hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
+                    hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
                     if (hdAddress == null) continue;
 
                     (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
@@ -602,6 +604,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                     balance.AmountUnconfirmed = result.amountUnconfirmed;
 
                     break;
+                }
+
+                if (hdAddress == null)
+                {
+                    this.logger.LogTrace("(-)[ADDRESS_NOT_FOUND]");
+                    throw new WalletException($"Address '{address}' not found in wallets.");
                 }
             }
 
