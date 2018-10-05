@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             GetInfoModel info = controller.GetInfo();
 
-            NodeSettings nodeSettings = NodeSettings.Default();
+            NodeSettings nodeSettings = NodeSettings.Default(fullNode.Network);
             uint expectedProtocolVersion = (uint)nodeSettings.ProtocolVersion;
             decimal expectedRelayFee = nodeSettings.MinRelayTxFeeRate.FeePerK.ToUnit(NBitcoin.MoneyUnit.BTC);
             Assert.NotNull(info);
