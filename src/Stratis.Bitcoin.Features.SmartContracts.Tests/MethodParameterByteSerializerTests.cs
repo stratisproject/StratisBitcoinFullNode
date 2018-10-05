@@ -38,6 +38,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void Serialized_Method_Params_Are_Smaller_Than_Strings()
+        {
+            // Single comparative case for a sample byte vs. string encoded method params array
+            var stringSerializer = new MethodParameterStringSerializer();
+
+            var parameters = GetData(0).SelectMany(o => o).ToArray();
+
+            var serializedBytes = this.Serializer.Serialize(parameters);
+            var s = stringSerializer.Serialize(parameters);
+            var serializedString = Encoding.UTF8.GetBytes(s);
+            
+            Assert.True(serializedBytes.Length <= serializedString.Length);
+        }
+
+        [Fact]
         public void Roundtrip_Serialize_Multiple_Params()
         {
             object[] methodParameters = GetData(0).SelectMany(o => o).ToArray();
