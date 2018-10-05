@@ -16,8 +16,8 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
             this.Value = value;
         }
 
-        public uint160 From { get; set; }
-        public uint160 To { get; set; }
-        public ulong Value { get; set; }
+        public uint160 From { get; }
+        public uint160 To { get; }
+        public ulong Value { get; }
     }
 }
