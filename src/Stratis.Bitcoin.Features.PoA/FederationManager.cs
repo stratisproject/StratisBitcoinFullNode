@@ -19,12 +19,15 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly PoANetwork network;
 
+        private readonly PoAMiner miner;
+
         private readonly ILogger logger;
 
-        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory)
+        public FederationManager(NodeSettings nodeSettings, Network network, PoAMiner miner, ILoggerFactory loggerFactory)
         {
             this.settings = nodeSettings;
             this.network = network as PoANetwork;
+            this.miner = miner;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -45,6 +48,9 @@ namespace Stratis.Bitcoin.Features.PoA
                 }
 
                 this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
+
+                // Enable mining because we are a federation member.
+                this.miner.StartMining();
             }
         }
 

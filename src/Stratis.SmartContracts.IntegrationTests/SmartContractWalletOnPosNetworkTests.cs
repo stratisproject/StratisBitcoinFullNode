@@ -32,13 +32,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPosNode();
-                CoreNode scReceiver = builder.CreateSmartContractPosNode();
+                CoreNode scSender = builder.CreateSmartContractPosNode().NotInIBD().WithWallet();
+                CoreNode scReceiver = builder.CreateSmartContractPosNode().NotInIBD().WithWallet();
 
                 builder.StartAll();
-
-                scSender.NotInIBD().WithWallet(Password, WalletName, Passphrase);
-                scReceiver.NotInIBD().WithWallet(Password, WalletName, Passphrase);
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
                 HdAddress senderAddress = TestHelper.MineBlocks(scSender, maturity + 5, WalletName, Password, AccountName).AddressUsed;

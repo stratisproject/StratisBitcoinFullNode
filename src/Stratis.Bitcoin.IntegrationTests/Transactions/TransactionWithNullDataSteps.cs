@@ -49,13 +49,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
 
         private void two_proof_of_work_nodes()
         {
-            this.senderNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
-            this.receiverNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.senderNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+            this.receiverNode = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
 
             this.builder.StartAll();
-
-            this.senderNode.NotInIBD().WithWallet();
-            this.receiverNode.NotInIBD().WithWallet();
         }
 
         private void a_sending_and_a_receiving_wallet()

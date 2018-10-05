@@ -77,15 +77,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest);
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
 
                 builder.StartAll();
-
-                stratisNodeSync.NotInIBD().WithWallet();
-                stratisNode1.NotInIBD();
-                stratisNode2.NotInIBD();
 
                 // generate blocks and wait for the downloader to pickup
                 TestHelper.MineBlocks(stratisNodeSync, 10); // coinbase maturity = 10
@@ -121,11 +117,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
 
                 builder.StartAll();
-
-                stratisNodeSync.NotInIBD().WithWallet();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -151,15 +145,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest);
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest);
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
 
                 builder.StartAll();
-
-                stratisNodeSync.NotInIBD();
-                stratisNode1.NotInIBD().WithWallet();
-                stratisNode2.NotInIBD().WithWallet();
 
                 // sync both nodes
                 stratisNodeSync.CreateRPCClient().AddNode(stratisNode1.Endpoint, true);
@@ -203,13 +193,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest);
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest);
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD();
 
                 builder.StartAll();
-
-                stratisNode1.NotInIBD().WithWallet();
-                stratisNode2.NotInIBD();
 
                 // sync both nodes
                 stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
@@ -234,9 +221,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(this.regTest);
+                CoreNode node = builder.CreateStratisPowNode(this.regTest).NotInIBD();
                 builder.StartAll();
-                node.NotInIBD();
                 uint256 genesisHash = node.FullNode.Chain.Genesis.HashBlock;
                 Block genesisBlock = node.FullNode.BlockStore().GetBlockAsync(genesisHash).Result;
                 Assert.Equal(genesisHash, genesisBlock.GetHash());
