@@ -159,7 +159,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.firstStratisPowApiNode.Start();
-            this.firstStratisPowApiNode.WithWallet();
+
+            // With these tests we still need to create the wallets outside of the builder
+            this.firstStratisPowApiNode.Mnemonic = this.firstStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
             this.firstStratisPowApiNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
             this.apiUri = this.firstStratisPowApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
@@ -169,7 +171,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.secondStratisPowApiNode.Start();
-            this.secondStratisPowApiNode.WithWallet();
+
+            // With these tests we still need to create the wallets outside of the builder
+            this.secondStratisPowApiNode.Mnemonic = this.secondStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -196,7 +200,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var stakingRequest = new StartStakingRequest() { Name = WalletName, Password = WalletPassword };
 
-            this.stratisPosApiNode.WithWallet();
+            // With these tests we still need to create the wallets outside of the builder
+            this.stratisPosApiNode.Mnemonic = this.stratisPosApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
             this.response = this.httpClient.PostAsync($"{this.apiUri}{StartStakingUri}", httpRequestContent).GetAwaiter().GetResult();
@@ -283,7 +288,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_general_info()
         {
-            this.stratisPosApiNode.WithWallet();
+            // With these tests we still need to create the wallets outside of the builder
+            this.stratisPosApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
             this.send_api_get_request($"{GeneralInfoUri}?name={WalletName}");
         }
 
