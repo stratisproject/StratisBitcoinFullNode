@@ -245,12 +245,47 @@ namespace Stratis.SmartContracts.IntegrationTests
             //Method calls back and forth between 2 contracts
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void InternalTransfer_BetweenContracts_FromConstructor()
         {
-            //Method calls back and forth between 2 contracts, but from constructor. 
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
 
-            // Special case because code needs to be stored in repo before execution. 
+            double amount = 25;
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/MultipleNestedCalls.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+            Block lastBlock = this.node1.GetLastBlock();
+
+            // Storage from nested call succeeded
+            Assert.NotNull(this.node1.GetStorageValue(response.NewContractAddress, "Caller"));
+
+            // Block contains a condensing transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction condensingTransaction = lastBlock.Transactions[2];
+            Assert.Equal(2, condensingTransaction.Outputs.Count);
+
+            // 1 output which is contract maintaining its balance
+            byte[] toBytes = condensingTransaction.Outputs[0].ScriptPubKey.ToBytes();
+            Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
+            uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
+            Assert.Equal(response.NewContractAddress, toAddress.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC) / 2, condensingTransaction.Outputs[0].Value);
+            Assert.Equal((ulong) new Money((long)amount, MoneyUnit.BTC) / 2, this.node1.GetContractBalance(response.NewContractAddress));
+
+            // 1 output to other deployed contract
+            uint160 internalContract = this.addressGenerator.GenerateAddress(response.TransactionId, 1);
+            toBytes = condensingTransaction.Outputs[1].ScriptPubKey.ToBytes();
+            Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
+            toAddress = new uint160(toBytes.Skip(1).ToArray());
+            Assert.Equal(internalContract, toAddress);
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC) / 2, condensingTransaction.Outputs[1].Value);
+            Assert.Equal((ulong)new Money((long)amount, MoneyUnit.BTC) / 2, this.node1.GetContractBalance(internalContract.ToAddress(this.mockChain.Network)));
         }
 
         [Fact]
