@@ -885,9 +885,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-                builder.StartAll();
-                miner.WithWallet();
 
+                miner.WithWallet();
+                builder.StartAll();
+                
                 TestHelper.MineBlocks(miner, 5);
 
                 Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
@@ -908,9 +909,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD()
                 };
 
-                builder.StartAll();
                 miner.WithWallet();
-
+                builder.StartAll();
+                
                 foreach (CoreNode syncer in syncers)
                 {
                     miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
@@ -929,33 +930,40 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void MiningAndPropagatingPOW_NodeConsensusTipHasLessWorkThanNetworkTipResets()
+        public void MiningAndPropagatingPOW_MineBlockNotPushedToConsensusCode_SupercededByBetterBlockOnReorg_InitialBlockRejected()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode node1 = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode node2 = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+
+                node1.WithWallet();
+                node2.WithWallet();
 
                 builder.StartAll();
-                miner.WithWallet();
+                
+                node1.CreateRPCClient().AddNode(node2.Endpoint, true);
+                TestHelper.MineBlocks(node1, 5);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(node1, node2));
+                node1.CreateRPCClient().RemoveNode(node2.Endpoint);
 
-                // Connect syncer.
-                miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
+                // Node1 new block not pushed to consensus code.
+                Transaction tx = node1.FullNode.Network.CreateTransaction();
+                Block newBlock = TestHelper.GenerateBlockManually(node1, 
+                    new List<Transaction>(new[] { node1.FullNode.Network.CreateTransaction(tx.ToBytes()) }), 0, false /* Not calling BlockMinedAsync yet */);
 
-                int initialChainLength = 1;
-                TestHelper.MineBlocks(miner, initialChainLength);
+                // Mine another 2 blocks on node 2 chain up to height 7.
+                TestHelper.MineBlocks(node2, 2);
 
-                // Check nodes are in step.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
+                // Sync nodes and node 1 reorgs with better blocks.
+                node1.CreateRPCClient().AddNode(node2.Endpoint, true);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(node1, node2));
 
-                // Syncer disconnects and extends its chain by 3 blocks.  Chains now have different tips.
-                miner.CreateRPCClient().RemoveNode(syncer.Endpoint);
-                TestHelper.MineBlocks(miner, initialChainLength + 3);
-                Assert.NotEqual(miner.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
+                // Call BlockMinedAsync manually.
+                node1.FullNode.ConsensusManager().BlockMinedAsync(newBlock).GetAwaiter().GetResult();
 
-                // Main re-adds syncer node which has more chainwork.  Nodes sync and chains now have common tip.
-                miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
+                // Verify that the manually added block is NOT in the consensus chain.
+                Assert.False(node1.FullNode.Chain.Contains(newBlock.GetHash()));
             }
         }
     }
