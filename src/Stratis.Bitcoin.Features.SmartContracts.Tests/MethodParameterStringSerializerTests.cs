@@ -38,17 +38,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void Serialize_Multiple_Params()
+        public void Roundtrip_Serialize_Multiple_Params()
         {
-            object[] methodParameters =
-            {
-                (int) 12,
-                true,
-                "te|s|t",
-                "te#st",
-                "#4#te#st#",
-                '#'
-            };
+            object[] methodParameters = GetData(0).SelectMany(o => o).ToArray();
 
             var serialized = this.Serializer.Serialize(methodParameters);
 
@@ -58,7 +50,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             {
                 Assert.Equal(methodParameters[i], deserialized[i]);
             }
-
         }
 
         public static IEnumerable<object[]> GetData(int numTests)
