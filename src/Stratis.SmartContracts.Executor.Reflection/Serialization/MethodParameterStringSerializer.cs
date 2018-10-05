@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public Type Type => this.GetType(this.Value);
 
-        public int Length => 1;
+        public int Length { get; } = 1;
 
         public Type GetType(byte b)
         {
@@ -47,10 +47,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     return typeof(uint160);
                 case MethodParameterDataType.ByteArray:
                     return typeof(byte[]);
+                default:
+                    throw new ArgumentOutOfRangeException(nameof(b), b, "Unsupported type");
             }
-
-            // Any other types are not supported.
-            throw new Exception("Unsupported type");
         }
 
         public static Prefix ForObject(object o)
@@ -95,7 +94,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return MethodParameterDataType.Int;
 
             // Any other types are not supported.
-            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
+            throw new ArgumentOutOfRangeException(nameof(o), o, string.Format("{0} is not supported.", o.GetType().Name));
         }
 
         public void CopyTo(byte[] result)
@@ -141,13 +140,14 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             RLPCollection innerList = (RLPCollection)list[0];
 
-            IList<byte[]> paramBytes = innerList.Select(x => x.RLPData).ToList();
+            IList<byte[]> encodedParamBytes = innerList.Select(x => x.RLPData).ToList();
 
             var results = new List<object>();
 
-            foreach (var bbb in paramBytes)
+            foreach (var encodedParam in encodedParamBytes)
             {
-                var result = this.Decode(bbb);
+                object result = this.Decode(encodedParam);
+
                 results.Add(result);
             }
             
