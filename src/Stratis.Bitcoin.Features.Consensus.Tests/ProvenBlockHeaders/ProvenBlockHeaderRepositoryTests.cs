@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
     {
         private readonly Mock<ILoggerFactory> loggerFactory;
         private const string ProvenBlockHeaderTable = "ProvenBlockHeader";
-        private const string BlockHashTable = "BlockHash";
+        private const string BlockHashTable = "BlockHashHeight";
 
         public ProvenBlockHeaderRepositoryTests() : base(KnownNetworks.StratisTest)
         {
@@ -62,8 +62,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.ValuesLazyLoadingIsOn = false;
 
                 var headerOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHashHieghtPair.Height.ToBytes(false)).Value;
+                var hashHeightPairOut = txn.Select<byte[], HashHeightPair>(BlockHashTable, new byte[0].ToBytes()).Value;
 
                 headerOut.Should().NotBeNull();
+                headerOut.GetHash().Should().Be(provenBlockHeaderIn.GetHash());
+
+                hashHeightPairOut.Should().NotBeNull();
                 headerOut.GetHash().Should().Be(provenBlockHeaderIn.GetHash());
             }
         }
