@@ -157,9 +157,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_work_node_with_api_enabled()
         {
-            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
+            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.firstStratisPowApiNode.Start();
-            this.firstStratisPowApiNode.NotInIBD().WithWallet();
+            this.firstStratisPowApiNode.WithWallet();
 
             this.firstStratisPowApiNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
             this.apiUri = this.firstStratisPowApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
@@ -167,9 +167,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_second_proof_of_work_node_with_api_enabled()
         {
-            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork);
+            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.secondStratisPowApiNode.Start();
-            this.secondStratisPowApiNode.NotInIBD().WithWallet();
+            this.secondStratisPowApiNode.WithWallet();
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(16);
+            commands.Count.Should().Be(20);
             commands.Should().Contain(x => x.Command == "stop");
             commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
@@ -433,6 +433,10 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "startstaking <walletname> <walletpassword>");
             commands.Should().Contain(x => x.Command == "getstakinginfo [<isjsonformat>]");
             commands.Should().Contain(x => x.Command == "sendtoaddress <bitcoinaddress> <amount>");
+            commands.Should().Contain(x => x.Command == "getnewaddress");
+            commands.Should().Contain(x => x.Command == "sendrawtransaction <hex>");
+            commands.Should().Contain(x => x.Command == "decoderawtransaction <hex>");
+            commands.Should().Contain(x => x.Command == "getblock <blockhash> [<isjsonformat>]");
         }
 
         private void status_information_is_returned()

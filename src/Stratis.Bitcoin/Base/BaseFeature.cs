@@ -171,8 +171,6 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             this.dbreezeSerializer.Initialize(this.chain.Network);
 
             await this.StartChainAsync().ConfigureAwait(false);
@@ -207,8 +205,6 @@ namespace Stratis.Bitcoin.Base
             await this.consensusManager.InitializeAsync(this.chain.Tip).ConfigureAwait(false);
 
             this.chainState.ConsensusTip = this.consensusManager.Tip;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

@@ -57,12 +57,11 @@ namespace Stratis.SmartContracts.Tools.Sct
 
             Assembly smartContract = Assembly.Load(compilation);
 
-            var serializer = new MethodParameterSerializer();
+            var serializer = new MethodParameterStringSerializer();
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {
-                var methodParametersRaw = new MethodParameterSerializer().ToRaw(parameters);
-                methodParameters = serializer.ToObjects(methodParametersRaw);
+                methodParameters = serializer.Deserialize(parameters);
             }
 
             validationServiceResult.ConstructorExists = Contract.ConstructorExists(smartContract.ExportedTypes.FirstOrDefault(), methodParameters);
@@ -135,13 +134,12 @@ namespace Stratis.SmartContracts.Tools.Sct
         {
         }
 
-
-        public byte GetByte(string key)
+        public void SetArray(string key, Array a)
         {
-            return 0;
+            throw new NotImplementedException();
         }
 
-        public byte[] GetByteArray(string key)
+        public byte[] GetBytes(string key)
         {
             return new byte[] { };
         }
@@ -186,20 +184,17 @@ namespace Stratis.SmartContracts.Tools.Sct
             return null;
         }
 
-        public sbyte GetSbyte(string key)
-        {
-            return 0;
-        }
-
         public T GetStruct<T>(string key) where T : struct
         {
             return default(T);
         }
-        public void SetByte(string key, byte value)
+
+        public T[] GetArray<T>(string key)
         {
+            throw new NotImplementedException();
         }
 
-        public void SetByteArray(string key, byte[] value)
+        public void SetBytes(string key, byte[] value)
         {
         }
 
@@ -235,8 +230,5 @@ namespace Stratis.SmartContracts.Tools.Sct
         {
         }
 
-        public void SetSByte(string key, sbyte value)
-        {
-        }
     }
 }
