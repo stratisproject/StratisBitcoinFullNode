@@ -10,6 +10,7 @@ using NBitcoin.Policy;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -185,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <inheritdoc />
-        //[NoTrace]
+        [NoTrace]
         public void CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration)
         {
             Guard.NotNull(walletAccount, nameof(walletAccount));
