@@ -32,14 +32,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
+            // TODO: We should do something about this heinous injection
             var p2pkhRule = new P2PKHNotContractRule();
             p2pkhRule.Parent = (ConsensusRuleEngine) consensusRules;
             p2pkhRule.Initialize();
+
+            var allowedTypesRule = new AllowedScriptTypesRule();
+            allowedTypesRule.Parent = (ConsensusRuleEngine) consensusRules;
+            allowedTypesRule.Initialize();
 
             this.preTxRules = new List<ISmartContractMempoolRule>
             {
                 new MempoolOpSpendRule(),
                 new TxOutSmartContractExecRule(),
+                allowedTypesRule,
                 p2pkhRule
             };
 
