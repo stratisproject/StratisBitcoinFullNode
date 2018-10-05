@@ -1318,8 +1318,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.Wallets.SingleOrDefault(w => w.Name == walletName);
             if (wallet == null)
             {
-                this.logger.LogTrace("(-)[NOT_FOUND]");
-                throw new WalletException($"No wallet with name {walletName} could be found.");
+                this.logger.LogTrace("(-)[WALLET_NOT_FOUND]");
+                throw new WalletException($"No wallet with name '{walletName}' could be found.");
             }
 
             return wallet;
