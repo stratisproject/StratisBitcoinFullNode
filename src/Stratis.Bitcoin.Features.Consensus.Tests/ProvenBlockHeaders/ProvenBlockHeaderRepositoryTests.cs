@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 headerOut.GetHash().Should().Be(provenBlockHeaderIn.GetHash());
 
                 hashHeightPairOut.Should().NotBeNull();
-                headerOut.GetHash().Should().Be(provenBlockHeaderIn.GetHash());
+                hashHeightPairOut.Hash.Should().Be(provenBlockHeaderIn.GetHash());
             }
         }
 
