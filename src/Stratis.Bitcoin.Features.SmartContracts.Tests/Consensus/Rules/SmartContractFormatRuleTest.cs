@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public SmartContractFormatRuleTest()
         {
             this.network = new SmartContractsRegTest();
-            this.callDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(this.network)));
         }
 
         private UnspentOutputSet GetMockOutputSet()

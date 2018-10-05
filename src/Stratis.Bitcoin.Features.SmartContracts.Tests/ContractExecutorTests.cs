@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
             this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.network, this.internalTxExecutorFactory);
             
-            this.serializer = new CallDataSerializer(new MethodParameterStringSerializer());
+            this.serializer = new CallDataSerializer(new MethodParameterByteSerializer(this.contractPrimitiveSerializer));
 
             this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
         }
