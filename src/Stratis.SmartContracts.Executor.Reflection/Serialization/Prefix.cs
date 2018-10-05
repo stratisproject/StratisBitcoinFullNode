@@ -17,9 +17,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public Type Type => this.GetType(this.Value);
 
+        public MethodParameterDataType DataType => (MethodParameterDataType) this.Value;
+
         public int Length { get; } = 1;
 
-        public Type GetType(byte b)
+        private Type GetType(byte b)
         {
             switch ((MethodParameterDataType)b)
             {
