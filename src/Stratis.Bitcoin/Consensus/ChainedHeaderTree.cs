@@ -149,6 +149,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Gets tip of the best peer.</summary>
         /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
         ChainedHeader GetBestPeerTip();
+
+        /// <summary>Sets the tip claim for a peer that has mined a block.</summary>
+        /// <param name="tipHash">Tip's hash.</param>
+        void ClaimPeerTipForMiner(uint256 tipHash);
     }
 
     /// <inheritdoc />
@@ -171,6 +175,9 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
+
+        /// <summary>A special peer identifier that represents our local node that is a miner.</summary>
+        internal const int MinerPeerId = -2;
 
         /// <summary>Specifies for how many blocks from the consensus tip the block data should be kept in the memory.</summary>
         /// <remarks>
@@ -391,6 +398,25 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             peersClaimingThisHeader.Add(networkPeerId);
+        }
+
+        /// <inheritdoc />
+        public void ClaimPeerTipForMiner(uint256 tipHash)
+        {
+            HashSet<int> peersClaimingThisHeader;
+            if (!this.peerIdsByTipHash.TryGetValue(tipHash, out peersClaimingThisHeader))
+            {
+                this.peerIdsByTipHash.Add(tipHash, new HashSet<int>(new[] { MinerPeerId }));
+            }
+            else
+            {
+                // Update the last miner tip hash with the new tip
+                var lastMinerTip = this.peerIdsByTipHash.FirstOrDefault(p => p.Value.Contains(MinerPeerId));
+                if (lastMinerTip.Key != null)
+                    this.peerIdsByTipHash.Remove(lastMinerTip.Key);
+
+                peersClaimingThisHeader.Add(MinerPeerId);
+            }
         }
 
         /// <inheritdoc />
