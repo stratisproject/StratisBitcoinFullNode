@@ -318,8 +318,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-
-
         /// <inheritdoc/>
         public bool VerifySignature(UnspentOutputs coin, Transaction txTo, int txToInN, ScriptVerify flagScriptVerify)
         {

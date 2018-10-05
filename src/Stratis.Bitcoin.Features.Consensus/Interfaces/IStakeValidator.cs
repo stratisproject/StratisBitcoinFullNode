@@ -20,7 +20,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
         /// <param name="transactionTime">Transaction time.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
-        /// <param name="prevBlockTime">The previous block time.</param>
         void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
 
         /// <summary>
