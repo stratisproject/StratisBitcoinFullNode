@@ -341,17 +341,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the account matching the name passed as a parameter.
         /// </summary>
         /// <param name="accountName">The name of the account to get.</param>
-        /// <returns></returns>
-        /// <exception cref="System.Exception"></exception>
+        /// <returns>The HD account specified by the parameter.</returns>
+        /// <exception cref="WalletException">An exception thrown if no account could be found.</exception>
         public HdAccount GetAccountByName(string accountName)
         {
             if (this.Accounts == null)
-                throw new WalletException($"No account with the name {accountName} could be found.");
+                throw new WalletException($"No account with the name '{accountName}' could be found.");
 
-            // get the account
+            // Get the requested account.
             HdAccount account = this.Accounts.SingleOrDefault(a => a.Name == accountName);
             if (account == null)
-                throw new WalletException($"No account with the name {accountName} could be found.");
+                throw new WalletException($"No account with the name '{accountName}' could be found.");
 
             return account;
         }
