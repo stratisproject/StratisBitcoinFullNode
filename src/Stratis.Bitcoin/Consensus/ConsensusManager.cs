@@ -37,9 +37,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The minimum amount of slots that should be available to trigger asking block puller for blocks.</summary>
         private const int ConsumptionThresholdSlots = MaxBlocksToAskFromPuller / 10;
 
-        /// <summary>The default number of blocks to ask when there is no historic data to estimate average block size.</summary>
-        private const int DefaultNumberOfBlocksToAsk = 10;
-
         /// <summary>The amount of blocks from consensus the node is considered to be synced.</summary>
         private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
@@ -1100,11 +1097,15 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
+                // To fix issue https://github.com/stratisproject/StratisBitcoinFullNode/issues/2294#issue-364513736
+                // if there are no samples, assume the worst scenario (you are going to donwload full blocks).
                 long avgSize = (long)this.blockPuller.GetAverageBlockSizeBytes();
-                int maxBlocksToAsk = avgSize != 0 ? (int)(freeBytes / avgSize) : DefaultNumberOfBlocksToAsk;
+                if (avgSize == 0)
+                {
+                    avgSize = this.network.Consensus.Options.MaxBlockBaseSize;
+                }
 
-                if (maxBlocksToAsk > freeSlots)
-                    maxBlocksToAsk = freeSlots;
+                int maxBlocksToAsk = Math.Min((int)(freeBytes / avgSize), freeSlots);
 
                 this.logger.LogTrace("With {0} average block size, we have {1} download slots available.", avgSize, maxBlocksToAsk);
 

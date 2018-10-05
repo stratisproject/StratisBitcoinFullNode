@@ -45,13 +45,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected void a_sending_and_receiving_stratis_bitcoin_node_and_wallet()
         {
-            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD();
             this.sendingStratisBitcoinNode.Start();
-            this.sendingStratisBitcoinNode.NotInIBD().WithWallet();
+            this.sendingStratisBitcoinNode.WithWallet();
 
-            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD();
             this.receivingStratisBitcoinNode.Start();
-            this.receivingStratisBitcoinNode.NotInIBD().WithWallet();
+            this.receivingStratisBitcoinNode.WithWallet();
 
             TestHelper.Connect(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
 

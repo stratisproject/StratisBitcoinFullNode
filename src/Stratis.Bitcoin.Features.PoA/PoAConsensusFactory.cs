@@ -1,17 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoAConsensusFactory : ConsensusFactory
     {
-        public PoAConsensusFactory()
-            : base()
-        {
-        }
-
         /// <inheritdoc />
         public override Block CreateBlock()
         {
@@ -22,8 +14,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <inheritdoc />
         public override BlockHeader CreateBlockHeader()
         {
-            // TODO POA create PoA block header
-            return new BlockHeader();
+            return new PoABlockHeader();
         }
     }
 }
