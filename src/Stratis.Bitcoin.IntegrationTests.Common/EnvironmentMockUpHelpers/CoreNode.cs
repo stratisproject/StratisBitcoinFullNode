@@ -10,8 +10,10 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
@@ -34,6 +36,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NodeRunner runner;
         private List<Transaction> transactions = new List<Transaction>();
 
+        private bool builderNotInIBD = false;
+        private bool builderNoValidation = false;
+        private bool builderWithWallet = false;
+        private const string BuilderWalletName = "mywallet";
+        private const string BuilderWalletPassphrase = "passphrase";
+        private const string BuilderWalletPassword = "password";
+        private List<IFullValidationConsensusRule> fullValidationRules;
+        private List<IHeaderValidationConsensusRule> headerValidationRules;
+        private List<IIntegrityValidationConsensusRule> integrityValidationRules;
+        private List<IPartialValidationConsensusRule> partialValidationRules;
+
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
         public BitcoinSecret MinerSecret { get; private set; }
         public HdAddress MinerHDAddress { get; internal set; }
@@ -52,8 +65,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public bool CookieAuth { get; set; }
 
         public Mnemonic Mnemonic { get; set; }
-
-        private bool builderNotInIbd;
 
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
@@ -91,15 +102,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
         }
 
-        public CoreNode NotInIBD()
+        public CoreNode WithWallet()
         {
-            this.builderNotInIbd = true;
+            this.builderWithWallet = true;
             return this;
         }
 
-        public Mnemonic WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
+        public CoreNode NotInIBD()
         {
-            return this.FullNode.WalletManager().CreateWallet(walletPassword, walletName, walletPassphrase);
+            this.builderNotInIBD = true;
+            return this;
+        }
+
+        public CoreNode NoValidation()
+        {
+            this.builderNoValidation = true;
+            return this;
         }
 
         public RPCClient CreateRPCClient()
@@ -128,7 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
 
-        public void Start()
+        public CoreNode Start()
         {
             lock (this.lockObject)
             {
@@ -143,6 +161,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 StartStratisRunner();
 
             this.State = CoreNodeState.Running;
+
+            return this;
         }
 
         private void CreateConfigFile(NodeConfigParameters configParameters = null)
@@ -206,8 +226,39 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
 
-            if (this.builderNotInIbd)
+            if (this.builderWithWallet)
+                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(BuilderWalletPassword, BuilderWalletName, BuilderWalletPassphrase);
+
+            if (this.builderNotInIBD)
                 ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+
+            if (this.builderNoValidation)
+                DisableValidation();
+        }
+
+        public void DisableValidation()
+        {
+            this.fullValidationRules = this.FullNode.Network.Consensus.FullValidationRules.ToList();
+            this.headerValidationRules = this.FullNode.Network.Consensus.HeaderValidationRules.ToList();
+            this.integrityValidationRules = this.FullNode.Network.Consensus.IntegrityValidationRules.ToList();
+            this.partialValidationRules = this.FullNode.Network.Consensus.PartialValidationRules.ToList();
+
+            this.FullNode.Network.Consensus.FullValidationRules.Clear();
+            this.FullNode.Network.Consensus.HeaderValidationRules.Clear();
+            this.FullNode.Network.Consensus.IntegrityValidationRules.Clear();
+            this.FullNode.Network.Consensus.PartialValidationRules.Clear();
+
+            this.FullNode.NodeService<IConsensusRuleEngine>().Register();
+        }
+
+        public void EnableValidation()
+        {
+            this.FullNode.Network.Consensus.FullValidationRules = this.fullValidationRules;
+            this.FullNode.Network.Consensus.HeaderValidationRules = this.headerValidationRules;
+            this.FullNode.Network.Consensus.IntegrityValidationRules = this.integrityValidationRules;
+            this.FullNode.Network.Consensus.PartialValidationRules = this.partialValidationRules;
+
+            this.FullNode.NodeService<IConsensusRuleEngine>().Register();
         }
 
         public void Broadcast(Transaction transaction)
