@@ -156,13 +156,14 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         private byte[] Encode(object o)
         {
-            var prefix = Prefix.ForObject(o);
+            Prefix prefix = Prefix.ForObject(o);
 
-            var serializedBytes = this.primitiveSerializer.Serialize(o);
+            byte[] serializedBytes = this.primitiveSerializer.Serialize(o);
 
             var result = new byte[prefix.Length + serializedBytes.Length];
 
             prefix.CopyTo(result);
+
             serializedBytes.CopyTo(result, prefix.Length);
 
             return result;
@@ -177,7 +178,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 throw new ArgumentOutOfRangeException(nameof(bytes));
 
             var prefix = new Prefix(bytes[0]);
-            var paramBytes = bytes.Skip(prefix.Length).ToArray();
+
+            byte[] paramBytes = bytes.Skip(prefix.Length).ToArray();
+
             return this.primitiveSerializer.Deserialize(prefix.Type, paramBytes);
         }
     }
