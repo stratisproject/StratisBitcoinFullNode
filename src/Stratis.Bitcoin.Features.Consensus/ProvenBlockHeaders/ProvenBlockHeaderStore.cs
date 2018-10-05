@@ -50,6 +50,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Pending - not yet saved to disk - block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
         /// </summary>
+        /// <para>
+        /// All access to these items have to be protected by <see cref="lockObject"/>.
+        /// </para>
         private HashHeightPair pendingTipHashHeight;
 
         /// <summary>
@@ -58,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private IAsyncLoop asyncLoop;
 
         /// <summary>
-        /// A lock object that protects access to the <see cref="PendingBatch"/>.
+        /// A lock object that protects access to the <see cref="PendingBatch"/> and <see cref="pendingTipHashHeight"/>.
         /// </summary>
         private readonly object lockObject;
 
