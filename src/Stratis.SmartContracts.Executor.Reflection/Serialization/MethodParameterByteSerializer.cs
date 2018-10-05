@@ -6,7 +6,7 @@ using Nethereum.RLP;
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
     /// <summary>
-    /// Serializes method parameters using an RLP-encoded byte arrays.
+    /// Serializes method parameters using RLP-encoded byte arrays.
     /// </summary>
     public class MethodParameterByteSerializer : IMethodParameterSerializer
     {
