@@ -4,9 +4,204 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using NBitcoin;
+using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
+    public class PrefixByte
+    {
+        public byte Byte { get; }
+
+        public PrefixByte(byte @byte)
+        {
+            this.Byte = @byte;
+        }
+
+        public Type Type => this.GetType(this.Byte);
+
+        public Type GetType(byte b)
+        {
+            switch ((MethodParameterDataType)b)
+            {
+                case MethodParameterDataType.Address:
+                    return typeof(Address);
+                case MethodParameterDataType.Bool:
+                    return typeof(bool);
+                case MethodParameterDataType.Byte:
+                    return typeof(byte);
+                case MethodParameterDataType.Char:
+                    return typeof(char);
+                case MethodParameterDataType.String:
+                    return typeof(string);
+                case MethodParameterDataType.Int:
+                    return typeof(int);
+                case MethodParameterDataType.UInt:
+                    return typeof(uint);
+                case MethodParameterDataType.Long:
+                    return typeof(long);
+                case MethodParameterDataType.ULong:
+                    return typeof(ulong);
+                case MethodParameterDataType.UInt160:
+                    return typeof(uint160);
+                case MethodParameterDataType.ByteArray:
+                    return typeof(byte[]);
+            }
+
+            // Any other types are not supported.
+            throw new Exception("Unsupported type");
+        }
+    }
+    public class MethodParameterByteSerializer : IMethodParameterSerializer
+    {
+        private readonly IContractPrimitiveSerializer primitiveSerializer;
+
+        public MethodParameterByteSerializer(IContractPrimitiveSerializer primitiveSerializer)
+        {
+            this.primitiveSerializer = primitiveSerializer;
+        }
+
+        public byte[] Serialize(object[] methodParameters)
+        {
+            if (methodParameters == null)
+                throw new ArgumentNullException(nameof(methodParameters));
+
+            var result = new List<byte[]>();
+
+            foreach (var param in methodParameters)
+            {
+                var encoded = this.Encode(param);
+
+                result.Add(encoded);
+            }
+
+            return RLP.EncodeList(result.Select(RLP.EncodeElement).ToArray());
+        }
+
+        public object[] Deserialize(string[] parameters)
+        {
+            throw new NotImplementedException();
+        }
+
+        public object[] Deserialize(byte[] bytes)
+        {
+            RLPCollection list = RLP.Decode(bytes);
+
+            RLPCollection innerList = (RLPCollection)list[0];
+
+            IList<byte[]> paramBytes = innerList.Select(x => x.RLPData).ToList();
+
+            var results = new List<object>();
+
+            foreach (var bbb in paramBytes)
+            {
+                var result = this.Decode(bbb);
+                results.Add(result);
+            }
+            
+            return results.ToArray();
+        }
+
+        private byte[] Encode(object o)
+        {
+            var type = GetPrimitiveType(o);
+
+            // To save space we select the first two bytes only
+            var prefixByte = (byte) type;
+
+            var serializedBytes = this.primitiveSerializer.Serialize(o);
+
+            var result = new byte[1 + serializedBytes.Length];
+            result[0] = prefixByte;
+            serializedBytes.CopyTo(result, 1);
+
+            return result;
+        }
+
+        private object Decode(byte[] bytes)
+        {
+            if (bytes == null)
+                throw new ArgumentNullException(nameof(bytes));
+
+            if (bytes.Length == 0)
+                throw new ArgumentOutOfRangeException(nameof(bytes));
+
+            var prefixByte = new PrefixByte(bytes[0]);
+            var paramBytes = bytes.Skip(1).ToArray();
+            return this.primitiveSerializer.Deserialize(prefixByte.Type, paramBytes);
+        }
+
+        private Type GetType(byte b)
+        {
+            switch ((MethodParameterDataType)b)
+            {
+                case MethodParameterDataType.Address:
+                    return typeof(Address);
+                case MethodParameterDataType.Bool:
+                    return typeof(bool);
+                case MethodParameterDataType.Byte:
+                    return typeof(byte);
+                case MethodParameterDataType.Char:
+                    return typeof(char);
+                case MethodParameterDataType.String:
+                    return typeof(string);
+                case MethodParameterDataType.Int:
+                    return typeof(int);
+                case MethodParameterDataType.UInt:
+                    return typeof(uint);
+                case MethodParameterDataType.Long:
+                    return typeof(long);
+                case MethodParameterDataType.ULong:
+                    return typeof(ulong);
+                case MethodParameterDataType.UInt160:
+                    return typeof(uint160);
+                case MethodParameterDataType.ByteArray:
+                    return typeof(byte[]);
+            }
+
+            // Any other types are not supported.
+            throw new Exception("Unsupported type");
+        }
+
+        private static MethodParameterDataType GetPrimitiveType(object o)
+        {
+            if (o is bool)
+                return MethodParameterDataType.Bool;
+
+            if (o is byte)
+                return MethodParameterDataType.Byte;
+
+            if (o is byte[])
+                return MethodParameterDataType.ByteArray;
+
+            if (o is char)
+                return MethodParameterDataType.Char;
+
+            if (o is string)
+                return MethodParameterDataType.String;
+
+            if (o is uint)
+                return MethodParameterDataType.UInt;
+
+            if (o is uint160)
+                return MethodParameterDataType.UInt160;
+
+            if (o is ulong)
+                return MethodParameterDataType.ULong;
+
+            if (o is Address)
+                return MethodParameterDataType.Address;
+
+            if (o is long)
+                return MethodParameterDataType.Long;
+
+            if (o is int)
+                return MethodParameterDataType.Int;
+
+            // Any other types are not supported.
+            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
+        }
+    }
+
     /// <summary>
     /// Class that handles method parameter serialization.
     /// </summary>
