@@ -56,7 +56,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Length of expiry of the unlocking, restricted to max duration.
             TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, maxDurationInSeconds));
 
-            this.walletTransactionHandler.CacheSecret(account, passphrase, duration);
+            try
+            {
+                this.walletTransactionHandler.CacheSecret(account, passphrase, duration);
+            }
+            catch (SecurityException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, exception.Message);
+            }
             return true; // NOTE: Have to return a value or else RPC middleware doesn't serialize properly.
         }
 
@@ -90,6 +97,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return hash;
             }
             catch (SecurityException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, exception.Message);
+            }
+            catch (WalletException exception)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, exception.Message);
             }
