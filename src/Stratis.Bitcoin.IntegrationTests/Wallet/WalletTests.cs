@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisSender = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-                CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).NotInIBD();
+                CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
 
                 builder.StartAll();
