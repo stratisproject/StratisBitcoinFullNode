@@ -41,6 +41,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 = invalid
                 TestHelper.BuildBlocks.OnNode(minerB).Valid(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
+                // On mining the following will happen: 
+                // Reorg from blocks 9 to 5.
+                // Connect blocks 5 to 10
+                // Block 8 fails.
+                // Reorg from 7 to 5
+                // Reconnect blocks 6 to 9
+
                 TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
                 TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
             }

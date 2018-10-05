@@ -39,9 +39,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private bool builderNotInIBD = false;
         private bool builderNoValidation = false;
         private bool builderWithWallet = false;
-        private const string BuilderWalletName = "mywallet";
-        private const string BuilderWalletPassphrase = "passphrase";
-        private const string BuilderWalletPassword = "password";
+        private string builderWalletName;
+        private string builderWalletPassword;
+        private string builderWalletPassphrase;
         private List<IFullValidationConsensusRule> fullValidationRules;
         private List<IHeaderValidationConsensusRule> headerValidationRules;
         private List<IIntegrityValidationConsensusRule> integrityValidationRules;
@@ -102,12 +102,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
         }
 
-        public CoreNode WithWallet()
-        {
-            this.builderWithWallet = true;
-            return this;
-        }
-
         public CoreNode NotInIBD()
         {
             this.builderNotInIBD = true;
@@ -117,6 +111,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode NoValidation()
         {
             this.builderNoValidation = true;
+            return this;
+        }
+
+        public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
+        {
+            this.builderWithWallet = true;
+            this.builderWalletName = walletName;
+            this.builderWalletPassphrase = walletPassphrase;
+            this.builderWalletPassword = walletPassword;
             return this;
         }
 
@@ -227,7 +230,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
 
             if (this.builderWithWallet)
-                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(BuilderWalletPassword, BuilderWalletName, BuilderWalletPassphrase);
+                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
 
             if (this.builderNotInIBD)
                 ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
