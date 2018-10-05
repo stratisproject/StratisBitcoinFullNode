@@ -36,17 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NodeRunner runner;
         private List<Transaction> transactions = new List<Transaction>();
 
-        private bool builderNotInIBD = false;
-        private bool builderNoValidation = false;
-        private bool builderWithWallet = false;
-        private string builderWalletName;
-        private string builderWalletPassword;
-        private string builderWalletPassphrase;
-        private List<IFullValidationConsensusRule> fullValidationRules;
-        private List<IHeaderValidationConsensusRule> headerValidationRules;
-        private List<IIntegrityValidationConsensusRule> integrityValidationRules;
-        private List<IPartialValidationConsensusRule> partialValidationRules;
-
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
         public BitcoinSecret MinerSecret { get; private set; }
         public HdAddress MinerHDAddress { get; internal set; }
@@ -65,6 +54,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public bool CookieAuth { get; set; }
 
         public Mnemonic Mnemonic { get; set; }
+
+        private bool builderNotInIBD;
+        private bool builderNoValidation;
+        private bool builderWithWallet;
+        private string builderWalletName;
+        private string builderWalletPassword;
+        private string builderWalletPassphrase;
+
+        private List<IFullValidationConsensusRule> fullValidationRules;
+        private List<IHeaderValidationConsensusRule> headerValidationRules;
+        private List<IIntegrityValidationConsensusRule> integrityValidationRules;
+        private List<IPartialValidationConsensusRule> partialValidationRules;
 
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
@@ -229,11 +230,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
 
-            if (this.builderWithWallet)
-                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
-
             if (this.builderNotInIBD)
                 ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
+
+            if (this.builderWithWallet)
+                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
 
             if (this.builderNoValidation)
                 DisableValidation();
