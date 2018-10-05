@@ -8,6 +8,7 @@ using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
@@ -37,6 +38,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// <seealso cref="T:Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules.ProvenHeaderRuleBase" />
     public class ProvenHeaderCoinstakeRule : ProvenHeaderRuleBase
     {
+        /// <summary>The stake validator.</summary>
+        private IStakeValidator stakeValidator;
+
         /// <summary>PoS block's timestamp mask.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
         public const uint StakeTimestampMask = 0x0000000F;
@@ -48,6 +52,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             Guard.NotNull(this.PosParent.StakeValidator, nameof(this.PosParent.StakeValidator));
             Guard.NotNull(this.PosParent.UtxoSet, nameof(this.PosParent.UtxoSet));
+
+            this.stakeValidator = this.PosParent.StakeValidator;
         }
 
         public override void Run(RuleContext context)
@@ -153,31 +159,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
         private void CheckSignature(ProvenBlockHeader header, UnspentOutputs unspentOutputs)
         {
-            TxIn input = header.Coinstake.Inputs[0];
-
-            if ((input.PrevOut.N >= unspentOutputs.Outputs.Length) || (input.PrevOut.Hash != unspentOutputs.TransactionId))
-            {
-                this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
-                ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
-            }
-
-            TxOut output = unspentOutputs.Outputs[input.PrevOut.N];
-
-            var txData = new PrecomputedTransactionData(header.Coinstake);
-            var checker = new TransactionChecker(header.Coinstake, 0, output.Value, txData);
-            var ctx = new ScriptEvaluationContext(this.PosParent.Network) { ScriptVerify = ScriptVerify.None };
-
-            if (ctx.VerifyScript(input.ScriptSig, output.ScriptPubKey, checker))
+            if (this.stakeValidator.VerifySignature(unspentOutputs, header.Coinstake, 0, ScriptVerify.None))
                 return;
-
+            
             this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
             ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
         }
 
         private void CheckStakeKernelHash(PosRuleContext context, UnspentOutputs stakingCoins, ProvenBlockHeader header, ChainedHeader chainedHeader)
         {
-            TxIn input = header.Coinstake.Inputs[0];
-            OutPoint prevout = input.PrevOut;
+            OutPoint prevout = this.GetPreviousOut(header);
             uint transactionTime = header.Coinstake.Time;
 
             ChainedHeader prevChainedHeader = chainedHeader.Previous;
@@ -191,54 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             uint headerBits = chainedHeader.Header.Bits.ToCompact();
 
-            if (transactionTime < stakingCoins.Time)
-            {
-                this.Logger.LogTrace("Coinstake transaction timestamp {0} is lower than it's own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
-                this.Logger.LogTrace("(-)[BAD_STAKE_TIME]");
-                ConsensusErrors.StakeTimeViolation.Throw();
-            }
-
-            // Base target.
-            BigInteger target = new Target(headerBits).ToBigInteger();
-
-            // TODO: Investigate:
-            // The POS protocol should probably put a limit on the max amount that can be staked
-            // not a hard limit but a limit that allow any amount to be staked with a max weight value.
-            // The max weight should not exceed the max uint256 array size (array size = 32).
-
-            // Weighted target.
-            long valueIn = stakingCoins.Outputs[prevout.N].Value.Satoshi;
-            BigInteger weight = BigInteger.ValueOf(valueIn);
-            BigInteger weightedTarget = target.Multiply(weight);
-
-            context.TargetProofOfStake = this.ToUInt256(weightedTarget);
-            this.Logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", this.ToUInt256(target), valueIn, context.TargetProofOfStake);
-
-            // ReSharper disable once PossibleNullReferenceException - it is checked above.
-            uint256 stakeModifierV2 = prevBlockStake.StakeModifierV2;
-
-            // Calculate hash.
-            using (var ms = new MemoryStream())
-            {
-                var serializer = new BitcoinStream(ms, true);
-                serializer.ReadWrite(stakeModifierV2);
-                serializer.ReadWrite(stakingCoins.Time);
-                serializer.ReadWrite(prevout.Hash);
-                serializer.ReadWrite(prevout.N);
-                serializer.ReadWrite(transactionTime);
-
-                context.HashProofOfStake = Hashes.Hash256(ms.ToArray());
-            }
-
-            this.Logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", stakeModifierV2, context.HashProofOfStake);
-
-            // Now check if proof-of-stake hash meets target protocol.
-            var hashProofOfStakeTarget = new BigInteger(1, context.HashProofOfStake.ToBytes(false));
-            if (hashProofOfStakeTarget.CompareTo(weightedTarget) > 0)
-            {
-                this.Logger.LogTrace("(-)[TARGET_MISSED]");
-                ConsensusErrors.StakeHashInvalidTarget.Throw();
-            }
+            this.stakeValidator.CheckStakeKernelHash(context, headerBits, prevBlockStake, stakingCoins, prevout, transactionTime);
         }
 
         private void CheckCoinstakeMerkleProof(ProvenBlockHeader header)
@@ -252,8 +196,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
         private void CheckHeaderSignatureWithConinstakeKernel(ProvenBlockHeader header, UnspentOutputs stakingCoins)
         {
-            TxIn input = header.Coinstake.Inputs[0];
-            OutPoint prevout = input.PrevOut;
+            OutPoint prevout = this.GetPreviousOut(header);
 
             Script scriptPubKey = stakingCoins.Outputs[prevout.N].ScriptPubKey;
             PubKey pubKey = scriptPubKey.GetDestinationPublicKeys(this.PosParent.Network)[0];
@@ -266,6 +209,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
             ConsensusErrors.BadBlockSignature.Throw();
+        }
+
+        private OutPoint GetPreviousOut(ProvenBlockHeader header)
+        {
+            TxIn input = header.Coinstake.Inputs[0];
+            OutPoint prevout = input.PrevOut;
+
+            return prevout;
         }
 
         /// <summary>
