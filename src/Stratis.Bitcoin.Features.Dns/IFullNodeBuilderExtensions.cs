@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Dns
     public static class IFullNodeBuilderExtensions
     {
         /// <summary>
-        /// Configures the Dns feature. 
+        /// Configures the Dns feature.
         /// </summary>
         /// <param name="fullNodeBuilder">Full node builder used to configure the feature.</param>
         /// <returns>The full node builder with the Dns feature configured.</returns>
@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 features
                 .AddFeature<DnsFeature>()
+                //TODO add DependsOn to specify which feature the DnsFeature requires
                 .FeatureServices(services =>
                 {
                     services.AddSingleton(fullNodeBuilder);
@@ -31,6 +32,9 @@ namespace Stratis.Bitcoin.Features.Dns
                     services.AddSingleton<DnsSettings>();
                     services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
                     services.AddSingleton<IWhitelistManager, WhitelistManager>();
+
+                    // transient, means that every time this service is requested, a new instance is created
+                    services.AddTransient<UnreliablePeerBehavior, UnreliablePeerBehavior>();
                 });
             });
 
