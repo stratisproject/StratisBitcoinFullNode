@@ -79,14 +79,9 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="peer">Peer that sent us the message.</param>
         /// <param name="message">Received message.</param>
         /// <remarks>
-        /// This handler only cares about "verack" messages, which are only sent once per node
-        /// and at the time they are sent the time offset information is parsed by underlaying logic.
-        /// <para>
-        /// Note that it is not possible to use "version" message here as <see cref="INetworkPeer"/>
-        /// does not deliver this message for inbound peers to node behaviors.
-        /// </para>
+        /// This handler only cares about "version" messages, which are only sent once per node.
         /// </remarks>
-        /// <returns><placeholder>A <see cref="Task"/> representing the asynchronous operation.</placeholder></returns>
+        /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             if (message.Message.Payload is VersionPayload version)
