@@ -3,6 +3,10 @@
     "City.Chain": {
       "commandName": "Project"
     },
+    "City.Chain (Test)": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet"
+    },
     "City.Chain (Local Data Dir)": {
       "commandName": "Project",
       "commandLineArgs": "-datadir=citynode"
