@@ -42,9 +42,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void PremineNodeWithWallet()
         {
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest).NotInIBD();
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest).NotInIBD().WithWallet();
             this.PremineNodeWithCoins.Start();
-            this.PremineNodeWithCoins.WithWallet();
         }
 
         public void MineGenesisAndPremineBlocks()
