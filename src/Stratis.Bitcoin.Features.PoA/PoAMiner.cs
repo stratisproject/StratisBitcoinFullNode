@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
+    // TODO POA create an interface like we did with PoSMinting
     public class PoAMiner : IDisposable
     {
         // TODO POA. Implement miner properly later. Right now we need bare minimum to test syncing and payloads.
@@ -29,7 +30,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// </summary>
         private CancellationTokenSource cancellation;
 
-        private readonly IInitialBlockDownloadState indState;
+        private readonly IInitialBlockDownloadState ibdState;
 
         private readonly PoABlockDefinition blockDefinition;
 
@@ -41,13 +42,13 @@ namespace Stratis.Bitcoin.Features.PoA
             Network network,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState indState,
+            IInitialBlockDownloadState ibdState,
             PoABlockDefinition blockDefinition)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
             this.network = network;
-            this.indState = indState;
+            this.ibdState = ibdState;
             this.blockDefinition = blockDefinition;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 try
                 {
                     // Don't mine in IBD.
-                    if (this.indState.IsInitialBlockDownload() && !MineDuringIBD)
+                    if (this.ibdState.IsInitialBlockDownload() && !MineDuringIBD)
                     {
                         int attemptDelayMs = 20_000;
                         await Task.Delay(attemptDelayMs, this.cancellation.Token).ConfigureAwait(false);
