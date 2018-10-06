@@ -9,8 +9,15 @@ namespace Stratis.SmartContracts.Core.State.AccountAbstractionLayer
     /// </summary>
     public class TransferInfo
     {
-        public uint160 From { get; set; }
-        public uint160 To { get; set; }
-        public ulong Value { get; set; }
+        public TransferInfo(uint160 from, uint160 to, ulong value)
+        {
+            this.From = from;
+            this.To = to;
+            this.Value = value;
+        }
+
+        public uint160 From { get; }
+        public uint160 To { get; }
+        public ulong Value { get; }
     }
 }
