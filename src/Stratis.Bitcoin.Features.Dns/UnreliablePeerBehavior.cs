@@ -88,14 +88,11 @@ namespace Stratis.Bitcoin.Features.Dns
             {
                 // If current node is on POS, and ProvenHeaders is activated, check if current connected peer can serve Proven Headers.
                 // If it can't, disconnect from him and ban for few minutes
-                if (IsProvenHeaderActivated())
+                if (this.IsProvenHeaderActivated() && !this.CanServeProvenHeader(version))
                 {
-                    if (!CanServeProvenHeader(version))
-                    {
-                        TimeSpan banDuration = TimeSpan.FromMinutes(1);
-                        this.logger.LogDebug("Peer '{0}' has been disconnected for {1} because can't serve proven headers. Peer Version: {2}", peer.RemoteSocketEndpoint, banDuration, version.Version);
-                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Can't serve proven headers.");
-                    }
+                    TimeSpan banDuration = TimeSpan.FromMinutes(1);
+                    this.logger.LogDebug("Peer '{0}' has been banned for {1} because can't serve proven headers. Peer Version: {2}", peer.RemoteSocketEndpoint, banDuration, version.Version);
+                    this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Can't serve proven headers.");
                 }
             }
 
@@ -114,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Dns
             if (this.network.Consensus.Options is PosConsensusOptions options)
             {
                 long currentHeight = this.chainState.ConsensusTip.Height;
-                return options.ProvenHeadersActivationHeight > 0 && currentHeight >= options.ProvenHeadersActivationHeight;
+                return (options.ProvenHeadersActivationHeight > 0) && (currentHeight >= options.ProvenHeadersActivationHeight);
             }
 
             return false;
@@ -129,7 +126,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </returns>
         private bool CanServeProvenHeader(VersionPayload version)
         {
-            this.logger.LogTrace("Ensuring Peer can serve Proven Header");
             return version.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
         }
     }

@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Dns
                     services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
                     services.AddSingleton<IWhitelistManager, WhitelistManager>();
 
-                    // transient, means that every time this service is requested, a new instance is created
+                    // Transient, means that every time this service is requested, a new instance is created.
                     services.AddTransient<UnreliablePeerBehavior, UnreliablePeerBehavior>();
                 });
             });

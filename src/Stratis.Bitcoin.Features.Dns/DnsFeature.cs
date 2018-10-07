@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Dns
         private bool disposed = false;
 
         /// <summary>
-        /// The service provider that allow to get required services.
+        /// The service provider that allows getting required services.
         /// </summary>
         private IFullNodeServiceProvider services;
 
@@ -248,8 +248,6 @@ namespace Stratis.Bitcoin.Features.Dns
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromSeconds(30));
         }
-
-
 
         /// <inheritdoc />
         public override void ValidateDependencies(IFullNodeServiceProvider services)

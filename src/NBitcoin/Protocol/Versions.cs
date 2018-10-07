@@ -66,7 +66,7 @@
         WITNESS_VERSION = 70012,
 
         /// <summary>
-        /// ! Communication between nodes with proven headers is possible after this version.
+        /// Communication between nodes with proven headers is possible after this version.
         /// This is for stratis only. Temporary solution, refers to issue #2144
         /// https://github.com/stratisproject/StratisBitcoinFullNode/issues/2144
         /// </summary>
