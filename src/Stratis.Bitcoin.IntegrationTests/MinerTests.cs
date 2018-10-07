@@ -225,7 +225,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                     var res = await this.consensus.BlockMinedAsync(block);
 
-                    if(res == null)
+                    if (res == null)
                         throw new InvalidOperationException();
 
                     blocks.Add(block);
@@ -363,10 +363,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network);
+                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
-                miner.NotInIBD();
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
                 TestHelper.MineBlocks(miner, 1);
 
@@ -471,10 +470,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network);
+                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD();
 
                 builder.StartAll();
-                miner.NotInIBD();
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
                 TestHelper.MineBlocks(miner, 1);
 
@@ -686,9 +684,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
                 builder.StartAll();
-                node.NotInIBD();
 
                 node.SetDummyMinerSecret(new BitcoinSecret(new Key(), node.FullNode.Network));
 
@@ -711,13 +708,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
 
                 builder.StartAll();
-
-                miner.NotInIBD();
-                syncer.NotInIBD();
 
                 miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
 
@@ -734,12 +728,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest);
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
 
                 builder.StartAll();
-                miner.NotInIBD();
-                syncer.NotInIBD();
 
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
 

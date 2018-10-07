@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
     /// </summary>
     public static class ContractCompiler
     {
-        private const string AssemblyName = "smartContract";
+        private const string AssemblyName = "SmartContract";
 
         /// <summary>
         /// Get the compiled bytecode for the specified file.

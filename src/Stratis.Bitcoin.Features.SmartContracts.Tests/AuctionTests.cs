@@ -140,12 +140,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             return default(T);
         }
 
-        public byte GetByte(string key)
-        {
-            return this.GetObject<byte>(key);
-        }
-
-        public byte[] GetByteArray(string key)
+        public byte[] GetBytes(string key)
         {
             return this.GetObject<byte[]>(key);
         }
@@ -190,14 +185,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             return this.GetObject<string>(key);
         }
 
-        public sbyte GetSbyte(string key)
-        {
-            return this.GetObject<sbyte>(key);
-        }
-
         public T GetStruct<T>(string key) where T : struct
         {
             return this.GetObject<T>(key);
+        }
+
+        public T[] GetArray<T>(string key)
+        {
+            throw new NotImplementedException();
         }
 
         private void SetObject<T>(string key, T obj)
@@ -205,12 +200,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.objects[key] = obj;
         }
 
-        public void SetByte(string key, byte value)
-        {
-            this.SetObject(key, value);
-        }
-
-        public void SetByteArray(string key, byte[] value)
+        public void SetBytes(string key, byte[] value)
         {
             this.SetObject(key, value);
         }
@@ -255,14 +245,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.SetObject(key, value);
         }
 
-        public void SetSByte(string key, sbyte value)
+        public void SetStruct<T>(string key, T value) where T : struct
         {
             this.SetObject(key, value);
         }
 
-        public void SetStruct<T>(string key, T value) where T : struct
+        public void SetArray(string key, Array a)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
     }
 }

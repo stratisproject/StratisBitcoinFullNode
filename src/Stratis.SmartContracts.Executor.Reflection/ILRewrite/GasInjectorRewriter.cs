@@ -2,6 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
@@ -133,14 +134,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 
                 AddSpendGasMethodBeforeInstruction(methodDefinition, context.Observer, context.ObserverVariable, injectAfterInstruction, gasToSpendForSegment[instruction]);
             }
-
-            foreach (Instruction instruction in branches)
-            {
-                var oldReference = (Instruction)instruction.Operand;
-                Instruction newReference = oldReference.Previous.Previous.Previous; // 3 were inserted
-                Instruction newInstruction = il.Create(instruction.OpCode, newReference);
-                il.Replace(instruction, newInstruction);
-            }
         }
 
         /// <summary>
@@ -149,9 +142,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         private static void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, ObserverReferences observer, VariableDefinition variable, Instruction instruction, Gas opcodeCount)
         {
             ILProcessor il = methodDefinition.Body.GetILProcessor();
+            il.Body.SimplifyMacros();
             il.InsertBefore(instruction, il.CreateLdlocBest(variable)); // load observer
             il.InsertBefore(instruction, il.Create(OpCodes.Ldc_I8, (long)opcodeCount.Value)); // load gas amount
             il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.SpendGasMethod)); // trigger method
+            il.Body.OptimizeMacros();
         }
     }
 }
