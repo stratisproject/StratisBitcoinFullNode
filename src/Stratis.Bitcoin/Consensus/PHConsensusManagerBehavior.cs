@@ -26,9 +26,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
-        private readonly object bestSentHeaderLock;
-
         /// <summary>Gets the best header sent using <see cref="ProvenHeadersPayload"/>.</summary>
         /// <remarks>Write access should be protected by <see cref="bestSentHeaderLock"/>.</remarks>
         public ProvenBlockHeader BestSentHeader { get; private set; }
@@ -49,12 +46,13 @@ namespace Stratis.Bitcoin.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// Processes and incoming message from the peer.
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        protected override async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
             {
@@ -146,7 +144,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         protected async Task ProcessHeadersAsync(INetworkPeer peer, ProvenHeadersPayload headersPayload)
         {
-            List<ProvenBlockHeader> headers = headersPayload.Headers;
+            var headers = new List<BlockHeader>(headersPayload.Headers);
 
             if (headers.Count == 0)
             {
@@ -184,7 +182,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 var consensusFactory = new PosConsensusFactory();
 
-                ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
+                ConnectNewHeadersResult result = await base.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
 
                 if (result == null)
                 {
@@ -281,21 +279,21 @@ namespace Stratis.Bitcoin.Consensus
             return true;
         }
 
-        protected override void AttachCore()
-        {
-            // Initialize auto sync timer.
-            int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
-            this.autosyncTimer = new Timer(async (o) =>
-            {
-                await this.ResyncAsync().ConfigureAwait(false);
-            }, null, interval, interval);
+        //protected override void AttachCore()
+        //{
+        //    // Initialize auto sync timer.
+        //    int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
+        //    this.autosyncTimer = new Timer(async (o) =>
+        //    {
+        //        await this.ResyncAsync().ConfigureAwait(false);
+        //    }, null, interval, interval);
 
-            if (this.AttachedPeer.State == NetworkPeerState.Connected)
-                this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
+        //    if (this.AttachedPeer.State == NetworkPeerState.Connected)
+        //        this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
 
-            this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
-        }
+        //    this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
+        //    this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
+        //}
 
         /// <inheritdoc />
         public override object Clone()
