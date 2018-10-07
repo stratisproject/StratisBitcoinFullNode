@@ -17,6 +17,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletRPCController : FeatureController
     {
+        // <summary>As per RPC method definition this should be the max allowable expiry duration.</summary>
+        private const int maxDurationInSeconds = 1073741824;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -47,9 +50,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool UnlockWallet(string passphrase, int timeout)
         {
             Guard.NotEmpty(passphrase, nameof(passphrase));
-
-            // As per RPC method definition this should be the max allowable expiry duration.
-            const int maxDurationInSeconds = 1073741824;
 
             WalletAccountReference account = this.GetAccount();
 

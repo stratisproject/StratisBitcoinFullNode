@@ -2,7 +2,6 @@
 using System.Threading;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
@@ -51,7 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var aliceAddress = alice.GetAddress();
                 rpcClient.WalletPassphrase("password", 60);
                 var txid = rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
-                rpcClient.SendCommand(RPCOperations.walletlock); // TODO: create a method for walletlock.
+                rpcClient.SendCommand(RPCOperations.walletlock);
 
                 // Check the hash calculated correctly.
                 var tx = rpcClient.GetRawTransaction(txid);
@@ -85,7 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Unlock and lock case.
                 rpcClient.WalletPassphrase("password", 60);
-                rpcClient.SendCommand(RPCOperations.walletlock); // TODO: create a method for walletlock.
+                rpcClient.SendCommand(RPCOperations.walletlock);
                 Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
 
                 // Unlock timesout case.
