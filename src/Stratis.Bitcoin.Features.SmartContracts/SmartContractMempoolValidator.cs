@@ -45,8 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new MempoolOpSpendRule(),
                 new TxOutSmartContractExecRule(),
                 scriptTypeRule,
-                p2pkhRule,
-                new AllowedScriptTypeRule()
+                p2pkhRule
             };
 
             this.feeTxRules = new List<ISmartContractMempoolRule>()
