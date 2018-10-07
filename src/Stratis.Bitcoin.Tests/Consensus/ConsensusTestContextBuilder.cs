@@ -29,7 +29,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
         internal TestContext Build()
         {
             if (this.testContext.InitialChainTip != null)
+            {
+                this.testContext.coinView.UpdateTipHash(this.testContext.InitialChainTip.Header.GetHash());
                 this.testContext.ChainedHeaderTree.Initialize(this.testContext.InitialChainTip);
+            }
 
             return this.testContext;
         }
