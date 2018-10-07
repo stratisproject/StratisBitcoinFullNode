@@ -392,7 +392,7 @@ namespace Stratis.Bitcoin.Controllers
         public IActionResult Shutdown([FromBody] bool corsProtection = true)
         {
             // Start the node shutdown process, by calling StopApplication, which will signal to
-            // the full node RunAsync to continuee processing, which calls Dispose on the node.
+            // the full node RunAsync to continue processing, which calls Dispose on the node.
             this.fullNode?.NodeLifetime.StopApplication();
 
             return this.Ok();
