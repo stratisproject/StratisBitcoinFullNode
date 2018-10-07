@@ -68,7 +68,7 @@ phases:
     inputs:
       githubEndpoint: github
       githubRepository: 'CityChainFoundation/city-chain'
-      githubReleaseTitle: 'City Chain $(Build.BuildNumber) (Preview Release)'
+      githubReleaseTitle: 'City Chain (Release $(Build.BuildNumber))'
       githubReleasePrerelease: true
       githubReleaseAsset: '$(Build.ArtifactStagingDirectory)/City.Chain*.*'
       manifestJson: package.json
