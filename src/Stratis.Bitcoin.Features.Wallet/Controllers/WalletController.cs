@@ -988,6 +988,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 }
                 else
                 {
+                    if (request.TransactionsIds == null || request.TransactionsIds.Any(trx => trx == null))
+                    {
+                        throw new WalletException("Transaction ids need to be specified if the 'all' flag is not set.");
+                    }
+
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
                     result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
                 }
