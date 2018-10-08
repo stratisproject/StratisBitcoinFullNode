@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (syncRequired)
                 await this.ResyncAsync().ConfigureAwait(false);
-            
+
             return result;
         }
 
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
-        private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
+        protected virtual async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
             {
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Consensus
                     break;
 
                 case HeadersPayload headers:
-                    await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                    await this.ProcessHeadersAsync(peer, headers.Headers).ConfigureAwait(false);
                     break;
             }
         }
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Consensus
         /// If the peer is behind/equal to our best height an empty array is sent back.
         /// </para>
         /// </remarks>
-        private async Task ProcessGetHeadersAsync(INetworkPeer peer, GetHeadersPayload getHeadersPayload)
+        protected async Task ProcessGetHeadersAsync(INetworkPeer peer, GetHeadersPayload getHeadersPayload)
         {
             if (getHeadersPayload.BlockLocator.Blocks.Count > BlockLocator.MaxLocatorSize)
             {
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Consensus
                 if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
             }
-            
+
             return headers;
         }
 
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Processes "headers" message received from the peer.
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
-        /// <param name="headersPayload">Payload of "headers" message to process.</param>
+        /// <param name="headers">List of headers to process.</param>
         /// <remarks>
         /// "headers" message is sent in response to "getheaders" message or it is solicited
         /// by the peer when a new block is validated (unless in IBD).
@@ -240,10 +240,8 @@ namespace Stratis.Bitcoin.Consensus
         /// the tip of the best chain we think the peer has.
         /// </para>
         /// </remarks>
-        private async Task ProcessHeadersAsync(INetworkPeer peer, HeadersPayload headersPayload)
+        protected async Task ProcessHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
-            List<BlockHeader> headers = headersPayload.Headers;
-
             if (headers.Count == 0)
             {
                 this.logger.LogTrace("Headers payload with no headers was received. Assuming we're synced with the peer.");
@@ -251,7 +249,7 @@ namespace Stratis.Bitcoin.Consensus
                 return;
             }
 
-            if (!this.ValidateHeadersPayload(peer, headersPayload, out string validationError))
+            if (!this.ValidateHeadersFromPayload(peer, headers, out string validationError))
             {
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
@@ -306,16 +304,16 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Validates the headers payload.</summary>
         /// <param name="peer">The peer who sent the payload.</param>
-        /// <param name="headersPayload">Headers payload to validate.</param>
+        /// <param name="headers">Headers to validate.</param>
         /// <param name="validationError">The validation error that is set in case <c>false</c> is returned.</param>
         /// <returns><c>true</c> if payload was valid, <c>false</c> otherwise.</returns>
-        private bool ValidateHeadersPayload(INetworkPeer peer, HeadersPayload headersPayload, out string validationError)
+        private bool ValidateHeadersFromPayload(INetworkPeer peer, List<BlockHeader> headers, out string validationError)
         {
             validationError = null;
 
-            if (headersPayload.Headers.Count > MaxItemsPerHeadersMessage)
+            if (headers.Count > MaxItemsPerHeadersMessage)
             {
-                this.logger.LogDebug("Headers payload with {0} headers was received. Protocol violation. Banning the peer.", headersPayload.Headers.Count);
+                this.logger.LogDebug("Headers payload with {0} headers was received. Protocol violation. Banning the peer.", headers.Count);
 
                 validationError = "Protocol violation.";
 
@@ -324,12 +322,12 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // Check headers for consecutiveness.
-            for (int i = 1; i < headersPayload.Headers.Count; i++)
+            for (int i = 1; i < headers.Count; i++)
             {
-                if (headersPayload.Headers[i].HashPrevBlock != headersPayload.Headers[i - 1].GetHash())
+                if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
                 {
                     this.logger.LogDebug("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
-                        peer.RemoteSocketEndpoint, i, headersPayload.Headers[i].HashPrevBlock, headersPayload.Headers[i - 1].GetHash());
+                        peer.RemoteSocketEndpoint, i, headers[i].HashPrevBlock, headers[i - 1].GetHash());
 
                     validationError = "Peer presented nonconsecutive headers.";
 
@@ -337,7 +335,7 @@ namespace Stratis.Bitcoin.Consensus
                     return false;
                 }
             }
-            
+
             return true;
         }
 
@@ -389,7 +387,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogDebug("Peer violates max reorg. Peer will be banned and disconnected.");
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer violates max reorg rule.");
             }
-            
+
             return result;
         }
 
