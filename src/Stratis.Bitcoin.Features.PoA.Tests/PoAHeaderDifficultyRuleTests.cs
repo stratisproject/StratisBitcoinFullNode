@@ -26,9 +26,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void ChainworkIsIncreasedBySameConstantValue()
         {
-            BigInteger pow256 = BigInteger.ValueOf(2).Pow(256);
             Target defaultTarget = PoAHeaderDifficultyRule.PoABlockDifficulty;
-            int headersCount = 200;
+            int headersCount = 100;
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(headersCount, null, false, defaultTarget);
 
@@ -37,10 +36,14 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             foreach (ChainedHeader header in headers.Skip(2))
             {
-                BigInteger chainworkDiff = new BigInteger(header.ChainWork.ToString()).Subtract(new BigInteger(header.Previous.ChainWork.ToString()));
-                BigInteger chainworkDiffPrev = new BigInteger(header.Previous.ChainWork.ToString()).Subtract(new BigInteger(header.Previous.Previous.ChainWork.ToString()));
+                var currentHeaderWork = new BigInteger(header.ChainWork.ToBytes());
+                var prevHeaderWork = new BigInteger(header.Previous.ChainWork.ToBytes());
 
-                Assert.Equal(chainworkDiff, chainworkDiffPrev);
+                BigInteger chainworkDiff = currentHeaderWork.Subtract(prevHeaderWork);
+                BigInteger chainworkDiffPrev = new BigInteger(header.Previous.ChainWork.ToBytes()).Subtract(new BigInteger(header.Previous.Previous.ChainWork.ToBytes()));
+
+                int comp = chainworkDiff.CompareTo(chainworkDiffPrev);
+                Assert.True(comp == 0);
             }
         }
     }
