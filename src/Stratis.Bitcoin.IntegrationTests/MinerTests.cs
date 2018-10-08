@@ -884,9 +884,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
 
-                miner.WithWallet();
                 builder.StartAll();
                 
                 TestHelper.MineBlocks(miner, 5);
@@ -900,7 +899,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
                 
                 CoreNode[] syncers = new CoreNode[]
                 {
@@ -909,7 +908,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                     builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD()
                 };
 
-                miner.WithWallet();
                 builder.StartAll();
                 
                 foreach (CoreNode syncer in syncers)
@@ -934,30 +932,24 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-                CoreNode node2 = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-
-                node1.WithWallet();
-                node2.WithWallet();
+                CoreNode node1 = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
+                CoreNode node2 = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet().NotInIBD();
 
                 builder.StartAll();
                 
-                node1.CreateRPCClient().AddNode(node2.Endpoint, true);
                 TestHelper.MineBlocks(node1, 5);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(node1, node2));
-                node1.CreateRPCClient().RemoveNode(node2.Endpoint);
+                TestHelper.ConnectAndSync(node1, node2);
+                TestHelper.Disconnect(node1, node2);
 
                 // Node1 new block not pushed to consensus code.
-                Transaction tx = node1.FullNode.Network.CreateTransaction();
                 Block newBlock = TestHelper.GenerateBlockManually(node1, 
-                    new List<Transaction>(new[] { node1.FullNode.Network.CreateTransaction(tx.ToBytes()) }), 0, false /* Not calling BlockMinedAsync yet */);
+                    new List<Transaction>(), 0, false /* Not calling BlockMinedAsync yet */);
 
                 // Mine another 2 blocks on node 2 chain up to height 7.
                 TestHelper.MineBlocks(node2, 2);
 
                 // Sync nodes and node 1 reorgs with better blocks.
-                node1.CreateRPCClient().AddNode(node2.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(node1, node2));
+                TestHelper.ConnectAndSync(node1, node2);
 
                 // Call BlockMinedAsync manually.
                 node1.FullNode.ConsensusManager().BlockMinedAsync(newBlock).GetAwaiter().GetResult();
