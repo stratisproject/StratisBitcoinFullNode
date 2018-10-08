@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public ReflectionVirtualMachine Vm { get; }
         public ISmartContractStateFactory SmartContractStateFactory { get; }
         public StateProcessor StateProcessor { get; }
+        public Serializer Serializer { get; }
 
         public ContractExecutorTestContext()
         {
@@ -40,6 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.LoggerFactory.AddConsoleWithFilters();
             this.State = new StateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.ContractPrimitiveSerializer = new ContractPrimitiveSerializer(this.Network);
+            this.Serializer = new Serializer(this.ContractPrimitiveSerializer);
             this.AddressGenerator = new AddressGenerator();
             this.Validator = new SmartContractValidator();
             this.AssemblyLoader = new ContractAssemblyLoader();
@@ -47,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.Vm = new ReflectionVirtualMachine(this.Validator, this.LoggerFactory, this.Network, this.AssemblyLoader, this.ModuleDefinitionReader);
             this.StateProcessor = new StateProcessor(this.Vm, this.AddressGenerator);
             this.InternalTxExecutorFactory = new InternalExecutorFactory(this.LoggerFactory, this.Network, this.StateProcessor);
-            this.SmartContractStateFactory = new SmartContractStateFactory(this.ContractPrimitiveSerializer, this.Network, this.InternalTxExecutorFactory);
+            this.SmartContractStateFactory = new SmartContractStateFactory(this.ContractPrimitiveSerializer, this.Network, this.InternalTxExecutorFactory, this.Serializer);
         }
     }
 }
