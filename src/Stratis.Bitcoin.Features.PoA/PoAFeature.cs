@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
@@ -7,6 +8,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
@@ -16,40 +18,53 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
+    public class PoAFeature : FullNodeFeature
+    {
+        /// <summary>Manager of node's network connections.</summary>
+        private readonly IConnectionManager connectionManager;
+
+        private readonly FederationManager federationManager;
+
+        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager)
+        {
+            this.federationManager = federationManager;
+            this.connectionManager = connectionManager;
+
+            payloadProvider.DiscoverPayloads(this.GetType().Assembly);
+        }
+
+        /// <inheritdoc />
+        public override Task InitializeAsync()
+        {
+            NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
+            bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
+            Guard.Assert(oldCMBRemoved);
+
+            //TODO POA add new
+
+            this.federationManager.Initialize();
+
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public override void Dispose()
+        {
+        }
+    }
+
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
     public static class FullNodeBuilderConsensusExtension
     {
-        public class PoAFeature : FullNodeFeature
-        {
-            private readonly FederationManager federationManager;
-
-            public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider)
-            {
-                this.federationManager = federationManager;
-
-                payloadProvider.DiscoverPayloads(this.GetType().Assembly);
-            }
-
-            /// <inheritdoc />
-            public override Task InitializeAsync()
-            {
-                this.federationManager.Initialize();
-
-                return Task.CompletedTask;
-            }
-
-            /// <inheritdoc />
-            public override void Dispose()
-            {
-            }
-        }
-
         /// <summary>This is mandatory for all PoA networks.</summary>
         public static IFullNodeBuilder UsePoAConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
