@@ -39,6 +39,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly PoABlockDefinition blockDefinition;
 
+        private readonly SlotsManager slotsManager;
+
         private Task miningTask;
 
         public PoAMiner(
@@ -48,13 +50,15 @@ namespace Stratis.Bitcoin.Features.PoA
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
-            PoABlockDefinition blockDefinition)
+            PoABlockDefinition blockDefinition,
+            SlotsManager slotsManager)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
             this.network = network;
             this.ibdState = ibdState;
             this.blockDefinition = blockDefinition;
+            this.slotsManager = slotsManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
