@@ -49,6 +49,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public byte[] Serialize(string s)
         {
+            if (s == null)
+                return null;
+
             return this.primitiveSerializer.Serialize(s);
         }
 
