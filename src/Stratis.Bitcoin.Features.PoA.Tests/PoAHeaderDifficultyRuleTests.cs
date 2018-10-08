@@ -31,9 +31,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(headersCount, null, false, defaultTarget);
 
-            foreach (ChainedHeader chainedHeader in headers)
-                chainedHeader.InvokeMethod("CalculateChainWork");
-
             foreach (ChainedHeader header in headers.Skip(2))
             {
                 var currentHeaderWork = new BigInteger(header.ChainWork.ToBytes());
