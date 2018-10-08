@@ -173,13 +173,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
-            ChainedHeader initializationTip = this.chain.GetBlock(this.provenBlockHeaderRepository.TipHashHeight.Hash);
-
-            this.storeTip = initializationTip;
-            this.TipHashHeight = new HashHeightPair(this.storeTip);
+            this.storeTip = this.chain.GetBlock(this.provenBlockHeaderRepository.TipHashHeight.Hash);
 
             if (this.storeTip == null)
-                this.storeTip = await this.RecoverStoreTipAsnc().ConfigureAwait(false);
+            {
+                this.storeTip = await this.RecoverStoreTipAsync().ConfigureAwait(false);
+            }
+
+            this.TipHashHeight = new HashHeightPair(this.storeTip);
 
             this.logger.LogDebug("Initialized ProvenBlockHeader block tip at '{0}'.", this.storeTip);
 
@@ -353,7 +354,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ConcurrentChain"/>.
         /// </summary>
-        private async Task<ChainedHeader> RecoverStoreTipAsnc()
+        private async Task<ChainedHeader> RecoverStoreTipAsync()
         {
             uint256 latestBlockHash = this.provenBlockHeaderRepository.TipHashHeight.Hash;
 
