@@ -118,9 +118,9 @@ namespace Stratis.SmartContracts
             this.state.ContractLogger.Log(this.state, toLog);
         }
 
-        /// The fallback method, invoked when a transaction provides a method name of <see cref="string.Empty"/>.
-        /// The fallback method. Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
-        /// Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
+        /// <summary>
+        /// Default method used to handle the receipt of funds. Override this method to define behaviour when the contract receives funds and
+        /// no method name is provided or the method name in the calling transaction equals <see cref="string.Empty"/>.
         /// <para>
         /// This occurs when a contract sends funds to another contract using <see cref="Transfer"/>.
         /// </para>
