@@ -739,7 +739,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
 
             if (!this.connectionManager.ConnectedPeers.Any())
-                throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
+            {
+                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
+            }
 
             try
             {
