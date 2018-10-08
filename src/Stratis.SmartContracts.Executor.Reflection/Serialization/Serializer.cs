@@ -65,7 +65,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return default(bool);
 
-            return this.primitiveSerializer.Deserialize<bool>(val);
+            (bool success, bool result) = this.TryDeserializeValue<bool>(val);
+
+            return success ? result : default(bool);
         }
 
         public Address ToAddress(byte[] val)
@@ -73,7 +75,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return default(Address);
 
-            return this.primitiveSerializer.Deserialize<Address>(val);
+            (bool success, Address result) = this.TryDeserializeValue<Address>(val);
+
+            return success ? result : default(Address);
         }
 
         public int ToInt32(byte[] val)
@@ -84,7 +88,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val.Length != 4)
                 return default(int);
 
-            return this.primitiveSerializer.Deserialize<int>(val);
+            (bool success, int result) = this.TryDeserializeValue<int>(val);
+
+            return success ? result : default(int);
         }
 
         public uint ToUInt32(byte[] val)
@@ -95,7 +101,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val.Length != 4)
                 return default(uint);
 
-            return this.primitiveSerializer.Deserialize<uint>(val);
+            (bool success, uint result) = this.TryDeserializeValue<uint>(val);
+
+            return success ? result : default(uint);
         }
 
         public long ToInt64(byte[] val)
@@ -106,7 +114,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val.Length != 8)
                 return default(long);
 
-            return this.primitiveSerializer.Deserialize<long>(val);
+            (bool success, long result) = this.TryDeserializeValue<long>(val);
+
+            return success ? result : default(long);
         }
 
         public ulong ToUInt64(byte[] val)
@@ -117,7 +127,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val.Length != 8)
                 return default(ulong);
 
-            return this.primitiveSerializer.Deserialize<ulong>(val);
+            (bool success, ulong result) = this.TryDeserializeValue<ulong>(val);
+
+            return success ? result : default(ulong);
         }
 
         public string ToString(byte[] val)
@@ -125,7 +137,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return string.Empty;
 
-            return this.primitiveSerializer.Deserialize<string>(val);
+            (bool success, string result) = this.TryDeserializeValue<string>(val);
+
+            return success ? result : string.Empty;
         }
 
         public T[] ToArray<T>(byte[] val)
@@ -133,7 +147,22 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return new T[0];
 
-            return this.primitiveSerializer.Deserialize<T[]>(val);
+            (bool success, T[] result) = this.TryDeserializeValue<T[]>(val);
+
+            return success ? result : new T[0];
+        }
+
+        private (bool, T) TryDeserializeValue<T>(byte[] val)
+        {
+            try
+            {
+                T deserialized = this.primitiveSerializer.Deserialize<T>(val);
+                return (true, deserialized);
+            }
+            catch (Exception)
+            {
+                return (false, default(T));
+            }
         }
     }
 }
