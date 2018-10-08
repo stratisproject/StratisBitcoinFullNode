@@ -1679,9 +1679,9 @@ namespace NBitcoin
             return true;
         }
 
-        public static bool IsLowDerSignature(byte[] vchSig)
+        public static bool IsLowDerSignature(byte[] vchSig, bool haveSigHash = true)
         {
-            if (!IsValidSignatureEncoding(vchSig))
+            if (!IsValidSignatureEncoding(vchSig, haveSigHash))
             {
                 return false;
             }
@@ -1714,9 +1714,9 @@ namespace NBitcoin
             return true;
         }
 
-        public bool IsLowDERSignature(byte[] vchSig)
+        public bool IsLowDERSignature(byte[] vchSig, bool haveSigHash = true)
         {
-            if(!IsValidSignatureEncoding(vchSig))
+            if(!IsValidSignatureEncoding(vchSig, haveSigHash))
             {
                 this.Error = ScriptError.SigDer;
                 return false;
@@ -1797,7 +1797,7 @@ namespace NBitcoin
         }
 
 
-        public static bool IsValidSignatureEncoding(byte[] sig)
+        public static bool IsValidSignatureEncoding(byte[] sig, bool haveSigHash = true)
         {
             // Format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S] [sighash]
             // * total-length: 1-byte length descriptor of everything that follows,
@@ -1822,7 +1822,7 @@ namespace NBitcoin
                 return false;
 
             // Make sure the length covers the entire signature.
-            if(sig[1] != signLen - 3)
+            if(sig[1] != signLen - (haveSigHash ? 3 : 2))
                 return false;
 
             // Extract the length of the R element.
@@ -1837,7 +1837,7 @@ namespace NBitcoin
 
             // Verify that the length of the signature matches the sum of the length
             // of the elements.
-            if((lenR + lenS + 7) != signLen)
+            if((lenR + lenS + (haveSigHash ? 7 : 6)) != signLen)
                 return false;
 
             // Check whether the R element is an integer.

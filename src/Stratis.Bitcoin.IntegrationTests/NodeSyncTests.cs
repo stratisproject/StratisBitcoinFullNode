@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void CanStratisSyncFromCore()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -189,18 +189,16 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisMiner = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
+                CoreNode stratisMiner = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet();
                 CoreNode stratisSyncer = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
-                CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
+                CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet();
 
                 builder.StartAll();
-                stratisMiner.WithWallet();
-                stratisReorg.WithWallet();
 
                 TestHelper.MineBlocks(stratisMiner, 1);
 
@@ -259,20 +257,18 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </para>
         /// </summary>
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
-        [Fact]
+        [Retry]
         public void PullerVsMinerRaceCondition()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
+                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet();
 
                 // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.posNetwork).NotInIBD();
+                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet();
 
                 builder.StartAll();
-                stratisMinerLocal.WithWallet();
-                stratisMinerRemote.WithWallet();
 
                 // Let's mine block Ap and Bp.
                 TestHelper.MineBlocks(stratisMinerRemote, 2);
@@ -315,28 +311,24 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Network - Node1 - MiningNode
         /// </para>
         /// </summary>
-        [Fact]
+        [Retry]
         public void MiningNodeWithOneConnectionAlwaysSynced()
         {
             string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnectionAlwaysSynced));
 
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(testFolderPath))
             {
-                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
+                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet();
                 minerNode.Start();
-                minerNode.WithWallet();
 
-                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
+                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet();
                 connectorNode.Start();
-                connectorNode.WithWallet();
 
-                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
+                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet();
                 firstNode.Start();
-                firstNode.WithWallet();
 
-                CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork);
+                CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet();
                 secondNode.Start();
-                secondNode.WithWallet();
 
                 TestHelper.Connect(minerNode, connectorNode);
                 TestHelper.Connect(connectorNode, firstNode);

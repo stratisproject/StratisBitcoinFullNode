@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return bytes;
 
             if (o is Array array)
-                return SerializeArray(array);
+                return Serialize(array);
 
             if (o is byte b1)
                 return new byte[] { b1 };
@@ -119,8 +119,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return RLP.EncodeList(toEncode.ToArray());
         }
 
-        private byte[] SerializeArray(Array array)
+        public byte[] Serialize(Array array)
         {
+            // Edge case, serializing nonsensical
+            if (array is byte[] a)
+                return a;
+
             List<byte[]> toEncode = new List<byte[]>();
 
             for(int i=0; i< array.Length; i++)
@@ -223,6 +227,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return Encoding.UTF8.GetString(val);
         }
 
+        public T[] ToArray<T>(byte[] val)
+        {
+            return (T[]) DeserializeArray(typeof(T), val);
+        } 
+
         #endregion
 
         private object DeserializeStruct(Type type, byte[] bytes)
@@ -244,6 +253,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         private object DeserializeArray(Type elementType, byte[] bytes)
         {
+            // Edge case, serializing nonsensical
+            if (elementType == typeof(byte))
+                return bytes;
+
             RLPCollection collection = (RLPCollection)RLP.Decode(bytes)[0];
 
             var ret = Array.CreateInstance(elementType, collection.Count);
