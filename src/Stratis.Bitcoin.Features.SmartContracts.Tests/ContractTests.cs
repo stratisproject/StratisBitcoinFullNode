@@ -278,7 +278,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void HasNoReceive_Returns_Correct_Receive()
         {
             var receiveContract = Contract.CreateUninitialized(typeof(HasNoReceive), this.state, this.address);
-            var receiveInstance = (HasNoReceive)receiveContract.GetPrivateFieldValue("instance");
 
             // ReceiveHandler should be null here because we set the binding flags to only resolve methods on the declared type
             var receiveMethod = ((Contract)receiveContract).ReceiveHandler;
