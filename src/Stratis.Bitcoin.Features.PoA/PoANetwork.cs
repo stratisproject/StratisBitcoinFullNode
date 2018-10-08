@@ -21,8 +21,12 @@ namespace Stratis.Bitcoin.Features.PoA
         /// </remarks>
         public List<PubKey> FederationPublicKeys { get; }
 
+        public int TargetSpacingSeconds { get; }
+
         public PoANetwork()
         {
+            this.TargetSpacingSeconds = 16;
+
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
