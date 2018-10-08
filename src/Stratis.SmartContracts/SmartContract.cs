@@ -42,11 +42,6 @@ namespace Stratis.SmartContracts
         protected readonly ISerializer Serializer;
 
         /// <summary>
-        /// Tracks the gas usage for this contract instance.
-        /// </summary>
-        private readonly IGasMeter gasMeter;
-
-        /// <summary>
         /// Gets the balance of the contract, if applicable.
         /// </summary>
         private readonly Func<ulong> getBalance;
@@ -76,7 +71,6 @@ namespace Stratis.SmartContracts
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
 
-            this.gasMeter = smartContractState.GasMeter;
             this.Block = smartContractState.Block;
             this.getBalance = smartContractState.GetBalance;
             this.contractLogger = smartContractState.ContractLogger;
