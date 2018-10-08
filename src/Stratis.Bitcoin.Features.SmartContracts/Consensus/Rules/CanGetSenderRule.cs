@@ -54,8 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
             // If wanting to execute a contract, we must be able to get the sender.
             if (context.Transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractExec()))
             {
-                // TODO: Task / await here.
-                GetSenderResult result = this.senderRetriever.GetSenderAsync(context.Transaction, context.View).Result;
+                GetSenderResult result = this.senderRetriever.GetSender(context.Transaction, context.View);
                 if (!result.Success)
                     new ConsensusError("cant-get-sender", "smart contract output without a P2PKH as the first input to the tx.").Throw();
             }

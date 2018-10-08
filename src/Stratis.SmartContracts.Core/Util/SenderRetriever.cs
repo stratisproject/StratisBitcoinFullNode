@@ -49,7 +49,7 @@ namespace Stratis.SmartContracts.Core.Util
             return GetSenderResult.CreateFailure("Unable to get the sender of the transaction");
         }
 
-        public async Task<GetSenderResult> GetSenderAsync(Transaction tx, MempoolCoinView coinView)
+        public GetSenderResult GetSender(Transaction tx, MempoolCoinView coinView)
         {
             TxOut output = coinView.GetOutputFor(tx.Inputs[0]);
             return GetAddressFromScript(output.ScriptPubKey);

@@ -21,6 +21,6 @@ namespace Stratis.SmartContracts.Core.Util
         /// <summary>
         /// Get the 'sender' of a transaction in the mempool. Necessary because the MempoolCoinView has a very peculiar API.
         /// </summary>
-        Task<GetSenderResult> GetSenderAsync(Transaction tx, MempoolCoinView coinView);
+        GetSenderResult GetSender(Transaction tx, MempoolCoinView coinView);
     }
 }

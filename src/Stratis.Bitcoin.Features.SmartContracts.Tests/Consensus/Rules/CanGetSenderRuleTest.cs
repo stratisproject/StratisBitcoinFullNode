@@ -53,8 +53,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public void P2PKH_GetSender_Passes()
         {
             var successResult = GetSenderResult.CreateSuccess(new uint160(0));
-            this.senderRetriever.Setup(x => x.GetSenderAsync(It.IsAny<Transaction>(), It.IsAny<MempoolCoinView>()))
-                .Returns(Task.FromResult(successResult));
+            this.senderRetriever.Setup(x => x.GetSender(It.IsAny<Transaction>(), It.IsAny<MempoolCoinView>()))
+                .Returns(successResult);
             this.senderRetriever.Setup(x=> x.GetSender(It.IsAny<Transaction>(), It.IsAny<ICoinView>(), It.IsAny<IList<Transaction>>()))
                 .Returns(successResult);
 
@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public void P2PKH_GetSender_Fails()
         {
             var failResult = GetSenderResult.CreateFailure("String error");
-            this.senderRetriever.Setup(x => x.GetSenderAsync(It.IsAny<Transaction>(), It.IsAny<MempoolCoinView>()))
-                .Returns(Task.FromResult(failResult));
+            this.senderRetriever.Setup(x => x.GetSender(It.IsAny<Transaction>(), It.IsAny<MempoolCoinView>()))
+                .Returns(failResult);
             this.senderRetriever.Setup(x => x.GetSender(It.IsAny<Transaction>(), It.IsAny<ICoinView>(), It.IsAny<IList<Transaction>>()))
                 .Returns(failResult);
 
