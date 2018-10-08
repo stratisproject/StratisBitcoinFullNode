@@ -948,10 +948,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Mine another 2 blocks on node 2 chain up to height 7.
                 TestHelper.MineBlocks(node2, 2);
 
-                // Sync nodes and node 1 reorgs with better blocks.
+                // Nodes 1 syncs with node 2 up to height 7.
                 TestHelper.ConnectAndSync(node1, node2);
 
-                // Call BlockMinedAsync manually.
+                // Call BlockMinedAsync manually with the block that was supposed to have been submitted at height 6.
                 node1.FullNode.ConsensusManager().BlockMinedAsync(newBlock).GetAwaiter().GetResult();
 
                 // Verify that the manually added block is NOT in the consensus chain.
