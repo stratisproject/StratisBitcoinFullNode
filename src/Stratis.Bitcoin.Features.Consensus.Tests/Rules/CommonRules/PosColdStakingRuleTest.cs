@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
@@ -28,6 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// <param name="outputScriptPubKeysDiffer">Tests the scenario where some of the output scriptPubKeys differ.</param>
         /// <param name="badSecondOutput">Tests the scenario where the second output is not an OP_RETURN followed by some data.</param>
         /// <param name="inputsExceedOutputs">Tests the scenario where the input amount exceeds the output amount.</param>
+        /// <param name="inputsWithoutOutputs">Tests the scenario where the some inputs have no incoming outputs.</param>
         /// <param name="expectedError">The error expected by running this test. Set to <c>null</c> if no error is expected.</param>
         private async Task PosColdStakingRuleTestHelperAsync(bool isColdCoinStake, bool inputScriptPubKeysDiffer, bool outputScriptPubKeysDiffer,
             bool badSecondOutput, bool inputsExceedOutputs, bool inputsWithoutOutputs, ConsensusError expectedError)
@@ -49,7 +51,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             prevTransaction.Outputs.Add(new TxOut(25, inputScriptPubKeysDiffer ? scriptPubKey2 : scriptPubKey1));
 
             // Record the spendable outputs.
-            (this.ruleContext as UtxoRuleContext).UnspentOutputSet.Update(prevTransaction, 0);
+            var posRuleContext = this.ruleContext as PosRuleContext;
+            posRuleContext.UnspentOutputSet.Update(prevTransaction, 0);
 
             // Create cold coin stake transaction.
             Transaction coinstakeTransaction = this.network.CreateTransaction();
@@ -86,10 +89,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             Assert.True(BlockStake.IsProofOfStake(block));
 
             this.concurrentChain.SetTip(block.Header);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
 
             // Execute the rule and check the outcome against what is expected.
             var rule = this.CreateRule<PosColdStakingRule>();
+
+            // Initialize the rule context.
+            posRuleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
+            posRuleContext.CoinStakePrevOutputs = coinstakeTransaction.Inputs.ToDictionary(txin => txin, txin => posRuleContext.UnspentOutputSet.GetOutputFor(txin));
+            posRuleContext.TotalCoinStakeValueIn = posRuleContext.CoinStakePrevOutputs.Sum(a => a.Value?.Value ?? 0);
 
             // If an error is expeected then capture the error and compare it against the expected error.
             if (expectedError != null)
