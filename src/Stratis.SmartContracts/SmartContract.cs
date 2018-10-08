@@ -65,21 +65,21 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// The current state of the blockchain and current transaction.
         /// </summary>
-        private readonly ISmartContractState smartContractState;
+        private readonly ISmartContractState state;
 
-        public SmartContract(ISmartContractState smartContractState)
+        public SmartContract(ISmartContractState state)
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
 
-            this.Block = smartContractState.Block;
-            this.getBalance = smartContractState.GetBalance;
-            this.contractLogger = smartContractState.ContractLogger;
-            this.internalTransactionExecutor = smartContractState.InternalTransactionExecutor;
-            this.internalHashHelper = smartContractState.InternalHashHelper;
-            this.Message = smartContractState.Message;
-            this.PersistentState = smartContractState.PersistentState;
-            this.Serializer = smartContractState.Serializer;
-            this.smartContractState = smartContractState;
+            this.Block = state.Block;
+            this.getBalance = state.GetBalance;
+            this.contractLogger = state.ContractLogger;
+            this.internalTransactionExecutor = state.InternalTransactionExecutor;
+            this.internalHashHelper = state.InternalHashHelper;
+            this.Message = state.Message;
+            this.PersistentState = state.PersistentState;
+            this.Serializer = state.Serializer;
+            this.state = state;
         }
 
         /// <summary>
@@ -91,7 +91,7 @@ namespace Stratis.SmartContracts
         /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
         protected ITransferResult Transfer(Address addressTo, ulong amountToTransfer)
         {
-            return this.internalTransactionExecutor.Transfer(this.smartContractState, addressTo, amountToTransfer);
+            return this.internalTransactionExecutor.Transfer(this.state, addressTo, amountToTransfer);
         }
 
         /// <summary>
@@ -104,7 +104,7 @@ namespace Stratis.SmartContracts
         /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
         protected ITransferResult Call(Address addressTo, ulong amountToTransfer, string methodName, object[] parameters = null, ulong gasLimit = 0)
         {
-            return this.internalTransactionExecutor.Call(this.smartContractState, addressTo, amountToTransfer, methodName, parameters, gasLimit);
+            return this.internalTransactionExecutor.Call(this.state, addressTo, amountToTransfer, methodName, parameters, gasLimit);
         }
 
         /// <summary>
@@ -116,7 +116,7 @@ namespace Stratis.SmartContracts
         /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
         protected ICreateResult Create<T>(ulong amountToTransfer = 0, object[] parameters = null, ulong gasLimit = 0) where T : SmartContract
         {
-            return this.internalTransactionExecutor.Create<T>(this.smartContractState, amountToTransfer, parameters, gasLimit);
+            return this.internalTransactionExecutor.Create<T>(this.state, amountToTransfer, parameters, gasLimit);
         }
 
 
@@ -146,7 +146,7 @@ namespace Stratis.SmartContracts
         /// <param name="toLog">Object with fields to save in logs.</param>
         protected void Log<T>(T toLog) where T : struct
         {
-            this.contractLogger.Log(this.smartContractState, toLog);
+            this.contractLogger.Log(this.state, toLog);
         }
 
         /// The fallback method, invoked when a transaction provides a method name of <see cref="string.Empty"/>.

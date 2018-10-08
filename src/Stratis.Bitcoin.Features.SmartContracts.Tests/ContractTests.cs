@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalHashHelper = this.instance.GetBaseTypePrivateFieldValue("internalHashHelper");
             var message = this.instance.GetBaseTypePrivateFieldValue("Message");
             var persistentState = this.instance.GetBaseTypePrivateFieldValue("PersistentState");
-            var smartContractState = this.instance.GetBaseTypePrivateFieldValue("smartContractState");
+            var smartContractState = this.instance.GetBaseTypePrivateFieldValue("state");
 
             Assert.NotNull(gasMeter);
             Assert.Equal(this.state.GasMeter, gasMeter);
@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var internalHashHelper = receiveInstance.GetBaseTypePrivateFieldValue("internalHashHelper");
             var message = receiveInstance.GetBaseTypePrivateFieldValue("Message");
             var persistentState = receiveInstance.GetBaseTypePrivateFieldValue("PersistentState");
-            var smartContractState = receiveInstance.GetBaseTypePrivateFieldValue("smartContractState");
+            var smartContractState = receiveInstance.GetBaseTypePrivateFieldValue("state");
 
             Assert.NotNull(gasMeter);
             Assert.Equal(this.state.GasMeter, gasMeter);
