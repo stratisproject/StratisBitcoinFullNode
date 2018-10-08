@@ -10,6 +10,24 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
+    /// <summary>
+    /// Saves blocks to the database in batches.
+    /// </summary>
+    /// <remarks>
+    /// <para>
+    /// The batch is saved to the database and cleared every minute.
+    /// </para>
+    /// <para>
+    /// Items in the batch are also saved to the least recently used <see cref="MemorySizeCache"/>.  This cache has a memory size limit (<see cref="MemoryCacheSizeLimitInBytes"/>) of 100MB.
+    /// </para>
+    /// <para>
+    /// When we save new blocks to the database, in case <see cref="IProvenBlockHeaderRepository"/> contains blocks that
+    /// are no longer a part of our best chain, they are removed from the database.
+    /// </para>
+    /// <para>
+    /// When <see cref="ProvenBlockHeaderStore"/> is being initialized we overwrite blocks that are not on the best chain.
+    /// </para>
+    /// </remarks>
     public class ProvenBlockHeaderStore : IProvenBlockHeaderStore
     {
         /// <summary>
@@ -46,6 +64,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Current block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
         /// </summary>
         public HashHeightPair TipHashHeight { get; private set; }
+
+        /// <summary>The highest stored block in the repository.</summary>
+        private ChainedHeader storeTip;
 
         /// <summary>
         /// Pending - not yet saved to disk - block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
@@ -132,21 +153,38 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.asyncLoopFactory = asyncLoopFactory;
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 400);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark);
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
-        /// <inheritdoc />
+        /// <summary>
+        /// Initializes the <see cref="ProvenBlockHeaderStore"/>.
+        /// <para>
+        /// If <see cref="storeTip"/> is <c>null</c>, the store is out of sync. This can happen when:</para>
+        /// <list>
+        ///     <item>The node crashed.</item>
+        ///     <item>The node was not closed down properly.</item>
+        /// </list>
+        /// <para>
+        /// To recover we walk back the chain until a common block header is found and then set the <see cref="ProvenBlockHeaderStore"/>'s <see cref="storeTip"/> to that.
+        /// </para>
+        /// </summary>
         public async Task InitializeAsync()
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
-            this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
+            ChainedHeader initializationTip = this.chain.GetBlock(this.provenBlockHeaderRepository.TipHashHeight.Hash);
 
-            this.logger.LogDebug("Initialized ProvenBlockHader block tip at '{0}'.", this.TipHashHeight);
+            this.storeTip = initializationTip;
+            this.TipHashHeight = new HashHeightPair(this.storeTip);
+
+            if (this.storeTip == null)
+                this.storeTip = await this.RecoverStoreTipAsnc().ConfigureAwait(false);
+
+            this.logger.LogDebug("Initialized ProvenBlockHeader block tip at '{0}'.", this.storeTip);
 
             this.asyncLoop = this.asyncLoopFactory.Run("ProvenBlockHeaders job", async token =>
             {
-                // Save pending items.
                 await this.SaveAsync().ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)[IN_ASYNC_LOOP]");
@@ -271,10 +309,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="IProvenBlockHeaderRepository"/>.
-        /// <para>
-        /// It will also remove the items from the <see cref="PendingBatch"/>.
-        /// </para>
+        /// Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="IProvenBlockHeaderRepository"/>, then removes them from the pending batch.
         /// </summary>
         private async Task SaveAsync()
         {
@@ -296,36 +331,91 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = null;
             }
 
+            // Make sure the block height keys, within the pendingBatch, are in sequence.
             List<int> sortedBlockHeights = pendingBatch.OrderBy(s => s.Key).Select(s => s.Key).ToList();
 
             if (!sortedBlockHeights.SequenceEqual(pendingBatch.Select(s => s.Key)))
             {
                 this.logger.LogTrace("(-)[PENDING_BATCH_INCORRECT_SEQEUNCE]");
 
-                throw new InvalidOperationException("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
+                throw new ProvenHeaderStoreException("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
             }
 
+            // Save the items to disk.
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
-                // Save the items to disk.
                 await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Select(items => items.Value).ToList(), hashHeight);
 
                 this.TipHashHeight = hashHeight;
             }
         }
 
+        /// <summary>
+        /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ConcurrentChain"/>.
+        /// </summary>
+        private async Task<ChainedHeader> RecoverStoreTipAsnc()
+        {
+            uint256 latestBlockHash = this.provenBlockHeaderRepository.TipHashHeight.Hash;
+
+            ProvenBlockHeader latestHeader = await this.provenBlockHeaderRepository.GetAsync(Convert.ToInt32(latestBlockHash));
+
+            while (this.chain.GetBlock(latestBlockHash) == null)
+            {
+                if (latestHeader.HashPrevBlock == this.chain.Genesis.HashBlock)
+                {
+                    latestBlockHash = this.chain.Genesis.HashBlock;
+                    break;
+                }
+
+                latestHeader = await this.provenBlockHeaderRepository.GetAsync(Convert.ToInt32(latestHeader.HashPrevBlock)).ConfigureAwait(false);
+
+                if (latestHeader == null)
+                {
+                    // Happens when the proven block header store is corrupt.
+                    throw new ProvenHeaderStoreException("Proven block header store failed to recover.");
+                }
+
+                latestBlockHash = latestHeader.GetHash();
+            }
+
+            ChainedHeader newTip = this.chain.GetBlock(latestBlockHash);
+
+            this.logger.LogWarning("Proven block header store tip recovered to block '{0}'.", newTip);
+
+            return newTip;
+        }
+
         private void AddBenchStats(StringBuilder benchLog)
         {
-            benchLog.AppendLine("======ProvenBlockHeaderStore Bench======");
+            if (this.storeTip != null)
+            {
+                benchLog.AppendLine("======ProvenBlockHeaderStore Bench======");
 
-            BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
+                BackendPerformanceSnapshot snapShot = this.performanceCounter.Snapshot();
 
-            if (this.latestPerformanceSnapShot == null)
-                benchLog.AppendLine(snapShot.ToString());
-            else
-                benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
+                if (this.latestPerformanceSnapShot == null)
+                    benchLog.AppendLine(snapShot.ToString());
+                else
+                    benchLog.AppendLine((snapShot - this.latestPerformanceSnapShot).ToString());
 
-            this.latestPerformanceSnapShot = snapShot;
+                this.latestPerformanceSnapShot = snapShot;
+            }
+
+            this.PendingBatch.Sum(p => p.Value.HeaderSize);
+        }
+
+        private void AddComponentStats(StringBuilder log)
+        {
+            long totalBytes = this.PendingBatch.Sum(p => p.Value.HeaderSize);
+
+            decimal totalInMB = Convert.ToDecimal(totalBytes / Math.Pow(2, 20));
+
+            if ((this.storeTip != null) && (totalBytes > 0))
+            {
+                log.AppendLine();
+                log.AppendLine("======ProvenBlockHeaderStore======");
+                log.AppendLine($"Batch Size: {Math.Round(totalInMB, 2)} Mb ({this.PendingBatch.Count} headers)");
+            }
         }
 
         /// <inheritdoc />
