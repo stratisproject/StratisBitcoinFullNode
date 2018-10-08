@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(KnownNetworks.TestNet));
             dnsSettings.DnsHostName = "stratis.test.com";
 
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, null, dnsSettings, this.peerBanning); };
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(KnownNetworks.TestNet));
             dnsSettings.DnsHostName = "stratis.test.com";
 
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, null, dnsSettings, this.peerBanning); };
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(KnownNetworks.TestNet));
             dnsSettings.DnsHostName = "stratis.test.com";
             ConnectionManagerSettings connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(KnownNetworks.TestNet));
 
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .Verifiable();
 
             NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(KnownNetworks.TestNet));
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Network network = KnownNetworks.StratisTest;
             var nodeSettings = new NodeSettings(network, args: args);
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(KnownNetworks.TestNet));
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             dnsSettings.DnsFullNode = false;
@@ -387,7 +387,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Network network = KnownNetworks.StratisTest;
             var nodeSettings = new NodeSettings(network, args: args);
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(KnownNetworks.TestNet));
             dnsSettings.DnsFullNode = true;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
@@ -479,7 +479,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .Verifiable();
 
             NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(KnownNetworks.TestNet));
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
@@ -580,7 +580,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Directory.CreateDirectory(dataFolderDirectory);
 
-            var peerFolder = new DataFolder(new NodeSettings(args: new string[] { $"-datadir={dataFolderDirectory}" }).DataDir);
+            var peerFolder = new DataFolder(new NodeSettings(KnownNetworks.TestNet, args: new string[] { $"-datadir={dataFolderDirectory}" }).DataDir);
 
             var mockLogger = new Mock<ILogger>();
             var mockLoggerFactory = new Mock<ILoggerFactory>();

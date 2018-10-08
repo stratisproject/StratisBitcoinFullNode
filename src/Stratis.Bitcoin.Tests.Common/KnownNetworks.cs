@@ -19,10 +19,5 @@ namespace Stratis.Bitcoin.Tests.Common
         public static Network StratisTest => NetworkRegistration.GetNetwork("StratisTest") ?? NetworkRegistration.Register(new StratisTest());
 
         public static Network StratisRegTest => NetworkRegistration.GetNetwork("StratisRegTest") ?? NetworkRegistration.Register(new StratisRegTest());
-
-        public static NodeSettings Default(this NodeSettings nodeSettings, Network network = null, ProtocolVersion protocolVersion = ProtocolVersion.SENDHEADERS_VERSION)
-        {
-            return new NodeSettings(network ?? KnownNetworks.Main, protocolVersion);
-        }
     }
 }

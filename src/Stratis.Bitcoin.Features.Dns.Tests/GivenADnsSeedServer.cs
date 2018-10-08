@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir=C:\\" });
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir=C:\\" });
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), null); };
 
             // Act and Assert.
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -306,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -382,7 +382,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             asyncLoopFactory.Setup(f => f.Run(It.IsAny<string>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<TimeSpan?>(), It.IsAny<TimeSpan?>())).Returns(new Mock<IAsyncLoop>().Object);
             
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -499,7 +499,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             asyncLoopFactory.Setup(f => f.Run(It.IsAny<string>(), It.IsAny<Func<CancellationToken, Task>>(), It.IsAny<TimeSpan?>(), It.IsAny<TimeSpan?>())).Returns(new Mock<IAsyncLoop>().Object);
 
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -566,7 +566,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
 
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -604,7 +604,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
 
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
@@ -646,7 +646,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "host.example.com";
             dnsSettings.DnsNameServer = "ns1.host.example.com";
             dnsSettings.DnsMailBox = "admin@host.example.com";
