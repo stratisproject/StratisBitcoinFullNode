@@ -1,4 +1,4 @@
-# Suggestion for cross-chain transfers mechanism
+# Suggestions for cross-chain transfers mechanism
 
 ### Overview
 
@@ -122,3 +122,8 @@ The leader role will be assigned round-robin to each member in turn, following t
 
 5. In general, there is a UTXO bandwidth issue due to the ancestor transaction limit in a block. In other words, per UTXO per block, there are a finite number of transactions that could potentially be constructed from it, no matter what value the UTXO itself has.
 
+6. What happens when there is a reorg on the target chain ?
+
+    - After a reorg happens on a chain, the node monitoring that chain will trigger a resync of all the cross chain transactions that may have been affected by the reorg. This can be very similar to what happens when a node comes back online and has to trace back all the transactions it has missed.  
+    It is possible that the whole federation has to reorg (especially on the mainchain), this implies that the whole federation will have to cancel the status of the transactions they had seen on chain after the reorg point, and start rebuilding them from scratch, as if they had been offline for a while.
+    If only a small fraction of the federation has to reorg, chances are that the rest of the federation will already have put these transactions on chain and not much will need to happen.

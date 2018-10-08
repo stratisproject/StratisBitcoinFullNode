@@ -74,6 +74,16 @@ NB : This could be an isolated test, but could also be something that we check o
 9. The leader is online and has enough signatures to propagate the transaction.
 10. 5.6.7. from XCT-1
 
+### XCT-6 One part of the federation goes rogue and sends bad cross chain transfers
+
+1. 1.2. from XCT-1
+2. One or more members agree on sending a different version of the transaction representing the cross chain transfer. The leader is part of them.
+3. The honest part of the federation sends the correct transaction (which respects the deterministic creation process).
+4. On the honest nodes, the wrong transaction is not accepted.
+5. The wrong transaction does not make it to the mempool, lacking signatures.
+6. On the next leader round, enough signatures have been collected from honest memebers and the transaction goes to the mempool.
+7. 5.6.7. from XCT-1
+
 ## Sidechain transfers
 -----------------------------
 
