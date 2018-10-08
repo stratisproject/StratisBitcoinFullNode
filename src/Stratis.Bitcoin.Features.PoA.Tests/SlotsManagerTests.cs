@@ -69,6 +69,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             roundStart += this.network.TargetSpacingSeconds * (uint) fedKeys.Count;
             Assert.Equal(roundStart + network.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - 5));
+            Assert.Equal(roundStart + network.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - network.TargetSpacingSeconds + 1));
+
+            Assert.True(this.slotsManager.IsValidTimestamp(this.slotsManager.GetMiningTimestamp(roundStart - 5)));
         }
 
         private class TestPoANetwork : PoANetwork

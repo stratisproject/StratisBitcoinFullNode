@@ -8,8 +8,10 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
-    // TODO POA add comment
-    // TODO POA logs
+    /// <summary>
+    /// Provider of information about which pubkey should be used at which timestamp
+    /// and what is the next timestamp at which current node will be able to mine.
+    /// </summary>
     public class SlotsManager
     {
         private readonly PoANetwork network;
@@ -47,39 +49,40 @@ namespace Stratis.Bitcoin.Features.PoA
             return keys[currentSlotNumber];
         }
 
-        /// <summary>
-        /// Gets next timestamp at which node can produce a block.
-        /// </summary>
+        /// <summary>Gets next timestamp at which current node can produce a block.</summary>
         /// <exception cref="Exception">Thrown if this node is not a federation member.</exception>
         public uint GetMiningTimestamp(uint currentTime)
         {
             if (!this.federationManager.IsFederationMember)
                 throw new Exception("Not a federation member!");
 
+            // Round length in seconds.
             uint roundTime = this.GetRoundLengthSeconds();
+
+            // Index of a slot that current node can take in each round.
             uint slotIndex = (uint)this.network.FederationPublicKeys.IndexOf(this.federationManager.FederationMemberKey.PubKey);
 
             // Time when current round started.
             uint roundStartTimestamp = (currentTime / roundTime) * roundTime;
-            uint myTimestamp = roundStartTimestamp + slotIndex * this.network.TargetSpacingSeconds;
+            uint timestamp = roundStartTimestamp + slotIndex * this.network.TargetSpacingSeconds;
 
-            if (myTimestamp < currentTime)
+            if (timestamp < currentTime)
             {
                 // Get timestamp from next round.
-                myTimestamp = roundStartTimestamp + roundTime + slotIndex * this.network.TargetSpacingSeconds;
+                timestamp = roundStartTimestamp + roundTime + slotIndex * this.network.TargetSpacingSeconds;
             }
 
-            return myTimestamp;
+            return timestamp;
         }
 
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
-            return headerUnixTimestamp % this.network.TargetSpacingSeconds == 0;
+            return (headerUnixTimestamp % this.network.TargetSpacingSeconds) == 0;
         }
 
         private uint GetRoundLengthSeconds()
         {
-            uint roundLength = (uint)this.network.FederationPublicKeys.Count * this.network.TargetSpacingSeconds;
+            uint roundLength = (uint)(this.network.FederationPublicKeys.Count * this.network.TargetSpacingSeconds);
 
             return roundLength;
         }
