@@ -77,6 +77,12 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>Manager of node's network connections.</summary>
         private readonly IConnectionManager connectionManager;
 
+
+        /// <summary>
+        /// Instance of the UnreliablePeerBehavior to the connectionManager Template.
+        /// </summary>
+        private readonly UnreliablePeerBehavior unreliablePeerBehavior;
+
         /// <summary>
         /// The async loop to refresh the whitelist.
         /// </summary>
@@ -87,10 +93,6 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         private bool disposed = false;
 
-        /// <summary>
-        /// The service provider that allows getting required services.
-        /// </summary>
-        private IFullNodeServiceProvider services;
 
         /// <summary>
         /// Initializes a new instance of the <see cref="DnsFeature"/> class.
@@ -104,7 +106,8 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <param name="dataFolders">The data folders of the system.</param>
         /// <param name="asyncLoopFactory">The asynchronous loop factory.</param>
         /// <param name="connectionManager">Manager of node's network connections.</param>
-        public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, DnsSettings dnsSettings, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncLoopFactory asyncLoopFactory, IConnectionManager connectionManager)
+        /// <param name="unreliablePeerBehavior">Instance of the UnreliablePeerBehavior that will be added to the connectionManager Template.</param>
+        public DnsFeature(IDnsServer dnsServer, IWhitelistManager whitelistManager, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime, DnsSettings dnsSettings, NodeSettings nodeSettings, DataFolder dataFolders, IAsyncLoopFactory asyncLoopFactory, IConnectionManager connectionManager, UnreliablePeerBehavior unreliablePeerBehavior)
         {
             Guard.NotNull(dnsServer, nameof(dnsServer));
             Guard.NotNull(whitelistManager, nameof(whitelistManager));
@@ -114,6 +117,7 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(dataFolders, nameof(dataFolders));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(connectionManager, nameof(connectionManager));
+            Guard.NotNull(unreliablePeerBehavior, nameof(unreliablePeerBehavior));
 
             this.dnsServer = dnsServer;
             this.whitelistManager = whitelistManager;
@@ -124,6 +128,7 @@ namespace Stratis.Bitcoin.Features.Dns
             this.dnsSettings = dnsSettings;
             this.dataFolders = dataFolders;
             this.connectionManager = connectionManager;
+            this.unreliablePeerBehavior = unreliablePeerBehavior;
         }
 
         /// <summary>
@@ -136,9 +141,8 @@ namespace Stratis.Bitcoin.Features.Dns
 
             this.StartWhitelistRefreshLoop();
 
-            IServiceProvider serviceProvider = this.services.ServiceProvider;
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.TemplateBehaviors.Add(serviceProvider.GetService<UnreliablePeerBehavior>());
+            connectionParameters.TemplateBehaviors.Add(this.unreliablePeerBehavior);
 
             return Task.CompletedTask;
         }
@@ -247,15 +251,6 @@ namespace Stratis.Bitcoin.Features.Dns
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromSeconds(30));
-        }
-
-        /// <inheritdoc />
-        public override void ValidateDependencies(IFullNodeServiceProvider services)
-        {
-            //TODO: this property should be exposed by FullNodeFeature base class as protected
-            this.services = services;
-
-            services.EnsureServiceIsRegistered<Network>();
         }
     }
 }

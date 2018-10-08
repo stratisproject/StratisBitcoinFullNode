@@ -84,16 +84,17 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <returns>A <see cref="Task"/> representing the asynchronous operation.</returns>
         private Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            if (message.Message.Payload is VersionPayload version)
+            switch (message.Message.Payload)
             {
-                // If current node is on POS, and ProvenHeaders is activated, check if current connected peer can serve Proven Headers.
-                // If it can't, disconnect from him and ban for few minutes
-                if (this.IsProvenHeaderActivated() && !this.CanServeProvenHeader(version))
-                {
-                    TimeSpan banDuration = TimeSpan.FromMinutes(1);
-                    this.logger.LogDebug("Peer '{0}' has been banned for {1} because can't serve proven headers. Peer Version: {2}", peer.RemoteSocketEndpoint, banDuration, version.Version);
-                    this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Can't serve proven headers.");
-                }
+                case VersionPayload version:
+                    // If current node is on POS, and ProvenHeaders is activated, check if current connected peer can serve Proven Headers.
+                    // If it can't, disconnect from him and ban for few minutes
+                    if (this.IsProvenHeaderActivated() && !this.CanServeProvenHeader(version))
+                    {
+                        this.logger.LogDebug("Peer '{0}' has been banned because can't serve proven headers. Peer Version: {1}", peer.RemoteSocketEndpoint, version.Version);
+                        this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Can't serve proven headers.");
+                    }
+                    break;
             }
 
             return Task.CompletedTask;

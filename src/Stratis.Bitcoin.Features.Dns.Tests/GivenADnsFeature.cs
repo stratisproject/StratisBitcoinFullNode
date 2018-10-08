@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
@@ -23,19 +24,79 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     /// </summary>
     public class GivenADnsFeature : TestBase
     {
-        private readonly NetworkPeerConnectionParameters networkPeerParameters;
+        private class ConstructorParameters
+        {
+            public Mock<IDnsServer> dnsServer;
+            public Mock<IWhitelistManager> whitelistManager;
+            public Mock<ILoggerFactory> loggerFactory;
+            public Mock<INodeLifetime> nodeLifetime;
+            public Mock<DnsSettings> dnsSettings;
+            public NodeSettings nodeSettings;
+            public DataFolder dataFolder;
+            public IAsyncLoopFactory asyncLoopFactory;
+            public Mock<IConnectionManager> connectionManager;
+            public UnreliablePeerBehavior unreliablePeerBehavior;
+
+            public ConstructorParameters()
+            {
+                this.dnsServer = new Mock<IDnsServer>();
+                this.whitelistManager = new Mock<IWhitelistManager>();
+
+                var logger = new Mock<ILogger>(MockBehavior.Loose);
+                this.loggerFactory = new Mock<ILoggerFactory>();
+                this.loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
+
+                this.nodeLifetime = new Mock<INodeLifetime>();
+                this.dnsSettings = new Mock<DnsSettings>();
+                this.nodeSettings = NodeSettings.Default();
+                this.dataFolder = CreateDataFolder(this);
+                this.asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
+                this.connectionManager = this.BuildConnectionManager();
+                this.unreliablePeerBehavior = this.BuildUnreliablePeerBehavior();
+            }
+
+            private Mock<IConnectionManager> BuildConnectionManager()
+            {
+                NetworkPeerConnectionParameters networkPeerParameters = new NetworkPeerConnectionParameters();
+                Mock<IConnectionManager> connectionManager = new Mock<IConnectionManager>();
+                connectionManager.SetupGet(np => np.Parameters).Returns(networkPeerParameters);
+                connectionManager.SetupGet(np => np.ConnectedPeers).Returns(new NetworkPeerCollection());
+                return connectionManager;
+            }
+
+            private UnreliablePeerBehavior BuildUnreliablePeerBehavior()
+            {
+                IChainState chainState = new Mock<IChainState>().Object;
+                IPeerBanning peerBanning = new Mock<IPeerBanning>().Object;
+                return new UnreliablePeerBehavior(KnownNetworks.StratisMain, chainState, this.loggerFactory.Object, peerBanning, this.nodeSettings);
+            }
+        }
+
+        private readonly ConstructorParameters defaultConstructorParameters;
 
         public GivenADnsFeature() : base(KnownNetworks.Main)
         {
-            this.networkPeerParameters = new NetworkPeerConnectionParameters();
+            this.defaultConstructorParameters = new ConstructorParameters();
         }
 
-        private IConnectionManager GetConnectionManager()
+        /// <summary>
+        /// Builds the default DNS feature using default constructor parameters.
+        /// </summary>
+        /// <returns>DnsFeature instance.</returns>
+        private DnsFeature BuildDefaultDnsFeature()
         {
-            Mock<IConnectionManager> connectionManager = new Mock<IConnectionManager>();
-            connectionManager.SetupGet(np => np.Parameters).Returns(this.networkPeerParameters);
-            connectionManager.SetupGet(np => np.ConnectedPeers).Returns(new NetworkPeerCollection());
-            return connectionManager.Object;
+            return new DnsFeature(
+                this.defaultConstructorParameters.dnsServer?.Object,
+                this.defaultConstructorParameters.whitelistManager?.Object,
+                this.defaultConstructorParameters.loggerFactory?.Object,
+                this.defaultConstructorParameters.nodeLifetime?.Object,
+                this.defaultConstructorParameters.dnsSettings?.Object,
+                this.defaultConstructorParameters.nodeSettings,
+                this.defaultConstructorParameters.dataFolder,
+                this.defaultConstructorParameters.asyncLoopFactory,
+                this.defaultConstructorParameters.connectionManager?.Object,
+                this.defaultConstructorParameters.unreliablePeerBehavior
+            );
         }
 
         [Fact]
@@ -43,16 +104,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenConstructorCalled_AndDnsServerIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
-            DataFolder dataFolder = CreateDataFolder(this);
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-            IConnectionManager connectionManager = GetConnectionManager();
-
-            Action a = () => { new DnsFeature(null, whitelistManager, loggerFactory, nodeLifetime, dnsSettings, nodeSettings, dataFolder, asyncLoopFactory, connectionManager); };
+            this.defaultConstructorParameters.dnsServer = null;
+            Action a = () => this.BuildDefaultDnsFeature();
 
             // Act and Assert.
             a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dnsServer");
@@ -63,15 +116,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenConstructorCalled_AndWhiteListManagerIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DataFolder dataFolder = CreateDataFolder(this);
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-            IConnectionManager connectionManager = GetConnectionManager();
-
-            Action a = () => { new DnsFeature(dnsServer, null, loggerFactory, nodeLifetime, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager); };
+            this.defaultConstructorParameters.whitelistManager = null;
+            Action a = () => this.BuildDefaultDnsFeature();
 
             // Act and Assert.
             a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("whitelistManager");
@@ -82,15 +128,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenConstructorCalled_AndLoggerFactoryIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
-            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DataFolder dataFolder = CreateDataFolder(this);
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-            IConnectionManager connectionManager = GetConnectionManager();
-
-            Action a = () => { new DnsFeature(dnsServer, whitelistManager, null, nodeLifetime, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager); };
+            this.defaultConstructorParameters.loggerFactory = null;
+            Action a = () => this.BuildDefaultDnsFeature();
 
             // Act and Assert.
             a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("loggerFactory");
@@ -101,16 +140,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenConstructorCalled_AndNodeLifetimeIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
-            IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DataFolder dataFolder = CreateDataFolder(this);
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-            IConnectionManager connectionManager = GetConnectionManager();
-
-            Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, null, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager); };
+            this.defaultConstructorParameters.nodeLifetime = null;
+            Action a = () => this.BuildDefaultDnsFeature();
 
             // Act and Assert.
             a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("nodeLifetime");
@@ -121,16 +152,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenConstructorCalled_AndNodeSettingsIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DataFolder dataFolder = CreateDataFolder(this);
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-            IConnectionManager connectionManager = GetConnectionManager();
-
-            Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetime, new DnsSettings(nodeSettings), null, dataFolder, asyncLoopFactory, connectionManager); };
+            this.defaultConstructorParameters.nodeSettings = null;
+            Action a = () => this.BuildDefaultDnsFeature();
 
             // Act and Assert.
             a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("nodeSettings");
@@ -138,19 +161,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
         [Fact]
         [Trait("DNS", "UnitTest")]
-        public void WhenConstructorCalled_AnddataFolderIsNull_ThenArgumentNullExceptionIsThrown()
+        public void WhenConstructorCalled_AndDataFolderIsNull_ThenArgumentNullExceptionIsThrown()
         {
             // Arrange.
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = new Mock<NodeSettings>(null, NodeSettings.SupportedProtocolVersion, "StratisBitcoin", null).Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-            IConnectionManager connectionManager = GetConnectionManager();
-
-            Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetime, dnsSettings, nodeSettings, null, asyncLoopFactory, connectionManager); };
+            this.defaultConstructorParameters.dataFolder = null;
+            Action a = () => this.BuildDefaultDnsFeature();
 
             // Act and Assert.
             a.Should().Throw<ArgumentNullException>().Which.Message.Should().Contain("dataFolder");
@@ -161,17 +176,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenConstructorCalled_AndAllParametersValid_ThenTypeCreated()
         {
             // Arrange.
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
-            INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DataFolder dataFolder = CreateDataFolder(this);
-            ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
-            IConnectionManager connectionManager = GetConnectionManager();
-
-            // Act.
-            var feature = new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetime, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager);
+            var feature = this.BuildDefaultDnsFeature();
 
             // Assert.
             feature.Should().NotBeNull();
@@ -182,43 +187,24 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenDnsFeatureInitialized_ThenDnsServerSuccessfullyStarts()
         {
             // Arrange.
-            var dnsServer = new Mock<IDnsServer>();
             var waitObject = new ManualResetEventSlim(false);
             Action<int, CancellationToken> action = (port, token) =>
             {
                 waitObject.Set();
                 throw new OperationCanceledException();
             };
-            dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-
-            var whitelistManager = new Mock<IWhitelistManager>();
-
-            var nodeLifetime = new Mock<INodeLifetime>();
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
-            DataFolder dataFolder = CreateDataFolder(this);
-
-            var logger = new Mock<ILogger>(MockBehavior.Loose);
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
-
-            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
-            IConnectionManager connectionManager = GetConnectionManager();
-
-
+            this.defaultConstructorParameters.dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
+            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
 
             // Act.
-            var feature = new DnsFeature(dnsServer.Object, whitelistManager.Object, loggerFactory.Object, nodeLifetime.Object, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager);
-
-            var services = new FullNodeServiceProvider(new ServiceCollection().BuildServiceProvider(), new System.Collections.Generic.List<Type>());
-            feature.SetPrivateVariableValue("services", services);
-
+            var feature = this.BuildDefaultDnsFeature();
             feature.InitializeAsync().GetAwaiter().GetResult();
             bool waited = waitObject.Wait(5000);
 
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+            this.defaultConstructorParameters.dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -226,7 +212,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenDnsFeatureStopped_ThenDnsServerSuccessfullyStops()
         {
             // Arrange.
-            var dnsServer = new Mock<IDnsServer>();
             Action<int, CancellationToken> action = (port, token) =>
             {
                 while (true)
@@ -235,41 +220,26 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                     Thread.Sleep(50);
                 }
             };
-            dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-
-            var mockWhitelistManager = new Mock<IWhitelistManager>();
-            IWhitelistManager whitelistManager = mockWhitelistManager.Object;
+            this.defaultConstructorParameters.dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
 
             var source = new CancellationTokenSource();
-            var nodeLifetime = new Mock<INodeLifetime>();
-            nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
-            nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
-            INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
+            this.defaultConstructorParameters.nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
+            this.defaultConstructorParameters.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
 
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
-            DataFolder dataFolder = CreateDataFolder(this);
+            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
 
-            var logger = new Mock<ILogger>(MockBehavior.Loose);
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
-
-            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
-            IConnectionManager connectionManager = GetConnectionManager();
+            //IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
 
             // Act.
-            var feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetimeObject, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager);
-
-            var services = new FullNodeServiceProvider(new ServiceCollection().BuildServiceProvider(), new System.Collections.Generic.List<Type>());
-            feature.SetPrivateVariableValue("services", services);
-
+            var feature = this.BuildDefaultDnsFeature();
             feature.InitializeAsync().GetAwaiter().GetResult();
-            nodeLifetimeObject.StopApplication();
+            this.defaultConstructorParameters.nodeLifetime.Object.StopApplication();
             bool waited = source.Token.WaitHandle.WaitOne(5000);
 
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
+            this.defaultConstructorParameters.dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.Once);
         }
 
         [Fact]
@@ -277,47 +247,32 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenDnsServerFailsToStart_ThenDnsFeatureRetries()
         {
             // Arrange.
-            var dnsServer = new Mock<IDnsServer>();
             Action<int, CancellationToken> action = (port, token) =>
             {
                 throw new ArgumentException("Bad port");
             };
-            dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-
-            var mockWhitelistManager = new Mock<IWhitelistManager>();
-            IWhitelistManager whitelistManager = mockWhitelistManager.Object;
+            this.defaultConstructorParameters.dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
 
             var source = new CancellationTokenSource(3000);
-            var nodeLifetime = new Mock<INodeLifetime>();
-            nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
-            nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
-            INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
+            this.defaultConstructorParameters.nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
+            this.defaultConstructorParameters.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
 
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
-            DataFolder dataFolder = CreateDataFolder(this);
+            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
 
             var logger = new Mock<ILogger>();
             bool serverError = false;
             logger.Setup(l => l.Log(LogLevel.Error, It.IsAny<EventId>(), It.IsAny<FormattedLogValues>(), It.IsAny<Exception>(), It.IsAny<Func<object, Exception, string>>())).Callback<LogLevel, EventId, object, Exception, Func<object, Exception, string>>((level, id, state, e, f) => serverError = state.ToString().StartsWith("Failed whilst running the DNS server"));
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
-
-            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
-            IConnectionManager connectionManager = GetConnectionManager();
+            this.defaultConstructorParameters.loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
             // Act.
-            var feature = new DnsFeature(dnsServer.Object, whitelistManager, loggerFactory.Object, nodeLifetimeObject, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager);
-
-            var services = new FullNodeServiceProvider(new ServiceCollection().BuildServiceProvider(), new System.Collections.Generic.List<Type>());
-            feature.SetPrivateVariableValue("services", services);
-
+            var feature = this.BuildDefaultDnsFeature();
             feature.InitializeAsync().GetAwaiter().GetResult();
             bool waited = source.Token.WaitHandle.WaitOne(5000);
 
             // Assert.
             feature.Should().NotBeNull();
             waited.Should().BeTrue();
-            dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
+            this.defaultConstructorParameters.dnsServer.Verify(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>()), Times.AtLeastOnce);
             serverError.Should().BeTrue();
         }
 
@@ -326,36 +281,18 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
         public void WhenInitialize_ThenRefreshLoopIsStarted()
         {
             // Arrange.
-            var mockWhitelistManager = new Mock<IWhitelistManager>();
-            mockWhitelistManager.Setup(w => w.RefreshWhitelist()).Verifiable("the RefreshWhitelist method should be called on the WhitelistManager");
-
-            IWhitelistManager whitelistManager = mockWhitelistManager.Object;
-
-            var mockLogger = new Mock<ILogger>();
-            var mockLoggerFactory = new Mock<ILoggerFactory>();
-            mockLoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(mockLogger.Object);
-            ILoggerFactory loggerFactory = mockLoggerFactory.Object;
-
-            IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory);
-            INodeLifetime nodeLifeTime = new NodeLifetime();
-
-            IDnsServer dnsServer = new Mock<IDnsServer>().Object;
+            this.defaultConstructorParameters.whitelistManager.Setup(w => w.RefreshWhitelist()).Verifiable("the RefreshWhitelist method should be called on the WhitelistManager");
 
             var source = new CancellationTokenSource(3000);
-            var nodeLifetime = new Mock<INodeLifetime>();
-            nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
-            nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
-            INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
+            this.defaultConstructorParameters.nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
+            this.defaultConstructorParameters.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
 
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
-            DataFolder dataFolder = CreateDataFolder(this);
-            IConnectionManager connectionManager = GetConnectionManager();
+            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
 
-            using (var feature = new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetimeObject, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory, connectionManager))
+            this.defaultConstructorParameters.asyncLoopFactory = new AsyncLoopFactory(this.defaultConstructorParameters.loggerFactory.Object);
+
+            using (var feature = this.BuildDefaultDnsFeature())
             {
-                var services = new FullNodeServiceProvider(new ServiceCollection().BuildServiceProvider(), new System.Collections.Generic.List<Type>());
-                feature.SetPrivateVariableValue("services", services);
-
                 // Act.
                 feature.InitializeAsync().GetAwaiter().GetResult();
                 bool waited = source.Token.WaitHandle.WaitOne(5000);
@@ -363,7 +300,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 // Assert.
                 feature.Should().NotBeNull();
                 waited.Should().BeTrue();
-                mockWhitelistManager.Verify();
+                this.defaultConstructorParameters.whitelistManager.Verify();
             }
         }
     }
