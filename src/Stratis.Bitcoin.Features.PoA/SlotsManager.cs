@@ -36,6 +36,11 @@ namespace Stratis.Bitcoin.Features.PoA
             return keys[currentSlotNumber];
         }
 
+        //TODO POA logs
+
+        //TODO POA get my timestamp- getMyNextTimeStamp(uint currentAdjustedTime)
+
+
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
             return headerUnixTimestamp % this.network.TargetSpacingSeconds == 0;
