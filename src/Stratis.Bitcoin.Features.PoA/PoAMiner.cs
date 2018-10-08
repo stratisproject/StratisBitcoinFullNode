@@ -10,8 +10,13 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
-    // TODO POA create an interface like we did with PoSMinting
-    public class PoAMiner : IDisposable
+    // TODO POA comment
+    public interface IPoAMiner : IDisposable
+    {
+        void InitializeMining();
+    }
+
+    public class PoAMiner : IPoAMiner
     {
         // TODO POA. Implement miner properly later. Right now we need bare minimum to test syncing and payloads.
 

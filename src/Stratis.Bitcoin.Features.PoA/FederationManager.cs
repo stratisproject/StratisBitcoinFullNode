@@ -20,11 +20,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly PoANetwork network;
 
-        private readonly PoAMiner miner;
+        private readonly IPoAMiner miner;
 
         private readonly ILogger logger;
 
-        public FederationManager(NodeSettings nodeSettings, Network network, PoAMiner miner, ILoggerFactory loggerFactory)
+        public FederationManager(NodeSettings nodeSettings, Network network, IPoAMiner miner, ILoggerFactory loggerFactory)
         {
             this.settings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.network = Guard.NotNull(network as PoANetwork, nameof(network));
