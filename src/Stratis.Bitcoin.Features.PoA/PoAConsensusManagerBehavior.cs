@@ -12,7 +12,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA //TODO POA add tests
+namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoAConsensusManagerBehavior : ConsensusManagerBehavior
     {
@@ -47,7 +47,6 @@ namespace Stratis.Bitcoin.Features.PoA //TODO POA add tests
         protected override Payload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
         {
             ChainedHeader fork = this.chain.FindFork(locator);
-
             lastHeader = null;
 
             if (fork == null)
