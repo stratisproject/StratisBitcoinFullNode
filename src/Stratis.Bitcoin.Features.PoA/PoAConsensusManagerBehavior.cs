@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     break;
 
                 case PoAHeadersPayload headers:
-                    await this.ProcessHeadersAsync(peer, headers.Headers.Select(x => x as BlockHeader).ToList()).ConfigureAwait(false);
+                    await this.ProcessHeadersAsync(peer, headers.Headers.Cast<BlockHeader>().ToList()).ConfigureAwait(false);
                     break;
             }
         }
