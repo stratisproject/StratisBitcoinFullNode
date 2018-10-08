@@ -36,10 +36,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             p2pkhRule.Parent = (ConsensusRuleEngine) consensusRules;
             p2pkhRule.Initialize();
 
+            var scriptTypeRule = new AllowedScriptTypeRule();
+            scriptTypeRule.Parent = (ConsensusRuleEngine) consensusRules;
+            scriptTypeRule.Initialize();
+
             this.preTxRules = new List<ISmartContractMempoolRule>
             {
                 new MempoolOpSpendRule(),
                 new TxOutSmartContractExecRule(),
+                scriptTypeRule,
                 p2pkhRule
             };
 

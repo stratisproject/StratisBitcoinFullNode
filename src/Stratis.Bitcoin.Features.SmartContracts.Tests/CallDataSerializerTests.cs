@@ -64,7 +64,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             object[] methodParameters =
             {
-                (short) 12,
                 true,
                 "te|s|t",
                 "te#st",
@@ -84,10 +83,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(methodParameters.Length, callData.MethodParameters.Length);
 
             Assert.NotNull(callData.MethodParameters[0]);
-            Assert.Equal(methodParameters[0], callData.MethodParameters[0]);
+            Assert.Equal(methodParameters[0], (bool)callData.MethodParameters[0]);
 
             Assert.NotNull(callData.MethodParameters[1]);
-            Assert.Equal(methodParameters[1], (bool)callData.MethodParameters[1]);
+            Assert.Equal(methodParameters[1], callData.MethodParameters[1]);
 
             Assert.NotNull(callData.MethodParameters[2]);
             Assert.Equal(methodParameters[2], callData.MethodParameters[2]);
@@ -97,9 +96,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(callData.MethodParameters[4]);
             Assert.Equal(methodParameters[4], callData.MethodParameters[4]);
-
-            Assert.NotNull(callData.MethodParameters[5]);
-            Assert.Equal(methodParameters[5], callData.MethodParameters[5]);
 
             Assert.Equal(contractTxData.GasPrice, callData.GasPrice);
             Assert.Equal(contractTxData.GasLimit, callData.GasLimit);
@@ -131,11 +127,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 (byte)1,
                 Encoding.UTF8.GetBytes("test"),
                 's',
-                (sbyte)-45,
-                (short)7,
                 "test",
                 (uint)36,
-                new uint160(new byte[20]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}),
                 (ulong)29,
                 new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639"),
                 new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy")
@@ -173,15 +166,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(callData.MethodParameters[8]);
             Assert.Equal(methodParameters[8], callData.MethodParameters[8]);
-
-            Assert.NotNull(callData.MethodParameters[9]);
-            Assert.Equal(methodParameters[9], callData.MethodParameters[9]);
-
-            Assert.NotNull(callData.MethodParameters[10]);
-            Assert.Equal(methodParameters[10], callData.MethodParameters[10]);
-
-            Assert.NotNull(callData.MethodParameters[11]);
-            Assert.Equal(methodParameters[11], callData.MethodParameters[11]);
         }
     }
 }

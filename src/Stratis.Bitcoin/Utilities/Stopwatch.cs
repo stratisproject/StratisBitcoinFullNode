@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Utilities
     /// <remarks>
     /// Note that we are using <see cref="DateTime.Ticks"/> as a basic unit of measurement,
     /// not <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.
+    /// Issue that cover this subject is <see href="https://github.com/stratisproject/StratisBitcoinFullNode/issues/2391"/>.
     /// </remarks>
     /// <example>
     /// <code>
