@@ -88,6 +88,20 @@ namespace NBitcoin.Crypto
                 return this;
         }
 
+        /// <summary>
+        /// Allow creation of signature with non-LowS for test purposes
+        /// </summary>
+        /// <remarks>Not to be used under normal circumstances</remarks>
+        public ECDSASignature MakeNonCanonical()
+        {
+            if (!this.IsLowS)
+            {
+                return this;
+            }
+            else
+                return new ECDSASignature(this.R, ECKey.CURVE_ORDER.Subtract(this.S));
+        }
+
         public bool IsLowS
         {
             get
