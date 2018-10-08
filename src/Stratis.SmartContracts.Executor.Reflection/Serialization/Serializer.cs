@@ -2,6 +2,96 @@
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
+    public class PersistentStateSerializer : ISerializer
+    {
+        private readonly ISerializer serializer;
+
+        public PersistentStateSerializer(ISerializer baseSerializer)
+        {
+            this.serializer = baseSerializer;
+        }
+
+        public byte[] Serialize(Address address)
+        {
+            return this.serializer.Serialize(address);
+        }
+
+        public byte[] Serialize(bool b)
+        {
+            return this.serializer.Serialize(b);
+        }
+
+        public byte[] Serialize(int i)
+        {
+            return this.serializer.Serialize(i);
+        }
+
+        public byte[] Serialize(long l)
+        {
+            return this.serializer.Serialize(l);
+        }
+
+        public byte[] Serialize(uint u)
+        {
+            return this.serializer.Serialize(u);
+        }
+
+        public byte[] Serialize(ulong ul)
+        {
+            return this.serializer.Serialize(ul);
+        }
+
+        public byte[] Serialize(string s)
+        {
+            return this.serializer.Serialize(s);
+        }
+
+        public byte[] Serialize(Array a)
+        {
+            return this.serializer.Serialize(a);
+        }
+
+        public bool ToBool(byte[] val)
+        {
+            return this.serializer.ToBool(val);
+        }
+
+        public Address ToAddress(byte[] val)
+        {
+            return this.serializer.ToAddress(val);
+        }
+
+        public int ToInt32(byte[] val)
+        {
+            return this.serializer.ToInt32(val);
+        }
+
+        public uint ToUInt32(byte[] val)
+        {
+            return this.serializer.ToUInt32(val);
+        }
+
+        public long ToInt64(byte[] val)
+        {
+            return this.serializer.ToInt64(val);
+        }
+
+        public ulong ToUInt64(byte[] val)
+        {
+            return this.serializer.ToUInt64(val);
+        }
+
+        public string ToString(byte[] val)
+        {
+            return this.serializer.ToString(val);
+        }
+
+        public T[] ToArray<T>(byte[] val)
+        {
+            return this.serializer.ToArray<T>(val);
+        }
+    }
+
     /// <summary>
     /// Defines the serialization functionality that is exposed to a <see cref="SmartContract"/>.
     /// </summary>
