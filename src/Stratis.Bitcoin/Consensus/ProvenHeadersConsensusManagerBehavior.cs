@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -15,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
-    public class PHConsensusManagerBehavior : ConsensusManagerBehavior
+    public class ProvenHeadersConsensusManagerBehavior : ConsensusManagerBehavior
     {
         private readonly ConcurrentChain chain;
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
@@ -27,21 +26,19 @@ namespace Stratis.Bitcoin.Consensus
         private readonly ILogger logger;
 
         /// <summary>Gets the best header sent using <see cref="ProvenHeadersPayload"/>.</summary>
-        /// <remarks>Write access should be protected by <see cref="bestSentHeaderLock"/>.</remarks>
         public ProvenBlockHeader BestSentHeader { get; private set; }
 
-        /// <summary>Maximum number of headers in <see cref="HeadersPayload"/> according to Bitcoin protocol.</summary>
+        /// <summary>Maximum number of headers in <see cref="ProvenHeadersPayload"/> according to Bitcoin protocol.</summary>
         /// <seealso cref="https://en.bitcoin.it/wiki/Protocol_documentation#getheaders"/>
         private const int MaxItemsPerHeadersMessage = 2000;
 
-        public PHConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+        public ProvenHeadersConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.chain = chain;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;
-            this.bestSentHeaderLock = new object();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
@@ -61,15 +58,15 @@ namespace Stratis.Bitcoin.Consensus
                     break;
 
                 case HeadersPayload headers:
-                    await this.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                    await this.ProcessHeadersAsync(peer, headers.Headers).ConfigureAwait(false);
                     break;
 
                 case ProvenHeadersPayload provenHeaders:
-                    await this.ProcessHeadersAsync(peer, provenHeaders).ConfigureAwait(false);
+                    await this.ProcessProvenHeadersAsync(peer, provenHeaders).ConfigureAwait(false);
                     break;
 
                 case GetProvenHeadersPayload getHeaders:
-                    await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
+                    await this.ProcessGetProvenHeadersAsync(peer, getHeaders).ConfigureAwait(false);
                     break;
             }
         }
@@ -88,7 +85,7 @@ namespace Stratis.Bitcoin.Consensus
         /// If the peer is behind/equal to our best height an empty array is sent back.
         /// </para>
         /// </remarks>
-        private async Task ProcessGetHeadersAsync(INetworkPeer peer, GetProvenHeadersPayload getProvenHeadersPayload)
+        private async Task ProcessGetProvenHeadersAsync(INetworkPeer peer, GetProvenHeadersPayload getProvenHeadersPayload)
         {
             if (getProvenHeadersPayload.BlockLocator.Blocks.Count > BlockLocator.MaxLocatorSize)
             {
@@ -109,7 +106,7 @@ namespace Stratis.Bitcoin.Consensus
                 return;
             }
 
-            ProvenHeadersPayload headersPayload = this.ConstructHeadersPayload(getProvenHeadersPayload.BlockLocator, getProvenHeadersPayload.HashStop, out ProvenBlockHeader lastHeader);
+            ProvenHeadersPayload headersPayload = this.ConstructProvenHeadersPayload(getProvenHeadersPayload.BlockLocator, getProvenHeadersPayload.HashStop, out ProvenBlockHeader lastHeader);
 
             if (headersPayload != null)
             {
@@ -132,19 +129,19 @@ namespace Stratis.Bitcoin.Consensus
         /// Processes "headers" message received from the peer.
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
-        /// <param name="headersPayload">Payload of "headers" message to process.</param>
+        /// <param name="provenHeadersPayload">Payload of "Proven Headers" message to process.</param>
         /// <remarks>
-        /// "headers" message is sent in response to "getheaders" message or it is solicited
+        /// "provenHeaders" message is sent in response to "getprovenheaders" message or it is solicited
         /// by the peer when a new block is validated (unless in IBD).
         /// <para>
-        /// When we receive "headers" message from the peer, we can adjust our knowledge
+        /// When we receive "provenheaders" message from the peer, we can adjust our knowledge
         /// of the peer's view of the chain. We update its pending tip, which represents
         /// the tip of the best chain we think the peer has.
         /// </para>
         /// </remarks>
-        protected async Task ProcessHeadersAsync(INetworkPeer peer, ProvenHeadersPayload headersPayload)
+        protected async Task ProcessProvenHeadersAsync(INetworkPeer peer, ProvenHeadersPayload provenHeadersPayload)
         {
-            var headers = new List<BlockHeader>(headersPayload.Headers);
+            var headers = new List<BlockHeader>(provenHeadersPayload.Headers);
 
             if (headers.Count == 0)
             {
@@ -153,7 +150,7 @@ namespace Stratis.Bitcoin.Consensus
                 return;
             }
 
-            if (!this.ValidateHeadersPayload(peer, headersPayload, out string validationError))
+            if (!base.ValidateHeadersFromPayload(peer, new List<BlockHeader>(provenHeadersPayload.Headers), out string validationError))
             {
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
@@ -214,7 +211,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
         /// <param name="lastHeader"><see cref="ProvenBlockHeader"/> of the last header that was added to the <see cref="ProvenHeadersPayload"/>.</param>
         /// <returns><see cref="ProvenHeadersPayload"/> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        private ProvenHeadersPayload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ProvenBlockHeader lastHeader)
+        private ProvenHeadersPayload ConstructProvenHeadersPayload(BlockLocator locator, uint256 hashStop, out ProvenBlockHeader lastHeader)
         {
             ChainedHeader fork = this.chain.FindFork(locator);
 
@@ -242,63 +239,15 @@ namespace Stratis.Bitcoin.Consensus
             return headers;
         }
 
-        /// <summary>Validates the proven headers payload.</summary>
-        /// <param name="peer">The peer who sent the payload.</param>
-        /// <param name="provenHeadersPayload">Proven Headers payload to validate.</param>
-        /// <param name="validationError">The validation error that is set in case <c>false</c> is returned.</param>
-        /// <returns><c>true</c> if payload was valid, <c>false</c> otherwise.</returns>
-        private bool ValidateHeadersPayload(INetworkPeer peer, ProvenHeadersPayload provenHeadersPayload, out string validationError)
+        protected override void AttachCore()
         {
-            validationError = null;
-
-            if (provenHeadersPayload.Headers.Count > MaxItemsPerHeadersMessage)
-            {
-                this.logger.LogDebug("Proven Headers payload with {0} headers was received. Protocol violation. Banning the peer.", provenHeadersPayload.Headers.Count);
-
-                validationError = "Protocol violation.";
-
-                this.logger.LogTrace("(-)[TOO_MANY_HEADERS]:false");
-                return false;
-            }
-
-            // Check headers for consecutiveness.
-            for (int i = 1; i < provenHeadersPayload.Headers.Count; i++)
-            {
-                if (provenHeadersPayload.Headers[i].HashPrevBlock != provenHeadersPayload.Headers[i - 1].GetHash())
-                {
-                    this.logger.LogDebug("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
-                        peer.RemoteSocketEndpoint, i, provenHeadersPayload.Headers[i].HashPrevBlock, provenHeadersPayload.Headers[i - 1].GetHash());
-
-                    validationError = "Peer presented nonconsecutive headers.";
-
-                    this.logger.LogTrace("(-)[NONCONSECUTIVE]:false");
-                    return false;
-                }
-            }
-
-            return true;
+            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
-
-        //protected override void AttachCore()
-        //{
-        //    // Initialize auto sync timer.
-        //    int interval = (int)TimeSpan.FromMinutes(AutosyncIntervalMinutes).TotalMilliseconds;
-        //    this.autosyncTimer = new Timer(async (o) =>
-        //    {
-        //        await this.ResyncAsync().ConfigureAwait(false);
-        //    }, null, interval, interval);
-
-        //    if (this.AttachedPeer.State == NetworkPeerState.Connected)
-        //        this.AttachedPeer.MyVersion.StartHeight = this.consensusManager.Tip.Height;
-
-        //    this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
-        //    this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
-        //}
 
         /// <inheritdoc />
         public override object Clone()
         {
-            return new PHConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
+            return new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
         }
     }
 }
