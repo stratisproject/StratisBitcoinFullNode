@@ -153,6 +153,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void Deserialize_Byte0_Bool_Returns_Default()
+        {
+            var result = this.serializer.ToBool(new byte[0]);
+
+            Assert.Equal(default(bool), result);
+            this.contractPrimitiveSerializer.Verify(s => s.Deserialize<bool>(It.IsAny<byte[]>()), Times.Never);
+        }
+
+        [Fact]
         public void Deserialize_Byte0_String_Returns_Empty()
         {
             var result = this.serializer.ToString(new byte[0]);

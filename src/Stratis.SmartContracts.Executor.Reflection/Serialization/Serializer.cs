@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public bool ToBool(byte[] val)
         {
-            if (val == null)
+            if (val == null || val.Length == 0)
                 return default(bool);
 
             (bool success, bool result) = this.TryDeserializeValue<bool>(val);
