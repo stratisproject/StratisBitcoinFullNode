@@ -5,6 +5,9 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -50,6 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new CanGetSenderRule(new SenderRetriever()),
+                new SmartContractFormatRule(new CallDataSerializer(new MethodParameterStringSerializer())), // Can we inject these serializers?
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
                 new SmartContractSaveCoinviewRule()
             };
