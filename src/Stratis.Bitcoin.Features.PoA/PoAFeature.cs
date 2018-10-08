@@ -97,6 +97,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 {
                     new HeaderTimeChecksPoARule(),
                     new StratisHeaderVersionRule(),
+                    new PoAHeaderDifficultyRule(),
                     new PoAHeaderSignatureRule()
                 };
 
