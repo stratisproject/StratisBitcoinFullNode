@@ -524,7 +524,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             descriptions.Add(utxoDescription);
 
-            List<UtxoStakeDescription> suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStaking(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue);
+            List<UtxoStakeDescription> suitableCoins = miner.GetUtxoStakeDescriptionsSuitableForStakingAsync(descriptions, chainTip, chainTip.Header.Time + 64, long.MaxValue).GetAwaiter().GetResult();
             return suitableCoins.Count == 1;
         }
 

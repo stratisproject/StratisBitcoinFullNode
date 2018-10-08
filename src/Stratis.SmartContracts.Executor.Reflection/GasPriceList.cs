@@ -1,4 +1,6 @@
-﻿using Mono.Cecil;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -17,7 +19,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The cost per gas unit if contract validation fails.</summary>
         public const ulong ContractValidationFailedCost = 1000;
 
-        public const int StorageGasCost = 10;
+        public const int StoragePerByteSavedGasCost = 10;
+        public const int StoragePerByteRetrievedGasCost = 1;
+        public const int LogPerTopicByteCost = 2;
+        public const int LogPerByteCost = 1;
         public const int MethodCallGasCost = 5;
         public const int InstructionGasCost = 1;
 
@@ -51,13 +56,36 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// 
+        /// Gas cost to log an event inside a contract.
         /// </summary>
-        /// <param name="keyBytes"></param>
-        /// <param name="valueBytes"></param>
-        public static Gas StorageOperationCost(byte[] keyBytes, byte[] valueBytes)
+        public static Gas LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
         {
-            Gas cost = (Gas)(ulong)(StorageGasCost * keyBytes.Length + StorageGasCost * valueBytes.Length);
+            int topicCost = topics.Select(x => x.Length * LogPerTopicByteCost).Sum();
+            int dataCost = data.Length * LogPerByteCost;
+            return (Gas)(ulong) (topicCost + dataCost);
+        }
+
+        /// <summary>
+        /// Get cost to store this key and value.
+        /// </summary>
+        public static Gas StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        {
+            int keyLen = keyBytes != null ? keyBytes.Length : 0;
+            int valueLen = valueBytes != null ? valueBytes.Length : 0;
+
+            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
+            return cost;
+        }
+
+        /// <summary>
+        /// Get cost to retrieve this value via key.
+        /// </summary>
+        public static Gas StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        {
+            int keyLen = keyBytes != null ? keyBytes.Length : 0;
+            int valueLen = valueBytes != null ? valueBytes.Length : 0;
+
+            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
             return cost;
         }
 

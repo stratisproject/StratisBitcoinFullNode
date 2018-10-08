@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -98,6 +99,27 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// The gas consumed during execution.
         /// </summary>
         public Gas GasConsumed { get; }
+
+        public ContractErrorMessage GetErrorMessage()
+        {
+            switch (this.Kind)
+            {
+                case StateTransitionErrorKind.InsufficientBalance:
+                    return new ContractErrorMessage(StateTransitionErrors.InsufficientBalance);
+                case StateTransitionErrorKind.InsufficientGas:
+                    return new ContractErrorMessage(StateTransitionErrors.InsufficientGas);
+                case StateTransitionErrorKind.NoCode:
+                    return  new ContractErrorMessage(StateTransitionErrors.NoCode);
+                case StateTransitionErrorKind.NoMethodName:
+                    return new ContractErrorMessage(StateTransitionErrors.NoMethodName);
+                case StateTransitionErrorKind.OutOfGas:
+                    return  new ContractErrorMessage(StateTransitionErrors.OutOfGas);
+                case StateTransitionErrorKind.VmError:
+                    return this.VmError;
+            }
+            
+            throw new NotSupportedException("No error message has been set for this ErrorKind.");
+        }
     }
 
     /// <summary>

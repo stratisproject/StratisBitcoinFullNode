@@ -50,9 +50,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
             TestStorageSerialize(receipt);
 
             // Test cases where either the sender or contract is null - AKA CALL vs CREATE
-            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), null, true, "TestValue") { BlockHash = new uint256(1234) };
+            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), new uint160(24), null, true, "Test Error Message") { BlockHash = new uint256(1234) };
             TestStorageSerialize(receipt);
-            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), null, new uint160(23), true, "TestValue2") { BlockHash = new uint256(1234) };
+            receipt = new Receipt(receipt.PostState, receipt.GasUsed, receipt.Logs, new uint256(12345), new uint160(25), null, new uint160(23), true, "Test Error Message 2") { BlockHash = new uint256(1234) };
             TestStorageSerialize(receipt);
         }
 

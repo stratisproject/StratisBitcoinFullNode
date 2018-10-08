@@ -8,7 +8,7 @@ using NBitcoin;
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
     /// <summary>
-    /// Class that handles method parameter serialization in the <see cref="SmartContractCarrier"/>.
+    /// Class that handles method parameter serialization in the <see cref="ContractCarrier"/>.
     /// </summary>
     public sealed class MethodParameterSerializer : IMethodParameterSerializer
     {

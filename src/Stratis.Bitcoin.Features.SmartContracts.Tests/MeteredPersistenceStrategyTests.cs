@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContracts_MeteredPersistenceStrategy_TestNullInjectedArgsThrow()
         {
-            var sr = new Mock<IContractState>();
+            var sr = new Mock<IStateRepository>();
 
             Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(null, new GasMeter((Gas) 0), this.keyEncodingStrategy));
             Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(sr.Object, null, this.keyEncodingStrategy));
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             byte[] testValue = new byte[] { 2 };
             uint160 testAddress = uint160.One;
 
-            var sr = new Mock<IContractState>();
+            var sr = new Mock<IStateRepository>();
 
             sr.Setup(m => m.SetStorageValue(
                 It.IsAny<uint160>(),

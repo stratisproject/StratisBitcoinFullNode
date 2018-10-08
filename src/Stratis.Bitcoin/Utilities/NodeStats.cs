@@ -16,6 +16,9 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Collects inline stats and then feature stats.</summary>
         string GetStats();
+
+        /// <summary>Collects benchmark stats.</summary>
+        string GetBenchmark();
     }
 
     public class NodeStats : INodeStats
@@ -54,10 +57,10 @@ namespace Stratis.Bitcoin.Utilities
         /// <inheritdoc />
         public string GetStats()
         {
+            var statsBuilder = new StringBuilder();
+
             lock (this.locker)
             {
-                var statsBuilder = new StringBuilder();
-
                 string date = this.dateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture);
                 statsBuilder.AppendLine($"======Node stats====== {date}");
 
@@ -66,12 +69,23 @@ namespace Stratis.Bitcoin.Utilities
 
                 foreach (StatsItem actionPriority in this.stats.Where(x => x.StatsType == StatsType.Component))
                     actionPriority.AppendStatsAction(statsBuilder);
+            }
 
+            return statsBuilder.ToString();
+        }
+
+        /// <inheritdoc />
+        public string GetBenchmark()
+        {
+            var statsBuilder = new StringBuilder();
+
+            lock (this.locker)
+            {
                 foreach (StatsItem actionPriority in this.stats.Where(x => x.StatsType == StatsType.Benchmark))
                     actionPriority.AppendStatsAction(statsBuilder);
-
-                return statsBuilder.ToString();
             }
+
+            return statsBuilder.ToString();
         }
 
         private struct StatsItem
