@@ -7,6 +7,8 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
+    // TODO POA add comment
+    // TODO POA logs
     public class SlotsManager
     {
         private readonly PoANetwork network;
@@ -29,17 +31,22 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Find timestamp of round's start.
             uint roundTime = (uint)keys.Count * this.network.TargetSpacingSeconds;
+
+            // Time when current round started.
             uint roundStartTimestamp = (headerUnixTimestamp / roundTime) * roundTime;
 
+            // Slot number in current round.
             int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.network.TargetSpacingSeconds);
 
             return keys[currentSlotNumber];
         }
 
-        //TODO POA logs
+        public uint GetMyMiningTimestamp(uint currentTime)
+        {
+            //TODO POA get my timestamp- getMyNextTimeStamp(uint currentAdjustedTime)
 
-        //TODO POA get my timestamp- getMyNextTimeStamp(uint currentAdjustedTime)
-
+            return 0;
+        }
 
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
