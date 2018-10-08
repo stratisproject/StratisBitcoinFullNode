@@ -25,13 +25,20 @@ namespace Stratis.Bitcoin.Features.PoA
             if (!this.IsValidTimestamp(headerUnixTimestamp))
                 return null;
 
+            List<PubKey> keys = this.network.FederationPublicKeys;
 
-            return null; // TODO POA
+            // Find timestamp of round's start.
+            uint roundTime = (uint)keys.Count * this.network.TargetSpacingSeconds;
+            uint roundStartTimestamp = (headerUnixTimestamp / roundTime) * roundTime;
+
+            int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.network.TargetSpacingSeconds);
+
+            return keys[currentSlotNumber];
         }
 
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
-            return false; // TODO POA
+            return headerUnixTimestamp % this.network.TargetSpacingSeconds == 0;
         }
     }
 }

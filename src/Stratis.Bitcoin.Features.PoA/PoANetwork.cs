@@ -19,9 +19,9 @@ namespace Stratis.Bitcoin.Features.PoA
         /// Blocks that are not signed with private keys that correspond
         /// to public keys from this list are considered to be invalid.
         /// </remarks>
-        public List<PubKey> FederationPublicKeys { get; }
+        public List<PubKey> FederationPublicKeys { get; protected set; }
 
-        public int TargetSpacingSeconds { get; }
+        public uint TargetSpacingSeconds { get; protected set; }
 
         public PoANetwork()
         {
