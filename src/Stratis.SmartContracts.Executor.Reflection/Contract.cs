@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private const BindingFlags DefaultReceiveLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
 
-        protected internal const BindingFlags DefaultBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+        private const BindingFlags DefaultBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
 
         private readonly SmartContract instance;
 
