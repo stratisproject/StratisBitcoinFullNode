@@ -1,20 +1,24 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
 {
     public class SlotsManagerTests
     {
-        private readonly SlotsManager slotsManager;
-        private readonly PoANetwork network;
+        private SlotsManager slotsManager;
+        private PoANetwork network;
 
         public SlotsManagerTests()
         {
             this.network = new TestPoANetwork();
 
-            this.slotsManager = new SlotsManager(this.network, new LoggerFactory());
+            var fedManager = new FederationManager(NodeSettings.Default(), this.network, new Mock<IPoAMiner>().Object, new LoggerFactory());
+            this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
         }
 
         [Fact]
@@ -44,9 +48,32 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.network.TargetSpacingSeconds * 7));
         }
 
+        [Fact]
+        public void GetMiningTimestamp()
+        {
+            var tool = new KeyTool(null);
+            Key key = tool.GeneratePrivateKey();
+            var network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey});
+
+            var fedManager = new FederationManager(NodeSettings.Default(), network, new Mock<IPoAMiner>().Object, new LoggerFactory());
+            this.slotsManager = new SlotsManager(network, fedManager, new LoggerFactory());
+
+            List<PubKey> fedKeys = this.network.FederationPublicKeys;
+            uint roundStart = this.network.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
+
+            fedManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
+            fedManager.SetPrivatePropertyValue(nameof(FederationManager.FederationMemberKey), key);
+
+            Assert.Equal(roundStart + network.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart));
+            Assert.Equal(roundStart + network.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart + 4));
+
+            roundStart += this.network.TargetSpacingSeconds * (uint) fedKeys.Count;
+            Assert.Equal(roundStart + network.TargetSpacingSeconds, this.slotsManager.GetMiningTimestamp(roundStart - 5));
+        }
+
         private class TestPoANetwork : PoANetwork
         {
-            public TestPoANetwork()
+            public TestPoANetwork(List<PubKey> pubKeysOverride = null)
             {
                 this.TargetSpacingSeconds = 60;
 
@@ -59,6 +86,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                     new PubKey("038d196fc2e60d6dfc533c6a905ba1f9092309762d8ebde4407d209e37a820e462"),
                     new PubKey("0358711f76435a508d98a9dee2a7e160fed5b214d97e65ea442f8f1265d09e6b55")
                 };
+
+                if (pubKeysOverride != null)
+                    this.FederationPublicKeys = pubKeysOverride;
             }
         }
     }

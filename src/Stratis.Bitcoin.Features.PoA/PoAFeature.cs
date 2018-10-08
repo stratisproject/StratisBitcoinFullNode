@@ -97,6 +97,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<SlotsManager>();
                         services.AddSingleton<PoABlockDefinition, PoABlockDefinition>();
                     });
             });
