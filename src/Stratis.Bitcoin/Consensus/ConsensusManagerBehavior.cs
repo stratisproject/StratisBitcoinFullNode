@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="ConcurrentChain"/>
-        private readonly ConcurrentChain chain;
+        protected readonly ConcurrentChain chain;
 
         /// <inheritdoc cref="IPeerBanning"/>
         private readonly IPeerBanning peerBanning;
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Maximum number of headers in <see cref="HeadersPayload"/> according to Bitcoin protocol.</summary>
         /// <seealso cref="https://en.bitcoin.it/wiki/Protocol_documentation#getheaders"/>
-        private const int MaxItemsPerHeadersMessage = 2000;
+        protected const int MaxItemsPerHeadersMessage = 2000;
 
         /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
@@ -176,12 +176,10 @@ namespace Stratis.Bitcoin.Consensus
                 return;
             }
 
-            HeadersPayload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop, out ChainedHeader lastHeader);
+            Payload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop, out ChainedHeader lastHeader);
 
             if (headersPayload != null)
             {
-                this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
-
                 try
                 {
                     this.BestSentHeader = lastHeader;
@@ -199,8 +197,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="locator">Block locator.</param>
         /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
         /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
-        /// <returns><see cref="HeadersPayload"/> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        private HeadersPayload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
+        /// <returns>Payload with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
+        protected virtual Payload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
         {
             ChainedHeader fork = this.chain.FindFork(locator);
 
@@ -212,18 +210,20 @@ namespace Stratis.Bitcoin.Consensus
                 return null;
             }
 
-            var headers = new HeadersPayload();
+            var headersPayload = new HeadersPayload();
 
             foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
             {
                 lastHeader = header;
-                headers.Headers.Add(header.Header);
+                headersPayload.Headers.Add(header.Header);
 
-                if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
+                if ((header.HashBlock == hashStop) || (headersPayload.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
             }
 
-            return headers;
+            this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
+
+            return headersPayload;
         }
 
         /// <summary>

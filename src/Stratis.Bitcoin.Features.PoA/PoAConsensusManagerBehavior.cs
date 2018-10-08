@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -11,7 +12,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA
+namespace Stratis.Bitcoin.Features.PoA //TODO POA add tests
 {
     public class PoAConsensusManagerBehavior : ConsensusManagerBehavior
     {
@@ -32,14 +33,51 @@ namespace Stratis.Bitcoin.Features.PoA
             switch (message.Message.Payload)
             {
                 case GetHeadersPayload getHeaders:
-                    // TODO POA override to send PoA headers as a response
-                    //await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
+                    await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
                     break;
 
                 case PoAHeadersPayload headers:
                     await this.ProcessHeadersAsync(peer, headers.Headers.Select(x => x as BlockHeader).ToList()).ConfigureAwait(false);
                     break;
             }
+        }
+
+        /// <inheritdoc />
+        /// <remarks>Creates <see cref="PoAHeadersPayload"/> instead of <see cref="HeadersPayload"/> like base implementation does.</remarks>
+        protected override Payload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
+        {
+            ChainedHeader fork = this.chain.FindFork(locator);
+
+            lastHeader = null;
+
+            if (fork == null)
+            {
+                this.logger.LogTrace("(-)[INVALID_LOCATOR]:null");
+                return null;
+            }
+
+            var headersPayload = new PoAHeadersPayload();
+
+            foreach (ChainedHeader chainedHeader in this.chain.EnumerateToTip(fork).Skip(1))
+            {
+                lastHeader = chainedHeader;
+
+                if (chainedHeader.Header is PoABlockHeader header)
+                {
+                    headersPayload.Headers.Add(header);
+
+                    if ((chainedHeader.HashBlock == hashStop) || (headersPayload.Headers.Count == MaxItemsPerHeadersMessage))
+                        break;
+                }
+                else
+                {
+                    throw new Exception("Not a PoA header!");
+                }
+            }
+
+            this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
+
+            return headersPayload;
         }
     }
 }
