@@ -193,5 +193,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.StakeTimeViolation);
         }
+
+        [Fact]
+        public void RunRule_ProvenHeadersActive_And_InvalidStakeDepth_StakeDepthErrorIsThrown()
+        {
+            // Setup previous chained header.
+            PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
+            var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 1);
+
+            // Setup proven header with null coinstake.
+            PosBlock posBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
+            provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
+
+            // Setup chained header and move it to the height higher than proven header activation height.
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 2);
+
+            // Setup coinstake transaction with an invalid stake age.
+            this.coinView
+                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()) }, posBlock.GetHash()));
+
+            // When we run the validation rule, we should hit coinstake stake time violation error.
+            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            ruleValidation.Should().Throw<ConsensusErrorException>()
+                .And.ConsensusError
+                .Should().Be(ConsensusErrors.InvalidStakeDepth);
+        }
     }
 }
