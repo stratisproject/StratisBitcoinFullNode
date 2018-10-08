@@ -33,13 +33,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.builder = NodeBuilder.Create(this);
-            this.stratisSender = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-            this.stratisReceiver = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+            this.stratisSender = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+            this.stratisReceiver = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
             this.mempoolValidationState = new MempoolValidationState(true);
 
             this.builder.StartAll();
-            this.stratisSender.WithWallet();
-            this.stratisReceiver.WithWallet();
         }
 
         protected override void AfterTest()
