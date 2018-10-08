@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void CanStratisSyncFromCore()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
