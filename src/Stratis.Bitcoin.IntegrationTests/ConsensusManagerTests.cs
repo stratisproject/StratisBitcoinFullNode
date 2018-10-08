@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
+        [Retry(5)]
         public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_MaxReorgViolation()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
