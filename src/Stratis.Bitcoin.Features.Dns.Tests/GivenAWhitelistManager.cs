@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsHostName = "stratis.test.com";
-            ConnectionManagerSettings connectionManagerSettings = new ConnectionManagerSettings();
+            ConnectionManagerSettings connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(KnownNetworks.TestNet));
 
             Action a = () => new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, connectionManagerSettings, dnsSettings, 
                     null);
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 })
                 .Verifiable();
 
-            NodeSettings nodeSettings = NodeSettings.Default();
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
@@ -478,7 +478,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 })
                 .Verifiable();
 
-            NodeSettings nodeSettings = NodeSettings.Default();
+            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
             DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
@@ -536,7 +536,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .When(m => m.SwapMasterfile(Arg.Any<IMasterFile>()))
                 .Do(x => masterFile = x.Arg<IMasterFile>());
 
-            var nodeSettings = NodeSettings.Default();
+            var nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
             var dnsSettings = Substitute.For<DnsSettings>();
             dnsSettings.DnsHostName = "stratis.test.com";
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);

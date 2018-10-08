@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Dns
             builder.AppendLine($"-dnsnameserver=<string>   The DNS Seed Service nameserver.");
             builder.AppendLine($"-dnsmailbox=<string>      The e-mail address used as the administrative point of contact for the domain.");
 
-            NodeSettings.Default().Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>
