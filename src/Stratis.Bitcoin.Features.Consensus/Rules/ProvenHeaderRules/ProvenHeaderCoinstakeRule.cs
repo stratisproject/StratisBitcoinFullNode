@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <see cref="IStakeValidator.CheckStakeKernelHash"/>
         private void CheckStakeKernelHash(PosRuleContext context, UnspentOutputs stakingCoins, ProvenBlockHeader header, ChainedHeader chainedHeader)
         {
-            OutPoint prevout = this.GetPreviousOut(header);
+            OutPoint prevOut = this.GetPreviousOut(header);
             uint transactionTime = header.Coinstake.Time;
 
             ChainedHeader prevChainedHeader = chainedHeader.Previous;
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             uint headerBits = chainedHeader.Header.Bits.ToCompact();
 
-            this.stakeValidator.CheckStakeKernelHash(context, headerBits, prevBlockStake, stakingCoins, prevout, transactionTime);
+            this.stakeValidator.CheckStakeKernelHash(context, headerBits, prevBlockStake, stakingCoins, prevOut, transactionTime);
         }
 
         /// <summary>
@@ -225,9 +225,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <param name="stakingCoins">The staking coins.</param>
         private void CheckHeaderSignatureWithConinstakeKernel(ProvenBlockHeader header, UnspentOutputs stakingCoins)
         {
-            OutPoint prevout = this.GetPreviousOut(header);
+            OutPoint prevOut = this.GetPreviousOut(header);
 
-            Script scriptPubKey = stakingCoins.Outputs[prevout.N].ScriptPubKey;
+            Script scriptPubKey = stakingCoins.Outputs[prevOut.N].ScriptPubKey;
             PubKey pubKey = scriptPubKey.GetDestinationPublicKeys(this.PosParent.Network)[0];
 
             byte[] signature = header.Signature.Signature;
@@ -243,9 +243,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         private OutPoint GetPreviousOut(ProvenBlockHeader header)
         {
             TxIn input = header.Coinstake.Inputs[0];
-            OutPoint prevout = input.PrevOut;
+            OutPoint prevOut = input.PrevOut;
 
-            return prevout;
+            return prevOut;
         }
     }
 }
