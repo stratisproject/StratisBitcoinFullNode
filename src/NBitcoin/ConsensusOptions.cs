@@ -112,6 +112,10 @@
         /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
+        /// <summary>PoS block's timestamp mask.</summary>
+        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
+        public const uint StakeTimestampMask = 0x0000000F;
+
         /// <summary>
         /// Maximum coinstake serialized size in bytes.
         /// </summary>

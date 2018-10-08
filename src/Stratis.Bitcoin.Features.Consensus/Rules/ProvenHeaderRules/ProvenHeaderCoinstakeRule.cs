@@ -1,8 +1,5 @@
-﻿using System;
-using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -38,10 +35,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     {
         /// <summary>The stake validator.</summary>
         private IStakeValidator stakeValidator;
-
-        /// <summary>PoS block's timestamp mask.</summary>
-        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
-        public const uint StakeTimestampMask = 0x0000000F;
 
         /// <inheritdoc />
         public override void Initialize()
@@ -155,7 +148,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             uint headerTime = header.Time; 
 
             // Check if times are equal and coinstake tx time is divisible by 16.
-            if ((headerTime == coinstakeTime) && ((coinstakeTime & StakeTimestampMask) == 0))
+            if ((headerTime == coinstakeTime) && ((coinstakeTime & PosConsensusOptions.StakeTimestampMask) == 0))
                 return;
 
             this.Logger.LogTrace("(-)[BAD_TIME]");
@@ -253,28 +246,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             OutPoint prevout = input.PrevOut;
 
             return prevout;
-        }
-
-        /// <summary>
-        /// Converts <see cref="BigInteger" /> to <see cref="uint256" />.
-        /// </summary>
-        /// <param name="input"><see cref="BigInteger"/> input value.</param>
-        /// <returns><see cref="uint256"/> version of <paramref name="input"/>.</returns>
-        private uint256 ToUInt256(BigInteger input)
-        {
-            byte[] array = input.ToByteArray();
-
-            int missingZero = 32 - array.Length;
-            if (missingZero < 0)
-            {
-                //throw new InvalidOperationException("Awful bug, this should never happen");
-                array = array.Skip(Math.Abs(missingZero)).ToArray();
-            }
-
-            if (missingZero > 0)
-                array = new byte[missingZero].Concat(array).ToArray();
-
-            return new uint256(array, false);
         }
     }
 }
