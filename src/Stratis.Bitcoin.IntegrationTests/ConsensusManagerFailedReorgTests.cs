@@ -9,10 +9,12 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class ConsensusManagerFailedReorgTests
     {
         private readonly Network posNetwork;
+        private readonly Network posNetworkWithNoValidation;
 
         public ConsensusManagerFailedReorgTests()
         {
             this.posNetwork = new StratisRegTest();
+            this.posNetworkWithNoValidation = new StratisRegTest();
         }
 
         [Fact]
@@ -21,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (var builder = NodeBuilder.Create(this))
             {
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().NoValidation().Start();
+                var minerB = builder.CreateStratisPosNode(this.posNetworkWithNoValidation).NotInIBD().NoValidation().WithWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -47,7 +49,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 fails.
                 // Reorg from 7 to 5
                 // Reconnect blocks 6 to 9
-
                 TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
                 TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
             }
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (var builder = NodeBuilder.Create(this))
             {
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().NoValidation().Start();
+                var minerB = builder.CreateStratisPosNode(this.posNetworkWithNoValidation).NotInIBD().NoValidation().WithWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 fails.
                 // Reorg from 7 to 5
                 // Reconnect blocks 6 to 9
-                TestHelper.Disconnect(minerA, minerB);
+                TestHelper.Connect(minerA, minerB);
 
                 TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
                 TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);

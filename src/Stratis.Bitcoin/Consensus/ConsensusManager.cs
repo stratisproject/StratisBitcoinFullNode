@@ -259,7 +259,9 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
                         if (fullValidationResult.Succeeded)
+                        {
                             this.chainedHeaderTree.ClaimPeerTipForMiner(validationContext.ChainedHeaderToValidate.HashBlock);
+                        }
                         else
                         {
                             this.logger.LogTrace("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);

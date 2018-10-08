@@ -10,7 +10,6 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using NBitcoin.Rules;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
@@ -61,11 +60,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private string builderWalletName;
         private string builderWalletPassword;
         private string builderWalletPassphrase;
-
-        private List<IFullValidationConsensusRule> fullValidationRules;
-        private List<IHeaderValidationConsensusRule> headerValidationRules;
-        private List<IIntegrityValidationConsensusRule> integrityValidationRules;
-        private List<IPartialValidationConsensusRule> partialValidationRules;
 
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
@@ -242,25 +236,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public void DisableValidation()
         {
-            this.fullValidationRules = this.FullNode.Network.Consensus.FullValidationRules.ToList();
-            this.headerValidationRules = this.FullNode.Network.Consensus.HeaderValidationRules.ToList();
-            this.integrityValidationRules = this.FullNode.Network.Consensus.IntegrityValidationRules.ToList();
-            this.partialValidationRules = this.FullNode.Network.Consensus.PartialValidationRules.ToList();
-
             this.FullNode.Network.Consensus.FullValidationRules.Clear();
             this.FullNode.Network.Consensus.HeaderValidationRules.Clear();
             this.FullNode.Network.Consensus.IntegrityValidationRules.Clear();
             this.FullNode.Network.Consensus.PartialValidationRules.Clear();
-
-            this.FullNode.NodeService<IConsensusRuleEngine>().Register();
-        }
-
-        public void EnableValidation()
-        {
-            this.FullNode.Network.Consensus.FullValidationRules = this.fullValidationRules;
-            this.FullNode.Network.Consensus.HeaderValidationRules = this.headerValidationRules;
-            this.FullNode.Network.Consensus.IntegrityValidationRules = this.integrityValidationRules;
-            this.FullNode.Network.Consensus.PartialValidationRules = this.partialValidationRules;
 
             this.FullNode.NodeService<IConsensusRuleEngine>().Register();
         }
