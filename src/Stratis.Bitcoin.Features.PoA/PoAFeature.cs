@@ -2,6 +2,7 @@
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
@@ -30,12 +31,32 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Manager of node's network connections.</summary>
         private readonly IConnectionManager connectionManager;
 
+        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        private readonly ConcurrentChain chain;
+
         private readonly FederationManager federationManager;
 
-        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager)
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
+        private readonly IConsensusManager consensusManager;
+
+        /// <summary>A handler that can manage the lifetime of network peers.</summary>
+        private readonly IPeerBanning peerBanning;
+
+        /// <summary>Factory for creating loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
+            IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
+            this.chain = chain;
+            this.initialBlockDownloadState = initialBlockDownloadState;
+            this.consensusManager = consensusManager;
+            this.peerBanning = peerBanning;
+            this.loggerFactory = loggerFactory;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
         }
@@ -47,7 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA
             bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
             Guard.Assert(oldCMBRemoved);
 
-            //TODO POA add new
+            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
 
             this.federationManager.Initialize();
 
