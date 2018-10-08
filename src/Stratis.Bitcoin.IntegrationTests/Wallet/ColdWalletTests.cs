@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 hotWalletManager.UpdateKeysLookupLocked(new[] { hotWalletAddress });
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, maturity + 15);
+                TestHelper.MineBlocks(stratisSender, maturity + 15, WalletName, Password, Account);
 
                 int currentBestHeight = maturity + 15;
 
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
-                    TestHelper.MineBlocks(stratisSender, WalletName, Password, Account, 1);
+                    TestHelper.MineBlocks(stratisSender, 1, WalletName, Password, Account);
                     return coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).Sum(s => s.Transaction.Amount) > receivetotal2;
                 });
             }
