@@ -63,7 +63,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             yield return new object[] { 's' }; // MethodParameterDataType.Char
             yield return new object[] { "test" }; // MethodParameterDataType.String
             yield return new object[] { (uint)36 }; // MethodParameterDataType.UInt
-            yield return new object[] { new uint160(new byte[] { 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }) }; // MethodParameterDataType.UInt160
             yield return new object[] { (ulong)29 }; // MethodParameterDataType.ULong
             yield return new object[] { new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639") }; // MethodParameterDataType.Address
             yield return new object[] { (long)12312321 }; // MethodParameterDataType.Long,

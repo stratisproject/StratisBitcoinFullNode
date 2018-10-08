@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             Then(node2_receives_the_funds);
         }
 
-        [Fact]
+        [Retry]
         public void sending_from_fifty_addresses_to_one_address()
         {
             Given(funds_across_fifty_addresses_on_node2_wallet);
