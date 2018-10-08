@@ -75,7 +75,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public Address ToAddress(byte[] val)
         {
-            if (val == null)
+            if (val == null || val.Length == 0)
                 return default(Address);
 
             (bool success, Address result) = this.TryDeserializeValue<Address>(val);
@@ -137,7 +137,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public string ToString(byte[] val)
         {
-            if (val == null)
+            if (val == null || val.Length < sizeof(char))
                 return string.Empty;
 
             (bool success, string result) = this.TryDeserializeValue<string>(val);
@@ -147,7 +147,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public T[] ToArray<T>(byte[] val)
         {
-            if (val == null)
+            if (val == null || val.Length == 0)
                 return new T[0];
 
             (bool success, T[] result) = this.TryDeserializeValue<T[]>(val);
