@@ -197,6 +197,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 var hotMiningFeature = stratisHotStake.FullNode.NodeFeature<MiningFeature>();
                 hotMiningFeature.StartStaking(WalletName, Password);
 
+                // Wait for new cold wallet transaction.
+                TestHelper.WaitLoop(() =>
+                {
+                    // Keep mining to ensure that staking outputs reach maturity.
+                    TestHelper.MineBlocks(stratisSender, 1, WalletName, Password, Account);
+                    return coldWalletAddress.Transactions.Count > 1;
+                });
+
                 // Wait for money from staking.
                 TestHelper.WaitLoop(() =>
                 {
