@@ -66,20 +66,33 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         /// <param name="nodeBuilder">The node builder that will be used to build the node.</param>
         /// <param name="network">The network that the node is being built for.</param>
         /// <param name="dataDir">The data directory used by the node.</param>
+        /// <param name="coldStakeNode">Set to <c>false</c> to create a normal (non-cold-staking) node.</param>
         /// <returns>The created cold staking node.</returns>
-        private CoreNode CreateColdStakingNode(NodeBuilder nodeBuilder, Network network, string dataDir)
+        private CoreNode CreatePowPosMiningNode(NodeBuilder nodeBuilder, Network network, string dataDir, bool coldStakeNode)
         {
             var extraParams = new NodeConfigParameters { { "datadir", dataDir } };
 
             var buildAction = new Action<IFullNodeBuilder>(builder =>
-             builder.UseBlockStore()
+            {
+                builder.UseBlockStore()
                  .UsePosConsensus()
-                 .UseMempool()
-                 .UseColdStakingWallet()
+                 .UseMempool();
+
+                if (coldStakeNode)
+                {
+                    builder.UseColdStakingWallet();
+                }
+                else
+                {
+                    builder.UseWallet();
+                }
+
+                builder
                  .AddPowPosMining()
                  .AddRPC()
                  .UseApi()
-                 .MockIBD());
+                 .MockIBD();
+            });
 
             return nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
                 ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
@@ -98,13 +111,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = CreateColdStakingNode(builder, this.network, TestBase.CreateTestDir(this));
-                CoreNode stratisHotStake = CreateColdStakingNode(builder, this.network, TestBase.CreateTestDir(this));
-                CoreNode stratisColdStake = CreateColdStakingNode(builder, this.network, TestBase.CreateTestDir(this));
+                CoreNode stratisSender = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: false);
+                CoreNode stratisHotStake = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: true);
+                CoreNode stratisColdStake = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: true);
 
                 builder.StartAll();
 
-                var senderWalletManager = stratisSender.FullNode.WalletManager() as ColdStakingManager; //stratisSender.FullNode.WalletManager();
+                var senderWalletManager = stratisSender.FullNode.WalletManager() as ColdStakingManager;
                 var coldWalletManager = stratisColdStake.FullNode.WalletManager() as ColdStakingManager;
                 var hotWalletManager = stratisHotStake.FullNode.WalletManager() as ColdStakingManager;
 

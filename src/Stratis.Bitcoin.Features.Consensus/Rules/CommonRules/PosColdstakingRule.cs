@@ -47,12 +47,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             this.Logger.LogTrace("()");
 
-            // Take the coinstake transaction from the block and check if the flag ("IsColdCoinStake") is set.
-            // The flag will only be set in the OP_CHECKCOLDSTAKEVERIFY if ScriptFlags in DeploymentFlags has "CheckColdStakeVerify" set.
+            // Get the second transaction so that we can confirm whether it is a cold coin stake transaction.
             Block block = context.ValidationContext.BlockToValidate;
-            if ((block.Transactions.Count < 2) || !((block.Transactions[1] is PosTransaction coinstakeTransaction) && coinstakeTransaction.IsColdCoinStake))
+            PosTransaction coinstakeTransaction = ((block.Transactions.Count >= 2)?block.Transactions[1]:null) as PosTransaction;
+
+            // If there is no coinstake transaction or it is not a cold coin stake transaction then this rule is not required.
+            // The "IsColdCoinStake" flag will only be set in the OP_CHECKCOLDSTAKEVERIFY if ScriptFlags in DeploymentFlags has "CheckColdStakeVerify" set.
+            if (!(coinstakeTransaction?.IsColdCoinStake ?? false))
             {
-                // If it is not a cold coin stake transaction then this rule is not required.
                 this.Logger.LogTrace("(-)[SKIP_COLDSTAKE_RULE]");
                 return Task.CompletedTask;
             }
@@ -60,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             var posRuleContext = context as PosRuleContext;
 
             // Verify that all inputs map to incoming outputs.
-            if (coinstakeTransaction.Inputs.Any(i => !posRuleContext.CoinStakeInputs.ContainsKey(i)))
+            if (coinstakeTransaction.Inputs.Any(i => !posRuleContext.CoinStakePrevOutputs.ContainsKey(i)))
             {
                 this.Logger.LogTrace("(-)[COLDSTAKE_INPUTS_WITHOUT_OUTPUTS]");
                 ConsensusErrors.BadColdstakeInputs.Throw();
@@ -68,10 +70,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             // Check that ScriptPubKeys of all inputs of this transaction are the same. If they are not, the script fails.
             // Due to this being a coinstake transaction we know if will have at least one input.
-            Script scriptPubKey = posRuleContext.CoinStakeInputs[coinstakeTransaction.Inputs[0]].ScriptPubKey;
+            Script scriptPubKey = posRuleContext.CoinStakePrevOutputs[coinstakeTransaction.Inputs[0]].ScriptPubKey;
             for (int i = 1; i < coinstakeTransaction.Inputs.Count; i++)
             {
-                if (scriptPubKey != posRuleContext.CoinStakeInputs[coinstakeTransaction.Inputs[i]]?.ScriptPubKey)
+                if (scriptPubKey != posRuleContext.CoinStakePrevOutputs[coinstakeTransaction.Inputs[i]]?.ScriptPubKey)
                 {
                     this.Logger.LogTrace("(-)[BAD_COLDSTAKE_INPUTS]");
                     ConsensusErrors.BadColdstakeInputs.Throw();

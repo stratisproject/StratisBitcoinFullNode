@@ -95,8 +95,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Initialize the rule context.
             posRuleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.Tip;
-            posRuleContext.CoinStakeInputs = coinstakeTransaction.Inputs.ToDictionary(txin => txin, txin => posRuleContext.UnspentOutputSet.GetOutputFor(txin));
-            posRuleContext.TotalCoinStakeValueIn = posRuleContext.CoinStakeInputs.Sum(a => a.Value?.Value ?? 0);
+            posRuleContext.CoinStakePrevOutputs = coinstakeTransaction.Inputs.ToDictionary(txin => txin, txin => posRuleContext.UnspentOutputSet.GetOutputFor(txin));
+            posRuleContext.TotalCoinStakeValueIn = posRuleContext.CoinStakePrevOutputs.Sum(a => a.Value?.Value ?? 0);
 
             // If an error is expeected then capture the error and compare it against the expected error.
             if (expectedError != null)

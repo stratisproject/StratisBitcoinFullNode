@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             if (transaction.IsCoinStake)
             {
                 posRuleContext.TotalCoinStakeValueIn = view.GetValueIn(transaction);
-                posRuleContext.CoinStakeInputs = transaction.Inputs.ToDictionary(txin => txin, txin => view.GetOutputFor(txin));
+                posRuleContext.CoinStakePrevOutputs = transaction.Inputs.ToDictionary(txin => txin, txin => view.GetOutputFor(txin));
             }
 
             base.UpdateUTXOSet(context, transaction);

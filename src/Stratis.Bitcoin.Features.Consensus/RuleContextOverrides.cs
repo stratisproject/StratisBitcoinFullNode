@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
         public BlockStake BlockStake { get; set; }
 
-        public Dictionary<TxIn, TxOut> CoinStakeInputs { get; set; }
+        public Dictionary<TxIn, TxOut> CoinStakePrevOutputs { get; set; }
 
         public Money TotalCoinStakeValueIn { get; set; }
 
