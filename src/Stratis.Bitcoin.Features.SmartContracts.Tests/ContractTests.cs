@@ -434,6 +434,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractInvocationResult result = this.contract.Invoke(methodCall);
 
             Assert.False(result.IsSuccess);
+            Assert.Equal(ContractInvocationErrorType.ParameterTypesDontMatch, result.InvocationErrorType);
         }
     }
 }

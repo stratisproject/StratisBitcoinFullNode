@@ -116,6 +116,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             object[] invokeParams = call.Parameters?.ToArray() ?? new object[0];
 
+            if (invokeParams.Any(p => p == null))
+            {
+                // Do not support binding of null parameter values.
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
+            }
+
             Type[] types = invokeParams.Select(p => p.GetType()).ToArray();
 
             MethodInfo methodToInvoke = this.Type.GetMethod(call.Name, types);
