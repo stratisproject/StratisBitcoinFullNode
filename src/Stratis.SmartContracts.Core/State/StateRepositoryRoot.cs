@@ -50,13 +50,13 @@ namespace Stratis.SmartContracts.Core.State
             this.stateTrie = new PatriciaTrie(stateRoot, this.trieCache);
 
             SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(this.stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
-            ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
+            WriteCache<AccountState> accountStateCache = new WriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
 
-            MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
+            var storageCaches = new StorageCaches(this);
             ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             ISource<byte[], byte[]> unspentCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
             SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.ContractOutputSerializer);
-            this.Init(accountStateCache, codeCache, storageCache, unspentCacheCodec);
+            this.Init(accountStateCache, codeCache, storageCaches, unspentCacheCodec);
         }
 
         public override void Commit()
@@ -68,7 +68,7 @@ namespace Stratis.SmartContracts.Core.State
 
         private byte[] GetRoot()
         {
-            this.storageCache.Flush();
+            this.storageCaches.Flush();
             this.accountStateCache.Flush();
 
             return this.stateTrie.GetRootHash();
