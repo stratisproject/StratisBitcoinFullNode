@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("(-)[PENDING_BATCH_INCORRECT_SEQEUNCE]");
 
-                throw new ProvenHeaderStoreException("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
+                throw new ProvenBlockHeaderStoreException("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
             }
 
             // Save the items to disk.
@@ -368,7 +368,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             if (latestHeader == null)
             {
                 // Happens when the proven header store is corrupt.
-                throw new ProvenHeaderStoreException("Proven block header store failed to recover.");
+                throw new ProvenBlockHeaderStoreException("Proven block header store failed to recover.");
             }
 
             while (this.chain.GetBlock(tipHeight) == null)

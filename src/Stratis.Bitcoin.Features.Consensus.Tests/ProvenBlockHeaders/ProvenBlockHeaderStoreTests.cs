@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (ProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
                 new Action(() => store.InitializeAsync().Wait())
-                    .Should().Throw<ProvenHeaderStoreException>()
+                    .Should().Throw<ProvenBlockHeaderStoreException>()
                     .And.Message.Should().Be("Proven block header store failed to recover.");
             }
         }
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             taskResult.IsFaulted.Should().BeTrue();
             taskResult.Exception.InnerExceptions.Count.Should().Be(1);
-            taskResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenHeaderStoreException>();
+            taskResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenBlockHeaderStoreException>();
             taskResult.Exception.InnerExceptions[0].Message.Should().Be("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
         }
 
