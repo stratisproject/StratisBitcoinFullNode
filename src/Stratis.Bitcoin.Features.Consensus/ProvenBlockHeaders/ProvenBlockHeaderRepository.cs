@@ -147,11 +147,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             Guard.Assert(newTip.Hash == headers.Last().GetHash());
 
-            if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.HashPrevBlock))
+            if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.GetHash()))
             {
                 this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
 
-                throw new InvalidOperationException("Invalid newTip block hash.");
+                throw new ProvenBlockHeaderException("Invalid newTip block hash. newTip block hash is the same a the most recent proven block header hash saved to disk.");
             }
 
             Task task = Task.Run(() =>

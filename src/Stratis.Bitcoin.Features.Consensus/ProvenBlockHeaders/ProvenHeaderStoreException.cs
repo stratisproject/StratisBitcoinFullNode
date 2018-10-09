@@ -2,9 +2,9 @@
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
-    public class ProvenBlockHeaderStoreException : Exception
+    public class ProvenBlockHeaderException : Exception
     {
-        public ProvenBlockHeaderStoreException(string message) : base(message)
+        public ProvenBlockHeaderException(string message) : base(message)
         {
         }
     }
