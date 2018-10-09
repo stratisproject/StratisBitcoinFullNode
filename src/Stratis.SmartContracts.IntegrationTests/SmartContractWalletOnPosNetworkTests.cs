@@ -18,7 +18,7 @@ namespace Stratis.SmartContracts.IntegrationTests
     {
         private readonly ICallDataSerializer callDataSerializer;
         private const string WalletName = "mywallet";
-        private const string Password = "123456";
+        private const string Password = "password";
         private const string Passphrase = "test";
         private const string AccountName = "account 0";
 
