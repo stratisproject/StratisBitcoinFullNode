@@ -484,12 +484,11 @@ public class Test {
 
             var typeDefinition = CompileToTypeDef(source);
 
-            foreach (var methodDefinition in typeDefinition.Methods)
-            {
-                var result = new MethodParamValidator().Validate(methodDefinition).ToList();
-                Assert.Equal(2, result.Count);
-                Assert.True(result.All(r => r is MethodParamValidator.MethodParamValidationResult));
-            }
+            var method = typeDefinition.Methods.First(m => m.Name == "OptionalTest");
+
+            var result = new MethodParamValidator().Validate(method).ToList();
+            Assert.Equal(2, result.Count);
+            Assert.True(result.All(r => r is MethodParamValidator.MethodParamValidationResult));
         }
 
         [Fact]
@@ -503,7 +502,7 @@ public class Test {
 
             Assert.Single(result);
             Assert.IsType<FinalizerValidator.FinalizerValidationResult>(result.Single());
-        }        
+        }
 
         [Fact]
         public void FinalizerValidator_Should_Validate_MethodFinalizer()
