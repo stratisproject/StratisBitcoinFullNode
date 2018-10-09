@@ -6,6 +6,7 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Logging.Internal;
 using Moq;
+using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -24,7 +25,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     /// </summary>
     public class GivenADnsFeature : TestBase
     {
-        private class ConstructorParameters
+        private class TestContext
         {
             public Mock<IDnsServer> dnsServer;
             public Mock<IWhitelistManager> whitelistManager;
@@ -37,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             public Mock<IConnectionManager> connectionManager;
             public UnreliablePeerBehavior unreliablePeerBehavior;
 
-            public ConstructorParameters()
+            public TestContext(Network network)
             {
                 this.dnsServer = new Mock<IDnsServer>();
                 this.whitelistManager = new Mock<IWhitelistManager>();
@@ -48,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
                 this.nodeLifetime = new Mock<INodeLifetime>();
                 this.dnsSettings = new Mock<DnsSettings>();
-                this.nodeSettings = NodeSettings.Default();
+                this.nodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
                 this.dataFolder = CreateDataFolder(this);
                 this.asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
                 this.connectionManager = this.BuildConnectionManager();
@@ -72,11 +73,11 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             }
         }
 
-        private readonly ConstructorParameters defaultConstructorParameters;
+        private readonly TestContext defaultConstructorParameters;
 
         public GivenADnsFeature() : base(KnownNetworks.Main)
         {
-            this.defaultConstructorParameters = new ConstructorParameters();
+            this.defaultConstructorParameters = new TestContext(this.Network);
         }
 
         /// <summary>
@@ -194,7 +195,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 throw new OperationCanceledException();
             };
             this.defaultConstructorParameters.dnsServer.Setup(s => s.ListenAsync(It.IsAny<int>(), It.IsAny<CancellationToken>())).Callback(action);
-            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
 
             // Act.
             var feature = this.BuildDefaultDnsFeature();
@@ -226,10 +226,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
 
-            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
-
-            //IAsyncLoopFactory asyncLoopFactory = new AsyncLoopFactory(loggerFactory.Object);
-
             // Act.
             var feature = this.BuildDefaultDnsFeature();
             feature.InitializeAsync().GetAwaiter().GetResult();
@@ -256,8 +252,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var source = new CancellationTokenSource(3000);
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
-
-            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
 
             var logger = new Mock<ILogger>();
             bool serverError = false;
@@ -286,8 +280,6 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var source = new CancellationTokenSource(3000);
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.StopApplication()).Callback(() => source.Cancel());
             this.defaultConstructorParameters.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
-
-            this.defaultConstructorParameters.nodeSettings = new NodeSettings(args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
 
             this.defaultConstructorParameters.asyncLoopFactory = new AsyncLoopFactory(this.defaultConstructorParameters.loggerFactory.Object);
 

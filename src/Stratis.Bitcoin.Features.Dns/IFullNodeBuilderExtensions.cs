@@ -33,8 +33,8 @@ namespace Stratis.Bitcoin.Features.Dns
                     services.AddSingleton<IUdpClient, DnsSeedUdpClient>();
                     services.AddSingleton<IWhitelistManager, WhitelistManager>();
 
-                    // Transient, means that every time this service is requested, a new instance is created.
-                    services.AddTransient<UnreliablePeerBehavior, UnreliablePeerBehavior>();
+                    // TODO: using Transient and a factory could allow us to get rid of Clone method.
+                    services.AddSingleton<UnreliablePeerBehavior, UnreliablePeerBehavior>();
                 });
             });
 
