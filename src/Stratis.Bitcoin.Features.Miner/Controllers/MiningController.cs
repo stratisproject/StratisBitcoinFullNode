@@ -98,9 +98,16 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
             }
         }
 
+        /// <summary>
+        /// Stop mining.
+        /// </summary>
+        /// <param name="corsProtection">This body parameter is here to prevent a CORS call from triggering method execution.</param>
+        /// <remarks>
+        /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
+        /// </remarks>
         [Route("stopmining")]
         [HttpPost]
-        public IActionResult StopMining()
+        public IActionResult StopMining([FromBody] bool corsProtection = true)
         {
             try
             {
