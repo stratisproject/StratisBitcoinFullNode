@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Consensus
                         ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
                         if (fullValidationResult.Succeeded)
                         {
-                            this.chainedHeaderTree.ClaimPeerTipForMiner(validationContext.ChainedHeaderToValidate.HashBlock);
+                            //this.chainedHeaderTree.ClaimPeerTipForMiner(validationContext.ChainedHeaderToValidate.HashBlock);
                         }
                         else
                         {
@@ -540,7 +540,11 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Blocks to connect are missing!");
             }
 
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = null;
+            if (!isExtension)
+                connectBlockResult = await this.ConnectChainFromReorgAsync(newTip, blocksToConnect).ConfigureAwait(false);
+            else
+                connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -636,7 +640,70 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Connects new chain.</summary>
         /// <param name="newTip">New tip.</param>
         /// <param name="blocksToConnect">List of blocks to connect.</param>
-        private async Task<ConnectBlocksResult> ConnectChainAsync(ChainedHeader newTip, List<ChainedHeaderBlock> blocksToConnect)
+        private async Task<ConnectBlocksResult> ConnectChainFromReorgAsync(ChainedHeader newTip, List<ChainedHeaderBlock> blocksToConnect)
+        {
+            ChainedHeaderBlock lastValidatedBlock = null;
+            ConnectBlocksResult connectBlockResult = null;
+
+            var forkPoint = blocksToConnect[0].ChainedHeader.Previous;
+
+            foreach (ChainedHeaderBlock blockToConnect in blocksToConnect)
+            {
+                using (this.performanceCounter.MeasureBlockConnectionFV())
+                {
+                    connectBlockResult = await this.ConnectBlockFromReorgAsync(forkPoint, blockToConnect).ConfigureAwait(false);
+
+                    if (!connectBlockResult.Succeeded)
+                    {
+                        connectBlockResult.LastValidatedBlockHeader = lastValidatedBlock.ChainedHeader;
+
+                        this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:'{0}'", connectBlockResult);
+                        return connectBlockResult;
+                    }
+
+                    lastValidatedBlock = blockToConnect;
+
+                    this.SetConsensusTipInternalLocked(lastValidatedBlock.ChainedHeader);
+
+                    using (this.performanceCounter.MeasureBlockConnectedSignal())
+                    {
+                        this.signals.SignalBlockConnected(lastValidatedBlock);
+                    }
+                }
+            }
+
+            // Block connected successfully.
+            if (lastValidatedBlock.ChainedHeader.HashBlock == newTip.HashBlock)
+            {
+                List<int> peersToResync = this.SetConsensusTip(lastValidatedBlock.ChainedHeader);
+
+                await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
+
+                if (this.network.Consensus.MaxReorgLength != 0)
+                {
+                    int newFinalizedHeight = lastValidatedBlock.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
+
+                    if (newFinalizedHeight > 0)
+                    {
+                        uint256 newFinalizedHash = lastValidatedBlock.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
+
+                        this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeight(newFinalizedHash, newFinalizedHeight);
+                    }
+                }
+
+                //using (this.performanceCounter.MeasureBlockConnectedSignal())
+                //{
+                //    this.signals.SignalBlockConnected(lastValidatedBlock);
+                //}
+            }
+
+            return connectBlockResult;
+        }
+
+        /// <summary>Connects new chain.</summary>
+        /// <param name="newTip">New tip.</param>
+        /// <param name="blocksToConnect">List of blocks to connect.</param>
+        private async Task<ConnectBlocksResult> ConnectChainAsync(ChainedHeader newTip, List<ChainedHeaderBlock> blocksToConnect, bool reconnectFromFailedReorg = false)
         {
             ChainedHeader lastValidatedBlockHeader = null;
             ConnectBlocksResult connectBlockResult = null;
@@ -658,7 +725,7 @@ namespace Stratis.Bitcoin.Consensus
                     lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                     // Block connected successfully.
-                    List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
+                    List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader, reconnectFromFailedReorg);
 
                     await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
 
@@ -690,7 +757,7 @@ namespace Stratis.Bitcoin.Consensus
         private async Task<ConnectBlocksResult> ReconnectOldChainAsync(ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToReconnect)
         {
             // Connect back the old blocks.
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(currentTip, blocksToReconnect, true).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -791,6 +858,53 @@ namespace Stratis.Bitcoin.Consensus
             return result;
         }
 
+        private async Task<ConnectBlocksResult> ConnectBlockFromReorgAsync(ChainedHeader forkPoint, ChainedHeaderBlock blockToConnect)
+        {
+            if ((blockToConnect.ChainedHeader.BlockValidationState != ValidationState.PartiallyValidated) &&
+                (blockToConnect.ChainedHeader.BlockValidationState != ValidationState.FullyValidated))
+            {
+                this.logger.LogError("Block '{0}' must be partially or fully validated but it is {1}.", blockToConnect, blockToConnect.ChainedHeader.BlockValidationState);
+                this.logger.LogTrace("(-)[BLOCK_INVALID_STATE]");
+                throw new ConsensusException("Block must be partially or fully validated.");
+            }
+
+            // Call the validation engine.
+            ValidationContext validationContext = await this.fullValidator.ValidateAsync(blockToConnect.ChainedHeader, blockToConnect.Block).ConfigureAwait(false);
+
+            if (validationContext.Error != null)
+            {
+                List<int> badPeers;
+
+                lock (this.peerLock)
+                {
+                    badPeers = this.chainedHeaderTree.PartialOrFullValidationFailedFromReorg(blockToConnect.ChainedHeader);
+                }
+
+                var failureResult = new ConnectBlocksResult(false)
+                {
+                    BanDurationSeconds = validationContext.BanDurationSeconds,
+                    BanReason = validationContext.Error.Message,
+                    ConsensusTipChanged = false,
+                    Error = validationContext.Error,
+                    PeersToBan = badPeers
+                };
+
+                this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
+                return failureResult;
+            }
+
+            lock (this.peerLock)
+            {
+                this.chainedHeaderTree.FullValidationSucceeded(blockToConnect.ChainedHeader);
+
+                this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
+            }
+
+            var result = new ConnectBlocksResult(true) { ConsensusTipChanged = true };
+
+            return result;
+        }
+
         /// <summary>Try to find all blocks between two headers.</summary>
         /// <returns>Collection of blocks that were loaded. In case at least one block was not present <c>null</c> will be returned.</returns>
         private async Task<List<ChainedHeaderBlock>> TryGetBlocksToConnectAsync(ChainedHeader proposedNewTip, int heightOfFirstBlock)
@@ -819,11 +933,11 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Sets the consensus tip.</summary>
         /// <param name="newTip">New consensus tip.</param>
-        private List<int> SetConsensusTip(ChainedHeader newTip)
+        private List<int> SetConsensusTip(ChainedHeader newTip, bool reconnectFromFailedReorg = false)
         {
             lock (this.peerLock)
             {
-                List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip);
+                List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip, reconnectFromFailedReorg);
 
                 this.SetConsensusTipInternalLocked(newTip);
 
