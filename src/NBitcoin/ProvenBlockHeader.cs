@@ -62,16 +62,16 @@ namespace NBitcoin
         public BlockSignature Signature => this.signature;
 
         /// <summary>Gets the size of the merkle proof in bytes, the header must be serialized or deserialized for this property to be set.</summary>
-        public long? MerkleProofSize { get; protected set; }
+        public long MerkleProofSize { get; protected set; }
 
         /// <summary>Gets the size of the signature in bytes, the header must be serialized or deserialized for this property to be set.</summary>
-        public long? SignatureSize { get; protected set; }
+        public long SignatureSize { get; protected set; }
 
         /// <summary>Gets the size of the coinstake in bytes, the header must be serialized or deserialized for this property to be set.</summary>
-        public long? CoinstakeSize { get; protected set; }
+        public long CoinstakeSize { get; protected set; }
 
-        /// <summary>Gets the header size in bytes, the header must be serialized or deserialized for this property to be set.</summary>
-        public long HeaderSize { get; private set; }
+        /// <summary>Gets the total header size - including the <see cref="BlockHeader.Size"/> - in bytes. <see cref="ProvenBlockHeader"/> must be serialized or deserialized for this property to be set.</summary>
+        public long HeaderSize => Size + this.MerkleProofSize + this.SignatureSize + this.CoinstakeSize;
 
         public ProvenBlockHeader()
         {
@@ -89,11 +89,6 @@ namespace NBitcoin
             this.Nonce = block.Header.Nonce;
             this.Version = block.Header.Version;
 
-            // Set additional properties.
-            this.MerkleProofSize = null;
-            this.CoinstakeSize = null;
-            this.SignatureSize = null;
-
             this.signature = block.BlockSignature;
             this.coinstake = block.Transactions[1];
             this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
@@ -103,16 +98,14 @@ namespace NBitcoin
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
-            this.HeaderSize = stream.ProcessedBytes;
-
             stream.ReadWrite(ref this.merkleProof);
-            this.MerkleProofSize = stream.ProcessedBytes - this.HeaderSize;
+            this.MerkleProofSize = stream.ProcessedBytes - Size;
 
             stream.ReadWrite(ref this.signature);
-            this.SignatureSize = stream.ProcessedBytes - this.HeaderSize - this.MerkleProofSize;
+            this.SignatureSize = stream.ProcessedBytes - Size - this.MerkleProofSize;
 
             stream.ReadWrite(ref this.coinstake);
-            this.CoinstakeSize = stream.ProcessedBytes - this.HeaderSize - this.MerkleProofSize - this.SignatureSize;
+            this.CoinstakeSize = stream.ProcessedBytes - Size - this.MerkleProofSize - this.SignatureSize;
         }
 
         /// <inheritdoc />

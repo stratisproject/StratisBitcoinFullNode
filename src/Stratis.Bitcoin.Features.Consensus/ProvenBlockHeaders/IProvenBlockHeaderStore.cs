@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Adds <see cref="ProvenBlockHeader"/> items to the pending batch.  Ready for saving to disk.
         /// </summary>
         /// <param name="provenBlockHeader">A <see cref="ProvenBlockHeader"/> item to add.</param>
-        /// <param name="newTip">Block hash and height pair associated against the <see cref="ProvenBlockHeader"/> item.</param>
+        /// <param name="newTip">Hash and height pair that represent the tip of <see cref="IProvenBlockHeaderStore"/>.</param>
         void AddToPendingBatch(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip);
     }
 }

@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    this.logger.LogTrace("Loading ProvenBlockHeaders from block height '{0}' to '{1}  from the database.",
+                    this.logger.LogTrace("Loading ProvenBlockHeaders from block height {0} to {1} from the database.",
                         fromBlockHeight, toBlockHeight);
 
                     var headers = new List<ProvenBlockHeader>();
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         }
                         else
                         {
-                            this.logger.LogTrace("ProvenBlockHeader block height ({0}) does not exist in the database.", i);
+                            this.logger.LogTrace("ProvenBlockHeader height ({0}) does not exist in the database.", i);
                             headers.Add(null);
                         }
                     }
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             IEnumerable<ProvenBlockHeader> headers =  await this.GetAsync(blockHeight, blockHeight).ConfigureAwait(false);
 
-            return headers.First();
+            return headers.FirstOrDefault();
         }
 
         /// <inheritdoc />
@@ -169,34 +169,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     transaction.Commit();
 
                     this.TipHashHeight = newTip;
-                }
-            });
-
-            return task;
-        }
-
-        /// <summary>
-        /// Delete <see cref="ProvenBlockHeader"/> items.
-        /// </summary>
-        /// <param name="fromBlockHeight">Block height to start range.</param>
-        /// <param name="toBlockHeight">Block height end range.</param>
-        private Task DeleteAsync(int fromBlockHeight, int toBlockHeight)
-        {
-            Task task = Task.Run(() =>
-            {
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
-
-                    transaction.ValuesLazyLoadingIsOn = false;
-
-                    for (int i = fromBlockHeight; i <= toBlockHeight; i++)
-                        transaction.RemoveKey<byte[]>(ProvenBlockHeaderTable, i.ToBytes(false));
-
-                    transaction.Commit();
-
-                    // TODO : Get the most recent value in ProvenBlockHeaderTable and set the tip.
-                    // TODO:  Also check that sequentiality is kept.
                 }
             });
 

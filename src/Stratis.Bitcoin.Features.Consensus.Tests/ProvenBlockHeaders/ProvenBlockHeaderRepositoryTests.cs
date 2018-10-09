@@ -183,62 +183,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
         }
 
-        [Fact(Skip = "Used when reorg happens - complete in next task.")]
-        public async Task DeleteAsync_RemovesProvenBlockHeadersAsync()
-        {
-            string folder = CreateTestDir(this);
-
-            ProvenBlockHeader headerIn = CreateNewProvenBlockHeaderMock();
-
-            var items = new List<ProvenBlockHeader> { headerIn, headerIn, };
-
-            int[] blockHeights = { 1, 2 };
-            var newTip = new HashHeightPair(new uint256(), blockHeights.Count());
-
-            // Add items and verify they exist.
-            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
-            {
-                await repo.PutAsync(items, newTip).ConfigureAwait(false);
-            }
-
-            using (var engine = new DBreezeEngine(folder))
-            {
-                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-
-                txn.SynchronizeTables(ProvenBlockHeaderTable);
-
-                txn.ValuesLazyLoadingIsOn = false;
-
-                var row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[0].ToBytes(false));
-                row.Exists.Should().BeTrue();
-
-                row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[1].ToBytes(false));
-                row.Exists.Should().BeTrue();
-            }
-
-            // Delete the items and verify they no longer exist.
-            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
-            {
-                // TODO
-                // await repo.DeleteAsync(3, blockHeights.ToList());
-            }
-
-            using (var engine = new DBreezeEngine(folder))
-            {
-                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-
-                txn.SynchronizeTables(ProvenBlockHeaderTable);
-
-                txn.ValuesLazyLoadingIsOn = false;
-
-                var row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[0].ToBytes(false));
-                row.Exists.Should().BeFalse();
-
-                row = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeights[1].ToBytes(false));
-                row.Exists.Should().BeFalse();
-            }
-        }
-
         private ProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
             var repo = new ProvenBlockHeaderRepository(network, folder, this.LoggerFactory.Object);

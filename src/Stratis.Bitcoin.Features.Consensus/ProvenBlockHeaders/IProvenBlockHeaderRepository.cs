@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     /// <summary>
-    /// Interface for <see cref="ProvenBlockHeaderRepository"></see>.
+    /// Interface to insert and retrieve <see cref="ProvenBlockHeader"/> items from the database repository.
     /// </summary>
     public interface IProvenBlockHeaderRepository : IProvenBlockHeaderProvider
     {
