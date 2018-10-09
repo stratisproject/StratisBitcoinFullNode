@@ -423,5 +423,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(result.IsSuccess);
             Assert.Equal(param, result.Return);
         }
+
+        [Fact]
+        public void Invoke_Method_With_Null_Param()
+        {
+            var param = (string) null;
+            var methodCall = new MethodCall("Test2", new object[] { param });
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
+
+            Assert.False(result.IsSuccess);
+        }
     }
 }
