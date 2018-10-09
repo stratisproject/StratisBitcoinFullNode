@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 500,
+                maxReorgLength: 0, // No max reorg limit on PoA networks.
                 defaultAssumeValid: null,
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 50,
