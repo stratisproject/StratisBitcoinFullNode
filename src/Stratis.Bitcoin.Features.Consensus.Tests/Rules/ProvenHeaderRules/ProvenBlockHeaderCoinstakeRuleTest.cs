@@ -5,18 +5,17 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
+using uint256 = NBitcoin.uint256;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 {
     public class ProvenBlockHeaderCoinstakeRuleTest : TestPosConsensusRulesUnitTestBase
     {
         private readonly PosConsensusOptions options;
-        private readonly Mock<IStakeValidator> stakeValidatorMock = new Mock<IStakeValidator>();
 
         public ProvenBlockHeaderCoinstakeRuleTest()
         {
@@ -162,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
         [Fact]
         public void RunRule_ProvenHeadersActive_And_InvalidStakeTime_StakeTimeViolationErrorIsThrown()
         {
-            // Setup proven header with null coinstake.
+            // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
 
@@ -203,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
             previousChainedHeader.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 1);
 
-            // Setup proven header with null coinstake.
+            // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
             provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
@@ -218,11 +217,169 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()) }, posBlock.GetHash()));
 
-            // When we run the validation rule, we should hit coinstake stake time violation error.
+            // When we run the validation rule, we should hit coinstake depth error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.InvalidStakeDepth);
+        }
+
+        [Fact]
+        public void RunRule_ProvenHeadersActive_And_InvalidCoinstakeSignature_CoinstakeVerifySignatureErrorIsThrown()
+        {
+            // Setup previous chained header.
+            PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
+            var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 1);
+
+            // Setup proven header with valid coinstake.
+            PosBlock posBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
+            provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
+
+            // Setup chained header and move it to the height higher than proven header activation height.
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 2);
+
+            // Setup coinstake transaction with a valid stake age.
+            this.coinView
+                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.options.ProvenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+
+            // Setup stake validator to fail signature validation.
+            this.stakeValidator
+                .Setup(m => m.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), It.IsAny<int>(), It.IsAny<ScriptVerify>()))
+                .Returns(false);
+
+            // When we run the validation rule, we should hit coinstake signature verification error.
+            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            ruleValidation.Should().Throw<ConsensusErrorException>()
+                .And.ConsensusError
+                .Should().Be(ConsensusErrors.CoinstakeVerifySignatureFailed);
+        }
+
+        [Fact]
+        public void RunRule_ProvenHeadersActive_And_NullPreviousStake_PrevStakeErrorIsThrown()
+        {
+            // Setup previous chained header.
+            PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
+            var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 1);
+
+            // Setup proven header with valid coinstake.
+            PosBlock posBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
+            provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
+
+            // Setup chained header and move it to the height higher than proven header activation height.
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 2);
+
+            // Setup coinstake transaction with a valid stake age.
+            this.coinView
+                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.options.ProvenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+
+            // Setup stake validator to pass signature validation.
+            this.stakeValidator
+                .Setup(m => m.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), It.IsAny<int>(), It.IsAny<ScriptVerify>()))
+                .Returns(true);
+
+            // When we run the validation rule, we should hit previous stake null error.
+            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            ruleValidation.Should().Throw<ConsensusErrorException>()
+                .And.ConsensusError
+                .Should().Be(ConsensusErrors.PrevStakeNull);
+        }
+
+        [Fact]
+        public void RunRule_ProvenHeadersActive_And_InvalidStakeKernelHash_CoinstakeVerifySignatureErrorIsThrown()
+        {
+            // Setup previous chained header.
+            PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
+            var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 1);
+
+            // Setup proven header with valid coinstake.
+            PosBlock posBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
+            provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
+
+            // Setup chained header and move it to the height higher than proven header activation height.
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 2);
+
+            // Setup coinstake transaction with a valid stake age.
+            this.coinView
+                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.options.ProvenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+
+            // Setup stake validator to pass signature validation.
+            this.stakeValidator
+                .Setup(m => m.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), It.IsAny<int>(), It.IsAny<ScriptVerify>()))
+                .Returns(true);
+
+            // Setup stake validator to fail stake kernel hash validation.
+            this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
+            this.stakeValidator
+                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<BlockStake>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()))
+                .Throws(new ConsensusErrorException(ConsensusErrors.StakeHashInvalidTarget));
+
+            // When we run the validation rule, we should hit stake hash invalied target error.
+            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            ruleValidation.Should().Throw<ConsensusErrorException>()
+                .And.ConsensusError
+                .Should().Be(ConsensusErrors.StakeHashInvalidTarget);
+        }
+
+        [Fact]
+        public void RunRule_ProvenHeadersActive_And_InvalidMerkleProof_BadMerkleProofErrorIsThrown()
+        {
+            // Setup previous chained header.
+            PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
+            var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 1);
+
+            // Setup proven header with valid coinstake.
+            PosBlock posBlock = new PosBlockBuilder(this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
+            provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
+
+            // Corrupt merkle proof.
+            provenBlockHeader.SetPrivateVariableValue("merkleProof", new PartialMerkleTree(new [] { new uint256(1234) }, new [] { false }));
+
+            // Setup chained header and move it to the height higher than proven header activation height.
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 2);
+
+            // Setup coinstake transaction with a valid stake age.
+            this.coinView
+                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.options.ProvenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+
+            // Setup stake validator to pass signature validation.
+            this.stakeValidator
+                .Setup(m => m.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), It.IsAny<int>(), It.IsAny<ScriptVerify>()))
+                .Returns(true);
+
+            // Setup stake validator to pass stake kernel hash validation.
+            this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
+            this.stakeValidator
+                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<BlockStake>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()));
+            
+            // When we run the validation rule, we should hit bad merkle proof error.
+            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            ruleValidation.Should().Throw<ConsensusErrorException>()
+                .And.ConsensusError
+                .Should().Be(ConsensusErrors.BadMerkleRoot);
         }
     }
 }
