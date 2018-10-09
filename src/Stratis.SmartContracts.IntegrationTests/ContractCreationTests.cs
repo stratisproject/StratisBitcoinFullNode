@@ -71,7 +71,6 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Check block has 3 transactions. Coinbase, our tx, and then a condensing tx.
                 var block = receiver.GetLastBlock();
-
                 Assert.Equal(3, block.Transactions.Count);
                 // Condensing tx has 1 input and 1 output - FROM: real tx. TO: new contract address.
                 Assert.Single(block.Transactions[2].Inputs);
