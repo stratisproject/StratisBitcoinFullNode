@@ -13,10 +13,16 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
-    // TODO POA comment
     /// <summary>
-    ///
+    /// Mines blocks for PoA network.
+    /// Mining can happen only in case this node is a federation member.
     /// </summary>
+    /// <remarks>
+    /// Blocks can be created only for particular timestamps- once per round.
+    /// Round length in seconds is equal to amount of fed members multiplied by target spacing.
+    /// Miner's slot in each round is the same and is determined by the index
+    /// of current key in <see cref="PoANetwork.FederationPublicKeys"/>
+    /// </remarks>
     public interface IPoAMiner : IDisposable
     {
         void InitializeMining();
@@ -25,8 +31,6 @@ namespace Stratis.Bitcoin.Features.PoA
     /// <inheritdoc cref="IPoAMiner"/>
     public class PoAMiner : IPoAMiner
     {
-        // TODO POA. Implement miner properly later.
-
         private readonly IConsensusManager consensusManager;
 
         private readonly IDateTimeProvider dateTimeProvider;
@@ -134,7 +138,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     // Update merkle root.
                     blockTemplate.Block.UpdateMerkleRoot();
 
-                    // TODO POA That should also do interg vaidation
+                    // TODO POA That should also do intergity vaidation
                     ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 
                     if (chainedHeader == null)
