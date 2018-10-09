@@ -29,16 +29,6 @@ namespace Stratis.SmartContracts.Core.State
             return newCache;
         }
 
-        public void Put(byte[] key, StorageCache val)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Delete(byte[] key)
-        {
-            throw new NotImplementedException();
-        }
-
         public bool Flush()
         {
             bool ret = false;
@@ -55,16 +45,8 @@ namespace Stratis.SmartContracts.Core.State
             }
             return ret;
         }
-    }
 
-    public class CachedStorageCaches : ISource<byte[], StorageCache>
-    {
         public void Put(byte[] key, StorageCache val)
-        {
-            throw new NotImplementedException();
-        }
-
-        public StorageCache Get(byte[] key)
         {
             throw new NotImplementedException();
         }
@@ -73,8 +55,28 @@ namespace Stratis.SmartContracts.Core.State
         {
             throw new NotImplementedException();
         }
+    }
+
+    public class CachedStorageCaches : ISource<byte[], StorageCache>
+    {
+        private ISource<byte[], StorageCache>
+
+        public StorageCache Get(byte[] key)
+        {
+            throw new NotImplementedException();
+        }
 
         public bool Flush()
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Put(byte[] key, StorageCache val)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Delete(byte[] key)
         {
             throw new NotImplementedException();
         }
