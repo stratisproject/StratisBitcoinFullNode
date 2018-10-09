@@ -65,13 +65,12 @@ namespace Stratis.SmartContracts.IntegrationTests
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);
 
-                var block = receiver.GetLastBlock();
-
                 // Check created contract has expected balance.
                 lastCreatedCatAddress = new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
                 Assert.Equal(amount * Money.COIN , sender.GetContractBalance(lastCreatedCatAddress.ToAddress(chain.Network)));
 
                 // Check block has 3 transactions. Coinbase, our tx, and then a condensing tx.
+                var block = receiver.GetLastBlock();
 
                 Assert.Equal(3, block.Transactions.Count);
                 // Condensing tx has 1 input and 1 output - FROM: real tx. TO: new contract address.
