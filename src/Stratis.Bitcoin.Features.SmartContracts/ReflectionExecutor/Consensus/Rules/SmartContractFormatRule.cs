@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// <summary>
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
-    public class SmartContractFormatRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
+    public class SmartContractFormatRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
         public const ulong GasLimitMaximum = 5_000_000;
 
