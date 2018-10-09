@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.asyncLoopFactory = asyncLoopFactory;
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 400);
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 100);
         }
 
         /// <inheritdoc />
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
 
-            this.logger.LogDebug("Initialized ProvenBlockHader block tip at '{0}'.", this.TipHashHeight);
+            this.logger.LogDebug("Initialized ProvenBlockHeader block tip at '{0}'.", this.TipHashHeight);
 
             this.asyncLoop = this.asyncLoopFactory.Run("ProvenBlockHeaders job", async token =>
             {
