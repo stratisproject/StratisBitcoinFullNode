@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             }
         }
 
-        [Retry]
+        [Retry(5)]
         public void BlockStoreCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

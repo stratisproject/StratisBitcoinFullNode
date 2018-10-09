@@ -189,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
+        [Retry(5)]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

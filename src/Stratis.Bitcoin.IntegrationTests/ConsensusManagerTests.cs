@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
+        [Retry(5)]
         public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain__With_Connected_Blocks_And_Fail_Then_Revert_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

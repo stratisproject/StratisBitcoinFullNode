@@ -194,12 +194,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             Then(a_method_not_allowed_error_is_returned);
         }
 
-        [Retry(5)]
+        [Fact]
         public void Proof_of_work_node_calls_generate_and_receives_error()
         {
             Given(a_proof_of_stake_node_with_api_enabled);
             When(calling_generate);
-            Then(a_method_not_allowed_error_is_returned);
+            Then(a_bad_request_error_is_returned);
         }
     }
 }

@@ -538,6 +538,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.response.StatusCode.Should().Be(StatusCodes.Status405MethodNotAllowed);
         }
 
+        private void a_bad_request_error_is_returned()
+        {
+            this.response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
+        }
+
         private void send_api_get_request(string apiendpoint)
         {
             this.response = this.httpClient.GetAsync($"{this.apiUri}{apiendpoint}").GetAwaiter().GetResult();

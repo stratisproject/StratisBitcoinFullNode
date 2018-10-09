@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             }
         }
 
-        [Retry]
+        [Retry(5)]
         public void TxMempoolBlockDoublespend()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
