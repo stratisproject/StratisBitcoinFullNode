@@ -87,6 +87,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 throw new OutOfGasException("Out of gas");
             }
 
+            public string TestOptionalParam(string optional = "DefaultValue")
+            {
+                return optional;
+            }
+
             public bool Test1Called { get; set; }
 
             public int Param { get; set; }
@@ -394,6 +399,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(this.state.PersistentState, persistentState);
             Assert.NotNull(smartContractState);
             Assert.Equal(this.state, smartContractState);
+        }
+
+        [Fact]
+        public void Invoke_Method_With_Empty_Optional_Param()
+        {
+            // Method binding should fail when a method has an optional param that is not provided
+            var methodCall = new MethodCall("TestOptionalParam");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
+
+            Assert.False(result.IsSuccess);
+        }
+
+        [Fact]
+        public void Invoke_Method_With_Set_Optional_Param()
+        {
+            var param = "Test Optional Param";
+            var methodCall = new MethodCall("TestOptionalParam", new object[] { param });
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(param, result.Return);
         }
     }
 }
