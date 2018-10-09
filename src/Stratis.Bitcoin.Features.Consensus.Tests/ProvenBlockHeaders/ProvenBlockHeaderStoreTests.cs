@@ -57,34 +57,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task LoadItemsAsync()
+        public async Task GetAsync_Get_Items_From_StoreAsync()
         {
-            var inItems = new List<ProvenBlockHeader>();
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
 
-            var provenHeaderMock = CreateNewProvenBlockHeaderMock();
+            this.concurrentChain = chainWithHeaders.concurrentChain;
 
-            ChainedHeader chainedHeader = this.concurrentChain.Tip;
+            var inHeaders = chainWithHeaders.provenBlockHeaders;
 
-            while(chainedHeader != null)
-            {
-                inItems.Add(provenHeaderMock);
-
-                chainedHeader = chainedHeader.Previous;
-            }
-
-            await this.provenBlockHeaderRepository.PutAsync(inItems, new HashHeightPair(provenHeaderMock.GetHash(), inItems.Count - 1)).ConfigureAwait(false);
+            await this.provenBlockHeaderRepository.PutAsync(inHeaders, new HashHeightPair(inHeaders.Last().GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
 
             // Then load them.
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
-                var outItems = await store.GetAsync(0, inItems.Count).ConfigureAwait(false);
+                var outHeaders = await store.GetAsync(0, inHeaders.Count).ConfigureAwait(false);
 
-                outItems.Count.Should().Be(inItems.Count);
+                outHeaders.Count.Should().Be(inHeaders.Count);
 
-                foreach(var item in outItems)
-                {
-                    item.GetHash().Should().Be(provenHeaderMock.GetHash());
-                }
+                // items in headers should exist in outHeaders (from the repository).
+                inHeaders.All(x => outHeaders.Any(y => x.GetHash() == y.GetHash())).Should().BeTrue();
             }
         }
 
