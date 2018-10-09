@@ -14,11 +14,15 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.PoA
 {
     // TODO POA comment
+    /// <summary>
+    ///
+    /// </summary>
     public interface IPoAMiner : IDisposable
     {
         void InitializeMining();
     }
 
+    /// <inheritdoc cref="IPoAMiner"/>
     public class PoAMiner : IPoAMiner
     {
         // TODO POA. Implement miner properly later.

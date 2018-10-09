@@ -86,6 +86,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <inheritdoc />
         public override void Dispose()
         {
+            this.miner.Dispose();
         }
     }
 
