@@ -61,9 +61,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private string builderWalletPassword;
         private string builderWalletPassphrase;
 
-        public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
+        public CoreNode(NodeRunner runnerParam, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
-            this.runner = runner;
+            this.runner = runnerParam;
 
             this.State = CoreNodeState.Stopped;
             string pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
