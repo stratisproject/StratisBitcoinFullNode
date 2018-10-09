@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -19,7 +20,9 @@ namespace Xunit
             if (maxRetries < 1)
                 maxRetries = 3;
 
-            yield return new RetryTestCase(diagnosticMessageSink, discoveryOptions.MethodDisplayOrDefault(), testMethod, maxRetries);
+            var exponentialBackoffMs = Math.Max(0, factAttribute.GetNamedArgument<int>("ExponentialBackoffMs"));
+
+            yield return new RetryTestCase(diagnosticMessageSink, discoveryOptions.MethodDisplayOrDefault(), testMethod, maxRetries, exponentialBackoffMs);
         }
     }
 }

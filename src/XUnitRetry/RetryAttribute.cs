@@ -9,9 +9,10 @@ namespace Xunit
     [XunitTestCaseDiscoverer("Xunit.RetryFactDiscoverer", "XunitRetry")]
     public class RetryAttribute : FactAttribute
     { 
-        public RetryAttribute(int maxRetries = 3)
+        public RetryAttribute(int maxRetries = 3, int exponentialBackoffMs = 1000)
         {
             MaxRetries = maxRetries;
+            ExponentialBackoffMs = exponentialBackoffMs;
         }
 
         /// <summary>
@@ -19,5 +20,10 @@ namespace Xunit
         /// default to 3 attempts.
         /// </summary>
         public int MaxRetries { get; set; }
+
+        /// <summary>
+        /// https://en.wikipedia.org/wiki/Exponential_backoff
+        /// </summary>
+        public int ExponentialBackoffMs { get; set; }
     }
 }

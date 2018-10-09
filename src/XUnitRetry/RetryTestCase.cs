@@ -11,15 +11,19 @@ namespace Xunit
     public class RetryTestCase : XunitTestCase
     {
         private int maxRetries;
+        private int exponentialBackoffMs;
+
+        private static readonly int MaxDelayInMs = (int)TimeSpan.FromMinutes(2).TotalMilliseconds;
 
         [EditorBrowsable(EditorBrowsableState.Never)]
         [Obsolete("Called by the de-serializer", true)]
         public RetryTestCase() { }
 
-        public RetryTestCase(IMessageSink diagnosticMessageSink, TestMethodDisplay testMethodDisplay, ITestMethod testMethod, int maxRetries)
+        public RetryTestCase(IMessageSink diagnosticMessageSink, TestMethodDisplay testMethodDisplay, ITestMethod testMethod, int maxRetries, int exponentialBackoffMs)
             : base(diagnosticMessageSink, testMethodDisplay, testMethod, testMethodArguments: null)
         {
             this.maxRetries = maxRetries;
+            this.exponentialBackoffMs = exponentialBackoffMs;
         }
 
         // This method is called by the xUnit test framework classes to run the test case. We will do the
@@ -48,6 +52,9 @@ namespace Xunit
                 }
 
                 diagnosticMessageSink.OnMessage(new DiagnosticMessage("Execution of '{0}' failed (attempt #{1}), retrying...", DisplayName, runCount));
+
+                var delayInMs = Math.Min((int)Math.Pow(2, runCount - 1) * this.exponentialBackoffMs, MaxDelayInMs);
+                await Task.Delay(delayInMs);
             }
         }
 
@@ -56,6 +63,7 @@ namespace Xunit
             base.Serialize(data);
 
             data.AddValue("MaxRetries", maxRetries);
+            data.AddValue("ExponentialBackoffMs", exponentialBackoffMs);
         }
 
         public override void Deserialize(IXunitSerializationInfo data)
@@ -63,6 +71,7 @@ namespace Xunit
             base.Deserialize(data);
 
             maxRetries = data.GetValue<int>("MaxRetries");
+            exponentialBackoffMs = data.GetValue<int>("ExponentialBackoffMs");
         }
     }
 }
