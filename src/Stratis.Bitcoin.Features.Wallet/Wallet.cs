@@ -194,8 +194,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// According to BIP44, an account at index (i) can only be created when the account at index (i - 1) contains at least one transaction.
         /// </remarks>
         /// <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki"/>
-        /// <param name="extPubKey">The extended public key for the wallet<see cref="EncryptedSeed"/>.</param>
         /// <param name="coinType">The type of coin this account is for.</param>
+        /// <param name="extPubKey">The extended public key for the wallet<see cref="EncryptedSeed"/>.</param>
         /// <param name="accountIndex">Zero-based index of the account to add.</param>
         /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <returns>A new HD account.</returns>
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.Accounts == null)
                 return null;
 
-            List<HdAccount> unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.Any() && !acc.InternalAddresses.Any()).ToList();
+            List<HdAccount> unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.SelectMany(add => add.Transactions).Any() && !acc.InternalAddresses.SelectMany(add => add.Transactions).Any()).ToList();
             if (!unusedAccounts.Any())
                 return null;
 
@@ -341,17 +341,17 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the account matching the name passed as a parameter.
         /// </summary>
         /// <param name="accountName">The name of the account to get.</param>
-        /// <returns></returns>
-        /// <exception cref="System.Exception"></exception>
+        /// <returns>The HD account specified by the parameter.</returns>
+        /// <exception cref="WalletException">An exception thrown if no account could be found.</exception>
         public HdAccount GetAccountByName(string accountName)
         {
             if (this.Accounts == null)
-                throw new WalletException($"No account with the name {accountName} could be found.");
+                throw new WalletException($"No account with the name '{accountName}' could be found.");
 
-            // get the account
+            // Get the requested account.
             HdAccount account = this.Accounts.SingleOrDefault(a => a.Name == accountName);
             if (account == null)
-                throw new WalletException($"No account with the name {accountName} could be found.");
+                throw new WalletException($"No account with the name '{accountName}' could be found.");
 
             return account;
         }
