@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NLog.LayoutRenderers.Wrappers;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -46,7 +47,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Gets the best header sent using <see cref="HeadersPayload"/>.</summary>
         /// <remarks>Write access should be protected by <see cref="bestSentHeaderLock"/>.</remarks>
-        public ChainedHeader BestSentHeader { get; private set; }
+        public ChainedHeader BestSentHeader { get; protected set; }
 
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
