@@ -1,4 +1,4 @@
-<Project Sdk="Microsoft.NET.Sdk">
+﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup Label="Globals">
     <SccProjectName>SAK</SccProjectName>
@@ -12,6 +12,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <StartupObject>FedKeyPairGen.Program</StartupObject>
     <RuntimeIdentifiers>win10-x64;</RuntimeIdentifiers>
+    <DebugType>Full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
