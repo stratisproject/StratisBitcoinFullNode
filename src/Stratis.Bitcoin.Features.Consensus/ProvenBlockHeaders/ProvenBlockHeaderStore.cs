@@ -11,21 +11,21 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     /// <summary>
-    /// Saves blocks to the database in batches.
+    /// Manages the persistence of <see cref="ProvenBlockHeader"/> items.
     /// </summary>
     /// <remarks>
     /// <para>
-    /// The batch is saved to the database and cleared every minute.
+    /// The pending batch is saved to the database and cleared every minute.
     /// </para>
     /// <para>
-    /// Items in the batch are also saved to the least recently used <see cref="MemorySizeCache"/>.  This cache has a memory size limit (<see cref="MemoryCacheSizeLimitInBytes"/>) of 100MB.
+    /// Items in the pending batch are also saved to the least recently used <see cref="MemorySizeCache"/>.  This cache has a memory size limit of 100MB (see <see cref="MemoryCacheSizeLimitInBytes"/>).
     /// </para>
     /// <para>
-    /// When we save new blocks to the database, in case <see cref="IProvenBlockHeaderRepository"/> contains blocks that
-    /// are no longer a part of our best chain, they are removed from the database.
+    /// When new <see cref="ProvenBlockHeader"/> items are saved to the database, in case <see cref="IProvenBlockHeaderRepository"/> contains headers that
+    /// are no longer a part of the best chain, they are overwritten or ignored.
     /// </para>
     /// <para>
-    /// When <see cref="ProvenBlockHeaderStore"/> is being initialized we overwrite blocks that are not on the best chain.
+    /// When <see cref="IProvenBlockHeaderStore"/> is being initialized we overwrite blocks that are not on the best chain.
     /// </para>
     /// </remarks>
     public class ProvenBlockHeaderStore : IProvenBlockHeaderStore
@@ -61,15 +61,17 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private BackendPerformanceSnapshot latestPerformanceSnapShot;
 
         /// <summary>
-        /// Current block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
+        /// Current <see cref="IProvenBlockHeaderStore"/> tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
         /// </summary>
         public HashHeightPair TipHashHeight { get; private set; }
 
-        /// <summary>The highest stored block in the repository.</summary>
+        /// <summary>
+        /// The highest stored <see cref= "ProvenBlockHeader"/> in the repository.
+        /// </summary>
         private ChainedHeader storeTip;
 
         /// <summary>
-        /// Pending - not yet saved to disk - block tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
+        /// Pending - not yet saved to disk - <see cref="IProvenBlockHeaderStore"/> tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
         /// </summary>
         /// <para>
         /// All access to these items have to be protected by <see cref="lockObject"/>.
@@ -166,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         ///     <item>The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the chain until a common block header is found and then set the <see cref="ProvenBlockHeaderStore"/>'s <see cref="storeTip"/> to that.
+        /// To recover we walk back the <see cref= "ConcurrentChain "/> until a common <see cref= "HashHeightPair"/> is found and then set the <see cref="ProvenBlockHeaderStore"/>'s <see cref="storeTip"/> to that.
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
@@ -182,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.TipHashHeight = new HashHeightPair(this.storeTip);
 
-            this.logger.LogDebug("Initialized ProvenBlockHeader block tip at '{0}'.", this.storeTip);
+            this.logger.LogDebug("Initialized ProvenBlockHeader store tip at '{0}'.", this.storeTip);
 
             this.asyncLoop = this.asyncLoopFactory.Run("ProvenBlockHeaders job", async token =>
             {
@@ -332,10 +334,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = null;
             }
 
-            // Make sure the block height keys, within the pendingBatch, are in sequence.
-            List<int> sortedBlockHeights = pendingBatch.OrderBy(s => s.Key).Select(s => s.Key).ToList();
+            // Make sure the proven block header height keys, within the pendingBatch, are in sequence.
+            List<int> sortedHeaderHeights = pendingBatch.OrderBy(s => s.Key).Select(s => s.Key).ToList();
 
-            if (!sortedBlockHeights.SequenceEqual(pendingBatch.Select(s => s.Key)))
+            if (!sortedHeaderHeights.SequenceEqual(pendingBatch.Select(s => s.Key)))
             {
                 this.logger.LogTrace("(-)[PENDING_BATCH_INCORRECT_SEQEUNCE]");
 
@@ -353,7 +355,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Sets block store tip to the last block that exists both in the repository and in the <see cref="ConcurrentChain"/>.
+        /// Will set the <see cref="IProvenBlockHeaderStore"/> tip to the last <see cref="ProvenBlockHeader"/> that exists both in the repository and in the <see cref="ConcurrentChain"/>.
         /// </summary>
         private async Task<ChainedHeader> RecoverStoreTipAsync()
         {
@@ -365,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             if (latestHeader == null)
             {
-                // Happens when the proven block header store is corrupt.
+                // Happens when the proven header store is corrupt.
                 throw new ProvenHeaderStoreException("Proven block header store failed to recover.");
             }
 

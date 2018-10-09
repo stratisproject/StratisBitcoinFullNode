@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task InitializeAsync_When_Tip_Reorg_Occurs_Tip_Is_CorrectAsync()
+        public async Task InitializeAsync_When_Tip_Reorg_Occurs_Tip_Is_Most_RecentAsync()
         {
             this.concurrentChain = new ConcurrentChain(this.network);
 
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             var inHeader = CreateNewProvenBlockHeaderMock();
 
-            // HashHeightPair Height sequence incorrect.
+            // Add headers to pending batch in the wrong height order.
             this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 1));
             this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 0));
 
