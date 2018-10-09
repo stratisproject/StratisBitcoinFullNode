@@ -496,9 +496,9 @@ namespace NBitcoin.Tests
             Assert.Equal(18442, network.RPCPort);
             Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
-            Assert.Equal(0, network.MinTxFee);
-            Assert.Equal(0, network.FallbackFee);
-            Assert.Equal(0, network.MinRelayTxFee);
+            Assert.Equal(10000, network.MinTxFee);
+            Assert.Equal(10000, network.FallbackFee);
+            Assert.Equal(10000, network.MinRelayTxFee);
             Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
