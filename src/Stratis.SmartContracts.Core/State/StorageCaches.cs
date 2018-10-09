@@ -5,7 +5,7 @@ using Stratis.Patricia;
 
 namespace Stratis.SmartContracts.Core.State
 {
-    public class StorageCaches : WriteCache<byte[], V>
+    public class StorageCaches : ISource<byte[], StorageCache>
     {
         // TODO: Any threading related stuff
         protected Dictionary<byte[], StorageCache> cache = new Dictionary<byte[],StorageCache>(new ByteArrayComparer());
@@ -54,6 +54,29 @@ namespace Stratis.SmartContracts.Core.State
                 this.repo.accountStateCache.Put(kvp.Key, storageOwnerAcct);
             }
             return ret;
+        }
+    }
+
+    public class CachedStorageCaches : ISource<byte[], StorageCache>
+    {
+        public void Put(byte[] key, StorageCache val)
+        {
+            throw new NotImplementedException();
+        }
+
+        public StorageCache Get(byte[] key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Delete(byte[] key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public bool Flush()
+        {
+            throw new NotImplementedException();
         }
     }
 }
