@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.CheckCoinstakeMerkleProof(header);
 
-            this.CheckHeaderSignatureWithConinstakeKernel(header, prevUtxo);
+            this.CheckHeaderSignatureWithCoinstakeKernel(header, prevUtxo);
         }
 
         /// <summary>
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="header">The header.</param>
         /// <param name="stakingCoins">The staking coins.</param>
-        private void CheckHeaderSignatureWithConinstakeKernel(ProvenBlockHeader header, UnspentOutputs stakingCoins)
+        private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header, UnspentOutputs stakingCoins)
         {
             OutPoint prevOut = this.GetPreviousOut(header);
 
