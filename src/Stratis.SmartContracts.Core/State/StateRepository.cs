@@ -92,12 +92,25 @@ namespace Stratis.SmartContracts.Core.State
             this.GetOrCreateAccountState(addr);
             ISource<byte[], byte[]> contractStorage = this.storageCaches.Get(addr.ToBytes());
             contractStorage.Put(key, value); // TODO: Check if 0
+            // this.accountStateCache.Flush();
         }
 
         public byte[] GetStorageValue(uint160 addr, byte[] key)
         {
             AccountState accountState = this.GetAccountState(addr);
+//<<<<<<< Updated upstream
             return accountState == null ? null : this.storageCaches.Get(addr.ToBytes()).Get(key);
+//=======
+//            if (accountState == null)
+//                return null;
+
+//            var cache = this.storageCache.Get(addr.ToBytes());
+//            if (cache is StorageCache c)
+//            {
+//                var test = c.trie.GetRootHash();
+//            }
+//            return cache.Get(key);
+//>>>>>>> Stashed changes
         }
 
         public string GetContractType(uint160 addr)

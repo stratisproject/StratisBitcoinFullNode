@@ -46,6 +46,9 @@ namespace Stratis.SmartContracts.Core.State
                     this.repo.accountStateCache.Put(kvp.Key, storageOwnerAcct);
                 }
             }
+
+            this.cache.Clear();
+
             return ret;
         }
 
@@ -88,6 +91,8 @@ namespace Stratis.SmartContracts.Core.State
             {
                 ret |= source.Value.Flush();
             }
+
+            this.cache.Clear();
 
             return ret;
         }

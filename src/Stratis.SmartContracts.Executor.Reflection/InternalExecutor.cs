@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 
@@ -31,6 +32,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             object[] parameters,
             ulong gasLimit = 0)
         {
+            Debug.WriteLine(amountToTransfer);
             Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
 
             // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.

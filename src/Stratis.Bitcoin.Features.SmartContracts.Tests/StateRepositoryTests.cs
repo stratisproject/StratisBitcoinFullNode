@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Patricia;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Xunit;
 using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
@@ -207,6 +208,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             IStateRepository txTrack3 = repository.StartTracking();
             txTrack3.SetStorageValue(testAddress, dodecahedron, bird);
+            txTrack3.SetUnspent(testAddress, new ContractUnspentOutput
+            {
+                Hash = new uint256(5),
+                Nvout = 2,
+                Value = 3000
+            });
             txTrack3.Commit();
             repository.Commit();
 
@@ -214,7 +221,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal(cat, repository.GetStorageValue(testAddress, dog));
             Assert.Equal(bird, repository.GetStorageValue(testAddress, dodecahedron));
-
+            Assert.Equal(3000uL, repository.GetUnspent(testAddress).Value);
             IStateRepository snapshot = repository.GetSnapshotTo(root1);
 
             repository.SyncToRoot(root1);
@@ -251,6 +258,42 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             StateRepositoryRoot repository2 = new StateRepositoryRoot(stateDB, repository.Root);
             // Nope, comes back null...
             Assert.Null(repository2.GetStorageValue(testAddress, dog));
+        }
+
+        [Fact]
+        public void Repository_SyncToRoot()
+        {
+            var memDb = new MemoryDictionarySource();
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(memDb);
+            StateRepositoryRoot repo = new StateRepositoryRoot(stateDB, null);
+
+
+            IStateRepositoryRoot mutableState = repo.GetSnapshotTo(repo.Root);
+            mutableState.CreateAccount(123);
+            mutableState.SetStorageValue(123, new byte[] {1, 2, 3}, new byte[] {1, 2, 3});
+            mutableState.SetUnspent(123, new ContractUnspentOutput
+            {
+                Hash = new uint256(5),
+                Nvout = 2,
+                Value = 3000
+            });
+            Assert.NotNull(mutableState.GetAccountState(123));
+            Assert.Empty(memDb.Db);
+            Assert.Null(repo.GetAccountState(123));
+            mutableState.Commit();
+            repo.SyncToRoot(mutableState.Root);
+            Assert.NotNull(repo.GetAccountState(123));
+            Assert.NotNull(repo.GetStorageValue(123, new byte[] { 1, 2, 3 }));
+            Assert.Equal(3000uL, mutableState.GetUnspent(123).Value);
+            Assert.Equal(3000uL, repo.GetUnspent(123).Value);
+
+            byte[] snapshot = mutableState.Root;
+            mutableState.CreateAccount(12345);
+            byte[] after = mutableState.Root;
+            Assert.NotNull(mutableState.GetAccountState(12345));
+            mutableState.SyncToRoot(snapshot);
+            Assert.Null(mutableState.GetAccountState(12345));
+            Assert.NotNull(mutableState.GetAccountState(123));
         }
     }
 }

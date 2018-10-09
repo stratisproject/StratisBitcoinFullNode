@@ -98,11 +98,24 @@ namespace Stratis.SmartContracts.Executor.Reflection
             bool revert = !result.IsSuccess;
 
             Transaction internalTransaction = this.transferProcessor.Process(
-                this.stateRoot,
+                newState.ContractState,
                 result.Success?.ContractAddress,
                 transactionContext,
                 state.InternalTransfers,
                 revert);
+            if (result.IsSuccess)
+                newState.ContractState.Commit();
+
+            if (PersistentState.Address != null)
+            {
+                var test = newState.ContractState.GetUnspent(PersistentState.Address);
+                var test2 = state.ContractState.GetUnspent(PersistentState.Address);
+                var test3 = newState.ContractState.GetAccountState(PersistentState.Address);
+                var test4 = state.ContractState.GetAccountState(PersistentState.Address);
+
+                var test5 = this.stateRoot.GetUnspent(PersistentState.Address);
+                var test6 = this.stateRoot.GetAccountState(PersistentState.Address);
+            }
 
             bool outOfGas = result.IsFailure && result.Error.Kind == StateTransitionErrorKind.OutOfGas;
 
