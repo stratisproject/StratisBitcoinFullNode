@@ -4,7 +4,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingTransactionWithDoubleSpend
     {
-        [Retry(5)]
+        [Retry(6)]
         public void sending_transaction_with_double_spend_mined_trx()
         {
             Given(wallets_with_coins);
