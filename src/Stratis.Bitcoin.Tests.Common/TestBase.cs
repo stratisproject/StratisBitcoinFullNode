@@ -172,5 +172,29 @@ namespace Stratis.Bitcoin.Tests.Common
 
             return block;
         }
+
+        public (ConcurrentChain concurrentChain, List<ProvenBlockHeader> provenBlockHeaders) BuildChainWithProvenHeaders(int blockCount, Network network)
+        {
+            Guard.Assert(blockCount > 0);
+
+            var provenBlockHeaders = new List<ProvenBlockHeader>();
+            var concurrentChain = new ConcurrentChain(network);
+
+            for (int i = 0; i < blockCount; i++)
+            {
+                PosBlock block = CreatePosBlockMock();
+                ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
+
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = concurrentChain.Tip.HashBlock;
+                header.Bits = Target.Difficulty1;
+
+                concurrentChain.SetTip(new ChainedHeader(header, header.GetHash(), concurrentChain.Tip));
+
+                provenBlockHeaders.Add(header);
+            }
+
+            return (concurrentChain, provenBlockHeaders);
+        }
     }
 }

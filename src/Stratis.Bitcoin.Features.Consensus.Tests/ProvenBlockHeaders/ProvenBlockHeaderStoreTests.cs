@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
     {
         private readonly Network network = KnownNetworks.StratisTest;
         private readonly Mock<IConsensusManager> consensusManager;
-        private readonly ConcurrentChain concurrentChain;
+        private ConcurrentChain concurrentChain;
         private readonly ProvenBlockHeaderStore provenBlockHeaderStore;
         private IProvenBlockHeaderRepository provenBlockHeaderRepository;
         private readonly Mock<INodeLifetime> nodeLifetime;
@@ -233,6 +233,122 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             long cacheSizeInBytes = (long)this.provenBlockHeaderStore.Cache.GetMemberValue("totalSize");
 
             cacheSizeInBytes.Should().BeLessThan(maxSize);
+        }
+
+        [Fact]
+        public async Task InitializeAsync_When_Tip_Hash_Is_Genesis_Store_Tip_Is_GenesisAsync()
+        {
+            this.concurrentChain = new ConcurrentChain(this.network);
+
+            var chainWithHeaders = BuildChainWithProvenHeaders(1, this.network);
+
+            this.concurrentChain = chainWithHeaders.concurrentChain;
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            // clear chain to cause the store revert back to genesis.
+            this.concurrentChain = new ConcurrentChain(this.network);
+
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders,
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                await store.InitializeAsync();
+
+                store.TipHashHeight.Hash.Should().Be(this.network.GetGenesis().GetHash());
+            }
+        }
+
+        [Fact]
+        public void InitializeAsync_When_Hash_Not_In_Chain_Or_Repo_Throw_Exception()
+        {
+            this.concurrentChain = new ConcurrentChain(this.network);
+
+            this.provenBlockHeaderRepository.SetPrivatePropertyValue("TipHashHeight", new HashHeightPair(new uint256(), 1));
+
+            using (ProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                new Action(() => store.InitializeAsync().Wait())
+                    .Should().Throw<ProvenHeaderStoreException>()
+                    .And.Message.Should().Be("Proven block header store failed to recover.");
+            }
+        }
+
+        [Fact]
+        public async Task InitializeAsync_When_Tip_Reorg_Occurs_Tip_Is_CorrectAsync()
+        {
+            this.concurrentChain = new ConcurrentChain(this.network);
+
+            // Chain - 1a | 2a | 3a | 4a | 5a (tip at 5a).
+            var chainWithHeaders = BuildChainWithProvenHeaders(5, this.network);
+
+            this.concurrentChain = chainWithHeaders.concurrentChain;
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            // Persist current chain.
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders,
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
+            // Reorg chain - 1b | 2b | 3b (tip now at 3b).
+            this.concurrentChain = new ConcurrentChain(this.network);
+
+            var chainWithHeadersReorg = BuildChainWithProvenHeaders(3, this.network);
+
+            this.concurrentChain = chainWithHeadersReorg.concurrentChain;
+
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                await store.InitializeAsync();
+
+                store.TipHashHeight.Hash.Should().Be(chainWithHeadersReorg.concurrentChain.Tip.Header.GetHash());
+            }
+        }
+
+        [Fact]
+        public void AddToPending_Then_Save_Incorrect_Sequence_Thrown_Exception()
+        {
+            var inHeader = CreateNewProvenBlockHeaderMock();
+
+            // HashHeightPair Height sequence incorrect.
+            this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 1));
+            this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 0));
+
+            var taksResult = this.provenBlockHeaderStore.InvokeMethod("SaveAsync") as Task;
+
+            taksResult.IsFaulted.Should().BeTrue();
+            taksResult.Exception.InnerExceptions.Count.Should().Be(1);
+            taksResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenHeaderStoreException>();
+            taksResult.Exception.InnerExceptions[0].Message.Should().Be("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
+        }
+
+        [Fact]
+        public async Task AddToPending_Store_TipHash_Is_The_Same_As_ChainHeaderTipAsync()
+        {
+            this.concurrentChain = new ConcurrentChain(this.network);
+
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
+
+            this.concurrentChain = chainWithHeaders.concurrentChain;
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            // Persist current chain.
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders,
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                var header = CreateNewProvenBlockHeaderMock();
+
+                this.provenBlockHeaderStore.AddToPendingBatch(header, new HashHeightPair(header.GetHash(), this.concurrentChain.Tip.Height + 1));
+
+                this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
+
+                store.TipHashHeight.Hash.Should().Be(this.concurrentChain.Tip.Header.GetHash());
+                store.TipHashHeight.Height.Should().Be(this.concurrentChain.Tip.Height);
+            }
         }
 
         private ProvenBlockHeaderStore SetupStore(string folder)

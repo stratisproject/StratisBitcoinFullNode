@@ -345,9 +345,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             // Save the items to disk.
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
-                await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Select(items => items.Value).ToList(), hashHeight);
+                await this.provenBlockHeaderRepository.PutAsync(
+                    pendingBatch.Select(items => items.Value).ToList(), hashHeight).ConfigureAwait(false);
 
-                this.TipHashHeight = hashHeight;
+                this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
             }
         }
 
@@ -358,9 +359,17 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             uint256 latestBlockHash = this.provenBlockHeaderRepository.TipHashHeight.Hash;
 
-            ProvenBlockHeader latestHeader = await this.provenBlockHeaderRepository.GetAsync(Convert.ToInt32(latestBlockHash));
+            int tipHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
 
-            while (this.chain.GetBlock(latestBlockHash) == null)
+            ProvenBlockHeader latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight);
+
+            if (latestHeader == null)
+            {
+                // Happens when the proven block header store is corrupt.
+                throw new ProvenHeaderStoreException("Proven block header store failed to recover.");
+            }
+
+            while (this.chain.GetBlock(tipHeight) == null)
             {
                 if (latestHeader.HashPrevBlock == this.chain.Genesis.HashBlock)
                 {
@@ -368,18 +377,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     break;
                 }
 
-                latestHeader = await this.provenBlockHeaderRepository.GetAsync(Convert.ToInt32(latestHeader.HashPrevBlock)).ConfigureAwait(false);
-
-                if (latestHeader == null)
-                {
-                    // Happens when the proven block header store is corrupt.
-                    throw new ProvenHeaderStoreException("Proven block header store failed to recover.");
-                }
+                latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight--).ConfigureAwait(false);
 
                 latestBlockHash = latestHeader.GetHash();
             }
 
-            ChainedHeader newTip = this.chain.GetBlock(latestBlockHash);
+            ChainedHeader newTip = this.chain.GetBlock(tipHeight);
 
             this.logger.LogWarning("Proven block header store tip recovered to block '{0}'.", newTip);
 
