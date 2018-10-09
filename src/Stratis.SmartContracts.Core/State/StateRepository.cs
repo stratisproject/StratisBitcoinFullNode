@@ -14,18 +14,18 @@ namespace Stratis.SmartContracts.Core.State
         public ISource<byte[], AccountState> accountStateCache;
         public ISource<byte[], ContractUnspentOutput> vinCache;
         protected ISource<byte[], byte[]> codeCache;
-        protected ISource<byte[], StorageCache> storageCaches;
+        protected ISource<byte[], ISource<byte[], byte[]>> storageCaches;
         
         protected StateRepository() { }
 
         public StateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-            ISource<byte[], StorageCache> storageCaches, ISource<byte[], ContractUnspentOutput> vinCache)
+            ISource<byte[], ISource<byte[], byte[]>> storageCaches, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.Init(accountStateCache, codeCache, storageCaches, vinCache);
         }
 
         protected void Init(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-            ISource<byte[], StorageCache> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
+            ISource<byte[], ISource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
@@ -118,8 +118,7 @@ namespace Stratis.SmartContracts.Core.State
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
             ISource<byte[], ContractUnspentOutput> trackVinCache = new WriteCache<ContractUnspentOutput>(this.vinCache, WriteCache<ContractUnspentOutput>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache<byte[]>.CacheType.SIMPLE);
-            ISource<byte[], StorageCache> trackStorageCache = new WriteCache<StorageCache>(this.storageCaches, WriteCache<StorageCache>.CacheType.SIMPLE);
-
+            ISource<byte[], ISource<byte[], byte[]>> trackStorageCache = new CachedStorageCaches(this.storageCaches); 
             var stateRepository = new StateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache)
             {
                 parent = this

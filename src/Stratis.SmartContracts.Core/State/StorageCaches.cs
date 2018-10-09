@@ -5,7 +5,7 @@ using Stratis.Patricia;
 
 namespace Stratis.SmartContracts.Core.State
 {
-    public class StorageCaches : ISource<byte[], StorageCache>
+    public class StorageCaches : ISource<byte[], ISource<byte[],byte[]>>
     {
         // TODO: Any threading related stuff
         protected Dictionary<byte[], StorageCache> cache = new Dictionary<byte[],StorageCache>(new ByteArrayComparer());
@@ -17,7 +17,7 @@ namespace Stratis.SmartContracts.Core.State
             this.repo = repo;
         }
 
-        public StorageCache Get(byte[] key)
+        public ISource<byte[], byte[]> Get(byte[] key)
         {
             if (this.cache.ContainsKey(key))
                 return this.cache[key];
@@ -38,15 +38,18 @@ namespace Stratis.SmartContracts.Core.State
                 ret |= childCache.Flush();
                 AccountState storageOwnerAcct = this.repo.accountStateCache.Get(kvp.Key);
                 // need to update account storage root
-                childCache.trie.Flush();
-                byte[] rootHash = childCache.trie.GetRootHash();
-                storageOwnerAcct.StateRoot = rootHash;
-                this.repo.accountStateCache.Put(kvp.Key, storageOwnerAcct);
+                if (storageOwnerAcct != null)
+                {
+                    childCache.trie.Flush();
+                    byte[] rootHash = childCache.trie.GetRootHash();
+                    storageOwnerAcct.StateRoot = rootHash;
+                    this.repo.accountStateCache.Put(kvp.Key, storageOwnerAcct);
+                }
             }
             return ret;
         }
 
-        public void Put(byte[] key, StorageCache val)
+        public void Put(byte[] key, ISource<byte[], byte[]> val)
         {
             throw new NotImplementedException();
         }
@@ -57,21 +60,39 @@ namespace Stratis.SmartContracts.Core.State
         }
     }
 
-    public class CachedStorageCaches : ISource<byte[], StorageCache>
+    public class CachedStorageCaches : ISource<byte[], ISource<byte[], byte[]>>
     {
-        private ISource<byte[], StorageCache>
+        private ISource<byte[], ISource<byte[], byte[]>> previous;
 
-        public StorageCache Get(byte[] key)
+        private Dictionary<byte[], ISource<byte[], byte[]>> cache = new Dictionary<byte[], ISource<byte[], byte[]>>(new ByteArrayComparer());
+
+        public CachedStorageCaches(ISource<byte[], ISource<byte[], byte[]>> previous)
         {
-            throw new NotImplementedException();
+            this.previous = previous;
+        }
+
+        public ISource<byte[],byte[]> Get(byte[] key)
+        {
+            if (this.cache.ContainsKey(key))
+                return this.cache[key];
+
+            ISource<byte[], byte[]> newStorage = this.previous.Get(key);
+            this.cache[key] = new WriteCache<byte[]>(newStorage, WriteCache<byte[]>.CacheType.SIMPLE);
+            return this.cache[key];
         }
 
         public bool Flush()
         {
-            throw new NotImplementedException();
+            bool ret = false;
+            foreach(KeyValuePair<byte[], ISource<byte[], byte[]>> source in this.cache)
+            {
+                ret |= source.Value.Flush();
+            }
+
+            return ret;
         }
 
-        public void Put(byte[] key, StorageCache val)
+        public void Put(byte[] key, ISource<byte[], byte[]> val)
         {
             throw new NotImplementedException();
         }
