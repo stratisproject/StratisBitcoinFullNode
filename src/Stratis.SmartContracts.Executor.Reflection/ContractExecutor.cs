@@ -47,6 +47,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IContractExecutionResult Execute(IContractTransactionContext transactionContext)
         {
+            IStateRepository trackRepository = this.stateRoot.StartTracking();
             // Deserialization can't fail because this has already been through SmartContractFormatRule.
             Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.Data);
             ContractTxData callData = callDataDeserializationResult.Value;
@@ -59,7 +60,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             );
 
             IState state = this.stateFactory.Create(
-                this.stateRoot,
+                trackRepository,
                 block,
                 transactionContext.TxOutValue,
                 transactionContext.TransactionHash);
@@ -100,14 +101,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // This section below is gross. Thoughts?
 
             Transaction internalTransaction = this.transferProcessor.Process(
-                newState.ContractState,
+                trackRepository,
                 result.Success?.ContractAddress,
                 transactionContext,
                 state.InternalTransfers,
                 revert);
 
             if (result.IsSuccess)
-                newState.ContractState.Commit();
+                trackRepository.Commit();
 
             bool outOfGas = result.IsFailure && result.Error.Kind == StateTransitionErrorKind.OutOfGas;
 

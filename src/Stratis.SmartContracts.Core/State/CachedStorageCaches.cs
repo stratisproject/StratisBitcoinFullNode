@@ -7,6 +7,7 @@ namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>
     /// Created for each new level of tracking. Introduces a WriteCache in front of the StorageCache itself.
+    /// TODO: Rename
     /// </summary>
     public class CachedStorageCaches : IStorageCaches
     {
