@@ -196,9 +196,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 return pendingTipHashHeight == null;
             });
 
-            // Check if it has been saved to disk.
-            var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1999).ConfigureAwait(false);
-            outHeaderRepo.Should().NotBeNull();
+            WaitLoop(() => {
+                // Check if it has been saved to disk.
+                var outHeaderRepo = this.provenBlockHeaderRepository.GetAsync(1999).ConfigureAwait(false).GetAwaiter().GetResult();
+                return outHeaderRepo != null;
+            });
 
             // Check items in cache - should now be empty.
             cacheCount = this.provenBlockHeaderStore.PendingBatch.GetMemberValue("Count");
