@@ -98,8 +98,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             bool revert = !result.IsSuccess;
 
-            // This section below is gross. Thoughts?
-
             Transaction internalTransaction = this.transferProcessor.Process(
                 trackRepository,
                 result.Success?.ContractAddress,
