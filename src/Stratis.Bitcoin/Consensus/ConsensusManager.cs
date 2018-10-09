@@ -170,6 +170,8 @@ namespace Stratis.Bitcoin.Consensus
                 if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
+                this.logger.LogInformation("Block store at height {0} ahead of consensus, rewinding consensus from height {2}.", this.chainState.BlockStoreTip, pendingTip);
+
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
                 RewindState transitionState = await this.ConsensusRules.RewindAsync().ConfigureAwait(false);

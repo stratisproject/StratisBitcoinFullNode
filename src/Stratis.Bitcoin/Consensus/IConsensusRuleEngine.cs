@@ -19,7 +19,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Initialize the rules engine.
         /// </summary>
-        Task Initialize();
+        /// <param name="chainTip">Last common header between chain repository and block store if it's available,
+        Task Initialize(ChainedHeader chainTip);
 
         /// <summary>
         /// Register a new rule to the engine

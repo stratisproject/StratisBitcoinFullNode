@@ -55,9 +55,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override Task Initialize()
+        public override async Task Initialize(ChainedHeader chainTip)
         {
-            return ((DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner).InitializeAsync();
+            DBreezeCoinView breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
+
+            await breezeCoinView.InitializeAsync();
+
+            uint256 consensusTipHash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+
+            while (true)
+            {
+                ChainedHeader pendingTip = chainTip.FindAncestorOrSelf(consensusTipHash);
+
+                if (pendingTip != null)
+                    break;
+
+                // In case block store initialized behind, rewind until or before the block store tip.
+                // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
+                consensusTipHash = await breezeCoinView.Rewind().ConfigureAwait(false);
+            }
         }
 
         public override async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)

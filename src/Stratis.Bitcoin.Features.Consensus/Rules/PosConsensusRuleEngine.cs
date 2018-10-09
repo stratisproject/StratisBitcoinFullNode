@@ -45,9 +45,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         }
 
         /// <inheritdoc />
-        public override async Task Initialize()
+        public override async Task Initialize(ChainedHeader chainTip)
         {
-            await base.Initialize().ConfigureAwait(false);
+            await base.Initialize(chainTip).ConfigureAwait(false);
 
             await this.StakeChain.LoadAsync();
         }
