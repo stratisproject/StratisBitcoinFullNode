@@ -99,7 +99,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     // TODO sign the block with our signature
 
-                    ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
+                    // Update merkle root.
+                    blockTemplate.Block.UpdateMerkleRoot();
+
+                    ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false); // TODO POA That should also do interg vaidation
 
                     if (chainedHeader == null)
                     {
