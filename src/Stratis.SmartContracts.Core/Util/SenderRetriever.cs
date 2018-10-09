@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.SmartContracts.Core.Util
@@ -44,6 +47,12 @@ namespace Stratis.SmartContracts.Core.Util
             }
 
             return GetSenderResult.CreateFailure("Unable to get the sender of the transaction");
+        }
+
+        public GetSenderResult GetSender(Transaction tx, MempoolCoinView coinView)
+        {
+            TxOut output = coinView.GetOutputFor(tx.Inputs[0]);
+            return GetAddressFromScript(output.ScriptPubKey);
         }
 
         /// <inheritdoc />

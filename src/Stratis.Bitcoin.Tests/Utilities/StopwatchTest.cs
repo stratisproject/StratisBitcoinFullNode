@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// instead of <see cref="System.Diagnostics.Stopwatch"/>. It was argued that there was some kind of measurement
         /// error when the later was used. Most likely the problem was in mixing <see cref="System.DateTime.Ticks"/>
         /// units with incompatible <see cref="System.Diagnostics.Stopwatch.ElapsedTicks"/>.
+        /// Issue that cover this subject is <see href="https://github.com/stratisproject/StratisBitcoinFullNode/issues/2391"/>.
         /// <para>
         /// This test aims to verify that the time measurement with the disposable stopwatch achieves correct results.
         /// It performs a series of small work simlating delays which represent a measured code block. Each delay

@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public partial class ProofOfWorkSpendingSpecification : BddSpecification
     {
-        [Fact]
+        [Retry]
         public void Attempt_to_spend_coin_earned_through_proof_of_work_BEFORE_coin_maturity_will_fail()
         {
             Given(a_sending_and_receiving_stratis_bitcoin_node_and_wallet);
@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             Then(the_transaction_is_rejected_from_the_mempool);
         }
 
-        [Fact]
+        [Retry]
         public void Attempt_to_spend_coin_earned_through_proof_of_work_AFTER_maturity_will_succeed()
         {
             Given(a_sending_and_receiving_stratis_bitcoin_node_and_wallet);
