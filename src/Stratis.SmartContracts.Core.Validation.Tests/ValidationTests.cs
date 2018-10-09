@@ -470,7 +470,26 @@ public class Test
             {
                 var result = new MethodParamValidator().Validate(methodDefinition).ToList();
                 Assert.True(result.All(r => r is MethodParamValidator.MethodParamValidationResult));
-            }           
+            }
+        }
+
+        [Fact]
+        public void MethodParamValidator_Should_Validate_Optional_Params()
+        {
+            const string source = @"
+using System;
+public class Test { 
+    public void OptionalTest(int optional = 1, int optional2 = 2){}
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            foreach (var methodDefinition in typeDefinition.Methods)
+            {
+                var result = new MethodParamValidator().Validate(methodDefinition).ToList();
+                Assert.Equal(2, result.Count);
+                Assert.True(result.All(r => r is MethodParamValidator.MethodParamValidationResult));
+            }
         }
 
         [Fact]
