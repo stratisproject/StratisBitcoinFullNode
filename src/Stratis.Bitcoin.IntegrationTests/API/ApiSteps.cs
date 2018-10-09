@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore.Models;
@@ -143,6 +144,11 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
             this.stratisPosApiNode.FullNode.NodeService<IPosMinting>(true).Should().NotBeNull();
             this.apiUri = this.stratisPosApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
+        }
+
+        private void the_proof_of_stake_node_has_passed_LastPOWBlock()
+        {
+            typeof(ChainedHeader).GetProperty("Height").SetValue(this.stratisPosApiNode.FullNode.ConsensusManager().Tip, 12501);
         }
 
         private void two_connected_proof_of_work_nodes_with_api_enabled()
@@ -536,11 +542,6 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void a_method_not_allowed_error_is_returned()
         {
             this.response.StatusCode.Should().Be(StatusCodes.Status405MethodNotAllowed);
-        }
-
-        private void a_bad_request_error_is_returned()
-        {
-            this.response.StatusCode.Should().Be(StatusCodes.Status400BadRequest);
         }
 
         private void send_api_get_request(string apiendpoint)
