@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             Guard.Assert(newTip.Hash == headers.Last().GetHash());
 
-            if ((this.provenBlockHeaderTip != null) && (newTip.Hash != this.provenBlockHeaderTip.HashPrevBlock))
+            if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.HashPrevBlock))
             {
                 this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
 
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
 
-                    this.InsertHeaders(transaction, headers, newTip);
+                    this.InsertHeaders(transaction, headers);
 
                     this.SetTip(transaction, newTip);
 
@@ -192,15 +192,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="transaction"> Open DBreeze transaction.</param>
         /// <param name="headers"> List of <see cref="ProvenBlockHeader"/> items to save.</param>
-        /// <param name="newTip"> Hash and height of the new repository's tip.</param>
-        private void InsertHeaders(DBreeze.Transactions.Transaction transaction, List<ProvenBlockHeader> headers, HashHeightPair newTip)
+        private void InsertHeaders(DBreeze.Transactions.Transaction transaction, List<ProvenBlockHeader> headers)
         {
-            int tipHeight = newTip.Height;
-
             var headerDict = new Dictionary<int, ProvenBlockHeader>();
 
             // Gather headers.
-            for (int i = tipHeight; i > -1; i--)
+            for (int i = headers.Count - 1; i > -1; i--)
                 headerDict[i] = headers[i];
 
             List<KeyValuePair<int, ProvenBlockHeader>> sortedHeaders = headerDict.ToList();

@@ -315,12 +315,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 1));
             this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), 0));
 
-            var taksResult = this.provenBlockHeaderStore.InvokeMethod("SaveAsync") as Task;
+            var taskResult = this.provenBlockHeaderStore.InvokeMethod("SaveAsync") as Task;
 
-            taksResult.IsFaulted.Should().BeTrue();
-            taksResult.Exception.InnerExceptions.Count.Should().Be(1);
-            taksResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenHeaderStoreException>();
-            taksResult.Exception.InnerExceptions[0].Message.Should().Be("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
+            taskResult.IsFaulted.Should().BeTrue();
+            taskResult.Exception.InnerExceptions.Count.Should().Be(1);
+            taskResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenHeaderStoreException>();
+            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
         }
 
         [Fact]
@@ -342,12 +342,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             {
                 var header = CreateNewProvenBlockHeaderMock();
 
-                this.provenBlockHeaderStore.AddToPendingBatch(header, new HashHeightPair(header.GetHash(), this.concurrentChain.Tip.Height + 1));
+                this.provenBlockHeaderStore.AddToPendingBatch(header, new HashHeightPair(header.GetHash(), this.concurrentChain.Tip.Height));
 
                 this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
 
-                store.TipHashHeight.Hash.Should().Be(this.concurrentChain.Tip.Header.GetHash());
-                store.TipHashHeight.Height.Should().Be(this.concurrentChain.Tip.Height);
+                HashHeightPair tipHashHeight = null;
+
+                WaitLoop(() => {
+                    tipHashHeight = this.provenBlockHeaderStore.GetMemberValue("TipHashHeight") as HashHeightPair;
+                    return tipHashHeight == this.provenBlockHeaderRepository.TipHashHeight;
+                });
+
+                tipHashHeight.Height.Should().Be(this.concurrentChain.Tip.Height);
             }
         }
 
