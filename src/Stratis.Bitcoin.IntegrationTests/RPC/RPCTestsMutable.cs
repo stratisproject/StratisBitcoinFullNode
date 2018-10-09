@@ -13,6 +13,23 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
     public class RPCTestsMutable
     {
         [Fact]
+        public void TestRpcGetBalanceIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+                builder.StartAll();
+                RPCClient rpcClient = node.CreateRPCClient();
+
+                TestHelper.MineBlocks(node, 2);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == 2);
+
+                Money balance = rpcClient.GetBalance();
+                Assert.NotEqual(Money.Zero, balance);
+            }
+        }
+
+        [Fact]
         public void TestRpcGetBlockWithValidHashIsSuccessful()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

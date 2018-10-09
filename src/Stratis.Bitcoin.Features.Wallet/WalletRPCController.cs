@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -71,6 +72,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             string base58Address = hdAddress.Address;
             
             return new NewAddressModel(base58Address);
+        }
+
+        [ActionName("getbalance")]
+        [ActionDescription("Gets wallets spendable balance.")]
+        public Money GetBalance()
+        {
+            var account = this.GetAccount();
+
+            IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(account.WalletName, account.AccountName);
+            return balances?.Sum(i => i.AmountConfirmed);
         }
 
         private WalletAccountReference GetAccount()
