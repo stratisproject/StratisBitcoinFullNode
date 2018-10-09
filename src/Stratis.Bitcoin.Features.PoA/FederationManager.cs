@@ -47,6 +47,14 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
             }
+
+            var builder = new StringBuilder();
+            builder.AppendLine($"Federation contains {this.network.FederationPublicKeys.Count} members. Their public keys are: ");
+
+            foreach (PubKey pubKey in this.network.FederationPublicKeys)
+                builder.AppendLine(pubKey.ToString());
+
+            this.logger.LogInformation(builder.ToString());
         }
 
         /// <summary>Loads federation key if it exists.</summary>
