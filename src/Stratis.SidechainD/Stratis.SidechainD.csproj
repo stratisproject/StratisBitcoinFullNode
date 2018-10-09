@@ -5,6 +5,7 @@
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <AssemblyName>Stratis.SidechainD</AssemblyName>
     <PackageId>Stratis.SidechainD</PackageId>
+    <DebugType>Full</DebugType>
   </PropertyGroup>
 
   <ItemGroup>
