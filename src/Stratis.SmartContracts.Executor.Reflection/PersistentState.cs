@@ -28,6 +28,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         internal IContractPrimitiveSerializer Serializer { get; }
 
         public static uint160 Address { get; set; }
+        public static uint160 InitialAddress { get; set; }
 
         internal T GetObject<T>(string key)
         {
@@ -102,6 +103,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (key == "CatNumber")
             {
                 Address = this.ContractAddress;
+            }
+
+            if (key == "LastCreatedCat")
+            {
+                InitialAddress = this.ContractAddress;
             }
         }
 
