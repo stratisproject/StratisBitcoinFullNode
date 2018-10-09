@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public ProvenBlockHeaderStoreTests() : base(KnownNetworks.StratisTest)
         {
             this.consensusManager = new Mock<IConsensusManager>();
-            this.concurrentChain = this.GenerateChainWithHeight(3);
+            this.concurrentChain = new ConcurrentChain(this.network);
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.nodeStats = new NodeStats(DateTimeProvider.Default);
             this.asyncLoopFactoryLoop = new Mock<IAsyncLoopFactory>();
@@ -59,7 +59,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact]
         public async Task LoadItemsAsync()
         {
-            // Put 3 items to in the repository - items created in the constructor.
             var inItems = new List<ProvenBlockHeader>();
 
             var provenHeaderMock = CreateNewProvenBlockHeaderMock();
@@ -365,26 +364,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 this.concurrentChain, DateTimeProvider.Default,
                 this.LoggerFactory.Object, this.provenBlockHeaderRepository,
                 this.nodeLifetime.Object, new NodeStats(DateTimeProvider.Default), this.asyncLoopFactoryLoop.Object);
-        }
-
-        private ConcurrentChain GenerateChainWithHeight(int blockAmount)
-        {
-            var chain = new ConcurrentChain(this.network);
-            uint nonce = RandomUtils.GetUInt32();
-            uint256 prevBlockHash = chain.Genesis.HashBlock;
-            for (int i = 0; i < blockAmount; i++)
-            {
-                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(this.network.CreateTransaction());
-                block.UpdateMerkleRoot();
-                block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
-                block.Header.HashPrevBlock = prevBlockHash;
-                block.Header.Nonce = nonce;
-                chain.SetTip(block.Header);
-                prevBlockHash = block.GetHash();
-            }
-
-            return chain;
         }
 
         private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
