@@ -5,75 +5,26 @@ using Stratis.Patricia;
 
 namespace Stratis.SmartContracts.Core.State
 {
-    public class StorageCaches : ISource<byte[], ISource<byte[],byte[]>>
+    /// <summary>
+    /// Created for each new level of tracking. Introduces a WriteCache in front of the StorageCache itself.
+    /// </summary>
+    public class CachedStorageCaches : IStorageCaches
     {
-        // TODO: Any threading related stuff
-        protected Dictionary<byte[], StorageCache> cache = new Dictionary<byte[],StorageCache>(new ByteArrayComparer());
+        /// <summary>
+        /// The previous level of storage caching. May be the RootStorageCache where a StorageCache is spawned.
+        /// </summary>
+        private readonly IStorageCaches previous;
 
-        private StateRepositoryRoot repo;
+        private readonly Dictionary<byte[], ISource<byte[], byte[]>> cache;
 
-        public StorageCaches(StateRepositoryRoot repo)
-        {
-            this.repo = repo;
-        }
-
-        public ISource<byte[], byte[]> Get(byte[] key)
-        {
-            if (this.cache.ContainsKey(key))
-                return this.cache[key];
-
-            AccountState accountState = this.repo.accountStateCache.Get(key);
-            IPatriciaTrie storageTrie = this.repo.GetTrieWithSameCache(accountState?.StateRoot);
-            var newCache = new StorageCache(storageTrie);
-            this.cache[key] = newCache;
-            return newCache;
-        }
-
-        public bool Flush()
-        {
-            bool ret = false;
-            foreach (KeyValuePair<byte[], StorageCache> kvp in this.cache)
-            {
-                StorageCache childCache = kvp.Value;
-                ret |= childCache.Flush();
-                AccountState storageOwnerAcct = this.repo.accountStateCache.Get(kvp.Key);
-                // need to update account storage root
-                if (storageOwnerAcct != null)
-                {
-                    childCache.trie.Flush();
-                    byte[] rootHash = childCache.trie.GetRootHash();
-                    storageOwnerAcct.StateRoot = rootHash;
-                    this.repo.accountStateCache.Put(kvp.Key, storageOwnerAcct);
-                }
-            }
-
-            this.cache.Clear();
-
-            return ret;
-        }
-
-        public void Put(byte[] key, ISource<byte[], byte[]> val)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Delete(byte[] key)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
-    public class CachedStorageCaches : ISource<byte[], ISource<byte[], byte[]>>
-    {
-        private ISource<byte[], ISource<byte[], byte[]>> previous;
-
-        private Dictionary<byte[], ISource<byte[], byte[]>> cache = new Dictionary<byte[], ISource<byte[], byte[]>>(new ByteArrayComparer());
-
-        public CachedStorageCaches(ISource<byte[], ISource<byte[], byte[]>> previous)
+        public CachedStorageCaches(IStorageCaches previous)
         {
             this.previous = previous;
+            this.cache = new Dictionary<byte[], ISource<byte[], byte[]>>(new ByteArrayComparer());
+
         }
 
+        /// <inheritdoc />
         public ISource<byte[],byte[]> Get(byte[] key)
         {
             if (this.cache.ContainsKey(key))
@@ -84,8 +35,10 @@ namespace Stratis.SmartContracts.Core.State
             return this.cache[key];
         }
 
+        /// <inheritdoc />
         public bool Flush()
         {
+            // TODO: May be able to introduce a GetModified() like in other parts of State as an optimisation
             bool ret = false;
             foreach(KeyValuePair<byte[], ISource<byte[], byte[]>> source in this.cache)
             {
@@ -95,16 +48,6 @@ namespace Stratis.SmartContracts.Core.State
             this.cache.Clear();
 
             return ret;
-        }
-
-        public void Put(byte[] key, ISource<byte[], byte[]> val)
-        {
-            throw new NotImplementedException();
-        }
-
-        public void Delete(byte[] key)
-        {
-            throw new NotImplementedException();
         }
     }
 }

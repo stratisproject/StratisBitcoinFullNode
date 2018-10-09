@@ -158,19 +158,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             // Update the globally injected state so all services receive the updates.
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(this.mutableStateRepository.Root);
-
-            if (PersistentState.Address != null)
-            {
-                var test = this.ContractCoinviewRule.OriginalStateRoot.GetUnspent(PersistentState.Address);
-                var test2 = this.mutableStateRepository.GetUnspent(PersistentState.Address);
-
-                var lastCreated =
-                    new uint160(this.ContractCoinviewRule.OriginalStateRoot.GetStorageValue(PersistentState.InitialAddress,
-                        Encoding.UTF8.GetBytes("LastCreatedCat")));
-
-                var lastCreated2 = new uint160(this.mutableStateRepository.GetStorageValue(PersistentState.InitialAddress,
-                    Encoding.UTF8.GetBytes("LastCreatedCat")));
-            }
         }
 
         /// <inheritdoc/>

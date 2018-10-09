@@ -14,22 +14,22 @@ namespace Stratis.SmartContracts.Core.State
         public ISource<byte[], AccountState> accountStateCache;
         public ISource<byte[], ContractUnspentOutput> vinCache;
         protected ISource<byte[], byte[]> codeCache;
-        protected ISource<byte[], ISource<byte[], byte[]>> storageCaches;
+        protected IStorageCaches storageCaches;
         
         protected StateRepository() { }
 
         public StateRepository(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-            ISource<byte[], ISource<byte[], byte[]>> storageCaches, ISource<byte[], ContractUnspentOutput> vinCache)
+            IStorageCaches storageCaches, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.Init(accountStateCache, codeCache, storageCaches, vinCache);
         }
 
         protected void Init(ISource<byte[], AccountState> accountStateCache, ISource<byte[], byte[]> codeCache,
-            ISource<byte[], ISource<byte[], byte[]>> storageCache, ISource<byte[], ContractUnspentOutput> vinCache)
+            IStorageCaches storageCaches, ISource<byte[], ContractUnspentOutput> vinCache)
         {
             this.accountStateCache = accountStateCache;
             this.codeCache = codeCache;
-            this.storageCaches = storageCache;
+            this.storageCaches = storageCaches;
             this.vinCache = vinCache;
         }
 
@@ -60,12 +60,6 @@ namespace Stratis.SmartContracts.Core.State
             return ret;
         }
 
-        //public void Delete(uint160 addr)
-        //{
-        //    this.accountStateCache.Delete(addr.ToBytes());
-        //    this.storageCache.Delete(addr.ToBytes());
-        //}
-
         public void SetCode(uint160 addr, byte[] code)
         {
             byte[] codeHash = Hashing.HashHelper.Keccak256(code);
@@ -92,25 +86,12 @@ namespace Stratis.SmartContracts.Core.State
             this.GetOrCreateAccountState(addr);
             ISource<byte[], byte[]> contractStorage = this.storageCaches.Get(addr.ToBytes());
             contractStorage.Put(key, value); // TODO: Check if 0
-            // this.accountStateCache.Flush();
         }
 
         public byte[] GetStorageValue(uint160 addr, byte[] key)
         {
             AccountState accountState = this.GetAccountState(addr);
-//<<<<<<< Updated upstream
             return accountState == null ? null : this.storageCaches.Get(addr.ToBytes()).Get(key);
-//=======
-//            if (accountState == null)
-//                return null;
-
-//            var cache = this.storageCache.Get(addr.ToBytes());
-//            if (cache is StorageCache c)
-//            {
-//                var test = c.trie.GetRootHash();
-//            }
-//            return cache.Get(key);
-//>>>>>>> Stashed changes
         }
 
         public string GetContractType(uint160 addr)
@@ -131,7 +112,7 @@ namespace Stratis.SmartContracts.Core.State
             ISource<byte[], AccountState> trackAccountStateCache = new WriteCache<AccountState>(this.accountStateCache, WriteCache<AccountState>.CacheType.SIMPLE);
             ISource<byte[], ContractUnspentOutput> trackVinCache = new WriteCache<ContractUnspentOutput>(this.vinCache, WriteCache<ContractUnspentOutput>.CacheType.SIMPLE);
             ISource<byte[], byte[]> trackCodeCache = new WriteCache<byte[]>(this.codeCache, WriteCache<byte[]>.CacheType.SIMPLE);
-            ISource<byte[], ISource<byte[], byte[]>> trackStorageCache = new CachedStorageCaches(this.storageCaches); 
+            IStorageCaches trackStorageCache = new CachedStorageCaches(this.storageCaches); 
             var stateRepository = new StateRepository(trackAccountStateCache, trackCodeCache, trackStorageCache, trackVinCache)
             {
                 parent = this
@@ -178,8 +159,6 @@ namespace Stratis.SmartContracts.Core.State
         /// 
         /// Note that because the initial transaction will always be coming from a human we don't need to minus if from.
         /// </summary>
-        /// <param name="address"></param>
-        /// <returns></returns>
         public ulong GetCurrentBalance(uint160 address)
         {
             ulong ret = 0;

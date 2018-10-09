@@ -27,9 +27,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         internal IContractPrimitiveSerializer Serializer { get; }
 
-        public static uint160 Address { get; set; }
-        public static uint160 InitialAddress { get; set; }
-
         internal T GetObject<T>(string key)
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
@@ -100,15 +97,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             byte[] keyBytes = Encoding.UTF8.GetBytes(key);
             this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, this.Serializer.Serialize(obj));
-            if (key == "CatNumber")
-            {
-                Address = this.ContractAddress;
-            }
-
-            if (key == "LastCreatedCat")
-            {
-                InitialAddress = this.ContractAddress;
-            }
         }
 
         public void SetBytes(string key, byte[] value)
