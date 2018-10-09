@@ -74,6 +74,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             return new NewAddressModel(base58Address);
         }
 
+        /// <summary>
+        /// RPC method that returns the spendable balance of all accounts.
+        /// Uses the first wallet and account.
+        /// </summary>
+        /// <returns>Total spendable balance of the wallet.</returns>
         [ActionName("getbalance")]
         [ActionDescription("Gets wallets spendable balance.")]
         public Money GetBalance()
