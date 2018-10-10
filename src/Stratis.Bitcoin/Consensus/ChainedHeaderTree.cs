@@ -87,6 +87,13 @@ namespace Stratis.Bitcoin.Consensus
         List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader);
 
         /// <summary>
+        /// During a re-org this will handle block data which failed partial or full validation.
+        /// </summary>
+        /// <param name="chainedHeader">Chained header which block data failed the validation.</param>
+        /// <returns>List of peer Ids that were claiming chain that contains an invalid block. Such peers should be banned.</returns>
+        List<int> PartialOrFullValidationFailedFromReorg(ChainedHeader failed);
+
+        /// <summary>
         /// Handles situation when consensuses tip was changed.
         /// </summary>
         /// <remarks>
@@ -149,14 +156,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Gets tip of the best peer.</summary>
         /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
         ChainedHeader GetBestPeerTip();
-
-        /// <summary>Sets the tip claim for a peer that has mined a block.</summary>
-        /// <param name="tipHash">Tip's hash.</param>
-        //void ClaimPeerTipForMiner(uint256 tipHash);
-
-        MinerPeerTipStates MinerPeerTips { get; }
-
-        List<int> PartialOrFullValidationFailedFromReorg(ChainedHeader failed);
     }
 
     public class MinerPeerTipStates
@@ -420,27 +419,6 @@ namespace Stratis.Bitcoin.Consensus
             peersClaimingThisHeader.Add(networkPeerId);
         }
 
-        ///// <inheritdoc />
-        //public void ClaimPeerTipForMiner(uint256 tipHash)
-        //{
-        //    HashSet<int> peersClaimingThisHeader;
-        //    if (!this.peerIdsByTipHash.TryGetValue(tipHash, out peersClaimingThisHeader))
-        //    {
-        //        this.peerIdsByTipHash.Add(tipHash, new HashSet<int>(new[] { MinerPeerId }));
-        //    }
-        //    else
-        //    {
-        //        // Update the last miner tip hash with the new tip
-        //        var lastMinerTip = this.peerIdsByTipHash.FirstOrDefault(p => p.Value.Contains(MinerPeerId));
-        //        if (lastMinerTip.Key != null)
-        //            this.peerIdsByTipHash.Remove(lastMinerTip.Key);
-
-        //        peersClaimingThisHeader.Add(MinerPeerId);
-        //    }
-
-        //    this.MinerPeerTips.Update(this.peerIdsByTipHash);
-        //}
-
         /// <inheritdoc />
         public List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader)
         {
@@ -458,59 +436,33 @@ namespace Stratis.Bitcoin.Consensus
             return peersToBan;
         }
 
-        public List<int> PartialOrFullValidationFailedFromReorg(ChainedHeader failedBlocked)
+        /// <inheritdoc />
+        public List<int> PartialOrFullValidationFailedFromReorg(ChainedHeader reorgChainTip)
         {
-            // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
-            if (!this.chainedHeadersByHash.ContainsKey(failedBlocked.HashBlock))
-            {
-                this.logger.LogTrace("(-)[NOT_FOUND]");
-                return new List<int>();
-            }
-
-            // Remove tree to tip of failed branch
             var peersToBan = new List<int>();
 
-            var headersToProcess = new Stack<ChainedHeader>();
-            headersToProcess.Push(failedBlocked);
-
-            ChainedHeader failedChainLastHeader;
-            HashSet<int> peersToUpdate = new HashSet<int>();
-
-            while (headersToProcess.Count != 0)
+            // Disconnect the failed reorg chain.
+            ChainedHeader blockToDisconnect = reorgChainTip;
+            while (blockToDisconnect.Next.Count == 0)
             {
-                ChainedHeader header = headersToProcess.Pop();
-
-                foreach (ChainedHeader nextHeader in header.Next)
-                    headersToProcess.Push(nextHeader);
-
-                if (this.peerIdsByTipHash.TryGetValue(header.HashBlock, out HashSet<int> peers))
+                if (this.peerIdsByTipHash.TryGetValue(blockToDisconnect.HashBlock, out HashSet<int> peers))
                 {
-                    failedChainLastHeader = header;
+                    // There was a partially validated chain that was better than our consensus tip, we've started full validation
+                    // and found out that a block on this chain is invalid. At this point we have a marker with LocalPeerId on the new chain
+                    // but our consensus tip inside peerTipsByPeerId has not been changed yet, therefore we want to prevent removing
+                    // the consensus tip from the structure.
 
                     foreach (int peerId in peers.Where(p => p != LocalPeerId))
                     {
-                        // There was a partially validated chain that was better than our consensus tip, we've started full validation
-                        // and found out that a block on this chain is invalid. At this point we have a marker with LocalPeerId on the new chain
-                        // but our consensus tip inside peerTipsByPeerId has not been changed yet, therefore we want to prevent removing
-                        // the consensus tip from the structure.
-
                         this.peerTipsByPeerId.Remove(peerId);
                         peersToBan.Add(peerId);
-
-                        peersToUpdate.Add(peerId);
                     }
 
-                    this.peerIdsByTipHash.Remove(header.HashBlock);
+                    this.peerIdsByTipHash.Remove(blockToDisconnect.HashBlock);
                 }
 
-                this.DisconnectChainHeader(header);
-            }
-
-            // Update the peer tips to that last validated block on the failed chain.
-            foreach (var peer in peersToUpdate)
-            {
-                this.ClaimPeerTip(peer, failedBlocked.Previous.HashBlock);
-                this.peerTipsByPeerId.Add(peer, failedBlocked.Previous.HashBlock);
+                this.DisconnectChainHeader(blockToDisconnect);
+                blockToDisconnect = blockToDisconnect.Previous;
             }
 
             return peersToBan;

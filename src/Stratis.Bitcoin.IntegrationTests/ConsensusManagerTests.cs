@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
 
                 // Inject a rule that will fail at block 15 of the new chain.
-                ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
+                var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(15));
                 engine.Register();
 

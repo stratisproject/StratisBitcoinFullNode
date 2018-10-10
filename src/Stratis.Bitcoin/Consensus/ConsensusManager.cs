@@ -642,59 +642,53 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="blocksToConnect">List of blocks to connect.</param>
         private async Task<ConnectBlocksResult> ConnectChainFromReorgAsync(ChainedHeader newTip, List<ChainedHeaderBlock> blocksToConnect)
         {
-            ChainedHeaderBlock lastValidatedBlock = null;
+            ChainedHeader lastValidatedBlockHeader = null;
             ConnectBlocksResult connectBlockResult = null;
 
-            var forkPoint = blocksToConnect[0].ChainedHeader.Previous;
+            var reorgChainTip = blocksToConnect[blocksToConnect.Count - 1];
 
             foreach (ChainedHeaderBlock blockToConnect in blocksToConnect)
             {
                 using (this.performanceCounter.MeasureBlockConnectionFV())
                 {
-                    connectBlockResult = await this.ConnectBlockFromReorgAsync(forkPoint, blockToConnect).ConfigureAwait(false);
+                    connectBlockResult = await this.ConnectBlockFromReorgAsync(blockToConnect, reorgChainTip.ChainedHeader).ConfigureAwait(false);
 
                     if (!connectBlockResult.Succeeded)
                     {
-                        connectBlockResult.LastValidatedBlockHeader = lastValidatedBlock.ChainedHeader;
+                        connectBlockResult.LastValidatedBlockHeader = lastValidatedBlockHeader;
 
                         this.logger.LogTrace("(-)[FAILED_TO_CONNECT]:'{0}'", connectBlockResult);
                         return connectBlockResult;
                     }
 
-                    lastValidatedBlock = blockToConnect;
+                    lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
-                    this.SetConsensusTipInternalLocked(lastValidatedBlock.ChainedHeader);
+                    this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
 
                     using (this.performanceCounter.MeasureBlockConnectedSignal())
                     {
-                        this.signals.SignalBlockConnected(lastValidatedBlock);
+                        this.signals.SignalBlockConnected(blockToConnect);
                     }
                 }
             }
 
-            // Block connected successfully.
-            if (lastValidatedBlock.ChainedHeader.HashBlock == newTip.HashBlock)
+            if (lastValidatedBlockHeader.HashBlock == newTip.HashBlock)
             {
-                List<int> peersToResync = this.SetConsensusTip(lastValidatedBlock.ChainedHeader);
+                List<int> peersToResync = this.SetConsensusTip(lastValidatedBlockHeader);
 
                 await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
 
                 if (this.network.Consensus.MaxReorgLength != 0)
                 {
-                    int newFinalizedHeight = lastValidatedBlock.ChainedHeader.Height - (int)this.network.Consensus.MaxReorgLength;
+                    int newFinalizedHeight = lastValidatedBlockHeader.Height - (int)this.network.Consensus.MaxReorgLength;
 
                     if (newFinalizedHeight > 0)
                     {
-                        uint256 newFinalizedHash = lastValidatedBlock.ChainedHeader.GetAncestor(newFinalizedHeight).HashBlock;
+                        uint256 newFinalizedHash = lastValidatedBlockHeader.GetAncestor(newFinalizedHeight).HashBlock;
 
                         this.finalizedBlockInfo.SaveFinalizedBlockHashAndHeight(newFinalizedHash, newFinalizedHeight);
                     }
                 }
-
-                //using (this.performanceCounter.MeasureBlockConnectedSignal())
-                //{
-                //    this.signals.SignalBlockConnected(lastValidatedBlock);
-                //}
             }
 
             return connectBlockResult;
@@ -854,11 +848,10 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             var result = new ConnectBlocksResult(true) { ConsensusTipChanged = true };
-
             return result;
         }
 
-        private async Task<ConnectBlocksResult> ConnectBlockFromReorgAsync(ChainedHeader forkPoint, ChainedHeaderBlock blockToConnect)
+        private async Task<ConnectBlocksResult> ConnectBlockFromReorgAsync(ChainedHeaderBlock blockToConnect, ChainedHeader reorgChainTip)
         {
             if ((blockToConnect.ChainedHeader.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (blockToConnect.ChainedHeader.BlockValidationState != ValidationState.FullyValidated))
@@ -868,16 +861,15 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Block must be partially or fully validated.");
             }
 
-            // Call the validation engine.
             ValidationContext validationContext = await this.fullValidator.ValidateAsync(blockToConnect.ChainedHeader, blockToConnect.Block).ConfigureAwait(false);
 
             if (validationContext.Error != null)
             {
-                List<int> badPeers;
+                List<int> peersToBan;
 
                 lock (this.peerLock)
                 {
-                    badPeers = this.chainedHeaderTree.PartialOrFullValidationFailedFromReorg(blockToConnect.ChainedHeader);
+                    peersToBan = this.chainedHeaderTree.PartialOrFullValidationFailedFromReorg(reorgChainTip);
                 }
 
                 var failureResult = new ConnectBlocksResult(false)
@@ -886,7 +878,7 @@ namespace Stratis.Bitcoin.Consensus
                     BanReason = validationContext.Error.Message,
                     ConsensusTipChanged = false,
                     Error = validationContext.Error,
-                    PeersToBan = badPeers
+                    PeersToBan = peersToBan
                 };
 
                 this.logger.LogTrace("(-)[FAILED]:'{0}'", failureResult);
@@ -900,9 +892,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
             }
 
-            var result = new ConnectBlocksResult(true) { ConsensusTipChanged = true };
-
-            return result;
+            return new ConnectBlocksResult(true) { ConsensusTipChanged = true };
         }
 
         /// <summary>Try to find all blocks between two headers.</summary>
