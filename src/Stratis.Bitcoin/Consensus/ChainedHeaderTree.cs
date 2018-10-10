@@ -437,15 +437,18 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public List<int> PartialOrFullValidationFailedFromReorg(ChainedHeader reorgChainTip)
+        public List<int> PartialOrFullValidationFailedFromReorg(ChainedHeader reorgTip)
         {
             var peersToBan = new List<int>();
 
-            // Disconnect the failed reorg chain.
-            ChainedHeader blockToDisconnect = reorgChainTip;
-            while (blockToDisconnect.Next.Count == 0)
+            // First remove the subtree (reorg tip to the end of the chain)
+            peersToBan = this.RemoveSubtree(reorgTip);
+
+            // Disconnect the chain to fork point.
+            ChainedHeader chainedHeaderToStartFrom = reorgTip;
+            while (chainedHeaderToStartFrom.Next.Count == 0)
             {
-                if (this.peerIdsByTipHash.TryGetValue(blockToDisconnect.HashBlock, out HashSet<int> peers))
+                if (this.peerIdsByTipHash.TryGetValue(chainedHeaderToStartFrom.HashBlock, out HashSet<int> peers))
                 {
                     // There was a partially validated chain that was better than our consensus tip, we've started full validation
                     // and found out that a block on this chain is invalid. At this point we have a marker with LocalPeerId on the new chain
@@ -458,11 +461,11 @@ namespace Stratis.Bitcoin.Consensus
                         peersToBan.Add(peerId);
                     }
 
-                    this.peerIdsByTipHash.Remove(blockToDisconnect.HashBlock);
+                    this.peerIdsByTipHash.Remove(chainedHeaderToStartFrom.HashBlock);
                 }
 
-                this.DisconnectChainHeader(blockToDisconnect);
-                blockToDisconnect = blockToDisconnect.Previous;
+                this.DisconnectChainHeader(chainedHeaderToStartFrom);
+                chainedHeaderToStartFrom = chainedHeaderToStartFrom.Previous;
             }
 
             return peersToBan;

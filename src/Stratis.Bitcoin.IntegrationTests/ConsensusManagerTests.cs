@@ -307,6 +307,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(minerA, 10);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
 
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 20);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 10);
+                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 20);
+
                 // Inject a rule that will fail at block 15 of the new chain.
                 var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(15));
@@ -330,7 +334,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain__With__No_Connected_Blocks_And_Fail_Then_Revert_Back()
+        public void ConsensusManager_Reorgs_Then_Try_To_Connect_Longer_Chain_With_No_Connected_Blocks_And_Fail_Then_Revert_Back()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
