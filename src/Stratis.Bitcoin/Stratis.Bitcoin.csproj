@@ -50,7 +50,6 @@
   <ItemGroup>
     <ProjectReference Include="..\FodyNlogAdapter\FodyNlogAdapter.csproj" />
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Networks\Stratis.Bitcoin.Networks.csproj" />
   </ItemGroup>
 
   <ItemGroup>

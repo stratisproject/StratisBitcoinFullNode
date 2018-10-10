@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.network = KnownNetworks.TestNet;
             this.connectionManager.Setup(c => c.Network).Returns(this.network);
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
-            this.nodeSettings = new NodeSettings();
+            this.nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin);
             this.pooledTransaction = new Mock<IPooledTransaction>();
             this.pooledGetUnspentTransaction = new Mock<IPooledGetUnspentTransaction>();
             this.getUnspentTransaction = new Mock<IGetUnspentTransaction>();

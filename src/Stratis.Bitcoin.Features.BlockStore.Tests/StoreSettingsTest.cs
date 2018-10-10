@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             string dir = CreateTestDir(this);
 
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}" });
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir={dir}" });
 
             IFullNode node1 = FullNodeSetup(nodeSettings);
 
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             Assert.False(settings1.ReIndex);
 
-            nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}", "-reindex=1" });
+            nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir={dir}", "-reindex=1" });
 
             IFullNode node2 = FullNodeSetup(nodeSettings);
 

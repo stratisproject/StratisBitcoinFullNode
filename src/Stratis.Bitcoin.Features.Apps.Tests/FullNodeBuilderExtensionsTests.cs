@@ -3,6 +3,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Apps.Interfaces;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Apps.Tests
@@ -14,7 +15,7 @@ namespace Stratis.Bitcoin.Features.Apps.Tests
         public FullNodeBuilderExtensionsTests()
         {
             this.fullNodeBuilder = new FullNodeBuilder()
-                .UseNodeSettings(new NodeSettings())
+                .UseNodeSettings(new NodeSettings(KnownNetworks.TestNet))
                 .UsePosConsensus();
         }
 

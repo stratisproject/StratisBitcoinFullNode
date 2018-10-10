@@ -6,6 +6,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
     public partial class SendingTransactionOverPolicyByteLimit
     {
         [Retry]
+        [Trait("Unstable", "True")]
         public void sending_transaction_near_policy_byte_limit()
         {
             Given(two_connected_nodes);
@@ -17,6 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Retry]
+        [Trait("Unstable", "True")]
         public void sending_transaction_over_policy_byte_limit()
         {
             Given(two_connected_nodes);
