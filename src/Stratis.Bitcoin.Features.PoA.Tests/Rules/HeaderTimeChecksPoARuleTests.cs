@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -66,9 +67,12 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             var provider = new Mock<IDateTimeProvider>();
             provider.Setup(x => x.GetAdjustedTimeAsUnixTimestamp()).Returns(timestamp);
 
-            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain,
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.chain,
                 new NodeDeployments(this.network, this.chain), this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object,
                 new ChainState(), new InvalidBlockHashStore(provider.Object), new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator);
+
+            this.timeChecksRule.Parent = this.rulesEngine;
+            this.timeChecksRule.Initialize();
 
             var validationContext = new ValidationContext() { ChainedHeaderToValidate = this.currentHeader };
             var ruleContext = new RuleContext(validationContext, time);
