@@ -57,7 +57,9 @@ namespace Stratis.Bitcoin.Features.PoA
             // and should be the same for all nodes operating on this network.
             this.FederationPublicKeys = new List<PubKey>()
             {
-                new PubKey("02d485fc5ae101c2780ff5e1f0cb92dd907053266f7cf3388eb22c5a4bd266ca2e")
+                new PubKey("03e6f19ea3dc6c145d98a0e0838af952755798e5bc3950bbca4f9485aa23873d7f"),
+                new PubKey("02ddebcf18207072bdd172a25f85f2ea12e2de1d9d794f136722634aad08400fcb"),
+                new PubKey("02067b38d777690aaaf23a5b371a819e6ddc6d2aae734b0199fe59df28dc056dd7")
             };
 
             // Create the genesis block.
