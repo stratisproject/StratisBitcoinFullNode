@@ -147,17 +147,11 @@ namespace Stratis.Bitcoin.Features.PoA
             this.Bech32Encoders[(int)Bech32Type.WITNESS_PUBKEY_ADDRESS] = encoder;
             this.Bech32Encoders[(int)Bech32Type.WITNESS_SCRIPT_ADDRESS] = encoder;
 
-            this.DNSSeeds = new List<DNSSeedData>
-            {
-                // TODO POA
-                //new DNSSeedData("seednode1.stratisplatform.com", "seednode1.stratisplatform.com"),
-                //new DNSSeedData("seednode2.stratis.cloud", "seednode2.stratis.cloud"),
-                //new DNSSeedData("seednode3.stratisplatform.com", "seednode3.stratisplatform.com"),
-                //new DNSSeedData("seednode4.stratis.cloud", "seednode4.stratis.cloud")
-            };
+            // No DNS seeds.
+            this.DNSSeeds = new List<DNSSeedData> { };
 
-            // TODO POA change IPs here
-            string[] seedNodes = { "101.200.198.244" };
+            // No seed nodes.
+            string[] seedNodes = { };
             this.SeedNodes = this.ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
