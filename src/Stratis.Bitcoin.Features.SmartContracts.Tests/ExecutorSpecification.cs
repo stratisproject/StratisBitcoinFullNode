@@ -12,7 +12,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Create_Contract_Success()
         {
-            // TODO: Fix
             var contractTxData = new ContractTxData(1, 1, (Gas) 1000, new byte[] { 0xAA, 0xBB, 0xCC });
 
             VmExecutionResult vmExecutionResult = VmExecutionResult.Ok(new object(), null);
@@ -57,10 +56,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             fixture.TransferProcessor.Verify(t => t
                 .Process(
-                    fixture.ContractStateRoot.Object, 
+                    snapshot.ContractState, 
                     stateTransitionResult.Success.ContractAddress, 
                     fixture.ContractTransactionContext,
-                    fixture.State.Object.InternalTransfers,
+                    snapshot.InternalTransfers,
                     false), 
                 Times.Once);
 
@@ -88,7 +87,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Create_Contract_Failure()
         {
-            // TODO: Fix
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, new byte[] { 0xAA, 0xBB, 0xCC });
             
             StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas) 100, StateTransitionErrorKind.VmError);
@@ -134,10 +132,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             fixture.TransferProcessor.Verify(t => t
                     .Process(
-                        fixture.ContractStateRoot.Object,
+                        snapshot.ContractState,
                         null,
                         fixture.ContractTransactionContext,
-                        fixture.State.Object.InternalTransfers,
+                        snapshot.InternalTransfers,
                         true),
                 Times.Once);
 
@@ -165,7 +163,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Call_Contract_Success()
         {
-            // TODO: Fix
             var parameters = new object[] { };
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
 
@@ -216,10 +213,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             fixture.TransferProcessor.Verify(t => t
                 .Process(
-                    fixture.ContractStateRoot.Object,
+                    snapshot.ContractState,
                     stateTransitionResult.Success.ContractAddress,
                     fixture.ContractTransactionContext,
-                    fixture.State.Object.InternalTransfers,
+                    snapshot.InternalTransfers,
                     false),
                 Times.Once);
 
@@ -247,7 +244,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Call_Contract_Failure()
         {
-            // TODO: Fix
             var parameters = new object[] { };
             var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
 
@@ -297,10 +293,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Transfer processor is called with null for new contract address and true for reversion required.
             fixture.TransferProcessor.Verify(t => t
                     .Process(
-                        fixture.ContractStateRoot.Object,
+                        snapshot.ContractState,
                         null,
                         fixture.ContractTransactionContext,
-                        fixture.State.Object.InternalTransfers,
+                        snapshot.InternalTransfers,
                         true),
                 Times.Once);
 

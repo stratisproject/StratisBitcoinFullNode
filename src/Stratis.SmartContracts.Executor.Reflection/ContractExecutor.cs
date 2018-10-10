@@ -47,7 +47,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IContractExecutionResult Execute(IContractTransactionContext transactionContext)
         {
-            IStateRepository trackRepository = this.stateRoot.StartTracking();
             // Deserialization can't fail because this has already been through SmartContractFormatRule.
             Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.Data);
             ContractTxData callData = callDataDeserializationResult.Value;
@@ -60,7 +59,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             );
 
             IState state = this.stateFactory.Create(
-                trackRepository,
+                this.stateRoot,
                 block,
                 transactionContext.TxOutValue,
                 transactionContext.TransactionHash);
@@ -93,20 +92,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 result = this.stateProcessor.Apply(newState, message);
             }
 
-            if (result.IsSuccess)
-                state.TransitionTo(newState);
-
             bool revert = !result.IsSuccess;
 
             Transaction internalTransaction = this.transferProcessor.Process(
-                trackRepository,
+                newState.ContractState,
                 result.Success?.ContractAddress,
                 transactionContext,
-                state.InternalTransfers,
+                newState.InternalTransfers,
                 revert);
 
             if (result.IsSuccess)
-                trackRepository.Commit();
+                state.TransitionTo(newState);
 
             bool outOfGas = result.IsFailure && result.Error.Kind == StateTransitionErrorKind.OutOfGas;
 
