@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     if (waitingTime > 0)
                     {
-                        // Wait till we can mine.
+                        // Wait until we can mine.
                         await Task.Delay(TimeSpan.FromSeconds(waitingTime), this.cancellation.Token).ConfigureAwait(false);
                     }
 
