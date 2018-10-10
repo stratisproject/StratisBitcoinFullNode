@@ -1,6 +1,7 @@
 ﻿using System;
 using FluentAssertions;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Xunit;
 
@@ -8,10 +9,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 {
     public class MinerSettingsTest : LogsTestBase
     {
+        public MinerSettingsTest() : base(KnownNetworks.StratisTest)
+        {
+        }
+
         [Fact]
         public void Load_GivenNodeSettings_LoadsSettingsFromNodeSettings()
         {
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-mine=true",
                 "-stake=true",
                 "-walletname=mytestwallet",
@@ -31,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Load_MiningDisabled_DoesNotLoadMineAddress()
         {
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-mine=false",
                 "-stake=true",
                 "-walletname=mytestwallet",
@@ -52,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]	
         public void Load_StakingDisabled_DoesNotLoadWalletDetails()
         {
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-mine=true",
                 "-stake=false",
                 "-walletname=mytestwallet",
@@ -73,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void Load_MiningEnabled_BlockSize_BlockWeight_Set()
         {
             // Set values within consensus rules
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-mine=true",
                 "-blockmaxsize=150000",
                 "-blockmaxweight=300000"
@@ -90,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void Load_MiningEnabled_BlockSize_BlockWeight_Set_BelowMinimum()
         {
             // Set values below consensus rules
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new string[] {
                 "-mine=true",
                 "-blockmaxsize=10",
                 "-blockmaxweight=30"
@@ -107,7 +112,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void Load_MiningEnabled_BlockSize_BlockWeight_Set_AboveMaximum()
         {
             // Set values above consensus rules
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-mine=true",
                 "-blockmaxsize=5000000",
                 "-blockmaxweight=5000000"
@@ -123,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Load_EnableCoinStakeSplitting_MinimumStakingCoinValue_And_MinimumSplitCoinValue()
         {
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-enablecoinstakesplitting=false",
                 "-minimumstakingcoinvalue=50000",
                 "-minimumsplitcoinvalue=50000000"
@@ -139,7 +144,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Load_MinimumStakingCoinValue_Should_Be_Strictly_Above_Zero()
         {
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-minimumstakingcoinvalue=0",
             });
 
@@ -151,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Defaults_EnableCoinStakeSplitting_MinimumStakingCoinValue_And_MinimumSplitCoinValue()
         {
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-stake=1",
             });
 
@@ -165,13 +170,13 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public void Throws_On_MinimumStakingCoinValue_Or_MinimumSplitCoinValue_Invalid()
         {
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                "-minimumstakingcoinvalue=-1",
             });
 
             new Action(() => new MinerSettings(nodeSettings)).Should().Throw<Exception>();
 
-            nodeSettings = new NodeSettings(args: new string[] {
+            nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-minimumsplitcoinvalue=-1"
             });
 

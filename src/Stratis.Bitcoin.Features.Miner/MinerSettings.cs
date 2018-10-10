@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -67,13 +68,6 @@ namespace Stratis.Bitcoin.Features.Miner
         public BlockDefinitionOptions BlockDefinitionOptions { get; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public MinerSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -110,10 +104,10 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Displays mining help information on the console.
         /// </summary>
-        /// <param name="mainNet">Not used.</param>
-        public static void PrintHelp(Network mainNet)
+        /// <param name="network">Not used.</param>
+        public static void PrintHelp(Network network)
         {
-            NodeSettings defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default(network);
             var builder = new StringBuilder();
 
             builder.AppendLine("-mine=<0 or 1>                      Enable POW mining.");
