@@ -20,8 +20,8 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
         /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
-            // TODO POA at height N do the premine
-            // TODO POA miner should mine to particular addr
+            // TODO POA at height N do the premine.
+            // TODO POA miner should mine to particular address.
 
             if (block.Transactions[0].TotalOut > fees)
             {

@@ -55,12 +55,12 @@ namespace Stratis.Bitcoin.Features.PoA
 
             FileStream readStream = File.OpenRead(path);
 
-            var privKey = new Key();
+            var privateKey = new Key();
             var stream = new BitcoinStream(readStream, false);
-            stream.ReadWrite(ref privKey);
+            stream.ReadWrite(ref privateKey);
             readStream.Close();
 
-            return privKey;
+            return privateKey;
         }
     }
 }
