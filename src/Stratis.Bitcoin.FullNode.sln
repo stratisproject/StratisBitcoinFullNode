@@ -140,7 +140,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Po
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.PoAChainD", "Stratis.PoAChainD\Stratis.PoAChainD.csproj", "{C3DBEB3F-490C-479C-9CE9-6AFBC4C1415D}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Networks", "Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj", "{D45CAF59-5133-4995-AED2-EC6C3D41E3E3}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Networks", "Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj", "{D45CAF59-5133-4995-AED2-EC6C3D41E3E3}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
