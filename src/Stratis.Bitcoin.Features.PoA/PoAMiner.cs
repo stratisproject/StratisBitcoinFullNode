@@ -112,12 +112,6 @@ namespace Stratis.Bitcoin.Features.PoA
                     uint timeNow = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
                     uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
-                    if (myTimestamp < timeNow)
-                    {
-                        // Sanity check.
-                        throw new Exception("Invalid mining timestamp generated.");
-                    }
-
                     uint waitingTime = myTimestamp - timeNow - 1;
 
                     this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
