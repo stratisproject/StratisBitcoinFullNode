@@ -417,7 +417,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (connectBlocksResult != null)
                 {
-                    if (connectBlocksResult.PeersToBan != null)
+                    if (connectBlocksResult.PeersToBan != null && connectBlocksResult.PeersToBan.Count > 0)
                     {
                         var peersToBan = new List<INetworkPeer>();
 
