@@ -79,7 +79,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         {
             if (this.FullNode != null)
             {
-                this.FullNode.Dispose();
+                this.FullNode.NodeLifetime.StopApplication();
                 this.FullNode = null;
             }
 

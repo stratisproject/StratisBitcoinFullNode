@@ -87,6 +87,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 throw new OutOfGasException("Out of gas");
             }
 
+            public string TestOptionalParam(string optional = "DefaultValue")
+            {
+                return optional;
+            }
+
             public bool Test1Called { get; set; }
 
             public int Param { get; set; }
@@ -237,29 +242,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             this.contract.Invoke(methodCall);
 
-            var gasMeter = this.instance.GetBaseTypePrivateFieldValue("gasMeter");
-            var block = this.instance.GetBaseTypePrivateFieldValue("Block");
-            var getBalance = this.instance.GetBaseTypePrivateFieldValue("getBalance");
-            var internalTransactionExecutor = this.instance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
-            var internalHashHelper = this.instance.GetBaseTypePrivateFieldValue("internalHashHelper");
-            var message = this.instance.GetBaseTypePrivateFieldValue("Message");
-            var persistentState = this.instance.GetBaseTypePrivateFieldValue("PersistentState");
-            var smartContractState = this.instance.GetBaseTypePrivateFieldValue("smartContractState");
+            var smartContractState = this.instance.GetBaseTypePrivateFieldValue("state");
 
-            Assert.NotNull(gasMeter);
-            Assert.Equal(this.state.GasMeter, gasMeter);
-            Assert.NotNull(block);
-            Assert.Equal(this.state.Block, block);
-            Assert.NotNull(getBalance);
-            Assert.Equal(this.state.GetBalance, getBalance);
-            Assert.NotNull(internalTransactionExecutor);
-            Assert.Equal(this.state.InternalTransactionExecutor, internalTransactionExecutor);
-            Assert.NotNull(internalHashHelper);
-            Assert.Equal(this.state.InternalHashHelper, internalHashHelper);
-            Assert.NotNull(message);
-            Assert.Equal(this.state.Message, message);
-            Assert.NotNull(persistentState);
-            Assert.Equal(this.state.PersistentState, persistentState);
             Assert.NotNull(smartContractState);
             Assert.Equal(this.state, smartContractState);
         }
@@ -299,7 +283,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void HasNoReceive_Returns_Correct_Receive()
         {
             var receiveContract = Contract.CreateUninitialized(typeof(HasNoReceive), this.state, this.address);
-            var receiveInstance = (HasNoReceive)receiveContract.GetPrivateFieldValue("instance");
 
             // ReceiveHandler should be null here because we set the binding flags to only resolve methods on the declared type
             var receiveMethod = ((Contract)receiveContract).ReceiveHandler;
@@ -369,31 +352,46 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             receiveContract.Invoke(methodCall);
 
-            var gasMeter = receiveInstance.GetBaseTypePrivateFieldValue("gasMeter");
-            var block = receiveInstance.GetBaseTypePrivateFieldValue("Block");
-            var getBalance = receiveInstance.GetBaseTypePrivateFieldValue("getBalance");
-            var internalTransactionExecutor = receiveInstance.GetBaseTypePrivateFieldValue("internalTransactionExecutor");
-            var internalHashHelper = receiveInstance.GetBaseTypePrivateFieldValue("internalHashHelper");
-            var message = receiveInstance.GetBaseTypePrivateFieldValue("Message");
-            var persistentState = receiveInstance.GetBaseTypePrivateFieldValue("PersistentState");
-            var smartContractState = receiveInstance.GetBaseTypePrivateFieldValue("smartContractState");
+            var smartContractState = receiveInstance.GetBaseTypePrivateFieldValue("state");
 
-            Assert.NotNull(gasMeter);
-            Assert.Equal(this.state.GasMeter, gasMeter);
-            Assert.NotNull(block);
-            Assert.Equal(this.state.Block, block);
-            Assert.NotNull(getBalance);
-            Assert.Equal(this.state.GetBalance, getBalance);
-            Assert.NotNull(internalTransactionExecutor);
-            Assert.Equal(this.state.InternalTransactionExecutor, internalTransactionExecutor);
-            Assert.NotNull(internalHashHelper);
-            Assert.Equal(this.state.InternalHashHelper, internalHashHelper);
-            Assert.NotNull(message);
-            Assert.Equal(this.state.Message, message);
-            Assert.NotNull(persistentState);
-            Assert.Equal(this.state.PersistentState, persistentState);
             Assert.NotNull(smartContractState);
             Assert.Equal(this.state, smartContractState);
+        }
+
+        [Fact]
+        public void Invoke_Method_With_Empty_Optional_Param()
+        {
+            // Method binding should fail when a method has an optional param that is not provided
+            var methodCall = new MethodCall("TestOptionalParam");
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ContractInvocationErrorType.MethodDoesNotExist, result.InvocationErrorType);
+        }
+
+        [Fact]
+        public void Invoke_Method_With_Set_Optional_Param()
+        {
+            var param = "Test Optional Param";
+            var methodCall = new MethodCall("TestOptionalParam", new object[] { param });
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
+
+            Assert.True(result.IsSuccess);
+            Assert.Equal(param, result.Return);
+        }
+
+        [Fact]
+        public void Invoke_Method_With_Null_Param()
+        {
+            var param = (string) null;
+            var methodCall = new MethodCall("Test2", new object[] { param });
+
+            IContractInvocationResult result = this.contract.Invoke(methodCall);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(ContractInvocationErrorType.ParameterTypesDontMatch, result.InvocationErrorType);
         }
     }
 }
