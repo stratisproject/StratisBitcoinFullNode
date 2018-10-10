@@ -651,5 +651,29 @@ public class Test : SmartContract
             Assert.Single(result.Errors);
             Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
         }
+
+        [Fact]
+        public void SmartContractValidator_Should_Not_Allow_Optional_Params()
+        {
+            const string source = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state)
+        : base(state) { }
+
+    public void Optional(int optionalParam = 1) {
+    }
+}";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e is MethodParamValidator.MethodParamValidationResult);
+        }
     }
 }
