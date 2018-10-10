@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Tests.P2P
                 new PayloadProvider().DiscoverPayloads(), 
                 new SelfEndpointTracker(this.extendedLoggerFactory),
                 new Mock<IInitialBlockDownloadState>().Object,
-                new Configuration.Settings.ConnectionManagerSettings());
+                new Configuration.Settings.ConnectionManagerSettings(NodeSettings.Default(this.Network)));
         }
 
         [Fact]

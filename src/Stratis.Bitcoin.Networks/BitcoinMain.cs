@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Networks
                 [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1479168000, 1510704000)
             };
 
-            this.Consensus = new Consensus(
+            this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: new ConsensusOptions(), // Default - set to Bitcoin params.
                 coinType: 0,

@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
 
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(this.Network);
 
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             IPAddress ipAddressThree = IPAddress.Parse("::ffff:192.168.0.3");
             var endpointConnectNode = new IPEndPoint(ipAddressThree, 80);
 
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(this.Network);
 
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             connectionSettings.Connect.Add(endpointConnectNode);
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(this.Network);
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
             var peerConnector = new PeerConnectorConnectNode(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.Network, networkPeerFactory.Object, this.nodeLifetime, nodeSettings, connectionSettings, peerAddressManager, new SelfEndpointTracker(this.extendedLoggerFactory));
@@ -369,7 +369,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         {
             DataFolder peerFolder = CreateDataFolder(this);
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.extendedLoggerFactory, new SelfEndpointTracker(this.extendedLoggerFactory));
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(this.Network);
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
             var peerConnector = new PeerConnectorDiscovery(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.Network, networkPeerFactory.Object, this.nodeLifetime, nodeSettings, connectionSettings, peerAddressManager, new SelfEndpointTracker(this.extendedLoggerFactory));
@@ -379,7 +379,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         [Fact]
         public void PeerConnectorDiscover_WithConnectPeersSpecified_CanNotStart()
         {
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(this.Network);
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
             var ipAddressThree = IPAddress.Parse("::ffff:192.168.0.3");
             var networkAddressConnectNode = new IPEndPoint(ipAddressThree, 80);
@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var selfEndpointTracker = new Mock<ISelfEndpointTracker>();
             selfEndpointTracker.Setup(x => x.IsSelf(It.IsAny<IPEndPoint>())).Returns(true);
             var peerAddressManager = new Mock<IPeerAddressManager>();
-            var nodeSettings = new NodeSettings();
+            var nodeSettings = new NodeSettings(this.Network);
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
             var peerConnector = new PeerConnectorDiscovery(this.asyncLoopFactory, DateTimeProvider.Default, this.extendedLoggerFactory, this.Network, networkPeerFactory.Object, this.nodeLifetime, nodeSettings, new ConnectionManagerSettings(nodeSettings), peerAddressManager.Object, selfEndpointTracker.Object);
 
