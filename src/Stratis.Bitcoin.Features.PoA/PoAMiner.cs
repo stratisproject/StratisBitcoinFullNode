@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
@@ -56,6 +57,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly FederationManager federationManager;
 
+        private readonly IIntegrityValidator integrityValidator;
+
         private Task miningTask;
 
         public PoAMiner(
@@ -69,7 +72,8 @@ namespace Stratis.Bitcoin.Features.PoA
             SlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
-            FederationManager federationManager)
+            FederationManager federationManager,
+            IIntegrityValidator integrityValidator)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -80,6 +84,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.connectionManager = connectionManager;
             this.poaHeaderValidator = poaHeaderValidator;
             this.federationManager = federationManager;
+            this.integrityValidator = integrityValidator;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
@@ -143,8 +148,14 @@ namespace Stratis.Bitcoin.Features.PoA
                     // Update merkle root.
                     blockTemplate.Block.UpdateMerkleRoot();
 
-                    // TODO POA That should also do integrity validation
                     ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
+
+                    ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, blockTemplate.Block);
+                    if (result.Error != null)
+                    {
+                        // Sanity check. Should never happen.
+                        throw new Exception(result.Error.ToString());
+                    }
 
                     if (chainedHeader == null)
                     {
