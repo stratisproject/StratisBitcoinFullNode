@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>(); // TODO POA: PoA rule engine?
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())

@@ -10,12 +10,15 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
     {
         private PoANetwork network;
 
+        private SlotsManager slotsManager;
+
         /// <inheritdoc />
         public override void Initialize()
         {
             base.Initialize();
 
             this.network = this.Parent.Network as PoANetwork;
+            this.slotsManager = (this.Parent as PoAConsensusRuleEngine).SlotsManager;
         }
 
         /// <inheritdoc />
@@ -35,6 +38,12 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
+            }
+
+            if (!this.slotsManager.IsValidTimestamp(chainedHeader.Header.Time))
+            {
+                this.Logger.LogTrace("(-)[INVALID_TIMESTAMP]");
+                PoAConsensusErrors.InvalidHeaderTimestamp.Throw();
             }
         }
     }

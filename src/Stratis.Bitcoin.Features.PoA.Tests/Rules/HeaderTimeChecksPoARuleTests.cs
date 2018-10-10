@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
@@ -38,11 +39,13 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             IDateTimeProvider timeProvider = new DateTimeProvider();
             var consensusSettings = new ConsensusSettings(NodeSettings.Default());
 
-            var powConsensusRulesEngine = new PowConsensusRuleEngine(this.network, loggerFactory, new DateTimeProvider(), chain,
-                new NodeDeployments(this.network, chain), consensusSettings, new Checkpoints(this.network, consensusSettings), new Mock<ICoinView>().Object,
-                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider));
+            var slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(), this.network, loggerFactory), loggerFactory);
 
-            this.timeChecksRule.Parent = powConsensusRulesEngine;
+            var poaConsensusRulesEngine = new PoAConsensusRuleEngine(this.network, loggerFactory, new DateTimeProvider(), chain,
+                new NodeDeployments(this.network, chain), consensusSettings, new Checkpoints(this.network, consensusSettings), new Mock<ICoinView>().Object,
+                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider), slotsManager);
+
+            this.timeChecksRule.Parent = poaConsensusRulesEngine;
             this.timeChecksRule.Logger = loggerFactory.CreateLogger(this.timeChecksRule.GetType().FullName);
             this.timeChecksRule.Initialize();
 
@@ -59,8 +62,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             var ruleContext = new RuleContext(validationContext, DateTimeOffset.Now);
 
             // New block has smaller timestamp.
-            this.currentHeader.Header.Time = 100;
-            this.prevHeader.Header.Time = 101;
+            this.currentHeader.Header.Time = this.network.TargetSpacingSeconds;
+            this.prevHeader.Header.Time = this.currentHeader.Header.Time + this.network.TargetSpacingSeconds;
 
             Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
 
@@ -74,32 +77,25 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             }
 
             // New block has equal timestamp.
-            this.prevHeader.Header.Time = 100;
+            this.prevHeader.Header.Time = this.currentHeader.Header.Time;
             Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
 
             // New block has greater timestamp.
-            this.prevHeader.Header.Time = 80;
+            this.prevHeader.Header.Time = this.currentHeader.Header.Time - this.network.TargetSpacingSeconds;
             this.timeChecksRule.Run(ruleContext);
         }
 
         [Fact]
         public void EnsureTimestampIsNotTooNew()
         {
-            var time = new DateTimeOffset(DateTime.UtcNow);
+            DateTimeOffset time = DateTimeOffset.FromUnixTimeSeconds(new DateTimeProvider().GetUtcNow().ToUnixTimestamp() / this.network.TargetSpacingSeconds * this.network.TargetSpacingSeconds);
 
             var validationContext = new ValidationContext() { ChainedHeaderToValidate = this.currentHeader };
             var ruleContext = new RuleContext(validationContext, time);
 
-            // New block has smaller timestamp.
             this.prevHeader.Header.Time = (uint)time.ToUnixTimeSeconds();
 
-            this.currentHeader.Header.Time = this.prevHeader.Header.Time + this.network.TargetSpacingSeconds - 1;
-            this.timeChecksRule.Run(ruleContext);
-
             this.currentHeader.Header.Time = this.prevHeader.Header.Time + this.network.TargetSpacingSeconds;
-            this.timeChecksRule.Run(ruleContext);
-
-            this.currentHeader.Header.Time = this.prevHeader.Header.Time + 1;
             this.timeChecksRule.Run(ruleContext);
 
             this.currentHeader.Header.Time = this.prevHeader.Header.Time + this.network.TargetSpacingSeconds + 1;
@@ -112,6 +108,34 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             catch (ConsensusErrorException exception)
             {
                 Assert.Equal(ConsensusErrors.TimeTooNew, exception.ConsensusError);
+            }
+        }
+
+        [Fact]
+        public void EnsureTimestampDivisibleByTargetSpacing()
+        {
+            DateTimeOffset time = DateTimeOffset.FromUnixTimeSeconds(new DateTimeProvider().GetUtcNow().ToUnixTimestamp() / this.network.TargetSpacingSeconds * this.network.TargetSpacingSeconds);
+
+            var validationContext = new ValidationContext() { ChainedHeaderToValidate = this.currentHeader };
+            var ruleContext = new RuleContext(validationContext, time);
+
+            // New block has smaller timestamp.
+            this.prevHeader.Header.Time = (uint)time.ToUnixTimeSeconds();
+
+            this.currentHeader.Header.Time = this.prevHeader.Header.Time + this.network.TargetSpacingSeconds;
+            this.timeChecksRule.Run(ruleContext);
+
+            this.currentHeader.Header.Time = this.prevHeader.Header.Time + this.network.TargetSpacingSeconds - 1;
+
+            Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
+
+            try
+            {
+                this.timeChecksRule.Run(ruleContext);
+            }
+            catch (ConsensusErrorException exception)
+            {
+                Assert.Equal(PoAConsensusErrors.InvalidHeaderTimestamp, exception.ConsensusError);
             }
         }
     }
