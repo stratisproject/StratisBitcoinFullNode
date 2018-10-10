@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 = invalid
                 TestHelper.BuildBlocks.OnNode(minerB).Valid(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
-                // Reconnect minerA to minerB causing the following to happen: 
+                // Reconnect syncer to minerB causing the following to happen: 
                 // Reorg from blocks 9 to 5.
                 // Connect blocks 5 to 10
                 // Block 8 fails.
