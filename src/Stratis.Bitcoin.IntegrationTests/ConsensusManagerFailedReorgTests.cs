@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_FailedReorg_Reconnect_OldChain_Nodes_Connected()
+        public void ConsensusManager_ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_Connected()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // MinerB mines 5 more blocks:
                 // Block 6,7,9,10 = valid
                 // Block 8 = invalid
-                TestHelper.BuildBlocks.OnNode(minerB).Valid(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
+                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
                 // On mining the following will happen: 
                 // Reorg from blocks 9 to 5.
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_FailedReorg_Reconnect_OldChain_Nodes_Disconnected()
+        public void ConsensusManager_ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_Disconnected()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // MinerB mines 5 more blocks:
                 // Block 6,7,9,10 = valid
                 // Block 8 = invalid
-                TestHelper.BuildBlocks.OnNode(minerB).Valid(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
+                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
                 // Reconnect minerA to minerB causing the following to happen: 
                 // Reorg from blocks 9 to 5.
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void ConsensusManager_FailedReorg_Reconnect_OldChain_FromSecondMiner_Disconnected()
+        public void ConsensusManager_ReorgChain_FailsFullValidation_Reconnect_OldChain_FromSecondMiner_Disconnected()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // MinerB mines 5 more blocks:
                 // Block 6,7,9,10 = valid
                 // Block 8 = invalid
-                TestHelper.BuildBlocks.OnNode(minerB).Valid(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
+                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
                 // Reconnect syncer to minerB causing the following to happen: 
                 // Reorg from blocks 9 to 5.
@@ -144,5 +144,75 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
             }
         }
+
+        [Fact]
+        public void ConsensusManager_ReorgChain_FailsPartialValidation_Nodes_Connected()
+        {
+            using (var builder = NodeBuilder.Create(this))
+            {
+                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(this.posNetworkWithNoValidation).NotInIBD().NoValidation().WithWallet().Start();
+
+                // MinerA mines 5 blocks
+                TestHelper.MineBlocks(minerA, 5);
+
+                // MinerB syncs with MinerA
+                TestHelper.ConnectAndSync(minerB, minerA);
+
+                // Disable syncer from sending blocks to miner B
+                TestHelper.DisableBlockPropagation(minerA, minerB);
+
+                // Miner A continues to mine to height 9
+                TestHelper.MineBlocks(minerA, 4);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
+
+                // MinerB mines 5 more blocks:
+                // Block 6,7,9,10 = valid
+                // Block 8 = invalid
+                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidDuplicateCoinbase(coreNode, block)).BuildAsync();
+
+                // Reconnect minerA to minerB.
+                // This will cause the reorg chain to fail at block 8 and roll back any changes.
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
+            }
+        }
+
+
+        [Fact]
+        public void ConsensusManager_ReorgChain_FailsPartialValidation_Nodes_Disconnected()
+        {
+            using (var builder = NodeBuilder.Create(this))
+            {
+                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(this.posNetworkWithNoValidation).NotInIBD().NoValidation().WithWallet().Start();
+
+                // MinerA mines 5 blocks
+                TestHelper.MineBlocks(minerA, 5);
+
+                // MinerB syncs with MinerA
+                TestHelper.ConnectAndSync(minerB, minerA);
+
+                // Disconnect minerA from miner B
+                TestHelper.Disconnect(minerA, minerB);
+
+                // Miner A continues to mine to height 9
+                TestHelper.MineBlocks(minerA, 4);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
+
+                // MinerB mines 5 more blocks:
+                // Block 6,7,9,10 = valid
+                // Block 8 = invalid
+                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
+
+                // Reconnect minerA to minerB.
+                // This will cause the reorg chain to fail at block 8 and roll back any changes.
+                TestHelper.Connect(minerA, minerB);
+
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
+            }
+        }
+
     }
 }

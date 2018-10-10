@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>Sets the amount of valid blocks to create.</summary>
-        public BlockBuilder Valid(int amountOfBlocks)
+        public BlockBuilder Amount(int amountOfBlocks)
         {
             this.amountOfBlocks = amountOfBlocks;
             return this;
@@ -97,12 +97,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public static Block InvalidCoinbaseReward(CoreNode coreNode, Block block)
         {
             block.Transactions[0].Outputs[0].Value = Money.Coins(999);
-            return block;
-        }
-
-        public static Block InvalidDifficulty(CoreNode coreNode, Block block)
-        {
-            block.Header.Bits = new Target(0);
             return block;
         }
 
