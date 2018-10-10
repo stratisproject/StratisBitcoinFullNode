@@ -64,15 +64,17 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Time when current round started.
             uint roundStartTimestamp = (currentTime / roundTime) * roundTime;
-            uint timestamp = roundStartTimestamp + slotIndex * this.network.TargetSpacingSeconds;
+            uint nextTimestampForMining = roundStartTimestamp + slotIndex * this.network.TargetSpacingSeconds;
 
-            if (timestamp < currentTime)
+            // We already passed our slot in this round.
+            // Get timestamp of our slot from next round.
+            if (nextTimestampForMining < currentTime)
             {
-                // Get timestamp from next round.
-                timestamp = roundStartTimestamp + roundTime + slotIndex * this.network.TargetSpacingSeconds;
+                // Get timestamp for next round.
+                nextTimestampForMining = roundStartTimestamp + roundTime + slotIndex * this.network.TargetSpacingSeconds;
             }
 
-            return timestamp;
+            return nextTimestampForMining;
         }
 
         public bool IsValidTimestamp(uint headerUnixTimestamp)
