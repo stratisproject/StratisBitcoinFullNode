@@ -8,6 +8,8 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
@@ -59,6 +61,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IIntegrityValidator integrityValidator;
 
+        private readonly IWalletManager walletManager;
+
         private Task miningTask;
 
         public PoAMiner(
@@ -73,7 +77,8 @@ namespace Stratis.Bitcoin.Features.PoA
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
             FederationManager federationManager,
-            IIntegrityValidator integrityValidator)
+            IIntegrityValidator integrityValidator,
+            IWalletManager walletManager)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -85,6 +90,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.poaHeaderValidator = poaHeaderValidator;
             this.federationManager = federationManager;
             this.integrityValidator = integrityValidator;
+            this.walletManager = walletManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
@@ -130,6 +136,26 @@ namespace Stratis.Bitcoin.Features.PoA
                     ChainedHeader tip = this.consensusManager.Tip;
 
                     BlockTemplate blockTemplate = this.blockDefinition.Build(tip);
+
+                    // Premine.
+                    if (tip.Height + 1 == this.network.Consensus.PremineHeight)
+                    {
+                        Script premineScriptPubKey = this.GetPremineScriptPubKey();
+
+                        if (premineScriptPubKey == null)
+                        {
+                            this.logger.LogWarning("Miner wasn't able to get address from the wallet to add premine reward!");
+                        }
+                        else
+                        {
+                            Transaction coinbase = blockTemplate.Block.Transactions[0];
+
+                            coinbase.Outputs[0].ScriptPubKey = premineScriptPubKey;
+                            coinbase.Outputs[0].Value = this.network.Consensus.PremineReward;
+
+                            this.logger.LogInformation("Premine was added to the block. It will be available after {0} confirmations.", this.network.Consensus.CoinbaseMaturity);
+                        }
+                    }
 
                     blockTemplate.Block.Header.Time = myTimestamp;
 
@@ -180,6 +206,26 @@ namespace Stratis.Bitcoin.Features.PoA
                     break;
                 }
             }
+        }
+
+        /// <summary>Gets scriptPubKey from the wallet.</summary>
+        private Script GetPremineScriptPubKey()
+        {
+            string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+
+            if (walletName == null)
+                return null;
+
+            HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
+
+            if (account == null)
+                return null;
+
+            var walletAccountReference = new WalletAccountReference(walletName, account.Name);
+
+            HdAddress address = this.walletManager.GetUnusedAddress(walletAccountReference);
+
+            return address.Pubkey;
         }
 
         /// <inheritdoc/>

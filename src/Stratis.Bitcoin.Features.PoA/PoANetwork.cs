@@ -104,8 +104,8 @@ namespace Stratis.Bitcoin.Features.PoA
                 maxReorgLength: 0, // No max reorg limit on PoA networks.
                 defaultAssumeValid: null,
                 maxMoney: long.MaxValue,
-                coinbaseMaturity: 50,
-                premineHeight: 2,
+                coinbaseMaturity: 2,
+                premineHeight: 10,
                 premineReward: Money.Coins(100_000_000),
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks

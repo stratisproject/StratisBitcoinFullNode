@@ -9,7 +9,14 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
 {
     public class PoACoinviewRule : CoinViewRule
     {
-        // TODO POA check this rule properly later, it's a dummy implementation needed for miner
+        private PoANetwork network;
+
+        public override void Initialize()
+        {
+            base.Initialize();
+
+            this.network = this.Parent.Network as PoANetwork;
+        }
 
         /// <inheritdoc/>
         protected override bool IsProtocolTransaction(Transaction transaction)
@@ -20,10 +27,12 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
         /// <inheritdoc/>
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
-            // TODO POA at height N do the premine.
-            // TODO POA miner should mine to particular address.
+            Money reward = Money.Zero;
 
-            if (block.Transactions[0].TotalOut > fees)
+            if (height == this.network.Consensus.PremineHeight)
+                reward = this.network.Consensus.PremineReward;
+
+            if (block.Transactions[0].TotalOut > fees + reward)
             {
                 this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
                 ConsensusErrors.BadCoinbaseAmount.Throw();
