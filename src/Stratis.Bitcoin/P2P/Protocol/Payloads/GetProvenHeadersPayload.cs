@@ -13,20 +13,20 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     {
         public GetProvenHeadersPayload()
         {
-            base.HashStop = uint256.Zero;
+            this.HashStop = uint256.Zero;
         }
 
         public GetProvenHeadersPayload(BlockLocator locator)
         {
-            base.BlockLocator = locator;
-            base.HashStop = uint256.Zero;
+            this.BlockLocator = locator;
+            this.HashStop = uint256.Zero;
         }
 
         /// <inheritdoc />
         public override void ReadWriteCore(BitcoinStream stream)
         {
-            stream.ReadWrite(ref base.blockLocator);
-            stream.ReadWrite(ref base.hashStop);
+            stream.ReadWrite(ref this.blockLocator);
+            stream.ReadWrite(ref this.hashStop);
         }
     }
 }
