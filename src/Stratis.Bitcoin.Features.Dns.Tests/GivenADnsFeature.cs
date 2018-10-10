@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             public Mock<IWhitelistManager> whitelistManager;
             public Mock<ILoggerFactory> loggerFactory;
             public Mock<INodeLifetime> nodeLifetime;
-            public Mock<DnsSettings> dnsSettings;
+            public DnsSettings dnsSettings;
             public NodeSettings nodeSettings;
             public DataFolder dataFolder;
             public IAsyncLoopFactory asyncLoopFactory;
@@ -48,8 +48,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 this.loggerFactory.Setup<ILogger>(f => f.CreateLogger(It.IsAny<string>())).Returns(logger.Object);
 
                 this.nodeLifetime = new Mock<INodeLifetime>();
-                this.dnsSettings = new Mock<DnsSettings>();
                 this.nodeSettings = new NodeSettings(network, args: new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
+                this.dnsSettings = new DnsSettings(this.nodeSettings);
                 this.dataFolder = CreateDataFolder(this);
                 this.asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
                 this.connectionManager = this.BuildConnectionManager();
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 this.defaultConstructorParameters.whitelistManager?.Object,
                 this.defaultConstructorParameters.loggerFactory?.Object,
                 this.defaultConstructorParameters.nodeLifetime?.Object,
-                this.defaultConstructorParameters.dnsSettings?.Object,
+                this.defaultConstructorParameters.dnsSettings,
                 this.defaultConstructorParameters.nodeSettings,
                 this.defaultConstructorParameters.dataFolder,
                 this.defaultConstructorParameters.asyncLoopFactory,

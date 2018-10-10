@@ -540,7 +540,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .Do(x => masterFile = x.Arg<IMasterFile>());
 
             var nodeSettings = NodeSettings.Default(this.Network);
-            var dnsSettings = Substitute.For<DnsSettings>();
+            var dnsSettings = new DnsSettings(nodeSettings);
             dnsSettings.DnsHostName = "stratis.test.com";
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
 
