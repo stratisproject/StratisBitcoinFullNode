@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
     public class FullNodeControllerTest : LogsTestBase
     {
         private ConcurrentChain chain;
+        private readonly Mock<INodeLifetime> nodeLifeTime;
         private readonly Mock<IFullNode> fullNode;
         private readonly Mock<IChainState> chainState;
         private readonly Mock<IConnectionManager> connectionManager;
@@ -42,7 +43,9 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
 
         public FullNodeControllerTest()
         {
+            this.nodeLifeTime = new Mock<INodeLifetime>();
             this.fullNode = new Mock<IFullNode>();
+            this.fullNode.SetupGet(p => p.NodeLifetime).Returns(this.nodeLifeTime.Object);
             this.chainState = new Mock<IChainState>();
             this.connectionManager = new Mock<IConnectionManager>();
             this.network = KnownNetworks.TestNet;
@@ -74,7 +77,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         {
             await this.controller.Stop().ConfigureAwait(false);
 
-            this.fullNode.Verify(f => f.Dispose());
+            this.nodeLifeTime.Verify(n => n.StopApplication());
         }
 
         [Fact]

@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void Stop_WithFullNode_DisposesFullNode()
         {
             var isDisposed = false;
-            this.fullNode.Setup(f => f.Dispose()).Callback(() => isDisposed = true);
+            this.fullNode.Setup(f => f.NodeLifetime.StopApplication()).Callback(() => isDisposed = true);
 
             IActionResult result = this.controller.Shutdown(true);
 

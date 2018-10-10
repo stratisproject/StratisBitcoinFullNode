@@ -21,9 +21,6 @@ namespace Stratis.Bitcoin.Networks
             this.Magic = magic;
             this.DefaultPort = 18444;
             this.RPCPort = 18442;
-            this.MinTxFee = 0;
-            this.FallbackFee = 0;
-            this.MinRelayTxFee = 0;
             this.CoinTicker = "TSTRAT";
 
             var powLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));

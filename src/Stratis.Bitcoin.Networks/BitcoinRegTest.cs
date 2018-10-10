@@ -17,8 +17,6 @@ namespace Stratis.Bitcoin.Networks
             this.RPCPort = 18332;
             this.CoinTicker = "TBTC";
 
-            var consensusFactory = new ConsensusFactory();
-
             // Create the genesis block.
             this.GenesisTime = 1296688602;
             this.GenesisNonce = 2;
@@ -26,6 +24,7 @@ namespace Stratis.Bitcoin.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Coins(50m);
 
+            var consensusFactory = new ConsensusFactory();
             Block genesisBlock = CreateBitcoinGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
 
             this.Genesis = genesisBlock;

@@ -5,7 +5,7 @@ namespace Stratis.SmartContracts.Core.State
     /// <summary>
     /// A wrapper for a specific account's storage.
     /// </summary>
-    public class StorageCache : ReadWriteCache<byte[]>
+    public class StorageCache : WriteCache<byte[]>
     {
         public IPatriciaTrie trie;
 
