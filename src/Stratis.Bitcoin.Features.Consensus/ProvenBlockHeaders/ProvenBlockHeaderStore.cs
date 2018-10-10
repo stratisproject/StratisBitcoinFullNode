@@ -163,9 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
             {
-                this.Cache.TryGetValue(blockHeight, out header);
-
-                if (header == null)
+                if (!this.Cache.TryGetValue(blockHeight, out header))
                 {
                     // Check the repository.
                     header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
@@ -182,7 +180,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Guard.Assert(toBlockHeight >= fromBlockHeight);
 
-            var headersInCache = new List<ProvenBlockHeader>();
+            var headersInCache = new Dictionary<int, ProvenBlockHeader>();
+
+            var provenHeadersOutput = new SortedDictionary<int, ProvenBlockHeader>();
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
             {
@@ -190,19 +190,17 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 ProvenBlockHeader header = null;
 
-                var headersNotInCache = new List<int>();
+                var blockHeightsNotInCache = new List<int>();
 
                 do
                 {
-                    this.Cache.TryGetValue(index, out header);
-
-                    if (header != null)
+                    if (this.Cache.TryGetValue(index, out header))
                     {
-                        headersInCache.Add(header);
+                        headersInCache.Add(index, header);
                     }
                     else
                     {
-                        headersNotInCache.Add(index);
+                        blockHeightsNotInCache.Add(index);
                     }
 
                     index++;
@@ -210,23 +208,22 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 } while (index <= toBlockHeight);
 
                 // Try and get items from the repository if not found in the store cache.
-
-                if (headersNotInCache.Count > 0)
+                if (blockHeightsNotInCache.Count > 0)
                 {
-                    var repositoryHeaders = new List<ProvenBlockHeader>();
+                    var repositoryHeaders = new Dictionary<int, ProvenBlockHeader>();
 
-                    // Check the full range first
-                    if ((headersNotInCache.Count - 1) == toBlockHeight - fromBlockHeight)
+                    // If headersInCache is empty then we can assume blockHeightsNotInCache is the full range.
+                    if (headersInCache.Keys.Count == 0)
                     {
                         List<ProvenBlockHeader> rangeHeaders = await this.provenBlockHeaderRepository.GetAsync(fromBlockHeight, toBlockHeight);
 
                         index = fromBlockHeight;
 
-                        foreach(ProvenBlockHeader rangeHeader in rangeHeaders)
+                        foreach (ProvenBlockHeader rangeHeader in rangeHeaders)
                         {
                             if (rangeHeader != null)
                             {
-                                repositoryHeaders.Add(rangeHeader);
+                                repositoryHeaders.Add(index, rangeHeader);
                                 this.Cache.AddOrUpdate(index, rangeHeader, rangeHeader.HeaderSize);
                             }
 
@@ -236,25 +233,26 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     else
                     {
                         // If not a full sequence then check individually.
-                        foreach (int headerNotInCache in headersNotInCache)
+                        foreach (int headerNotInCache in blockHeightsNotInCache)
                         {
                             ProvenBlockHeader repositoryHeader = await this.provenBlockHeaderRepository.GetAsync(headerNotInCache).ConfigureAwait(false);
 
                             if (repositoryHeader != null)
                             {
-                                repositoryHeaders.Add(repositoryHeader);
+                                repositoryHeaders.Add(headerNotInCache, repositoryHeader);
 
                                 this.Cache.AddOrUpdate(headerNotInCache, repositoryHeader, repositoryHeader.HeaderSize);
                             }
                         }
                     }
 
-                    if (repositoryHeaders.Count > 0)
-                        headersInCache.AddRange(repositoryHeaders);
+                    // Before returning the items, make sure they are sorted.
+                    provenHeadersOutput = AddToSortedDictionary(headersInCache, provenHeadersOutput);
+                    provenHeadersOutput = AddToSortedDictionary(repositoryHeaders, provenHeadersOutput);
                 }
             }
 
-            return headersInCache;
+            return provenHeadersOutput.Values.ToList();
         }
 
         /// <inheritdoc />
@@ -312,6 +310,25 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 this.TipHashHeight = hashHeight;
             }
+        }
+
+        /// <summary>
+        /// Sorts <see cref="ProvenBlockHeader"/> items in order of block height.
+        /// </summary>
+        /// <param name="headers"><see cref="Dictionary{int, ProvenBlockHeader}"/> of <see cref="ProvenBlockHeader"/> items to sort by block height.</param>
+        /// <param name="sortedHeaders">Sorted <see cref="Dictionary{int, ProvenBlockHeader}"/> items to append to.</param>
+        /// <returns>Sorted <see cref="Dictionary{int, ProvenBlockHeader}"/> items.</returns>
+        private SortedDictionary<int, ProvenBlockHeader> AddToSortedDictionary(Dictionary<int, ProvenBlockHeader> headers, SortedDictionary<int, ProvenBlockHeader> sortedHeaders)
+        {
+            if (headers.Keys.Count > 0)
+            {
+                foreach (KeyValuePair<int, ProvenBlockHeader> header in headers)
+                {
+                    sortedHeaders[header.Key] = header.Value;
+                }
+            }
+
+            return sortedHeaders;
         }
 
         private void AddBenchStats(StringBuilder benchLog)

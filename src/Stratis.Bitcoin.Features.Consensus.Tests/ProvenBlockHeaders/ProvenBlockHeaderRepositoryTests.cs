@@ -183,6 +183,32 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
         }
 
+        [Fact]
+        public async Task PutAsync_Add_Ten_ProvenBlockHeaders_Dispose_On_Initialise_Repo_TipHeight_Should_Be_At_Last_Saved_TipAsync()
+        {
+            string folder = CreateTestDir(this);
+
+            PosBlock posBlock = CreatePosBlockMock();
+            var headers = new List<ProvenBlockHeader>();
+
+            for (int i = 0; i < 10; i++)
+            {
+                headers.Add(CreateNewProvenBlockHeaderMock(posBlock));
+            }
+
+            // Put the items in the repository.
+            using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
+            {
+                await repo.PutAsync(headers, new HashHeightPair(headers.Last().GetHash(), headers.Count - 1));
+            }
+
+            using (IProvenBlockHeaderRepository newRepo = this.SetupRepository(this.Network, folder))
+            {
+                newRepo.TipHashHeight.Hash.Should().Be(headers.Last().GetHash());
+                newRepo.TipHashHeight.Height.Should().Be(headers.Count - 1);
+            }
+        }
+
         private ProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
             var repo = new ProvenBlockHeaderRepository(network, folder, this.LoggerFactory.Object);

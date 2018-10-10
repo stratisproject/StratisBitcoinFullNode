@@ -77,6 +77,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
+                    this.TipHashHeight = this.GetTipHash(transaction);
+
                     if (this.TipHashHeight != null) return;
 
                     var hashHeight = new HashHeightPair(this.network.GetGenesis().GetHash(), 0);
@@ -119,7 +121,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                         }
                         else
                         {
-                            this.logger.LogTrace("ProvenBlockHeader height ({0}) does not exist in the database.", i);
+                            this.logger.LogDebug("ProvenBlockHeader height {0} does not exist in the database.", i);
                             headers.Add(null);
                         }
                     }
@@ -147,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             Guard.Assert(newTip.Hash == headers.Last().GetHash());
 
-            if ((this.provenBlockHeaderTip != null) && (newTip.Hash != this.provenBlockHeaderTip.HashPrevBlock))
+            if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.GetHash()))
             {
                 this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
 
@@ -200,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             var headerDict = new Dictionary<int, ProvenBlockHeader>();
 
             // Gather headers.
-            for (int i = tipHeight; i > -1; i--)
+            for (int i = headers.Count - 1; i > -1; i--)
                 headerDict[i] = headers[i];
 
             List<KeyValuePair<int, ProvenBlockHeader>> sortedHeaders = headerDict.ToList();
@@ -212,6 +214,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             // Store the latest ProvenBlockHeader in memory.
             this.provenBlockHeaderTip = headers.Last();
+        }
+
+        /// <summary>
+        /// Retrieves the current <see cref="HashHeightPair"/> tip from disk.
+        /// </summary>
+        /// <param name="transaction"> Open DBreeze transaction.</param>
+        /// <returns> Hash of blocks current tip.</returns>
+        private HashHeightPair GetTipHash(DBreeze.Transactions.Transaction transaction)
+        {
+            HashHeightPair tipHash = null;
+
+            Row<byte[], HashHeightPair> row = transaction.Select<byte[], HashHeightPair>(BlockHashHeightTable, blockHashHeightKey);
+
+            if (row.Exists)
+                tipHash = row.Value;
+
+            return tipHash;
         }
 
         /// <inheritdoc />
