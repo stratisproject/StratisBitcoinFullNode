@@ -223,6 +223,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void Repository_CacheDoesntCarryOver()
+        {
+            const string testContractType = "A String";
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
+            StateRepositoryRoot repository = new StateRepositoryRoot(stateDB);
+
+            byte[] initialRoot = repository.Root;
+
+            IStateRepository txTrack = repository.StartTracking();
+            txTrack.CreateAccount(testAddress);
+            txTrack.SetStorageValue(testAddress, dog, cat);
+            txTrack.SetContractType(testAddress, testContractType);
+            txTrack.Commit();
+            repository.Commit();
+
+            byte[] postChangesRoot = repository.Root;
+
+            IStateRepositoryRoot repository2 = repository.GetSnapshotTo(initialRoot);
+            Assert.Null(repository2.GetAccountState(testAddress));
+            repository2.SetContractType(testAddress, "Something Else");
+            repository2.SyncToRoot(postChangesRoot);
+            Assert.Equal(testContractType, repository2.GetContractType(testAddress));
+        }
+
+        [Fact]
         public void Repository_CommitPushesToUnderlyingSource()
         {
             ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());

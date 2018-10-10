@@ -57,14 +57,5 @@ namespace Stratis.SmartContracts.Core.State
 
             return ret;
         }
-
-        /// <summary>
-        /// Empty the cache. Used when resetting to another block in the chain. Don't want to carry anything over.
-        /// </summary>
-        public void ClearCache()
-        {
-            this.cache.Clear();
-        }
-
     }
 }

@@ -49,6 +49,15 @@ namespace Stratis.SmartContracts.Core.State
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             this.stateTrie = new PatriciaTrie(stateRoot, this.trieCache);
 
+            this.SetupAsNew();
+        }
+
+        /// <summary>
+        /// Creates brand new caches, just like starting from scratch.
+        /// Useful when creating a new StateRepositoryRoot or trying to sync to another known state and wanting to abandon all "in-progress" data.
+        /// </summary>
+        private void SetupAsNew()
+        {
             SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(this.stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
             WriteCache<AccountState> accountStateCache = new WriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
 
@@ -86,8 +95,7 @@ namespace Stratis.SmartContracts.Core.State
 
         public void SyncToRoot(byte[] root)
         {
-            // We want to start from scratch when syncing elsewhere.
-            ((RootStorageCaches) this.storageCaches).ClearCache();
+            this.SetupAsNew();
 
             this.stateTrie.SetRootHash(root);
         }
