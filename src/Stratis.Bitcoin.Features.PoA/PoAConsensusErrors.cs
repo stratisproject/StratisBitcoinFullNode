@@ -1,6 +1,6 @@
 ﻿using Stratis.Bitcoin.Consensus;
 
-namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
+namespace Stratis.Bitcoin.Features.PoA
 {
     public static class PoAConsensusErrors
     {
