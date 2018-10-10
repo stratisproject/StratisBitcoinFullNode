@@ -90,16 +90,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             return balances?.Sum(i => i.AmountConfirmed);
         }
 
-        private WalletAccountReference GetAccount()
-        {
-            //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-            string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
-            if (walletName == null)
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
-            HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
-            return new WalletAccountReference(walletName, account.Name);
-        }
-
+        /// <summary>
+        /// RPC method to return transaction info from the wallet.
+        /// Uses the first wallet and account.
+        /// </summary>
+        /// <param name="txid">Transaction identifier to find.</param>
+        /// <returns>Transaction information.</returns>
         [ActionName("gettransaction")]
         [ActionDescription("Gets a transaction from the wallet.")]
         public GetTransactionModel GetTransaction(string txid)
@@ -142,6 +138,16 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return model;
+        }
+
+        private WalletAccountReference GetAccount()
+        {
+            //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
+            string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+            if (walletName == null)
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
+            HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
+            return new WalletAccountReference(walletName, account.Name);
         }
     }
 }
