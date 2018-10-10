@@ -52,6 +52,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IConnectionManager connectionManager;
 
+        private readonly PoABlockHeaderValidator poaHeaderValidator;
+
+        private readonly FederationManager federationManager;
+
         private Task miningTask;
 
         public PoAMiner(
@@ -63,7 +67,9 @@ namespace Stratis.Bitcoin.Features.PoA
             IInitialBlockDownloadState ibdState,
             PoABlockDefinition blockDefinition,
             SlotsManager slotsManager,
-            IConnectionManager connectionManager)
+            IConnectionManager connectionManager,
+            PoABlockHeaderValidator poaHeaderValidator,
+            FederationManager federationManager)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -72,6 +78,8 @@ namespace Stratis.Bitcoin.Features.PoA
             this.blockDefinition = blockDefinition;
             this.slotsManager = slotsManager;
             this.connectionManager = connectionManager;
+            this.poaHeaderValidator = poaHeaderValidator;
+            this.federationManager = federationManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
@@ -134,7 +142,9 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    // TODO POA sign the block with our signature
+                    // Sign block with our private key.
+                    var header = blockTemplate.Block.Header as PoABlockHeader;
+                    this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
 
                     // Update merkle root.
                     blockTemplate.Block.UpdateMerkleRoot();
