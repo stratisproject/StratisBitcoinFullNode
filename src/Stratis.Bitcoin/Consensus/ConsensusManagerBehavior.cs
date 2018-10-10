@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="ConcurrentChain"/>
-        protected readonly ConcurrentChain chain;
+        protected ConcurrentChain chain;
 
         /// <inheritdoc cref="IPeerBanning"/>
         private readonly IPeerBanning peerBanning;
