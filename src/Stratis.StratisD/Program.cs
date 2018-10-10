@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.StratisD
@@ -22,7 +23,7 @@ namespace Stratis.StratisD
         {
             try
             {
-                var nodeSettings = new NodeSettings(protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
+                var nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
 
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners

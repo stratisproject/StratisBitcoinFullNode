@@ -12,7 +12,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
     {
         private readonly string agent;
         private readonly Action<IFullNodeBuilder> callback;
-        private readonly Network network;
         private readonly ProtocolVersion protocolVersion;
         private readonly NodeConfigParameters configParameters;
 
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             : base(dataDir)
         {
             this.callback = callback;
-            this.network = network;
+            this.Network = network;
             this.protocolVersion = protocolVersion;
             this.agent = agent;
             this.configParameters = configParameters ?? new NodeConfigParameters();
@@ -30,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public override void BuildNode()
         {
             var argsAsStringArray = this.configParameters.AsConsoleArgArray();
-            var settings = new NodeSettings(this.network, this.protocolVersion, this.agent, argsAsStringArray);
+            var settings = new NodeSettings(this.Network, this.protocolVersion, this.agent, argsAsStringArray);
             IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(settings);
 
             this.callback(builder);

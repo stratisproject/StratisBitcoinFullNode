@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -16,6 +17,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -26,6 +28,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         protected Transaction generatedTransaction;
         protected IList<Receipt> receipts;
         protected uint refundCounter;
+        protected IStateRepositoryRoot mutableStateRepository;
+
         protected ISmartContractCoinviewRule ContractCoinviewRule { get; private set; }
 
         /// <inheritdoc />
@@ -39,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <inheritdoc />
-        public async override Task RunAsync(RuleContext context)
+        public override async Task RunAsync(RuleContext context)
         {
             this.blockTxsProcessed = new List<Transaction>();
             NBitcoin.Block block = context.ValidationContext.BlockToValidate;
@@ -47,9 +51,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             DeploymentFlags flags = context.Flags;
             UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
             
-            // Start state from previous block's root
-            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes());
-            IStateRepository trackedState = this.ContractCoinviewRule.OriginalStateRoot.StartTracking();
+            // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
+            byte[] blockRoot = ((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
+            this.mutableStateRepository = this.ContractCoinviewRule.OriginalStateRoot.GetSnapshotTo(blockRoot);
 
             this.receipts = new List<Receipt>();
 
@@ -144,12 +148,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             }
             else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            if (new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
+            if (new uint256(this.mutableStateRepository.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
             ValidateAndStoreReceipts(((SmartContractBlockHeader)block.Header).ReceiptRoot);
 
-            this.ContractCoinviewRule.OriginalStateRoot.Commit();
+            // Push to underlying database
+            this.mutableStateRepository.Commit();
+
+            // Update the globally injected state so all services receive the updates.
+            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(this.mutableStateRepository.Root);
         }
 
         /// <inheritdoc/>
@@ -242,12 +250,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         protected void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
             IContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
-            IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.ContractCoinviewRule.OriginalStateRoot, txContext);
+            IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.mutableStateRepository, txContext);
 
             IContractExecutionResult result = executor.Execute(txContext);
 
             var receipt = new Receipt(
-                new uint256(this.ContractCoinviewRule.OriginalStateRoot.Root),
+                new uint256(this.mutableStateRepository.Root),
                 result.GasConsumed,
                 result.Logs.ToArray(),
                 txContext.TransactionHash,

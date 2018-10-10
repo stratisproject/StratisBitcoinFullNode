@@ -46,10 +46,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
-        public string Network { get; set; }
-
-        public string FolderPath { get; set; }
-
         [Required(ErrorMessage = "The name of the wallet to create is missing.")]
         public string Name { get; set; }
     }
@@ -58,8 +54,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     {
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
-
-        public string FolderPath { get; set; }
 
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
@@ -85,12 +79,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
-        public string FolderPath { get; set; }
-
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
-
-        public string Network { get; set; }
 
         [JsonConverter(typeof(IsoDateTimeConverter))]
         public DateTime CreationDate { get; set; }
@@ -104,12 +94,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "An account number is required. E.g. 0.")]
         public int AccountIndex { get; set; }
 
-        public string FolderPath { get; set; }
-
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
-
-        public string Network { get; set; }
 
         [JsonConverter(typeof(IsoDateTimeConverter))]
         public DateTime CreationDate { get; set; }

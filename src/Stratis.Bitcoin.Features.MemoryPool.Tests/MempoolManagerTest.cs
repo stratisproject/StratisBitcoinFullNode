@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
@@ -35,11 +36,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 mockLoggerFactory.Setup(i => i.CreateLogger(It.IsAny<string>())).Returns(new Mock<ILogger>().Object);
                 ILoggerFactory loggerFactory = mockLoggerFactory.Object;
 
-                var settings = new MempoolSettings(NodeSettings.Default())
+                var settings = new MempoolSettings(NodeSettings.Default(KnownNetworks.TestNet))
                 {
                     MempoolExpiry = MempoolExpiry
                 };
-                NodeSettings nodeSettings = NodeSettings.Default();
+                NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
 
                 var blockPolicyEstimator = new BlockPolicyEstimator(settings, loggerFactory, nodeSettings);
                 var mempool = new TxMempool(dateTime, blockPolicyEstimator, loggerFactory, nodeSettings);
