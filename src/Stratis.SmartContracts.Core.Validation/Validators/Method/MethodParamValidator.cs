@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.Core.Validation
     /// </summary>
     public class MethodParamValidator : IMethodDefinitionValidator
     {
-        public static readonly string ErrorType = "Invalid Method Param Type";
+        public static readonly string ErrorType = "Invalid Method Param";
 
         // See SmartContractCarrierDataType
         public static readonly IEnumerable<string> AllowedTypes = new[]
@@ -35,26 +35,43 @@ namespace Stratis.SmartContracts.Core.Validation
             if (!methodDef.HasParameters)
                 return Enumerable.Empty<MethodDefinitionValidationResult>();
 
+            var results = new List<ValidationResult>();
 
-            bool IsValidParamForThisMethod(ParameterDefinition p) => !IsValidParam(methodDef, p);
+            foreach (var param in methodDef.Parameters)
+            {
+                (var valid, var message) = IsValidParam(methodDef, param);
 
-            return methodDef.Parameters
-                .Where(IsValidParamForThisMethod)
-                .Select(paramDef => new MethodParamValidationResult(methodDef, paramDef));
+                if (!valid)
+                {
+                    results.Add(new MethodParamValidationResult(message));
+                }
+            }
+
+            return results;
         }
 
         /// <summary>
         /// Checks that constructor methods contains an allowed parameter. Allowed parameters are <see cref="ISmartContractState"/>
         /// and the types defined in <see cref="AllowedTypes"/>
         /// </summary>
-        public static bool IsValidParam(MethodDefinition methodDefinition, ParameterDefinition param)
+        public static (bool, string) IsValidParam(MethodDefinition methodDefinition, ParameterDefinition param)
         {
-            if (methodDefinition.IsConstructor && ParameterIsSmartContractState(param))
+            if (param.IsOptional)
             {
-                return true;
+                return (false, $"{methodDefinition.FullName} is invalid [{param.Name} is disallowed optional parameter]");
             }
 
-            return AllowedTypes.Contains(param.ParameterType.FullName);
+            if (methodDefinition.IsConstructor && ParameterIsSmartContractState(param))
+            {
+                return (true, null);
+            }
+
+            var allowedType = AllowedTypes.Contains(param.ParameterType.FullName);
+
+            return allowedType
+                ? (true, null)
+                : (false,
+                    $"{methodDefinition.FullName} is invalid [{param.Name} is disallowed parameter Type {param.ParameterType.FullName}]");
         }
 
         private static bool ParameterIsSmartContractState(ParameterDefinition param)
@@ -64,10 +81,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
         public class MethodParamValidationResult : MethodDefinitionValidationResult
         {
-            public MethodParamValidationResult(MethodDefinition method, ParameterDefinition param) 
-                : base(method.FullName,
-                    ErrorType,
-                    $"{method.FullName} is invalid [{ErrorType} {param.ParameterType.FullName}]")
+            public MethodParamValidationResult(string message) : base(message)
             {
             }
         }
