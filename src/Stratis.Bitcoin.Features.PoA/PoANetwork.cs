@@ -6,6 +6,15 @@ using NBitcoin.DataEncoders;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
+    /// <summary>
+    /// Example network for PoA consensus.
+    /// </summary>
+    /// <remarks>
+    /// Do NOT use this network template exactly as it is when creating your own network.
+    /// Redefine federation keys and update genesis block, most importantly timestamp.
+    /// Also feel free to change target spacing, premine height and premine reward.
+    /// Don't set target spacing to be less than 10 sec.
+    /// </remarks>
     public class PoANetwork : Network
     {
         /// <summary> The name of the root folder containing the different PoA blockchains.</summary>
