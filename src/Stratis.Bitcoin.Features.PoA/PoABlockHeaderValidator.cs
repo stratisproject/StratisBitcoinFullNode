@@ -4,6 +4,7 @@ using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
+    /// <summary>Signs and validates signatures of <see cref="PoABlockHeader"/>.</summary>
     public class PoABlockHeaderValidator
     {
         private readonly ILogger logger;
@@ -13,6 +14,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.logger = factory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <summary>Signs PoA header with the specified key.</summary>
         public void Sign(Key key, PoABlockHeader header)
         {
             uint256 headerHash = header.GetHash();
@@ -21,6 +23,10 @@ namespace Stratis.Bitcoin.Features.PoA
             header.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
         }
 
+        /// <summary>
+        /// Verifies if signature of provided header was created using
+        /// private key that corresponds to given public key.
+        /// </summary>
         public bool VerifySignature(PubKey pubKey, PoABlockHeader header)
         {
             if ((header.BlockSignature == null) || header.BlockSignature.IsEmpty())

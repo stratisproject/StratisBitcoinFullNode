@@ -12,9 +12,6 @@ namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoABlockDefinition : BlockDefinition
     {
-        /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
-
         public PoABlockDefinition(
             IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
@@ -24,7 +21,6 @@ namespace Stratis.Bitcoin.Features.PoA
             Network network)
             : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(), network)
         {
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc/>

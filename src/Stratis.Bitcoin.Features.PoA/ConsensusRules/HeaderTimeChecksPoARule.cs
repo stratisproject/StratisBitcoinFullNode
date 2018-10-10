@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
             }
 
             // Timestamp shouldn't be more than targetSpacing seconds in the future.
-            if (chainedHeader.Header.Time > (context.Time + TimeSpan.FromSeconds(this.network.TargetSpacingSeconds)).ToUnixTimeSeconds())
+            if (chainedHeader.Header.Time > (this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + this.network.TargetSpacingSeconds))
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();

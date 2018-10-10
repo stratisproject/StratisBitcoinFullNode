@@ -117,14 +117,14 @@ namespace Stratis.Bitcoin.Features.PoA
                     uint timeNow = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
                     uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
-                    uint waitingTime = myTimestamp - timeNow - 1;
+                    int waitingTimeSec = (int)(myTimestamp - timeNow) - 1;
 
-                    this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
+                    this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTimeSec);
 
-                    if (waitingTime > 0)
+                    if (waitingTimeSec > 0)
                     {
                         // Wait until we can mine.
-                        await Task.Delay(TimeSpan.FromSeconds(waitingTime), this.cancellation.Token).ConfigureAwait(false);
+                        await Task.Delay(waitingTimeSec * 1000, this.cancellation.Token).ConfigureAwait(false);
                     }
 
                     ChainedHeader tip = this.consensusManager.Tip;
