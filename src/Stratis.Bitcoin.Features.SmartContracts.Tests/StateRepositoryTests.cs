@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Patricia;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Xunit;
 using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
@@ -214,12 +215,36 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal(cat, repository.GetStorageValue(testAddress, dog));
             Assert.Equal(bird, repository.GetStorageValue(testAddress, dodecahedron));
-
             IStateRepository snapshot = repository.GetSnapshotTo(root1);
 
             repository.SyncToRoot(root1);
             Assert.Equal(cat, snapshot.GetStorageValue(testAddress, dog));
             Assert.Null(snapshot.GetStorageValue(testAddress, dodecahedron));
+        }
+
+        [Fact]
+        public void Repository_CacheDoesntCarryOver()
+        {
+            const string testContractType = "A String";
+            ISource<byte[], byte[]> stateDB = new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource());
+            StateRepositoryRoot repository = new StateRepositoryRoot(stateDB);
+
+            byte[] initialRoot = repository.Root;
+
+            IStateRepository txTrack = repository.StartTracking();
+            txTrack.CreateAccount(testAddress);
+            txTrack.SetStorageValue(testAddress, dog, cat);
+            txTrack.SetContractType(testAddress, testContractType);
+            txTrack.Commit();
+            repository.Commit();
+
+            byte[] postChangesRoot = repository.Root;
+
+            IStateRepositoryRoot repository2 = repository.GetSnapshotTo(initialRoot);
+            Assert.Null(repository2.GetAccountState(testAddress));
+            repository2.SetContractType(testAddress, "Something Else");
+            repository2.SyncToRoot(postChangesRoot);
+            Assert.Equal(testContractType, repository2.GetContractType(testAddress));
         }
 
         [Fact]

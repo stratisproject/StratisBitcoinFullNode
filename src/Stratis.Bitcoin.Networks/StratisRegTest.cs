@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new BIP9DeploymentsArray();
 
-            this.Consensus = new Consensus(
+            this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: 105,
