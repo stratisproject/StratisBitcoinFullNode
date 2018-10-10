@@ -1,4 +1,7 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -18,6 +21,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IConsensusManager consensusManager;
         private readonly IPeerBanning peerBanning;
         private readonly ILoggerFactory loggerFactory;
+        private readonly PosConsensusFactory consensusFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -29,6 +33,7 @@ namespace Stratis.Bitcoin.Consensus
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;
+            this.consensusFactory = new PosConsensusFactory();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
 
@@ -40,7 +45,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="message">Received message to process.</param>
         protected override async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            await base.OnMessageReceivedAsync(peer, message);
+            await base.OnMessageReceivedAsync(peer, message).ConfigureAwait(false);
             switch (message.Message.Payload)
             {
                 case ProvenHeadersPayload provenHeaders:
@@ -51,6 +56,39 @@ namespace Stratis.Bitcoin.Consensus
                     await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
                     break;
             }
+        }
+
+        /// <inheritdoc />
+        /// <summary>Constructs the proven headers payload from locator to consensus tip.</summary>
+        /// <param name="locator">Block locator.</param>
+        /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
+        /// <param name="lastHeader"><see cref="T:NBitcoin.ProvenBlockHeader" /> of the last header that was added to the <see cref="T:Stratis.Bitcoin.P2P.Protocol.Payloads.ProvenHeadersPayload" />.</param>
+        /// <returns><see cref="T:Stratis.Bitcoin.P2P.Protocol.Payloads.ProvenHeadersPayload" /> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
+        protected override Payload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
+        {
+            ChainedHeader fork = this.chain.FindFork(locator);
+
+            lastHeader = null;
+
+            if (fork == null)
+            {
+                this.logger.LogTrace("(-)[INVALID_LOCATOR]:null");
+                return null;
+            }
+
+            var headers = new ProvenHeadersPayload();
+            foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
+            {
+                var posBock = new PosBlock(header.Header);
+                ProvenBlockHeader provenBlockHeader = this.consensusFactory.CreateProvenBlockHeader(posBock);
+                lastHeader = header;
+                headers.Headers.Add(provenBlockHeader);
+
+                if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
+                    break;
+            }
+
+            return headers;
         }
 
         protected override void AttachCore()
