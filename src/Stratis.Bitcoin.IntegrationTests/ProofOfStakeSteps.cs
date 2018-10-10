@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System.Collections.Concurrent;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
+using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -23,6 +25,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         public readonly string PremineWalletPassword = "password";
 
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
+
+        private ConcurrentDictionary<uint256, TransactionData> txLookup = new ConcurrentDictionary<uint256, TransactionData>();
 
         public ProofOfStakeSteps(string displayName)
         {
@@ -43,6 +47,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void PremineNodeWithWallet()
         {
             this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest).NotInIBD().WithWallet();
+            this.PremineNodeWithCoins.Start();
+        }
+
+        public void PremineNodeWithWalletWithOverrides()
+        {
+            var configParameters = new NodeConfigParameters { { "savetrxhex", "true" } };
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisCustomPosNode(KnownNetworks.StratisRegTest, configParameters).NotInIBD().WithWallet();
             this.PremineNodeWithCoins.Start();
         }
 
@@ -100,6 +111,59 @@ namespace Stratis.Bitcoin.IntegrationTests
                 {
                     if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
                     {
+                        return true;
+                    }
+                }
+
+                return false;
+            });
+        }
+
+
+        public void PosRewardForAllCoinstakeTransactionsIsCorrect()
+        {
+            // build a dictionary of coinstake tx's indexed by hash
+            foreach (var tx in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets.First().GetAllTransactionsByCoinType((CoinType)
+                this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinType))
+            {
+                txLookup[tx.BlockHash] = tx;
+            }
+
+            TestHelper.WaitLoop(() =>
+            {
+                foreach (TransactionData transactionData in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets
+                    .First()
+                    .GetAllTransactionsByCoinType((CoinType)this.PremineNodeWithCoins.FullNode.Network.Consensus
+                        .CoinType))
+                {
+                    if (!this.transactionsBeforeStaking.Contains(transactionData.Id) && (transactionData.IsCoinStake ?? false))
+                    {
+                        Transaction coinstakeTransaction = this.PremineNodeWithCoins.FullNode.Network.CreateTransaction(transactionData.Hex);
+                        var balance = new Money(0);
+
+                        // COINSTAKE OUTPUTS
+                        foreach (TxOut output in coinstakeTransaction.Outputs)
+                        {
+                            // Output = funds are being paid 'into' the address in question
+                            balance += output.Value;
+
+                        }
+
+                        // COINSTAKE INPUTS - should be equal to 980000000 etc so reward = 1
+                        foreach (TxIn input in coinstakeTransaction.Inputs)
+                        {
+                            this.txLookup.TryGetValue(input.PrevOut.Hash, out TransactionData prevTransactionData);
+
+                            if (prevTransactionData == null)
+                                continue;
+
+                            var prevTransaction = this.PremineNodeWithCoins.FullNode.Network.CreateTransaction(prevTransactionData.Hex);
+
+                            balance -= prevTransaction.Outputs[input.PrevOut.N].Value;
+                        }
+
+                        Assert.Equal(this.PremineNodeWithCoins.FullNode.Network.Consensus.ProofOfStakeReward, balance);
+
                         return true;
                     }
                 }

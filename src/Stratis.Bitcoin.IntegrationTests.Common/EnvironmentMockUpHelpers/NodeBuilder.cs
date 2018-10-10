@@ -95,6 +95,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode CreateStratisPowNode(Network network)
         {
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network));
+
+
         }
 
         public CoreNode CreateStratisCustomPowNode(Network network, NodeConfigParameters configParameters)
@@ -114,6 +116,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode CreateStratisPosNode(Network network)
         {
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network), "stratis.conf");
+        }
+
+        public CoreNode CreateStratisCustomPosNode(Network network, NodeConfigParameters configParameters)
+        {
+            var callback = new Action<IFullNodeBuilder>(builder => builder
+                .UseBlockStore()
+                .UsePosConsensus()
+                .UseMempool()
+                .UseWallet()
+                .AddPowPosMining()
+                .AddRPC()
+                .MockIBD()
+                .SubstituteDateTimeProviderFor<MiningFeature>());
+
+                return CreateCustomNode(callback, network, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
         public CoreNode CreateSmartContractPowNode()
