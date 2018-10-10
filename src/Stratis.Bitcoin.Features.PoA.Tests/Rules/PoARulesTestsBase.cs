@@ -32,9 +32,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             var chain = new ConcurrentChain(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
-            var consensusSettings = new ConsensusSettings(NodeSettings.Default());
+            var consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 
-            var slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(), this.network, this.loggerFactory), this.loggerFactory);
+            var slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory), this.loggerFactory);
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 
