@@ -112,10 +112,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     uint waitingTime = myTimestamp - timeNow - 1;
 
+                    this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
+
                     if (waitingTime > 0)
                     {
                         // Wait till we can mine.
-                        this.logger.LogInformation("Waiting {0} seconds before block can be mined.", waitingTime);
                         await Task.Delay(TimeSpan.FromSeconds(waitingTime), this.cancellation.Token).ConfigureAwait(false);
                     }
 
@@ -125,7 +126,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     blockTemplate.Block.Header.Time = myTimestamp;
 
-                    // Timestamp should only greater than prev one.
+                    // Timestamp should always be greater than prev one.
                     if (blockTemplate.Block.Header.Time <= tip.Header.Time)
                     {
                         // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
@@ -138,7 +139,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     // Update merkle root.
                     blockTemplate.Block.UpdateMerkleRoot();
 
-                    // TODO POA That should also do intergity vaidation
+                    // TODO POA That should also do integrity validation
                     ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 
                     if (chainedHeader == null)
