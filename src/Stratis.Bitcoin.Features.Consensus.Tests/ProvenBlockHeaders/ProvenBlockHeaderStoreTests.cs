@@ -231,9 +231,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Asking for headers will check the cache store.  If the header is not in the cache store, then it will check the repository and add the cache store.
             var outHeaders = await this.provenBlockHeaderStore.GetAsync(0, inHeaders.Count - 1).ConfigureAwait(false);
 
-            long cacheSizeInBytes = (long)this.provenBlockHeaderStore.Cache.GetMemberValue("totalSize");
-
-            cacheSizeInBytes.Should().BeLessThan(maxSize);
+            this.provenBlockHeaderStore.Cache.TotalSize.Should().BeLessThan(maxSize);
         }
 
         [Fact]
