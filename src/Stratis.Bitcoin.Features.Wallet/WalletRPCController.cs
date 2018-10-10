@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -97,6 +98,50 @@ namespace Stratis.Bitcoin.Features.Wallet
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
             HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
             return new WalletAccountReference(walletName, account.Name);
+        }
+
+        [ActionName("gettransaction")]
+        [ActionDescription("Gets a transaction from the wallet.")]
+        public GetTransactionModel GetTransaction(string txid)
+        {
+            uint256 trxid;
+            if (!uint256.TryParse(txid, out trxid))
+                throw new ArgumentException(nameof(txid));
+
+            var accountReference = this.GetAccount();
+            var account = this.walletManager.GetAccounts(accountReference.WalletName)
+                                            .Where(i => i.Name.Equals(accountReference.AccountName))
+                                            .Single();
+
+            var transaction = account.GetTransactionsById(trxid)?.Single();
+
+            if (transaction == null)
+                return null;
+
+            var model = new GetTransactionModel
+            {
+                Amount = transaction.Amount,
+                BlockHash = transaction.BlockHash,
+                TransactionId = transaction.Id,
+                TransactionTime = transaction.CreationTime.ToUnixTimeSeconds(),
+                Details = new List<GetTransactionDetailsModel>(),
+                Hex = transaction.Hex
+            };
+
+            if (transaction.SpendingDetails?.Payments != null)
+            {
+                foreach (var paymentDetail in transaction.SpendingDetails.Payments)
+                {
+                    model.Details.Add(new GetTransactionDetailsModel
+                    {
+                        Address = paymentDetail.DestinationAddress,
+                        Category = "send",
+                        Amount = paymentDetail.Amount
+                    });
+                }
+            }
+
+            return model;
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
                 builder.StartAll();
                 RPCClient rpcClient = node.CreateRPCClient();
 
@@ -26,6 +26,21 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 Money balance = rpcClient.GetBalance();
                 Assert.NotEqual(Money.Zero, balance);
+            }
+        }
+
+        [Fact]
+        public void TestRpcGetTransactionIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+                builder.StartAll();
+                RPCClient rpc = node.CreateRPCClient();             
+                uint256 blockHash = rpc.Generate(1)[0];
+                Block block = rpc.GetBlock(blockHash);
+                RPCResponse walletTx = rpc.SendCommand(RPCOperations.gettransaction, block.Transactions[0].GetHash().ToString());
+                walletTx.ThrowIfError();
             }
         }
 
