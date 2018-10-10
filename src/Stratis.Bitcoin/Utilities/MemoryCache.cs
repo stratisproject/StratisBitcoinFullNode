@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Utilities
     public abstract class MemoryCache<TKey, TValue>
     {
         /// <summary>Cache item for the inner usage of the <see cref="MemoryCountCache{TKey,TValue}"/> class.</summary>
-        protected class CacheItem
+        public class CacheItem
         {
             public readonly TKey Key;
 
@@ -61,6 +61,10 @@ namespace Stratis.Bitcoin.Utilities
             this.lockObject = new object();
         }
 
+        /// <summary>Determine whether the cache has reached its limit.</summary>
+        /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
+        public abstract bool IsCacheFull(CacheItem item);
+
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
         public int Count
         {
@@ -74,47 +78,43 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>Create or overwrite an item in the cache.</summary>
-        /// <param name="key">The key.</param>
-        /// <param name="value">The value to add to the cache.</param>
-        /// <param name="removeItem"><see cref="Func{Boolean}"/>, when <c>true</c> removes the value.</param>
-        /// <param name="size">Optional value size in bytes.</param>
-        protected virtual void AddOrUpdate(TKey key, TValue value, Func<bool> removeItem, long size = 0)
+        /// <param name="item"><see cref="CacheItem"/> to add or update the cache.</param>
+        protected virtual void AddOrUpdate(CacheItem item)
         {
             LinkedListNode<CacheItem> node;
 
             lock (this.lockObject)
             {
-                if (this.cache.TryGetValue(key, out node))
+                if (this.cache.TryGetValue(item.Key, out node))
                 {
-                    node.Value.Value = value;
+                    node.Value.Value = item.Value;
                     this.keys.Remove(node);
                 }
                 else
                 {
-                    if (removeItem())
+                    if (this.IsCacheFull(item))
                     {
                         // Remove the item that was not used for the longest time.
                         LinkedListNode<CacheItem> lastNode = this.keys.First;
                         this.cache.Remove(lastNode.Value.Key);
                         this.keys.RemoveFirst();
 
-                        if (size > 0)
+                        if (item.Size > 0)
                             this.totalSize -= lastNode.Value.Size;
                     }
 
-                    node = new LinkedListNode<CacheItem>(new CacheItem(key, value));
-                    node.Value.Size = size;
+                    node = new LinkedListNode<CacheItem>(item);
+                    node.Value.Size = item.Size;
 
-                    this.cache.Add(key, node);
+                    this.cache.Add(item.Key, node);
 
-                    if (size > 0)
-                        this.totalSize += size;
+                    if (item.Size > 0)
+                        this.totalSize += item.Size;
                 }
 
                 this.keys.AddLast(node);
             }
         }
-
 
         /// <summary>Removes the object associated with the given key.</summary>
         /// <param name="key">Key of that item that will be removed from the cache.</param>
@@ -128,10 +128,10 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     this.cache.Remove(node.Value.Key);
                     this.keys.Remove(node);
+
+                    this.totalSize -= node.Value.Size;
                 }
             }
-
-            this.totalSize -= node.Value.Size;
         }
 
         /// <summary>Gets an item associated with specific key if present.</summary>

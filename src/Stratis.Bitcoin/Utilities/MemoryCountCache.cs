@@ -29,7 +29,13 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="value">The value to add to the cache.</param>
         public void AddOrUpdate(TKey key, TValue value)
         {
-            base.AddOrUpdate(key, value, () => this.keys.Count == this.maxItemsCount);
+            base.AddOrUpdate(new MemoryCache<TKey, TValue>.CacheItem(key, value));
+        }
+
+        /// <inheritdoc />
+        public override bool IsCacheFull(CacheItem item)
+        {
+            return (this.keys.Count == this.maxItemsCount);
         }
     }
 }

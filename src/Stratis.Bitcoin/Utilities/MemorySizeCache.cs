@@ -31,7 +31,14 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="size">Value size in bytes.</param>
         public void AddOrUpdate(TKey key, TValue value, long size)
         {
-            base.AddOrUpdate(key, value, () => this.TotalSize > (this.maxSize - size), size);
+            var item = new MemoryCache<TKey, TValue>.CacheItem(key, value) { Size = size };
+
+            base.AddOrUpdate(item);
+        }
+
+        public override bool IsCacheFull(CacheItem item)
+        {
+            return this.TotalSize > (this.maxSize - item.Size);
         }
     }
 }
