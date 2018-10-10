@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
             }
 
-            if (!IsInSequence(provenHeadersOutput.ToList()))
+            if (!InSequence(provenHeadersOutput.ToList()))
             {
                 this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_INCORRECT_SEQEUNCE]");
 
@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = null;
             }
 
-            if (!IsInSequence(pendingBatch))
+            if (!InSequence(pendingBatch))
             {
                 this.logger.LogTrace("(-)[PENDING_BATCH_INCORRECT_SEQEUNCE]");
 
@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="items"><see cref="List{KeyValuePair{int, ProvenBlockHeader}}"/> to sort by block height.</param>
         /// <returns><c>true</c> if keys are in sequence, otherwise <c>false</c>.</returns>
-        private bool IsInSequence(List<KeyValuePair<int, ProvenBlockHeader>> items)
+        private bool InSequence(List<KeyValuePair<int, ProvenBlockHeader>> items)
         {
             List<int> sortedKeys = items.OrderBy(s => s.Key).Select(s => s.Key).ToList();
 

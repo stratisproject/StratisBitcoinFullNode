@@ -22,16 +22,6 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
             Initialise();
         }
 
-        public LogsTestBase(Network network) : base(network)
-        {
-            this.FullNodeLogger = new Mock<ILogger>();
-            this.RPCLogger = new Mock<ILogger>();
-            this.Logger = new Mock<ILogger>();
-            this.LoggerFactory = new Mock<ILoggerFactory>();
-
-            Initialise();
-        }
-
         private void Initialise()
         {
             this.LoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
