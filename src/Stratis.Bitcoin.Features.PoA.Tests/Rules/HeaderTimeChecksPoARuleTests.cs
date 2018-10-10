@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -12,7 +11,6 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -43,7 +41,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             var poaConsensusRulesEngine = new PoAConsensusRuleEngine(this.network, loggerFactory, new DateTimeProvider(), chain,
                 new NodeDeployments(this.network, chain), consensusSettings, new Checkpoints(this.network, consensusSettings), new Mock<ICoinView>().Object,
-                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider), slotsManager);
+                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider), slotsManager, new PoABlockHeaderValidator(loggerFactory));
 
             this.timeChecksRule.Parent = poaConsensusRulesEngine;
             this.timeChecksRule.Logger = loggerFactory.CreateLogger(this.timeChecksRule.GetType().FullName);

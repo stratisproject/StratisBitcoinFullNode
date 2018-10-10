@@ -6,5 +6,6 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
     {
         public static readonly ConsensusError InvalidHeaderBits = new ConsensusError("invalid-header-bits", "invalid header bits");
         public static readonly ConsensusError InvalidHeaderTimestamp = new ConsensusError("invalid-header-timestamp", "invalid header timestamp");
+        public static readonly ConsensusError InvalidHeaderSignature = new ConsensusError("invalid-header-signature", "invalid header signature");
     }
 }

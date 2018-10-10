@@ -15,12 +15,15 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         public SlotsManager SlotsManager { get; private set; }
 
+        public PoABlockHeaderValidator poaHeaderValidator { get; private set; }
+
         public PoAConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain,
             NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, SlotsManager slotsManager)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, SlotsManager slotsManager, PoABlockHeaderValidator poaHeaderValidator)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
             this.SlotsManager = slotsManager;
+            this.poaHeaderValidator = poaHeaderValidator;
         }
     }
 }
