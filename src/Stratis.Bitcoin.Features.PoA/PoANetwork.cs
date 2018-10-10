@@ -19,10 +19,14 @@ namespace Stratis.Bitcoin.Features.PoA
         /// Blocks that are not signed with private keys that correspond
         /// to public keys from this list are considered to be invalid.
         /// </remarks>
-        public List<PubKey> FederationPublicKeys { get; }
+        public List<PubKey> FederationPublicKeys { get; protected set; }
+
+        public uint TargetSpacingSeconds { get; protected set; }
 
         public PoANetwork()
         {
+            this.TargetSpacingSeconds = 16;
+
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
@@ -97,7 +101,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 bip34Hash: new uint256("0x000000000000024b89b42a942fe0d9fea3bb44ab7bd1b19115dd6a759c0808b8"),
                 ruleChangeActivationThreshold: 1916, // 95% of 2016
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
-                maxReorgLength: 500,
+                maxReorgLength: 0, // No max reorg limit on PoA networks.
                 defaultAssumeValid: null,
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 50,

@@ -65,11 +65,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             string path;
 
             if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
-                path = $"../../../../External Libs/Bitcoin Core/{version}/Windows/bitcoind.exe";
+                path = $"../../../../External libs/Bitcoin Core/{version}/Windows/bitcoind.exe";
             else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
-                path = $"../../../../External Libs/Bitcoin Core/{version}/Linux/bitcoind";
+                path = $"../../../../External libs/Bitcoin Core/{version}/Linux/bitcoind";
             else
-                path = $"../../../../External Libs/Bitcoin Core/{version}/OSX/bitcoind";
+                path = $"../../../../External libs/Bitcoin Core/{version}/OSX/bitcoind";
 
             if (File.Exists(path))
                 return path;
