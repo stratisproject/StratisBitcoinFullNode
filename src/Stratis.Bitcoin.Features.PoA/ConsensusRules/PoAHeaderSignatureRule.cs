@@ -4,6 +4,10 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
 {
+    /// <summary>
+    /// Estimates which public key should be used for timestamp of a header being
+    /// validated and uses this public key to verify header's signature.
+    /// </summary>
     public class PoAHeaderSignatureRule : HeaderValidationConsensusRule
     {
         private PoABlockHeaderValidator validator;

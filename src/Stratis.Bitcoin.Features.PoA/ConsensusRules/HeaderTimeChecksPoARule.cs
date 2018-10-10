@@ -6,6 +6,11 @@ using Stratis.Bitcoin.Consensus.Rules;
 
 namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
 {
+    /// <summary>
+    /// Ensures that timestamp of current block is greater than timestamp of previous block,
+    /// that timestamp is not more than targetSpacing seconds far in the future and that it is devisible by target spacing.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public class HeaderTimeChecksPoARule : HeaderValidationConsensusRule
     {
         private PoANetwork network;
