@@ -80,17 +80,17 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// Handles situation when block data was considered to be invalid
-        /// for a given header during the partial or full validation.
+        /// for a given header during partial or full validation.
         /// </summary>
-        /// <param name="chainedHeader">Chained header which block data failed the validation.</param>
-        /// <returns>List of peer Ids that were claiming chain that contains an invalid block. Such peers should be banned.</returns>
-        List<int> PartialOrFullValidationFailed(ChainedHeader chainedHeader);
+        /// <param name="failed">The chained header which failed validation.</param>
+        /// <returns>List of peer Ids that were claiming the chain containing the invalid block. These peers should be banned.</returns>
+        List<int> PartialOrFullValidationFailed(ChainedHeader failed);
 
         /// <summary>
-        /// During a re-org this will handle block data which failed partial or full validation.
+        /// Updates chain header tree state should a block fail partial or full validation whilst connecting a re-org chain.
         /// </summary>
-        /// <param name="chainedHeader">Chained header which block data failed the validation.</param>
-        /// <returns>List of peer Ids that were claiming chain that contains an invalid block. Such peers should be banned.</returns>
+        /// <param name="chainedHeader">The chained header which failed validation.</param>
+        /// <returns>List of peer Ids that were claiming the chain containing the invalid block. These peers should be banned.</returns>
         List<int> PartialOrFullValidationFailedFromReorg(ChainedHeader failed);
 
         /// <summary>
@@ -158,21 +158,6 @@ namespace Stratis.Bitcoin.Consensus
         ChainedHeader GetBestPeerTip();
     }
 
-    public class MinerPeerTipStates
-    {
-        public Dictionary<int, uint256> MinerTips { get; }
-
-        public MinerPeerTipStates()
-        {
-            this.MinerTips = new Dictionary<int, uint256>();
-        }
-
-        public void Update(Dictionary<uint256, HashSet<int>> peerIdsByTipHash)
-        {
-            throw new NotImplementedException();
-        }
-    }
-
     /// <inheritdoc />
     public sealed class ChainedHeaderTree : IChainedHeaderTree
     {
@@ -222,9 +207,6 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private readonly Dictionary<uint256, ChainedHeader> chainedHeadersByHash;
 
-        /// <inheritdoc />
-        public MinerPeerTipStates MinerPeerTips { get; }
-
         public ChainedHeaderTree(
             Network network,
             ILoggerFactory loggerFactory,
@@ -247,7 +229,6 @@ namespace Stratis.Bitcoin.Consensus
             this.peerTipsByPeerId = new Dictionary<int, uint256>();
             this.peerIdsByTipHash = new Dictionary<uint256, HashSet<int>>();
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
-            this.MinerPeerTips = new MinerPeerTipStates();
             this.UnconsumedBlocksDataBytes = 0;
             this.UnconsumedBlocksCount = 0;
         }
