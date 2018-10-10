@@ -673,7 +673,7 @@ public class Test : SmartContract
             SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
-            //Assert.Contains(result.Errors, e => e is WhitelistValidator.WhitelistValidationResult);
+            Assert.Contains(result.Errors, e => e is MethodParamValidator.MethodParamValidationResult);
         }
     }
 }
