@@ -138,7 +138,6 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
-                //TODO POA add checkpoints
                 { 0, new CheckpointInfo(new uint256("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076")) },
             };
 
