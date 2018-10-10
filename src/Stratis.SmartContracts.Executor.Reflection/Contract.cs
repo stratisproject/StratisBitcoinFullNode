@@ -19,6 +19,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         private const BindingFlags DefaultReceiveLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
 
+        private const BindingFlags DefaultBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
+
         private readonly SmartContract instance;
 
         /// <summary>
@@ -116,6 +118,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             object[] invokeParams = call.Parameters?.ToArray() ?? new object[0];
 
+            if (invokeParams.Any(p => p == null))
+            {
+                // Do not support binding of null parameter values.
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
+            }
+
             Type[] types = invokeParams.Select(p => p.GetType()).ToArray();
 
             MethodInfo methodToInvoke = this.Type.GetMethod(call.Name, types);
@@ -154,7 +162,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private void EnsureInitialized()
         {
             if (!this.initialized)
-                SetStateFields(this.instance, this.State);
+                SetStateField(this.instance, this.State);
 
             this.initialized = true;
         }
@@ -204,50 +212,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// Uses reflection to set the state fields on the contract object.
+        /// Uses reflection to set the state field on the contract object.
         /// </summary>
-        private static void SetStateFields(SmartContract smartContract, ISmartContractState contractState)
+        private static void SetStateField(SmartContract smartContract, ISmartContractState contractState)
         {
-            FieldInfo[] fields = typeof(SmartContract).GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo field = typeof(SmartContract).GetField("state", DefaultBindingFlags);
 
-            foreach (FieldInfo field in fields)
-            {
-                switch (field.Name)
-                {
-                    case "gasMeter":
-                        field.SetValue(smartContract, contractState.GasMeter);
-                        break;
-                    case "Block":
-                        field.SetValue(smartContract, contractState.Block);
-                        break;
-                    case "getBalance":
-                        field.SetValue(smartContract, contractState.GetBalance);
-                        break;
-                    case "internalTransactionExecutor":
-                        field.SetValue(smartContract, contractState.InternalTransactionExecutor);
-                        break;
-                    case "internalHashHelper":
-                        field.SetValue(smartContract, contractState.InternalHashHelper);
-                        break;
-                    case "Message":
-                        field.SetValue(smartContract, contractState.Message);
-                        break;
-                    case "PersistentState":
-                        field.SetValue(smartContract, contractState.PersistentState);
-                        break;
-                    case "smartContractState":
-                        field.SetValue(smartContract, contractState);
-                        break;
-                    case "Serializer":
-                        field.SetValue(smartContract, contractState.Serializer);
-                        break;
-                    case "contractLogger":
-                        field.SetValue(smartContract, contractState.ContractLogger);
-                        break;
-                    default:
-                        break;
-                }
-            }
+            field.SetValue(smartContract, contractState);
         }
     }
 }

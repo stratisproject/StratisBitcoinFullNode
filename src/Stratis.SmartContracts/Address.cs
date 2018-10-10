@@ -11,7 +11,7 @@
         /// <summary>
         /// The address as a string, in base58 format.
         /// </summary>
-        public string Value;
+        public readonly string Value;
 
         /// <summary>
         /// Create a new address
@@ -38,22 +38,32 @@
 
         public static bool operator ==(Address obj1, Address obj2)
         {
-            return obj1.Value == obj2.Value;
+            return obj1.Equals(obj2);
         }
 
         public static bool operator !=(Address obj1, Address obj2)
         {
-            return !(obj1 == obj2);
+            return !obj1.Equals(obj2);
         }
 
         public override bool Equals(object obj)
         {
-            return this == (Address)obj;
+            if (obj is Address other)
+            {
+                return this.Equals(other);
+            }
+
+            return false;
+        }
+
+        public bool Equals(Address obj)
+        {
+            return this.Value == obj.Value;
         }
 
         public override int GetHashCode()
         {
-            return base.GetHashCode();
+            return this.Value.GetHashCode();
         }
     }
 }

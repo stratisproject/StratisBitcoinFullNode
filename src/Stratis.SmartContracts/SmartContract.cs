@@ -1,5 +1,4 @@
-﻿using System;
-using System.Globalization;
+﻿using System.Globalization;
 
 namespace Stratis.SmartContracts
 {
@@ -14,78 +13,42 @@ namespace Stratis.SmartContracts
         /// <summary>
         /// The address of the smart contract.
         /// </summary>
-        protected Address Address { get { return this.Message.ContractAddress; } }
+        protected Address Address => this.state.Message.ContractAddress;
 
         /// <summary>
         /// Returns the balance of the smart contract.
         /// </summary>
-        public ulong Balance { get { return this.getBalance(); } }
+        public ulong Balance => this.state.GetBalance();
 
         /// <summary>
         /// Holds details about the current block.
         /// </summary>
-        protected readonly IBlock Block;
+        public IBlock Block => this.state.Block;
 
         /// <summary>
         /// Holds details about the current transaction that has been sent.
         /// </summary>
-        protected readonly IMessage Message;
+        public IMessage Message => this.state.Message;
 
         /// <summary>
         ///  Provides functionality for the saving and retrieval of objects inside smart contracts.
         /// </summary>
-        protected readonly IPersistentState PersistentState;
+        public IPersistentState PersistentState => this.state.PersistentState;
 
         /// <summary>
         /// Provides functionality for the serialization and deserialization of primitives to bytes inside smart contracts.
         /// </summary>
-        protected readonly ISerializer Serializer;
-
-        /// <summary>
-        /// Tracks the gas usage for this contract instance.
-        /// </summary>
-        private readonly IGasMeter gasMeter;
-
-        /// <summary>
-        /// Gets the balance of the contract, if applicable.
-        /// </summary>
-        private readonly Func<ulong> getBalance;
-
-        /// <summary>
-        /// Saves any logs during contract execution.
-        /// </summary>
-        private readonly IContractLogger contractLogger;
-
-        /// <summary>
-        /// Executes any internal calls or creates to other smart contracts.
-        /// </summary>
-        private readonly IInternalTransactionExecutor internalTransactionExecutor;
-
-
-        /// <summary>
-        /// Provides access to internal hashing functions.
-        /// </summary>
-        private readonly IInternalHashHelper internalHashHelper;
+        public ISerializer Serializer => this.state.Serializer;
 
         /// <summary>
         /// The current state of the blockchain and current transaction.
         /// </summary>
-        private readonly ISmartContractState smartContractState;
+        private readonly ISmartContractState state;
 
-        public SmartContract(ISmartContractState smartContractState)
+        public SmartContract(ISmartContractState state)
         {
             CultureInfo.CurrentCulture = new CultureInfo("en-US");
-
-            this.gasMeter = smartContractState.GasMeter;
-            this.Block = smartContractState.Block;
-            this.getBalance = smartContractState.GetBalance;
-            this.contractLogger = smartContractState.ContractLogger;
-            this.internalTransactionExecutor = smartContractState.InternalTransactionExecutor;
-            this.internalHashHelper = smartContractState.InternalHashHelper;
-            this.Message = smartContractState.Message;
-            this.PersistentState = smartContractState.PersistentState;
-            this.Serializer = smartContractState.Serializer;
-            this.smartContractState = smartContractState;
+            this.state = state;
         }
 
         /// <summary>
@@ -97,7 +60,7 @@ namespace Stratis.SmartContracts
         /// <param name="amountToTransfer">The amount of funds to transfer in satoshi.</param>
         protected ITransferResult Transfer(Address addressTo, ulong amountToTransfer)
         {
-            return this.internalTransactionExecutor.Transfer(this.smartContractState, addressTo, amountToTransfer);
+            return this.state.InternalTransactionExecutor.Transfer(this.state, addressTo, amountToTransfer);
         }
 
         /// <summary>
@@ -110,7 +73,7 @@ namespace Stratis.SmartContracts
         /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
         protected ITransferResult Call(Address addressTo, ulong amountToTransfer, string methodName, object[] parameters = null, ulong gasLimit = 0)
         {
-            return this.internalTransactionExecutor.Call(this.smartContractState, addressTo, amountToTransfer, methodName, parameters, gasLimit);
+            return this.state.InternalTransactionExecutor.Call(this.state, addressTo, amountToTransfer, methodName, parameters, gasLimit);
         }
 
         /// <summary>
@@ -122,7 +85,7 @@ namespace Stratis.SmartContracts
         /// <param name="gasLimit">The total amount of gas to allow this call to take up. Default is to use all remaining gas.</param>
         protected ICreateResult Create<T>(ulong amountToTransfer = 0, object[] parameters = null, ulong gasLimit = 0) where T : SmartContract
         {
-            return this.internalTransactionExecutor.Create<T>(this.smartContractState, amountToTransfer, parameters, gasLimit);
+            return this.state.InternalTransactionExecutor.Create<T>(this.state, amountToTransfer, parameters, gasLimit);
         }
 
 
@@ -133,7 +96,7 @@ namespace Stratis.SmartContracts
         /// <returns></returns>
         protected byte[] Keccak256(byte[] toHash)
         {
-            return this.internalHashHelper.Keccak256(toHash);
+            return this.state.InternalHashHelper.Keccak256(toHash);
         }
 
         /// <summary>
@@ -152,12 +115,12 @@ namespace Stratis.SmartContracts
         /// <param name="toLog">Object with fields to save in logs.</param>
         protected void Log<T>(T toLog) where T : struct
         {
-            this.contractLogger.Log(this.smartContractState, toLog);
+            this.state.ContractLogger.Log(this.state, toLog);
         }
 
-        /// The fallback method, invoked when a transaction provides a method name of <see cref="string.Empty"/>.
-        /// The fallback method. Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
-        /// Override this method to define behaviour when the contract receives funds and the method name in the calling transaction equals <see cref="string.Empty"/>.
+        /// <summary>
+        /// Default method used to handle the receipt of funds. Override this method to define behaviour when the contract receives funds and
+        /// no method name is provided or the method name in the calling transaction equals <see cref="string.Empty"/>.
         /// <para>
         /// This occurs when a contract sends funds to another contract using <see cref="Transfer"/>.
         /// </para>

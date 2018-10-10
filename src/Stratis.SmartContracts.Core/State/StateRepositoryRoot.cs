@@ -32,10 +32,10 @@ namespace Stratis.SmartContracts.Core.State
             }
         }
 
-        private ISource<byte[], byte[]> stateDS;
+        private readonly ISource<byte[], byte[]> stateDS;
 
-        private ICachedSource<byte[], byte[]> trieCache;
-        private IPatriciaTrie stateTrie;
+        private readonly ICachedSource<byte[], byte[]> trieCache;
+        private readonly IPatriciaTrie stateTrie;
 
         public StateRepositoryRoot() { }
 
@@ -49,14 +49,23 @@ namespace Stratis.SmartContracts.Core.State
             this.trieCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             this.stateTrie = new PatriciaTrie(stateRoot, this.trieCache);
 
-            SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(this.stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
-            ReadWriteCache<AccountState> accountStateCache = new ReadWriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
+            this.SetupAsNew();
+        }
 
-            MultiCacheBase<ICachedSource<byte[], byte[]>> storageCache = new MultiStorageCache(this);
+        /// <summary>
+        /// Creates brand new caches, just like starting from scratch.
+        /// Useful when creating a new StateRepositoryRoot or trying to sync to another known state and wanting to abandon all "in-progress" data.
+        /// </summary>
+        private void SetupAsNew()
+        {
+            SourceCodec<byte[], AccountState, byte[], byte[]> accountStateCodec = new SourceCodec<byte[], AccountState, byte[], byte[]>(this.stateTrie, new Serializers.NoSerializer<byte[]>(), Serializers.AccountSerializer);
+            WriteCache<AccountState> accountStateCache = new WriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
+
+            var storageCaches = new RootStorageCaches(this);
             ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
             ISource<byte[], byte[]> unspentCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
             SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.ContractOutputSerializer);
-            this.Init(accountStateCache, codeCache, storageCache, unspentCacheCodec);
+            this.Init(accountStateCache, codeCache, storageCaches, unspentCacheCodec);
         }
 
         public override void Commit()
@@ -68,7 +77,7 @@ namespace Stratis.SmartContracts.Core.State
 
         private byte[] GetRoot()
         {
-            this.storageCache.Flush();
+            this.storageCaches.Flush();
             this.accountStateCache.Flush();
 
             return this.stateTrie.GetRootHash();
@@ -86,6 +95,8 @@ namespace Stratis.SmartContracts.Core.State
 
         public void SyncToRoot(byte[] root)
         {
+            this.SetupAsNew();
+
             this.stateTrie.SetRootHash(root);
         }
 

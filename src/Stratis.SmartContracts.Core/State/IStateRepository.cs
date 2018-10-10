@@ -13,7 +13,6 @@ namespace Stratis.SmartContracts.Core.State
         AccountState CreateAccount(uint160 addr);
         bool IsExist(uint160 addr);
         AccountState GetAccountState(uint160 addr);
-        void Delete(uint160 addr);
         void SetCode(uint160 addr, byte[] code);
         byte[] GetCode(uint160 addr);
         byte[] GetCodeHash(uint160 addr);
