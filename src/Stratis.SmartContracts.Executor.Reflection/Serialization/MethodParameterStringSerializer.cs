@@ -58,10 +58,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (o is uint)
                 return MethodParameterDataType.UInt;
-
-            if (o is uint160)
-                return MethodParameterDataType.UInt160;
-
+            
             if (o is ulong)
                 return MethodParameterDataType.ULong;
 
@@ -124,10 +121,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
                 else if (parameterSignature[0] == MethodParameterDataType.Long.ToString("d"))
                     processedParameters.Add(long.Parse(parameterSignature[1]));
-
-                else if (parameterSignature[0] == MethodParameterDataType.UInt160.ToString("d"))
-                    processedParameters.Add(new uint160(parameterSignature[1]));
-
+                
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
                     processedParameters.Add(new Address(parameterSignature[1]));
 

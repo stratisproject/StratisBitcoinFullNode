@@ -71,13 +71,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
 
-            integrityValidationRules.Count.Should().Be(2);
+            integrityValidationRules.Count.Should().Be(3);
             integrityValidationRules[0].Should().BeOfType<BlockMerkleRootRule>();
-            integrityValidationRules[1].Should().BeOfType<PosBlockSignatureRule>();
+            integrityValidationRules[1].Should().BeOfType<PosBlockSignatureRepresentationRule>();
+            integrityValidationRules[2].Should().BeOfType<PosBlockSignatureRule>();
 
             List<IPartialValidationConsensusRule> partialValidationRules = network.Consensus.PartialValidationRules;
 
-            partialValidationRules.Count.Should().Be(12);
+            partialValidationRules.Count.Should().Be(11);
 
             partialValidationRules[0].Should().BeOfType<SetActivationDeploymentsPartialValidationRule>();
             partialValidationRules[1].Should().BeOfType<PosTimeMaskRule>();
@@ -85,12 +86,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             partialValidationRules[3].Should().BeOfType<CoinbaseHeightActivationRule>();
             partialValidationRules[4].Should().BeOfType<WitnessCommitmentsRule>();
             partialValidationRules[5].Should().BeOfType<BlockSizeRule>();
-            partialValidationRules[6].Should().BeOfType<PosBlockContextRule>();
-            partialValidationRules[7].Should().BeOfType<EnsureCoinbaseRule>();
-            partialValidationRules[8].Should().BeOfType<CheckPowTransactionRule>();
-            partialValidationRules[9].Should().BeOfType<CheckPosTransactionRule>();
-            partialValidationRules[10].Should().BeOfType<CheckSigOpsRule>();
-            partialValidationRules[11].Should().BeOfType<PosCoinstakeRule>();
+            partialValidationRules[6].Should().BeOfType<EnsureCoinbaseRule>();
+            partialValidationRules[7].Should().BeOfType<CheckPowTransactionRule>();
+            partialValidationRules[8].Should().BeOfType<CheckPosTransactionRule>();
+            partialValidationRules[9].Should().BeOfType<CheckSigOpsRule>();
+            partialValidationRules[10].Should().BeOfType<PosCoinstakeRule>();
 
             List<IFullValidationConsensusRule> fullValidationRules = network.Consensus.FullValidationRules;
 

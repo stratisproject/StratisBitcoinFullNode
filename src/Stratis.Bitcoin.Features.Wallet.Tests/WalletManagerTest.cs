@@ -611,6 +611,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             HdAccount result = walletManager.GetUnusedAccount("testWallet", "password");
 
             Assert.Equal("account 0", result.Name);
+
+            int addressBuffer = new WalletSettings().UnusedAddressesBuffer;
+            Assert.Equal(addressBuffer, result.ExternalAddresses.Count);
+            Assert.Equal(addressBuffer, result.InternalAddresses.Count);
             Assert.True(File.Exists(Path.Combine(dataFolder.WalletPath + $"/testWallet.wallet.json")));
         }
 
