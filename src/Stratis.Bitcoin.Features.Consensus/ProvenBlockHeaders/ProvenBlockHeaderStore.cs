@@ -180,8 +180,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Guard.Assert(toBlockHeight >= fromBlockHeight);
 
-            var headersInCache = new Dictionary<int, ProvenBlockHeader>();
-
             var provenHeadersOutput = new SortedDictionary<int, ProvenBlockHeader>();
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
@@ -196,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     if (this.Cache.TryGetValue(index, out header))
                     {
-                        headersInCache.Add(index, header);
+                        provenHeadersOutput.Add(index, header);
                     }
                     else
                     {
@@ -213,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     var repositoryHeaders = new Dictionary<int, ProvenBlockHeader>();
 
                     // If headersInCache is empty then we can assume blockHeightsNotInCache is the full range.
-                    if (headersInCache.Keys.Count == 0)
+                    if (provenHeadersOutput.Keys.Count == 0)
                     {
                         List<ProvenBlockHeader> rangeHeaders = await this.provenBlockHeaderRepository.GetAsync(fromBlockHeight, toBlockHeight);
 
@@ -247,9 +245,15 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     }
 
                     // Before returning the items, make sure they are sorted.
-                    provenHeadersOutput = AddToSortedDictionary(headersInCache, provenHeadersOutput);
                     provenHeadersOutput = AddToSortedDictionary(repositoryHeaders, provenHeadersOutput);
                 }
+            }
+
+            if (!IsInSequence(provenHeadersOutput.ToList()))
+            {
+                this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_INCORRECT_SEQEUNCE]");
+
+                throw new InvalidOperationException("Proven block headers retrieved from the store are not in sequence.");
             }
 
             return provenHeadersOutput.Values.ToList();
@@ -294,9 +298,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = null;
             }
 
-            List<int> sortedBlockHeights = pendingBatch.OrderBy(s => s.Key).Select(s => s.Key).ToList();
-
-            if (!sortedBlockHeights.SequenceEqual(pendingBatch.Select(s => s.Key)))
+            if (!IsInSequence(pendingBatch))
             {
                 this.logger.LogTrace("(-)[PENDING_BATCH_INCORRECT_SEQEUNCE]");
 
@@ -329,6 +331,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
 
             return sortedHeaders;
+        }
+
+
+        /// <summary>
+        /// Checks whether <see cref="ProvenBlockHeader"/> block height keys are in sequence.
+        /// </summary>
+        /// <param name="items"><see cref="List{KeyValuePair{int, ProvenBlockHeader}}"/> to sort by block height.</param>
+        /// <returns><c>true</c> if keys are in sequence, otherwise <c>false</c>.</returns>
+        private bool IsInSequence(List<KeyValuePair<int, ProvenBlockHeader>> items)
+        {
+            List<int> sortedKeys = items.OrderBy(s => s.Key).Select(s => s.Key).ToList();
+
+            return sortedKeys.SequenceEqual(items.Select(s => s.Key));
         }
 
         private void AddBenchStats(StringBuilder benchLog)
