@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Diagnostics;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
 
