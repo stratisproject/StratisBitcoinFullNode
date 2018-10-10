@@ -10,8 +10,7 @@
         Int = 6,
         ULong = 7,
         Long = 8,
-        UInt160 = 9,
-        Address = 10,
-        ByteArray = 11
+        Address = 9,
+        ByteArray = 10
     }
 }

@@ -878,5 +878,85 @@ namespace Stratis.Bitcoin.IntegrationTests
             //    SetMockTime(0);
             //    mempool.clear();
         }
+
+        [Fact]
+        public void MiningAndPropagatingPOW_MineBlockCheckNodeConsensusTipIsCorrect()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
+
+                builder.StartAll();
+                
+                TestHelper.MineBlocks(miner, 5);
+
+                Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
+            }
+        }
+
+        [Fact]
+        public void MiningAndPropagatingPOW_MineBlockCheckPeerHasNewBlock()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
+                
+                CoreNode[] syncers = new CoreNode[]
+                {
+                    builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD(),
+                    builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD(),
+                    builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD()
+                };
+
+                builder.StartAll();
+                
+                foreach (CoreNode syncer in syncers)
+                {
+                    miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
+                }
+
+                Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 0));
+
+                TestHelper.MineBlocks(miner, 3);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[0]));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[1]));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[2]));
+
+                Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 3));
+            }
+        }
+
+        [Fact]
+        public void MiningAndPropagatingPOW_MineBlockNotPushedToConsensusCode_SupercededByBetterBlockOnReorg_InitialBlockRejected()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node1 = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
+                CoreNode node2 = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet().NotInIBD();
+
+                builder.StartAll();
+                
+                TestHelper.MineBlocks(node1, 5);
+                TestHelper.ConnectAndSync(node1, node2);
+                TestHelper.Disconnect(node1, node2);
+
+                // Node1 new block not pushed to consensus code.
+                Block newBlock = TestHelper.GenerateBlockManually(node1, 
+                    new List<Transaction>(), 0, false /* Not calling BlockMinedAsync yet */);
+
+                // Mine another 2 blocks on node 2 chain up to height 7.
+                TestHelper.MineBlocks(node2, 2);
+
+                // Nodes 1 syncs with node 2 up to height 7.
+                TestHelper.ConnectAndSync(node1, node2);
+
+                // Call BlockMinedAsync manually with the block that was supposed to have been submitted at height 6.
+                node1.FullNode.ConsensusManager().BlockMinedAsync(newBlock).GetAwaiter().GetResult();
+
+                // Verify that the manually added block is NOT in the consensus chain.
+                Assert.False(node1.FullNode.Chain.Contains(newBlock.GetHash()));
+            }
+        }
     }
 }

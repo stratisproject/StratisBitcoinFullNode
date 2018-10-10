@@ -223,10 +223,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             // TODO: Un-hard-code this. 
             // Constructor: 15
-            // Property setter: 12
+            // Property setter: 22
             // Storage: 150
             // "string newString = this.Owner + 1;": 36
-            Assert.Equal((Gas)213, this.gasMeter.GasConsumed);
+            Assert.Equal((Gas)223, this.gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -249,9 +249,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
 
             // Constructor: 15
-            // Property setter: 12
+            // Property setter: 17
             // Storage: 150
-            Assert.Equal((Gas)177, this.gasMeter.GasConsumed);
+            Assert.Equal((Gas)182, this.gasMeter.GasConsumed);
         }
 
         [Fact]
