@@ -21,26 +21,29 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         protected readonly ChainedHeader currentHeader;
         protected readonly PoANetwork network;
 
-        protected readonly PoAConsensusRuleEngine rulesEngine;
+        protected PoAConsensusRuleEngine rulesEngine;
         protected readonly LoggerFactory loggerFactory;
         protected readonly PoABlockHeaderValidator poaHeaderValidator;
+        protected readonly SlotsManager slotsManager;
+        protected readonly ConsensusSettings consensusSettings;
+        protected readonly ConcurrentChain chain;
 
         public PoARulesTestsBase(PoANetwork network = null)
         {
             this.loggerFactory = new LoggerFactory();
             this.network = network == null ? new PoANetwork() : network;
 
-            var chain = new ConcurrentChain(this.network);
+            this.chain = new ConcurrentChain(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
-            var consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
+            this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 
-            var slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory), this.loggerFactory);
+            this.slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory), this.loggerFactory);
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 
-            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), chain,
-                new NodeDeployments(this.network, chain), consensusSettings, new Checkpoints(this.network, consensusSettings), new Mock<ICoinView>().Object,
-                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider), slotsManager, this.poaHeaderValidator);
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain,
+                new NodeDeployments(this.network, this.chain), this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object,
+                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator);
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(50, null, false, null, this.network);
 

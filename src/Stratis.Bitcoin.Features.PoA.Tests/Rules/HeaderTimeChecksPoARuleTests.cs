@@ -1,7 +1,11 @@
 ﻿using System;
+using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -56,7 +60,15 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         [Fact]
         public void EnsureTimestampIsNotTooNew()
         {
-            DateTimeOffset time = DateTimeOffset.FromUnixTimeSeconds(new DateTimeProvider().GetUtcNow().ToUnixTimestamp() / this.network.TargetSpacingSeconds * this.network.TargetSpacingSeconds);
+            long timestamp = new DateTimeProvider().GetUtcNow().ToUnixTimestamp() / this.network.TargetSpacingSeconds * this.network.TargetSpacingSeconds;
+            DateTimeOffset time = DateTimeOffset.FromUnixTimeSeconds(timestamp);
+
+            var provider = new Mock<IDateTimeProvider>();
+            provider.Setup(x => x.GetAdjustedTimeAsUnixTimestamp()).Returns(timestamp);
+
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain,
+                new NodeDeployments(this.network, this.chain), this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object,
+                new ChainState(), new InvalidBlockHashStore(provider.Object), new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator);
 
             var validationContext = new ValidationContext() { ChainedHeaderToValidate = this.currentHeader };
             var ruleContext = new RuleContext(validationContext, time);
@@ -68,7 +80,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             this.currentHeader.Header.Time = prevHeader.Header.Time + this.network.TargetSpacingSeconds;
             this.timeChecksRule.Run(ruleContext);
 
-            this.currentHeader.Header.Time = prevHeader.Header.Time + this.network.TargetSpacingSeconds + 1;
+            this.currentHeader.Header.Time = prevHeader.Header.Time + this.network.TargetSpacingSeconds + 2;
             Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
 
             try
