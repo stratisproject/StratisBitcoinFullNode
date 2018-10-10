@@ -15,7 +15,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public void Sign(Key key, PoABlockHeader header)
         {
-            ECDSASignature signature = key.Sign(header.GetHash());
+            uint256 headerHash = header.GetHash();
+            ECDSASignature signature = key.Sign(headerHash);
 
             header.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
         }
@@ -42,7 +43,8 @@ namespace Stratis.Bitcoin.Features.PoA
                 return false;
             }
 
-            bool isValidSignature = pubKey.Verify(header.GetHash(), signature);
+            uint256 headerHash = header.GetHash();
+            bool isValidSignature = pubKey.Verify(headerHash, signature);
 
             return isValidSignature;
         }

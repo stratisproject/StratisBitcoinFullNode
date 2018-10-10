@@ -141,12 +141,12 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
+                    // Update merkle root.
+                    blockTemplate.Block.UpdateMerkleRoot();
+
                     // Sign block with our private key.
                     var header = blockTemplate.Block.Header as PoABlockHeader;
                     this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
-
-                    // Update merkle root.
-                    blockTemplate.Block.UpdateMerkleRoot();
 
                     ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 
@@ -169,10 +169,15 @@ namespace Stratis.Bitcoin.Features.PoA
                     builder.AppendLine("<<==============================================================>>");
                     this.logger.LogInformation(builder.ToString());
 
-                    await Task.Delay(TimeSpan.FromSeconds((double)this.network.TargetSpacingSeconds / 2.0), this.cancellation.Token).ConfigureAwait(false);
+                    await Task.Delay(TimeSpan.FromSeconds((double) this.network.TargetSpacingSeconds / 2.0), this.cancellation.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
+                }
+                catch (Exception exception)
+                {
+                    this.logger.LogCritical("Exception occurred during mining: {0}", exception.ToString());
+                    break;
                 }
             }
         }
