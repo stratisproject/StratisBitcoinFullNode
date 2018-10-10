@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(null, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolder); };
 
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, null, asyncLoopFactory, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolder); };
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, null, nodeLifetime, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolder); };
 
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, null, loggerFactory, dateTimeProvider, new DnsSettings(nodeSettings), dataFolder); };
 
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, null, dateTimeProvider, new DnsSettings(nodeSettings), dataFolder); };
 
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             Action a = () => { new DnsSeedServer(udpClient, masterFile, asyncLoopFactory, nodeLifetime, loggerFactory, null, new DnsSettings(nodeSettings), dataFolder); };
 
@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IDateTimeProvider dateTimeProvider = new Mock<IDateTimeProvider>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
 
             // Act.

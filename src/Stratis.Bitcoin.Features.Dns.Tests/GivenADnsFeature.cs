@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DnsSettings dnsSettings = new DnsSettings(nodeSettings);
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, null, loggerFactory, nodeLifetime, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, null, nodeLifetime, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, null, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory); };
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
             Action a = () => { new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetime, new DnsSettings(nodeSettings), null, dataFolder, asyncLoopFactory); };
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
             IWhitelistManager whitelistManager = new Mock<IWhitelistManager>().Object;
             INodeLifetime nodeLifetime = new Mock<INodeLifetime>().Object;
-            NodeSettings nodeSettings = NodeSettings.Default(KnownNetworks.TestNet);
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
             DataFolder dataFolder = CreateDataFolder(this);
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IAsyncLoopFactory asyncLoopFactory = new Mock<IAsyncLoopFactory>().Object;
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             var whitelistManager = new Mock<IWhitelistManager>();
 
             var nodeLifetime = new Mock<INodeLifetime>();
-            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args:new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
+            var nodeSettings = new NodeSettings(this.Network, args:new string[] { $"-datadir={Directory.GetCurrentDirectory()}" });
             DataFolder dataFolder = CreateDataFolder(this);
 
             var logger = new Mock<ILogger>(MockBehavior.Loose);
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
             INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
 
-            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args:new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
+            var nodeSettings = new NodeSettings(this.Network, args:new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
             DataFolder dataFolder = CreateDataFolder(this);
 
             var logger = new Mock<ILogger>(MockBehavior.Loose);
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
             INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
 
-            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
             DataFolder dataFolder = CreateDataFolder(this);
 
             var logger = new Mock<ILogger>();
@@ -302,7 +302,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             nodeLifetime.Setup(n => n.ApplicationStopping).Returns(source.Token);
             INodeLifetime nodeLifetimeObject = nodeLifetime.Object;
 
-            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir={ Directory.GetCurrentDirectory() }" });
             DataFolder dataFolder = CreateDataFolder(this);
 
             using (var feature = new DnsFeature(dnsServer, whitelistManager, loggerFactory, nodeLifetimeObject, new DnsSettings(nodeSettings), nodeSettings, dataFolder, asyncLoopFactory))

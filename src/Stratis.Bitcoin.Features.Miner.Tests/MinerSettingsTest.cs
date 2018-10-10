@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         public void Load_MiningEnabled_BlockSize_BlockWeight_Set_BelowMinimum()
         {
             // Set values below consensus rules
-            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new string[] {
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] {
                 "-mine=true",
                 "-blockmaxsize=10",
                 "-blockmaxweight=30"

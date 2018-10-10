@@ -104,10 +104,10 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Displays mining help information on the console.
         /// </summary>
-        /// <param name="mainNet">Not used.</param>
-        public static void PrintHelp(Network mainNet)
+        /// <param name="network">Not used.</param>
+        public static void PrintHelp(Network network)
         {
-            NodeSettings defaults = NodeSettings.Default(mainNet);
+            NodeSettings defaults = NodeSettings.Default(network);
             var builder = new StringBuilder();
 
             builder.AppendLine("-mine=<0 or 1>                      Enable POW mining.");

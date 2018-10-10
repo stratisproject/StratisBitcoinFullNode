@@ -46,10 +46,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Displays wallet configuration help information on the console.
         /// </summary>
-        /// <param name="mainNet">Not used.</param>
-        public static void PrintHelp(Network mainNet)
+        /// <param name="network">Not used.</param>
+        public static void PrintHelp(Network network)
         {
-            NodeSettings defaults = NodeSettings.Default(mainNet);
+            NodeSettings defaults = NodeSettings.Default(network);
             var builder = new StringBuilder();
 
             builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: 0.");

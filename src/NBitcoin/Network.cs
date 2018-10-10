@@ -33,6 +33,10 @@ namespace NBitcoin
         WITNESS_SCRIPT_ADDRESS
     }
 
+    /// <summary>
+    /// A container of all network instances of a certain high level network.
+    /// Every network normally comes in 3 flavors mainnet, testnet and regtest.
+    /// </summary>
     public class NetworksSelector
     {
         public NetworksSelector(Func<Network> mainnet, Func<Network> testnet, Func<Network> regtest)

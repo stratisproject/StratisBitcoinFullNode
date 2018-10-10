@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
         private NodeSettings CreateSettings(string subDirName)
         {
-            return new NodeSettings(KnownNetworks.TestNet, args: new string[] { $"-datadir={ Directory.CreateDirectory(Path.Combine(this.dir, subDirName)).FullName }" });
+            return new NodeSettings(this.network, args: new string[] { $"-datadir={ Directory.CreateDirectory(Path.Combine(this.dir, subDirName)).FullName }" });
         }
 
         private IEnumerable<MempoolPersistenceEntry> CreateTestEntries(int numTx)
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             txMemPool = new TxMempool(dateTimeProvider, new BlockPolicyEstimator(new MempoolSettings(nodeSettings), loggerFactory, nodeSettings), loggerFactory, nodeSettings);
             var mempoolLock = new MempoolSchedulerLock();
             var coins = new InMemoryCoinView(settings.Network.GenesisHash);
-            var chain = new ConcurrentChain(KnownNetworks.Main);
+            var chain = new ConcurrentChain(settings.Network);
             var chainState = new ChainState();
             var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
             this.network.Consensus.Options = new PosConsensusOptions();

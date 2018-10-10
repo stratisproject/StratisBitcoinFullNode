@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public RPCClient(RPCCredentialString credentials, Uri address, Network network)
         {
-            this.RPCClientIniti(network);
+            this.RPCClientInit(network);
 
             credentials = credentials ?? new RPCCredentialString();
 
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 throw new ArgumentException("Impossible to infer the authentication of the RPCClient");
         }
 
-        private void RPCClientIniti(Network network)
+        private void RPCClientInit(Network network)
         {
             string home = Environment.GetEnvironmentVariable("HOME");
             string localAppData = Environment.GetEnvironmentVariable("APPDATA");
