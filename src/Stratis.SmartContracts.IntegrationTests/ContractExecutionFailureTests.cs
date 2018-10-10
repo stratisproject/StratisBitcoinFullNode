@@ -494,6 +494,9 @@ namespace Stratis.SmartContracts.IntegrationTests
                 emptyModule = ms.ToArray();
             }
 
+            Assert.Single(module.Types);
+            Assert.Equal("<Module>", module.Types[0].Name);
+
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(emptyModule, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
