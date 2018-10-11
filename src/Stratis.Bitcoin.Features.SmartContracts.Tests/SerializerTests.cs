@@ -1,5 +1,6 @@
 ﻿using System;
 using Moq;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
@@ -186,6 +187,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal(new string[0], result);
             this.contractPrimitiveSerializer.Verify(s => s.Deserialize<string[]>(It.IsAny<byte[]>()), Times.Never);
+        }
+
+        public struct Example
+        {
+            public int Item1;
+            public int Item2;
+        }
+
+        [Fact]
+        public void Deserialize_Struct_Success()
+        {
+            var example = new Example { Item1 = 1234, Item2 = 4567 };
+
+            var item1Bytes = BitConverter.GetBytes(example.Item1);
+            var item2Bytes = BitConverter.GetBytes(example.Item2);
+            this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item1)).Returns(item1Bytes);
+            this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item2)).Returns(item2Bytes);
+
+            this.contractPrimitiveSerializer.Setup(p => p.Deserialize(typeof(int), item1Bytes)).Returns(example.Item1);
+            this.contractPrimitiveSerializer.Setup(p => p.Deserialize(typeof(int), item2Bytes)).Returns(example.Item2);
+
+            var bytes = this.serializer.Serialize(example);
+            var deserialized = this.serializer.ToStruct<Example>(bytes);
+
+            Assert.Equal(example, deserialized);
         }
     }
 }

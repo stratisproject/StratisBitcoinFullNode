@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Reflection;
+using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
@@ -61,6 +64,24 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return null;
 
             return this.primitiveSerializer.Serialize(a);
+        }
+
+        public byte[] Serialize<T>(T s) where T : struct
+        {
+            var toEncode = new List<byte[]>();
+
+            foreach (FieldInfo field in s.GetType().GetFields())
+            {
+                object value = field.GetValue(s);
+
+                byte[] serialized = value != null 
+                    ? this.primitiveSerializer.Serialize(value) ?? new byte[0]
+                    : new byte[0];
+
+                toEncode.Add(RLP.EncodeElement(serialized));
+            }
+
+            return RLP.EncodeList(toEncode.ToArray());
         }
 
         public bool ToBool(byte[] val)
@@ -153,6 +174,47 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             (bool success, T[] result) = this.TryDeserializeValue<T[]>(val);
 
             return success ? result : new T[0];
+        }
+
+        public T ToStruct<T>(byte[] val) where T: struct
+        {
+            if (val == null || val.Length == 0)
+                return default(T);
+
+            try
+            {
+                // DeserializeStruct uses ContractPrimitiveSerializer, which can throw exceptions
+                // eg. if a field deserializes incorrectly.
+                T result = this.DeserializeStruct<T>(val);
+
+                return result;
+            }
+            catch (Exception)
+            {
+                return default(T);
+            }
+        }
+
+        private T DeserializeStruct<T>(byte[] bytes) where T : struct
+        {
+            RLPCollection collection = (RLPCollection)RLP.Decode(bytes)[0];
+
+            Type type = typeof(T);
+
+            // This needs to be a boxed struct or we won't be able to set the fields with reflection.
+            object instance = Activator.CreateInstance(type);
+            
+            FieldInfo[] fields = type.GetFields();
+
+            for (int i = 0; i < fields.Length; i++)
+            {
+                byte[] fieldBytes = collection[i].RLPData;
+                Type fieldType = fields[i].FieldType;
+                object fieldValue = this.primitiveSerializer.Deserialize(fieldType, fieldBytes);
+                fields[i].SetValue(instance, fieldValue);
+            }
+
+            return (T) instance;
         }
 
         private (bool, T) TryDeserializeValue<T>(byte[] val)

@@ -146,7 +146,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return (T) deserialized;
         }
 
-        private object Deserialize(Type type, byte[] stream)
+        public object Deserialize(Type type, byte[] stream)
         {
             if (stream == null || stream.Length == 0)
                 return null;

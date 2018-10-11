@@ -48,6 +48,12 @@ namespace Stratis.SmartContracts
         byte[] Serialize(Array a);
 
         /// <summary>
+        /// Serializes a struct into its RLP-encoded format.
+        /// </summary>
+        /// <param name="s">The struct to serialize.</param>
+        byte[] Serialize<T>(T s) where T : struct;
+
+        /// <summary>
         /// Deserializes bytes into a boolean via BitConverter.
         /// </summary>
         bool ToBool(byte[] val);
@@ -87,5 +93,11 @@ namespace Stratis.SmartContracts
         /// </summary>
         /// <typeparam name="T">DeclaringType in the array to return. Must be one of the supported contract primitives.</typeparam>
         T[] ToArray<T>(byte[] val);
+
+        /// <summary>
+        /// Deserializes RLP-encoded bytes to an struct
+        /// </summary>
+        /// <typeparam name="T">The Type of struct to return</typeparam>
+        T ToStruct<T>(byte[] val) where T: struct;
     }
 }
