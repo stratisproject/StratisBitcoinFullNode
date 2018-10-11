@@ -122,11 +122,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void PosRewardForAllCoinstakeTransactionsIsCorrect()
         {
-            // build a dictionary of coinstake tx's indexed by hash
+            // build a dictionary of coinstake tx's indexed by tx id.
             foreach (var tx in this.PremineNodeWithCoins.FullNode.WalletManager().Wallets.First().GetAllTransactionsByCoinType((CoinType)
                 this.PremineNodeWithCoins.FullNode.Network.Consensus.CoinType))
             {
-                txLookup[tx.BlockHash] = tx;
+                this.txLookup[tx.Id] = tx;
             }
 
             TestHelper.WaitLoop(() =>
@@ -141,15 +141,13 @@ namespace Stratis.Bitcoin.IntegrationTests
                         Transaction coinstakeTransaction = this.PremineNodeWithCoins.FullNode.Network.CreateTransaction(transactionData.Hex);
                         var balance = new Money(0);
 
-                        // COINSTAKE OUTPUTS
+                        // Add coinstake outputs to balance.
                         foreach (TxOut output in coinstakeTransaction.Outputs)
                         {
-                            // Output = funds are being paid 'into' the address in question
                             balance += output.Value;
-
                         }
 
-                        // COINSTAKE INPUTS - should be equal to 980000000 etc so reward = 1
+                        // Subtract coinstake inputs from balance.
                         foreach (TxIn input in coinstakeTransaction.Inputs)
                         {
                             this.txLookup.TryGetValue(input.PrevOut.Hash, out TransactionData prevTransactionData);
@@ -157,7 +155,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                             if (prevTransactionData == null)
                                 continue;
 
-                            var prevTransaction = this.PremineNodeWithCoins.FullNode.Network.CreateTransaction(prevTransactionData.Hex);
+                            Transaction prevTransaction = this.PremineNodeWithCoins.FullNode.Network.CreateTransaction(prevTransactionData.Hex);
 
                             balance -= prevTransaction.Outputs[input.PrevOut.N].Value;
                         }
