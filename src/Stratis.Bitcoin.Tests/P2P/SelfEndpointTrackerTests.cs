@@ -110,11 +110,5 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(1, this.selfEndpointTracker.MyExternalAddressPeerScore);
         }
 
-
-        [Fact]
-        public void IPAddressParse()
-        {
-            IPAddress.Parse("*");
-        }
     }
 }
