@@ -8,6 +8,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 new Mock<IDateTimeProvider>().Object,
                 new ConcurrentChain(this.network),
                 new NodeDeployments(KnownNetworks.RegTest, new ConcurrentChain(this.network)),
-                new ConsensusSettings(), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
+                new ConsensusSettings(NodeSettings.Default(this.network)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(null),
                 new NodeStats(null));
 

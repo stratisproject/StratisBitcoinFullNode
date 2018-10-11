@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             get
             {
                 ILoggerFactory loggerFactory = new LoggerFactory();
-                NodeSettings settings = NodeSettings.Default();
+                NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
                 var policy = new LightWalletFixedFeePolicy(loggerFactory, settings);
                 return policy;
             }
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         public void MinTxFee_FromDefaultSettings_IsDefaultNodeMinTxFee()
         {
             ILoggerFactory loggerFactory = new LoggerFactory();
-            NodeSettings settings = NodeSettings.Default();
+            NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
             var policy = new LightWalletFixedFeePolicy(loggerFactory, settings);
             Assert.Equal(settings.FallbackTxFeeRate, policy.FallbackTxFeeRate);
         }
