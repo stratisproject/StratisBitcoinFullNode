@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -25,10 +25,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         public WalletTests()
         {
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
         }
 
-        [Fact]
+        [Retry(2)]
         public void WalletCanReceiveAndSendCorrectly()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact]
+        [Retry(2)]
         public void WalletCanReorg()
         {
             // This test has 4 parts:
