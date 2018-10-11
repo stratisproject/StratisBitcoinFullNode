@@ -1,5 +1,7 @@
 ﻿using NBitcoin;
 using NBitcoin.Networks;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Tests.Common

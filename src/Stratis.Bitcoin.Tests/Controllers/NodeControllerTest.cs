@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             this.network = KnownNetworks.TestNet;
             this.connectionManager.Setup(c => c.Network).Returns(this.network);
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
-            this.nodeSettings = new NodeSettings();
+            this.nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Bitcoin);
             this.pooledTransaction = new Mock<IPooledTransaction>();
             this.pooledGetUnspentTransaction = new Mock<IPooledGetUnspentTransaction>();
             this.getUnspentTransaction = new Mock<IGetUnspentTransaction>();
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
         public void Stop_WithFullNode_DisposesFullNode()
         {
             var isDisposed = false;
-            this.fullNode.Setup(f => f.Dispose()).Callback(() => isDisposed = true);
+            this.fullNode.Setup(f => f.NodeLifetime.StopApplication()).Callback(() => isDisposed = true);
 
             IActionResult result = this.controller.Shutdown(true);
 

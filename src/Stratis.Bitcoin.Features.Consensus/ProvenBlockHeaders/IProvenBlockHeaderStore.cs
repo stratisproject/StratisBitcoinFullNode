@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public interface IProvenBlockHeaderStore : IProvenBlockHeaderProvider
     {
         /// <summary>
-        /// Adds <see cref="ProvenBlockHeader"/> items to the pending batch.  Ready for saving to disk.
+        /// Adds <see cref="ProvenBlockHeader"/> items to the pending batch. Ready for saving to disk.
         /// </summary>
         /// <param name="provenBlockHeader">A <see cref="ProvenBlockHeader"/> item to add.</param>
         /// <param name="newTip">Hash and height pair that represent the tip of <see cref="IProvenBlockHeaderStore"/>.</param>

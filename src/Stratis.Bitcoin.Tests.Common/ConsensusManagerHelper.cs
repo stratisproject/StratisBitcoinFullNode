@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Tests.Common
                 loggerFactory, new PayloadProvider().DiscoverPayloads(),
                 new SelfEndpointTracker(loggerFactory),
                 new Mock<IInitialBlockDownloadState>().Object,
-                new ConnectionManagerSettings());
+                new ConnectionManagerSettings(nodeSettings));
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
