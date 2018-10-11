@@ -389,7 +389,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_SEQEUNCE]");
 
-                throw new InvalidOperationException("Proven block headers are not in the correct sequence.");
+                throw new ProvenBlockHeaderException("Proven block headers are not in the correct sequence.");
             }
         }
 

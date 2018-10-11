@@ -312,8 +312,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact]
         public void InitializeAsync_When_Hash_Not_In_Chain_Or_Repo_Throw_Exception()
         {
-            this.concurrentChain = new ConcurrentChain(this.network);
-
             this.provenBlockHeaderRepository.SetPrivatePropertyValue("TipHashHeight", new HashHeightPair(new uint256(), 1));
 
             using (ProvenBlockHeaderStore store = this.SetupStore(this.Folder))
@@ -369,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             taskResult.IsFaulted.Should().BeTrue();
             taskResult.Exception.InnerExceptions.Count.Should().Be(1);
             taskResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenBlockHeaderException>();
-            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Invalid ProvenBlockHeader pending batch sequence - unable to save to the database repository.");
+            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Proven block headers are not in the correct sequence.");
         }
 
         [Fact]
