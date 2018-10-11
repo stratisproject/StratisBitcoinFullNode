@@ -59,7 +59,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 builder.StartAll();
 
                 TestHelper.MineBlocks(node1, 5);
-                TestHelper.Connect(node1, node2);
+
+                TestHelper.ConnectAndSync(node1, node2);
+                Assert.True(node1.FullNode.ConsensusManager().Tip.Height == 5);
+
                 TestHelper.Disconnect(node1, node2);
 
                 // Create block manually on node1 without pushing to consensus (BlockMined wont be called).
@@ -70,12 +73,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
                 // Nodes 1 syncs with node 2 up to height 7.
                 TestHelper.ConnectAndSync(node1, node2);
+                Assert.True(node1.FullNode.ConsensusManager().Tip.Height == 7);
 
                 // Call BlockMinedAsync manually with the block that was supposed to have been submitted at height 6.
                 node1.FullNode.ConsensusManager().BlockMinedAsync(manualBlock).GetAwaiter().GetResult();
 
                 // Verify that the manually added block is NOT in the consensus chain.
-                Assert.False(node1.FullNode.Chain.Contains(manualBlock.GetHash()));
+                var chainedHeaderToValidate = node1.FullNode.ConsensusManager().Tip.Previous;
+                Assert.True(chainedHeaderToValidate.Height == 6);
+                Assert.False(chainedHeaderToValidate.HashBlock == manualBlock.GetHash());
             }
         }
     }
