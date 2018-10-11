@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
@@ -77,6 +76,7 @@ namespace Stratis.Bitcoin.Features.PoA
             return nextTimestampForMining;
         }
 
+        /// <summary>Determines whether timestamp is valid according to the network rules.</summary>
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
             return (headerUnixTimestamp % this.network.TargetSpacingSeconds) == 0;
