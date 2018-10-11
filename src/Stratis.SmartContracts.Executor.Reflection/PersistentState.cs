@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using NBitcoin;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection
 {
@@ -101,7 +100,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var bytes = this.GetBytes(key);
 
-            return this.DeserializeStruct<T>(bytes);
+            return this.Serializer.ToStruct<T>(bytes);
         }
 
         public T[] GetArray<T>(string key)
@@ -171,14 +170,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private byte[] SerializeStruct<T>(T value) where T : struct
         {
             return this.Serializer.Serialize(value);
-        }
-
-        private T DeserializeStruct<T>(byte[] bytes) where T : struct
-        {
-            if (bytes == null || bytes.Length == 0)
-                return default(T);
-
-            return this.Serializer.ToStruct<T>(bytes);
         }
     }
 }
