@@ -343,8 +343,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         private async Task<ChainedHeader> RecoverStoreTipAsync()
         {
-            uint256 latestBlockHash = this.provenBlockHeaderRepository.TipHashHeight.Hash;
-
             int tipHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
 
             ProvenBlockHeader latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight);
@@ -354,6 +352,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 // Happens when the proven header store is corrupt.
                 throw new ProvenBlockHeaderException("Proven block header store failed to recover.");
             }
+
+            uint256 latestBlockHash = this.provenBlockHeaderRepository.TipHashHeight.Hash;
 
             while (this.chain.GetBlock(tipHeight) == null)
             {
