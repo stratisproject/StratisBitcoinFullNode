@@ -3,6 +3,7 @@ using System.Threading;
 using FluentAssertions;
 using Moq;
 using NBitcoin;
+using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
@@ -467,7 +468,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Should().Be(ConsensusErrors.BadBlockSignature);
         }
 
-        // TODO: Investigate why this rule doesn't work. I suspect we are missing hash signing for proven header
         [Fact]
         public void RunRule_ProvenHeadersActive_And_ValidProvenHeader_NoErrorsAreThrown()
         {
@@ -484,10 +484,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network, privateKey).Build();
             posBlock.UpdateMerkleRoot();
+            posBlock.Header.HashPrevBlock = prevProvenBlockHeader.GetHash();
+            posBlock.Header.Bits = 16777216;
+
+            // Update signature.
+            ECDSASignature signature = privateKey.Sign(posBlock.Header.GetHash());
+            posBlock.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
+
             ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
             provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
-            provenBlockHeader.SetPrivateVariableValue("hashes", new [] { posBlock.GetHash() });
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);

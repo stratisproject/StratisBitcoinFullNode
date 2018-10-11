@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             block.AddTransaction(coinBaseTx);
             block.AddTransaction(coinstakeTx);
 
-            ECDSASignature signature = privateKey.Sign(block.GetHash());
+            ECDSASignature signature = privateKey.Sign(block.Header.GetHash());
             block.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.posBlock = block;
