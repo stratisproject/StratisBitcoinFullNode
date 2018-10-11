@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
@@ -39,6 +40,12 @@ namespace Stratis.Bitcoin.Features.RPC
         public bool IsAuthorized(IPAddress ip)
         {
             Guard.NotNull(ip, nameof(ip));
+
+            if (this.AllowIp.Contains(IPAddress.IPv6Any))
+                return true;
+
+            if (ip.IsIPv4() && this.AllowIp.Contains(IPAddress.Any))
+                return true;
 
             if (this.AllowIp.Count == 0)
                 return true;
