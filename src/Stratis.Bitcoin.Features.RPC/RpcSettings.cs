@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     this.AllowIp = config
                         .GetAll("rpcallowip", this.logger)
-                        .Select(p => IPAddress.Parse(p))
+                        .Select(p => p=="*" ? IPAddress.Any : IPAddress.Parse(p))
                         .ToList();
                 }
                 catch (FormatException)
