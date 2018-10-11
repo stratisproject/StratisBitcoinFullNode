@@ -130,5 +130,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="flagScriptVerify">Script verification flags.</param>
         /// <returns><c>true</c> if signature is valid.</returns>
         bool VerifySignature(UnspentOutputs coin, Transaction txTo, int txToInN, ScriptVerify flagScriptVerify);
+
+        /// <summary>
+        /// Returns <c>true</c> if provided coins were confirmed in less than <paramref name="targetDepth"/> number of blocks.
+        /// </summary>
+        /// <param name="coins">Coins to check confirmation depth for.</param>
+        /// <param name="referenceChainedHeader">Chained block from which we are counting the depth.</param>
+        /// <param name="targetDepth">The target depth.</param>
+        /// <returns><c>true</c> if the coins were spent within N blocks from <see cref="referenceChainedHeader"/>, <c>false</c> otherwise.</returns>
+        bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth);
     }
 }

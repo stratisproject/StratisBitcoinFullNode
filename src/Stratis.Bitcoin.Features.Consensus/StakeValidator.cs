@@ -339,6 +339,15 @@ namespace Stratis.Bitcoin.Features.Consensus
             return res;
         }
 
+        /// <inheritdoc />
+        public bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth)
+        {
+            int actualDepth = referenceChainedHeader.Height - (int)coins.Height;
+            bool res = actualDepth < targetDepth;
+
+            return res;
+        }
+
         /// <summary>
         /// Converts <see cref="BigInteger" /> to <see cref="uint256" />.
         /// </summary>
@@ -369,21 +378,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         private BigInteger FromUInt256(uint256 input)
         {
             return BigInteger.Zero;
-        }
-
-        /// <summary>
-        /// Returns <c>true</c> if provided coins were confirmed in less than <paramref name="targetDepth"/> number of blocks.
-        /// </summary>
-        /// <param name="coins">Coins to check confirmation depth for.</param>
-        /// <param name="referenceChainedHeader">Chained block from which we are counting the depth.</param>
-        /// <param name="targetDepth">The target depth.</param>
-        /// <returns><c>true</c> if the coins were spent within N blocks from <see cref="referenceChainedHeader"/>, <c>false</c> otherwise.</returns>
-        private bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth)
-        {
-            int actualDepth = referenceChainedHeader.Height - (int)coins.Height;
-            bool res = actualDepth < targetDepth;
-            
-            return res;
         }
     }
 }
