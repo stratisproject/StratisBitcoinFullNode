@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.PoA
             return nextTimestampForMining;
         }
 
-        /// <summary>Determines whether timestamp is divisible by <see cref="PoANetwork.TargetSpacingSeconds"/>.</summary>
+        /// <summary>Determines whether timestamp is valid according to the network rules.</summary>
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
             return (headerUnixTimestamp % this.network.TargetSpacingSeconds) == 0;

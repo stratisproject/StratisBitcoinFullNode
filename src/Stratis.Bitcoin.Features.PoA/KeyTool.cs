@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.dataFolder = dataFolder;
         }
 
-        /// <summary>Generates new private key.</summary>
+        /// <summary>Generates a new private key.</summary>
         public Key GeneratePrivateKey()
         {
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.PoA
             return privateKey;
         }
 
-        /// <summary>Gets default path for private key saving and loading.</summary>
+        /// <summary>Gets the default path for private key saving and loading.</summary>
         public string GetPrivateKeySavePath()
         {
             string path = Path.Combine(this.dataFolder.RootPath, KeyTool.KeyFileDefaultName);
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.PoA
             fileStream.Close();
         }
 
-        /// <summary>Loads private key from default path.</summary>
+        /// <summary>Loads the private key from default path.</summary>
         public Key LoadPrivateKey()
         {
             string path = this.GetPrivateKeySavePath();
