@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Length of the coinview cache flushing interval in seconds.</summary>
         /// <seealso cref="lastCacheFlushTime"/>
-        public const int CacheFlushTimeIntervalSeconds = 60;
+        public const int CacheFlushTimeIntervalSeconds = 600;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
