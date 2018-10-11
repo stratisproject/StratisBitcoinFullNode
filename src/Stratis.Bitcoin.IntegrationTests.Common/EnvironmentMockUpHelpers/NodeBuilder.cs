@@ -93,8 +93,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode CreateStratisPowNode(Network network)
         {
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network));
-
-
         }
 
         public CoreNode CreateStratisCustomPowNode(Network network, NodeConfigParameters configParameters)
