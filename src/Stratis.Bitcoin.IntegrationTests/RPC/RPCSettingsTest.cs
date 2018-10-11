@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using System.Net;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC;
@@ -32,6 +33,22 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Equal("abc", settings.RpcUser);	
             Assert.Equal("def", settings.RpcPassword);	
             Assert.Equal(91, settings.RPCPort);	
-        }	
+        }
+
+        [Fact]
+        public void SupportForStarOnRpcAllowIP()
+        {
+            var nodeSettings = new NodeSettings(this.Network, args: new [] { "-rpcallowip=*", "-server=1" });
+
+            IFullNode node = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UsePowConsensus()
+                .AddRPC()
+                .Build();
+
+            var settings = node.NodeService<RpcSettings>();
+
+            Assert.Contains(IPAddress.IPv6Any, settings.AllowIp);
+        }
     }	
 }
