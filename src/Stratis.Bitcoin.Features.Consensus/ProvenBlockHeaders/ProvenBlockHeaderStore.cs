@@ -305,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="keys">List of block height keys to check.</param>
         private void CheckItemsAreInSequence(List<int> keys)
         {
-            if (!keys.SequenceEqual(Enumerable.Range(0, keys.Count())))
+            if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count())))
             {
                 this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_SEQEUNCE]");
 
