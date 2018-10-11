@@ -68,37 +68,37 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         #region Primitive serialization
 
-        public byte[] Serialize(Address address)
+        private byte[] Serialize(Address address)
         {
             return address.ToUint160(this.network).ToBytes();
         }
 
-        public byte[] Serialize(bool b)
+        private byte[] Serialize(bool b)
         {
             return BitConverter.GetBytes(b);
         }
 
-        public byte[] Serialize(int i)
+        private byte[] Serialize(int i)
         {
             return BitConverter.GetBytes(i);
         }
 
-        public byte[] Serialize(long l)
+        private byte[] Serialize(long l)
         {
             return BitConverter.GetBytes(l);
         }
 
-        public byte[] Serialize(uint u)
+        private byte[] Serialize(uint u)
         {
             return BitConverter.GetBytes(u);
         }
 
-        public byte[] Serialize(ulong ul)
+        private byte[] Serialize(ulong ul)
         {
             return BitConverter.GetBytes(ul);
         }
 
-        public byte[] Serialize(string s)
+        private byte[] Serialize(string s)
         {
             return Encoding.UTF8.GetBytes(s);
         }
@@ -119,7 +119,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return RLP.EncodeList(toEncode.ToArray());
         }
 
-        public byte[] Serialize(Array array)
+        private byte[] Serialize(Array array)
         {
             // Edge case, serializing nonsensical
             if (array is byte[] a)
@@ -192,42 +192,42 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         #region Primitive Deserialization
 
-        public bool ToBool(byte[] val)
+        private bool ToBool(byte[] val)
         {
             return BitConverter.ToBoolean(val);
         }
 
-        public Address ToAddress(byte[] val)
+        private Address ToAddress(byte[] val)
         {
             return new uint160(val).ToAddress(this.network);
         }
 
-        public int ToInt32(byte[] val)
+        private int ToInt32(byte[] val)
         {
             return BitConverter.ToInt32(val, 0);
         }
 
-        public uint ToUInt32(byte[] val)
+        private uint ToUInt32(byte[] val)
         {
             return BitConverter.ToUInt32(val, 0);
         }
 
-        public long ToInt64(byte[] val)
+        private long ToInt64(byte[] val)
         {
             return BitConverter.ToInt64(val, 0);
         }
 
-        public ulong ToUInt64(byte[] val)
+        private ulong ToUInt64(byte[] val)
         {
             return BitConverter.ToUInt64(val, 0);
         }
 
-        public string ToString(byte[] val)
+        private string ToString(byte[] val)
         {
             return Encoding.UTF8.GetString(val);
         }
 
-        public T[] ToArray<T>(byte[] val)
+        private T[] ToArray<T>(byte[] val)
         {
             return (T[]) DeserializeArray(typeof(T), val);
         } 
