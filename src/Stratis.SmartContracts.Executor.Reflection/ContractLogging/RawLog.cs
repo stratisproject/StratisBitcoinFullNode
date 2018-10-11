@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
@@ -65,7 +66,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             {
                 object value = field.GetValue(this.LogStruct);
 
-                byte[] serialized = serializer.Serialize(value);
+                byte[] serialized = value != null 
+                    ? serializer.Serialize(value)
+                    : new byte[0];
 
                 if (field.CustomAttributes.Any(y => y.AttributeType == typeof(IndexAttribute)))
                 {
