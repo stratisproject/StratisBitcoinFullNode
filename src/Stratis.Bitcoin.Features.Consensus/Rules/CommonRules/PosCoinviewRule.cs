@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -87,7 +88,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             UnspentOutputSet view = posRuleContext.UnspentOutputSet;
 
             if (transaction.IsCoinStake)
+            {
                 posRuleContext.TotalCoinStakeValueIn = view.GetValueIn(transaction);
+                posRuleContext.CoinStakePrevOutputs = transaction.Inputs.ToDictionary(txin => txin, txin => view.GetOutputFor(txin));
+            }
 
             base.UpdateUTXOSet(context, transaction);
         }

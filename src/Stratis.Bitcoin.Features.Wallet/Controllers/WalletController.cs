@@ -759,7 +759,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
                         Amount = output.Value,
                         OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });

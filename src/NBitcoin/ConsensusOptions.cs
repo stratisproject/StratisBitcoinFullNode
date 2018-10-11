@@ -7,7 +7,7 @@
     public class ConsensusOptions
     {
         /// <summary>
-        /// Flag used to detect SegWit transactions.  
+        /// Flag used to detect SegWit transactions.
         /// </summary>
         public const int SerializeTransactionNoWitness = 0x40000000;
 
@@ -100,7 +100,7 @@
 
     /// <summary>
     /// Extension to ConsensusOptions for PoS-related parameters.
-    /// 
+    ///
     /// TODO: When moving rules to be part of consensus for network, move this class to the appropriate project too.
     /// Doesn't make much sense for it to be in NBitcoin. Also remove the CoinstakeMinConfirmation consts and set CointakeMinConfirmation in Network building.
     /// </summary>
@@ -111,6 +111,9 @@
 
         /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
+
+        /// <summary>The cold staking activation height.</summary>
+        public int ColdStakingActivationHeight { get; }
 
         /// <summary>
         /// Maximum coinstake serialized size in bytes.
@@ -163,8 +166,10 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int provenHeadersActivationHeight,
+            int coldStakingActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
         {
+            this.ColdStakingActivationHeight = coldStakingActivationHeight;
             this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
 

@@ -2,9 +2,9 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <AssemblyName>Stratis.StratisD</AssemblyName>
+    <AssemblyName>Stratis.StratisColdsD</AssemblyName>
     <OutputType>Exe</OutputType>
-    <PackageId>Stratis.StratisD</PackageId>
+    <PackageId>Stratis.StratisColdsD</PackageId>
     <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
     <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
