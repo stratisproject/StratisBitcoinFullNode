@@ -13,6 +13,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
@@ -55,7 +56,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
-        private bool builderNotInIbd;
+        private bool builderNotInIBD;
+        private bool builderNoValidation;
         private bool builderWithWallet;
         private string builderWalletName;
         private string builderWalletPassword;
@@ -99,7 +101,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode NotInIBD()
         {
-            this.builderNotInIbd = true;
+            this.builderNotInIBD = true;
+            return this;
+        }
+
+        public CoreNode NoValidation()
+        {
+            this.builderNoValidation = true;
             return this;
         }
 
@@ -138,7 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
 
-        public void Start()
+        public CoreNode Start()
         {
             lock (this.lockObject)
             {
@@ -153,6 +161,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 StartStratisRunner();
 
             this.State = CoreNodeState.Running;
+
+            return this;
         }
 
         private void CreateConfigFile(NodeConfigParameters configParameters = null)
@@ -216,11 +226,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
 
-            if (this.builderNotInIbd)
+            if (this.builderNotInIBD)
                 ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
             if (this.builderWithWallet)
                 this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
+
+            if (this.builderNoValidation)
+                DisableValidation();
+        }
+
+        public void DisableValidation()
+        {
+            this.FullNode.Network.Consensus.FullValidationRules.Clear();
+            this.FullNode.Network.Consensus.HeaderValidationRules.Clear();
+            this.FullNode.Network.Consensus.IntegrityValidationRules.Clear();
+            this.FullNode.Network.Consensus.PartialValidationRules.Clear();
+
+            this.FullNode.NodeService<IConsensusRuleEngine>().Register();
         }
 
         public void Broadcast(Transaction transaction)

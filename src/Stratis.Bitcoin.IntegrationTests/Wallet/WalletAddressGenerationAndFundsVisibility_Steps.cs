@@ -64,11 +64,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
             this.sendingStratisBitcoinNode.Start();
-            this.sendingStratisBitcoinNode.Mnemonic = this.sendingStratisBitcoinNode.Mnemonic;
 
             this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
             this.receivingStratisBitcoinNode.Start();
-            this.receivingStratisBitcoinNode.Mnemonic = this.receivingStratisBitcoinNode.Mnemonic;
 
             TestHelper.ConnectAndSync(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
             this.MineSpendableCoins();
@@ -81,11 +79,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
             this.sendingStratisBitcoinNode.Start();
-            this.sendingStratisBitcoinNode.Mnemonic = this.sendingStratisBitcoinNode.Mnemonic;
 
             this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisCustomPowNode(this.network, configParameters).NotInIBD().WithWallet();
             this.receivingStratisBitcoinNode.Start();
-            this.receivingStratisBitcoinNode.Mnemonic = this.receivingStratisBitcoinNode.Mnemonic;
 
             TestHelper.ConnectAndSync(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
             this.MineSpendableCoins();
