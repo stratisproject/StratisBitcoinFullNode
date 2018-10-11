@@ -41,7 +41,7 @@ namespace City.Networks
             this.Genesis = genesisBlock;
 
             // Taken from StratisX.
-            var consensusOptions = new PosConsensusOptions(
+            var consensusOptions = new CityPosConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,

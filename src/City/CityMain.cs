@@ -56,12 +56,12 @@ namespace City.Networks
             this.Genesis = genesisBlock;
 
             // Taken from StratisX.
-            var consensusOptions = new PosConsensusOptions(
+            var consensusOptions = new CityPosConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                provenHeadersActivationHeight: 20_000_000 // TODO: Set it to the real value once it is known.
+                provenHeadersActivationHeight: 0 // TODO: Set it to the real value once it is known.
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -90,7 +90,7 @@ namespace City.Networks
                 maxReorgLength: 500,
                 defaultAssumeValid: new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"),
                 maxMoney: long.MaxValue,
-                coinbaseMaturity: 50,
+                coinbaseMaturity: 500,
                 premineHeight: 2,
                 premineReward: Money.Coins(13736000000),
                 proofOfWorkReward: Money.Coins(2), // Produced up until last POW block.
