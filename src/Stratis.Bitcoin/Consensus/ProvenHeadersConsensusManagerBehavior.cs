@@ -7,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -22,11 +23,19 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IPeerBanning peerBanning;
         private readonly ILoggerFactory loggerFactory;
         private readonly PosConsensusFactory consensusFactory;
+        private readonly IConnectionManager connectionManager;
+
+        /// <summary>
+        /// The proven header peers reserved slots threshold (%).
+        /// Rapresents the percentage of maximum connectable peers that we reserve for peers that are able to serve proven headers.
+        /// </summary>
+        private const decimal ProvenHeaderPeersReservedSlotsThreshold = 0.4M;
+
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public ProvenHeadersConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+        public ProvenHeadersConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory, IConnectionManager connectionManager) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.chain = chain;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -35,6 +44,8 @@ namespace Stratis.Bitcoin.Consensus
             this.loggerFactory = loggerFactory;
             this.consensusFactory = new PosConsensusFactory();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+
+            this.connectionManager = connectionManager;
         }
 
         /// <inheritdoc />
@@ -55,7 +66,40 @@ namespace Stratis.Bitcoin.Consensus
                 case GetProvenHeadersPayload getHeaders:
                     await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
                     break;
+                case VersionPayload version:
+                    await this.ProcessVersionAsync(peer, version).ConfigureAwait(false);
+                    break;
             }
+        }
+
+        /// <summary>
+        /// Processes "version" message received from the peer.
+        /// Ensures we leave some available connection slots to nodes that are enabled to serve Proven Headers, if the number of minimum PH enabled nodes connected isn't met..
+        /// </summary>
+        /// <param name="peer">Peer from which the message was received.</param>
+        /// <param name="version">Payload of "version" message to process.</param>
+        protected Task ProcessVersionAsync(INetworkPeer peer, VersionPayload version)
+        {
+            PeerConnectorDiscovery connector = this.connectionManager.PeerConnectors.OfType<PeerConnectorDiscovery>().FirstOrDefault();
+            // if PeerConnectorDiscovery is not found means we are using other ways to connect peers (like -connect) and thus we don't enforce the rule.
+            if (connector != null)
+            {
+                decimal slotsReservedForProvenHeaderEnabledPeers = Math.Round(connector.MaxOutboundConnections * ProvenHeaderPeersReservedSlotsThreshold, MidpointRounding.ToEven);
+                decimal legacyPeersConnectedCount = connector.ConnectorPeers
+                    .Where(p => p.PeerVersion.Version < NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION)
+                    .Count();
+                decimal maxLegacyPeersAllowed = connector.MaxOutboundConnections - slotsReservedForProvenHeaderEnabledPeers;
+
+                bool dropLegacyPeers = legacyPeersConnectedCount >= maxLegacyPeersAllowed;
+
+                if (dropLegacyPeers)
+                {
+                    if (version.Version < NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION)
+                        peer.Disconnect("Reserving connection slot for Proven Header enabled peers");
+                }
+            }
+
+            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -99,7 +143,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public override object Clone()
         {
-            return new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
+            return new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.connectionManager);
         }
     }
 }
