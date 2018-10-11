@@ -10,7 +10,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public uint160 ContractAddress { get; }
         private readonly IPersistenceStrategy persistenceStrategy;
         private readonly Network network;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
 
         /// <summary>
         /// Instantiate a new PersistentState instance. Each PersistentState object represents
@@ -18,12 +17,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public PersistentState(IPersistenceStrategy persistenceStrategy,
             ISerializer serializer,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
             uint160 contractAddress)
         {
             this.persistenceStrategy = persistenceStrategy;
             this.Serializer = serializer;
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
             this.ContractAddress = contractAddress;
         }
 
@@ -173,7 +170,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private byte[] SerializeStruct<T>(T value) where T : struct
         {
-            return this.contractPrimitiveSerializer.Serialize(value);
+            return this.Serializer.Serialize(value);
         }
 
         private T DeserializeStruct<T>(byte[] bytes) where T : struct
@@ -181,7 +178,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (bytes == null || bytes.Length == 0)
                 return default(T);
 
-            return this.contractPrimitiveSerializer.Deserialize<T>(bytes);
+            return this.Serializer.ToStruct<T>(bytes);
         }
     }
 }

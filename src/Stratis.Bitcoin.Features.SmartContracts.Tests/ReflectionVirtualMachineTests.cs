@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new Message(TestAddress, TestAddress, 0),
                 new PersistentState(
                     new TestPersistenceStrategy(this.state),
-                    this.context.Serializer, this.context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)),
+                    this.context.Serializer, TestAddress.ToUint160(this.network)),
                 context.Serializer,
                 new GasMeter((Gas)5000000),
                 new ContractLogHolder(this.network),
@@ -121,7 +121,7 @@ public class Contract : SmartContract
                 s.Message == new Message(TestAddress, TestAddress, 0) &&
                 s.PersistentState == new PersistentState(
                     new TestPersistenceStrategy(this.state),
-                    this.context.Serializer, this.context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)) &&
+                    this.context.Serializer, TestAddress.ToUint160(this.network)) &&
                 s.Serializer == this.context.Serializer &&
                 s.GasMeter == new GasMeter((Gas) 0) &&
                 s.ContractLogger == new ContractLogHolder(this.network) &&
