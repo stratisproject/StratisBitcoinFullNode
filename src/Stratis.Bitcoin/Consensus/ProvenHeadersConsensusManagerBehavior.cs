@@ -88,18 +88,16 @@ namespace Stratis.Bitcoin.Consensus
                 if (connector != null)
                 {
                     int slotsReservedForProvenHeaderEnabledPeers = (int)Math.Round(connector.MaxOutboundConnections * ProvenHeaderPeersReservedSlotsThreshold, MidpointRounding.ToEven);
+                    int maxLegacyPeersAllowed = connector.MaxOutboundConnections - slotsReservedForProvenHeaderEnabledPeers;
                     int legacyPeersConnectedCount = connector.ConnectorPeers
                         .Where(p => p.PeerVersion.Version < NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION)
                         .Count();
-                    int maxLegacyPeersAllowed = connector.MaxOutboundConnections - slotsReservedForProvenHeaderEnabledPeers;
 
-                    bool dropLegacyPeers = legacyPeersConnectedCount >= maxLegacyPeersAllowed;
-
-                    if (dropLegacyPeers)
+                    bool hasToReserveSlots = legacyPeersConnectedCount >= maxLegacyPeersAllowed;
+                    if (hasToReserveSlots)
                     {
-                        // Any legacy peer that exceed our threshold will be disconnected if we are not in IBD.
+                        // If we were previously in IBD state, we should remove legacy peers to reserve slots for PH enabled peers.
                         int legacyPeersToDisconnect = legacyPeersConnectedCount - maxLegacyPeersAllowed;
-
                         if (legacyPeersToDisconnect > 0)
                         {
                             var peersToDisconnect = connector.ConnectorPeers.OrderBy(p => p.PeerVersion.StartHeight).Take(legacyPeersToDisconnect).ToList();
