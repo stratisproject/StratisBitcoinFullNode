@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// This class serializes and deserializes specific data types
     /// when persisting items inside a smart contract.
     /// </summary>
-    public class ContractPrimitiveSerializer : IContractPrimitiveSerializer, ISerializer
+    public class ContractPrimitiveSerializer : IContractPrimitiveSerializer
     {
         private readonly Network network;
 
