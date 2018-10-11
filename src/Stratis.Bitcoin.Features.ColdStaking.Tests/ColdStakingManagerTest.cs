@@ -187,14 +187,16 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             walletFeePolicy.Setup(w => w.GetMinimumFee(258, 50))
                 .Returns(new Money(5000));
 
-            var walletManager1 = new ColdStakingManager(this.Network, chainInfo.chain, new Mock<WalletSettings>().Object, dataFolder, walletFeePolicy.Object,
+            var walletSettings = new WalletSettings(new NodeSettings(network: this.Network));
+
+            var walletManager1 = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             walletManager1.Wallets.Add(wallet);
             walletManager1.Wallets.Add(coldWallet);
             walletManager1.LoadKeysLookupLock();
 
             // Create another instance for the hot wallet as it is not allowed to have both wallets on the same instance.
-            var walletManager2 = new ColdStakingManager(this.Network, chainInfo.chain, new Mock<WalletSettings>().Object, dataFolder, walletFeePolicy.Object,
+            var walletManager2 = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             walletManager2.Wallets.Add(hotWallet);
             walletManager2.LoadKeysLookupLock();
@@ -266,7 +268,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 new Money(750), new Money(262));
 
             // Wallet manager for the wallet receiving the funds.
-            var walletManager3 = new ColdStakingManager(this.Network, chainInfo.chain, new Mock<WalletSettings>().Object, dataFolder, walletFeePolicy.Object,
+            var walletManager3 = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
             walletManager3.Wallets.Add(withdrawalWallet);
             walletManager3.LoadKeysLookupLock();
