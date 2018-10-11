@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
@@ -109,7 +108,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<SlotsManager>();
-                        services.AddSingleton<PoABlockDefinition, PoABlockDefinition>();
+                        services.AddSingleton<PoABlockDefinition>();
                     });
             });
 
@@ -123,7 +122,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>(); // TODO POA: PoA rule engine?
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
