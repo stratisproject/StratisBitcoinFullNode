@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.PoA
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             Network network)
-            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(), network)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(NodeSettings.Default(network)), network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }

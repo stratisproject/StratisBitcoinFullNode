@@ -2,20 +2,21 @@
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Miners
 {
-    public class ProofOfStakeTests
+    public class ProofOfStakeMiningTests
     {
         [Fact]
         public void MiningAndPropagatingPOS_MineBlockCheckPeerHasNewBlock()
         {
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(this))
             {
-                CoreNode node = nodeBuilder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet();
-                CoreNode syncer = nodeBuilder.CreateStratisPosNode(new StratisRegTest()).NotInIBD();
+                var network = new StratisRegTest();
+
+                CoreNode node = nodeBuilder.CreateStratisPosNode(network).NotInIBD().WithWallet();
+                CoreNode syncer = nodeBuilder.CreateStratisPosNode(network).NotInIBD();
                 nodeBuilder.StartAll();
 
                 TestHelper.MineBlocks(node, 1);
@@ -31,16 +32,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(this))
             {
-                CoreNode node = nodeBuilder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet();
+                var network = new StratisRegTest();
+
+                CoreNode node = nodeBuilder.CreateStratisPosNode(network).NotInIBD().WithWallet();
                 nodeBuilder.StartAll();
 
                 // Mine two blocks (OK).
                 TestHelper.MineBlocks(node, 2);
 
                 // Mine another block after LastPOWBlock height (Error).
-                nodeBuilder.Nodes[0].FullNode.Network.Consensus.LastPOWBlock = 2;
+                var lastPowBlock = node.FullNode.Network.Consensus.LastPOWBlock;
+                node.FullNode.Network.Consensus.LastPOWBlock = 2;
                 var error = Assert.Throws<ConsensusException>(() => TestHelper.MineBlocks(node, 1));
                 Assert.True(error.Message == ConsensusErrors.ProofOfWorkTooHigh.Message);
+                node.FullNode.Network.Consensus.LastPOWBlock = lastPowBlock;
             }
         }
     }

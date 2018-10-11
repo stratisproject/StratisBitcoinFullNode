@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public static PowBlockDefinition AssemblerForTest(TestContext testContext)
         {
-            return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, new MinerSettings(), testContext.network, testContext.ConsensusRules);
+            return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, new MinerSettings(NodeSettings.Default(testContext.network)), testContext.network, testContext.ConsensusRules);
         }
 
         public class Blockinfo
@@ -142,10 +142,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                var nodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
+                var nodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(nodeSettings);
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings(nodeSettings));
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
@@ -887,75 +887,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
 
                 builder.StartAll();
-                
+
                 TestHelper.MineBlocks(miner, 5);
 
                 Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
-            }
-        }
-
-        [Fact]
-        public void MiningAndPropagatingPOW_MineBlockCheckPeerHasNewBlock()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
-                
-                CoreNode[] syncers = new CoreNode[]
-                {
-                    builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD(),
-                    builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD(),
-                    builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD()
-                };
-
-                builder.StartAll();
-                
-                foreach (CoreNode syncer in syncers)
-                {
-                    miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
-                }
-
-                Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 0));
-
-                TestHelper.MineBlocks(miner, 3);
-
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[0]));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[1]));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncers[2]));
-
-                Assert.True(syncers.All(x => x.FullNode.ConsensusManager().Tip.Height == 3));
-            }
-        }
-
-        [Fact]
-        public void MiningAndPropagatingPOW_MineBlockNotPushedToConsensusCode_SupercededByBetterBlockOnReorg_InitialBlockRejected()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode node1 = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
-                CoreNode node2 = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet().NotInIBD();
-
-                builder.StartAll();
-                
-                TestHelper.MineBlocks(node1, 5);
-                TestHelper.ConnectAndSync(node1, node2);
-                TestHelper.Disconnect(node1, node2);
-
-                // Node1 new block not pushed to consensus code.
-                Block newBlock = TestHelper.GenerateBlockManually(node1, 
-                    new List<Transaction>(), 0, false /* Not calling BlockMinedAsync yet */);
-
-                // Mine another 2 blocks on node 2 chain up to height 7.
-                TestHelper.MineBlocks(node2, 2);
-
-                // Nodes 1 syncs with node 2 up to height 7.
-                TestHelper.ConnectAndSync(node1, node2);
-
-                // Call BlockMinedAsync manually with the block that was supposed to have been submitted at height 6.
-                node1.FullNode.ConsensusManager().BlockMinedAsync(newBlock).GetAwaiter().GetResult();
-
-                // Verify that the manually added block is NOT in the consensus chain.
-                Assert.False(node1.FullNode.Chain.Contains(newBlock.GetHash()));
             }
         }
     }

@@ -45,8 +45,11 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly IPoAMiner miner;
+
         public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
-            IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
+            IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
+            IPoAMiner miner)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
@@ -55,6 +58,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;
+            this.miner = miner;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
         }
@@ -70,12 +74,19 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.federationManager.Initialize();
 
+            if (this.federationManager.IsFederationMember)
+            {
+                // Enable mining because we are a federation member.
+                this.miner.InitializeMining();
+            }
+
             return Task.CompletedTask;
         }
 
         /// <inheritdoc />
         public override void Dispose()
         {
+            this.miner.Dispose();
         }
     }
 
@@ -97,6 +108,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<SlotsManager>();
                         services.AddSingleton<PoABlockDefinition, PoABlockDefinition>();
                     });
             });
