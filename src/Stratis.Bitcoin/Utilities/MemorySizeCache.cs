@@ -11,7 +11,16 @@ namespace Stratis.Bitcoin.Utilities
         private readonly long maxSize;
 
         /// <summary>Gets the size of all items in the cache, in bytes.</summary>
-        public long TotalSize => this.totalSize;
+        public long TotalSize
+        {
+            get
+            {
+                lock (this.lockObject)
+                {
+                    return this.totalSize;
+                }
+            }
+        }
 
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCountCache{TKey, TValue}"/> class.
