@@ -29,9 +29,12 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
     {
         private readonly IPeerBanning peerBanning;
 
+        private Network Network;
+
         public GivenAWhitelistManager()
         {
             this.peerBanning = Substitute.For<IPeerBanning>();
+            this.Network = KnownNetworks.TestNet;
         }
 
         [Fact]
@@ -96,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "stratis.test.com";
 
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, null, dnsSettings, this.peerBanning); };
@@ -114,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "stratis.test.com";
 
             Action a = () => { new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, null, dnsSettings, this.peerBanning); };
@@ -132,9 +135,9 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             ILoggerFactory loggerFactory = new Mock<ILoggerFactory>().Object;
             IPeerAddressManager peerAddressManager = new Mock<IPeerAddressManager>().Object;
             IDnsServer dnsServer = new Mock<IDnsServer>().Object;
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsHostName = "stratis.test.com";
-            ConnectionManagerSettings connectionManagerSettings = new ConnectionManagerSettings();
+            ConnectionManagerSettings connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
 
             Action a = () => new WhitelistManager(dateTimeProvider, loggerFactory, peerAddressManager, dnsServer, connectionManagerSettings, dnsSettings, 
                     null);
@@ -196,8 +199,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 })
                 .Verifiable();
 
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
@@ -300,7 +303,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Network network = KnownNetworks.StratisTest;
             var nodeSettings = new NodeSettings(network, args: args);
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             dnsSettings.DnsFullNode = false;
@@ -387,7 +390,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Network network = KnownNetworks.StratisTest;
             var nodeSettings = new NodeSettings(network, args: args);
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsFullNode = true;
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
@@ -478,8 +481,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 })
                 .Verifiable();
 
-            NodeSettings nodeSettings = NodeSettings.Default();
-            DnsSettings dnsSettings = new Mock<DnsSettings>().Object;
+            NodeSettings nodeSettings = NodeSettings.Default(this.Network);
+            DnsSettings dnsSettings = new DnsSettings(NodeSettings.Default(this.Network));
             dnsSettings.DnsPeerBlacklistThresholdInSeconds = inactiveTimePeriod;
             dnsSettings.DnsHostName = "stratis.test.com";
             ConnectionManagerSettings connectionSettings = new ConnectionManagerSettings(nodeSettings);
@@ -536,8 +539,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
                 .When(m => m.SwapMasterfile(Arg.Any<IMasterFile>()))
                 .Do(x => masterFile = x.Arg<IMasterFile>());
 
-            var nodeSettings = NodeSettings.Default();
-            var dnsSettings = Substitute.For<DnsSettings>();
+            var nodeSettings = NodeSettings.Default(this.Network);
+            var dnsSettings = new DnsSettings(nodeSettings);
             dnsSettings.DnsHostName = "stratis.test.com";
             var connectionSettings = new ConnectionManagerSettings(nodeSettings);
 
@@ -580,7 +583,7 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
 
             Directory.CreateDirectory(dataFolderDirectory);
 
-            var peerFolder = new DataFolder(new NodeSettings(args: new string[] { $"-datadir={dataFolderDirectory}" }).DataDir);
+            var peerFolder = new DataFolder(new NodeSettings(this.Network, args: new string[] { $"-datadir={dataFolderDirectory}" }).DataDir);
 
             var mockLogger = new Mock<ILogger>();
             var mockLoggerFactory = new Mock<ILoggerFactory>();

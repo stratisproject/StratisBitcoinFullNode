@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -42,9 +42,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void PremineNodeWithWallet()
         {
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest).NotInIBD();
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet();
             this.PremineNodeWithCoins.Start();
-            this.PremineNodeWithCoins.WithWallet();
         }
 
         public void MineGenesisAndPremineBlocks()

@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public static PowBlockDefinition AssemblerForTest(TestContext testContext)
         {
-            return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, new MinerSettings(), testContext.network, testContext.ConsensusRules);
+            return new PowBlockDefinition(testContext.consensus, testContext.DateTimeProvider, new LoggerFactory(), testContext.mempool, testContext.mempoolLock, new MinerSettings(NodeSettings.Default(testContext.network)), testContext.network, testContext.ConsensusRules);
         }
 
         public class Blockinfo
@@ -142,10 +142,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var loggerFactory = new ExtendedLoggerFactory();
                 loggerFactory.AddConsoleWithFilters();
 
-                var nodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
+                var nodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(nodeSettings);
 
-                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings());
+                var networkPeerFactory = new NetworkPeerFactory(this.network, dateTimeProvider, loggerFactory, new PayloadProvider().DiscoverPayloads(), new SelfEndpointTracker(loggerFactory), new Mock<IInitialBlockDownloadState>().Object, new ConnectionManagerSettings(nodeSettings));
 
                 var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, nodeSettings.DataFolder, loggerFactory, new SelfEndpointTracker(loggerFactory));
                 var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(loggerFactory), loggerFactory, this.network, networkPeerFactory, new NodeLifetime(), nodeSettings, peerAddressManager);
@@ -877,6 +877,21 @@ namespace Stratis.Bitcoin.IntegrationTests
             //    chainActive.Tip().Height--;
             //    SetMockTime(0);
             //    mempool.clear();
+        }
+
+        [Fact]
+        public void MiningAndPropagatingPOW_MineBlockCheckNodeConsensusTipIsCorrect()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
+
+                builder.StartAll();
+
+                TestHelper.MineBlocks(miner, 5);
+
+                Assert.Equal(5, miner.FullNode.ConsensusManager().Tip.Height);
+            }
         }
     }
 }

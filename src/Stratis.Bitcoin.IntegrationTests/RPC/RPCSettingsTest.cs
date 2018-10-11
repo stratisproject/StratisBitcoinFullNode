@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             string dir = CreateTestDir(this);	
 	
-            var nodeSettings = new NodeSettings(args: new string[] { $"-datadir={dir}", "-rpcuser=abc", "-rpcpassword=def", "-rpcport=91" ,"-server=1" });	
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir={dir}", "-rpcuser=abc", "-rpcpassword=def", "-rpcport=91" ,"-server=1" });	
 	
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)

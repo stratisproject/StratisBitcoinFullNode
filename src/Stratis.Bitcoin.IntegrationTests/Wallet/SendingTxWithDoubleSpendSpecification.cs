@@ -4,7 +4,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingTransactionWithDoubleSpend
     {
-        [Fact]
+        [Retry(2)]
+        [Trait("Unstable", "True")]
         public void sending_transaction_with_double_spend_mined_trx()
         {
             Given(wallets_with_coins);
@@ -14,7 +15,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             Then(receiving_node_attempts_to_double_spend_mempool_doesnotaccept);
         }
 
-        [Fact]
+        [Retry(2)]
+        [Trait("Unstable", "True")]
         public void sending_transaction_with_double_spend_in_mempool()
         {
             Given(wallets_with_coins);

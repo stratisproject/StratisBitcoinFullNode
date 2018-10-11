@@ -191,7 +191,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                 consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
                 {
                     new BlockMerkleRootRule(),
-                    new PosBlockSignatureRule()
+                    new PosBlockSignatureRepresentationRule(),
+                    new PosBlockSignatureRule(),
                 };
 
                 consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
@@ -205,8 +206,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new CoinbaseHeightActivationRule(), // implements BIP34
                     new WitnessCommitmentsRule(), // BIP141, BIP144
                     new BlockSizeRule(),
-
-                    new PosBlockContextRule(), // TODO: this rule needs to be implemented
 
                     // rules that are inside the method CheckBlock
                     new EnsureCoinbaseRule(),

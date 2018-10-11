@@ -192,7 +192,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 this.loggerFactory = new ExtendedLoggerFactory();
                 this.loggerFactory.AddConsoleWithFilters();
 
-                this.NodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
+                this.NodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(this.NodeSettings);
 
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);

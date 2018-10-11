@@ -74,7 +74,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var state = new Mock<IState>();
             state.Setup(s => s.ContractState).Returns(this.ContractStateRoot.Object);
             state.SetupGet(p => p.InternalTransfers).Returns(new List<TransferInfo>().AsReadOnly());
-            state.Setup(s => s.Snapshot()).Returns(Mock.Of<IState>());
+            var snapshot = new Mock<IState>();
+            snapshot.SetupGet(p => p.InternalTransfers).Returns(new List<TransferInfo>().AsReadOnly());
+            snapshot.Setup(s => s.ContractState).Returns(Mock.Of<IStateRepository>());
+            state.Setup(s => s.Snapshot()).Returns(snapshot.Object);
             state.Setup(s => s.GetLogs(this.ContractPrimitiveSerializer.Object))
                 .Returns(new List<Log>());
             this.State = state;

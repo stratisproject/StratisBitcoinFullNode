@@ -16,8 +16,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         [Fact]
         public void AllPostMethodsShouldHaveBody()
         {
-            var assemblies = AppDomain.CurrentDomain.GetAssemblies();
-            var controllers = assemblies.SelectMany(GetControllersInAssembly());
+            var assemblies = AppDomain.CurrentDomain.GetAssemblies()
+                .Where(a => a.FullName.StartsWith("Stratis") || a.FullName.StartsWith("NBitcoin"));
+            var controllers = assemblies.SelectMany(GetControllersInAssembly()).ToList();
 
             foreach (var controller in controllers)
             {

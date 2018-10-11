@@ -408,6 +408,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 // No unused account was found, create a new one.
                 account = wallet.AddNewAccount(password, this.coinType, this.dateTimeProvider.GetTimeOffset());
+                IEnumerable<HdAddress> newReceivingAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer);
+                IEnumerable<HdAddress> newChangeAddresses = account.CreateAddresses(this.network, this.walletSettings.UnusedAddressesBuffer, true);
+                this.UpdateKeysLookupLocked(newReceivingAddresses.Concat(newChangeAddresses));
             }
 
             // Save the changes to the file.
@@ -591,9 +594,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
+                HdAddress hdAddress = null;
+
                 foreach (Wallet wallet in this.Wallets)
                 {
-                    HdAddress hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
+                    hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
                     if (hdAddress == null) continue;
 
                     (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
@@ -602,6 +607,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                     balance.AmountUnconfirmed = result.amountUnconfirmed;
 
                     break;
+                }
+
+                if (hdAddress == null)
+                {
+                    this.logger.LogTrace("(-)[ADDRESS_NOT_FOUND]");
+                    throw new WalletException($"Address '{address}' not found in wallets.");
                 }
             }
 
@@ -1310,8 +1321,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.Wallets.SingleOrDefault(w => w.Name == walletName);
             if (wallet == null)
             {
-                this.logger.LogTrace("(-)[NOT_FOUND]");
-                throw new WalletException($"No wallet with name {walletName} could be found.");
+                this.logger.LogTrace("(-)[WALLET_NOT_FOUND]");
+                throw new WalletException($"No wallet with name '{walletName}' could be found.");
             }
 
             return wallet;

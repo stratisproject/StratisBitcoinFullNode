@@ -4,6 +4,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -23,8 +24,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory)
         {
-            this.settings = nodeSettings;
-            this.network = network as PoANetwork;
+            this.settings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            this.network = Guard.NotNull(network as PoANetwork, nameof(network));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -46,6 +47,9 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
             }
+
+            this.logger.LogInformation("Federation contains {0} members. Their public keys are: {1}",
+                this.network.FederationPublicKeys.Count, Environment.NewLine + string.Join(Environment.NewLine, this.network.FederationPublicKeys));
         }
 
         /// <summary>Loads federation key if it exists.</summary>

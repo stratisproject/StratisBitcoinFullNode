@@ -19,7 +19,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CustomNodeBuilderTests
     {
-        [Fact]
+        [Retry]
+        [Trait("Unstable", "True")]
         public void CanOverrideOnlyApiPort()
         {
             var extraParams = new NodeConfigParameters { { "apiport", "12345" } };
@@ -87,7 +88,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
+        [Trait("Unstable", "True")]
         public void CanUnderstandUnknownParams()
         {
             var extraParams = new NodeConfigParameters
