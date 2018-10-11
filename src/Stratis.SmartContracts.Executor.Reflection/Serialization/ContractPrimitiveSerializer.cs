@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         public byte[] Serialize(object o)
         {
             if (o is null)
-                return new byte[0];
+                return null;
 
             if (o is byte[] bytes)
                 return bytes;
@@ -140,8 +140,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         public T Deserialize<T>(byte[] stream)
         {
             object deserialized = Deserialize(typeof(T), stream);
-            if (deserialized == null)
-                return default(T);
 
             return (T) deserialized;
         }
