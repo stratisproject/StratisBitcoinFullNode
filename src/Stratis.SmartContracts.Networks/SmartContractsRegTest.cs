@@ -16,12 +16,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
         public SmartContractsRegTest()
         {
             this.Name = "SmartContractsRegTest";
-            this.RootFolderName = StratisMain.StratisRootFolderName;
-            this.DefaultConfigFilename = StratisMain.StratisDefaultConfigFilename;
+            this.RootFolderName = SmartContractNetwork.StratisRootFolderName;
+            this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.RPCPort = 18332;
-            this.MaxTipAge = BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds;
+            this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPowConsensusFactory();
 
-            Block genesisBlock = BitcoinMain.CreateBitcoinGenesisBlock(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
+            Block genesisBlock = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
 
             this.Genesis = genesisBlock;

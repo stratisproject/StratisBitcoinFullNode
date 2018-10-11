@@ -31,13 +31,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         private readonly ILogger logger;
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public ConnectionManagerSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>

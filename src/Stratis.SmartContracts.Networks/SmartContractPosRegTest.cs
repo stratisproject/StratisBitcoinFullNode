@@ -5,21 +5,23 @@ using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
-using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
-    public sealed class SmartContractPosTest : Network
+    public sealed class SmartContractPosRegTest : Network
     {
-        public SmartContractPosTest()
+        /// <summary>
+        /// Took the 'InitReg' from above and adjusted it slightly (set a static flag + removed the hash check)
+        /// </summary>
+        public SmartContractPosRegTest()
         {
-            this.Name = "SmartContractPosTest";
-            this.RootFolderName = StratisMain.StratisRootFolderName;
-            this.DefaultConfigFilename = StratisMain.StratisDefaultConfigFilename;
-            this.Magic = 0x0709110F; // Incremented 09/08
-            this.DefaultPort = 18333;
+            this.Name = "SmartContractsPosRegTest";
+            this.RootFolderName = SmartContractNetwork.StratisRootFolderName;
+            this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
+            this.Magic = 0xDAB5BFFA;
+            this.DefaultPort = 18444;
             this.RPCPort = 18332;
-            this.MaxTipAge = BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds;
+            this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
@@ -27,9 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPosConsensusFactory();
 
-            Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 4, Money.Coins(50m));
-
-            this.Genesis = genesis;
+            this.Genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
 
             // Taken from StratisX.
             var consensusOptions = new PosConsensusOptions(
@@ -43,44 +43,44 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             var buriedDeployments = new BuriedDeploymentsArray
             {
-                [BuriedDeployments.BIP34] = 21111,
-                [BuriedDeployments.BIP65] = 581885,
-                [BuriedDeployments.BIP66] = 330776
+                [BuriedDeployments.BIP34] = 100000000,
+                [BuriedDeployments.BIP65] = 100000000,
+                [BuriedDeployments.BIP66] = 100000000
             };
 
             var bip9Deployments = new BIP9DeploymentsArray
             {
-                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
-                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1456790400, 1493596800),
-                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1462060800, 1493596800)
+                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999),
+                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999),
+                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
             };
 
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
-                coinType: 1,
-                hashGenesisBlock: genesis.Header.GetHash(),
-                subsidyHalvingInterval: 210_000,
-                majorityEnforceBlockUpgrade: 51,
-                majorityRejectBlockOutdated: 75,
-                majorityWindow: 100,
+                coinType: default(int),
+                hashGenesisBlock: this.Genesis.GetHash(),
+                subsidyHalvingInterval: 150,
+                majorityEnforceBlockUpgrade: 750,
+                majorityRejectBlockOutdated: 950,
+                majorityWindow: 1000,
                 buriedDeployments: buriedDeployments,
                 bip9Deployments: bip9Deployments,
-                bip34Hash: new uint256("0x0000000023b3a96d3484e5abb3755c413e7d41500f8e2a5c3f0dd01299cd8ef8"),
-                ruleChangeActivationThreshold: 1512, // 75% for testchains
-                minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
+                bip34Hash: new uint256(),
+                ruleChangeActivationThreshold: 108, // 95% of 2016
+                minerConfirmationWindow: 144, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 500,
-                defaultAssumeValid: new uint256("0x000000003ccfe92231efee04df6621e7bb3f7f513588054e19f78d626b951f59"), // 1235126
+                defaultAssumeValid: null, // turn off assumevalid for regtest.
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 5,
-                premineHeight: 2,
-                premineReward: Money.Coins(10_000_000),
+                premineHeight: default(long),
+                premineReward: Money.Zero,
                 proofOfWorkReward: Money.Coins(50),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
-                powTargetSpacing: TimeSpan.FromSeconds(20), // 20 second block time while on testnet
+                powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
-                powNoRetargeting: false,
-                powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), // Set extremely low difficulty for now.
+                powNoRetargeting: true,
+                powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: uint256.Zero,
                 isProofOfStake: true,
                 lastPowBlock: 1_000_000,
