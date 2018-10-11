@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
         }
 
         /// <summary>
-        /// Serializes the log to bytes.
+        /// Serializes the log and topics to bytes.
         /// </summary>
         /// <returns></returns>
         private (List<byte[]>, List<byte[]>) Serialize(IContractPrimitiveSerializer serializer)
