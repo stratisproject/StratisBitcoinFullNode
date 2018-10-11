@@ -34,8 +34,6 @@ namespace Stratis.SmartContracts.IntegrationTests
         // TODO: The costs definitely need to be refined! Contract execution shouldn't be so cheap relative to fees.
 
         // Also check that validation and base cost fees are being applied correctly.
-
-        // TODO: Calls to methods with incorrect parameters
         
         [Fact]
         public void ContractTransaction_InvalidSerialization()

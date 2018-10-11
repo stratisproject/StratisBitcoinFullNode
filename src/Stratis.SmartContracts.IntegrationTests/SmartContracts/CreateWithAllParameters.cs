@@ -40,7 +40,12 @@ public class CreateWithAllParameters : SmartContract
         Assert(PersistentState.GetInt32("int") == anInt);
         Assert(PersistentState.GetInt64("long") == aLong);
         Assert(PersistentState.GetString("string") == aString);
-        Assert(PersistentState.GetBytes("bytes") == bytes);
+        byte[] bytesStored = PersistentState.GetBytes("bytes");
+        Assert(bytesStored.Length == bytes.Length);
+        for (int i = 0; i < bytes.Length; i++)
+        {
+            Assert(bytesStored[i] == bytes[i]);
+        }
     }
 
     public struct Log
