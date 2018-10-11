@@ -1,6 +1,5 @@
 ﻿using System;
 using Moq;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
@@ -193,25 +192,57 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             public int Item1;
             public int Item2;
+            public string Item3;
         }
 
         [Fact]
         public void Deserialize_Struct_Success()
         {
-            var example = new Example { Item1 = 1234, Item2 = 4567 };
+            var example = new Example { Item1 = 1234, Item2 = 4567, Item3 = null };
 
             var item1Bytes = BitConverter.GetBytes(example.Item1);
             var item2Bytes = BitConverter.GetBytes(example.Item2);
+            var item3Bytes = new byte[0];
             this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item1)).Returns(item1Bytes);
             this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item2)).Returns(item2Bytes);
+            this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item3)).Returns(item3Bytes);
 
             this.contractPrimitiveSerializer.Setup(p => p.Deserialize(typeof(int), item1Bytes)).Returns(example.Item1);
             this.contractPrimitiveSerializer.Setup(p => p.Deserialize(typeof(int), item2Bytes)).Returns(example.Item2);
+            this.contractPrimitiveSerializer.Setup(p => p.Deserialize(typeof(string), item3Bytes)).Returns(example.Item3);
 
             var bytes = this.serializer.Serialize(example);
             var deserialized = this.serializer.ToStruct<Example>(bytes);
 
             Assert.Equal(example, deserialized);
+        }
+
+        [Fact]
+        public void Deserialize_Null_To_Struct_Returns_Default()
+        {
+            Example deserialized = this.serializer.ToStruct<Example>(null);
+
+            Assert.Equal(default(Example), deserialized);
+        }
+
+        [Fact]
+        public void Deserialize_Byte0_To_Struct_Returns_Default()
+        {
+            var deserialized = this.serializer.ToStruct<Example>(new byte[0]);
+
+            this.contractPrimitiveSerializer.Verify(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
+            Assert.Equal(default(Example), deserialized);
+        }
+
+        [Fact]
+        public void Deserialize_Garbage_To_Struct_Returns_Default()
+        {
+            // An exception should be thrown when attempting to RLP decode these bytes.
+            var deserialized = this.serializer.ToStruct<Example>(new byte[] { 0x00, 0xFF, 0xAA });
+
+            // The contract primitive serializer should not be called.
+            this.contractPrimitiveSerializer.Verify(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
+            Assert.Equal(default(Example), deserialized);
         }
     }
 }
