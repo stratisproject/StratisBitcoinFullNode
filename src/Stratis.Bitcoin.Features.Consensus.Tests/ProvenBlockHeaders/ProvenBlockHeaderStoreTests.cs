@@ -293,6 +293,32 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
         }
 
+        [Fact]
+        public async Task SaveAsync_Headers_Not_In_Consecutive_Order_Throws_ExceptionAsync()
+        {
+            var inItems = new List<ProvenBlockHeader>();
+
+            ProvenBlockHeader provenHeaderMock;
+
+            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+
+            // Add items with incorrect sequence.
+            for (int i = 0; i < 4; i += 2)
+            {
+                provenHeaderMock = CreateNewProvenBlockHeaderMock();
+
+                this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), i));
+            }
+
+            // Try to save items to disk.
+            var taskResult = this.provenBlockHeaderStore.InvokeMethod("SaveAsync") as Task;
+
+            taskResult.IsFaulted.Should().BeTrue();
+            taskResult.Exception.InnerExceptions.Count.Should().Be(1);
+            taskResult.Exception.InnerExceptions[0].Should().BeOfType<InvalidOperationException>();
+            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Proven block headers are not in the correct sequence.");
+        }
+
         private ProvenBlockHeaderStore SetupStore(string folder)
         {
             return new ProvenBlockHeaderStore(

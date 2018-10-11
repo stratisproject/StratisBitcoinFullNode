@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
             }
 
-            this.CheckItemsAreInSequence(provenHeadersOutput.ToList());
+            this.CheckItemsAreInSequence(provenHeadersOutput.Keys.ToList());
 
             return provenHeadersOutput.Values.ToList();
         }
@@ -273,13 +273,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             if (this.pendingTipHashHeight == null)
                 return;
 
-            var pendingBatch = new List<KeyValuePair<int, ProvenBlockHeader>>();
+            Dictionary<int, ProvenBlockHeader> pendingBatch;
 
             HashHeightPair hashHeight = null;
 
             lock (this.lockObject)
             {
-                pendingBatch = this.PendingBatch.ToList();
+                pendingBatch = new Dictionary<int, ProvenBlockHeader>(this.PendingBatch);
 
                 this.PendingBatch.Clear();
 
@@ -288,28 +288,24 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = null;
             }
 
-            this.CheckItemsAreInSequence(pendingBatch);
+            this.CheckItemsAreInSequence(pendingBatch.Keys.ToList());
 
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
                 // Save the items to disk.
-                await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Select(items => items.Value).ToList(), hashHeight);
+                await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Values.ToList(), hashHeight);
 
                 this.TipHashHeight = hashHeight;
             }
         }
 
         /// <summary>
-        /// Checks whether <see cref="ProvenBlockHeader"/> block height keys are in sequence.
+        /// Checks whether block height keys are in sequence.
         /// </summary>
-        /// <param name="items"><see cref="List{KeyValuePair{int, ProvenBlockHeader}}"/> to check if block height is in sequence.</param>
-        private void CheckItemsAreInSequence(List<KeyValuePair<int, ProvenBlockHeader>> items)
+        /// <param name="keys">List of block height keys to check.</param>
+        private void CheckItemsAreInSequence(List<int> keys)
         {
-            var itemsToCheck = new List<KeyValuePair<int, ProvenBlockHeader>>(items);
-
-            List<int> sortedKeys = itemsToCheck.OrderBy(s => s.Key).Select(s => s.Key).ToList();
-
-            if (!sortedKeys.SequenceEqual(itemsToCheck.Select(s => s.Key)))
+            if (!keys.SequenceEqual(Enumerable.Range(0, keys.Count())))
             {
                 this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_SEQEUNCE]");
 
