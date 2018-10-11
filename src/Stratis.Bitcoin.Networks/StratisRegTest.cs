@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
                 provenHeadersActivationHeight: 10_000_000, // TODO: Set it to the real value once it is known.
-                coldStakingActivationHeight: 0
+                coldStakingActivationHeight: int.MaxValue
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisHotStake, stratisColdStake));
 
                 // Send coins to hot wallet.
-                Money amountToSend = Money.COIN * 98000060;
+                Money amountToSend = Money.COIN * 98000059;
                 HdAddress sendto = hotWalletManager.GetUnusedAddress(new WalletAccountReference(WalletName, Account));
 
                 Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, amountToSend, FeeType.Medium, nConfirmations));
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Assert.Null(stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).First().Transaction.BlockHeight);
 
                 // Setup cold staking from the hot wallet.
-                Money amountToSend2 = Money.COIN * 98000059;
+                Money amountToSend2 = Money.COIN * 98000058;
                 Transaction transaction2 = hotWalletManager.GetColdStakingSetupTransaction(stratisHotStake.FullNode.WalletTransactionHandler(),
                     coldWalletAddress.Address, hotWalletAddress.Address, WalletName, Account, Password, amountToSend2, new Money(0.02m, MoneyUnit.BTC));
 
