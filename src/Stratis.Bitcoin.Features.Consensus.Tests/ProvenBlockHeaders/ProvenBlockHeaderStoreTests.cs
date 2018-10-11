@@ -310,12 +310,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public void InitializeAsync_When_Hash_Not_In_Chain_Or_Repo_Throw_Exception()
+        public async Task InitializeAsync_When_Hash_Not_In_Chain_Or_Repo_Throw_ExceptionAsync()
         {
-            this.provenBlockHeaderRepository.SetPrivatePropertyValue("TipHashHeight", new HashHeightPair(new uint256(), 1));
+            this.concurrentChain = new ConcurrentChain(this.network);
+
+            var chainWithHeaders = BuildChainWithProvenHeaders(2, this.network);
+
+            this.concurrentChain = chainWithHeaders.concurrentChain;
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            // Persist current chain.
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders,
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
 
             using (ProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
+                await store.InitializeAsync().ConfigureAwait(false);
+
+                // Change repository HashHeight tip to a value not in the chain or save to disk.
+                this.provenBlockHeaderRepository.SetPrivatePropertyValue("TipHashHeight", new HashHeightPair(new uint256(), 100));
+
                 new Action(() => store.InitializeAsync().Wait())
                     .Should().Throw<ProvenBlockHeaderException>()
                     .And.Message.Should().Be("Proven block header store failed to recover.");

@@ -332,16 +332,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
                 // Save the items to disk.
-                await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Values.ToList(), hashHeight);
-                await this.provenBlockHeaderRepository.PutAsync(
-                    pendingBatch.Select(items => items.Value).ToList(), hashHeight).ConfigureAwait(false);
+                await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Values.ToList(), hashHeight).ConfigureAwait(false);
 
                 this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
             }
         }
 
         /// <summary>
-        /// Will set the <see cref="IProvenBlockHeaderStore"/> tip to the last <see cref="ProvenBlockHeader"/> that exists both in the repository and in the <see cref="ConcurrentChain"/>.
+        /// Will set the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ConcurrentChain"/>.
         /// </summary>
         private async Task<ChainedHeader> RecoverStoreTipAsync()
         {
@@ -351,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             ProvenBlockHeader latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight);
 
-            if (latestHeader == null)
+            if ((tipHeight > 0) && (latestHeader == null))
             {
                 // Happens when the proven header store is corrupt.
                 throw new ProvenBlockHeaderException("Proven block header store failed to recover.");
@@ -383,7 +381,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="keys">List of block height keys to check.</param>
         private void CheckItemsAreInSequence(List<int> keys)
         {
-            if (!keys.SequenceEqual(Enumerable.Range(0, keys.Count())))
+            if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count())))
             {
                 this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_SEQEUNCE]");
 
