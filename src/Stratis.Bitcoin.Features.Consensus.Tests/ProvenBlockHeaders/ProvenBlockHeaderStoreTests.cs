@@ -356,7 +356,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             taskResult.IsFaulted.Should().BeTrue();
             taskResult.Exception.InnerExceptions.Count.Should().Be(1);
             taskResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenBlockHeaderException>();
-            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Proven block headers are not in the correct sequence.");
+            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Proven block headers are not in the correct consecutive sequence.");
         }
 
         [Fact]
