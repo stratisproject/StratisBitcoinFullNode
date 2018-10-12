@@ -4,11 +4,22 @@ using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.SmartContracts.Core.Util;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractPowRuleRegistration : IRuleRegistration
     {
+        private readonly Network network;
+
+        public SmartContractPowRuleRegistration(Network network)
+        {
+            this.network = network;
+        }
+
         public void RegisterRules(IConsensus consensus)
         {
             consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
@@ -37,7 +48,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new EnsureCoinbaseRule(),
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
-                new P2PKHNotContractRule()
+                new AllowedScriptTypeRule(),
+                new P2PKHNotContractRule() // TODO: Move to Full. Depends on validation of previous blocks
             };
 
             consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
@@ -48,6 +60,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
+                new CanGetSenderRule(new SenderRetriever()),
+                new SmartContractFormatRule(new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(this.network)))), // Can we inject these serializers?
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
                 new SmartContractSaveCoinviewRule()
             };

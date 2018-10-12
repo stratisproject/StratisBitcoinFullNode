@@ -213,15 +213,11 @@ namespace Stratis.Bitcoin.Features.Dns
 
                         this.logger.LogTrace("DNS request received of size {0} from endpoint {1}.", request.Item2.Length, request.Item1);
 
-                        // Received a request, now handle it.
-                        var stopWatch = new Stopwatch();
-                        stopWatch.Start();
-
-                        await this.HandleRequestAsync(request);
-
-                        stopWatch.Stop();
-
-                        this.metrics.CaptureRequestMetrics(this.GetPeerCount(), stopWatch.ElapsedTicks, false);
+                        // Received a request, now handle it. (measured)
+                        using (new StopwatchDisposable((elapsed) => { this.metrics.CaptureRequestMetrics(this.GetPeerCount(), elapsed, false); }))
+                        {
+                            await this.HandleRequestAsync(request);
+                        }
                     }
                     catch (ArgumentException e)
                     {
@@ -355,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Dns
 
             // Set new start index.
             Interlocked.Increment(ref this.startIndex);
-            
+
             return response;
         }
 

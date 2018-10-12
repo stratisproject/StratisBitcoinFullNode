@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using NBitcoin;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
@@ -31,14 +32,52 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         {
             var prefix = Prefix.ForObject(obj);
 
+            var primitiveType = GetPrimitiveType(obj);
+
             // ToString works fine for all of our data types except byte arrays.
-            var serialized = prefix.DataType == MethodParameterDataType.ByteArray
-                ? Encoding.UTF8.GetString((byte[])obj)
+            var serialized = primitiveType == MethodParameterDataType.ByteArray
+                ? ((byte[])obj).ToHexString()
                 : obj.ToString();
 
             return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
         }
-        
+
+        private static MethodParameterDataType GetPrimitiveType(object o)
+        {
+            if (o is bool)
+                return MethodParameterDataType.Bool;
+
+            if (o is byte)
+                return MethodParameterDataType.Byte;
+
+            if (o is byte[])
+                return MethodParameterDataType.ByteArray;
+
+            if (o is char)
+                return MethodParameterDataType.Char;         
+
+            if (o is string)
+                return MethodParameterDataType.String;
+
+            if (o is uint)
+                return MethodParameterDataType.UInt;
+            
+            if (o is ulong)
+                return MethodParameterDataType.ULong;
+
+            if (o is Address)
+                return MethodParameterDataType.Address;
+
+            if (o is long)
+                return MethodParameterDataType.Long;
+
+            if (o is int)
+                return MethodParameterDataType.Int;
+            
+            // Any other types are not supported.
+            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
+        }
+
         public object[] Deserialize(string[] parameters)
         {
             return StringToObjects(this.EscapeAndJoin(parameters));
@@ -83,15 +122,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
                 else if (parameterSignature[0] == MethodParameterDataType.Long.ToString("d"))
                     processedParameters.Add(long.Parse(parameterSignature[1]));
-
-                else if (parameterSignature[0] == MethodParameterDataType.UInt160.ToString("d"))
-                    processedParameters.Add(new uint160(parameterSignature[1]));
-
+                
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
                     processedParameters.Add(new Address(parameterSignature[1]));
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
-                    processedParameters.Add(Encoding.UTF8.GetBytes(parameterSignature[1]));
+                    processedParameters.Add(parameterSignature[1].HexToByteArray());
 
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));

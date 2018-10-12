@@ -1,54 +1,99 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
+    public class PoAFeature : FullNodeFeature
+    {
+        /// <summary>Manager of node's network connections.</summary>
+        private readonly IConnectionManager connectionManager;
+
+        /// <summary>Thread safe chain of block headers from genesis.</summary>
+        private readonly ConcurrentChain chain;
+
+        private readonly FederationManager federationManager;
+
+        /// <summary>Provider of IBD state.</summary>
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
+        private readonly IConsensusManager consensusManager;
+
+        /// <summary>A handler that can manage the lifetime of network peers.</summary>
+        private readonly IPeerBanning peerBanning;
+
+        /// <summary>Factory for creating loggers.</summary>
+        private readonly ILoggerFactory loggerFactory;
+
+        private readonly IPoAMiner miner;
+
+        public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
+            IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
+            IPoAMiner miner)
+        {
+            this.federationManager = federationManager;
+            this.connectionManager = connectionManager;
+            this.chain = chain;
+            this.initialBlockDownloadState = initialBlockDownloadState;
+            this.consensusManager = consensusManager;
+            this.peerBanning = peerBanning;
+            this.loggerFactory = loggerFactory;
+            this.miner = miner;
+
+            payloadProvider.DiscoverPayloads(this.GetType().Assembly);
+        }
+
+        /// <inheritdoc />
+        public override Task InitializeAsync()
+        {
+            NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
+            bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
+            Guard.Assert(oldCMBRemoved);
+
+            connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+
+            this.federationManager.Initialize();
+
+            if (this.federationManager.IsFederationMember)
+            {
+                // Enable mining because we are a federation member.
+                this.miner.InitializeMining();
+            }
+
+            return Task.CompletedTask;
+        }
+
+        /// <inheritdoc />
+        public override void Dispose()
+        {
+            this.miner.Dispose();
+        }
+    }
+
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
     public static class FullNodeBuilderConsensusExtension
     {
-        public class PoAFeature : FullNodeFeature
-        {
-            private readonly FederationManager federationManager;
-
-            public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider)
-            {
-                this.federationManager = federationManager;
-
-                payloadProvider.DiscoverPayloads(this.GetType().Assembly);
-            }
-
-            /// <inheritdoc />
-            public override Task InitializeAsync()
-            {
-                this.federationManager.Initialize();
-
-                return Task.CompletedTask;
-            }
-
-            /// <inheritdoc />
-            public override void Dispose()
-            {
-            }
-        }
-
         /// <summary>This is mandatory for all PoA networks.</summary>
         public static IFullNodeBuilder UsePoAConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
@@ -61,7 +106,9 @@ namespace Stratis.Bitcoin.Features.PoA
                     {
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
-                        services.AddSingleton<PoAMiner>();
+                        services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<SlotsManager>();
+                        services.AddSingleton<PoABlockDefinition>();
                     });
             });
 
@@ -75,7 +122,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>(); // TODO POA: PoA rule engine?
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
@@ -95,6 +142,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 {
                     new HeaderTimeChecksPoARule(),
                     new StratisHeaderVersionRule(),
+                    new PoAHeaderDifficultyRule(),
                     new PoAHeaderSignatureRule()
                 };
 

@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             var nodeSettings = new NodeSettings(this.Network, args:new string[] { "-conf=" + confFile });
 
-            var rpcSettings = new RpcSettings(new NodeSettings());
+            var rpcSettings = new RpcSettings(new NodeSettings(this.Network));
             string[] urls = rpcSettings.GetUrls();
 
             Assert.Empty(urls);

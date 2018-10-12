@@ -92,17 +92,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 result = this.stateProcessor.Apply(newState, message);
             }
 
-            if (result.IsSuccess)
-                state.TransitionTo(newState);
-
             bool revert = !result.IsSuccess;
 
             Transaction internalTransaction = this.transferProcessor.Process(
-                this.stateRoot,
+                newState.ContractState,
                 result.Success?.ContractAddress,
                 transactionContext,
-                state.InternalTransfers,
+                newState.InternalTransfers,
                 revert);
+
+            if (result.IsSuccess)
+                state.TransitionTo(newState);
 
             bool outOfGas = result.IsFailure && result.Error.Kind == StateTransitionErrorKind.OutOfGas;
 

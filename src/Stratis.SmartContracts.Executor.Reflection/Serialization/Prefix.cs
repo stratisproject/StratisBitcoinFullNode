@@ -43,8 +43,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     return typeof(long);
                 case MethodParameterDataType.ULong:
                     return typeof(ulong);
-                case MethodParameterDataType.UInt160:
-                    return typeof(uint160);
                 case MethodParameterDataType.ByteArray:
                     return typeof(byte[]);
                 default:
@@ -77,9 +75,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (o is uint)
                 return MethodParameterDataType.UInt;
-
-            if (o is uint160)
-                return MethodParameterDataType.UInt160;
 
             if (o is ulong)
                 return MethodParameterDataType.ULong;

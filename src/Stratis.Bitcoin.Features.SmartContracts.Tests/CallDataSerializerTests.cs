@@ -130,7 +130,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 's',
                 "test",
                 (uint)36,
-                new uint160(new byte[20]{ 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1}),
                 (ulong)29,
                 new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"),
                 new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy")
@@ -168,9 +167,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(callData.MethodParameters[8]);
             Assert.Equal(methodParameters[8], callData.MethodParameters[8]);
-
-            Assert.NotNull(callData.MethodParameters[9]);
-            Assert.Equal(methodParameters[9], callData.MethodParameters[9]);         
         }
     }
 }

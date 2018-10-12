@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="coreNode">The node we want to create the block with.</param>
         /// <param name="transactions">Transactions we want to manually include in the block.</param>
         /// <param name="nonce">Optional nonce.</param>
-        public static Block GenerateBlockManually(CoreNode coreNode, List<Transaction> transactions, uint nonce = 0)
+        public static Block GenerateBlockManually(CoreNode coreNode, List<Transaction> transactions, uint nonce = 0, bool callBlockMinedAsync = true)
         {
             var block = coreNode.FullNode.Network.CreateBlock();
             block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
@@ -187,8 +187,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             // This will set the block size.
             block = Block.Load(block.ToBytes(), coreNode.FullNode.Network);
 
-            coreNode.FullNode.ConsensusManager().BlockMinedAsync(block).GetAwaiter().GetResult();
-
+            if (callBlockMinedAsync)
+            { 
+                coreNode.FullNode.ConsensusManager().BlockMinedAsync(block).GetAwaiter().GetResult();
+            }
             return block;
         }
 

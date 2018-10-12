@@ -13,7 +13,7 @@ using NBitcoin.Networks;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -182,6 +182,8 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public RPCClient(RPCCredentialString credentials, Uri address, Network network)
         {
+            this.RPCClientInit(network);
+
             credentials = credentials ?? new RPCCredentialString();
 
             if (address != null && network == null)
@@ -220,7 +222,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 throw new ArgumentException("Impossible to infer the authentication of the RPCClient");
         }
 
-        static RPCClient()
+        private void RPCClientInit(Network network)
         {
             string home = Environment.GetEnvironmentVariable("HOME");
             string localAppData = Environment.GetEnvironmentVariable("APPDATA");
@@ -230,29 +232,44 @@ namespace Stratis.Bitcoin.Features.RPC
 
             if (!string.IsNullOrEmpty(home))
             {
-                string bitcoinFolder = Path.Combine(home, ".bitcoin");
+                string bitcoinFolder = Path.Combine(home,  "." + network.Name.ToLower());
 
-                string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinMain()), mainnet);
+                if (network.IsRegTest())
+                {
+                    string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
+                    RegisterDefaultCookiePath(NetworkRegistration.Register(network), regtest);
+                }
+                else if (network.IsTest())
+                {
+                    string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
+                    RegisterDefaultCookiePath(NetworkRegistration.Register(network), testnet);
+                }
+                else
+                {
+                    string mainnet = Path.Combine(bitcoinFolder, ".cookie");
+                    RegisterDefaultCookiePath(NetworkRegistration.Register(network), mainnet);
+                }
 
-                string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinTest()), testnet);
-
-                string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinRegTest()), regtest);
             }
             else if (!string.IsNullOrEmpty(localAppData))
             {
                 string bitcoinFolder = Path.Combine(localAppData, "Bitcoin");
 
-                string mainnet = Path.Combine(bitcoinFolder, ".cookie");
-                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinMain()), mainnet);
-
-                string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
-                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinTest()), testnet);
-
-                string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
-                RegisterDefaultCookiePath(NetworkRegistration.Register(new BitcoinRegTest()), regtest);
+                if (network.IsRegTest())
+                {
+                    string regtest = Path.Combine(bitcoinFolder, "regtest", ".cookie");
+                    RegisterDefaultCookiePath(NetworkRegistration.Register(network), regtest);
+                }
+                else if (network.IsTest())
+                {
+                    string testnet = Path.Combine(bitcoinFolder, "testnet3", ".cookie");
+                    RegisterDefaultCookiePath(NetworkRegistration.Register(network), testnet);
+                }
+                else
+                {
+                    string mainnet = Path.Combine(bitcoinFolder, ".cookie");
+                    RegisterDefaultCookiePath(NetworkRegistration.Register(network), mainnet);
+                }
             }
         }
 
