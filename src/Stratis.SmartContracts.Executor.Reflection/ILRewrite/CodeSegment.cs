@@ -50,10 +50,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
                         gasTally = (Gas)(gasTally + methodCallCost);
                     }
                 }
-                else
-                {
-                    gasTally = (Gas)(gasTally + instructionCost);
-                }
             }
 
             return gasTally;

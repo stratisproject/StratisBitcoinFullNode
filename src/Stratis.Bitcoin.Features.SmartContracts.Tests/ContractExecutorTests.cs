@@ -167,8 +167,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.ErrorMessage);
-            // Base cost + constructor cost (21 because that is number of gas to invoke Assert(false));
-            Assert.Equal(GasPriceList.BaseCost + 21, result.GasConsumed);
+            // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
+            Assert.Equal(GasPriceList.BaseCost + 18, result.GasConsumed);
         }
 
         [Fact]

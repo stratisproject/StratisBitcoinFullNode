@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using Microsoft.CodeAnalysis;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Core.Validation.Validators;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -30,7 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilationResult.Compilation).Value;
@@ -93,7 +94,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilationResult.Compilation).Value;
@@ -133,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilationResult.Compilation).Value;
@@ -168,7 +169,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilationResult.Compilation).Value;
@@ -207,7 +208,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilationResult.Compilation).Value;
@@ -251,7 +252,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilationResult.Compilation).Value;
@@ -286,7 +287,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                         }
                     }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(compilationResult.Compilation).Value;
