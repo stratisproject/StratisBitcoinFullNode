@@ -120,21 +120,24 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             if (!gasToSpendForSegment.ContainsKey(currentSegmentStart))
                 gasToSpendForSegment.Add(currentSegmentStart, gasTally);
 
+            bool isFirstSegment = true;
+
             foreach (Instruction instruction in gasToSpendForSegment.Keys)
             {
                 Instruction injectAfterInstruction = instruction;
 
-                // If it's a constructor we need to skip the first 3 instructions. 
+                // If it's the first branch of a constructor we need to skip the first 3 instructions. 
                 // These will always be invoking the base constructor
                 // ldarg.0
                 // ldarg.0
                 // call SmartContract::ctor
-                if (methodDefinition.IsConstructor)
+                if (methodDefinition.IsConstructor && isFirstSegment)
                 {
                     injectAfterInstruction = instruction.Next.Next.Next;
                 }
 
                 AddSpendGasMethodBeforeInstruction(methodDefinition, context.Observer, context.ObserverVariable, injectAfterInstruction, gasToSpendForSegment[instruction]);
+                isFirstSegment = false;
             }
         }
 
