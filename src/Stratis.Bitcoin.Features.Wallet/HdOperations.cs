@@ -13,19 +13,20 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Generates an HD public key derived from an extended public key.
         /// </summary>
+        /// <param name="network">The network the wallet is running on.</param>
         /// <param name="accountExtPubKey">The extended public key used to generate child keys.</param>
         /// <param name="index">The index of the child key to generate.</param>
         /// <param name="isChange">A value indicating whether the public key to generate corresponds to a change address.</param>
         /// <returns>
         /// An HD public key derived from an extended public key.
         /// </returns>
-        public static PubKey GeneratePublicKey(string accountExtPubKey, int index, bool isChange)
+        public static PubKey GeneratePublicKey(Network network, string accountExtPubKey, int index, bool isChange)
         {
             Guard.NotEmpty(accountExtPubKey, nameof(accountExtPubKey));
 
             int change = isChange ? 1 : 0;
             var keyPath = new KeyPath($"{change}/{index}");
-            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey).Derive(keyPath);
+            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtPubKey, network).Derive(keyPath);
             return extPubKey.PubKey;
         }
 

@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     for (int k = 0; k < actualAccount.InternalAddresses.Count; k++)
                     {
                         HdAddress actualAddress = actualAccount.InternalAddresses.ElementAt(k);
-                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey).Derive(new KeyPath($"1/{k}")).PubKey;
+                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey, this.Network).Derive(new KeyPath($"1/{k}")).PubKey;
                         BitcoinPubKeyAddress expectedAddress = expectedAddressPubKey.GetAddress(expectedWallet.Network);
                         Assert.Equal(k, actualAddress.Index);
                         Assert.Equal(expectedAddress.ScriptPubKey, actualAddress.ScriptPubKey);
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     for (int l = 0; l < actualAccount.ExternalAddresses.Count; l++)
                     {
                         HdAddress actualAddress = actualAccount.ExternalAddresses.ElementAt(l);
-                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey).Derive(new KeyPath($"0/{l}")).PubKey;
+                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey, this.Network).Derive(new KeyPath($"0/{l}")).PubKey;
                         BitcoinPubKeyAddress expectedAddress = expectedAddressPubKey.GetAddress(expectedWallet.Network);
                         Assert.Equal(l, actualAddress.Index);
                         Assert.Equal(expectedAddress.ScriptPubKey, actualAddress.ScriptPubKey);
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     for (int k = 0; k < actualAccount.InternalAddresses.Count; k++)
                     {
                         HdAddress actualAddress = actualAccount.InternalAddresses.ElementAt(k);
-                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey).Derive(new KeyPath($"1/{k}")).PubKey;
+                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey,this.Network).Derive(new KeyPath($"1/{k}")).PubKey;
                         BitcoinPubKeyAddress expectedAddress = expectedAddressPubKey.GetAddress(expectedWallet.Network);
                         Assert.Equal(k, actualAddress.Index);
                         Assert.Equal(expectedAddress.ScriptPubKey, actualAddress.ScriptPubKey);
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                     for (int l = 0; l < actualAccount.ExternalAddresses.Count; l++)
                     {
                         HdAddress actualAddress = actualAccount.ExternalAddresses.ElementAt(l);
-                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey).Derive(new KeyPath($"0/{l}")).PubKey;
+                        PubKey expectedAddressPubKey = ExtPubKey.Parse(expectedExtendedPubKey, this.Network).Derive(new KeyPath($"0/{l}")).PubKey;
                         BitcoinPubKeyAddress expectedAddress = expectedAddressPubKey.GetAddress(expectedWallet.Network);
                         Assert.Equal(l, actualAddress.Index);
                         Assert.Equal(expectedAddress.ScriptPubKey, actualAddress.ScriptPubKey);
@@ -865,7 +865,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             HdAddress result = walletManager.GetUnusedAddress(new WalletAccountReference("myWallet", "myAccount"));
 
             var keyPath = new KeyPath($"0/1");
-            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtendedPubKey).Derive(keyPath);
+            ExtPubKey extPubKey = ExtPubKey.Parse(accountExtendedPubKey, this.Network).Derive(keyPath);
             PubKey pubKey = extPubKey.PubKey;
             BitcoinPubKeyAddress address = pubKey.GetAddress(wallet.Network);
             Assert.Equal(1, result.Index);
@@ -3191,7 +3191,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             var walletManager = this.CreateWalletManager(dataFolder, this.Network);
-            walletManager.RecoverWallet("testWallet", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
+            walletManager.RecoverWallet("testWallet", ExtPubKey.Parse(stratisAccount0ExtPubKey, this.Network), 0, DateTime.Now.AddHours(-2));
             
             var wallet = walletManager.LoadWallet("password", "testWallet");
 
@@ -3211,11 +3211,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             const string stratisAccount1ExtPubKey = "xpub6DGguHV1FQFPvZ5Xu7VfeENyiySv4R2bdd6VtvwxWGVTVNnHUmphMNgTRkLe8j2JdAv332ogZcyhqSuz1yUPnN4trJ49cFQXmEhwNQHUqk1";
             var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain);
-            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
+            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey, this.Network), 0, DateTime.Now.AddHours(-2));
 
             try
             {
-                wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount1ExtPubKey), 0, DateTime.Now.AddHours(-2));
+                wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount1ExtPubKey, this.Network), 0, DateTime.Now.AddHours(-2));
 
                 Assert.True(false, "should have thrown exception but didn't.");
             }
@@ -3232,9 +3232,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             const string stratisAccount0ExtPubKey = "xpub661MyMwAqRbcEgnsMFfhjdrwR52TgicebTrbnttywb9zn3orkrzn6MHJrgBmKrd7MNtS6LAim44a6V2gizt3jYVPHGYq1MzAN849WEyoedJ";
             var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain);
-            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey), 0, DateTime.Now.AddHours(-2));
+            var wallet = walletManager.RecoverWallet("wallet1", ExtPubKey.Parse(stratisAccount0ExtPubKey, KnownNetworks.StratisMain), 0, DateTime.Now.AddHours(-2));
 
-            var addNewAccount = new Action(() => wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey), 1, DateTime.Now.AddHours(-2)));
+            var addNewAccount = new Action(() => wallet.AddNewAccount(CoinType.Stratis, ExtPubKey.Parse(stratisAccount0ExtPubKey, KnownNetworks.StratisMain), 1, DateTime.Now.AddHours(-2)));
 
             addNewAccount.Should().Throw<WalletException>()
                 .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);
