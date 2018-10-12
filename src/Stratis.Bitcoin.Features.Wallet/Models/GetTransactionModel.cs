@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
-    /// <summary>Model for RPC method gettransaction.</summary>
+    /// <summary>Transaction details model for RPC method gettransaction.</summary>
     public class GetTransactionDetailsModel
     {
         [JsonProperty("address")]

@@ -82,12 +82,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Total spendable balance of the wallet.</returns>
         [ActionName("getbalance")]
         [ActionDescription("Gets wallets spendable balance.")]
-        public Money GetBalance()
+        public decimal GetBalance()
         {
             var account = this.GetAccount();
 
             IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(account.WalletName, account.AccountName);
-            return balances?.Sum(i => i.AmountConfirmed);
+
+            Money balance = balances?.Sum(i => i.AmountConfirmed);            
+            return balance.ToUnit(MoneyUnit.BTC);           
         }
 
         /// <summary>
@@ -121,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 TransactionId = transaction.Id,
                 TransactionTime = transaction.CreationTime.ToUnixTimeSeconds(),
                 Details = new List<GetTransactionDetailsModel>(),
-                Hex = transaction.Hex
+                Hex = transaction.Hex == null ? string.Empty : transaction.Hex
             };
 
             if (transaction.SpendingDetails?.Payments != null)

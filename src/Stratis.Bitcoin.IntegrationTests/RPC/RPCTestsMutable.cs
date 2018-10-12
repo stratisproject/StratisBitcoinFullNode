@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == 2);
 
                 Money balance = rpcClient.GetBalance();
-                Assert.NotEqual(Money.Zero, balance);
+                Assert.Equal(Money.Coins(100), balance);
             }
         }
 
