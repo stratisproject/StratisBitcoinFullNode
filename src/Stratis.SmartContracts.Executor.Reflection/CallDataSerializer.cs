@@ -15,8 +15,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IMethodParameterSerializer methodParamSerializer;
         private readonly IContractPrimitiveSerializer primitiveSerializer;
 
-        private const int intLength = sizeof(int);
-
         public CallDataSerializer(IMethodParameterSerializer methodParameterSerializer)
         {
             this.methodParamSerializer = methodParameterSerializer;
@@ -115,45 +113,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             if (methodParametersRaw != null && methodParametersRaw.Length > 0)
                 methodParameters = this.methodParamSerializer.Deserialize(methodParametersRaw);
             return methodParameters;
-        }
-
-        private static T Deserialize<T>(byte[] smartContractBytes, ref int byteCursor, ref int takeLength)
-        {
-            takeLength = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(intLength).ToArray(), 0);
-            byteCursor += intLength;
-
-            if (takeLength == 0)
-                return default(T);
-
-            object result = null;
-
-            if (typeof(T) == typeof(bool))
-                result = BitConverter.ToBoolean(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(byte[]))
-                result = smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray();
-
-            if (typeof(T) == typeof(int))
-                result = BitConverter.ToInt32(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(short))
-                result = BitConverter.ToInt16(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(string))
-                result = Encoding.UTF8.GetString(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
-
-            if (typeof(T) == typeof(uint))
-                result = BitConverter.ToUInt32(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            if (typeof(T) == typeof(uint160))
-                result = new uint160(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray());
-
-            if (typeof(T) == typeof(ulong))
-                result = BitConverter.ToUInt64(smartContractBytes.Skip(byteCursor).Take(takeLength).ToArray(), 0);
-
-            byteCursor += takeLength;
-
-            return (T)result;
         }
     }
 }
