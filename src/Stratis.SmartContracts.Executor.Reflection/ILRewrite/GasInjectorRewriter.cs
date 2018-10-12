@@ -51,7 +51,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         /// <inheritdoc />
         public void Rewrite(MethodDefinition methodDefinition, ILProcessor il, ObserverRewriterContext context)
         {
-            List<Instruction> branches = methodDefinition.Body.Instructions.Where(x => BranchingOps.Contains(x.OpCode)).ToList();
+            RemoveSelfReferencingBranches(methodDefinition, il);
+
+            List<Instruction> branches = GetBranchingOps(methodDefinition).ToList();
             List<Instruction> branchTos = branches.Select(x => (Instruction)x.Operand).ToList();
 
             Gas gasTally = Gas.None;
@@ -147,6 +149,24 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             il.InsertBefore(instruction, il.Create(OpCodes.Ldc_I8, (long)opcodeCount.Value)); // load gas amount
             il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.SpendGasMethod)); // trigger method
             il.Body.OptimizeMacros();
+        }
+
+        private static void RemoveSelfReferencingBranches(MethodDefinition methodDefinition, ILProcessor il)
+        {
+            IEnumerable<Instruction> selfReferencingBranches = GetBranchingOps(methodDefinition).Where(x => x.Operand == x).ToList();
+            il.Body.SimplifyMacros();
+            foreach (Instruction instruction in selfReferencingBranches)
+            {
+                Instruction noop = il.Create(OpCodes.Nop);
+                il.InsertBefore(instruction, noop);
+                instruction.Operand = noop;
+            }
+            il.Body.OptimizeMacros();
+        }
+
+        private static IEnumerable<Instruction> GetBranchingOps(MethodDefinition methodDefinition)
+        {
+            return methodDefinition.Body.Instructions.Where(x => BranchingOps.Contains(x.OpCode));
         }
     }
 }
