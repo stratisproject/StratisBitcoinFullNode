@@ -10,11 +10,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// </summary>
     public class MethodParameterByteSerializer : IMethodParameterSerializer
     {
-        private readonly IContractPrimitiveSerializer primitiveSerializer;
+        public IContractPrimitiveSerializer PrimitiveSerializer { get; }
 
         public MethodParameterByteSerializer(IContractPrimitiveSerializer primitiveSerializer)
         {
-            this.primitiveSerializer = primitiveSerializer;
+            this.PrimitiveSerializer = primitiveSerializer;
         }
 
         public byte[] Serialize(object[] methodParameters)
@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         {
             Prefix prefix = Prefix.ForObject(o);
 
-            byte[] serializedBytes = this.primitiveSerializer.Serialize(o);
+            byte[] serializedBytes = this.PrimitiveSerializer.Serialize(o);
 
             var result = new byte[prefix.Length + serializedBytes.Length];
 
@@ -81,7 +81,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             byte[] paramBytes = bytes.Skip(prefix.Length).ToArray();
 
-            return this.primitiveSerializer.Deserialize(prefix.Type, paramBytes);
+            return this.PrimitiveSerializer.Deserialize(prefix.Type, paramBytes);
         }
     }
 }
