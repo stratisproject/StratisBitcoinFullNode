@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
@@ -14,10 +15,15 @@ namespace Stratis.SmartContracts.Core
 
         public static byte[] HexToByteArray(this string hex)
         {
-            int NumberChars = hex.Length;
+            string toHex = hex;
+
+            if (hex.StartsWith("0x"))
+                toHex = hex.Substring(2);
+
+            int NumberChars = toHex.Length;
             byte[] bytes = new byte[NumberChars / 2];
             for (int i = 0; i < NumberChars; i += 2)
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+                bytes[i / 2] = Convert.ToByte(toHex.Substring(i, 2), 16);
             return bytes;
         }
 
