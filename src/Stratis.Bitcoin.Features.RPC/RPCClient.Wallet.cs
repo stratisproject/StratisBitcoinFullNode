@@ -399,14 +399,14 @@ namespace Stratis.Bitcoin.Features.RPC
             foreach (JArray group in array.Children<JArray>())
             {
                 var grouping = new AddressGrouping();
-                grouping.PublicAddress = BitcoinAddress.Create(group[0][0].ToString());
+                grouping.PublicAddress = BitcoinAddress.Create(group[0][0].ToString(), this.Network);
                 grouping.Amount = Money.Coins(group[0][1].Value<decimal>());
                 grouping.Account = group[0].Count() > 2 ? group[0][2].ToString() : null;
 
                 foreach (JToken subgroup in group.Skip(1))
                 {
                     var change = new ChangeAddress();
-                    change.Address = BitcoinAddress.Create(subgroup[0].ToString());
+                    change.Address = BitcoinAddress.Create(subgroup[0].ToString(), this.Network);
                     change.Amount = Money.Coins(subgroup[1].Value<decimal>());
                     grouping.ChangeAddresses.Add(change);
                 }
