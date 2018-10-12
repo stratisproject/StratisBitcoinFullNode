@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void PremineNodeWithWalletWithOverrides()
         {
             var configParameters = new NodeConfigParameters { { "savetrxhex", "true" } };
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisCustomPosNode(KnownNetworks.StratisRegTest, configParameters).NotInIBD().WithWallet();
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisCustomPosNode(new StratisRegTest(), configParameters).NotInIBD().WithWallet();
             this.PremineNodeWithCoins.Start();
         }
 
