@@ -200,7 +200,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
-                    //transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins"); // Why it was there and what is it for? No one knows.
+
+                    // Refers to issue #2483. https://github.com/stratisproject/StratisBitcoinFullNode/issues/2483
+                    transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins");
 
                     using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
                     {
@@ -213,15 +215,25 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         this.SetBlockHash(transaction, nextBlockHash);
 
-                        all.Sort(UnspentOutputsComparer.Instance);
-                        foreach (UnspentOutputs coin in all)
+                        var toRemove = all.Where(utxo => utxo.IsPrunable == true).ToList();
+                        toRemove.Sort(UnspentOutputsComparer.Instance);
+                        for (int i = 0; i < toRemove.Count; i++)
                         {
-                            this.logger.LogTrace("Outputs of transaction ID '{0}' are {1} and will be {2} to the database.", coin.TransactionId, coin.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", coin.IsPrunable ? "removed" : "inserted");
+                            var coin = toRemove[i];
+                            this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and will be removed from the database.", coin.TransactionId);
 
-                            if (coin.IsPrunable)
-                                transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
-                            else
-                                transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+                            transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+                        }
+
+
+                        var toInsert = all.Where(utxo => utxo.IsPrunable == false).ToList();
+                        toInsert.Sort(UnspentOutputsComparer.Instance);
+                        for (int i = 0; i < toInsert.Count; i++)
+                        {
+                            var coin = toInsert[i];
+                            this.logger.LogTrace("Outputs of transaction ID '{0}' are NOT PRUNABLE and will be inserted into the database.", coin.TransactionId);
+
+                            transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
                         }
 
                         if (rewindDataList != null)
@@ -306,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     transaction.Commit();
                 }
-                
+
                 return res;
             });
 
