@@ -67,6 +67,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             }
         }
 
+        [Fact]
+        public void Deserialize_Garbage_Throws()
+        {
+            Assert.ThrowsAny<Exception>(() => this.Serializer.Deserialize(new byte[] { 0x00, 0x11, 0x22, 0x33 }));
+        }
+
+
         public static IEnumerable<object[]> GetData(int numTests)
         {
             yield return new object[] { true }; // MethodParameterDataType.Bool
