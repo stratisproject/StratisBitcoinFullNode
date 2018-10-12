@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup null chained header.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = null;
 
-            // When we run the validation rule, we should hit nul argument exception for chained header.
+            // When we run the validation rule, we should hit null argument exception for chained header.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ArgumentNullException>();
         }
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.StakeTimeViolation);
 
-            // Change coinstake time to be the same asot header time but not divisible by 16.
+            // Change coinstake time to be the same as header time but not divisible by 16.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header.Time = 50;
             ((ProvenBlockHeader)this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header).Coinstake.Time = 50;
 
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<BlockStake>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()))
                 .Throws(new ConsensusErrorException(ConsensusErrors.StakeHashInvalidTarget));
 
-            // When we run the validation rule, we should hit stake hash invalied target error.
+            // When we run the validation rule, we should hit stake hash invalid target error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
