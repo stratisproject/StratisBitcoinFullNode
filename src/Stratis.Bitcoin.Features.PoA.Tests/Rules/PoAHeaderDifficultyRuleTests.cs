@@ -4,13 +4,15 @@ using System.Linq;
 using System.Text;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.PoA.Tests
+namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class PoAHeaderDifficultyRuleTests
+    public class PoAHeaderDifficultyRuleTests : PoARulesTestsBase
     {
         [Fact]
         public void CumulativeWorkForALotOfBlocksIsLowerThanMaxValue()
@@ -42,6 +44,24 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 int comp = chainworkDiff.CompareTo(chainworkDiffPrev);
                 Assert.True(comp == 0);
             }
+        }
+
+        [Fact]
+        public void VerifyHeaderDifficulty()
+        {
+            var rule = new PoAHeaderDifficultyRule();
+            rule.Parent = this.rulesEngine;
+            rule.Logger = this.loggerFactory.CreateLogger(rule.GetType().FullName);
+            rule.Initialize();
+
+            var validationContext = new ValidationContext() { ChainedHeaderToValidate = this.currentHeader };
+            var ruleContext = new RuleContext(validationContext, DateTimeOffset.Now);
+
+            this.currentHeader.Header.Bits = new Target(123);
+            Assert.Throws<ConsensusErrorException>(() => rule.Run(ruleContext));
+
+            this.currentHeader.Header.Bits = PoAHeaderDifficultyRule.PoABlockDifficulty;
+            rule.Run(ruleContext);
         }
     }
 }
