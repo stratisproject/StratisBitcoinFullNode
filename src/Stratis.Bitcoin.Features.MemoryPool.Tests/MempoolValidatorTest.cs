@@ -610,18 +610,65 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.Equal(MempoolErrors.ScriptsigSize, state.Error);
         }
 
-        [Fact(Skip = "Not implemented yet.")]
-        public void AcceptToMemoryPool_TxIsNonStandardScriptSigIsPushOnly_ReturnsFalse()
+        [Fact]
+        public async void AcceptToMemoryPool_TxIsNonStandardScriptSigIsPushOnly_ReturnsFalseAsync()
         {
-            // TODO:Test the cases in PreMempoolChecks CheckStandardTransaction
-            // - Check input scriptsig push only
+            string dataDir = GetTestDirectoryPath(this);
+
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            Network network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            var destSecret = new BitcoinSecret(new Key(), network);
+            var tx = new Transaction();
+
+            List<Op> scriptSigOpcodes = new List<Op>();
+
+            // Create a garbage scriptSig.
+            for (int i = 0; i < 10; i++)
+            {
+                scriptSigOpcodes.Add(new Op() { Code = OpcodeType.OP_XOR });
+            }
+
+            var script = new Script(scriptSigOpcodes);
+
+            tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), script));
+            tx.AddOutput(new TxOut(new Money(Money.Coins(1)), destSecret.PubKeyHash));
+
+            var state = new MempoolValidationState(false);
+
+            // Tests the scriptSig only contains push operations case in PreMempoolChecks CheckStandardTransaction
+            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
+            Assert.False(isSuccess, "Transaction with non-push operations in the scriptSig should not have been accepted.");
+            Assert.Equal(MempoolErrors.ScriptsigNotPushonly, state.Error);
         }
 
-        [Fact(Skip = "Not implemented yet.")]
-        public void AcceptToMemoryPool_TxIsNonStandardScriptTemplateIsNull_ReturnsFalse()
+        [Fact]
+        public async void AcceptToMemoryPool_TxIsNonStandardScriptTemplateIsNull_ReturnsFalseAsync()
         {
-            // TODO:Test the casses in PreMempoolChecks CheckStandardTransaction
-            // - Check output scripttemplate == null
+            string dataDir = GetTestDirectoryPath(this);
+
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            Network network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            IMempoolValidator validator = context.MempoolValidator;
+            Assert.NotNull(validator);
+
+            var tx = new Transaction();
+            tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
+            tx.AddOutput(new TxOut(new Money(Money.Coins(1)), (IDestination)null));
+            tx.Sign(network, minerSecret, false);
+
+            var state = new MempoolValidationState(false);
+
+            // Tests the output script template null case in PreMempoolChecks CheckStandardTransaction
+            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
+            Assert.False(isSuccess, "Transaction with dust output should not have been accepted.");
+            Assert.Equal(MempoolErrors.Scriptpubkey, state.Error);
         }
 
         [Fact]
