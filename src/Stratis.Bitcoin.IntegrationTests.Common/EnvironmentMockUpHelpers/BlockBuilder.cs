@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     /// <summary>
-    /// Creates different types of invalid blocks.
+    /// Creates different types of valid and invalid blocks.
     /// </summary>
     public sealed class BlockBuilder
     {
@@ -94,12 +94,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             }
         }
 
+        /// <summary>
+        /// Produces a block that will fail Full Validation due to an invalid coinbase reward.
+        /// </summary>
         public static Block InvalidCoinbaseReward(CoreNode coreNode, Block block)
         {
             block.Transactions[0].Outputs[0].Value = Money.Coins(999);
             return block;
         }
 
+
+        /// <summary>
+        /// Produces a block that will fail Partial Validation due to it containing a duplicate coinbase transction.
+        /// </summary>
         public static Block InvalidDuplicateCoinbase(CoreNode coreNode, Block block)
         {
             var badTxNoInputs = coreNode.FullNode.Network.CreateTransaction();

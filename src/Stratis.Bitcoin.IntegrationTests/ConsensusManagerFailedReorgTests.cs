@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // MinerB mines 5 more blocks:
                 // Block 6,7,9,10 = valid
                 // Block 8 = invalid
-                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
+                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidDuplicateCoinbase(coreNode, block)).BuildAsync();
 
                 // Reconnect minerA to minerB.
                 // This will cause the reorg chain to fail at block 8 and roll back any changes.
