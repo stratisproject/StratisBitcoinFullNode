@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="header">The proven blockheader.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.EmptyCoinstake" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.EmptyCoinstake" /> if check fails.
         /// </exception>
         private void CheckCoinstakeIsNotNull(ProvenBlockHeader header)
         {
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="header">The header.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails.
         /// </exception>
         private FetchCoinsResponse GetAndValidateCoins(ProvenBlockHeader header)
         {
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="coins">The coins.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails.
         /// </exception>
         private UnspentOutputs GetAndValidatePreviousUtxo(FetchCoinsResponse coins)
         {
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="header">The proven block header.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.NonCoinstake" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.NonCoinstake" /> if check fails.
         /// </exception>
         private void CheckIfCoinstakeIsTrue(ProvenBlockHeader header)
         {
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="header">The proven block header.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.StakeTimeViolation" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.StakeTimeViolation" /> if check fails.
         /// </exception>
         private void CheckHeaderAndCoinstakeTimes(ProvenBlockHeader header)
         {
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <param name="chainedHeader">The chained header.</param>
         /// <param name="unspentOutputs">The unspent outputs.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.InvalidStakeDepth" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.InvalidStakeDepth" /> if check fails.
         /// </exception>
         private void CheckCoinstakeAgeRequirement(ChainedHeader chainedHeader, UnspentOutputs unspentOutputs)
         {
@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
         /// <see cref="IStakeValidator.VerifySignature"/>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.CoinstakeVerifySignatureFailed" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.CoinstakeVerifySignatureFailed" /> if check fails.
         /// </exception>
         private void CheckSignature(ProvenBlockHeader header, UnspentOutputs unspentOutputs)
         {
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
         /// <see cref="IStakeValidator.CheckStakeKernelHash"/>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.PrevStakeNull" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.PrevStakeNull" /> if check fails.
         /// </exception>
         private void CheckStakeKernelHash(PosRuleContext context, UnspentOutputs stakingCoins, ProvenBlockHeader header, ChainedHeader chainedHeader)
         {
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="header">The header.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.BadMerkleRoot" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.BadMerkleRoot" /> if check fails.
         /// </exception>
         private void CheckCoinstakeMerkleProof(ProvenBlockHeader header)
         {
@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <param name="header">The header.</param>
         /// <param name="stakingCoins">The staking coins.</param>
         /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.BadBlockSignature" /> if check fails
+        /// Throws exception with error <see cref="ConsensusErrors.BadBlockSignature" /> if check fails.
         /// </exception>
         private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header, UnspentOutputs stakingCoins)
         {
