@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Threading;
 using NBitcoin.DataEncoders;
-using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using NBitcoin.Stealth;
 
@@ -396,7 +395,7 @@ namespace NBitcoin
             if (str == null)
                 throw new ArgumentNullException("str");
 
-            IEnumerable<Network> networks = expectedNetwork == null ? NetworkRegistration.GetNetworks() : new[] { expectedNetwork };
+            IEnumerable<Network> networks = new[] { expectedNetwork };
             bool maybeb58 = true;
             for (int i = 0; i < str.Length; i++)
             {
@@ -417,6 +416,7 @@ namespace NBitcoin
                 {
                     maybeb58 = false;
                 }
+
                 if (maybeb58)
                 {
                     foreach (IBase58Data candidate in GetCandidates(networks, str))
@@ -436,9 +436,12 @@ namespace NBitcoin
                 foreach (Bech32Encoder encoder in network.Bech32Encoders)
                 {
                     i++;
+
                     if (encoder == null)
                         continue;
+
                     var type = (Bech32Type)i;
+
                     try
                     {
                         byte witVersion;
@@ -462,7 +465,6 @@ namespace NBitcoin
                         continue;
                     }
                 }
-
             }
 
             throw new FormatException("Invalid string");
@@ -472,6 +474,7 @@ namespace NBitcoin
         {
             if (base58 == null)
                 throw new ArgumentNullException("base58");
+
             foreach (Network network in networks)
             {
                 Base58Type? type = network.GetBase58Type(base58);
@@ -493,7 +496,9 @@ namespace NBitcoin
                         {
                         }
                     }
+
                     IBase58Data data = null;
+
                     try
                     {
                         data = network.CreateBase58Data(type.Value, base58);
@@ -501,6 +506,7 @@ namespace NBitcoin
                     catch (FormatException)
                     {
                     }
+
                     if (data != null)
                         yield return data;
                 }
