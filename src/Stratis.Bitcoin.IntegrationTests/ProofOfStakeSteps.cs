@@ -1,11 +1,19 @@
-﻿using System.Collections.Concurrent;
+﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using NBitcoin.Protocol;
+using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
+using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -31,7 +39,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public ProofOfStakeSteps(string displayName)
         {
-
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, displayName));
         }
 
@@ -54,8 +61,20 @@ namespace Stratis.Bitcoin.IntegrationTests
         public void PremineNodeWithWalletWithOverrides()
         {
             var configParameters = new NodeConfigParameters { { "savetrxhex", "true" } };
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisCustomPosNode(new StratisRegTest(), configParameters).NotInIBD().WithWallet();
-            this.PremineNodeWithCoins.Start();
+            
+            var callback = new Action<IFullNodeBuilder>(builder => builder
+                .UseBlockStore()
+                .UsePosConsensus()
+                .UseMempool()
+                .UseWallet()
+                .AddPowPosMining()
+                .AddRPC()
+                .MockIBD()
+                .SubstituteDateTimeProviderFor<MiningFeature>());
+
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateCustomNode(callback, new StratisRegTest(), ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
+            this.PremineNodeWithCoins.NotInIBD().WithWallet();
+			this.PremineNodeWithCoins.Start();
         }
 
         public void MineGenesisAndPremineBlocks()
