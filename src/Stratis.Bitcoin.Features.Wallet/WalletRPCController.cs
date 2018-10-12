@@ -88,8 +88,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(account.WalletName, account.AccountName);
 
-            Money balance = balances?.Sum(i => i.AmountConfirmed);            
-            return balance.ToUnit(MoneyUnit.BTC);           
+            Money balance = balances?.Sum(i => i.AmountConfirmed);
+            return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
         }
 
         /// <summary>
