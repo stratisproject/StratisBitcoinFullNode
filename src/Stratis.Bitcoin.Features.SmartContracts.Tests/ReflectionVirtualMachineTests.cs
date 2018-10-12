@@ -1,4 +1,9 @@
 ﻿using System;
+using System.IO;
+using System.Linq;
+using ICSharpCode.Decompiler;
+using ICSharpCode.Decompiler.CSharp;
+using Mono.Cecil;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
@@ -90,6 +95,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
+
+            var modDefinition = ModuleDefinition.ReadModule(new MemoryStream(contractExecutionCode));
+            var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
+            // TODO: Update decompiler to display all code, not just this rando FirstOrDefault (given we now allow multiple types)
+            string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
             var methodParameters = new object[] { (ulong)5 };
 
             VmExecutionResult result = this.vm.Create(this.state, this.contractState, contractExecutionCode, methodParameters);

@@ -194,7 +194,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            IContractInvocationResult result = contract.Invoke(callData);
+            // Because our contract contains an infinite loop, we want to kill our test after
+            // some amount of time without achieving a result. 3 seconds is an arbitrarily high enough timeout
+            // for the method body to have finished execution while minimising the amount of time we spend 
+            // running tests
+            // If you're running with the debugger on this will obviously be a source of failures
+            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(3, () => contract.Invoke(callData));
 
             Assert.False(result.IsSuccess);
             Assert.Equal((Gas)0, this.gasMeter.GasAvailable);

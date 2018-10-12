@@ -321,37 +321,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            result = RunWithTimeout(3, () => callExecutor.Execute(transactionContext));
+            result = TimeoutHelper.RunCodeWithTimeout(3, () => callExecutor.Execute(transactionContext));
 
             // Actual call was successful, but internal call failed due to gas - returned false.
             Assert.False(result.Revert);
             Assert.False((bool) result.Return);
-        }
-
-        private static T RunWithTimeout<T>(int timeout, Func<T> execute)
-        {
-            // ref. https://stackoverflow.com/questions/20282111/xunit-net-how-can-i-specify-a-timeout-how-long-a-test-should-maximum-need
-            // Only run single-threaded code in this method
-
-            Task<T> task = Task.Run(execute);
-            bool completedInTime = Task.WaitAll(new Task[] { task }, TimeSpan.FromSeconds(timeout));
-
-            if (task.Exception != null)
-            {
-                if (task.Exception.InnerExceptions.Count == 1)
-                {
-                    throw task.Exception.InnerExceptions[0];
-                }
-
-                throw task.Exception;
-            }
-
-            if (!completedInTime)
-            {
-                throw new TimeoutException($"Task did not complete in {timeout} seconds.");
-            }
-
-            return task.Result;
         }
 
         [Fact]
