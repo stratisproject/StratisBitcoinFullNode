@@ -22,12 +22,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         private uint160 coinbaseAddress;
         private readonly ICoinView coinView;
-        private readonly ISmartContractExecutorFactory executorFactory;
+        private readonly IContractExecutorFactory executorFactory;
         private readonly ILogger logger;
         private readonly List<TxOut> refundOutputs;
         private readonly List<Receipt> receipts;
-        private readonly IContractStateRoot stateRoot;
-        private IContractStateRoot stateSnapshot;
+        private readonly IStateRepositoryRoot stateRoot;
+        private IStateRepositoryRoot stateSnapshot;
         private readonly ISenderRetriever senderRetriever;
 
         public SmartContractBlockDefinition(
@@ -35,14 +35,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ICoinView coinView,
             IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
-            ISmartContractExecutorFactory executorFactory,
+            IContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             MinerSettings minerSettings,
             Network network,
             ISenderRetriever senderRetriever,
-            IContractStateRoot stateRoot)
+            IStateRepositoryRoot stateRoot)
             : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, minerSettings, network)
         {
             this.coinView = coinView;
@@ -71,8 +71,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         public override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
-            this.logger.LogTrace("()");
-
             TxOut smartContractTxOut = mempoolEntry.Transaction.TryGetSmartContractTxOut();
             if (smartContractTxOut == null)
             {
@@ -88,7 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
                 // We HAVE to first execute the smart contract contained in the transaction
                 // to ensure its validity before we can add it to the block.
-                ISmartContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
+                IContractExecutionResult result = this.ExecuteSmartContract(mempoolEntry);
                 this.AddTransactionToBlock(mempoolEntry.Transaction);
                 this.UpdateBlockStatistics(mempoolEntry);
                 this.UpdateTotalFees(result.Fee);
@@ -107,15 +105,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     this.logger.LogTrace("Internal {0}:{1} was added.", nameof(result.InternalTransaction), result.InternalTransaction.GetHash());
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKeyIn)
         {
-            this.logger.LogTrace("()");
-
             GetSenderResult getSenderResult = this.senderRetriever.GetAddressFromScript(scriptPubKeyIn);
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
@@ -130,9 +124,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             base.OnBuild(chainTip, scriptPubKeyIn);
 
             this.coinbase.Outputs.AddRange(this.refundOutputs);
-
-            this.logger.LogTrace("(-)");
-
+            
             return this.BlockTemplate;
         }
 
@@ -144,8 +136,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         public override void UpdateHeaders()
         {
-            this.logger.LogTrace("()");
-
             this.UpdateBaseHeaders();
 
             this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
@@ -157,8 +147,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             UpdateReceiptRoot(scHeader);
 
             UpdateLogsBloom(scHeader);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -188,17 +176,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Execute the contract and add all relevant fees and refunds to the block.
         /// </summary>
         /// <remarks>TODO: At some point we need to change height to a ulong.</remarks>
-        private ISmartContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
+        private IContractExecutionResult ExecuteSmartContract(TxMempoolEntry mempoolEntry)
         {
-            this.logger.LogTrace("()");
-
             GetSenderResult getSenderResult = this.senderRetriever.GetSender(mempoolEntry.Transaction, this.coinView, this.inBlock.Select(x => x.Transaction).ToList());
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-addcontracttoblock", getSenderResult.Error));
 
-            ISmartContractTransactionContext transactionContext = new SmartContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
-            ISmartContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
-            ISmartContractExecutionResult result = executor.Execute(transactionContext);
+            IContractTransactionContext transactionContext = new ContractTransactionContext((ulong)this.height, this.coinbaseAddress, mempoolEntry.Fee, getSenderResult.Sender, mempoolEntry.Transaction);
+            IContractExecutor executor = this.executorFactory.CreateExecutor(this.stateSnapshot, transactionContext);
+            IContractExecutionResult result = executor.Execute(transactionContext);
 
             // As we're not storing receipts, can use only consensus fields. 
             var receipt = new Receipt(
@@ -208,8 +194,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             );
 
             this.receipts.Add(receipt);
-
-            this.logger.LogTrace("(-)");
 
             return result;
         }

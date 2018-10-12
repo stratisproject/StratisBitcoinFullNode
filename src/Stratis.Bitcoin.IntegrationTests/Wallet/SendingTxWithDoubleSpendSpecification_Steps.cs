@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingTransactionWithDoubleSpend : BddSpecification
     {
-        private const string Password = "123456";
+        private const string Password = "password";
         private const string Name = "mywallet";
         private const string Passphrase = "passphrase";
         private const string AccountName = "account 0";
@@ -33,13 +33,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.builder = NodeBuilder.Create(this);
-            this.stratisSender = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
-            this.stratisReceiver = this.builder.CreateStratisPowNode(KnownNetworks.RegTest);
+            this.stratisSender = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+            this.stratisReceiver = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
             this.mempoolValidationState = new MempoolValidationState(true);
 
             this.builder.StartAll();
-            this.stratisSender.NotInIBD();
-            this.stratisReceiver.NotInIBD();
         }
 
         protected override void AfterTest()
@@ -49,13 +47,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void wallets_with_coins()
         {
-            var mnemonic1 = this.stratisSender.FullNode.WalletManager().CreateWallet(Password, Name, Passphrase);
-            var mnemonic2 = this.stratisReceiver.FullNode.WalletManager().CreateWallet(Password, Name, Passphrase);
-            mnemonic1.Words.Length.Should().Equals(12);
-            mnemonic2.Words.Length.Should().Equals(12);
-
             var maturity = (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-            TestHelper.MineBlocks(this.stratisSender, Name, Password, AccountName, maturity + 5);
+            TestHelper.MineBlocks(this.stratisSender, maturity + 5);
 
             var total = this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
             total.Should().Equals(Money.COIN * 6 * 50);
@@ -97,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void trx_is_mined_into_a_block_and_removed_from_mempools()
         {
-            TestHelper.MineBlocks(this.stratisSender, Name, Password, AccountName, 1);
+            TestHelper.MineBlocks(this.stratisSender, 1);
             TestHelper.WaitForNodeToSync(this.stratisSender, this.stratisReceiver);
 
             this.stratisSender.FullNode.MempoolManager().GetMempoolAsync().Result.Should().NotContain(this.transaction.GetHash());

@@ -3,8 +3,12 @@ using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
 using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.P2P.Peer;
@@ -37,13 +41,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
+            // If the nodes are at genesis they are considered synced.
+            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
                 return false;
 
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            if (node1.FullNode.GetBlockStoreTip().HashBlock != node2.FullNode.GetBlockStoreTip().HashBlock)
+            // Check that node1 tip exists in node2 store (either in disk or in the pending list) 
+            if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                return false;
+
+            // Check that node2 tip exists in node1 store (either in disk or in the pending list) 
+            if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
             if (!ignoreMempool)
@@ -64,10 +77,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeSynced(CoreNode node)
         {
+            // If the node is at genesis it is considered synced.
+            if (node.FullNode.Chain.Tip.Height == 0)
+                return true;
+
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.GetBlockStoreTip().HashBlock)
+            // Check that node1 tip exists in store (either in disk or in the pending list) 
+
+            if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
             if ((node.FullNode.WalletManager().ContainsWallets) &&
@@ -94,33 +113,45 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(n => WaitLoop(() => AreNodesSynced(nodes.First(), n)));
         }
 
+        public static void DisableBlockPropagation(CoreNode from, CoreNode to)
+        {
+            from.FullNode.ConnectionManager.ConnectedPeers.FindByEndpoint(to.Endpoint).Behavior<BlockStoreBehavior>().CanRespondToGetDataPayload = false;
+        }
+
+        public static void EnableBlockPropagation(CoreNode from, CoreNode to)
+        {
+            from.FullNode.ConnectionManager.ConnectedPeers.FindByEndpoint(to.Endpoint).Behavior<BlockStoreBehavior>().CanRespondToGetDataPayload = true;
+        }
+
         public static void WaitForNodeToSyncIgnoreMempool(params CoreNode[] nodes)
         {
             nodes.ToList().ForEach(node => WaitLoop(() => IsNodeSynced(node)));
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, string walletName, string walletPassword, string accountName, int numberOfBlocks)
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
         {
             Guard.NotNull(node, nameof(node));
-            Guard.NotEmpty(walletName, nameof(walletName));
-            Guard.NotEmpty(walletPassword, nameof(walletPassword));
-            Guard.NotEmpty(accountName, nameof(accountName));
 
-            if (numberOfBlocks == 0) throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
+            if (numberOfBlocks == 0)
+                throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            HdAddress address = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-            
-            Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
-            Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
+            if (node.MinerSecret == null)
+            {
+                HdAddress unusedAddress = node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                node.MinerHDAddress = unusedAddress;
 
-            node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+                Wallet wallet = node.FullNode.WalletManager().GetWalletByName(walletName);
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+                node.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, node.FullNode.Network));
+            }
 
-            var blockHashes = node.GenerateStratisWithMiner((int)numberOfBlocks);
+            var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
+            var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
-            WaitForNodeToSync(node);
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(node));
 
-            return (address, blockHashes);
+            return (node.MinerHDAddress, blockHashes);
         }
 
         /// <summary>
@@ -130,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="coreNode">The node we want to create the block with.</param>
         /// <param name="transactions">Transactions we want to manually include in the block.</param>
         /// <param name="nonce">Optional nonce.</param>
-        public static Block GenerateBlockManually(CoreNode coreNode, List<Transaction> transactions, uint nonce = 0)
+        public static Block GenerateBlockManually(CoreNode coreNode, List<Transaction> transactions, uint nonce = 0, bool callBlockMinedAsync = true)
         {
             var block = coreNode.FullNode.Network.CreateBlock();
             block.Header.HashPrevBlock = coreNode.FullNode.Chain.Tip.HashBlock;
@@ -156,8 +187,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             // This will set the block size.
             block = Block.Load(block.ToBytes(), coreNode.FullNode.Network);
 
-            coreNode.FullNode.ConsensusManager().BlockMinedAsync(block).GetAwaiter().GetResult();
-
+            if (callBlockMinedAsync)
+            { 
+                coreNode.FullNode.ConsensusManager().BlockMinedAsync(block).GetAwaiter().GetResult();
+            }
             return block;
         }
 
@@ -201,6 +234,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return result;
         }
 
+        public static void Disconnect(CoreNode from, CoreNode to)
+        {
+            from.CreateRPCClient().RemoveNode(to.Endpoint);
+            WaitLoop(() => !IsNodeConnectedTo(from, to));
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -236,12 +275,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static void Connect(CoreNode from, CoreNode to)
         {
             from.CreateRPCClient().AddNode(to.Endpoint, true);
+            WaitLoop(() => IsNodeConnectedTo(from, to));
         }
 
-        public static void ConnectAndSync(CoreNode from, CoreNode to)
+        public static void ConnectAndSync(CoreNode from, params CoreNode[] to)
         {
-            Connect(from, to);
-            WaitLoop(() => AreNodesSynced(from, to));
+            foreach (CoreNode coreNode in to)
+                Connect(from, coreNode);
+
+            foreach (CoreNode coreNode in to)
+                WaitLoop(() => AreNodesSynced(from, coreNode));
+        }
+
+        public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Equals(isConnectedToNode.Endpoint));
         }
     }
 }

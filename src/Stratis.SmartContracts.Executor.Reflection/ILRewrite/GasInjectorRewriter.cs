@@ -2,6 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
+using Mono.Cecil.Rocks;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
@@ -117,29 +118,24 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
             if (!gasToSpendForSegment.ContainsKey(currentSegmentStart))
                 gasToSpendForSegment.Add(currentSegmentStart, gasTally);
 
+            bool isFirstSegment = true;
+
             foreach (Instruction instruction in gasToSpendForSegment.Keys)
             {
                 Instruction injectAfterInstruction = instruction;
 
-                // If it's a constructor we need to skip the first 3 instructions. 
+                // If it's the first branch of a constructor we need to skip the first 3 instructions. 
                 // These will always be invoking the base constructor
                 // ldarg.0
                 // ldarg.0
                 // call SmartContract::ctor
-                if (methodDefinition.IsConstructor)
+                if (methodDefinition.IsConstructor && isFirstSegment)
                 {
                     injectAfterInstruction = instruction.Next.Next.Next;
                 }
 
                 AddSpendGasMethodBeforeInstruction(methodDefinition, context.Observer, context.ObserverVariable, injectAfterInstruction, gasToSpendForSegment[instruction]);
-            }
-
-            foreach (Instruction instruction in branches)
-            {
-                var oldReference = (Instruction)instruction.Operand;
-                Instruction newReference = oldReference.Previous.Previous.Previous; // 3 were inserted
-                Instruction newInstruction = il.Create(instruction.OpCode, newReference);
-                il.Replace(instruction, newInstruction);
+                isFirstSegment = false;
             }
         }
 
@@ -149,9 +145,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
         private static void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, ObserverReferences observer, VariableDefinition variable, Instruction instruction, Gas opcodeCount)
         {
             ILProcessor il = methodDefinition.Body.GetILProcessor();
+            il.Body.SimplifyMacros();
             il.InsertBefore(instruction, il.CreateLdlocBest(variable)); // load observer
             il.InsertBefore(instruction, il.Create(OpCodes.Ldc_I8, (long)opcodeCount.Value)); // load gas amount
             il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.SpendGasMethod)); // trigger method
+            il.Body.OptimizeMacros();
         }
     }
 }

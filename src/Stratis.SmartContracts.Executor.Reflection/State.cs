@@ -1,6 +1,5 @@
 using System;
 using System.Collections.Generic;
-using System.Collections.Immutable;
 using NBitcoin;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -28,7 +27,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class State : IState
     {
         private readonly List<TransferInfo> internalTransfers;
-
         private IState child;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
@@ -44,30 +42,28 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.internalTransfers = new List<TransferInfo>(state.InternalTransfers);
 
             // Create a new balance state based off the old one but with the repository and internal transfers list reference
-            this.BalanceState = new BalanceState(this.ContractState, state.BalanceState.TxAmount, this.internalTransfers);
+            this.BalanceState = new BalanceState(this.ContractState, this.internalTransfers, state.BalanceState.InitialTransfer);
             this.Network = state.Network;
-            this.Nonce = state.Nonce;
+            this.NonceGenerator = state.NonceGenerator;
             this.Block = state.Block;
             this.TransactionHash = state.TransactionHash;
             this.smartContractStateFactory = state.smartContractStateFactory;
         }
 
-        public State(
-            ISmartContractStateFactory smartContractStateFactory, 
-            IContractState repository,
+        public State(ISmartContractStateFactory smartContractStateFactory,
+            IStateRepository repository,
             IContractLogHolder contractLogHolder,
             List<TransferInfo> internalTransfers,
             IBlock block,
             Network network,
-            ulong txAmount,
             uint256 transactionHash)
         {
             this.ContractState = repository;
             this.LogHolder = contractLogHolder;
             this.internalTransfers = internalTransfers;
-            this.BalanceState = new BalanceState(this.ContractState, txAmount, this.InternalTransfers);
+            this.BalanceState = new BalanceState(this.ContractState, this.InternalTransfers);
             this.Network = network;
-            this.Nonce = 0;
+            this.NonceGenerator = new NonceGenerator();
             this.Block = block;
             this.TransactionHash = transactionHash;
             this.smartContractStateFactory = smartContractStateFactory;
@@ -79,7 +75,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private Network Network { get; }
 
-        public ulong Nonce { get; private set; }
+        public NonceGenerator NonceGenerator { get; }
 
         public IContractLogHolder LogHolder { get; }
 
@@ -87,19 +83,29 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IReadOnlyList<TransferInfo> InternalTransfers => this.internalTransfers;
 
-        public ulong GetNonceAndIncrement()
-        {
-            return this.Nonce++;
-        }
-
-        public IContractState ContractState { get; }
+        public IStateRepository ContractState { get; }
 
         /// <summary>
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>
-         public ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository) 
+        public ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository) 
         {
             return this.smartContractStateFactory.Create(state, gasMeter, address, message, repository);
+        }
+
+        /// <summary>
+        /// Adds the initial transfer to the BalanceState. It is necessary to call this method if an external create or call
+        /// is being executed in order to reflect the balance of the of the UTXO sent along with the contract invocation transaction.
+        /// This method can only be used to set an initial transfer once.
+        /// </summary>
+        public void AddInitialTransfer(TransferInfo initialTransfer)
+        {
+            if (this.BalanceState.InitialTransfer != null)
+            {
+                throw new NotSupportedException("Cannot add an initial transfer twice!");
+            }
+
+            this.BalanceState.AddInitialTransfer(initialTransfer);
         }
 
         /// <summary>
@@ -125,9 +131,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.LogHolder.Clear();
             this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
 
-            // Update nonce
-            this.Nonce = state.Nonce;
-
             // Commit the state to update the parent state
             state.ContractState.Commit();
 
@@ -146,7 +149,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public uint160 GenerateAddress(IAddressGenerator addressGenerator)
         {
-            return addressGenerator.GenerateAddress(this.TransactionHash, this.GetNonceAndIncrement());
+            return addressGenerator.GenerateAddress(this.TransactionHash, this.NonceGenerator.Next);
         }
 
         /// <summary>

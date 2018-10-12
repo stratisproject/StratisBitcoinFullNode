@@ -7,14 +7,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Loader
 {
     public class ContractAssemblyTests
     {
-        private readonly SmartContractCompilationResult compilation;
+        private readonly ContractCompilationResult compilation;
         private readonly ContractAssemblyLoader loader;
 
         public string Contract = Path.Combine("Loader", "Test.cs");
 
         public ContractAssemblyTests()
         {
-            this.compilation = SmartContractCompiler.CompileFile(Contract);
+            this.compilation = ContractCompiler.CompileFile(Contract);
             this.loader = new ContractAssemblyLoader();
         }
 

@@ -31,23 +31,15 @@ namespace Stratis.Bitcoin.Features.Miner
 
         public override void AddToBlock(TxMempoolEntry mempoolEntry)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}', {3}:{4})", nameof(mempoolEntry), nameof(mempoolEntry.TransactionHash), mempoolEntry.TransactionHash, nameof(mempoolEntry.ModifiedFee), mempoolEntry.ModifiedFee);
-
             this.AddTransactionToBlock(mempoolEntry.Transaction);
             this.UpdateBlockStatistics(mempoolEntry);
             this.UpdateTotalFees(mempoolEntry.Fee);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(chainTip), chainTip, nameof(scriptPubKey), nameof(scriptPubKey.Length), scriptPubKey.Length);
-
             base.OnBuild(chainTip, scriptPubKey);
-
-            this.logger.LogTrace("(-)");
 
             return this.BlockTemplate;
         }
@@ -55,13 +47,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc/>
         public override void UpdateHeaders()
         {
-            this.logger.LogTrace("()");
-
             base.UpdateBaseHeaders();
 
             this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

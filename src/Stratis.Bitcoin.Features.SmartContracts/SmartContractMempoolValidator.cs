@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -26,24 +27,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// These rules rely on the fee part of the context to be loaded in parent class. See 'AcceptToMemoryPoolWorkerAsync'.
         /// </summary>
         private readonly List<ISmartContractMempoolRule> feeTxRules;
+        private readonly ICallDataSerializer callDataSerializer;
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
             var p2pkhRule = new P2PKHNotContractRule();
             p2pkhRule.Parent = (ConsensusRuleEngine) consensusRules;
             p2pkhRule.Initialize();
 
+            var scriptTypeRule = new AllowedScriptTypeRule();
+            scriptTypeRule.Parent = (ConsensusRuleEngine) consensusRules;
+            scriptTypeRule.Initialize();
+
             this.preTxRules = new List<ISmartContractMempoolRule>
             {
                 new MempoolOpSpendRule(),
                 new TxOutSmartContractExecRule(),
+                scriptTypeRule,
                 p2pkhRule
             };
 
             this.feeTxRules = new List<ISmartContractMempoolRule>()
             {
-                new SmartContractFormatRule(),
+                new SmartContractFormatRule(callDataSerializer)
             };
         }
 

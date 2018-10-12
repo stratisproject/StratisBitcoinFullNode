@@ -9,6 +9,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>        
         ISmartContractState Create(IState state, IGasMeter gasMeter, uint160 address, BaseMessage message,
-            IContractState repository);
+            IStateRepository repository);
     }
 }

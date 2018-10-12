@@ -21,9 +21,6 @@ namespace Stratis.Bitcoin.Networks
             this.Magic = magic;
             this.DefaultPort = 18444;
             this.RPCPort = 18442;
-            this.MinTxFee = 0;
-            this.FallbackFee = 0;
-            this.MinRelayTxFee = 0;
             this.CoinTicker = "TSTRAT";
 
             var powLimit = new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
@@ -50,7 +47,8 @@ namespace Stratis.Bitcoin.Networks
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000
+                maxBlockSigopsCost: 20_000,
+                provenHeadersActivationHeight: 10_000_000 // TODO: Set it to the real value once it is known.
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -62,7 +60,7 @@ namespace Stratis.Bitcoin.Networks
 
             var bip9Deployments = new BIP9DeploymentsArray();
 
-            this.Consensus = new Consensus(
+            this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: 105,

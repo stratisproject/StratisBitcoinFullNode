@@ -25,8 +25,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override void Initialize()
         {
-            this.Logger.LogTrace("()");
-
             base.Initialize();
 
             this.consensus = this.Parent.Network.Consensus;
@@ -34,23 +32,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             this.stakeValidator = consensusRules.StakeValidator;
             this.stakeChain = consensusRules.StakeChain;
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         /// <summary>Compute and store the stake proofs.</summary>
         public override async Task RunAsync(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             this.CheckAndComputeStake(context);
 
             await base.RunAsync(context).ConfigureAwait(false);
             var posRuleContext = context as PosRuleContext;
             await this.stakeChain.SetAsync(context.ValidationContext.ChainedHeaderToValidate, posRuleContext.BlockStake).ConfigureAwait(false);
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
@@ -62,8 +54,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <inheritdoc />
         public override void CheckBlockReward(RuleContext context, Money fees, int height, Block block)
         {
-            this.Logger.LogTrace("({0}:{1},{2}:'{3}')", nameof(fees), fees, nameof(height), height);
-
             if (BlockStake.IsProofOfStake(block))
             {
                 var posRuleContext = context as PosRuleContext;
@@ -87,15 +77,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadCoinbaseAmount.Throw();
                 }
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
-            this.Logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
-
             var posRuleContext = context as PosRuleContext;
 
             UnspentOutputSet view = posRuleContext.UnspentOutputSet;
@@ -104,15 +90,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 posRuleContext.TotalCoinStakeValueIn = view.GetValueIn(transaction);
 
             base.UpdateUTXOSet(context, transaction);
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
-            this.Logger.LogTrace("({0}:'{1}/{2}',{3}:{4})", nameof(coins), coins.TransactionId, coins.Height, nameof(spendHeight), spendHeight);
-
             base.CheckCoinbaseMaturity(coins, spendHeight);
 
             if (coins.IsCoinstake)
@@ -124,8 +106,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionPrematureCoinstakeSpending.Throw();
                 }
             }
-
-            this.Logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -136,8 +116,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.SetStakeEntropyBitFailed">Thrown if failed to set stake entropy bit.</exception>
         private void CheckAndComputeStake(RuleContext context)
         {
-            this.Logger.LogTrace("()");
-
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
             Block block = context.ValidationContext.BlockToValidate;
 
@@ -194,8 +172,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", blockStake.StakeModifierV2);
             }
             else this.Logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
-
-            this.Logger.LogTrace("(-)[OK]");
         }
 
         /// <inheritdoc />

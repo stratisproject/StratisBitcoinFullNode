@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             console.WriteLine("Building ModuleDefinition...");
 
             compilation = validationServiceResult.CompilationResult.Compilation;
-            moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver()).Value;
             console.WriteLine("ModuleDefinition built successfully.");
 
             console.WriteLine();
@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         private static void CompileContract(string source, IConsole console, ValidationServiceResult validationServiceResult)
         {
             console.WriteLine($"Compiling...");
-            validationServiceResult.CompilationResult = SmartContractCompiler.Compile(source);
+            validationServiceResult.CompilationResult = ContractCompiler.Compile(source);
             if (!validationServiceResult.CompilationResult.Success)
                 console.WriteLine("Compilation failed!");
             else
@@ -57,12 +57,11 @@ namespace Stratis.SmartContracts.Tools.Sct
 
             Assembly smartContract = Assembly.Load(compilation);
 
-            var serializer = new MethodParameterSerializer();
+            var serializer = new MethodParameterStringSerializer();
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {
-                var methodParametersRaw = new MethodParameterSerializer().ToRaw(parameters);
-                methodParameters = serializer.ToObjects(methodParametersRaw);
+                methodParameters = serializer.Deserialize(parameters);
             }
 
             validationServiceResult.ConstructorExists = Contract.ConstructorExists(smartContract.ExportedTypes.FirstOrDefault(), methodParameters);
@@ -84,7 +83,7 @@ namespace Stratis.SmartContracts.Tools.Sct
 
     public sealed class ValidationServiceResult
     {
-        public SmartContractCompilationResult CompilationResult { get; set; }
+        public ContractCompilationResult CompilationResult { get; set; }
         public SmartContractValidationResult DeterminismValidationResult { get; set; }
         public SmartContractValidationResult FormatValidationResult { get; set; }
         public bool ConstructorExists { get; set; }
@@ -131,136 +130,16 @@ namespace Stratis.SmartContracts.Tools.Sct
 
     public sealed class ValidatorPersistentState : IPersistentState
     {
-        public ISmartContractMapping<T> GetStructMapping<T>(string name) where T : struct
-        {
-            return null;
-        }
-
-        public ISmartContractList<byte> GetByteList(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<byte[]> GetByteArrayList(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<char> GetCharList(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<Address> GetAddressList(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<bool> GetBoolList(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<int> GetInt32List(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<uint> GetUInt32List(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<long> GetInt64List(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<ulong> GetUInt64List(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<string> GetStringList(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<sbyte> GetSByteList(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractList<T> GetStructList<T>(string name) where T : struct
-        {
-            return null;
-        }
-
         public void SetStruct<T>(string key, T value) where T : struct
         {
         }
 
-        public ISmartContractMapping<byte> GetByteMapping(string name)
+        public void SetArray(string key, Array a)
         {
-            return null;
+            throw new NotImplementedException();
         }
 
-        public ISmartContractMapping<byte[]> GetByteArrayMapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<char> GetCharMapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<Address> GetAddressMapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<bool> GetBoolMapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<int> GetInt32Mapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<uint> GetUInt32Mapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<long> GetInt64Mapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<ulong> GetUInt64Mapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<string> GetStringMapping(string name)
-        {
-            return null;
-        }
-
-        public ISmartContractMapping<sbyte> GetSByteMapping(string name)
-        {
-            return null;
-        }
-
-        public byte GetByte(string key)
-        {
-            return 0;
-        }
-
-        public byte[] GetByteArray(string key)
+        public byte[] GetBytes(string key)
         {
             return new byte[] { };
         }
@@ -305,20 +184,17 @@ namespace Stratis.SmartContracts.Tools.Sct
             return null;
         }
 
-        public sbyte GetSbyte(string key)
-        {
-            return 0;
-        }
-
         public T GetStruct<T>(string key) where T : struct
         {
             return default(T);
         }
-        public void SetByte(string key, byte value)
+
+        public T[] GetArray<T>(string key)
         {
+            throw new NotImplementedException();
         }
 
-        public void SetByteArray(string key, byte[] value)
+        public void SetBytes(string key, byte[] value)
         {
         }
 
@@ -354,8 +230,5 @@ namespace Stratis.SmartContracts.Tools.Sct
         {
         }
 
-        public void SetSByte(string key, sbyte value)
-        {
-        }
     }
 }

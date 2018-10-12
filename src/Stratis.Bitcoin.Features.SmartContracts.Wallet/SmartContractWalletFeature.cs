@@ -62,24 +62,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline);
         }
 
-        private void AddComponentStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder log)
         {
             IEnumerable<string> walletNames = this.walletManager.GetWalletsNames();
 
             if (walletNames.Any())
             {
-                benchLog.AppendLine();
-                benchLog.AppendLine("======Wallets======");
+                log.AppendLine();
+                log.AppendLine("======Wallets======");
 
                 foreach (string walletName in walletNames)
                 {
                     IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    benchLog.AppendLine("Wallet[SC]: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                    log.AppendLine("Wallet[SC]: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
                 }
             }
         }
 
-        private void AddInlineStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder log)
         {
             if (this.walletManager is WalletManager walletManager)
             {
@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 ChainedHeader block = this.chain.GetBlock(height);
                 uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
-                benchLogs.AppendLine("Wallet[SC].Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                log.AppendLine("Wallet[SC].Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                         (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
                                         (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
             }
@@ -96,7 +96,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
@@ -106,7 +105,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
             this.logger.LogInformation("Smart Contract Feature Wallet Injected.");
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 

@@ -33,21 +33,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public static ContractInvocationResult Failure(ContractInvocationErrorType errorType)
         {
-            switch (errorType)
-            {
-                case ContractInvocationErrorType.MethodDoesNotExist:
-                    return new ContractInvocationResult(errorType,  new ContractErrorMessage("Method does not exist on contract."));
-                case ContractInvocationErrorType.MethodIsConstructor:
-                    return new ContractInvocationResult(errorType, new ContractErrorMessage("Attempted to invoke constructor on existing contract."));
-                case ContractInvocationErrorType.MethodIsPrivate:
-                    return new ContractInvocationResult(errorType, new ContractErrorMessage("Attempted to invoke private method."));
-                case ContractInvocationErrorType.ParameterCountIncorrect:
-                    return new ContractInvocationResult(errorType, new ContractErrorMessage("Incorrect number of parameters passed to method."));
-                case ContractInvocationErrorType.ParameterTypesDontMatch:
-                    return new ContractInvocationResult(errorType, new ContractErrorMessage("Parameters sent don't match expected method parameters."));
-                default:
-                    throw new NotSupportedException($"Should use either {nameof(Success)} or {nameof(ExecutionFailure)} for this ContractInvocationErrorType.");
-            }
+            string errorMessage = GetErrorMessage(errorType);
+            return new ContractInvocationResult(errorType, new ContractErrorMessage(errorMessage));
         }
 
         /// <summary>
@@ -56,6 +43,25 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public static ContractInvocationResult ExecutionFailure(ContractInvocationErrorType errorType, Exception exception)
         {
             return new ContractInvocationResult(errorType, new ContractErrorMessage(exception.ToString()));
+        }
+
+        private static string GetErrorMessage(ContractInvocationErrorType errorType)
+        {
+            switch (errorType)
+            {
+                case ContractInvocationErrorType.MethodDoesNotExist:
+                    return ContractInvocationErrors.MethodDoesNotExist;
+                case ContractInvocationErrorType.MethodIsConstructor:
+                    return ContractInvocationErrors.MethodIsConstructor;
+                case ContractInvocationErrorType.MethodIsPrivate:
+                    return ContractInvocationErrors.MethodIsPrivate;
+                case ContractInvocationErrorType.ParameterCountIncorrect:
+                    return ContractInvocationErrors.ParameterCountIncorrect;
+                case ContractInvocationErrorType.ParameterTypesDontMatch:
+                    return ContractInvocationErrors.ParameterTypesDontMatch;
+                default:
+                    throw new NotSupportedException($"Should use either {nameof(Success)} or {nameof(ExecutionFailure)} for this ContractInvocationErrorType.");
+            }
         }
     }
 }

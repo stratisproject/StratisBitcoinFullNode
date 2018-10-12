@@ -82,8 +82,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         [HttpGet]
         public IActionResult GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(language), language, nameof(wordCount), wordCount);
-
             try
             {
                 Wordlist wordList;
@@ -219,7 +217,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
         {
             Guard.NotNull(request, nameof(request));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
 
             // checks the request is valid
             if (!this.ModelState.IsValid)
@@ -252,10 +249,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-            finally
-            {
-                this.logger.LogTrace("(-)");
-            }
         }
 
         /// <summary>
@@ -267,7 +260,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         public IActionResult RecoverViaExtPubKey([FromBody]WalletExtPubRecoveryRequest request)
         {
             Guard.NotNull(request, nameof(request));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(request), nameof(request.Name), request.Name);
 
             if (!this.ModelState.IsValid)
             {
@@ -286,8 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     request.CreationDate);
 
                 this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
-
-                this.logger.LogTrace("(-)");
+                
                 return this.Ok();
             }
             catch (WalletException e)
@@ -306,10 +297,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-            finally
-            {
-                this.logger.LogTrace("(-)");
             }
         }
 
@@ -357,10 +344,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             catch (Exception e)
             {
                 this.logger.LogError(e, "Exception occurred: {0}", e.StackTrace);
-                if (e is System.FormatException)
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message, e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
 
@@ -755,7 +739,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
 
             if (!this.connectionManager.ConnectedPeers.Any())
-                throw new WalletException("Can't send transaction: sending transaction requires at least one connection!");
+            {
+                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
+            }
 
             try
             {
@@ -1004,6 +991,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 }
                 else
                 {
+                    if (request.TransactionsIds == null || request.TransactionsIds.Any(trx => trx == null))
+                    {
+                        throw new WalletException("Transaction ids need to be specified if the 'all' flag is not set.");
+                    }
+
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
                     result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
                 }

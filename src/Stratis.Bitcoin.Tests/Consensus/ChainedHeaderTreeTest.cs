@@ -2413,60 +2413,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <summary>
-        /// Issue 45 @ Node has a reorg of 5 blocks.
-        /// Make sure that headers for the blocks that were reorged away
-        /// have no block pointers and block data availability == headers only.
-        /// </summary>
-        [Fact]
-        public void NodeHasReorg_ReorganisedHeaders_HaveNoBlockPointers_BlockDataAvailability_SetToHeadersOnly()
-        {
-            const int depthOfReorg = 5;
-            const int heightOfFork = 5;
-            const int initialChainSize = 10;
-            const int extensionSize = 20;
-
-            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
-            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
-            ChainedHeader chainTip = testContext.InitialChainTip;
-
-            // First peer presents headers from the original chain.
-            List<BlockHeader> listOfExistingHeaders = testContext.ChainedHeaderToList(chainTip, initialChainSize);
-            ConnectNewHeadersResult connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(1, listOfExistingHeaders);
-
-            // None are marked for download.
-            connectNewHeadersResult.DownloadFrom.Should().Be(null);
-            connectNewHeadersResult.DownloadTo.Should().Be(null);
-
-            // Second peer presents fork.
-            ChainedHeader forkedBlockHeader = chainTip.GetAncestor(depthOfReorg);
-            ChainedHeader newTip = testContext.ExtendAChain(extensionSize, forkedBlockHeader);
-            List<BlockHeader> listOfExtendedHeaders = testContext.ChainedHeaderToList(newTip, heightOfFork + extensionSize);
-            connectNewHeadersResult = chainedHeaderTree.ConnectNewHeaders(2, listOfExtendedHeaders);
-
-            foreach (ChainedHeader chainedHeader in connectNewHeadersResult.ToArray())
-            {
-                chainedHeaderTree.BlockDataDownloaded(chainedHeader, newTip.FindAncestorOrSelf(chainedHeader).Block);
-                chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out bool fullValidationRequired);
-                chainedHeaderTree.ConsensusTipChanged(chainedHeader);
-            }
-
-            ChainedHeader chainHeader = chainTip;
-            while (chainHeader.Height > forkedBlockHeader.Height)
-            {
-                // Header has no block pointer.
-                Assert.Null(chainHeader.Block);
-
-                // Header block data availability == headers only.
-                Assert.Equal(BlockDataAvailabilityState.HeaderOnly, chainHeader.BlockDataAvailability);
-
-                // Status of headers for the blocks that were reorged away is fully validated.
-                Assert.Equal(ValidationState.FullyValidated, chainHeader.BlockValidationState);
-
-                chainHeader = chainHeader.Previous;
-            }
-        }
-
-        /// <summary>
         /// Issue 46 @ CT is at 5. Checkpoint is at 10.
         /// ConnectNewHeaders called with 9 new headers (from peer1).
         /// After that ConnectNewHeaders called with headers 5 to 15 (from peer2).

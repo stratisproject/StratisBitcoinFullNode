@@ -28,13 +28,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         public int UnusedAddressesBuffer { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public WalletSettings() : this(NodeSettings.Default())
-        {	
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -43,23 +36,20 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(WalletSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
             this.UnusedAddressesBuffer = config.GetOrDefault<int>("walletaddressbuffer", 20, this.logger);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
         /// Displays wallet configuration help information on the console.
         /// </summary>
-        /// <param name="mainNet">Not used.</param>
-        public static void PrintHelp(Network mainNet)
+        /// <param name="network">Not used.</param>
+        public static void PrintHelp(Network network)
         {
-            NodeSettings defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default(network);
             var builder = new StringBuilder();
 
             builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: 0.");

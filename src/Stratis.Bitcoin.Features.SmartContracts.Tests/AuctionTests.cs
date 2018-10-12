@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var getBalance = new Func<ulong>(() => Balance);
             var persistentState = new TestPersistentState();
             var network = new SmartContractsRegTest();
-            var serializer = new ContractPrimitiveSerializer(network);
+            var serializer = new Serializer(new ContractPrimitiveSerializer(network));
             this.smartContractState = new TestSmartContractState(
                 block,
                 message,
@@ -132,126 +132,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         private Dictionary<string, object> objects = new Dictionary<string, object>();
 
-        public ISmartContractMapping<T> GetStructMapping<T>(string name) where T : struct
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<byte> GetByteList(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<byte[]> GetByteArrayList(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<char> GetCharList(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<Address> GetAddressList(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<bool> GetBoolList(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<int> GetInt32List(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<uint> GetUInt32List(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<long> GetInt64List(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<ulong> GetUInt64List(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<string> GetStringList(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<sbyte> GetSByteList(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractList<T> GetStructList<T>(string name) where T : struct
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<byte> GetByteMapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<byte[]> GetByteArrayMapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<char> GetCharMapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<Address> GetAddressMapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<bool> GetBoolMapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<int> GetInt32Mapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<uint> GetUInt32Mapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<long> GetInt64Mapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<ulong> GetUInt64Mapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<string> GetStringMapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
-        public ISmartContractMapping<sbyte> GetSByteMapping(string name)
-        {
-            throw new NotImplementedException();
-        }
-
         private T GetObject<T>(string key)
         {
             if (this.objects.ContainsKey(key))
@@ -260,12 +140,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             return default(T);
         }
 
-        public byte GetByte(string key)
-        {
-            return this.GetObject<byte>(key);
-        }
-
-        public byte[] GetByteArray(string key)
+        public byte[] GetBytes(string key)
         {
             return this.GetObject<byte[]>(key);
         }
@@ -310,14 +185,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             return this.GetObject<string>(key);
         }
 
-        public sbyte GetSbyte(string key)
-        {
-            return this.GetObject<sbyte>(key);
-        }
-
         public T GetStruct<T>(string key) where T : struct
         {
             return this.GetObject<T>(key);
+        }
+
+        public T[] GetArray<T>(string key)
+        {
+            throw new NotImplementedException();
         }
 
         private void SetObject<T>(string key, T obj)
@@ -325,12 +200,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.objects[key] = obj;
         }
 
-        public void SetByte(string key, byte value)
-        {
-            this.SetObject(key, value);
-        }
-
-        public void SetByteArray(string key, byte[] value)
+        public void SetBytes(string key, byte[] value)
         {
             this.SetObject(key, value);
         }
@@ -375,14 +245,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.SetObject(key, value);
         }
 
-        public void SetSByte(string key, sbyte value)
+        public void SetStruct<T>(string key, T value) where T : struct
         {
             this.SetObject(key, value);
         }
 
-        public void SetStruct<T>(string key, T value) where T : struct
+        public void SetArray(string key, Array a)
         {
-            this.SetObject(key, value);
+            throw new NotImplementedException();
         }
     }
 }

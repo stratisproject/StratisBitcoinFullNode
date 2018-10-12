@@ -1,8 +1,10 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using System.Text;
 using NBitcoin;
+using Nethereum.RLP;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
@@ -32,23 +34,52 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 
         /// <summary>
         /// Transforms this log into the log type used by consensus.
+        /// 
+        /// TODO: Cache this value.
         /// </summary>
         public Log ToLog(IContractPrimitiveSerializer serializer)
         {
-            var topics = new List<byte[]>();
+            (List<byte[]> topics, List<byte[]> fields) = this.Serialize(serializer);
+
+            byte[] encodedFields = RLP.EncodeList(fields.Select(RLP.EncodeElement).ToArray());
+
+            return new Log(this.ContractAddress, topics, encodedFields);
+        }
+
+        /// <summary>
+        /// Serializes the log and topics to bytes.
+        /// </summary>
+        /// <returns></returns>
+        private (List<byte[]>, List<byte[]>) Serialize(IContractPrimitiveSerializer serializer)
+        {
+            var logType = this.LogStruct.GetType();
 
             // first topic is the log type name
-            topics.Add(Encoding.UTF8.GetBytes(this.LogStruct.GetType().Name));
+            var logTypeName = serializer.Serialize(logType.Name);
+            
+            var topics = new List<byte[]> { logTypeName };
+
+            var fields = new List<byte[]>();
 
             // rest of the topics are the indexed fields.
-            foreach (FieldInfo field in this.LogStruct.GetType().GetFields().Where(x=>x.CustomAttributes.Any(y=>y.AttributeType == typeof(IndexAttribute))))
+            foreach (FieldInfo field in logType.GetFields())
             {
                 object value = field.GetValue(this.LogStruct);
-                byte[] serialized = serializer.Serialize(value);
-                topics.Add(serialized);
+
+                byte[] serialized = value != null 
+                    ? serializer.Serialize(value)
+                    : new byte[0];
+
+                if (field.CustomAttributes.Any(y => y.AttributeType == typeof(IndexAttribute)))
+                {
+                    // It's an index, add to the topics
+                    topics.Add(serialized);
+                }
+
+                fields.Add(serialized);
             }
 
-            return new Log(this.ContractAddress, topics, serializer.Serialize(this.LogStruct));
+            return (topics, fields);
         }
     }
 

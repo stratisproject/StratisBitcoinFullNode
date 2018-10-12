@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public IChainState ChainState { get; set; }
 
-        public IFinalizedBlockInfo FinalizedBlockInfo { get; set; }
+        public IFinalizedBlockInfoRepository FinalizedBlockInfo { get; set; }
 
         public IInitialBlockDownloadState InitialBlockDownloadState { get; set; }
 
@@ -218,9 +218,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static void BuildMutatedBlock(BlockTemplate newBlock)
         {
             Transaction coinbaseTransaction = newBlock.Block.Transactions[0];
-            Transaction outTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 0);
+            Transaction outTransaction = TransactionsHelper.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 0);
             newBlock.Block.Transactions.Add(outTransaction);
-            Transaction duplicateTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 1);
+            Transaction duplicateTransaction = TransactionsHelper.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 1);
             newBlock.Block.Transactions.Add(duplicateTransaction);
             newBlock.Block.Transactions.Add(duplicateTransaction);
         }

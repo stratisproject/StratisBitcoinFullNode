@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿using System;
+
+namespace Stratis.SmartContracts
 {
     public interface ISerializer
     {
@@ -40,38 +42,62 @@
         byte[] Serialize(string s);
 
         /// <summary>
-        /// Serializes bytes into a boolean via BitConverter.
+        /// Serializes an array into its RLP-encoded format. If the given array is null, returns null.
+        /// </summary>
+        /// <param name="a">The array to serialize. The DeclaringType of the array must be one of the supported contract primitives.</param>
+        byte[] Serialize(Array a);
+
+        /// <summary>
+        /// Serializes a struct into its RLP-encoded format.
+        /// </summary>
+        /// <param name="s">The struct to serialize.</param>
+        byte[] Serialize<T>(T s) where T : struct;
+
+        /// <summary>
+        /// Deserializes bytes into a boolean via BitConverter. If the given bytes are null, empty, or deserialization fails, returns default(bool).
         /// </summary>
         bool ToBool(byte[] val);
 
         /// <summary>
-        /// Serializes 20-bytes into an address.
+        /// Deserializes 20-bytes into an address. If the given bytes are null, empty, or deserialization fails, returns default(Address).
         /// </summary>
         Address ToAddress(byte[] val);
 
         /// <summary>
-        /// Serializes first 4 bytes of a byte array into an integer.
+        /// Deserializes first 4 bytes of a byte array into an integer. If the given bytes are null, empty, or deserialization fails, returns default(int).
         /// </summary>
         int ToInt32(byte[] val);
 
         /// <summary>
-        /// Serializes first 4 bytes of a byte array into an unsigned integer.
+        /// Deserializes first 4 bytes of a byte array into an unsigned integer.If the given bytes are null, empty, or deserialization fails, returns default(uint).
         /// </summary>
         uint ToUInt32(byte[] val);
 
         /// <summary>
-        /// Serializes first 8 bytes of a  byte array into a long. 
+        /// Deserializes first 8 bytes of a  byte array into a long. If the given bytes are null, empty, or deserialization fails, returns default(long).
         /// </summary>
         long ToInt64(byte[] val);
 
         /// <summary>
-        /// Serializes first 8 bytes of a byte array into an unsigned long.
+        /// Deserializes first 8 bytes of a byte array into an unsigned long. If the given bytes are null, empty, or deserialization fails, returns default(ulong).
         /// </summary>
         ulong ToUInt64(byte[] val);
 
         /// <summary>
-        /// Serializes UTF8-encoded bytes into a string.
+        /// Deserializes UTF8-encoded bytes into a string. If the given bytes are null, empty, or deserialization fails, returns <see cref="string.Empty"/>.
         /// </summary>
         string ToString(byte[] val);
+
+        /// <summary>
+        /// Deserializes RLP-encoded bytes to an array. If the given bytes are null, empty, or deserialization fails, returns new T[0].
+        /// </summary>
+        /// <typeparam name="T">DeclaringType in the array to return. Must be one of the supported contract primitives.</typeparam>
+        T[] ToArray<T>(byte[] val);
+
+        /// <summary>
+        /// Deserializes RLP-encoded bytes to an struct. If the given bytes are null, empty, or deserialization fails, returns default(T).
+        /// </summary>
+        /// <typeparam name="T">The Type of struct to return</typeparam>
+        T ToStruct<T>(byte[] val) where T: struct;
     }
 }

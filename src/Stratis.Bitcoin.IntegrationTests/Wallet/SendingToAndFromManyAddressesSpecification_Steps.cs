@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private int CoinBaseMaturity;
 
         private const string WalletName = "mywallet";
-        private const string WalletPassword = "123456";
+        private const string WalletPassword = "password";
         private const string WalletPassphrase = "passphrase";
         private const string WalletAccountName = "account 0";
         private const int UnspentTransactionOutputs = 50;
@@ -50,22 +50,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_connected_nodes()
         {
-            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
             this.firstNode.Start();
-            this.firstNode.NotInIBD();
-            this.firstNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
-            this.secondNode = this.nodeBuilder.CreateStratisPowNode(this.network);
+            this.secondNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
             this.secondNode.Start();
-            this.secondNode.NotInIBD();
-            this.secondNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
-            TestHelper.ConnectAndSync(this.firstNode, this.secondNode);
+            TestHelper.Connect(this.firstNode, this.secondNode);
         }
 
         private void node1_sends_funds_to_node2_TO_fifty_addresses()
         {
-            TestHelper.MineBlocks(this.firstNode, WalletName, WalletPassword, WalletAccountName, this.CoinBaseMaturity + 2);
+            TestHelper.MineBlocks(this.firstNode, this.CoinBaseMaturity + 2);
 
             IEnumerable<HdAddress> nodeTwoAddresses = this.secondNode.FullNode.WalletManager().GetUnusedAddresses(new WalletAccountReference(WalletName, WalletAccountName), 50);
 
@@ -99,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             this.secondNode.WalletSpendableTransactionCount(WalletName).Should().Be(UnspentTransactionOutputs);
 
-            TestHelper.MineBlocks(this.secondNode, WalletName, WalletPassword, WalletAccountName, 1);
+            TestHelper.MineBlocks(this.secondNode, 1);
 
             this.secondNode.WalletHeight(WalletName).Should().Be(this.CoinBaseMaturity + 3);
         }
@@ -129,7 +125,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             Money nodeOneBeforeBalance = this.firstNode.WalletBalance(WalletName);
 
-            TestHelper.MineBlocks(this.secondNode, WalletName, WalletPassword, WalletAccountName, 1);
+            TestHelper.MineBlocks(this.secondNode, 1);
 
             this.firstNode.WalletBalance(WalletName).Should().Be(nodeOneBeforeBalance + Money.Coins(49));
 

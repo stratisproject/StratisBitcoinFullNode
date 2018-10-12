@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// <summary>
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
-    public class SmartContractFormatRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
+    public class SmartContractFormatRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
         public const ulong GasLimitMaximum = 5_000_000;
 
@@ -25,6 +25,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
         public const ulong GasPriceMinimum = 1;
 
         public const ulong GasPriceMaximum = 10_000;
+
+        private readonly ICallDataSerializer callDataSerializer;
+
+        public SmartContractFormatRule(ICallDataSerializer callDataSerializer)
+        {
+            this.callDataSerializer = callDataSerializer;
+        }
 
         public override Task RunAsync(RuleContext context)
         {
@@ -60,8 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
             }
 
-            ICallDataSerializer serializer = CallDataSerializer.Default;
-            Result<ContractTxData> callDataDeserializationResult = serializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
+            Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
 
             if (callDataDeserializationResult.IsFailure)
             {

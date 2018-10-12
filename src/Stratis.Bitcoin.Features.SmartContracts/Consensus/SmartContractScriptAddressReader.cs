@@ -1,5 +1,6 @@
 ﻿using CSharpFunctionalExtensions;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
         private readonly ICallDataSerializer callDataSerializer;
 
         public SmartContractScriptAddressReader(
-            IScriptAddressReader addressReader,
+            ScriptAddressReader addressReader,
             ICallDataSerializer callDataSerializer)
         {
             this.baseAddressReader = addressReader;

@@ -89,21 +89,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
-        private void AddComponentStats(StringBuilder benchLogs)
+        private void AddComponentStats(StringBuilder log)
         {
             if (this.mempoolManager != null)
             {
-                benchLogs.AppendLine();
-                benchLogs.AppendLine("=======Mempool=======");
-                benchLogs.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
+                log.AppendLine();
+                log.AppendLine("=======Mempool=======");
+                log.AppendLine(this.mempoolManager.PerformanceCounter.ToString());
             }
         }
 
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             await this.mempoolManager.LoadPoolAsync().ConfigureAwait(false);
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
@@ -111,8 +109,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.mempoolSignaled.Start();
 
             this.signals.SubscribeForBlocksDisconnected(this.blocksDisconnectedSignaled);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
