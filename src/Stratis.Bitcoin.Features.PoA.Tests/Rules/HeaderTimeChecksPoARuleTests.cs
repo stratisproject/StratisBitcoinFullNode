@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
