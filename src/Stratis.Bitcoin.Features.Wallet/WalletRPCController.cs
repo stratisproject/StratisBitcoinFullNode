@@ -1,11 +1,7 @@
 ﻿using System;
-<<<<<<< HEAD
 using System.Linq;
 using System.Security;
-=======
 using System.Collections.Generic;
-using System.Linq;
->>>>>>> 45441498ef6fb5725427902ea4575bb7bbec8289
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
