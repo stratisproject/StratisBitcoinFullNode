@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
 {
     /// <summary>
-    /// All PoA blocks should be of constant difficulty so chainwork always 
+    /// All PoA blocks should be of constant difficulty so chainwork always
     /// raises by constant amount with each new block.
     /// </summary>
     /// <remarks>
