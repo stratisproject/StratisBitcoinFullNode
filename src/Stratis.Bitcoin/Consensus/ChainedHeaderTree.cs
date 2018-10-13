@@ -416,20 +416,15 @@ namespace Stratis.Bitcoin.Consensus
         {
             ChainedHeader oldConsensusTip = this.GetConsensusTip();
             ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
-            ChainedHeader currentHeader = newConsensusTip;
 
             this.logger.LogTrace("Old consensus tip: '{0}', new consensus tip: '{1}', fork point: '{2}'.", oldConsensusTip, newConsensusTip, fork);
 
-            // Consider blocks that became a part of our best chain as consumed.
-            while (currentHeader != fork)
+            if (!blockMined && newConsensusTip.Block != null)
             {
-                if (!blockMined)
-                    this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
-
+                this.UnconsumedBlocksDataBytes -= newConsensusTip.Block.BlockSize.Value;
                 this.UnconsumedBlocksCount--;
 
-                this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
-                currentHeader = currentHeader.Previous;
+                this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", newConsensusTip.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
             }
 
             // Switch consensus tip to the new block header.
@@ -911,7 +906,9 @@ namespace Stratis.Bitcoin.Consensus
             this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
 
             ChainedHeader chainedHeader = this.GetChainedHeader(block.GetHash());
-            this.BlockDataDownloaded(chainedHeader, block);
+
+            chainedHeader.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+            chainedHeader.Block = block;
 
             return chainedHeader;
         }
