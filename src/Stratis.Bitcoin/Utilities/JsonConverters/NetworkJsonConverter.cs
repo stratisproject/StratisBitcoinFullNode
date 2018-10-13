@@ -52,13 +52,13 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             string networkName = null;
 
-            if (network == NetworkRegistration.GetNetwork("MainNet"))
+            if (network.Name == NetworkRegistration.GetNetwork("MainNet").Name)
                 networkName = "MainNet";
-            else if (network == NetworkRegistration.GetNetwork("TestNet"))
+            else if (network.Name == NetworkRegistration.GetNetwork("TestNet").Name)
                 networkName = "TestNet";
-            else if (network == NetworkRegistration.GetNetwork("RegTest"))
+            else if (network.Name == NetworkRegistration.GetNetwork("RegTest").Name)
                 networkName = "RegTest";
-            else if (network != null)
+            else if (network.Name != null)
                 networkName = network.ToString();
 
             if (networkName != null)

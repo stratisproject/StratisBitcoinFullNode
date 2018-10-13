@@ -395,6 +395,9 @@ namespace NBitcoin
             if (str == null)
                 throw new ArgumentNullException("str");
 
+            if (expectedNetwork == null)
+                throw new ArgumentNullException(nameof(expectedNetwork));
+
             IEnumerable<Network> networks = new[] { expectedNetwork };
             bool maybeb58 = true;
             for (int i = 0; i < str.Length; i++)

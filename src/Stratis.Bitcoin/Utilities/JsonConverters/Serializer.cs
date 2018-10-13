@@ -36,7 +36,9 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             {
                 Formatting = Formatting.Indented
             };
+
             RegisterFrontConverters(settings, network);
+
             return JsonConvert.DeserializeObject<T>(data, settings);
         }
 

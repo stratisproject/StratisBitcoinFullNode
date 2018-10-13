@@ -8,14 +8,16 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
     /// <summary>
     /// Converter used to convert an object implementing <see cref="IBitcoinString"/> to and from JSON.
     /// </summary>
-    /// <seealso cref="Newtonsoft.Json.JsonConverter" />
+    /// <seealso cref="JsonConverter" />
     public class BitcoinStringJsonConverter : JsonConverter
     {
-        public Network Network { get; set; }
+        private readonly Network network;
 
         public BitcoinStringJsonConverter(Network network)
         {
-            this.Network = network;
+            Guard.NotNull(network, nameof(network));
+
+            this.network = network;
         }
 
         /// <inheritdoc />
@@ -34,21 +36,18 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
 
             try
             {
-                IBitcoinString result = Network.Parse(reader.Value.ToString(), null);
+                IBitcoinString result = Network.Parse(reader.Value.ToString(), this.network);
                 if (result == null)
                 {
                     throw new JsonObjectException("Invalid BitcoinString data", reader);
                 }
 
-                if (this.Network != null)
+                if (result.Network != this.network)
                 {
-                    if (result.Network != this.Network)
+                    result = this.network.Parse(reader.Value.ToString());
+                    if (result.Network != this.network)
                     {
-                        result = this.Network.Parse(reader.Value.ToString());
-                        if (result.Network != this.Network)
-                        {
-                            throw new JsonObjectException("Invalid BitcoinString network", reader);
-                        }
+                        throw new JsonObjectException("Invalid BitcoinString network", reader);
                     }
                 }
 
