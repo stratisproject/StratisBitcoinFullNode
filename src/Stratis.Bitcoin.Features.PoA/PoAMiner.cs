@@ -176,6 +176,12 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
 
+                    if (chainedHeader == null)
+                    {
+                        // Block wasn't accepted because we already connected block from the network.
+                        continue;
+                    }
+
                     ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, blockTemplate.Block);
                     if (result.Error != null)
                     {
