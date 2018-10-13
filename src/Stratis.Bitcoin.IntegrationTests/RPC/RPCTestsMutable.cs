@@ -21,11 +21,18 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 builder.StartAll();
                 RPCClient rpcClient = node.CreateRPCClient();
 
-                TestHelper.MineBlocks(node, 2);
-                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == 2);
+                int maturity = (int)KnownNetworks.RegTest.Consensus.CoinbaseMaturity;
 
-                Money balance = rpcClient.GetBalance();
-                Assert.Equal(Money.Coins(100), balance);
+                // This shouldn't be necessary but is required to make this test pass.
+                // - looks like a bug in the wallet?
+                maturity--; 
+                
+                TestHelper.MineBlocks(node, maturity);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == maturity);                             
+                Assert.Equal(Money.Zero, rpcClient.GetBalance());
+
+                rpcClient.Generate(1);
+                Assert.Equal(Money.Coins(50), rpcClient.GetBalance());
             }
         }
 

@@ -79,16 +79,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// RPC method that returns the spendable balance of all accounts.
         /// Uses the first wallet and account.
         /// </summary>
+        /// <param name="minConfirmations">Only include transactions confirmed at least this many times. (default=1)</param>
+        /// <param name="isWatchOnly">Also include balance in watch-only addresses. (not used yet)</param>
         /// <returns>Total spendable balance of the wallet.</returns>
         [ActionName("getbalance")]
         [ActionDescription("Gets wallets spendable balance.")]
-        public decimal GetBalance()
+        public decimal GetBalance(int? minConfirmations, bool? isWatchOnly)
         {
             var account = this.GetAccount();
 
-            IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(account.WalletName, account.AccountName);
-
-            Money balance = balances?.Sum(i => i.AmountConfirmed);
+            Money balance = this.walletManager.GetSpendableTransactionsInAccount(account, minConfirmations ?? 1).Sum(x => x.Transaction.Amount);
             return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
         }
 
