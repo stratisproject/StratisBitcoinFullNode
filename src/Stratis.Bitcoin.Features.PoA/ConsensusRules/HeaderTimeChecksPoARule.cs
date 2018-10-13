@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
                 ConsensusErrors.TimeTooOld.Throw();
             }
 
-            // Timestamp shouldn't be more than targetSpacing seconds in the future.
+            // Timestamp shouldn't be more than current time plus max future drift.
             long maxValidTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + MaxFutureDriftSeconds;
             if (chainedHeader.Header.Time > maxValidTime)
             {
