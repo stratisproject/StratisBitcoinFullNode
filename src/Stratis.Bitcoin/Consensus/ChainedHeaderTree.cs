@@ -93,8 +93,9 @@ namespace Stratis.Bitcoin.Consensus
         /// All peers are checked against max reorg violation and if they violate their chain will be reset.
         /// </remarks>
         /// <param name="newConsensusTip">The new consensus tip.</param>
+        /// <param name="blockMined">Was the block mined or received from the network.</param>
         /// <returns>List of peer Ids that violate max reorg rule.</returns>
-        List<int> ConsensusTipChanged(ChainedHeader newConsensusTip);
+        List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, bool blockMined = false);
 
         /// <summary>
         /// Handles situation when the block's data is downloaded for a given chained header.
@@ -411,7 +412,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip)
+        public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, bool blockMined = false)
         {
             ChainedHeader oldConsensusTip = this.GetConsensusTip();
             ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
@@ -422,7 +423,9 @@ namespace Stratis.Bitcoin.Consensus
             // Consider blocks that became a part of our best chain as consumed.
             while (currentHeader != fork)
             {
-                this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
+                if (!blockMined)
+                    this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
+
                 this.UnconsumedBlocksCount--;
 
                 this.logger.LogTrace("Size of unconsumed block data is decreased by {0}, new value is {1}.", currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
