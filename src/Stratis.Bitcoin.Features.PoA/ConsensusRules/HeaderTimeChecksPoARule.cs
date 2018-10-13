@@ -16,6 +16,8 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
 
         private SlotsManager slotsManager;
 
+        public const int MaxFutureDriftSeconds = 60;
+
         /// <inheritdoc />
         public override void Initialize()
         {
@@ -38,7 +40,8 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
             }
 
             // Timestamp shouldn't be more than targetSpacing seconds in the future.
-            if (chainedHeader.Header.Time > (this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + this.network.TargetSpacingSeconds))
+            long maxValidTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + MaxFutureDriftSeconds;
+            if (chainedHeader.Header.Time > maxValidTime)
             {
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
