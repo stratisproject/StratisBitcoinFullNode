@@ -70,10 +70,9 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 Network network = KnownNetworks.RegTest;
-                var node = builder.CreateStratisPowNode(network);
+                var node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet();
                 builder.StartAll();
                 RPCClient rpcClient = node.CreateRPCClient();
-                node.NotInIBD().WithWallet();
                 int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
                 TestHelper.MineBlocks(node, blocksToMine);
                 TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
@@ -100,10 +99,9 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 Network network = KnownNetworks.RegTest;
-                var node = builder.CreateStratisPowNode(network);
+                var node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet(); ;
                 builder.StartAll();
                 RPCClient rpcClient = node.CreateRPCClient();
-                node.NotInIBD().WithWallet();
                 int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
                 TestHelper.MineBlocks(node, blocksToMine);
                 TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
@@ -111,7 +109,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var alice = new Key().GetBitcoinSecret(network);
                 var aliceAddress = alice.GetAddress();
 
-                // Not unlockedcase.                
+                // Not unlocked case.                
                 Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
 
                 // Unlock and lock case.
