@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
             long maxValidTime = this.Parent.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp() + MaxFutureDriftSeconds;
             if (chainedHeader.Header.Time > maxValidTime)
             {
+                this.Logger.LogWarning("Peer presented header with timestamp that is too far in to the future. Header was ignored." +
+                                       " If you see this message a lot consider checking if your computer's time is correct.");
                 this.Logger.LogTrace("(-)[TIME_TOO_NEW]");
                 ConsensusErrors.TimeTooNew.Throw();
             }
