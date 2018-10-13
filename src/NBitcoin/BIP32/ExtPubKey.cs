@@ -10,7 +10,7 @@ namespace NBitcoin
     /// </summary>
     public class ExtPubKey : IBitcoinSerializable, IDestination
     {
-        public static ExtPubKey Parse(string wif, Network expectedNetwork = null)
+        public static ExtPubKey Parse(string wif, Network expectedNetwork)
         {
             return Network.Parse<BitcoinExtPubKey>(wif, expectedNetwork).ExtPubKey;
         }

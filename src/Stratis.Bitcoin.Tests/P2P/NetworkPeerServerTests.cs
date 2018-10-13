@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Tests.Common.Logging;
 using Xunit;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Tests.P2P
 {
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             initialBlockDownloadState.Setup(i => i.IsInitialBlockDownload()).Returns(inIBD);
 
-            var nodeSettings = new NodeSettings(NetworkRegistration.GetNetwork("RegTest"));
+            var nodeSettings = new NodeSettings(new BitcoinRegTest());
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
 
             var endpointAddNode = new IPEndPoint(IPAddress.Parse("::ffff:192.168.0.1"), 80);

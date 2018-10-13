@@ -673,7 +673,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             for (int i = firstNewAddressIndex; i < firstNewAddressIndex + addressesQuantity; i++)
             {
                 // Generate a new address.
-                PubKey pubkey = HdOperations.GeneratePublicKey(this.ExtendedPubKey, i, isChange);
+                PubKey pubkey = HdOperations.GeneratePublicKey(network, this.ExtendedPubKey, i, isChange);
                 BitcoinPubKeyAddress address = pubkey.GetAddress(network);
 
                 // Add the new address details to the list of addresses.
