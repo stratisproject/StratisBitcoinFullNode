@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
         public PoAHeaderSignatureRuleTests() : base(new TestPoANetwork(new List<PubKey>() { key.PubKey }))
         {
-            this.signatureRule = new PoAHeaderSignatureRule();
+            this.signatureRule = new PoAHeaderSignatureRule(this.poaHeaderValidator, this.slotsManager);
             this.signatureRule.Parent = this.rulesEngine;
             this.signatureRule.Logger = this.loggerFactory.CreateLogger(this.signatureRule.GetType().FullName);
             this.signatureRule.Initialize();

@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public class HeaderTimeChecksPoARule : HeaderValidationConsensusRule
     {
+        /// <summary>Up to how many seconds headers's timestamp can be in the future to be considered valid.</summary>
         public const int MaxFutureDriftSeconds = 60;
 
         private readonly SlotsManager slotsManager;
