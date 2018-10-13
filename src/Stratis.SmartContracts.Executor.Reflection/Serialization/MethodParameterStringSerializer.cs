@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using System.Text.RegularExpressions;
 using NBitcoin;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
@@ -33,7 +34,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             // ToString works fine for all of our data types except byte arrays.
             var serialized = primitiveType == MethodParameterDataType.ByteArray
-                ? Encoding.UTF8.GetString((byte[])obj)
+                ? ((byte[])obj).ToHexString()
                 : obj.ToString();
 
             return string.Format("{0}#{1}", (int) primitiveType, serialized);
@@ -58,10 +59,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (o is uint)
                 return MethodParameterDataType.UInt;
-
-            if (o is uint160)
-                return MethodParameterDataType.UInt160;
-
+            
             if (o is ulong)
                 return MethodParameterDataType.ULong;
 
@@ -124,15 +122,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
                 else if (parameterSignature[0] == MethodParameterDataType.Long.ToString("d"))
                     processedParameters.Add(long.Parse(parameterSignature[1]));
-
-                else if (parameterSignature[0] == MethodParameterDataType.UInt160.ToString("d"))
-                    processedParameters.Add(new uint160(parameterSignature[1]));
-
+                
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
                     processedParameters.Add(new Address(parameterSignature[1]));
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
-                    processedParameters.Add(Encoding.UTF8.GetBytes(parameterSignature[1]));
+                    processedParameters.Add(parameterSignature[1].HexToByteArray());
 
                 else
                     throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));

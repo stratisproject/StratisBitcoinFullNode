@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore.Models;
@@ -145,6 +146,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.apiUri = this.stratisPosApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
         }
 
+        private void the_proof_of_stake_node_has_passed_LastPOWBlock()
+        {
+            typeof(ChainedHeader).GetProperty("Height").SetValue(this.stratisPosApiNode.FullNode.ConsensusManager().Tip,
+                this.stratisPosApiNode.FullNode.Network.Consensus.LastPOWBlock + 1);
+        }
+
         private void two_connected_proof_of_work_nodes_with_api_enabled()
         {
             a_proof_of_work_node_with_api_enabled();
@@ -159,7 +166,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.firstStratisPowApiNode.Start();
-            this.firstStratisPowApiNode.WithWallet();
+
+            // With these tests we still need to create the wallets outside of the builder
+            this.firstStratisPowApiNode.Mnemonic = this.firstStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
             this.firstStratisPowApiNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
             this.apiUri = this.firstStratisPowApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
@@ -169,7 +178,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD();
             this.secondStratisPowApiNode.Start();
-            this.secondStratisPowApiNode.WithWallet();
+
+            // With these tests we still need to create the wallets outside of the builder
+            this.secondStratisPowApiNode.Mnemonic = this.secondStratisPowApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
         }
 
         protected void a_block_is_mined_creating_spendable_coins()
@@ -196,7 +207,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var stakingRequest = new StartStakingRequest() { Name = WalletName, Password = WalletPassword };
 
-            this.stratisPosApiNode.WithWallet();
+            // With these tests we still need to create the wallets outside of the builder
+            this.stratisPosApiNode.Mnemonic = this.stratisPosApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
 
             var httpRequestContent = new StringContent(stakingRequest.ToString(), Encoding.UTF8, JsonContentType);
             this.response = this.httpClient.PostAsync($"{this.apiUri}{StartStakingUri}", httpRequestContent).GetAwaiter().GetResult();
@@ -283,7 +295,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void calling_general_info()
         {
-            this.stratisPosApiNode.WithWallet();
+            // With these tests we still need to create the wallets outside of the builder
+            this.stratisPosApiNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
             this.send_api_get_request($"{GeneralInfoUri}?name={WalletName}");
         }
 
@@ -416,7 +429,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(22);
+            commands.Count.Should().Be(24);
             commands.Should().Contain(x => x.Command == "stop");
             commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");

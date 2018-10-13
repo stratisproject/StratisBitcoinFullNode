@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
-using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
@@ -9,27 +8,29 @@ using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
-    public sealed class SmartContractPosTest : Network
+    public sealed class SmartContractsTest : Network
     {
-        public SmartContractPosTest()
+        public SmartContractsTest()
         {
-            this.Name = "SmartContractPosTest";
-            this.RootFolderName = StratisMain.StratisRootFolderName;
-            this.DefaultConfigFilename = StratisMain.StratisDefaultConfigFilename;
-            this.Magic = 0x0709110F; // Incremented 09/08
+            this.Name = "SmartContractsTestNet";
+            this.RootFolderName = SmartContractNetwork.StratisRootFolderName;
+            this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
+            this.Magic = 0x0709110E; // Incremented 19/06
             this.DefaultPort = 18333;
             this.RPCPort = 18332;
-            this.MaxTipAge = BitcoinMain.BitcoinDefaultMaxTipAgeInSeconds;
+            this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
             this.FallbackFee = 20000;
             this.MinRelayTxFee = 1000;
             this.MaxTimeOffsetSeconds = 25 * 60;
 
-            var consensusFactory = new SmartContractPosConsensusFactory();
+            var consensusFactory = new SmartContractPowConsensusFactory();
 
-            Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 4, Money.Coins(50m));
+            Block genesisBlock = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 1, Money.Coins(50m));
+            ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
+            genesisBlock.Header.Nonce = 3; // Incremented 19/06
 
-            this.Genesis = genesis;
+            this.Genesis = genesisBlock;
 
             // Taken from StratisX.
             var consensusOptions = new PosConsensusOptions(
@@ -58,8 +59,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: 1,
-                hashGenesisBlock: genesis.Header.GetHash(),
-                subsidyHalvingInterval: 210_000,
+                hashGenesisBlock: genesisBlock.Header.GetHash(),
+                subsidyHalvingInterval: 210000,
                 majorityEnforceBlockUpgrade: 51,
                 majorityRejectBlockOutdated: 75,
                 majorityWindow: 100,
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 5,
                 premineHeight: 2,
-                premineReward: Money.Coins(10_000_000),
+                premineReward: Money.Coins(1000000),
                 proofOfWorkReward: Money.Coins(50),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(20), // 20 second block time while on testnet
@@ -81,25 +82,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 powNoRetargeting: false,
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), // Set extremely low difficulty for now.
                 minimumChainWork: uint256.Zero,
-                isProofOfStake: true,
-                lastPowBlock: 1_000_000,
-                proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.COIN
+                isProofOfStake: default(bool),
+                lastPowBlock: default(int),
+                proofOfStakeLimit: null,
+                proofOfStakeLimitV2: null,
+                proofOfStakeReward: Money.Zero
             );
 
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (63) };
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (125) };
-            this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (63 + 128) };
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
+            this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
-            this.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x88), (0xB2), (0x1E) };
-            this.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x88), (0xAD), (0xE4) };
+            this.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x35), (0x87), (0xCF) };
+            this.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x35), (0x83), (0x94) };
             this.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
             this.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
-            this.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2a };
-            this.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 23 };
+            this.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2b };
+            this.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 115 };
             this.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
             Bech32Encoder encoder = Encoders.Bech32("tb");

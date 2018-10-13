@@ -9,6 +9,7 @@ namespace NBitcoin
         public class MutableUint256 : IBitcoinSerializable
         {
             private uint256 _Value;
+
             public uint256 Value
             {
                 get
@@ -20,6 +21,9 @@ namespace NBitcoin
                     this._Value = value;
                 }
             }
+
+            public uint256 MaxValue => uint256.Parse("ffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff");
+
             public MutableUint256()
             {
                 this._Value = Zero;

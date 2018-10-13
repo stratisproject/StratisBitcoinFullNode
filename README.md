@@ -1,14 +1,6 @@
-| Windows | Linux | OS X
+| Windows | MacOs | Ubuntu64
 | :---- | :------ | :---- |
-[![Windows build status][1]][2] | [![Linux build status][3]][4] | [![OS X build status][5]][6] | 
-
-[1]: https://ci.appveyor.com/api/projects/status/451tv98n7xvxm5ol/branch/master?svg=true
-[2]: https://ci.appveyor.com/project/stratis/stratisbitcoinfullnode
-[3]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode.svg?branch=master
-[4]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode
-[5]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode.svg?branch=master
-[6]: https://travis-ci.org/stratisproject/StratisBitcoinFullNode
-
+| [![Build Status](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_apis/build/status/HostedWindowsContainer-CI)](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/latest?definitionId=4) | [![Build Status](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_apis/build/status/HostedmacOS-CI)](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/latest?definitionId=6) | [![Build Status](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_apis/build/status/HostedUbuntu1604-CI)](https://dev.azure.com/StratisProject/StratisBitcoinFullNode/_build/latest?definitionId=5)
 
 Stratis Bitcoin
 ===============
@@ -109,14 +101,3 @@ You can find tasks at the issues/projects or visit the dev_general channel on [d
 Testing
 -------
 * [Testing Guidelines](Documentation/testing-guidelines.md)
-
-CI build
------------
-
-We use [AppVeyor](https://www.appveyor.com/) for our CI build and to create nuget packages.
-Every time someone pushes to the master branch or create a pull request on it, a build is triggered and new nuget packages are created.
-
-To skip a build, for example if you've made very minor changes, include the text **[skip ci]** or **[ci skip]** in your commits' comment (with the squared brackets).
-
-If you want get the :sparkles: latest :sparkles: (and unstable :bomb:) version of the nuget packages here: 
-* [Stratis.Bitcoin](https://ci.appveyor.com/api/projects/stratis/stratisbitcoinfullnode/artifacts/nuget/Stratis.Bitcoin.1.0.7-alpha.nupkg?job=Configuration%3A%20Release)

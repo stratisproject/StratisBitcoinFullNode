@@ -148,7 +148,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             private bool useCheckpoints = true;
             public Key privateKey;
             private ReflectionVirtualMachine vm;
-            private ICallDataSerializer serializer;
+            private ISerializer serializer;
             private ContractAssemblyLoader assemblyLoader;
             public ICallDataSerializer callDataSerializer;
             internal ReflectionExecutorFactory ExecutorFactory { get; private set; }
@@ -192,7 +192,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 this.loggerFactory = new ExtendedLoggerFactory();
                 this.loggerFactory.AddConsoleWithFilters();
 
-                this.NodeSettings = new NodeSettings(args: new string[] { "-checkpoints" });
+                this.NodeSettings = new NodeSettings(this.network, args: new string[] { "-checkpoints" });
                 var consensusSettings = new ConsensusSettings(this.NodeSettings);
 
                 var nodeDeployments = new NodeDeployments(this.network, this.chain);
@@ -311,7 +311,8 @@ namespace Stratis.SmartContracts.IntegrationTests
                 this.stateProcessor = new StateProcessor(this.reflectionVirtualMachine, this.AddressGenerator);
                 this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
-                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.network, this.internalTxExecutorFactory);
+                this.serializer = new Serializer(this.primitiveSerializer);
+                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.network, this.internalTxExecutorFactory, this.serializer);
                 this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
                 this.ExecutorFactory = new ReflectionExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.primitiveSerializer);
             }

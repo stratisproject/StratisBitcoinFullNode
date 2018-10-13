@@ -1,6 +1,11 @@
 ﻿using System;
+<<<<<<< HEAD
 using System.Linq;
 using System.Security;
+=======
+using System.Collections.Generic;
+using System.Linq;
+>>>>>>> 45441498ef6fb5725427902ea4575bb7bbec8289
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -136,6 +141,73 @@ namespace Stratis.Bitcoin.Features.Wallet
             string base58Address = hdAddress.Address;
             
             return new NewAddressModel(base58Address);
+        }
+
+        /// <summary>
+        /// RPC method that returns the spendable balance of all accounts.
+        /// Uses the first wallet and account.
+        /// </summary>
+        /// <returns>Total spendable balance of the wallet.</returns>
+        [ActionName("getbalance")]
+        [ActionDescription("Gets wallets spendable balance.")]
+        public decimal GetBalance()
+        {
+            var account = this.GetAccount();
+
+            IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(account.WalletName, account.AccountName);
+
+            Money balance = balances?.Sum(i => i.AmountConfirmed);
+            return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
+        }
+
+        /// <summary>
+        /// RPC method to return transaction info from the wallet.
+        /// Uses the first wallet and account.
+        /// </summary>
+        /// <param name="txid">Transaction identifier to find.</param>
+        /// <returns>Transaction information.</returns>
+        [ActionName("gettransaction")]
+        [ActionDescription("Gets a transaction from the wallet.")]
+        public GetTransactionModel GetTransaction(string txid)
+        {
+            uint256 trxid;
+            if (!uint256.TryParse(txid, out trxid))
+                throw new ArgumentException(nameof(txid));
+
+            var accountReference = this.GetAccount();
+            var account = this.walletManager.GetAccounts(accountReference.WalletName)
+                                            .Where(i => i.Name.Equals(accountReference.AccountName))
+                                            .Single();
+
+            var transaction = account.GetTransactionsById(trxid)?.Single();
+
+            if (transaction == null)
+                return null;
+
+            var model = new GetTransactionModel
+            {
+                Amount = transaction.Amount,
+                BlockHash = transaction.BlockHash,
+                TransactionId = transaction.Id,
+                TransactionTime = transaction.CreationTime.ToUnixTimeSeconds(),
+                Details = new List<GetTransactionDetailsModel>(),
+                Hex = transaction.Hex == null ? string.Empty : transaction.Hex
+            };
+
+            if (transaction.SpendingDetails?.Payments != null)
+            {
+                foreach (var paymentDetail in transaction.SpendingDetails.Payments)
+                {
+                    model.Details.Add(new GetTransactionDetailsModel
+                    {
+                        Address = paymentDetail.DestinationAddress,
+                        Category = "send",
+                        Amount = paymentDetail.Amount
+                    });
+                }
+            }
+
+            return model;
         }
 
         private WalletAccountReference GetAccount()

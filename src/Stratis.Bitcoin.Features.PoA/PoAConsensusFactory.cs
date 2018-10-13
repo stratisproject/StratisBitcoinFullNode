@@ -7,7 +7,6 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <inheritdoc />
         public override Block CreateBlock()
         {
-            // TODO POA create PoA block
             return new Block(this.CreateBlockHeader());
         }
 

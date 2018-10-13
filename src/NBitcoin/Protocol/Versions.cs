@@ -66,6 +66,13 @@
         WITNESS_VERSION = 70012,
 
         /// <summary>
+        /// Communication between nodes with proven headers is possible after this version.
+        /// This is for stratis only. Temporary solution, refers to issue #2144
+        /// https://github.com/stratisproject/StratisBitcoinFullNode/issues/2144
+        /// </summary>
+        PROVEN_HEADER_VERSION = 70012,
+
+        /// <summary>
         /// shord-id-based block download starts with this version.
         /// </summary>
         SHORT_IDS_BLOCKS_VERSION = 70014

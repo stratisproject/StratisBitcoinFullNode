@@ -15,14 +15,46 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
     public class RPCTestsMutable
     {
         [Fact]
+        public void TestRpcGetBalanceIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+                builder.StartAll();
+                RPCClient rpcClient = node.CreateRPCClient();
+
+                TestHelper.MineBlocks(node, 2);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == 2);
+
+                Money balance = rpcClient.GetBalance();
+                Assert.Equal(Money.Coins(100), balance);
+            }
+        }
+
+        [Fact]
+        public void TestRpcGetTransactionIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+                builder.StartAll();
+                RPCClient rpc = node.CreateRPCClient();             
+                uint256 blockHash = rpc.Generate(1)[0];
+                Block block = rpc.GetBlock(blockHash);
+                RPCResponse walletTx = rpc.SendCommand(RPCOperations.gettransaction, block.Transactions[0].GetHash().ToString());
+                walletTx.ThrowIfError();
+            }
+        }
+
+        [Fact]
         public void TestRpcGetBlockWithValidHashIsSuccessful()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                var node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
                 builder.StartAll();
                 RPCClient rpcClient = node.CreateRPCClient();
-                node.WithWallet();
+
                 TestHelper.MineBlocks(node, 2);
                 TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == 2);
 
