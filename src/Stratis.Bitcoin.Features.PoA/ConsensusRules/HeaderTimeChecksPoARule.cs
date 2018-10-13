@@ -12,19 +12,13 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public class HeaderTimeChecksPoARule : HeaderValidationConsensusRule
     {
-        private PoANetwork network;
-
-        private SlotsManager slotsManager;
-
         public const int MaxFutureDriftSeconds = 60;
 
-        /// <inheritdoc />
-        public override void Initialize()
-        {
-            base.Initialize();
+        private readonly SlotsManager slotsManager;
 
-            this.network = this.Parent.Network as PoANetwork;
-            this.slotsManager = (this.Parent as PoAConsensusRuleEngine).SlotsManager;
+        public HeaderTimeChecksPoARule(SlotsManager slotsManager)
+        {
+            this.slotsManager = slotsManager;
         }
 
         /// <inheritdoc />

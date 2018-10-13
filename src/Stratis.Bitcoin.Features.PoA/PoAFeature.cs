@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
-            IPoAMiner miner)
+            IPoAMiner miner, PoAConsensusRulesRegistration rulesRegistration, Network network)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
@@ -60,6 +60,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.miner = miner;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
+            rulesRegistration.RegisterRules(network.Consensus);
         }
 
         /// <inheritdoc />
@@ -89,6 +90,68 @@ namespace Stratis.Bitcoin.Features.PoA
         }
     }
 
+    public class PoAConsensusRulesRegistration : IRuleRegistration
+    {
+        private readonly HeaderTimeChecksPoARule timeChecksRule;
+        private readonly PoACoinviewRule coinviewRule;
+        private readonly PoAHeaderDifficultyRule headerDifficultyRule;
+        private readonly PoAHeaderSignatureRule headerSignatureRule;
+        private readonly PoAIntegritySignatureRule integritySignatureRule;
+
+        public PoAConsensusRulesRegistration(HeaderTimeChecksPoARule timeChecksRule, PoACoinviewRule coinviewRule, PoAHeaderDifficultyRule headerDifficultyRule,
+            PoAHeaderSignatureRule headerSignatureRule, PoAIntegritySignatureRule integritySignatureRule)
+        {
+            this.timeChecksRule = timeChecksRule;
+            this.coinviewRule = coinviewRule;
+            this.headerDifficultyRule = headerDifficultyRule;
+            this.headerSignatureRule = headerSignatureRule;
+            this.integritySignatureRule = integritySignatureRule;
+        }
+
+        public void RegisterRules(IConsensus consensus)
+        {
+            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            {
+                this.timeChecksRule,
+                new StratisHeaderVersionRule(),
+                this.headerDifficultyRule,
+                this.headerSignatureRule
+            };
+
+            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            {
+                new BlockMerkleRootRule(),
+                this.integritySignatureRule
+            };
+
+            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            {
+                new SetActivationDeploymentsPartialValidationRule(),
+
+                // rules that are inside the method ContextualCheckBlock
+                new TransactionLocktimeActivationRule(), // implements BIP113
+                new CoinbaseHeightActivationRule(), // implements BIP34
+                new BlockSizeRule(),
+
+                // rules that are inside the method CheckBlock
+                new EnsureCoinbaseRule(),
+                new CheckPowTransactionRule(),
+                new CheckSigOpsRule(),
+            };
+
+            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            {
+                new SetActivationDeploymentsFullValidationRule(),
+
+                // rules that require the store to be loaded (coinview)
+                new LoadCoinviewRule(),
+                new TransactionDuplicationActivationRule(), // implements BIP30
+                this.coinviewRule,
+                new SaveCoinviewRule()
+            };
+        }
+    }
+
     /// <summary>
     /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
     /// </summary>
@@ -109,6 +172,16 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<SlotsManager>();
                         services.AddSingleton<PoABlockDefinition>();
+
+                        services.AddSingleton<PoANetwork>(provider => provider.GetService<Network>() as PoANetwork);
+                        services.AddSingleton<PoAConsensusRulesRegistration>();
+
+                        // PoA consensus rules.
+                        services.AddSingleton<HeaderTimeChecksPoARule>();
+                        services.AddSingleton<PoACoinviewRule>();
+                        services.AddSingleton<PoAHeaderDifficultyRule>();
+                        services.AddSingleton<PoAHeaderSignatureRule>();
+                        services.AddSingleton<PoAIntegritySignatureRule>();
                     });
             });
 
@@ -127,57 +200,10 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
-                        new PoAConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
             return fullNodeBuilder;
-        }
-
-        private class PoAConsensusRulesRegistration : IRuleRegistration
-        {
-            public void RegisterRules(IConsensus consensus)
-            {
-                consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
-                {
-                    new HeaderTimeChecksPoARule(),
-                    new StratisHeaderVersionRule(),
-                    new PoAHeaderDifficultyRule(),
-                    new PoAHeaderSignatureRule()
-                };
-
-                consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
-                {
-                    new BlockMerkleRootRule(),
-                    new PoAIntegritySignatureRule()
-                };
-
-                consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
-                {
-                    new SetActivationDeploymentsPartialValidationRule(),
-
-                    // rules that are inside the method ContextualCheckBlock
-                    new TransactionLocktimeActivationRule(), // implements BIP113
-                    new CoinbaseHeightActivationRule(), // implements BIP34
-                    new BlockSizeRule(),
-
-                    // rules that are inside the method CheckBlock
-                    new EnsureCoinbaseRule(),
-                    new CheckPowTransactionRule(),
-                    new CheckSigOpsRule(),
-                };
-
-                consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
-                {
-                    new SetActivationDeploymentsFullValidationRule(),
-
-                    // rules that require the store to be loaded (coinview)
-                    new LoadCoinviewRule(),
-                    new TransactionDuplicationActivationRule(), // implements BIP30
-                    new PoACoinviewRule(),
-                    new SaveCoinviewRule()
-                };
-            }
         }
     }
 }
