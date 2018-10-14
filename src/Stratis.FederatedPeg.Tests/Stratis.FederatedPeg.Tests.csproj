@@ -20,6 +20,7 @@
     <PackageReference Include="FluentAssertions" Version="5.4.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
     <PackageReference Include="NStratis" Version="4.0.0.65" />
+    <PackageReference Include="NSubstitute" Version="3.1.0" />
     <PackageReference Include="Stratis.Bitcoin" Version="1.2.1-beta" />
     <PackageReference Include="Stratis.Bitcoin.Api" Version="1.2.1-beta" />
     <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.1-beta" />
