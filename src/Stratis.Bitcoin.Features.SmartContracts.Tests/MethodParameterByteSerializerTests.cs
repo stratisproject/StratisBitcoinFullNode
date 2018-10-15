@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Type paramType = value.GetType();
 
             // Equality comparison using .Equal is possible for these Types
-            if (paramType.IsValueType || paramType == typeof(uint160) || paramType == typeof(string))
+            if (paramType.IsValueType || paramType == typeof(string))
             {
                 Assert.Equal(value, methodParamObjects[0]);
             }
