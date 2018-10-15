@@ -4,43 +4,43 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 
-namespace Stratis.Bitcoin.Models
+namespace Stratis.Bitcoin.Controllers.Models
 {
     public class BlockModel
     {
         [JsonProperty("hash")]
-        public string Hash { get; set; }
+        public string Hash { get; private set; }
 
         [JsonProperty("size")]
-        public int Size { get; set; }
+        public int Size { get; private set; }
 
         [JsonProperty("version")]
-        public int Version { get; set; }
+        public int Version { get; private set; }
 
         [JsonProperty("bits")]
-        public string Bits { get; set; }
+        public string Bits { get; private set; }
 
         [JsonProperty("time")]
         [JsonConverter(typeof(DateTimeOffsetConverter))]
-        public DateTimeOffset Time { get; set; }
+        public DateTimeOffset Time { get; private set; }
 
         [JsonProperty("tx")]
-        public string[] Transactions { get; set; }
+        public string[] Transactions { get; private set; }
 
         [JsonProperty("difficulty")]
-        public double Difficulty { get; set; }
+        public double Difficulty { get; private set; }
 
         [JsonProperty("merkleroot")]
-        public string MerkleRoot { get; set; }
+        public string MerkleRoot { get; private set; }
 
         [JsonProperty("previousblockhash")]
-        public string PreviousBlockHash { get; set; }
+        public string PreviousBlockHash { get; private set; }
 
         [JsonProperty("nonce")]
-        public uint Nonce { get; set; }
+        public uint Nonce { get; private set; }
 
         [JsonProperty("height")]
-        public int Height { get; set; }
+        public int Height { get; private set; }
 
         public BlockModel(Block block, ChainBase chain)
         {
