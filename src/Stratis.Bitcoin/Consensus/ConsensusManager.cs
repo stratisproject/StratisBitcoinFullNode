@@ -656,7 +656,7 @@ namespace Stratis.Bitcoin.Consensus
                     // Block connected successfully.
                     lock (this.peerLock)
                     {
-                        this.SetConsensusTipInternalLocked(newTip);
+                        this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
                     }
 
                     if (this.network.Consensus.MaxReorgLength != 0)
