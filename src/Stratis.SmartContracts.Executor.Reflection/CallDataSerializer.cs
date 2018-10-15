@@ -41,41 +41,45 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 var gasPrice = this.primitiveSerializer.Deserialize<ulong>(gasPriceBytes);
                 var gasLimit = (Gas) this.primitiveSerializer.Deserialize<ulong>(gasLimitBytes);
 
-                if (IsCallContract(type))
-                {
-                    var contractAddressBytes = smartContractBytes.Slice(PrefixSize, AddressSize);
-                    var contractAddress = new uint160(contractAddressBytes);
-
-                    var remaining = smartContractBytes.Slice(CallContractPrefixSize, (uint)(smartContractBytes.Length - CallContractPrefixSize));
-
-                    IList<byte[]> decodedParams = RLPDecode(remaining);
-
-                    var methodName = this.primitiveSerializer.Deserialize<string>(decodedParams[0]);
-                    var methodParameters = this.DeserializeMethodParameters(decodedParams[1]);
-                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParameters);
-                    return Result.Ok(callData);
-                }
-
-                if (IsCreateContract(type))
-                {
-                    var remaining = smartContractBytes.Slice(PrefixSize, (uint)(smartContractBytes.Length - PrefixSize));
-
-                    IList<byte[]> decodedParams = RLPDecode(remaining);
-
-                    var contractExecutionCode = this.primitiveSerializer.Deserialize<byte[]>(decodedParams[0]);
-                    var methodParameters = this.DeserializeMethodParameters(decodedParams[1]);
-
-                    var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParameters);
-                    return Result.Ok(callData);
-                }
+                return IsCallContract(type) 
+                    ? this.SerializeCallContract(smartContractBytes, vmVersion, gasPrice, gasLimit)
+                    : this.SerializeCreateContract(smartContractBytes, vmVersion, gasPrice, gasLimit);
+                
             }
             catch (Exception e)
             {
                 // TODO: Avoid this catch all exceptions
                 return Result.Fail<ContractTxData>("Error deserializing calldata. " + e.Message);
             }
+        }
 
-            return Result.Fail<ContractTxData>("Error deserializing calldata. Incorrect first byte.");
+        private Result<ContractTxData> SerializeCreateContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, Gas gasLimit)
+        {
+            var remaining = smartContractBytes.Slice(PrefixSize, (uint) (smartContractBytes.Length - PrefixSize));
+
+            IList<byte[]> decodedParams = RLPDecode(remaining);
+
+            var contractExecutionCode = this.primitiveSerializer.Deserialize<byte[]>(decodedParams[0]);
+            var methodParameters = this.DeserializeMethodParameters(decodedParams[1]);
+
+            var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, methodParameters);
+            return Result.Ok(callData);
+        }
+
+        private Result<ContractTxData> SerializeCallContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, Gas gasLimit)
+        {
+            var contractAddressBytes = smartContractBytes.Slice(PrefixSize, AddressSize);
+            var contractAddress = new uint160(contractAddressBytes);
+
+            var remaining = smartContractBytes.Slice(CallContractPrefixSize,
+                (uint) (smartContractBytes.Length - CallContractPrefixSize));
+
+            IList<byte[]> decodedParams = RLPDecode(remaining);
+
+            var methodName = this.primitiveSerializer.Deserialize<string>(decodedParams[0]);
+            var methodParameters = this.DeserializeMethodParameters(decodedParams[1]);
+            var callData = new ContractTxData(vmVersion, gasPrice, gasLimit, contractAddress, methodName, methodParameters);
+            return Result.Ok(callData);
         }
 
         private static IList<byte[]> RLPDecode(byte[] remaining)
