@@ -27,10 +27,9 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>
         /// The proven header peers reserved slots threshold (%).
-        /// Rapresents the percentage of maximum connectable peers that we reserve for peers that are able to serve proven headers.
+        /// Represents the percentage of maximum connectable peers that we reserve for peers that are able to serve proven headers.
         /// </summary>
         private const decimal ProvenHeaderPeersReservedSlotsThreshold = 0.4M;
-
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -66,6 +65,7 @@ namespace Stratis.Bitcoin.Consensus
                 case GetProvenHeadersPayload getHeaders:
                     await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
                     break;
+
                 case VersionPayload version:
                     await this.ProcessVersionAsync(peer, version).ConfigureAwait(false);
                     break;
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="version">Payload of "version" message to process.</param>
-        protected Task ProcessVersionAsync(INetworkPeer peer, VersionPayload version)
+        private Task ProcessVersionAsync(INetworkPeer peer, VersionPayload version)
         {
             // We enforce having free slots for PH enabled nodes only when we are not in IBD.
             if (!this.initialBlockDownloadState.IsInitialBlockDownload())
@@ -100,10 +100,10 @@ namespace Stratis.Bitcoin.Consensus
                         int legacyPeersToDisconnect = legacyPeersConnectedCount - maxLegacyPeersAllowed;
                         if (legacyPeersToDisconnect > 0)
                         {
-                            var peersToDisconnect = connector.ConnectorPeers.OrderBy(p => p.PeerVersion.StartHeight).Take(legacyPeersToDisconnect).ToList();
+                            var peersToDisconnect = this.GetConnectedLegacyPeersSortedByTip(connector.ConnectorPeers).Take(legacyPeersToDisconnect);
                             foreach (var peerToDisconnect in peersToDisconnect)
                             {
-                                peer.Disconnect("Reserving connection slot for a Proven Header enabled peer.");
+                                peerToDisconnect.Disconnect("Reserving connection slot for a Proven Header enabled peer.");
                             }
                         }
 
@@ -116,6 +116,17 @@ namespace Stratis.Bitcoin.Consensus
 
             return Task.CompletedTask;
         }
+
+        private IEnumerable<INetworkPeer> GetConnectedLegacyPeersSortedByTip(NetworkPeerCollection connectedPeers)
+        {
+            return from peer in connectedPeers.ToList() // not sure if connectedPeers can change, so i use ToList to get a snapshot
+                   let isLegacy = peer.PeerVersion.Version < NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION
+                   let tip = peer.Behavior<ProvenHeadersConsensusManagerBehavior>()?.ExpectedPeerTip?.Height ?? 0
+                   where isLegacy
+                   orderby tip
+                   select peer;
+        }
+
 
         /// <inheritdoc />
         /// <summary>Constructs the proven headers payload from locator to consensus tip.</summary>
