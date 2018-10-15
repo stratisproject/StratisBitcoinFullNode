@@ -161,11 +161,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             }
         }
 
-        private static bool IsCreateContract(byte type)
-        {
-            return type == (byte)ScOpcodeType.OP_CREATECONTRACT;
-        }
-
         private static bool IsCallContract(byte type)
         {
             return type == (byte)ScOpcodeType.OP_CALLCONTRACT;
