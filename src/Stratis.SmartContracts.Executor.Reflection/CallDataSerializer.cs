@@ -11,6 +11,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class CallDataSerializer : ICallDataSerializer
     {
+        public const int OpcodeSize = sizeof(byte);
+        public const int VmVersionSize = sizeof(int);
+        public const int GasPriceSize = sizeof(ulong);
+        public const int GasLimitSize = sizeof(ulong);
+        public const int PrefixSize = OpcodeSize + VmVersionSize + GasPriceSize + GasLimitSize;
+
         private readonly IMethodParameterSerializer methodParamSerializer;
         private readonly IContractPrimitiveSerializer primitiveSerializer;
 
@@ -25,11 +31,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
             try
             {
                 var type = smartContractBytes[0];
-                var vmVersionBytes = smartContractBytes.Slice(sizeof(byte), sizeof(int));
-                var gasPriceBytes = smartContractBytes.Slice(sizeof(byte) + sizeof(int), sizeof(ulong));
-                var gasLimitBytes = smartContractBytes.Slice(sizeof(byte) + sizeof(int) + sizeof(ulong), sizeof(ulong));
-                var prefixLength = (uint) (sizeof(byte) + sizeof(int) + 2 * sizeof(ulong));
-                var remaining = smartContractBytes.Slice(prefixLength, (uint)(smartContractBytes.Length - prefixLength));
+                var vmVersionBytes = smartContractBytes.Slice(OpcodeSize, VmVersionSize);
+                var gasPriceBytes = smartContractBytes.Slice(OpcodeSize + VmVersionSize, GasPriceSize);
+                var gasLimitBytes = smartContractBytes.Slice(OpcodeSize + VmVersionSize + GasPriceSize, GasLimitSize);                
+                var remaining = smartContractBytes.Slice(PrefixSize, (uint)(smartContractBytes.Length - PrefixSize));
                 
                 var vmVersion = this.primitiveSerializer.Deserialize<int>(vmVersionBytes);
                 var gasPrice = this.primitiveSerializer.Deserialize<ulong>(gasPriceBytes);
@@ -95,12 +100,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             byte[] gasPrice = this.primitiveSerializer.Serialize(contractTxData.GasPrice);
             byte[] gasLimit = this.primitiveSerializer.Serialize(contractTxData.GasLimit.Value);
 
-            var bytes = new byte[sizeof(byte) + sizeof(int) + 2 * sizeof(ulong) + encoded.Length];
+            var bytes = new byte[PrefixSize + encoded.Length];
             bytes[0] = opcode;
-            vmVersion.CopyTo(bytes, sizeof(byte));
-            gasPrice.CopyTo(bytes, sizeof(byte) + sizeof(int));
-            gasLimit.CopyTo(bytes, sizeof(byte) + sizeof(int) + sizeof(ulong));
-            encoded.CopyTo(bytes, sizeof(byte) + sizeof(int) + 2*sizeof(ulong));
+            vmVersion.CopyTo(bytes, OpcodeSize);
+            gasPrice.CopyTo(bytes, OpcodeSize + VmVersionSize);
+            gasLimit.CopyTo(bytes, OpcodeSize + VmVersionSize + GasPriceSize);
+            encoded.CopyTo(bytes, PrefixSize);
 
             return bytes;
         }
