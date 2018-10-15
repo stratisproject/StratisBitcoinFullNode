@@ -148,7 +148,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             private bool useCheckpoints = true;
             public Key privateKey;
             private ReflectionVirtualMachine vm;
-            private ICallDataSerializer serializer;
+            private ISerializer serializer;
             private ContractAssemblyLoader assemblyLoader;
             public ICallDataSerializer callDataSerializer;
             internal ReflectionExecutorFactory ExecutorFactory { get; private set; }
@@ -226,7 +226,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                     new NodeStats(new DateTimeProvider()))
                     .Register();
 
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(), consensusRules: this.consensusRules);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(this.network), consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 
@@ -305,13 +305,14 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 this.AddressGenerator = new AddressGenerator();
                 this.assemblyLoader = new ContractAssemblyLoader();
-                this.callDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
+                this.callDataSerializer = new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(this.network)));
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
                 this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
                 this.stateProcessor = new StateProcessor(this.reflectionVirtualMachine, this.AddressGenerator);
                 this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
-                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.network, this.internalTxExecutorFactory);
+                this.serializer = new Serializer(this.primitiveSerializer);
+                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.network, this.internalTxExecutorFactory, this.serializer);
                 this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
                 this.ExecutorFactory = new ReflectionExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.primitiveSerializer);
             }
