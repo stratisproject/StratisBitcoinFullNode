@@ -79,7 +79,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     this.TipHashHeight = this.GetTipHash(transaction);
 
-                    if (this.TipHashHeight != null) return;
+                    if (this.TipHashHeight != null)
+                        return;
 
                     var hashHeight = new HashHeightPair(this.network.GetGenesis().GetHash(), 0);
 
@@ -210,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, header.Key.ToBytes(false), header.Value);
 
             // Store the latest ProvenBlockHeader in memory.
-            this.provenBlockHeaderTip = headers.Last();
+            this.provenBlockHeaderTip = sortedHeaders.Last().Value;
         }
 
         /// <summary>

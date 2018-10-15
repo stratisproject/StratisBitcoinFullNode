@@ -21,7 +21,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
     {
         private readonly Network network = KnownNetworks.StratisTest;
         private readonly Mock<IConsensusManager> consensusManager;
-        private ConcurrentChain concurrentChain;
         private readonly ProvenBlockHeaderStore provenBlockHeaderStore;
         private IProvenBlockHeaderRepository provenBlockHeaderRepository;
         private readonly Mock<INodeLifetime> nodeLifetime;
@@ -32,7 +31,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public ProvenBlockHeaderStoreTests() : base(KnownNetworks.StratisTest)
         {
             this.consensusManager = new Mock<IConsensusManager>();
-            this.concurrentChain = new ConcurrentChain(this.network);
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.nodeStats = new NodeStats(DateTimeProvider.Default);
             this.asyncLoopFactoryLoop = new Mock<IAsyncLoopFactory>();
@@ -42,26 +40,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.provenBlockHeaderRepository = new ProvenBlockHeaderRepository(this.network, this.Folder, this.LoggerFactory.Object);
 
             this.provenBlockHeaderStore = new ProvenBlockHeaderStore(
-                this.concurrentChain, DateTimeProvider.Default, this.LoggerFactory.Object,
-                this.provenBlockHeaderRepository, this.nodeLifetime.Object, this.nodeStats, this.asyncLoopFactoryLoop.Object);
+                DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository,
+                this.nodeLifetime.Object, this.nodeStats, this.asyncLoopFactoryLoop.Object);
         }
 
         [Fact]
         public async Task InitialiseStoreToGenesisChainHeaderAsync()
         {
-            ChainedHeader chainedHeader = this.concurrentChain.Genesis;
 
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            var genesis = BuildChainWithProvenHeaders(1, this.network).chainedHeader;
 
-            this.provenBlockHeaderStore.TipHashHeight.Hash.Should().Be(this.network.GetGenesis().GetHash());
+            await this.provenBlockHeaderStore.InitializeAsync(genesis).ConfigureAwait(false);
+
+            this.provenBlockHeaderStore.TipHashHeight.Hash.Should().Be(genesis.HashBlock);
         }
 
         [Fact]
         public async Task GetAsync_Get_Items_From_StoreAsync()
         {
             var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
-
-            this.concurrentChain = chainWithHeaders.concurrentChain;
 
             var inHeaders = chainWithHeaders.provenBlockHeaders;
 
@@ -83,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task AddToPending_Adds_To_CacheAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
@@ -106,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task AddToPending_Adds_To_Cache_Then_Save_To_DiskAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
@@ -138,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task Add_2k_ProvenHeaders_ToPending_CacheAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             ProvenBlockHeader inHeader = null;
 
@@ -162,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task Add_2k_ProvenHeaders_To_PendingBatch_Then_Save_Then_PendingBatch_Should_Be_EmptyAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             ProvenBlockHeader inHeader = null;
 
@@ -201,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task GetAsync_Add_Items_Greater_Than_Max_Size_Cache_Stays_Below_Max_SizeAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             var inHeaders = new List<ProvenBlockHeader>();
 
@@ -232,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             ProvenBlockHeader provenHeaderMock;
 
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             // Save items 0 - 9 to disk.
             for (int i = 0; i < 10; i++)
@@ -287,15 +284,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact]
         public async Task InitializeAsync_When_Chain_Tip_Reverts_Back_To_Genesis_Store_Tip_Is_In_SyncAsync()
         {
-            this.concurrentChain = new ConcurrentChain(this.network);
-
-            var chainWithHeaders = BuildChainWithProvenHeaders(1, this.network);
-
-            this.concurrentChain = chainWithHeaders.concurrentChain;
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
             var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
-
-            // Clear chain to cause the store to revert back to Genesis.
-            this.concurrentChain = new ConcurrentChain(this.network);
 
             await this.provenBlockHeaderRepository.PutAsync(
                 provenBlockheaders,
@@ -303,21 +293,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
-                await store.InitializeAsync();
+                // Clear chain to cause the store to revert back to Genesis.
+                var newGenesisTip = BuildChainWithProvenHeaders(1, this.network).chainedHeader;
 
-                store.TipHashHeight.Hash.Should().Be(this.network.GetGenesis().GetHash());
+                await store.InitializeAsync(newGenesisTip);
+
+                store.TipHashHeight.Hash.Should().Be(newGenesisTip.HashBlock);
             }
         }
 
         [Fact]
         public async Task InitializeAsync_When_Tip_Reorg_Occurs_Tip_Is_At_Most_RecentAsync()
         {
-            this.concurrentChain = new ConcurrentChain(this.network);
-
             // Chain - 1a | 2a | 3a | 4a | 5a (tip at 5a).
             var chainWithHeaders = BuildChainWithProvenHeaders(5, this.network);
-
-            this.concurrentChain = chainWithHeaders.concurrentChain;
             var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
 
             // Persist current chain.
@@ -326,17 +315,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
             // Reorganised chain - 1b | 2b | 3b (tip now at 3b).
-            this.concurrentChain = new ConcurrentChain(this.network);
-
             var chainWithHeadersReorg = BuildChainWithProvenHeaders(3, this.network);
-
-            this.concurrentChain = chainWithHeadersReorg.concurrentChain;
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
-                await store.InitializeAsync();
+                await store.InitializeAsync(chainWithHeadersReorg.chainedHeader);
 
-                store.TipHashHeight.Hash.Should().Be(this.concurrentChain.Tip.Header.GetHash());
+                store.TipHashHeight.Hash.Should().Be(chainWithHeadersReorg.chainedHeader.Header.GetHash());
             }
         }
 
@@ -362,11 +347,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact]
         public async Task AddToPending_Store_TipHash_Is_The_Same_As_ChainHeaderTipAsync()
         {
-            this.concurrentChain = new ConcurrentChain(this.network);
-
             var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
-
-            this.concurrentChain = chainWithHeaders.concurrentChain;
             var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
 
             // Persist current chain.
@@ -378,7 +359,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             {
                 var header = CreateNewProvenBlockHeaderMock();
 
-                this.provenBlockHeaderStore.AddToPendingBatch(header, new HashHeightPair(header.GetHash(), this.concurrentChain.Tip.Height));
+                this.provenBlockHeaderStore.AddToPendingBatch(header, new HashHeightPair(header.GetHash(), chainWithHeaders.chainedHeader.Height));
 
                 this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
 
@@ -389,15 +370,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                     return tipHashHeight == this.provenBlockHeaderRepository.TipHashHeight;
                 });
 
-                tipHashHeight.Height.Should().Be(this.concurrentChain.Tip.Height);
+                tipHashHeight.Height.Should().Be(chainWithHeaders.chainedHeader.Height);
             }
         }
 
         private ProvenBlockHeaderStore SetupStore(string folder)
         {
             return new ProvenBlockHeaderStore(
-                this.concurrentChain, DateTimeProvider.Default,
-                this.LoggerFactory.Object, this.provenBlockHeaderRepository,
+                DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository,
                 this.nodeLifetime.Object, new NodeStats(DateTimeProvider.Default), this.asyncLoopFactoryLoop.Object);
         }
 

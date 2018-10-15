@@ -18,14 +18,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// The pending batch is saved to the database and cleared every minute.
     /// </para>
     /// <para>
-    /// Items in the pending batch are also saved to the least recently used <see cref="MemorySizeCache"/>.  This cache has a memory size limit of 100MB (see <see cref="MemoryCacheSizeLimitInBytes"/>).
+    /// Items in the pending batch are also saved to the least recently used <see cref="MemorySizeCache{int, ProvenBlockHeader}"/>. This cache has a memory size limit of 100MB (see <see cref="MemoryCacheSizeLimitInBytes"/>).
     /// </para>
     /// <para>
     /// When new <see cref="ProvenBlockHeader"/> items are saved to the database - in case <see cref="IProvenBlockHeaderRepository"/> contains headers that
     /// are no longer a part of the best chain - they are overwritten or ignored.
     /// </para>
     /// <para>
-    /// When <see cref="IProvenBlockHeaderStore"/> is being initialized it will overwrite blocks that are not on the best chain.
+    /// When <see cref="ProvenBlockHeaderStore"/> is being initialized it will overwrite blocks that are not on the best chain.
     /// </para>
     /// </remarks>
     public class ProvenBlockHeaderStore : IProvenBlockHeaderStore
@@ -39,11 +39,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Allows consumers to perform clean-up during a graceful shutdown.
         /// </summary>
         private readonly INodeLifetime nodeLifetime;
-
-        /// <summary>
-        /// Thread safe class representing a chain of headers from genesis.
-        /// </summary>
-        private readonly ConcurrentChain chain;
 
         /// <summary>
         /// Database repository storing <see cref="ProvenBlockHeader"/> items.
@@ -120,7 +115,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
-        /// <param name="chain">Thread safe class representing a chain of headers from genesis</param>
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
         /// <param name="provenBlockHeaderRepository">Persistent interface of the <see cref="ProvenBlockHeader"/> DBreeze repository.</param>
@@ -128,7 +122,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
         /// <param name="asyncLoopFactory">Factory for creating and also possibly starting application defined tasks inside async loop.</param>
         public ProvenBlockHeaderStore(
-            ConcurrentChain chain,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             IProvenBlockHeaderRepository provenBlockHeaderRepository,
@@ -136,7 +129,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             INodeStats nodeStats,
             IAsyncLoopFactory asyncLoopFactory)
         {
-            Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(provenBlockHeaderRepository, nameof(provenBlockHeaderRepository));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
@@ -144,7 +136,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.chain = chain;
             this.provenBlockHeaderRepository = provenBlockHeaderRepository;
             this.nodeLifetime = nodeLifetime;
 
@@ -159,31 +150,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
-        /// <summary>
-        /// Initializes the <see cref="ProvenBlockHeaderStore"/>.
-        /// <para>
-        /// If the <see cref="storeTip"/> is <c>null</c> the store is out of sync. This can happen when:</para>
-        /// <list>
-        ///     <item>The node crashed.</item>
-        ///     <item>The node was not closed down properly.</item>
-        /// </list>
-        /// <para>
-        /// To recover it will walk back the <see cref= "ConcurrentChain"/> until a common <see cref= "HashHeightPair"/> is found.
-        /// Then the <see cref="ProvenBlockHeaderStore"/>'s <see cref="storeTip"/> will be set to that.
-        /// </para>
-        /// </summary>
-        public async Task InitializeAsync()
+        /// <inheritdoc />
+        public async Task InitializeAsync(ChainedHeader chainedHeader)
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
-            this.storeTip = this.chain.GetBlock(this.provenBlockHeaderRepository.TipHashHeight.Hash);
+            this.storeTip = chainedHeader.Height == this.provenBlockHeaderRepository.TipHashHeight.Height ? chainedHeader : null;
 
             if (this.storeTip == null)
             {
-                this.storeTip = await this.RecoverStoreTipAsync().ConfigureAwait(false);
-            }
+                this.storeTip = chainedHeader;
 
-            this.TipHashHeight = new HashHeightPair(this.storeTip);
+                await this.RecoverStoreTipAsync(chainedHeader).ConfigureAwait(false);
+            }
+            else
+            {
+                this.TipHashHeight = new HashHeightPair(this.storeTip);
+            }
 
             this.logger.LogDebug("Initialized ProvenBlockHeader store tip at '{0}'.", this.storeTip);
 
@@ -340,9 +323,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Will set the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ConcurrentChain"/>.
+        /// Will set the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ChainedHeader"/>.
         /// </summary>
-        private async Task<ChainedHeader> RecoverStoreTipAsync()
+        /// <param name="chainedHeader">Current <see cref="ChainedHeader"/> tip with all its ancestors.</param>
+        private async Task RecoverStoreTipAsync(ChainedHeader chainedHeader)
         {
             int tipHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
 
@@ -354,30 +338,26 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 throw new ProvenBlockHeaderException("Proven block header store failed to recover.");
             }
 
-            uint256 latestBlockHash = this.provenBlockHeaderRepository.TipHashHeight.Hash;
-
-            while (this.chain.GetBlock(tipHeight) == null)
+            if (tipHeight > chainedHeader.Height)
             {
-                if (latestHeader.HashPrevBlock == this.chain.Genesis.HashBlock)
-                {
-                    latestBlockHash = this.chain.Genesis.HashBlock;
-                    break;
-                }
+                this.TipHashHeight = new HashHeightPair(chainedHeader);
 
-                latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight--).ConfigureAwait(false);
+                ProvenBlockHeader recoveredHeader = chainedHeader.Header as ProvenBlockHeader;
+
+                await this.provenBlockHeaderRepository.PutAsync(new List<ProvenBlockHeader>() { recoveredHeader }, this.TipHashHeight);
+            }
+            else
+            {
+                throw new ProvenBlockHeaderException("Proven block header tip is ahead of chained header.");
             }
 
-            ChainedHeader newTip = this.chain.GetBlock(tipHeight);
-
-            this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", newTip);
-
-            return newTip;
+            this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", this.TipHashHeight);
         }
 
         /// <summary>
         /// Checks whether block height keys are in consecutive sequence.
         /// </summary>
-        /// <param name="keys"> List of block height keys to check.</param>
+        /// <param name="keys">List of block height keys to check.</param>
         private void CheckItemsAreInConsecutiveSequence(List<int> keys)
         {
             if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count())))
