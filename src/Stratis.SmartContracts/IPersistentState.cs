@@ -72,26 +72,69 @@ namespace Stratis.SmartContracts
         /// </summary>
         T[] GetArray<T>(string key);
 
+        /// <summary>
+        /// Sets the given bytes against the given key in state storage.
+        /// </summary>
         void SetBytes(string key, byte[] value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(char)"/> to serialize a char to its 2-byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetChar(string key, char value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(Address)"/> to serialize an Address to its 20-byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetAddress(string key, Address value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(bool)"/> to serialize a bool to its 1-byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetBool(string key, bool value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(int)"/> to serialize an int to its 4-byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetInt32(string key, int value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(uint)"/> to serialize a uint to its 4-byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetUInt32(string key, uint value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(long)"/> to serialize a long to its 8-byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetInt64(string key, long value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(ulong)"/> to serialize a ulong to its 8-byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetUInt64(string key, ulong value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(string)"/> to serialize a string to its UTF8 encoded byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetString(string key, string value);
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize{T}"/> to serialize a struct to its byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetStruct<T>(string key, T value) where T : struct;
 
+        /// <summary>
+        /// Uses <see cref="ISerializer.Serialize(Array)"/> to serialize an array of primitives to its byte representation.
+        /// Sets the serialized bytes against the given key in state storage.
+        /// </summary>
         void SetArray(string key, Array a);
     }
 }
