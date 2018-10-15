@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Configuration
             this.ApplicationsPath = Path.Combine(path, "apps");
             this.DnsMasterFilePath = path;
             this.SmartContractStatePath = Path.Combine(path, "contracts");
+            this.ProvenBlockHeaderPath = Path.Combine(path, "provenheaders");
             this.RootPath = path;
         }
 
@@ -80,6 +81,9 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>Path to the folder with smart contract state database files.</summary>
         public string SmartContractStatePath { get; set; }
+
+        /// <summary>Path to the folder for <see cref="Bitcoin.Features.Consensus.ProvenBlockHeaders.ProvenBlockHeader"/> items database files.</summary>
+        public string ProvenBlockHeaderPath { get; set; }
 
         /// <summary>Path to Stratis applications</summary>
         public string ApplicationsPath { get; internal set; }

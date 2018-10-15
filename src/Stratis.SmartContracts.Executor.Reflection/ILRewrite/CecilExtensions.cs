@@ -1,9 +1,57 @@
-﻿using Mono.Cecil.Cil;
+﻿using System.Collections.Generic;
+using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
 {
     public static class CecilExtensions
     {
+        /// <summary>
+        /// All opcodes that call to a method.
+        /// </summary>
+        private static readonly HashSet<OpCode> CallingOps = new HashSet<OpCode>
+        {
+            OpCodes.Call,
+            OpCodes.Calli,
+            OpCodes.Callvirt
+        };
+
+        /// <summary>
+        /// All branching opcodes.
+        /// </summary>
+        private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
+        {
+            OpCodes.Beq,
+            OpCodes.Beq_S,
+            OpCodes.Bge,
+            OpCodes.Bge_S,
+            OpCodes.Bge_Un,
+            OpCodes.Bge_Un_S,
+            OpCodes.Bgt,
+            OpCodes.Bgt_S,
+            OpCodes.Ble,
+            OpCodes.Ble_S,
+            OpCodes.Ble_Un,
+            OpCodes.Blt,
+            OpCodes.Bne_Un,
+            OpCodes.Bne_Un_S,
+            OpCodes.Br,
+            OpCodes.Brfalse,
+            OpCodes.Brfalse_S,
+            OpCodes.Brtrue,
+            OpCodes.Brtrue_S,
+            OpCodes.Br_S
+        };
+
+        public static bool IsMethodCall(this Instruction instruction)
+        {
+            return CallingOps.Contains(instruction.OpCode);
+        }
+
+        public static bool IsBranch(this Instruction instruction)
+        {
+            return BranchingOps.Contains(instruction.OpCode);
+        }
+
         /// <summary>
         /// Get the simplest instruction for popping item on stack into a variable index.
         /// </summary>

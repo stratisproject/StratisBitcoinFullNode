@@ -21,6 +21,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             this.proofOfStakeSteps.PremineNodeWithWallet();
         }
 
+        private void a_proof_of_stake_node_with_wallet_with_overrides()
+        {
+            this.proofOfStakeSteps.PremineNodeWithWalletWithOverrides();
+        }
+
         private void it_mines_genesis_and_premine_blocks()
         {
             this.proofOfStakeSteps.MineGenesisAndPremineBlocks();
@@ -45,5 +50,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             this.proofOfStakeSteps.PremineNodeWalletHasEarnedCoinsThroughStaking();
         }
+
+        private void pos_reward_for_all_coinstake_transactions_is_correct()
+        {
+            this.proofOfStakeSteps.PosRewardForAllCoinstakeTransactionsIsCorrect();
+        }
+        
     }
 }
