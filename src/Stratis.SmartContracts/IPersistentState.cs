@@ -50,5 +50,10 @@ namespace Stratis.SmartContracts
         void SetStruct<T>(string key, T value) where T : struct;
 
         void SetArray(string key, Array a);
+
+        /// <summary>
+        /// Removes any bytes set at the value pointed to by the given key.
+        /// </summary>
+        void Clear(string key);
     }
 }

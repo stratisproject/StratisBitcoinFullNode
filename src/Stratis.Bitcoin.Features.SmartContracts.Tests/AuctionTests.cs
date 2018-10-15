@@ -254,5 +254,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             throw new NotImplementedException();
         }
+
+        public void Clear(string key)
+        {
+            throw new NotImplementedException();
+        }
     }
 }
