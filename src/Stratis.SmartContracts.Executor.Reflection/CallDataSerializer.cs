@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 rlpBytes.Add(contractTxData.ContractExecutionCode);
 
             if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Any())
-                rlpBytes.Add(this.methodParamSerializer.Serialize(contractTxData.MethodParameters));
+                rlpBytes.Add(this.SerializeMethodParameters(contractTxData.MethodParameters));
             else
                 rlpBytes.Add(new byte[0]);
 
@@ -118,6 +118,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private static bool IsCallContract(byte type)
         {
             return type == (byte)ScOpcodeType.OP_CALLCONTRACT;
+        }
+
+        private byte[] SerializeMethodParameters(object[] objects)
+        {
+            return this.methodParamSerializer.Serialize(objects);
         }
 
         private object[] DeserializeMethodParameters(byte[] methodParametersRaw)
