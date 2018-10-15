@@ -1,0 +1,8 @@
+{
+  "profiles": {
+    "Stratis.StratisD.Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-network=StratisPosTestNetwork - testnet"
+    }
+  }
+}

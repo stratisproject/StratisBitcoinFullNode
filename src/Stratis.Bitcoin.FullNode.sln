@@ -132,6 +132,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "RuntimeObserver", "RuntimeO
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.IntegrationTests", "Stratis.SmartContracts.IntegrationTests\Stratis.SmartContracts.IntegrationTests.csproj", "{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}"
 EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisD.Test", "Stratis.StratisD.Test\Stratis.StratisD.Test.csproj", "{5269F3AA-D77D-4518-825D-DA5B209EC073}"
+EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "FodyNlogAdapter", "FodyNlogAdapter\FodyNlogAdapter.csproj", "{C4494C72-2423-4A2C-9E81-1C065C7F8291}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.PoA", "Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj", "{7DFE2D04-EA64-45C9-B5F6-89B435E7C8B6}"
@@ -358,6 +360,10 @@ Global
 		{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BBE830D7-3AD3-41D9-8257-8CAA06F38E40}.Release|Any CPU.Build.0 = Release|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{5269F3AA-D77D-4518-825D-DA5B209EC073}.Release|Any CPU.Build.0 = Release|Any CPU
 		{C4494C72-2423-4A2C-9E81-1C065C7F8291}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{C4494C72-2423-4A2C-9E81-1C065C7F8291}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C4494C72-2423-4A2C-9E81-1C065C7F8291}.Release|Any CPU.ActiveCfg = Release|Any CPU
