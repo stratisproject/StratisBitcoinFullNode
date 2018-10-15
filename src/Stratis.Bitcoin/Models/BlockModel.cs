@@ -8,20 +8,38 @@ namespace Stratis.Bitcoin.Models
 {
     public class BlockModel
     {
+        [JsonProperty("hash")]
         public string Hash { get; set; }
+
+        [JsonProperty("size")]
         public int Size { get; set; }
+
+        [JsonProperty("version")]
         public int Version { get; set; }
+
+        [JsonProperty("bits")]
         public string Bits { get; set; }
+
+        [JsonProperty("time")]
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset Time { get; set; }
+
         [JsonProperty("tx")]
         public string[] Transactions { get; set; }
+
+        [JsonProperty("difficulty")]
         public double Difficulty { get; set; }
+
         [JsonProperty("merkleroot")]
         public string MerkleRoot { get; set; }
+
         [JsonProperty("previousblockhash")]
         public string PreviousBlockHash { get; set; }
+
+        [JsonProperty("nonce")]
         public uint Nonce { get; set; }
+
+        [JsonProperty("height")]
         public int Height { get; set; }
 
         public BlockModel(Block block)
