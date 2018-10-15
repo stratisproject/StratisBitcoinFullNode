@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using CSharpFunctionalExtensions;
 using NBitcoin;
 using Nethereum.RLP;
@@ -26,18 +25,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             try
             {
                 var type = smartContractBytes[0];
-                var spareByte = new byte[sizeof(int)];
-                var gasPriceBytes = new byte[sizeof(ulong)];
-                var gasLimitBytes = new byte[sizeof(ulong)];
-                var prefixLength = sizeof(byte) + spareByte.Length + gasPriceBytes.Length + gasLimitBytes.Length;
-                var remaining = new byte[smartContractBytes.Length - prefixLength];
-
-                Array.Copy(smartContractBytes, sizeof(byte), spareByte, 0, 1);
-                Array.Copy(smartContractBytes, sizeof(byte) + spareByte.Length, gasPriceBytes, 0, gasPriceBytes.Length);
-                Array.Copy(smartContractBytes, sizeof(byte) + spareByte.Length + gasPriceBytes.Length, gasLimitBytes, 0, gasLimitBytes.Length);
-                Array.Copy(smartContractBytes, prefixLength, remaining, 0, remaining.Length);
-
-                var vmVersion = this.primitiveSerializer.Deserialize<int>(spareByte);
+                var vmVersionBytes = smartContractBytes.Slice(sizeof(byte), sizeof(int));
+                var gasPriceBytes = smartContractBytes.Slice(sizeof(byte) + sizeof(int), sizeof(ulong));
+                var gasLimitBytes = smartContractBytes.Slice(sizeof(byte) + sizeof(int) + sizeof(ulong), sizeof(ulong));
+                var prefixLength = (uint) (sizeof(byte) + sizeof(int) + 2 * sizeof(ulong));
+                var remaining = smartContractBytes.Slice(prefixLength, (uint)(smartContractBytes.Length - prefixLength));
+                
+                var vmVersion = this.primitiveSerializer.Deserialize<int>(vmVersionBytes);
                 var gasPrice = this.primitiveSerializer.Deserialize<ulong>(gasPriceBytes);
                 var gasLimit = (Gas) this.primitiveSerializer.Deserialize<ulong>(gasLimitBytes);
                 
@@ -77,21 +71,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public byte[] Serialize(ContractTxData contractTxData)
         {
-            var bytes = new List<byte[]>();
-
-            bytes.Add(new [] {contractTxData.OpCodeType});
-            bytes.Add(this.primitiveSerializer.Serialize(contractTxData.VmVersion));
-            bytes.Add(this.primitiveSerializer.Serialize(contractTxData.GasPrice));
-            bytes.Add(this.primitiveSerializer.Serialize((ulong)contractTxData.GasLimit));
+            byte opcode = contractTxData.OpCodeType;
 
             var rlpBytes = new List<byte[]>();
-            if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CALLCONTRACT)
+
+            if (opcode == (byte)ScOpcodeType.OP_CALLCONTRACT)
             {
                 rlpBytes.Add(contractTxData.ContractAddress.ToBytes());
                 rlpBytes.Add(this.primitiveSerializer.Serialize(contractTxData.MethodName));
             }
 
-            if (contractTxData.OpCodeType == (byte)ScOpcodeType.OP_CREATECONTRACT)
+            if (opcode == (byte)ScOpcodeType.OP_CREATECONTRACT)
                 rlpBytes.Add(contractTxData.ContractExecutionCode);
 
             if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Any())
@@ -101,8 +91,18 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var encoded = RLP.EncodeList(rlpBytes.Select(RLP.EncodeElement).ToArray());
 
-            bytes.Add(encoded);
-            return bytes.SelectMany(b => b).ToArray();
+            byte[] vmVersion = this.primitiveSerializer.Serialize(contractTxData.VmVersion);
+            byte[] gasPrice = this.primitiveSerializer.Serialize(contractTxData.GasPrice);
+            byte[] gasLimit = this.primitiveSerializer.Serialize(contractTxData.GasLimit.Value);
+
+            var bytes = new byte[sizeof(byte) + sizeof(int) + 2 * sizeof(ulong) + encoded.Length];
+            bytes[0] = opcode;
+            vmVersion.CopyTo(bytes, sizeof(byte));
+            gasPrice.CopyTo(bytes, sizeof(byte) + sizeof(int));
+            gasLimit.CopyTo(bytes, sizeof(byte) + sizeof(int) + sizeof(ulong));
+            encoded.CopyTo(bytes, sizeof(byte) + sizeof(int) + 2*sizeof(ulong));
+
+            return bytes;
         }
 
         private static bool IsCreateContract(byte type)
