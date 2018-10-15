@@ -36,7 +36,33 @@ namespace Stratis.SmartContracts.IntegrationTests
         // TODO: The costs definitely need to be refined! Contract execution shouldn't be so cheap relative to fees.
 
         // Also check that validation and base cost fees are being applied correctly.
-        
+
+        [Fact]
+        public void ContractTransaction_Invalid_MethodParamSerialization()
+        {
+            // Create poorly serialized method params
+            var serializer =
+                new CallDataSerializer(
+                    new MethodParameterByteSerializer(new ContractPrimitiveSerializer(this.mockChain.Network)));
+
+            var txData = serializer.Serialize(new ContractTxData(1, 1, (Gas) (GasPriceList.BaseCost + 1), new uint160(1), "Test"));
+
+            var random = new Random();
+            byte[] bytes = new byte[101];
+            random.NextBytes(bytes);
+
+            // Last 4 bytes are 0000. Remove and replace with garbage
+            var garbageTxData = new byte[txData.Length - 4 + bytes.Length];
+
+            txData.CopyTo(garbageTxData, 0);
+            bytes.CopyTo(garbageTxData, txData.Length - 4);
+            
+            // Send fails - doesn't even make it to mempool
+            Result<WalletSendTransactionModel> result = this.node1.SendTransaction(new Script(garbageTxData), 25);
+            Assert.True(result.IsFailure);
+            Assert.Equal("Invalid ContractTxData format", result.Error); // TODO: const error message
+        }
+
         [Fact]
         public void ContractTransaction_InvalidSerialization()
         {

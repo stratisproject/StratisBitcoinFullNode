@@ -19,16 +19,16 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
         /// Get the compiled bytecode for the specified file.
         /// </summary>
         /// <param name="path"></param>
-        public static ContractCompilationResult CompileFile(string path)
+        public static ContractCompilationResult CompileFile(string path, OptimizationLevel optimizationLevel = OptimizationLevel.Release)
         {
             string source = File.ReadAllText(path);
-            return Compile(source);
+            return Compile(source, optimizationLevel);
         }
 
         /// <summary>
         /// Compile all of the files in a directory, with the option of compiling a certain namespace.
         /// </summary>
-        public static ContractCompilationResult CompileDirectory(string path, string selectedNamespace = null)
+        public static ContractCompilationResult CompileDirectory(string path, string selectedNamespace = null, OptimizationLevel optimizationLevel = OptimizationLevel.Release)
         {
             // Get the syntax tree for every file in the given path.
             string[] files = Directory.GetFiles(path, "*.cs", SearchOption.AllDirectories);
@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
 
             // If we're not interested in any specific namespace then compile everything in the directory.
             if (selectedNamespace == null)
-                return Compile(syntaxTrees);
+                return Compile(syntaxTrees, optimizationLevel);
 
             // From all of these, work out which ones contain code in the given namespace.
             List<SyntaxTree> selectedNamespaceTrees = new List<SyntaxTree>();
@@ -49,29 +49,31 @@ namespace Stratis.SmartContracts.Executor.Reflection.Compilation
                 }
             }
 
-            return Compile(selectedNamespaceTrees);
+            return Compile(selectedNamespaceTrees, optimizationLevel);
         }
 
         /// <summary>
         /// Get the compiled bytecode for the specified C# source code.
         /// </summary>
         /// <param name="source"></param>
-        public static ContractCompilationResult Compile(string source)
+        public static ContractCompilationResult Compile(string source, OptimizationLevel optimizationLevel = OptimizationLevel.Release)
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
-            return Compile(new[] { syntaxTree });
+            return Compile(new[] { syntaxTree }, optimizationLevel);
         }
 
-        private static ContractCompilationResult Compile(IEnumerable<SyntaxTree> syntaxTrees)
+        private static ContractCompilationResult Compile(IEnumerable<SyntaxTree> syntaxTrees, OptimizationLevel optimizationLevel)
         {
-            // @TODO - Use OptimizationLevel.Release once we switch to injecting compiler options
             CSharpCompilation compilation = CSharpCompilation.Create(
                 AssemblyName,
                 syntaxTrees,
                 GetReferences(),
                 new CSharpCompilationOptions(
                     OutputKind.DynamicallyLinkedLibrary,
-                    checkOverflow: true));
+                    checkOverflow: true,
+                    optimizationLevel: optimizationLevel,
+                    deterministic: true)
+                );
 
 
             using (var dllStream = new MemoryStream())

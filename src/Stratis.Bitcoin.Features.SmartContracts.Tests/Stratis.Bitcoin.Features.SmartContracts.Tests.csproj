@@ -56,6 +56,9 @@
     <Compile Update="SmartContracts\CallInfiniteLoopContract.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\ClearStorage.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\ContractConstructorInvalid.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
