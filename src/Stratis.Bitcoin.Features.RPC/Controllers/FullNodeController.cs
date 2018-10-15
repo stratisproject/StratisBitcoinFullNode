@@ -9,8 +9,10 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -291,26 +293,24 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
 
         /// <summary>
         /// RPC method for returning a block.
-        /// Currently only supports raw (hex) format, Json format is not yet supported.
+        /// Supports Json format by default, and optionally raw (hex) format by supplying <c>false</c> to <see cref="isJsonFormat"/>.
         /// </summary>
         /// <param name="blockHash">Hash of block to find.</param>
         /// <param name="isJsonFormat">Whether to output in raw format or in Json format.</param>
         /// <returns>The block according to format specified in <see cref="isJsonFormat"/></returns>
         [ActionName("getblock")]
         [ActionDescription("Returns the block in hex, given a block hash.")]
-        public async Task<object> GetBlockAsync(string blockHash, bool isJsonFormat = false)
+        public async Task<object> GetBlockAsync(string blockHash, bool isJsonFormat = true)
         {
             Block block = this.blockStore != null ? await this.blockStore.GetBlockAsync(uint256.Parse(blockHash)).ConfigureAwait(false) : null;
 
-            if (isJsonFormat)
-            {
-                this.logger.LogError("Json format serialization is not supported for RPC '{0}'.", nameof(this.GetBlockAsync));
-                throw new NotImplementedException();
-            }
-            else
-            {
+            if (!isJsonFormat)
                 return block;
-            }
+
+            return new BlockModel(block)
+            {
+                Height = this.Chain.GetBlock(uint256.Parse(blockHash)).Height
+            };
         }
 
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)

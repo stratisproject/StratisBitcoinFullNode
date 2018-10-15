@@ -14,11 +14,15 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
         public string Bits { get; set; }
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset Time { get; set; }
+        [JsonProperty("tx")]
         public string[] Transactions { get; set; }
         public double Difficulty { get; set; }
+        [JsonProperty("merkleroot")]
         public string MerkleRoot { get; set; }
+        [JsonProperty("previousblockhash")]
         public string PreviousBlockHash { get; set; }
         public uint Nonce { get; set; }
+        public int Height { get; set; }
 
         public BlockModel(Block block)
         {
