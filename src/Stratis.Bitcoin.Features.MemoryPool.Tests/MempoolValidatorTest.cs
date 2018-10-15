@@ -101,16 +101,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            var minerSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            ITestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            var network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var destSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            var tx = new Transaction();
+            var destSecret = new BitcoinSecret(new Key(), network);
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
-            tx.Sign(KnownNetworks.RegTest, minerSecret, false);
+            tx.Sign(network, minerSecret, false);
 
             var state = new MempoolValidationState(false);
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
@@ -417,13 +419,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            var minerSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            ITestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            var network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var destSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            var tx = new Transaction();
+            var destSecret = new BitcoinSecret(new Key(), network);
+            Transaction tx = network.CreateTransaction();
 
             // Create a transaction that looks like a coinbase.
             tx.AddInput(new TxIn(new OutPoint(new uint256(0), uint.MaxValue), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
@@ -444,13 +448,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            var minerSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            ITestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            var network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var destSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            var tx = new Transaction();
+            var destSecret = new BitcoinSecret(new Key(), network);
+            Transaction tx = network.CreateTransaction();
 
             // Create a transaction that looks like a coinbase. But the consensus rules that apply to coinbases will reject it anyway.
             // We need two forms of the test because submitting an incorrectly constructed coinbase triggers a consensus rule instead
@@ -458,7 +464,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // TODO: Instead of creating multiple versions of all such tests we should perhaps find a way of testing the applicable rules in the mempool simultaneously.
             tx.AddInput(new TxIn(new OutPoint(new uint256(0), uint.MaxValue), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
-            tx.Sign(KnownNetworks.RegTest, minerSecret, false);
+            tx.Sign(network, minerSecret, false);
             Assert.True(tx.IsCoinBase);
 
             var state = new MempoolValidationState(false);
@@ -466,6 +472,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Tests PreMempoolChecks invokes CheckPowTransactionRule and is enforced for mempool transactions.
             Assert.False(isSuccess, "Coinbase with incorrect size should not be accepted to mempool.");
+            Assert.Equal("bad-cb-length", state.Error.ConsensusError.Code);
         }
 
         [Fact]
@@ -473,13 +480,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            var minerSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            ITestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            var network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var destSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
 
             // Create a transaction that looks like a coinstake.
             tx.AddInput(new TxIn()
@@ -512,7 +520,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.Satoshis(1)), destSecret.PubKeyHash));
             tx.Version = 0;
@@ -526,7 +534,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.Equal(MempoolErrors.Version, state.Error);
 
             // Can't reuse previous transaction with bumped version due to signing process having side effects.
-            tx = new Transaction();
+            tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.Satoshis(1)), destSecret.PubKeyHash));
             tx.Version = (uint)validator.ConsensusOptions.MaxStandardVersion + 1;
@@ -552,7 +560,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             // Add outputs until transaction is large enough to fail standardness checks.
@@ -585,7 +593,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
 
             Op checkSigOp = new Op() { Code = OpcodeType.OP_CHECKSIG };
 
@@ -623,7 +631,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
 
             List<Op> scriptSigOpcodes = new List<Op>();
 
@@ -658,7 +666,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.Coins(1)), (IDestination)null));
             tx.Sign(network, minerSecret, false);
@@ -684,7 +692,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.Satoshis(1)), destSecret.PubKeyHash));
             tx.Sign(network, minerSecret, false);
@@ -710,7 +718,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             // Add two OP_RETURN (nulldata) outputs.
@@ -739,7 +747,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             // This is somewhat counterintuitive, but the nSequence of at least one input must
@@ -768,16 +776,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            var minerSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            ITestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            var network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var destSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            var tx = new Transaction();
+            var destSecret = new BitcoinSecret(new Key(), network);
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
-            tx.Sign(KnownNetworks.RegTest, minerSecret, false);
+            tx.Sign(network, minerSecret, false);
 
             var state = new MempoolValidationState(false);
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
@@ -800,24 +810,29 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            var minerSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            ITestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
+            var network = KnownNetworks.Main;
+            var minerSecret = new BitcoinSecret(new Key(), network);
+            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var destSecret = new BitcoinSecret(new Key(), KnownNetworks.RegTest);
-            var tx = new Transaction();
+            var destSecret = new BitcoinSecret(new Key(), network);
+            Transaction tx = network.CreateTransaction();
 
             // Nonexistent input.
             tx.AddInput(new TxIn(new OutPoint(new uint256(57), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
-            tx.Sign(KnownNetworks.RegTest, minerSecret, false);
+            tx.Sign(network, minerSecret, false);
 
             var state = new MempoolValidationState(false);
 
             // CheckMempoolCoinView !context.View.HaveCoins(txin.PrevOut.Hash)
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
             Assert.False(isSuccess, "Transaction with invalid input should not have been accepted.");
+            Assert.Null(state.Error.Code); // No specific error set for this case, only the MissingInputs flag.
+            Assert.Equal(0, state.Error.RejectCode);
+            Assert.True(state.MissingInputs);
         }
 
         [Fact(Skip = "Not implemented yet.")]
@@ -839,7 +854,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
 
             // Need version >= 2 for BIP68 to be enforced.
             tx.Version = 2;
@@ -860,6 +875,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
             Assert.False(isSuccess, "Transaction with nSequence relative lock time further than next block should not have been accepted.");
             Assert.Equal(MempoolErrors.NonBIP68Final, state.Error);
+            
+            // TODO: Test for a time-based lock in addition to only a height-based one.
         }
 
         [Fact(Skip = "Not implemented yet.")]
@@ -893,7 +910,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             // By using the entire UTXO value the fee will be zero.
@@ -932,7 +949,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(context.SrcTxs[0].Outputs[0].Value - Money.Cents(50), destSecret.PubKeyHash));
             tx.Sign(network, minerSecret, false);
@@ -960,7 +977,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IMempoolValidator validator = context.MempoolValidator;
             Assert.NotNull(validator);
 
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(context.SrcTxs[0].Outputs[0].Value - Money.Cents(1), minerSecret.PubKeyHash));
             tx.Sign(network, minerSecret, false);
@@ -972,7 +989,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             {
                 await validator.AcceptToMemoryPool(state, tx);
 
-                var newTx = new Transaction();
+                Transaction newTx = network.CreateTransaction();
                 newTx.AddInput(new TxIn(new OutPoint(tx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
                 newTx.AddOutput(new TxOut(tx.Outputs[0].Value - Money.Cents(1), minerSecret.PubKeyHash));
                 newTx.Sign(network, minerSecret, false);
@@ -1069,7 +1086,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
 
             // Want output value > inputs.
@@ -1135,7 +1152,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.NotNull(validator);
 
             var destSecret = new BitcoinSecret(new Key(), network);
-            var tx = new Transaction();
+            Transaction tx = network.CreateTransaction();
             tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
             tx.AddOutput(new TxOut(new Money(Money.CENT * 11), destSecret.PubKeyHash));
             tx.Sign(network, minerSecret, false);
