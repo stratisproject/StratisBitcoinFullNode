@@ -4,7 +4,10 @@ namespace Stratis.SmartContracts
 {
     public interface ISerializer
     {
-        // TODO: Document the requirements for inputs for these fields?
+        /// <summary>
+        /// Serializes a char into its byte representation.
+        /// </summary>
+        byte[] Serialize(char c);
 
         /// <summary>
         /// Serializes an address into its 20-bytes representation.
@@ -87,6 +90,11 @@ namespace Stratis.SmartContracts
         /// Deserializes UTF8-encoded bytes into a string. If the given bytes are null, empty, or deserialization fails, returns <see cref="string.Empty"/>.
         /// </summary>
         string ToString(byte[] val);
+
+        /// <summary>
+        /// Deserializes a Unicode character.
+        /// </summary>
+        char ToChar(byte[] val);
 
         /// <summary>
         /// Deserializes RLP-encoded bytes to an array. If the given bytes are null, empty, or deserialization fails, returns new T[0].

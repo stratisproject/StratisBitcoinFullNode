@@ -40,11 +40,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var bytes = this.GetBytes(key);
 
-            var s = this.Serializer.ToString(bytes);
-
-            if (s.Any()) return s[0];
-
-            return default(char);
+            return this.Serializer.ToChar(bytes);
         }
 
         public Address GetAddress(string key)
