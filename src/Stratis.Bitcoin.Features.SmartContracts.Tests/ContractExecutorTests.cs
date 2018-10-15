@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
             this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.network, this.internalTxExecutorFactory, this.serializer);
             
-            this.callDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
+            this.callDataSerializer = new CallDataSerializer(new MethodParameterByteSerializer(this.contractPrimitiveSerializer));
 
             this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
         }
@@ -167,8 +167,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.ErrorMessage);
-            // Base cost + constructor cost (21 because that is number of gas to invoke Assert(false));
-            Assert.Equal(GasPriceList.BaseCost + 21, result.GasConsumed);
+            // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
+            Assert.Equal(GasPriceList.BaseCost + 18, result.GasConsumed);
         }
 
         [Fact]
@@ -323,37 +323,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // for the method body to have finished execution while minimising the amount of time we spend 
             // running tests
             // If you're running with the debugger on this will obviously be a source of failures
-            result = RunWithTimeout(3, () => callExecutor.Execute(transactionContext));
+            result = TimeoutHelper.RunCodeWithTimeout(3, () => callExecutor.Execute(transactionContext));
 
             // Actual call was successful, but internal call failed due to gas - returned false.
             Assert.False(result.Revert);
             Assert.False((bool) result.Return);
-        }
-
-        private static T RunWithTimeout<T>(int timeout, Func<T> execute)
-        {
-            // ref. https://stackoverflow.com/questions/20282111/xunit-net-how-can-i-specify-a-timeout-how-long-a-test-should-maximum-need
-            // Only run single-threaded code in this method
-
-            Task<T> task = Task.Run(execute);
-            bool completedInTime = Task.WaitAll(new Task[] { task }, TimeSpan.FromSeconds(timeout));
-
-            if (task.Exception != null)
-            {
-                if (task.Exception.InnerExceptions.Count == 1)
-                {
-                    throw task.Exception.InnerExceptions[0];
-                }
-
-                throw task.Exception;
-            }
-
-            if (!completedInTime)
-            {
-                throw new TimeoutException($"Task did not complete in {timeout} seconds.");
-            }
-
-            return task.Result;
         }
 
         [Fact]

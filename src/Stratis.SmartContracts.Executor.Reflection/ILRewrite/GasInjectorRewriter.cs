@@ -11,145 +11,84 @@ namespace Stratis.SmartContracts.Executor.Reflection.ILRewrite
     /// </summary>
     public class GasInjectorRewriter : IObserverMethodRewriter
     {
-        /// <summary>
-        /// All branching opcodes.
-        /// </summary>
-        private static readonly HashSet<OpCode> BranchingOps = new HashSet<OpCode>
-        {
-            OpCodes.Beq,
-            OpCodes.Beq_S,
-            OpCodes.Bge,
-            OpCodes.Bge_S,
-            OpCodes.Bge_Un,
-            OpCodes.Bge_Un_S,
-            OpCodes.Bgt,
-            OpCodes.Bgt_S,
-            OpCodes.Ble,
-            OpCodes.Ble_S,
-            OpCodes.Ble_Un,
-            OpCodes.Blt,
-            OpCodes.Bne_Un,
-            OpCodes.Bne_Un_S,
-            OpCodes.Br,
-            OpCodes.Brfalse,
-            OpCodes.Brfalse_S,
-            OpCodes.Brtrue,
-            OpCodes.Brtrue_S,
-            OpCodes.Br_S
-        };
-
-        /// <summary>
-        /// All opcodes that call to a method.
-        /// </summary>
-        private static readonly HashSet<OpCode> CallingOps = new HashSet<OpCode>
-        {
-            OpCodes.Call,
-            OpCodes.Calli,
-            OpCodes.Callvirt
-        };
-
         /// <inheritdoc />
         public void Rewrite(MethodDefinition methodDefinition, ILProcessor il, ObserverRewriterContext context)
         {
-            List<Instruction> branches = methodDefinition.Body.Instructions.Where(x => BranchingOps.Contains(x.OpCode)).ToList();
+            List<Instruction> branches = GetBranchingOps(methodDefinition).ToList();
             List<Instruction> branchTos = branches.Select(x => (Instruction)x.Operand).ToList();
 
-            Gas gasTally = Gas.None;
-
-            Dictionary<Instruction, Gas> gasToSpendForSegment = new Dictionary<Instruction, Gas>();
-
-            // To account  for variable load at start.
+            // Start from 2 because we setup Observer in first 2 instructions
             int position = 2;
-            Instruction currentSegmentStart = methodDefinition.Body.Instructions[position];
+
+            List<CodeSegment> segments = new List<CodeSegment>();
+
+            var codeSegment = new CodeSegment(methodDefinition);
 
             while (position < methodDefinition.Body.Instructions.Count)
             {
                 Instruction instruction = methodDefinition.Body.Instructions[position];
 
-                Gas instructionCost = GasPriceList.InstructionOperationCost(instruction);
-
-                // is the end of a segment. Include the current instruction in the count.
+                // End of a segment. Add this as the last instruction and move onwards with a new segment
                 if (branches.Contains(instruction))
                 {
-                    gasTally = (Gas)(gasTally + instructionCost);
-                    gasToSpendForSegment.Add(currentSegmentStart, gasTally);
-                    gasTally = Gas.None;
-                    position++;
-                    if (position == methodDefinition.Body.Instructions.Count)
-                        break;
-                    currentSegmentStart = methodDefinition.Body.Instructions[position];
+                    codeSegment.Instructions.Add(instruction);
+                    segments.Add(codeSegment);
+                    codeSegment = new CodeSegment(methodDefinition);
                 }
-                // is the start of a new segment. Don't include the current instruction in count.
-                else if (branchTos.Contains(instruction) && instruction != currentSegmentStart)
+                // Start of a new segment. End last segment and start new one with this as the first instruction
+                else if (branchTos.Contains(instruction))
                 {
-                    gasToSpendForSegment.Add(currentSegmentStart, gasTally);
-                    gasTally = Gas.None;
-                    currentSegmentStart = instruction;
-                    position++;
+                    if (codeSegment.Instructions.Any())
+                        segments.Add(codeSegment);
+                    codeSegment = new CodeSegment(methodDefinition);
+                    codeSegment.Instructions.Add(instruction);
                 }
-                // is a call to another method
-                else if (CallingOps.Contains(instruction.OpCode))
-                {
-                    var methodToCall = (MethodReference)instruction.Operand;
-
-                    // If it's a method inside this contract then the gas will be injected no worries.
-                    if (methodToCall.DeclaringType == methodDefinition.DeclaringType)
-                    {
-                        position++;
-                        gasTally = (Gas)(gasTally + instructionCost);
-                    }
-                    // If it's a method outside this contract then we will need to get some average in future.
-                    else
-                    {
-                        Gas methodCallCost = GasPriceList.MethodCallCost(methodToCall);
-
-                        position++;
-                        gasTally = (Gas)(gasTally + instructionCost + methodCallCost);
-                    }
-                }
-                // any other instruction. just increase counter.
+                // Just an in-between instruction. Add to current segment.
                 else
                 {
-                    position++;
-                    gasTally = (Gas)(gasTally + instructionCost);
+                    codeSegment.Instructions.Add(instruction);
                 }
+
+                position++;
             }
 
-            if (!gasToSpendForSegment.ContainsKey(currentSegmentStart))
-                gasToSpendForSegment.Add(currentSegmentStart, gasTally);
+            // Got to end of the method. Add the last one if necessary
+            if (!segments.Contains(codeSegment) && codeSegment.Instructions.Any())
+                segments.Add(codeSegment);
 
-            bool isFirstSegment = true;
-
-            foreach (Instruction instruction in gasToSpendForSegment.Keys)
+            foreach (CodeSegment segment in segments)
             {
-                Instruction injectAfterInstruction = instruction;
-
-                // If it's the first branch of a constructor we need to skip the first 3 instructions. 
-                // These will always be invoking the base constructor
-                // ldarg.0
-                // ldarg.0
-                // call SmartContract::ctor
-                if (methodDefinition.IsConstructor && isFirstSegment)
-                {
-                    injectAfterInstruction = instruction.Next.Next.Next;
-                }
-
-                AddSpendGasMethodBeforeInstruction(methodDefinition, context.Observer, context.ObserverVariable, injectAfterInstruction, gasToSpendForSegment[instruction]);
-                isFirstSegment = false;
+                AddSpendGasMethodBeforeInstruction(il, context.Observer, context.ObserverVariable, segment);
             }
+
+            // All of the branches now need to point to the place 3 instructions earlier!
+            foreach (Instruction branch in branches)
+            {
+                Instruction currentlyPointingTo = (Instruction) branch.Operand;
+                branch.Operand = currentlyPointingTo.Previous.Previous.Previous;
+            }
+
         }
 
         /// <summary>
         /// Adds a call to SpendGas from the RuntimeObserver before the given instruction.
         /// </summary>
-        private static void AddSpendGasMethodBeforeInstruction(MethodDefinition methodDefinition, ObserverReferences observer, VariableDefinition variable, Instruction instruction, Gas opcodeCount)
+        private static void AddSpendGasMethodBeforeInstruction(ILProcessor il, ObserverReferences observer, VariableDefinition variable, CodeSegment codeSegment)
         {
-            ILProcessor il = methodDefinition.Body.GetILProcessor();
+            Instruction first = codeSegment.Instructions.First();
+            Instruction newFirst = il.CreateLdlocBest(variable);
+            long segmentCost = (long) codeSegment.CalculateGasCost().Value;
+
             il.Body.SimplifyMacros();
-            il.InsertBefore(instruction, il.CreateLdlocBest(variable)); // load observer
-            il.InsertBefore(instruction, il.Create(OpCodes.Ldc_I8, (long)opcodeCount.Value)); // load gas amount
-            il.InsertBefore(instruction, il.Create(OpCodes.Call, observer.SpendGasMethod)); // trigger method
+            il.InsertBefore(first, newFirst); // load observer
+            il.InsertBefore(first, il.Create(OpCodes.Ldc_I8, (long) segmentCost)); // load gas amount
+            il.InsertBefore(first, il.Create(OpCodes.Call, observer.SpendGasMethod)); // trigger method
             il.Body.OptimizeMacros();
+        }
+
+        private static IEnumerable<Instruction> GetBranchingOps(MethodDefinition methodDefinition)
+        {
+            return methodDefinition.Body.Instructions.Where(x => x.IsBranch());
         }
     }
 }

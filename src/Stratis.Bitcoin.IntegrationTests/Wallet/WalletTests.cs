@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
@@ -25,10 +25,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         public WalletTests()
         {
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
         }
 
-        [Fact]
+        [Retry(2)]
         public void WalletCanReceiveAndSendCorrectly()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact]
+        [Retry(2)]
         public void WalletCanReorg()
         {
             // This test has 4 parts:
@@ -107,7 +107,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Send a second transaction and wait for it to be confirmed
             // Connect to a longer chain that causes a reorg so that the second trasnaction is undone
             // Mine the second transaction back in to the main chain
-
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisSender = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
