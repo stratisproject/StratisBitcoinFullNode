@@ -79,5 +79,25 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
 
             Assert.False(result);
         }
+
+        [Fact]
+        public void IsAuthorizedWhenIPv6AnyAllowedReturnsTrueForEverything()
+        {
+            this.authorization.AllowIp.Add(IPAddress.IPv6Any);
+
+            Assert.True(this.authorization.IsAuthorized(IPAddress.Parse("127.1.1.15")));
+            Assert.True(this.authorization.IsAuthorized(IPAddress.Parse("4.5.6.7")));
+            Assert.True(this.authorization.IsAuthorized(IPAddress.Parse("::")));
+            Assert.True(this.authorization.IsAuthorized(IPAddress.Parse("2001:0db8:85a3:0000:0000:8a2e:0370:7334")));
+        }
+
+        [Fact]
+        public void IsAuthorizedWhenIPv4AnyAllowedReturnsTrueForIPv4FalseForIPv6()
+        {
+            this.authorization.AllowIp.Add(IPAddress.Any);
+
+            Assert.True(this.authorization.IsAuthorized(IPAddress.Parse("127.1.1.15")));
+            Assert.False(this.authorization.IsAuthorized(IPAddress.Parse("2001:0db8:85a3:0000:0000:8a2e:0370:7334")));
+        }
     }
 }
