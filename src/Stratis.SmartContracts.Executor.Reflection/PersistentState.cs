@@ -167,5 +167,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             return this.Serializer.Serialize(value);
         }
+
+        public void Clear(string key)
+        {
+            this.SetBytes(key, null);
+        }
     }
 }
