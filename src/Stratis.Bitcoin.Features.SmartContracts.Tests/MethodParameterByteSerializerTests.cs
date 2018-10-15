@@ -61,6 +61,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var deserialized = this.Serializer.Deserialize(serialized);
 
+            Assert.Equal(deserialized.Length, methodParameters.Length);
+
             for (var i = 0; i < deserialized.Length; i++)
             {
                 Assert.Equal(methodParameters[i], deserialized[i]);
