@@ -299,7 +299,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
         {
-            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Equals(isConnectedToNode.Endpoint));
+            if (thisNode.Runner is BitcoinCoreRunner)
+                return thisNode.CreateRPCClient().GetBestBlockHash() == isConnectedToNode.CreateRPCClient().GetBestBlockHash();
+            else
+                return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Equals(isConnectedToNode.Endpoint));
         }
 
         public static BlockBuilder BuildBlocks { get { return new BlockBuilder(); } }
