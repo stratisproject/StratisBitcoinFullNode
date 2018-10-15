@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -36,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             var dateTimeProvider = new Mock<IDateTimeProvider>();
             var chain = new Mock<ConcurrentChain>();
             var nodeDeployments = new Mock<NodeDeployments>();
-            var consensusSettings = new Mock<ConsensusSettings>();
+            var consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
             var checkpoints = new Mock<ICheckpoints>();
             var coinView = new Mock<ICoinView>();
             var chainState = new Mock<ChainState>();
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 dateTimeProvider.Object,
                 chain.Object,
                 new NodeDeployments(this.network, chain.Object),
-                consensusSettings.Object,
+                consensusSettings,
                 checkpoints.Object,
                 coinView.Object,
                 chainState.Object,

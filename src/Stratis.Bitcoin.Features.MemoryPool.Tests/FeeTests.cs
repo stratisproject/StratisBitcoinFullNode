@@ -16,7 +16,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void BlockPolicyEstimates()
         {
             var dateTimeSet = new DateTimeProviderSet();
-            NodeSettings settings = NodeSettings.Default();
+            NodeSettings settings = NodeSettings.Default(KnownNetworks.TestNet);
             var mpool = new TxMempool(DateTimeProvider.Default,
                 new BlockPolicyEstimator(new MempoolSettings(settings), settings.LoggerFactory, settings), settings.LoggerFactory, settings);
             var entry = new TestMemPoolEntryHelper();

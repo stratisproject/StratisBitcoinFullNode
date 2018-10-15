@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NLog.LayoutRenderers.Wrappers;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IConsensusManager consensusManager;
 
         /// <inheritdoc cref="ConcurrentChain"/>
-        protected readonly ConcurrentChain chain;
+        protected ConcurrentChain chain;
 
         /// <inheritdoc cref="IPeerBanning"/>
         private readonly IPeerBanning peerBanning;
@@ -42,11 +43,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// The announced tip is accepted if it seems to be valid. Validation is only done on headers and so the announced tip may refer to invalid block.
         /// </remarks>
-        public ChainedHeader ExpectedPeerTip { get; private set; }
+        public ChainedHeader ExpectedPeerTip { get; protected set; }
 
         /// <summary>Gets the best header sent using <see cref="HeadersPayload"/>.</summary>
         /// <remarks>Write access should be protected by <see cref="bestSentHeaderLock"/>.</remarks>
-        public ChainedHeader BestSentHeader { get; private set; }
+        public ChainedHeader BestSentHeader { get; protected set; }
 
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Consensus
         private const int AutosyncIntervalMinutes = 10;
 
         /// <summary>Amount of headers that should be cached until we stop syncing from the peer.</summary>
-        private const int CacheSyncHeadersThreshold = 2000;
+        protected const int CacheSyncHeadersThreshold = 2000;
 
         /// <summary>Maximum number of headers in <see cref="HeadersPayload"/> according to Bitcoin protocol.</summary>
         /// <seealso cref="https://en.bitcoin.it/wiki/Protocol_documentation#getheaders"/>
@@ -63,10 +64,10 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>List of block headers that were not yet consumed by <see cref="ConsensusManager"/>.</summary>
         /// <remarks>Should be protected by <see cref="asyncLock"/>.</remarks>
-        private readonly List<BlockHeader> cachedHeaders;
+        protected readonly List<BlockHeader> cachedHeaders;
 
         /// <summary>Protects access to <see cref="cachedHeaders"/>.</summary>
-        private readonly AsyncLock asyncLock;
+        protected readonly AsyncLock asyncLock;
 
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
@@ -307,7 +308,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="headers">Headers to validate.</param>
         /// <param name="validationError">The validation error that is set in case <c>false</c> is returned.</param>
         /// <returns><c>true</c> if payload was valid, <c>false</c> otherwise.</returns>
-        private bool ValidateHeadersFromPayload(INetworkPeer peer, List<BlockHeader> headers, out string validationError)
+        protected bool ValidateHeadersFromPayload(INetworkPeer peer, List<BlockHeader> headers, out string validationError)
         {
             validationError = null;
 
@@ -343,7 +344,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>Have to be locked by <see cref="asyncLock"/>.</remarks>
         /// <param name="headers">List of headers that the peer presented.</param>
         /// <param name="triggerDownload">Specifies if the download should be scheduled for interesting blocks.</param>
-        private async Task<ConnectNewHeadersResult> PresentHeadersLockedAsync(List<BlockHeader> headers, bool triggerDownload = true)
+        protected async Task<ConnectNewHeadersResult> PresentHeadersLockedAsync(List<BlockHeader> headers, bool triggerDownload = true)
         {
             ConnectNewHeadersResult result = null;
 

@@ -4,21 +4,22 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Utilities
 {
-    public class MemoryCacheTest
+    public class MemorySizeCacheTest
     {
         [Fact]
-        public void CacheDoesNotExceedMaxItemsLimit()
+        public void CacheDoesNotExceedMaxSizeLimit()
         {
-            int maxItemsCount = 100;
+            long maxSize = 100;
 
-            var cache = new MemoryCache<int, string>(maxItemsCount);
-            
-            for (int i = 0; i < maxItemsCount*2; i++)
+            var cache = new MemorySizeCache<int, string>(maxSize);
+
+            for (int i = 0; i < 10; i++)
             {
-                cache.AddOrUpdate(i, RandomUtils.GetInt32().ToString());
+                var item = RandomUtils.GetInt32().ToString();
+                cache.AddOrUpdate(i, item, item.Length);
             }
-             
-            Assert.Equal(maxItemsCount, cache.Count);
+
+            Assert.True(maxSize >= cache.TotalSize);
         }
 
         [Fact]
@@ -27,11 +28,12 @@ namespace Stratis.Bitcoin.Tests.Utilities
             int maxItemsCount = 10;
             int itemsCountToAdd = 100;
 
-            var cache = new MemoryCache<int, string>(maxItemsCount);
-            
+            var cache = new MemorySizeCache<int, string>(100);
+
             for (int i = 0; i < itemsCountToAdd; i++)
             {
-                cache.AddOrUpdate(i, RandomUtils.GetInt32().ToString());
+                var item = RandomUtils.GetInt32().ToString();
+                cache.AddOrUpdate(i, item, item.Length);
             }
 
             for (int i = itemsCountToAdd - maxItemsCount; i < itemsCountToAdd; i++)
@@ -47,18 +49,18 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void CanManuallyRemoveItemsFromTheCache()
         {
-            var cache = new MemoryCache<int, string>(10);
-            
+            var cache = new MemorySizeCache<int, string>(100);
+
             for (int i = 0; i < 5; i++)
             {
-                cache.AddOrUpdate(i, i + "VALUE");
+                cache.AddOrUpdate(i, i + "VALUE", 10);
             }
 
             for (int i = 0; i < 3; i++)
             {
                 cache.Remove(i);
             }
-            
+
             Assert.Equal(2, cache.Count);
 
             // Check if cache still has the same values that were added.
@@ -72,11 +74,11 @@ namespace Stratis.Bitcoin.Tests.Utilities
         [Fact]
         public void CacheKeepsMostRecentlyUsedItems()
         {
-            var cache = new MemoryCache<int, string>(10);
-            
+            var cache = new MemorySizeCache<int, string>(100);
+
             for (int i = 0; i < 15; i++)
             {
-                cache.AddOrUpdate(i, RandomUtils.GetInt32().ToString());
+                cache.AddOrUpdate(i, RandomUtils.GetInt32().ToString(), 10);
 
                 if (i == 8)
                 {
@@ -87,7 +89,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
                     }
                 }
             }
-            
+
             // Cache should have 0-2 & 8-14.
             for (int i = 0; i < 15; i++)
             {

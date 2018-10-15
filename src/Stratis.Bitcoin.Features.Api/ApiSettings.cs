@@ -53,13 +53,6 @@ namespace Stratis.Bitcoin.Features.Api
         public bool UseHttps { get; set; }
     
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public ApiSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -137,7 +130,7 @@ namespace Stratis.Bitcoin.Features.Api
             builder.AppendLine($"-usehttps=<bool>                  Use https protocol on the API. Defaults to false.");
             builder.AppendLine($"-certificatefilepath=<string>     Path to the certificate used for https traffic encryption. Defaults to <null>. Password protected files are not supported. On MacOs, only p12 certificates can be used without password.");
 
-            NodeSettings.Default().Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>

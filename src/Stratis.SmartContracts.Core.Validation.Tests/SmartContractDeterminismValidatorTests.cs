@@ -1,5 +1,6 @@
 using System.IO;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Validators;
@@ -14,7 +15,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
     {
         public IContractModuleDefinition CompileFileToModuleDef(FileInfo file)
         {
-            ContractCompilationResult compilationResult = ContractCompiler.CompileFile(file.FullName);
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile(file.FullName, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
@@ -24,7 +25,7 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
 
         public IContractModuleDefinition CompileToModuleDef(string source)
         {
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
@@ -650,6 +651,30 @@ public class Test : SmartContract
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
+        }
+
+        [Fact]
+        public void SmartContractValidator_Should_Not_Allow_Optional_Params()
+        {
+            const string source = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state)
+        : base(state) { }
+
+    public void Optional(int optionalParam = 1) {
+    }
+}";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e is MethodParamValidator.MethodParamValidationResult);
         }
     }
 }

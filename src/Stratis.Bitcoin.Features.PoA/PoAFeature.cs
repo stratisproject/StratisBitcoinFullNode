@@ -14,7 +14,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
@@ -45,8 +44,11 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly IPoAMiner miner;
+
         public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
-            IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
+            IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
+            IPoAMiner miner)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
@@ -55,6 +57,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;
+            this.miner = miner;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
         }
@@ -70,12 +73,19 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.federationManager.Initialize();
 
+            if (this.federationManager.IsFederationMember)
+            {
+                // Enable mining because we are a federation member.
+                this.miner.InitializeMining();
+            }
+
             return Task.CompletedTask;
         }
 
         /// <inheritdoc />
         public override void Dispose()
         {
+            this.miner.Dispose();
         }
     }
 
@@ -97,7 +107,8 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
-                        services.AddSingleton<PoABlockDefinition, PoABlockDefinition>();
+                        services.AddSingleton<SlotsManager>();
+                        services.AddSingleton<PoABlockDefinition>();
                     });
             });
 
@@ -111,7 +122,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, PowConsensusRuleEngine>(); // TODO POA: PoA rule engine?
+                        services.AddSingleton<IConsensusRuleEngine, PoAConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())

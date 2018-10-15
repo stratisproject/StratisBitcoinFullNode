@@ -13,6 +13,7 @@ using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore.Models;
@@ -143,6 +144,12 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
             this.stratisPosApiNode.FullNode.NodeService<IPosMinting>(true).Should().NotBeNull();
             this.apiUri = this.stratisPosApiNode.FullNode.NodeService<ApiSettings>().ApiUri;
+        }
+
+        private void the_proof_of_stake_node_has_passed_LastPOWBlock()
+        {
+            typeof(ChainedHeader).GetProperty("Height").SetValue(this.stratisPosApiNode.FullNode.ConsensusManager().Tip,
+                this.stratisPosApiNode.FullNode.Network.Consensus.LastPOWBlock + 1);
         }
 
         private void two_connected_proof_of_work_nodes_with_api_enabled()
@@ -422,7 +429,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(20);
+            commands.Count.Should().BeGreaterOrEqualTo(22);
             commands.Should().Contain(x => x.Command == "stop");
             commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
