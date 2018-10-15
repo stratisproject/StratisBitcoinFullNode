@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Models;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             response.Result.Should().BeOfType<JsonResult>();
             var result = (JsonResult) response.Result;
 
-            result.Value.Should().BeOfType<Models.BlockModel>();
+            result.Value.Should().BeOfType<BlockModel>();
             ((BlockModel) result.Value).Hash.Should().Be(ValidHash);
             ((BlockModel) result.Value).MerkleRoot.Should()
                 .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
