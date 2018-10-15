@@ -2,7 +2,6 @@
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -21,19 +20,19 @@ namespace Stratis.Bitcoin.Consensus
         private readonly IConsensusManager consensusManager;
         private readonly IPeerBanning peerBanning;
         private readonly ILoggerFactory loggerFactory;
-        private readonly NodeSettings nodeSettings;
+        private readonly Network network;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         public ProvenHeadersConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState,
-            IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory, NodeSettings nodeSettings) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+            IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory, Network network) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.chain = chain;
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.consensusManager = consensusManager;
             this.peerBanning = peerBanning;
-            this.nodeSettings = nodeSettings;
+            this.network = network;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
@@ -81,7 +80,7 @@ namespace Stratis.Bitcoin.Consensus
             foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
             {
                 var posBock = new PosBlock(header.Header);
-                ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.nodeSettings.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBock);
+                ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBock);
                 lastHeader = header;
                 headers.Headers.Add(provenBlockHeader);
 
@@ -101,7 +100,7 @@ namespace Stratis.Bitcoin.Consensus
         public override object Clone()
         {
             return new ProvenHeadersConsensusManagerBehavior(
-                this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.nodeSettings);
+                this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network);
         }
     }
 }
