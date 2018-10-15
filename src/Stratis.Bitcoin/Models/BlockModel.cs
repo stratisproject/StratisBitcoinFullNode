@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Models
         [JsonProperty("height")]
         public int Height { get; set; }
 
-        public BlockModel(Block block)
+        public BlockModel(Block block, ChainBase chain)
         {
             this.Hash = block.GetHash().ToString();
             this.Size = block.ToBytes().Length;
@@ -54,6 +54,7 @@ namespace Stratis.Bitcoin.Models
             this.MerkleRoot = block.Header.HashMerkleRoot.ToString();
             this.Difficulty = block.Header.Bits.Difficulty;
             this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
+            this.Height = chain.GetBlock(block.GetHash()).Height;
         }
 
         /// <summary>

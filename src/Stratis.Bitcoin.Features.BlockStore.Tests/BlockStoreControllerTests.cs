@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             chainState.Setup(c => c.ConsensusTip)
                 .Returns(chain.GetBlock(2));
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain);
 
             var json = (JsonResult)controller.GetBlockCount();
             int result = int.Parse(json.Value.ToString());
@@ -186,7 +186,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object);
+            var  chain = new Mock<ConcurrentChain>();
+            Block block = Block.Parse(BlockAsHex, KnownNetworks.StratisTest);
+            chain.Setup(c => c.GetBlock(It.IsAny<uint256>())).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
+
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain.Object);
 
             return (store, controller);
         }

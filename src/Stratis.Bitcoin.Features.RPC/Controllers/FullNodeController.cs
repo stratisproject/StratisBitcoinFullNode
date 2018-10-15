@@ -306,10 +306,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!isJsonFormat)
                 return block;
 
-            return new BlockModel(block)
-            {
-                Height = this.Chain.GetBlock(uint256.Parse(blockHash)).Height
-            };
+            return new BlockModel(block, this.Chain);
         }
 
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
