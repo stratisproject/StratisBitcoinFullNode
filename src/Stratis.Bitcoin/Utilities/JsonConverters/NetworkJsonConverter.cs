@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
                 return NetworkRegistration.GetNetwork("RegTest");
 
             Network network = NetworkRegistration.GetNetwork(networkName);
-            if (networkName != null)
-                return networkName;
+            if (network != null)
+                return network;
 
             throw new JsonObjectException("Unknown network (valid values : main, test, reg)", reader);
         }
@@ -49,20 +49,12 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
         public override void WriteJson(JsonWriter writer, object value, JsonSerializer serializer)
         {
             var network = (Network)value;
+            Guard.NotNull(network, nameof(network));
 
-            string networkName = null;
+            if (string.IsNullOrEmpty(network.Name))
+                throw new ArgumentException("Network name was not supplied.");
 
-            if (network == NetworkRegistration.GetNetwork("MainNet"))
-                networkName = "MainNet";
-            else if (network == NetworkRegistration.GetNetwork("TestNet"))
-                networkName = "TestNet";
-            else if (network == NetworkRegistration.GetNetwork("RegTest"))
-                networkName = "RegTest";
-            else if (network != null)
-                networkName = network.ToString();
-
-            if (networkName != null)
-                writer.WriteValue(networkName);
+            writer.WriteValue(network.Name);
         }
     }
 }
