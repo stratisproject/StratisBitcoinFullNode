@@ -18,7 +18,6 @@ namespace Stratis.Bitcoin.Utilities.JsonConverters
             settings.Converters.Add(new UInt160JsonConverter());
             settings.Converters.Add(new UInt256JsonConverter());
             settings.Converters.Add(new BitcoinSerializableJsonConverter());
-            settings.Converters.Add(new NetworkJsonConverter());
             settings.Converters.Add(new KeyPathJsonConverter());
             settings.Converters.Add(new SignatureJsonConverter());
             settings.Converters.Add(new HexJsonConverter());
