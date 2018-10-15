@@ -20,10 +20,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IMethodParameterSerializer methodParamSerializer;
         private readonly IContractPrimitiveSerializer primitiveSerializer;
 
-        public CallDataSerializer(IMethodParameterSerializer methodParameterSerializer)
-        {
-            this.methodParamSerializer = methodParameterSerializer;
-            this.primitiveSerializer = this.methodParamSerializer.PrimitiveSerializer;
+        public CallDataSerializer(IContractPrimitiveSerializer primitiveSerializer)
+        {            
+            this.primitiveSerializer = primitiveSerializer;
+            this.methodParamSerializer = new MethodParameterByteSerializer(primitiveSerializer);
         }
 
         public Result<ContractTxData> Deserialize(byte[] smartContractBytes)

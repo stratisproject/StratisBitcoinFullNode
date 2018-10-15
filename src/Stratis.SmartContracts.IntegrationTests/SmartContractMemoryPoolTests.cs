@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 builder.StartAll();
 
-                var callDataSerializer = new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(stratisNodeSync.FullNode.Network)));
+                var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(stratisNodeSync.FullNode.Network));
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100

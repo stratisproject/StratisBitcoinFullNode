@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 builder.StartAll();
 
-                var callDataSerializer = new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network)));
+                var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 
                 scSender.WithWallet(Password, WalletName, Passphrase);
                 scReceiver.WithWallet(Password, WalletName, Passphrase);
