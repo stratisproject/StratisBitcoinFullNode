@@ -246,7 +246,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.EvictLocked();
                 }
             }
-            
+
             return result;
         }
 
@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
+        public async Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -443,7 +443,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
-                
+
                 return hash;
             }
         }
