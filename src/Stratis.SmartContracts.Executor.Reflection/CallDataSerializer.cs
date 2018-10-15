@@ -109,7 +109,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var encoded = RLP.EncodeList(rlpBytes.Select(RLP.EncodeElement).ToArray());
             
             var bytes = new byte[PrefixSize + encoded.Length];
-            bytes[0] = (byte)ScOpcodeType.OP_CREATECONTRACT;
 
             this.SerializePrefix(bytes, contractTxData);
             
@@ -129,10 +128,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var encoded = RLP.EncodeList(rlpBytes.Select(RLP.EncodeElement).ToArray());
             
             var bytes = new byte[CallContractPrefixSize + encoded.Length];
-            bytes[0] = (byte)ScOpcodeType.OP_CALLCONTRACT;
+
             this.SerializePrefix(bytes, contractTxData);
 
             contractTxData.ContractAddress.ToBytes().CopyTo(bytes, PrefixSize);
+
             encoded.CopyTo(bytes, CallContractPrefixSize);
 
             return bytes;
@@ -143,7 +143,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             byte[] vmVersion = this.primitiveSerializer.Serialize(contractTxData.VmVersion);
             byte[] gasPrice = this.primitiveSerializer.Serialize(contractTxData.GasPrice);
             byte[] gasLimit = this.primitiveSerializer.Serialize(contractTxData.GasLimit.Value);
-
+            bytes[0] = contractTxData.OpCodeType;
             vmVersion.CopyTo(bytes, OpcodeSize);
             gasPrice.CopyTo(bytes, OpcodeSize + VmVersionSize);
             gasLimit.CopyTo(bytes, OpcodeSize + VmVersionSize + GasPriceSize);
