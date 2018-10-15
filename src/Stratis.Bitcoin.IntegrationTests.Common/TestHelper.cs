@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -41,6 +42,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
+            if (node1.Runner is BitcoinCoreRunner || node2.Runner is BitcoinCoreRunner)
+            {
+                return node1.CreateRPCClient().GetBestBlockHash() == node2.CreateRPCClient().GetBestBlockHash();
+            }
+
             // If the nodes are at genesis they are considered synced.
             if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
                 return true;
@@ -85,7 +91,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return false;
 
             // Check that node1 tip exists in store (either in disk or in the pending list) 
-
             if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
