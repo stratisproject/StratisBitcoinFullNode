@@ -89,53 +89,72 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public byte[] Serialize(ContractTxData contractTxData)
         {
-            byte opcode = contractTxData.OpCodeType;
+            return IsCallContract(contractTxData.OpCodeType) 
+                ? this.SerializeCallContract(contractTxData) 
+                : this.SerializeCreateContract(contractTxData);
+        }
 
+        private byte[] SerializeCreateContract(ContractTxData contractTxData)
+        {
             var rlpBytes = new List<byte[]>();
 
-            if (IsCallContract(opcode))
-            {
-                rlpBytes.Add(this.primitiveSerializer.Serialize(contractTxData.MethodName));
-            }
+            rlpBytes.Add(contractTxData.ContractExecutionCode);
+            
+            this.AddMethodParams(rlpBytes, contractTxData.MethodParameters);
+            
+            var encoded = RLP.EncodeList(rlpBytes.Select(RLP.EncodeElement).ToArray());
+            
+            var bytes = new byte[PrefixSize + encoded.Length];
+            bytes[0] = (byte)ScOpcodeType.OP_CREATECONTRACT;
 
-            if (IsCreateContract(opcode))
-            {
-                rlpBytes.Add(contractTxData.ContractExecutionCode);
-            }
+            this.SerializePrefix(bytes, contractTxData);
+            
+            encoded.CopyTo(bytes, PrefixSize);
 
-            if (contractTxData.MethodParameters != null && contractTxData.MethodParameters.Any())
+            return bytes;
+        }
+
+        private byte[] SerializeCallContract(ContractTxData contractTxData)
+        {
+            var rlpBytes = new List<byte[]>();
+
+            rlpBytes.Add(this.primitiveSerializer.Serialize(contractTxData.MethodName));
+
+            this.AddMethodParams(rlpBytes, contractTxData.MethodParameters);
+
+            var encoded = RLP.EncodeList(rlpBytes.Select(RLP.EncodeElement).ToArray());
+            
+            var bytes = new byte[CallContractPrefixSize + encoded.Length];
+            bytes[0] = (byte)ScOpcodeType.OP_CALLCONTRACT;
+            this.SerializePrefix(bytes, contractTxData);
+
+            contractTxData.ContractAddress.ToBytes().CopyTo(bytes, PrefixSize);
+            encoded.CopyTo(bytes, CallContractPrefixSize);
+
+            return bytes;
+        }
+
+        private void SerializePrefix(byte[] bytes, ContractTxData contractTxData)
+        {
+            byte[] vmVersion = this.primitiveSerializer.Serialize(contractTxData.VmVersion);
+            byte[] gasPrice = this.primitiveSerializer.Serialize(contractTxData.GasPrice);
+            byte[] gasLimit = this.primitiveSerializer.Serialize(contractTxData.GasLimit.Value);
+
+            vmVersion.CopyTo(bytes, OpcodeSize);
+            gasPrice.CopyTo(bytes, OpcodeSize + VmVersionSize);
+            gasLimit.CopyTo(bytes, OpcodeSize + VmVersionSize + GasPriceSize);
+        }
+
+        private void AddMethodParams(List<byte[]> rlpBytes, object[] methodParameters)
+        {
+            if (methodParameters != null && methodParameters.Any())
             {
-                rlpBytes.Add(this.SerializeMethodParameters(contractTxData.MethodParameters));
+                rlpBytes.Add(this.SerializeMethodParameters(methodParameters));
             }
             else
             {
                 rlpBytes.Add(new byte[0]);
             }
-
-            var encoded = RLP.EncodeList(rlpBytes.Select(RLP.EncodeElement).ToArray());
-
-            byte[] vmVersion = this.primitiveSerializer.Serialize(contractTxData.VmVersion);
-            byte[] gasPrice = this.primitiveSerializer.Serialize(contractTxData.GasPrice);
-            byte[] gasLimit = this.primitiveSerializer.Serialize(contractTxData.GasLimit.Value);
-
-            var bytes = IsCallContract(opcode) ? new byte[CallContractPrefixSize + encoded.Length] : new byte[PrefixSize + encoded.Length];
-
-            bytes[0] = opcode;
-            vmVersion.CopyTo(bytes, OpcodeSize);
-            gasPrice.CopyTo(bytes, OpcodeSize + VmVersionSize);
-            gasLimit.CopyTo(bytes, OpcodeSize + VmVersionSize + GasPriceSize);
-
-            if (IsCallContract(opcode))
-            {
-                contractTxData.ContractAddress.ToBytes().CopyTo(bytes, PrefixSize);
-                encoded.CopyTo(bytes, CallContractPrefixSize);
-            }
-            else
-            {
-                encoded.CopyTo(bytes, PrefixSize);
-            }
-
-            return bytes;
         }
 
         private static bool IsCreateContract(byte type)
@@ -159,6 +178,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (methodParametersRaw != null && methodParametersRaw.Length > 0)
                 methodParameters = this.methodParamSerializer.Deserialize(methodParametersRaw);
+
             return methodParameters;
         }
     }
