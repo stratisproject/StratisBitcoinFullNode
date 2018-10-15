@@ -139,6 +139,11 @@ namespace Stratis.SmartContracts.Tools.Sct
             throw new NotImplementedException();
         }
 
+        public void Clear(string key)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte[] GetBytes(string key)
         {
             return new byte[] { };

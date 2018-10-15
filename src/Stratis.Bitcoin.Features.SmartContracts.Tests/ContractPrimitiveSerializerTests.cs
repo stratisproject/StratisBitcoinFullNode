@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private void TestTypeArrayMethod<T>(T[] input)
         {
             byte[] testBytes = this.serializer.Serialize(input);
-            T[] output = this.serializer.ToArray<T>(testBytes);
+            T[] output = this.serializer.Deserialize<T[]>(testBytes);
             Assert.Equal(input, output);
         }
 
