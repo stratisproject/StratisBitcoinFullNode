@@ -11,7 +11,5 @@
         /// Deserializes an encoded array of bytes to parameter objects.
         /// </summary>
         object[] Deserialize(byte[] methodParameters);
-
-        IContractPrimitiveSerializer PrimitiveSerializer { get; }
     }
 }
