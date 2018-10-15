@@ -31,6 +31,8 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.serializer = new ContractPrimitiveSerializer(this.mockChain.Network);
         }
 
+        // TODO: Tests with serializing arrays, both in params and PersistentState
+
         [Fact]
         public void CreateContract_OneOfEachParameterType()
         {
@@ -120,6 +122,70 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(response.NewContractAddress, receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
+            Assert.Null(receipt.Error);
+        }
+
+        [Fact]
+        public void CallContract_SerializeEachParameterType()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CallWithAllParameters.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 25;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            const char testChar = 'c';
+            Address testAddress = new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
+            const bool testBool = true;
+            const int testInt = Int32.MaxValue;
+            const long testLong = Int64.MaxValue;
+            const uint testUint = UInt32.MaxValue;
+            const ulong testUlong = UInt64.MaxValue;
+            const string testString = "The quick brown fox jumps over the lazy dog";
+
+            string[] parameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Char, testChar),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, testAddress),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, testBool),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Int, testInt),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Long, testLong),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.UInt, testUint),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, testUlong),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.String, testString)
+            };
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(CallWithAllParameters.Call), preResponse.NewContractAddress, amount, parameters);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Block doesn't contain any extra transactions
+            Assert.Equal(2, lastBlock.Transactions.Count);
+
+            // Contract keeps balance
+            Assert.Equal((ulong)new Money((ulong)amount, MoneyUnit.BTC), this.node1.GetContractBalance(preResponse.NewContractAddress));
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.True(receipt.Success);
+            Assert.Empty(receipt.Logs);
+            Assert.True(receipt.GasUsed > GasPriceList.BaseCost);
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.Equal(preResponse.NewContractAddress, receipt.To);
             Assert.Null(receipt.Error);
         }
     }
