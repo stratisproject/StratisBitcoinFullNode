@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public virtual Task Initialize(ChainedHeader chainTip)
+        public virtual Task InitializeAsync(ChainedHeader chainTip)
         {
             return Task.CompletedTask;
         }
