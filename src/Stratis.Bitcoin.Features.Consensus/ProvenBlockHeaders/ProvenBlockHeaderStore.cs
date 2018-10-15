@@ -21,11 +21,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// Items in the pending batch are also saved to the least recently used <see cref="MemorySizeCache"/>.  This cache has a memory size limit of 100MB (see <see cref="MemoryCacheSizeLimitInBytes"/>).
     /// </para>
     /// <para>
-    /// When new <see cref="ProvenBlockHeader"/> items are saved to the database, in case <see cref="IProvenBlockHeaderRepository"/> contains headers that
-    /// are no longer a part of the best chain, they are overwritten or ignored.
+    /// When new <see cref="ProvenBlockHeader"/> items are saved to the database - in case <see cref="IProvenBlockHeaderRepository"/> contains headers that
+    /// are no longer a part of the best chain - they are overwritten or ignored.
     /// </para>
     /// <para>
-    /// When <see cref="IProvenBlockHeaderStore"/> is being initialized we overwrite blocks that are not on the best chain.
+    /// When <see cref="IProvenBlockHeaderStore"/> is being initialized it will overwrite blocks that are not on the best chain.
     /// </para>
     /// </remarks>
     public class ProvenBlockHeaderStore : IProvenBlockHeaderStore
@@ -66,16 +66,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public HashHeightPair TipHashHeight { get; private set; }
 
         /// <summary>
-        /// The highest stored <see cref= "ProvenBlockHeader"/> in the repository.
+        /// The highest stored <see cref= "ChainedHeader"/> tip in the store.
         /// </summary>
         private ChainedHeader storeTip;
 
         /// <summary>
         /// Pending - not yet saved to disk - <see cref="IProvenBlockHeaderStore"/> tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
-        /// </summary>
         /// <para>
-        /// All access to these items have to be protected by <see cref="lockObject"/>.
+        /// All access to these items have to be protected by <see cref="lockObject" />
         /// </para>
+        /// </summary>
         private HashHeightPair pendingTipHashHeight;
 
         /// <summary>
@@ -162,13 +162,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Initializes the <see cref="ProvenBlockHeaderStore"/>.
         /// <para>
-        /// If <see cref="storeTip"/> is <c>null</c>, the store is out of sync. This can happen when:</para>
+        /// If the <see cref="storeTip"/> is <c>null</c> the store is out of sync. This can happen when:</para>
         /// <list>
         ///     <item>The node crashed.</item>
         ///     <item>The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover we walk back the <see cref= "ConcurrentChain "/> until a common <see cref= "HashHeightPair"/> is found and then set the <see cref="ProvenBlockHeaderStore"/>'s <see cref="storeTip"/> to that.
+        /// To recover it will walk back the <see cref= "ConcurrentChain"/> until a common <see cref= "HashHeightPair"/> is found.
+        /// Then the <see cref="ProvenBlockHeaderStore"/>'s <see cref="storeTip"/> will be set to that.
         /// </para>
         /// </summary>
         public async Task InitializeAsync()
@@ -285,7 +286,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
             }
 
-            this.CheckItemsAreInSequence(provenHeadersOutput.Keys.ToList());
+            this.CheckItemsAreInConsecutiveSequence(provenHeadersOutput.Keys.ToList());
 
             return provenHeadersOutput.Values.ToList();
         }
@@ -304,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="IProvenBlockHeaderRepository"/>, then removes them from the pending batch.
+        /// Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="IProvenBlockHeaderRepository"/>, then removes the items from the pending batch.
         /// </summary>
         private async Task SaveAsync()
         {
@@ -326,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = null;
             }
 
-            this.CheckItemsAreInSequence(pendingBatch.Keys.ToList());
+            this.CheckItemsAreInConsecutiveSequence(pendingBatch.Keys.ToList());
 
             // Save the items to disk.
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
@@ -364,28 +365,26 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 }
 
                 latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight--).ConfigureAwait(false);
-
-                latestBlockHash = latestHeader.GetHash();
             }
 
             ChainedHeader newTip = this.chain.GetBlock(tipHeight);
 
-            this.logger.LogWarning("Proven block header store tip recovered to block '{0}'.", newTip);
+            this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", newTip);
 
             return newTip;
         }
 
         /// <summary>
-        /// Checks whether block height keys are in sequence.
+        /// Checks whether block height keys are in consecutive sequence.
         /// </summary>
-        /// <param name="keys">List of block height keys to check.</param>
-        private void CheckItemsAreInSequence(List<int> keys)
+        /// <param name="keys"> List of block height keys to check.</param>
+        private void CheckItemsAreInConsecutiveSequence(List<int> keys)
         {
             if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count())))
             {
-                this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_SEQEUNCE]");
+                this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_CONSECUTIVE_SEQEUNCE]");
 
-                throw new ProvenBlockHeaderException("Proven block headers are not in the correct sequence.");
+                throw new ProvenBlockHeaderException("Proven block headers are not in the correct consecutive sequence.");
             }
         }
 
@@ -411,6 +410,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private void AddComponentStats(StringBuilder log)
         {
             long totalBytes = this.PendingBatch.Sum(p => p.Value.HeaderSize);
+
+            if (totalBytes == 0) return;
 
             decimal totalInMB = Convert.ToDecimal(totalBytes / Math.Pow(2, 20));
 
