@@ -50,15 +50,22 @@ namespace Stratis.Bitcoin.Features.Consensus
         public async Task LoadAsync()
         {
             uint256 hash = await this.dBreezeCoinView.GetTipHashAsync().ConfigureAwait(false);
-            ChainedHeader next = this.chain.GetBlock(hash);
+            ChainedHeader currentHeader = this.chain.GetBlock(hash);
+
+            while (currentHeader == null)
+            {
+                hash = await this.dBreezeCoinView.RewindAsync().ConfigureAwait(false);
+                currentHeader = this.chain.GetBlock(hash);
+            }
+
             var load = new List<StakeItem>();
 
-            while (next != this.chain.Genesis)
+            while (currentHeader != this.chain.Genesis)
             {
-                load.Add(new StakeItem { BlockId = next.HashBlock, Height = next.Height });
-                if ((load.Count >= this.threshold) || (next.Previous == null))
+                load.Add(new StakeItem { BlockId = currentHeader.HashBlock, Height = currentHeader.Height });
+                if ((load.Count >= this.threshold) || (currentHeader.Previous == null))
                     break;
-                next = next.Previous;
+                currentHeader = currentHeader.Previous;
             }
 
             await this.dBreezeCoinView.GetStakeAsync(load).ConfigureAwait(false);

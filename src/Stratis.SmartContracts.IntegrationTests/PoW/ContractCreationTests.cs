@@ -3,14 +3,14 @@ using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     public class ContractCreationTests
     {
@@ -24,10 +24,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Test_CatCreation()
         {
-            using (Chain chain = new Chain(2))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                Node sender = chain.Nodes[0];
-                Node receiver = chain.Nodes[1];
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
 
                 sender.MineBlocks(1);
 
