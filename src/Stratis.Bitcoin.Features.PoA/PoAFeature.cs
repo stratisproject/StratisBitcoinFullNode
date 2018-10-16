@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.ConsensusRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -171,7 +172,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<SlotsManager>();
-                        services.AddSingleton<PoABlockDefinition>();
+                        services.AddSingleton<BlockDefinition, PoABlockDefinition>();
 
                         services.AddSingleton<PoANetwork>(provider => provider.GetService<Network>() as PoANetwork);
                         services.AddSingleton<PoAConsensusRulesRegistration>();

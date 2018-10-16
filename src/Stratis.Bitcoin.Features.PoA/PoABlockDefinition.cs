@@ -33,12 +33,9 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <inheritdoc/>
-        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey = null)
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            this.OnBuild(chainTip, new Script());
-
-            this.coinbase.Outputs[0].ScriptPubKey = new Script();
-            this.coinbase.Outputs[0].Value = Money.Zero;
+            base.OnBuild(chainTip, scriptPubKey);
 
             return this.BlockTemplate;
         }
