@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <summary>
         /// Configures the node with the smart contract proof of work consensus model.
         /// </summary>
-        public static IFullNodeBuilder UseSmartContractConsensus(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder UseSmartContractPowConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
 
@@ -148,6 +148,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             return fullNodeBuilder;
         }
+
+        /// <summary>
+        /// Configures the node with the smart contract proof of authority consensus model.
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractPoAConsensus(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<ConsensusFeature>()
+                    .DependOn<SmartContractFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<DBreezeCoinView>();
+                        services.AddSingleton<ICoinView, CachedCoinView>();
+                        services.AddSingleton<ConsensusController>();
+                        services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
+
+                        new SmartContractPowRuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
 
         /// <summary>
         /// Configures the node with the smart contract proof of stake consensus model.
@@ -211,6 +238,38 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// <para>We inject <see cref="IPowMining"/> with a smart contract block provider and definition.</para>
         /// </summary>
         public static IFullNodeBuilder UseSmartContractPosPowMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<MiningFeature>()
+                    .DependOn<MempoolFeature>()
+                    .DependOn<RPCFeature>()
+                    .DependOn<SmartContractWalletFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<IPowMining, PowMining>();
+                        services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
+                        services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
+                        services.AddSingleton<BlockDefinition, SmartContractPosPowBlockDefinition>();
+                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
+                        services.AddSingleton<MiningRpcController>();
+                        services.AddSingleton<MiningController>();
+                        services.AddSingleton<StakingController>();
+                        services.AddSingleton<StakingRpcController>();
+                        services.AddSingleton<MinerSettings>();
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Adds mining to the smart contract node when on a proof-of-authority network.
+        /// </summary>
+        public static IFullNodeBuilder UseSmartContractPoAMining(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
 
