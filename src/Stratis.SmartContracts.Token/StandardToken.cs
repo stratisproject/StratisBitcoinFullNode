@@ -45,6 +45,8 @@
                 SetBalance(to, toBalance + amount);
             }
 
+            Log(new TransferLog { From = Message.Sender, To = to, Amount = amount });
+
             return true;
         }
 
@@ -73,13 +75,17 @@
                 SetBalance(to, toBalance + amount);
             }
 
+            Log(new TransferLog { From = from, To = to, Amount = amount });
+
             return true;
         }
 
         /// <inheritdoc />
-        public bool Approve(Address spender, uint value)
+        public bool Approve(Address spender, uint amount)
         {
-            SetApproval(Message.Sender, spender, value);
+            SetApproval(Message.Sender, spender, amount);
+
+            Log(new ApprovalLog { Owner = Message.Sender, Spender = spender, Amount = amount});
 
             return true;
         }
@@ -92,6 +98,20 @@
         public uint Allowance(Address owner, Address spender)
         {
             return PersistentState.GetUInt32($"Allowance:{owner}:{spender}");
+        }
+
+        public struct TransferLog
+        {
+            public Address From;
+            public Address To;
+            public uint Amount;
+        }
+
+        public struct ApprovalLog
+        {
+            public Address Owner;
+            public Address Spender;
+            public uint Amount;
         }
     }
 }

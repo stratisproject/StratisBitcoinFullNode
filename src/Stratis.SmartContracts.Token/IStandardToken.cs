@@ -38,9 +38,9 @@
         /// The caller of the approve function approves spender to spend the allowance of tokens.
         /// </summary>
         /// <param name="spender"></param>
-        /// <param name="value"></param>
+        /// <param name="amount"></param>
         /// <returns></returns>
-        bool Approve(Address spender, uint value);
+        bool Approve(Address spender, uint amount);
 
         /// <summary>
         /// Returns the amount of tokens owned by the owner that the spender is able to spend.
