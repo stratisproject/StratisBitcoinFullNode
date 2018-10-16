@@ -170,6 +170,8 @@ namespace Stratis.Bitcoin.Consensus
                 if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
+                this.logger.LogInformation("Block store at height {0} is ahead of consensus, rewinding consensus from height {1}.", this.chainState.BlockStoreTip, pendingTip);
+
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
                 RewindState transitionState = await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
@@ -654,9 +656,10 @@ namespace Stratis.Bitcoin.Consensus
                     lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                     // Block connected successfully.
-                    List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
-
-                    await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
+                    lock (this.peerLock)
+                    {
+                        this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
+                    }
 
                     if (this.network.Consensus.MaxReorgLength != 0)
                     {
@@ -676,6 +679,12 @@ namespace Stratis.Bitcoin.Consensus
                     this.signals.SignalBlockConnected(blockToConnect);
                 }
             }
+
+            // After successfully connecting all blocks set the tree tip and claim the branch.
+            List<int> peersToResync = this.SetConsensusTip(lastValidatedBlockHeader);
+
+            // Disconnect peers that are not relevant anymore.
+            await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
 
             return connectBlockResult;
         }

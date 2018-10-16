@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
             this.serializer = serializer;
         }
 
-        public void Log<T>(ISmartContractState smartContractState, T toLog)
+        public void Log<T>(ISmartContractState smartContractState, T toLog) where T : struct 
         {
             var rawLog = new RawLog(smartContractState.Message.ContractAddress.ToUint160(this.network), toLog);
             Log log = rawLog.ToLog(this.serializer);

@@ -9,7 +9,7 @@ using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     public class SmartContractMemoryPoolTests
     {
@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 builder.StartAll();
 
-                var callDataSerializer = new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(stratisNodeSync.FullNode.Network)));
+                var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(stratisNodeSync.FullNode.Network));
 
                 stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
