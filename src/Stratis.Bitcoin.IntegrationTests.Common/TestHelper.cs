@@ -14,6 +14,7 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
@@ -137,6 +138,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
         {
             Guard.NotNull(node, nameof(node));
+
+            if (node.Runner is BitcoinCoreRunner)
+            {
+                node.CreateRPCClient().Generate(numberOfBlocks);
+                return (null, null);
+            }
 
             if (numberOfBlocks == 0)
                 throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
@@ -282,9 +289,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             };
         }
 
-        public static void Connect(CoreNode from, CoreNode to)
+        public static void Connect(CoreNode from, CoreNode to, bool oneTry = true)
         {
-            from.CreateRPCClient().AddNode(to.Endpoint, true);
+            from.CreateRPCClient().AddNode(to.Endpoint, oneTry);
             WaitLoop(() => IsNodeConnectedTo(from, to));
         }
 
@@ -302,7 +309,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (thisNode.Runner is BitcoinCoreRunner)
                 return thisNode.CreateRPCClient().GetBestBlockHash() == isConnectedToNode.CreateRPCClient().GetBestBlockHash();
             else
-                return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Equals(isConnectedToNode.Endpoint));
+                return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint));
         }
 
         public static BlockBuilder BuildBlocks { get { return new BlockBuilder(); } }
