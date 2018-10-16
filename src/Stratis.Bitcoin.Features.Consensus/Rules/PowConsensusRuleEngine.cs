@@ -50,16 +50,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             return new RewindState()
             {
-                BlockHash = await this.UtxoSet.Rewind().ConfigureAwait(false)
+                BlockHash = await this.UtxoSet.RewindAsync().ConfigureAwait(false)
             };
         }
 
         /// <inheritdoc />
         public override async Task InitializeAsync(ChainedHeader chainTip)
         {
-            DBreezeCoinView breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
+            var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
 
-            await breezeCoinView.InitializeAsync();
+            await breezeCoinView.InitializeAsync().ConfigureAwait(false);
 
             uint256 consensusTipHash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
 
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                consensusTipHash = await breezeCoinView.Rewind().ConfigureAwait(false);
+                consensusTipHash = await breezeCoinView.RewindAsync().ConfigureAwait(false);
             }
         }
 

@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// This method is provided (in <paramref name="unspentOutputs"/> parameter) with information about all
         /// transactions that are either new or were changed in the new block. It is also provided with information
         /// (in <see cref="originalOutputs"/>) about the previous state of those transactions (if any),
-        /// which is used for <see cref="Rewind"/> operation.
+        /// which is used for <see cref="RewindAsync"/> operation.
         /// </para>
         /// </summary>
         /// <param name="unspentOutputs">Information about the changes between the old block and the new block. An item in this list represents a list of all outputs
@@ -58,6 +58,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </para>
         /// </summary>
         /// <returns>Hash of the block header which is now the tip of the rewound coinview.</returns>
-        Task<uint256> Rewind();
+        Task<uint256> RewindAsync();
     }
 }

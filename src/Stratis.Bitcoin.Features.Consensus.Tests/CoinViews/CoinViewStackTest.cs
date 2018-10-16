@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task<uint256> Rewind()
+            public Task<uint256> RewindAsync()
             {
                 throw new NotImplementedException();
             }
@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task<uint256> Rewind()
+            public Task<uint256> RewindAsync()
             {
                 throw new NotImplementedException();
             }
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task<uint256> Rewind()
+            public Task<uint256> RewindAsync()
             {
                 throw new NotImplementedException();
             }

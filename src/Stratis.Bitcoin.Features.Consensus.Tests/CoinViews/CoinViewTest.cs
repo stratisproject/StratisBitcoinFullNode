@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 return response.BlockHash;
             }
 
-            public Task<uint256> Rewind()
+            public Task<uint256> RewindAsync()
             {
                 throw new NotImplementedException();
             }
