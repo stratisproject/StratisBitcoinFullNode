@@ -9,11 +9,14 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
 {
     public class PoACoinviewRule : CoinViewRule
     {
-        private readonly PoANetwork network;
+        private PoANetwork network;
 
-        public PoACoinviewRule(PoANetwork network)
+        /// <inheritdoc />
+        public override void Initialize()
         {
-            this.network = network;
+            base.Initialize();
+
+            this.network = this.Parent.Network as PoANetwork;
         }
 
         /// <inheritdoc/>

@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
         public HeaderTimeChecksPoARuleTests()
         {
-            this.timeChecksRule = new HeaderTimeChecksPoARule(this.slotsManager);
+            this.timeChecksRule = new HeaderTimeChecksPoARule();
             this.timeChecksRule.Parent = this.rulesEngine;
             this.timeChecksRule.Logger = this.loggerFactory.CreateLogger(this.timeChecksRule.GetType().FullName);
             this.timeChecksRule.Initialize();

@@ -10,14 +10,19 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
     /// </summary>
     public class PoAHeaderSignatureRule : HeaderValidationConsensusRule
     {
-        private readonly PoABlockHeaderValidator validator;
+        private PoABlockHeaderValidator validator;
 
-        private readonly SlotsManager slotsManager;
+        private SlotsManager slotsManager;
 
-        public PoAHeaderSignatureRule(PoABlockHeaderValidator validator, SlotsManager slotsManager)
+        /// <inheritdoc />
+        public override void Initialize()
         {
-            this.validator = validator;
-            this.slotsManager = slotsManager;
+            base.Initialize();
+
+            var engine = this.Parent as PoAConsensusRuleEngine;
+
+            this.slotsManager = engine.SlotsManager;
+            this.validator = engine.poaHeaderValidator;
         }
 
         public override void Run(RuleContext context)

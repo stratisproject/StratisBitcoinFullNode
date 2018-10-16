@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
-            IPoAMiner miner, PoAConsensusRulesRegistration rulesRegistration, Network network)
+            IPoAMiner miner)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
@@ -61,7 +61,6 @@ namespace Stratis.Bitcoin.Features.PoA
             this.miner = miner;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
-            rulesRegistration.RegisterRules(network.Consensus);
         }
 
         /// <inheritdoc />
@@ -93,36 +92,20 @@ namespace Stratis.Bitcoin.Features.PoA
 
     public class PoAConsensusRulesRegistration : IRuleRegistration
     {
-        private readonly HeaderTimeChecksPoARule timeChecksRule;
-        private readonly PoACoinviewRule coinviewRule;
-        private readonly PoAHeaderDifficultyRule headerDifficultyRule;
-        private readonly PoAHeaderSignatureRule headerSignatureRule;
-        private readonly PoAIntegritySignatureRule integritySignatureRule;
-
-        public PoAConsensusRulesRegistration(HeaderTimeChecksPoARule timeChecksRule, PoACoinviewRule coinviewRule, PoAHeaderDifficultyRule headerDifficultyRule,
-            PoAHeaderSignatureRule headerSignatureRule, PoAIntegritySignatureRule integritySignatureRule)
-        {
-            this.timeChecksRule = timeChecksRule;
-            this.coinviewRule = coinviewRule;
-            this.headerDifficultyRule = headerDifficultyRule;
-            this.headerSignatureRule = headerSignatureRule;
-            this.integritySignatureRule = integritySignatureRule;
-        }
-
         public void RegisterRules(IConsensus consensus)
         {
             consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
             {
-                this.timeChecksRule,
+                new HeaderTimeChecksPoARule(),
                 new StratisHeaderVersionRule(),
-                this.headerDifficultyRule,
-                this.headerSignatureRule
+                new PoAHeaderDifficultyRule(),
+                new PoAHeaderSignatureRule()
             };
 
             consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule(),
-                this.integritySignatureRule
+                new PoAIntegritySignatureRule()
             };
 
             consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
@@ -147,7 +130,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 // rules that require the store to be loaded (coinview)
                 new LoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
-                this.coinviewRule,
+                new PoACoinviewRule(),
                 new SaveCoinviewRule()
             };
         }
@@ -173,16 +156,6 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<SlotsManager>();
                         services.AddSingleton<BlockDefinition, PoABlockDefinition>();
-
-                        services.AddSingleton<PoANetwork>(provider => provider.GetService<Network>() as PoANetwork);
-                        services.AddSingleton<PoAConsensusRulesRegistration>();
-
-                        // PoA consensus rules.
-                        services.AddSingleton<HeaderTimeChecksPoARule>();
-                        services.AddSingleton<PoACoinviewRule>();
-                        services.AddSingleton<PoAHeaderDifficultyRule>();
-                        services.AddSingleton<PoAHeaderSignatureRule>();
-                        services.AddSingleton<PoAIntegritySignatureRule>();
                     });
             });
 
