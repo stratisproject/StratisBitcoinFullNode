@@ -43,8 +43,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             // Create poorly serialized method params
             var serializer =
-                new CallDataSerializer(
-                    new MethodParameterByteSerializer(new ContractPrimitiveSerializer(this.mockChain.Network)));
+                new CallDataSerializer(new ContractPrimitiveSerializer(this.mockChain.Network));
 
             var txData = serializer.Serialize(new ContractTxData(1, 1, (Gas) (GasPriceList.BaseCost + 1), new uint160(1), "Test"));
 
