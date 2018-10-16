@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
+        public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <inheritdoc />
-        public Task<uint256> Rewind()
+        public Task<uint256> RewindAsync()
         {
             throw new NotImplementedException();
         }

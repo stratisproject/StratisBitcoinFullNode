@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
@@ -136,6 +137,46 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(headerTree.Last().GetHash(), result.Consumed.Header.GetHash());
             Assert.Equal(headerTree.First().GetHash(), result.DownloadFrom.Header.GetHash());
             Assert.Equal(headerTree.Last().GetHash(), result.DownloadTo.Header.GetHash());
+        }
+
+        [Fact]
+        public void HeadersPresented_ProcessDownloadedBlock_PartialValidationCalledWhenBlockImmediatelyAfterTip()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
+            var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
+            var peer = builder.GetNetworkPeerWithConnection();
+
+            var result = builder.ConsensusManager.HeadersPresented(peer.Object, headerTree, true);
+
+            Assert.NotNull(builder.blockPullerBlockDownloadCallback);
+            builder.blockPullerBlockDownloadCallback(additionalHeaders.HashBlock, additionalHeaders.Block, peer.Object.Connection.Id);
+            
+            builder.PartialValidator.Verify(p => p.StartPartialValidation(It.IsAny<ChainedHeader>(), It.IsAny<Block>(), It.IsAny<OnPartialValidationCompletedAsyncCallback>()), Times.Exactly(1));
+        }
+
+        [Fact]
+        public void HeadersPresented_ProcessDownloadedBlock_PartialValidationNotCalledWhenBlockNotImmediatelyAfterTip()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var additionalHeaders = builder.ExtendAChain(2, builder.InitialChainTip);
+            var headerTree = builder.ChainedHeaderToList(additionalHeaders, 2).ToList();
+            var peer = builder.GetNetworkPeerWithConnection();
+
+            var result = builder.ConsensusManager.HeadersPresented(peer.Object, headerTree, true);
+
+            Assert.NotNull(builder.blockPullerBlockDownloadCallback);
+            builder.blockPullerBlockDownloadCallback(additionalHeaders.HashBlock, additionalHeaders.Block, peer.Object.Connection.Id);
+
+            builder.PartialValidator.Verify(p => p.StartPartialValidation(It.IsAny<ChainedHeader>(), It.IsAny<Block>(), It.IsAny<OnPartialValidationCompletedAsyncCallback>()), Times.Exactly(0));
         }
 
         private static void AssertBlockSizes(Dictionary<uint256, long> blockSize, List<uint256> expectedBlocks, int expectedSize)

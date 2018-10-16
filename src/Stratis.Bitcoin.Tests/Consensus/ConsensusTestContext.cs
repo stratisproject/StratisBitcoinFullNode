@@ -59,8 +59,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;
         public Mock<IIntegrityValidator> IntegrityValidator = new Mock<IIntegrityValidator>();
-        public readonly IPartialValidator PartialValidation;
-        public readonly IFullValidator FullValidation;
+        public readonly Mock<IPartialValidator> PartialValidator;
+        public readonly Mock<IFullValidator> FullValidator;
+        public BlockPuller.OnBlockDownloadedCallback blockPullerBlockDownloadCallback;
         // public readonly Mock<IPeerBanning> PeerBanning = new Mock<IPeerBanning>();
         private IPeerBanning peerBanning;
         private IConnectionManager connectionManager;
@@ -101,11 +102,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.coinView = new TestInMemoryCoinView(this.chain.Tip.HashBlock);
             this.HeaderValidator = new Mock<IHeaderValidator>();
             this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
-            
-            this.nodeLifetime = new NodeLifetime();            
+
+            this.nodeLifetime = new NodeLifetime();
             // this.nodeStats = new Mock<INodeStats>();
             this.ibd = new Mock<IInitialBlockDownloadState>();
             this.blockPuller = new Mock<IBlockPuller>();
+
+            this.blockPuller.Setup(b => b.Initialize(It.IsAny<BlockPuller.OnBlockDownloadedCallback>()))
+                .Callback<BlockPuller.OnBlockDownloadedCallback>((d) => { this.blockPullerBlockDownloadCallback = d; });
             this.blockStore = new Mock<IBlockStore>();
             // this.checkpoints = new Checkpoints();
             this.checkpoints = new Mock<ICheckpoints>();
@@ -156,12 +160,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.loggerFactory, new PayloadProvider().DiscoverPayloads(),
                 this.selfEndpointTracker,
                 this.ibd.Object,
-                new ConnectionManagerSettings());
+                new ConnectionManagerSettings(this.nodeSettings));
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory, this.selfEndpointTracker);
             var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, peerAddressManager);
-            var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);            
-            
+            var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
+
             this.connectionManager = new ConnectionManager(this.dateTimeProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeSettings,
                 this.nodeLifetime, new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
                 peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats);
@@ -185,7 +189,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // this.powConsensusRulesEngine.Register();
 
             // new HeaderValidator(this.consensusRules, this.loggerFactory)
-            var tree = new ChainedHeaderTree(this.Network, this.loggerFactory, this.HeaderValidator.Object , this.checkpoints.Object,
+            var tree = new ChainedHeaderTree(this.Network, this.loggerFactory, this.HeaderValidator.Object, this.checkpoints.Object,
                 this.ChainState.Object, this.FinalizedBlockMock.Object, this.consensusSettings, this.hashStore);
 
 
@@ -193,15 +197,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
             // new FullValidator(powConsensusRulesEngine, loggerFactory)
 
 
-            this.PartialValidation = new PartialValidator(this.consensusRules, this.loggerFactory);
-            this.FullValidation = new FullValidator(this.consensusRules, this.loggerFactory);
+            // this.PartialValidation = new PartialValidator(this.consensusRules, this.loggerFactory);
+            // this.FullValidation = new FullValidator(this.consensusRules, this.loggerFactory);
+
+            this.PartialValidator = new Mock<IPartialValidator>();
+            this.FullValidator = new Mock<IFullValidator>();
+
+
             this.peerBanning = new PeerBanning(this.connectionManager, this.loggerFactory, this.dateTimeProvider, peerAddressManager);
 
             this.ConsensusManager = new TestConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, new IntegrityValidator(this.consensusRules, this.loggerFactory),
-                this.PartialValidation, this.FullValidation, this.consensusRules,
+                this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
                 this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(), this.peerBanning, this.ibd.Object, this.chain,
                 this.blockPuller.Object, this.blockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime);
-
         }
 
         public Block CreateBlock(ChainedHeader previous)
@@ -262,7 +270,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             ChainedHeader chainedHeader = null,
             int difficultyAdjustmentDivisor = 1,
             bool assignBlocks = true,
-            ValidationState? validationState = null, 
+            ValidationState? validationState = null,
             int? avgBlockSize = null)
         {
             if (difficultyAdjustmentDivisor == 0)
@@ -288,7 +296,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                     block.GetSerializedSize();
 
                     if (avgBlockSize.HasValue)
-                    {                        
+                    {
                         var transaction = new Transaction();
                         transaction.Outputs.Add(new TxOut(new Money(10000000000), new Script()));
                         block.Transactions.Add(transaction);
@@ -354,7 +362,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         internal void SetupAverageBlockSize(int amount)
         {
             this.blockPuller.Setup(b => b.GetAverageBlockSizeBytes())
-                .Returns(amount);            
+                .Returns(amount);
         }
 
 
