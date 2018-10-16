@@ -272,15 +272,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         public static IFullNodeBuilder UseSmartContractPoAMining(this IFullNodeBuilder fullNodeBuilder)
         {
-            LoggingConfiguration.RegisterFeatureNamespace<MiningFeature>("mining");
-
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
-                    .AddFeature<MiningFeature>()
-                    .DependOn<MempoolFeature>()
-                    .DependOn<RPCFeature>()
-                    .DependOn<SmartContractWalletFeature>()
+                    .AddFeature<PoAFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<FederationManager>();
