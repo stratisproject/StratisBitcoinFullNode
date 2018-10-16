@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
@@ -167,8 +168,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
-                        // TODO: update this one and then the Mining.
-                        new SmartContractPowRuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                        
+                        new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
@@ -282,16 +283,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                     .DependOn<SmartContractWalletFeature>()
                     .FeatureServices(services =>
                     {
-                        services.AddSingleton<IPowMining, PowMining>();
-                        services.AddSingleton<IBlockProvider, SmartContractBlockProvider>();
-                        services.AddSingleton<BlockDefinition, SmartContractBlockDefinition>();
-                        services.AddSingleton<BlockDefinition, SmartContractPosPowBlockDefinition>();
-                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
-                        services.AddSingleton<MiningRpcController>();
-                        services.AddSingleton<MiningController>();
-                        services.AddSingleton<StakingController>();
-                        services.AddSingleton<StakingRpcController>();
-                        services.AddSingleton<MinerSettings>();
+                        services.AddSingleton<FederationManager>();
+                        services.AddSingleton<PoABlockHeaderValidator>();
+                        services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<SlotsManager>();
+                        services.AddSingleton<SmartContractPoABlockDefinition>();
                     });
             });
 
