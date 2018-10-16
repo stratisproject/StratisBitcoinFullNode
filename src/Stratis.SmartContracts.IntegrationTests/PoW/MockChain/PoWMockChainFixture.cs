@@ -1,14 +1,14 @@
 ﻿using System;
 
-namespace Stratis.SmartContracts.IntegrationTests.MockChain
+namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
 {
-    public class MockChainFixture : IDisposable
+    public class PoWMockChainFixture : IDisposable
     {
-        public Chain Chain { get; }
+        public PoWMockChain Chain { get; }
 
-        public MockChainFixture()
+        public PoWMockChainFixture()
         {
-            this.Chain = new Chain(2);
+            this.Chain = new PoWMockChain(2);
             var node1 = this.Chain.Nodes[0];
             var node2 = this.Chain.Nodes[1];
             var maturity = (int)this.Chain.Network.Consensus.CoinbaseMaturity;

@@ -12,7 +12,7 @@ using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     public sealed class SmartContractWalletOnPosNetworkTests
     {
@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 builder.StartAll();
 
-                var callDataSerializer = new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network)));
+                var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 
                 scSender.WithWallet(Password, WalletName, Passphrase);
                 scReceiver.WithWallet(Password, WalletName, Passphrase);

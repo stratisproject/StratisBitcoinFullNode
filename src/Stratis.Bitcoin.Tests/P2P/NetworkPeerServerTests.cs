@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
             initialBlockDownloadState.Setup(i => i.IsInitialBlockDownload()).Returns(inIBD);
 
-            var nodeSettings = new NodeSettings(NetworkRegistration.GetNetwork("RegTest"));
+            var nodeSettings = new NodeSettings(KnownNetworks.RegTest);
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
 
             var endpointAddNode = new IPEndPoint(IPAddress.Parse("::ffff:192.168.0.1"), 80);

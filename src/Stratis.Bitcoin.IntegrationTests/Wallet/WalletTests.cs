@@ -76,29 +76,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact]
-        public void CanMineAndSendToAddress()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network);
-                builder.StartAll();
-
-                // Move a wallet file to the right folder and restart the wallet manager to take it into account.
-                this.InitializeTestWallet(stratisNodeSync.FullNode.DataFolder.WalletPath);
-                var walletManager = stratisNodeSync.FullNode.NodeService<IWalletManager>() as WalletManager;
-                walletManager.Start();
-
-                RPCClient rpc = stratisNodeSync.CreateRPCClient();
-                rpc.SendCommand(RPCOperations.generate, 10);
-                Assert.Equal(10, rpc.GetBlockCount());
-
-                BitcoinPubKeyAddress address = new Key().PubKey.GetAddress(rpc.Network);
-                uint256 tx = rpc.SendToAddress(address, Money.Coins(1.0m));
-                Assert.NotNull(tx);
-            }
-        }
-
         [Retry(2)]
         public void WalletCanReorg()
         {

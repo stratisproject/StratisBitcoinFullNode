@@ -96,6 +96,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return true;
         }
 
+        /// <summary>
+        /// Ensures a node is internally synced and at a given height.
+        /// </summary>
+        /// <param name="node">This node.</param>
+        /// <param name="height">At which height should it be synced to.</param>
+        public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
+        {
+            if (IsNodeSynced(node))
+            {
+                WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
+                return true;
+            }
+
+            return false;
+        }
+
         public static void TriggerSync(CoreNode node)
         {
             foreach (INetworkPeer connectedPeer in node.FullNode.ConnectionManager.ConnectedPeers)
@@ -136,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (numberOfBlocks == 0)
                 throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            SetMinerSecret(node);
+            SetMinerSecret(node, walletName, walletPassword, accountName);
 
             var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
@@ -239,10 +255,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return result;
         }
 
-        public static void Disconnect(CoreNode from, CoreNode to)
+        /// <summary>
+        /// Disconnects a node from another and waits until the operation completes.
+        /// </summary>
+        /// <param name="thisNode">The node that will be disconnected from.</param>
+        /// <param name="nodeToDisconnect">The node that will be disconnected.</param>
+        public static void Disconnect(CoreNode thisNode, CoreNode nodeToDisconnect)
         {
-            from.CreateRPCClient().RemoveNode(to.Endpoint);
-            WaitLoop(() => !IsNodeConnectedTo(from, to));
+            thisNode.CreateRPCClient().RemoveNode(nodeToDisconnect.Endpoint);
+            WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
 
         private class TransactionNode
@@ -277,21 +298,37 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             };
         }
 
-        public static void Connect(CoreNode from, CoreNode to)
+        /// <summary>
+        /// Connects a node to another and waits for the operation to complete.
+        /// </summary>
+        /// <param name="thisNode">The node the connection will be established from.</param>
+        /// <param name="connectToNode">The node that will be connected to.</param>
+        public static void Connect(CoreNode thisNode, CoreNode connectToNode)
         {
-            from.CreateRPCClient().AddNode(to.Endpoint, true);
-            WaitLoop(() => IsNodeConnectedTo(from, to));
+            thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+            WaitLoop(() => IsNodeConnectedTo(thisNode, connectToNode));
         }
 
-        public static void ConnectAndSync(CoreNode from, params CoreNode[] to)
+        /// <summary>
+        /// Connects a node to a set of other nodes and waits for all the nodes to sync.
+        /// </summary>
+        /// <param name="thisNode">The node the connection will be established from.</param>
+        /// <param name="to">The nodes to connect to.</param>
+        public static void ConnectAndSync(CoreNode thisNode, params CoreNode[] to)
         {
             foreach (CoreNode coreNode in to)
-                Connect(from, coreNode);
+                Connect(thisNode, coreNode);
 
             foreach (CoreNode coreNode in to)
-                WaitLoop(() => AreNodesSynced(from, coreNode));
+                WaitLoop(() => AreNodesSynced(thisNode, coreNode));
         }
 
+        /// <summary>
+        /// Checks to see whether a node is connected to another.
+        /// </summary>
+        /// <param name="thisNode">The node we want to check from.</param>
+        /// <param name="isConnectedToNode">The node that will be checked.</param>
+        /// <returns>Returns <c>true</c> if the address exists in this node's connected peers collection.</returns>
         public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
         {
             return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Equals(isConnectedToNode.Endpoint));
