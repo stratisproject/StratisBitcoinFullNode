@@ -174,6 +174,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
+                        new PoAConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
