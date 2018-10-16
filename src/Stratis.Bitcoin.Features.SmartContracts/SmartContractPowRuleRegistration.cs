@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 new SetActivationDeploymentsFullValidationRule(),
 
-                new SmartContractLoadCoinviewRule(),
+                new LoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),

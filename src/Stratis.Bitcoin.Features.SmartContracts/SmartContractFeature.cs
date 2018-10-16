@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
-
+                        // TODO: update this one and then the Mining.
                         new SmartContractPowRuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
