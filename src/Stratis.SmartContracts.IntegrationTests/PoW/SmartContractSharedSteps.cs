@@ -3,7 +3,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     public static class SmartContractSharedSteps
     {

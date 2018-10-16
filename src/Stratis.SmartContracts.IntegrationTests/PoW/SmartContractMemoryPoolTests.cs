@@ -9,7 +9,7 @@ using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     public class SmartContractMemoryPoolTests
     {

@@ -3,27 +3,28 @@ using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
-using Xunit;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
+using Xunit;
 using Block = NBitcoin.Block;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
-    public class ContractInternalTransferTests : IClassFixture<MockChainFixture>
+    public class ContractInternalTransferTests : IClassFixture<PoWMockChainFixture>
     {
-        private readonly Chain mockChain;
-        private readonly Node node1;
-        private readonly Node node2;
+        private readonly PoWMockChain mockChain;
+        private readonly MockChainNode node1;
+        private readonly MockChainNode node2;
 
         private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
-        public ContractInternalTransferTests(MockChainFixture fixture)
+        public ContractInternalTransferTests(PoWMockChainFixture fixture)
         {
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
