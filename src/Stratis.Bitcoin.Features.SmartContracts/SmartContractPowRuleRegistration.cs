@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new CanGetSenderRule(new SenderRetriever()),
-                new SmartContractFormatRule(new CallDataSerializer(new MethodParameterByteSerializer(new ContractPrimitiveSerializer(this.network)))), // Can we inject these serializers?
+                new SmartContractFormatRule(new CallDataSerializer(new ContractPrimitiveSerializer(this.network))), // Can we inject these serializers?
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
                 new SmartContractSaveCoinviewRule()
             };
