@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             ChainedHeader pendingTip = null;
 
             // This happens when the new chain reorg is behind this current chain store.
-            if (newChainedHeader.Height <= tipHeight)
+            if (newChainedHeader.Height < tipHeight)
             {
                 while (true)
                 {
@@ -358,14 +358,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     if ((pendingTip != null) && (this.storeTip.Height >= pendingTip.Height))
                         break;
                 }
+
+                if (pendingTip != null)
+                {
+                    this.TipHashHeight = new HashHeightPair(pendingTip.HashBlock, pendingTip.Height);
+                    this.storeTip = pendingTip;
+                }
             }
-
-            if (pendingTip != null)
+            else if (newChainedHeader.Height > tipHeight)
             {
-                // Add the final chained header to the batch.
-                this.AddToPendingBatch(pendingTip.Header as ProvenBlockHeader, new HashHeightPair(pendingTip.Header.GetHash(), pendingTip.Height));
-
-                await this.SaveAsync().ConfigureAwait(false);
+                throw new ProvenBlockHeaderException("Chain header is ahead of the store.");
             }
 
             this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", this.TipHashHeight);
