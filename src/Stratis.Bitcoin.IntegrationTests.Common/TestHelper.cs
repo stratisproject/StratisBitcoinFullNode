@@ -316,11 +316,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="to">The nodes to connect to.</param>
         public static void ConnectAndSync(CoreNode thisNode, params CoreNode[] to)
         {
+            ConnectAndSync(thisNode, false, to);
+        }
+
+        /// <summary>
+        /// Connects a node to a set of other nodes and waits for all the nodes to sync.
+        /// </summary>
+        /// <param name="thisNode">The node the connection will be established from.</param>
+        /// <param name="ignoreMempool">Ignore differences between mempools.</param>
+        /// <param name="to">The nodes to connect to.</param>
+        public static void ConnectAndSync(CoreNode thisNode, bool ignoreMempool, params CoreNode[] to)
+        {
             foreach (CoreNode coreNode in to)
                 Connect(thisNode, coreNode);
 
             foreach (CoreNode coreNode in to)
-                WaitLoop(() => AreNodesSynced(thisNode, coreNode));
+                WaitLoop(() => AreNodesSynced(thisNode, coreNode, ignoreMempool));
         }
 
         /// <summary>

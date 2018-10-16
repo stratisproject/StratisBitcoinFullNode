@@ -422,9 +422,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 TestHelper.MineBlocks(node2, 2);
 
                 // Sync nodes and reorg occurs.
-                node1.CreateRPCClient().AddNode(node2.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(node2, node1, true));
-
+                TestHelper.ConnectAndSync(node1, true, node2);
+                
                 // Block mined by Node 1 is orphaned.
                 Assert.Null(node1.FullNode.ChainBehaviorState.ConsensusTip.FindAncestorOrSelf(minedBlockHash));
 
