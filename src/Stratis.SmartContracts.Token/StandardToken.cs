@@ -27,7 +27,11 @@
         public bool Transfer(Address to, uint amount)
         {
             if (amount == 0)
+            {
+                Log(new TransferLog { From = Message.Sender, To = to, Amount = 0 });
+
                 return true;
+            }
 
             uint senderBalance = GetBalance(Message.Sender);
             
@@ -54,6 +58,8 @@
         {
             if (amount == 0)
             {
+                Log(new TransferLog { From = from, To = to, Amount = 0 });
+
                 return true;
             }
 

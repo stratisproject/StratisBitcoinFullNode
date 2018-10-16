@@ -9,12 +9,15 @@ namespace Stratis.SmartContracts.Token.Tests
     {
         private readonly Mock<ISmartContractState> mockContractState;
         private readonly Mock<IPersistentState> mockPersistentState;
+        private readonly Mock<IContractLogger> mockContractLogger;
 
         public StandardTokenTests()
         {
+            this.mockContractLogger = new Mock<IContractLogger>();
             this.mockPersistentState = new Mock<IPersistentState>();
             this.mockContractState = new Mock<ISmartContractState>();
             this.mockContractState.Setup(s => s.PersistentState).Returns(this.mockPersistentState.Object);
+            this.mockContractState.Setup(s => s.ContractLogger).Returns(this.mockContractLogger.Object);
         }
 
         [Fact]
@@ -58,6 +61,8 @@ namespace Stratis.SmartContracts.Token.Tests
             standardToken.Approve(spender, approval);
 
             this.mockPersistentState.Verify(s => s.SetUInt32($"Allowance:{owner}:{spender}", approval));
+
+            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.ApprovalLog { Owner = owner, Spender = spender, Amount = approval }));
         }
 
         [Fact]
@@ -90,6 +95,7 @@ namespace Stratis.SmartContracts.Token.Tests
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 
             Assert.True(standardToken.Transfer(destination, amount));
+            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.TransferLog { From = sender, To = destination, Amount = amount }));
         }
 
         [Fact]
@@ -193,6 +199,8 @@ namespace Stratis.SmartContracts.Token.Tests
 
             // Verify we set the receiver's balance
             this.mockPersistentState.Verify(s => s.SetUInt32($"Balance:{destination}", destinationBalance + amount));
+
+            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.TransferLog { From = sender, To = destination, Amount = amount }));
         }
 
         [Fact]
@@ -210,6 +218,8 @@ namespace Stratis.SmartContracts.Token.Tests
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 
             Assert.True(standardToken.TransferFrom(owner, destination, amount));
+
+            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.TransferLog { From = owner, To = destination, Amount = amount }));
         }
 
         [Fact]
@@ -374,6 +384,8 @@ namespace Stratis.SmartContracts.Token.Tests
 
             // Verify we set the receiver's balance
             this.mockPersistentState.Verify(s => s.SetUInt32($"Balance:{destination}", destinationBalance + amount));
+
+            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.TransferLog { From = owner, To = destination, Amount = amount }));
         }
     }
 }
