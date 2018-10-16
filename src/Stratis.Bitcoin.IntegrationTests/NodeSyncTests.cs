@@ -297,33 +297,37 @@ namespace Stratis.Bitcoin.IntegrationTests
                     TestHelper.WaitForNodeToSync(nodes.ToArray());
                 });
 
-                Assert.Equal(4, minerNode.FullNode.Chain.Height);
+                int networkHeight = minerNode.FullNode.Chain.Height;
+                Assert.Equal(networkHeight, nodes.Count);
 
-                // firstNode mines block 5.
+                // Random node on network generates a block.
                 TestHelper.MineBlocks(firstNode, 1);
 
                 // Wait until connector get the hash of network's block.
                 while ((connectorNode.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != firstNode.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) ||
-                       (firstNode.FullNode.ChainBehaviorState.ConsensusTip.Height == 5))
+                       (firstNode.FullNode.ChainBehaviorState.ConsensusTip.Height == networkHeight))
                     Thread.Sleep(1);
 
                 Assert.Equal(connectorNode.FullNode.Chain.Tip.HashBlock, firstNode.FullNode.Chain.Tip.HashBlock);
-                Assert.Equal(4, minerNode.FullNode.Chain.Tip.Height);
-                Assert.Equal(5, connectorNode.FullNode.Chain.Tip.Height);
+                Assert.Equal(minerNode.FullNode.Chain.Tip.Height, networkHeight);
+                Assert.Equal(connectorNode.FullNode.Chain.Tip.Height, networkHeight + 1);
 
-                // Miner mines block 6.
+                // Miner mines the block.
                 TestHelper.MineBlocks(minerNode, 1);
 
-                Assert.Equal(connectorNode.FullNode.Chain.Tip.HashBlock, firstNode.FullNode.Chain.Tip.HashBlock);
-                Assert.Equal(6, minerNode.FullNode.Chain.Tip.Height);
-                Assert.Equal(6, connectorNode.FullNode.Chain.Tip.Height);
+                networkHeight++;
 
-                // connectorNode mines block 7.
+                Assert.Equal(connectorNode.FullNode.Chain.Tip.HashBlock, firstNode.FullNode.Chain.Tip.HashBlock);
+                Assert.Equal(minerNode.FullNode.Chain.Tip.Height, networkHeight);
+                Assert.Equal(connectorNode.FullNode.Chain.Tip.Height, networkHeight);
+
                 TestHelper.MineBlocks(connectorNode, 1);
+                networkHeight++;
 
                 TestHelper.WaitForNodeToSync(nodes.ToArray());
 
-                nodes.All(n => n.FullNode.Chain.Height == 7).Should().BeTrue(because: "all nodes have synced to chain height");
+                nodes.All(n => n.FullNode.Chain.Height == networkHeight).Should()
+                    .BeTrue(because: "all nodes have synced to chain height");
 
                 Assert.Equal(firstNode.FullNode.Chain.Tip.HashBlock, minerNode.FullNode.Chain.Tip.HashBlock);
             }
