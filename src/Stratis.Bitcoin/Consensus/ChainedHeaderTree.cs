@@ -421,7 +421,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("Old consensus tip: '{0}', new consensus tip: '{1}', fork point: '{2}'.", oldConsensusTip, newConsensusTip, fork);
 
             // Consider blocks that became a part of our best chain as consumed.
-            while ((currentHeader != fork) && !blockMined && (newConsensusTip.Block != null))
+            while ((newConsensusTip.Block != null) && (currentHeader != fork) && !blockMined)
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.UnconsumedBlocksCount--;
