@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         [ActionName("sendtoaddress")]
-        [ActionDescription("Sends money to a bitcoin address. Requires wallet to be unlocked using walletpassphrase.")]
+        [ActionDescription("Sends money to an address. Requires wallet to be unlocked using walletpassphrase.")]
         public async Task<uint256> SendToAddressAsync(BitcoinAddress address, decimal amount, string commentTx, string commentDest)
         {
             WalletAccountReference account = this.GetAccount(); 
@@ -99,11 +99,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             catch (SecurityException exception)
             {
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, exception.Message);
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, exception.Message);
             }
             catch (WalletException exception)
             {
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, exception.Message);
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
             }
         }
 
