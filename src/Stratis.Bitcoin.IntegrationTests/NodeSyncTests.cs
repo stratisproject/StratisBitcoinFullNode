@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectAndSync(stratisMinerLocal, stratisMinerRemote);
 
                 // Now disconnect the peers and mine block C2p on remote.
-                TestHelper.ConnectAndSync(stratisMinerLocal, stratisMinerRemote);
+                TestHelper.Disconnect(stratisMinerLocal, stratisMinerRemote);
 
                 // Mine block C2p.
                 TestHelper.MineBlocks(stratisMinerRemote, 1);

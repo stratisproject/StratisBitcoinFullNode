@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NetworkCredential creds;
         private readonly object lockObject = new object();
         private readonly ILoggerFactory loggerFactory;
-        internal readonly NodeRunner Runner;
+        internal readonly NodeRunner runner;
         private List<Transaction> transactions = new List<Transaction>();
 
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public int RpcPort => int.Parse(this.ConfigParameters["rpcport"]);
 
         /// <summary>Location of the data directory for the node.</summary>
-        public string DataFolder => this.Runner.DataFolder;
+        public string DataFolder => this.runner.DataFolder;
 
         public IPEndPoint Endpoint => new IPEndPoint(IPAddress.Parse("127.0.0.1"), this.ProtocolPort);
 
@@ -64,12 +64,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
-            this.Runner = runner;
+            this.runner = runner;
 
             this.State = CoreNodeState.Stopped;
             string pass = Encoders.Hex.EncodeData(RandomUtils.GetBytes(20));
             this.creds = new NetworkCredential(pass, pass);
-            this.Config = Path.Combine(this.Runner.DataFolder, configfile);
+            this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
             this.ConfigParameters.Import(configParameters);
             var randomFoundPorts = new int[3];
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
 
-            this.connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Runner.Network));
+            this.connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.runner.Network));
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
 
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>Get stratis full node if possible.</summary>
-        public FullNode FullNode => this.Runner.FullNode;
+        public FullNode FullNode => this.runner.FullNode;
 
         public CoreNodeState State { get; private set; }
 
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             if (!this.CookieAuth)
                 return this.creds.UserName + ":" + this.creds.Password;
             else
-                return "cookiefile=" + Path.Combine(this.Runner.DataFolder, "regtest", ".cookie");
+                return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
         }
 
         public CoreNode NotInIBD()
@@ -134,7 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
-            var networkPeerFactory = new NetworkPeerFactory(this.Runner.Network,
+            var networkPeerFactory = new NetworkPeerFactory(this.runner.Network,
                 DateTimeProvider.Default,
                 this.loggerFactory,
                 new PayloadProvider().DiscoverPayloads(),
@@ -149,12 +149,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
-                this.Runner.BuildNode();
-                this.Runner.Start();
+                this.runner.BuildNode();
+                this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
 
-            if (this.Runner is BitcoinCoreRunner)
+            if (this.runner is BitcoinCoreRunner)
                 StartBitcoinCoreRunner();
             else
                 StartStratisRunner();
@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private void CreateConfigFile(NodeConfigParameters configParameters = null)
         {
-            Directory.CreateDirectory(this.Runner.DataFolder);
+            Directory.CreateDirectory(this.runner.DataFolder);
 
             configParameters = configParameters ?? new NodeConfigParameters();
             configParameters.SetDefaultValueIfUndefined("regtest", "1");
@@ -217,11 +217,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var timeToNodeInit = TimeSpan.FromMinutes(1);
             var timeToNodeStart = TimeSpan.FromMinutes(1);
 
-            TestHelper.WaitLoop(() => this.Runner.FullNode != null,
+            TestHelper.WaitLoop(() => this.runner.FullNode != null,
                 cancellationToken: new CancellationTokenSource(timeToNodeInit).Token,
                 failureReason: $"Failed to assign instance of FullNode within {timeToNodeInit}");
 
-            TestHelper.WaitLoop(() => this.Runner.FullNode.State == FullNodeState.Started,
+            TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
 
@@ -297,11 +297,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
-                this.Runner.Stop();
+                this.runner.Stop();
 
-                if (!this.Runner.IsDisposed)
+                if (!this.runner.IsDisposed)
                 {
-                    throw new Exception($"Problem disposing of a node of type {this.Runner.GetType()}.");
+                    throw new Exception($"Problem disposing of a node of type {this.runner.GetType()}.");
                 }
 
                 this.State = CoreNodeState.Killed;
@@ -327,18 +327,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 peer.VersionHandshakeAsync().GetAwaiter().GetResult();
 
-                var chain = bestBlock == this.Runner.Network.GenesisHash ? new ConcurrentChain(this.Runner.Network) : this.GetChain(peer);
+                var chain = bestBlock == this.runner.Network.GenesisHash ? new ConcurrentChain(this.runner.Network) : this.GetChain(peer);
 
                 for (int i = 0; i < blockCount; i++)
                 {
                     uint nonce = 0;
 
-                    var block = this.Runner.Network.Consensus.ConsensusFactory.CreateBlock();
+                    var block = this.runner.Network.Consensus.ConsensusFactory.CreateBlock();
                     block.Header.HashPrevBlock = chain.Tip.HashBlock;
                     block.Header.Bits = block.Header.GetWorkRequired(rpc.Network, chain.Tip);
                     block.Header.UpdateTime(now, rpc.Network, chain.Tip);
 
-                    var coinbase = this.Runner.Network.CreateTransaction();
+                    var coinbase = this.runner.Network.CreateTransaction();
                     coinbase.AddInput(TxIn.CreateCoinbase(chain.Height + 1));
                     coinbase.AddOutput(new TxOut(rpc.Network.GetReward(chain.Height + 1), dest.GetAddress()));
                     block.AddTransaction(coinbase);
@@ -513,7 +513,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public bool AddToStratisMempool(Transaction trx)
         {
             var state = new MempoolValidationState(true);
-            return this.Runner.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
+            return this.runner.FullNode.MempoolManager().Validator.AcceptToMemoryPool(state, trx).Result;
         }
 
         public async Task BroadcastBlocksAsync(Block[] blocks, INetworkPeer peer)

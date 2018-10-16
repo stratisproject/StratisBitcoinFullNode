@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
-            if (node1.Runner is BitcoinCoreRunner || node2.Runner is BitcoinCoreRunner)
+            if (node1.runner is BitcoinCoreRunner || node2.runner is BitcoinCoreRunner)
             {
                 return node1.CreateRPCClient().GetBestBlockHash() == node2.CreateRPCClient().GetBestBlockHash();
             }
@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return transactions;
 
             var result = new List<Transaction>();
-            var dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
+            Dictionary<uint256, TransactionNode> dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
             foreach (TransactionNode transaction in dictionary.Select(d => d.Value))
             {
                 foreach (TxIn input in transaction.Transaction.Inputs)
@@ -337,8 +337,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the address exists in this node's connected peers collection.</returns>
         public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
         {
-            if (thisNode.Runner is BitcoinCoreRunner)
-                return thisNode.CreateRPCClient().GetBestBlockHash() == isConnectedToNode.CreateRPCClient().GetBestBlockHash();
+            if (thisNode.runner is BitcoinCoreRunner)
+            {
+                var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
+                return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
+            }
             else
                 return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint));
         }
