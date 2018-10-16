@@ -19,10 +19,10 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
         {
             base.Initialize();
 
-            var ruleEngine = this.Parent as PoAConsensusRuleEngine;
+            var engine = this.Parent as PoAConsensusRuleEngine;
 
-            this.slotsManager = ruleEngine.SlotsManager;
-            this.validator = ruleEngine.poaHeaderValidator;
+            this.slotsManager = engine.SlotsManager;
+            this.validator = engine.poaHeaderValidator;
         }
 
         public override void Run(RuleContext context)
