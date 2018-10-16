@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return new byte[] { b1 };
 
             if (o is char c)
-                return Serialize(c.ToString());
+                return Serialize(c);
 
             if (o is Address address)
                 return Serialize(address);
@@ -59,7 +59,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             if (o is string s)
                 return Serialize(s);
-            
+
             if (o.GetType().IsValueType)
                 return SerializeStruct(o);
                 
@@ -96,6 +96,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         private byte[] Serialize(ulong ul)
         {
             return BitConverter.GetBytes(ul);
+        }
+
+        private byte[] Serialize(char c)
+        {
+            return BitConverter.GetBytes(c);
         }
 
         private byte[] Serialize(string s)
@@ -159,7 +164,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return stream[0];
 
             if (type == typeof(char))
-                return ToString(stream)[0];
+                return ToChar(stream);
 
             if (type == typeof(Address))
                 return ToAddress(stream);
@@ -187,7 +192,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", type.Name));
         }
-
+        
         #region Primitive Deserialization
 
         private bool ToBool(byte[] val)
@@ -218,6 +223,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         private ulong ToUInt64(byte[] val)
         {
             return BitConverter.ToUInt64(val, 0);
+        }
+
+        private char ToChar(byte[] val)
+        {
+            return BitConverter.ToChar(val, 0);
         }
 
         private string ToString(byte[] val)

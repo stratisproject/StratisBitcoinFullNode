@@ -7,8 +7,9 @@ public class NonDeterministicContract : SmartContract
     {
     }
 
-    public void Test()
+    public float Test()
     {
         float notAllowed = 0.7F;
+        return notAllowed;
     }
 }

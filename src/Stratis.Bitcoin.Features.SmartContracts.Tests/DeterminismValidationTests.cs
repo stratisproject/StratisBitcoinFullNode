@@ -1,4 +1,5 @@
 using System.Linq;
+using Microsoft.CodeAnalysis;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Core.Validation.Validators;
@@ -334,7 +335,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             string adjustedSource = TestString.Replace(ReplaceCodeString, "double test = 3.5;").Replace(ReplaceReferencesString, "");
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
@@ -717,7 +718,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             string adjustedSource = TestString.Replace(ReplaceCodeString, "int? test = null;").Replace(ReplaceReferencesString, "");
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
@@ -791,7 +792,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     "var r = new System.Runtime.CompilerServices.TaskAwaiter();")
                 .Replace(ReplaceReferencesString, "");
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;

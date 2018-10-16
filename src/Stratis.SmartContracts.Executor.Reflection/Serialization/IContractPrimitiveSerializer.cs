@@ -6,6 +6,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     {
         byte[] Serialize(object obj); 
         T Deserialize<T>(byte[] stream);
-        object Deserialize(Type t, byte[] stream);
+        object Deserialize(Type type, byte[] stream);
     }
 }

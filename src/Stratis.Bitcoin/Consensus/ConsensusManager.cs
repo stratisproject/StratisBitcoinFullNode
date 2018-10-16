@@ -654,9 +654,10 @@ namespace Stratis.Bitcoin.Consensus
                     lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                     // Block connected successfully.
-                    List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
-
-                    await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
+                    lock (this.peerLock)
+                    {
+                        this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
+                    }
 
                     if (this.network.Consensus.MaxReorgLength != 0)
                     {
@@ -676,6 +677,12 @@ namespace Stratis.Bitcoin.Consensus
                     this.signals.SignalBlockConnected(blockToConnect);
                 }
             }
+
+            // After successfully connecting all blocks set the tree tip and claim the branch.
+            List<int> peersToResync = this.SetConsensusTip(lastValidatedBlockHeader);
+
+            // Disconnect peers that are not relevant anymore.
+            await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
 
             return connectBlockResult;
         }
