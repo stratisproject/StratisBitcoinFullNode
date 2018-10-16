@@ -146,15 +146,6 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
 
-                    // Premine.
-                    if (tip.Height + 1 == this.network.Consensus.PremineHeight)
-                    {
-                        Transaction coinbase = blockTemplate.Block.Transactions[0];
-                        coinbase.Outputs[0].Value += this.network.Consensus.PremineReward;
-
-                        this.logger.LogInformation("Premine was added to the block. It will be available after {0} confirmations.", this.network.Consensus.CoinbaseMaturity);
-                    }
-
                     blockTemplate.Block.Header.Time = myTimestamp;
 
                     // Timestamp should always be greater than prev one.
