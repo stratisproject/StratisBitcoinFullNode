@@ -323,10 +323,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Will set the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ChainedHeader"/>.
+        /// Will recover the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ChainedHeader"/>.
         /// </summary>
-        /// <param name="chainedHeader">Current <see cref="ChainedHeader"/> tip with all its ancestors.</param>
-        private async Task RecoverStoreTipAsync(ChainedHeader chainedHeader)
+        /// <param name="newChainedHeader">Current <see cref="ChainedHeader"/> tip with all its ancestors.</param>
+        private async Task RecoverStoreTipAsync(ChainedHeader newChainedHeader)
         {
             int tipHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
 
@@ -338,17 +338,34 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 throw new ProvenBlockHeaderException("Proven block header store failed to recover.");
             }
 
-            if (tipHeight > chainedHeader.Height)
+            ChainedHeader pendingTip = null;
+
+            // This happens when the new chain reorg is behind this current chain store.
+            if (newChainedHeader.Height <= tipHeight)
             {
-                this.TipHashHeight = new HashHeightPair(chainedHeader);
+                while (true)
+                {
+                    pendingTip = newChainedHeader.FindAncestorOrSelf(latestHeader.GetHash());
 
-                ProvenBlockHeader recoveredHeader = chainedHeader.Header as ProvenBlockHeader;
+                    latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight--);
 
-                await this.provenBlockHeaderRepository.PutAsync(new List<ProvenBlockHeader>() { recoveredHeader }, this.TipHashHeight);
+                    if (latestHeader == null  && pendingTip.Height > 0)
+                    {
+                        // Happens when unable to find a common header, ignoring genesis.
+                        throw new ProvenBlockHeaderException("Proven block header failed to recover.  Unable to find chain header in the store.");
+                    }
+
+                    if ((pendingTip != null) && (this.storeTip.Height >= pendingTip.Height))
+                        break;
+                }
             }
-            else
+
+            if (pendingTip != null)
             {
-                throw new ProvenBlockHeaderException("Proven block header tip is ahead of chained header.");
+                // Add the final chained header to the batch.
+                this.AddToPendingBatch(pendingTip.Header as ProvenBlockHeader, new HashHeightPair(pendingTip.Header.GetHash(), pendingTip.Height));
+
+                await this.SaveAsync().ConfigureAwait(false);
             }
 
             this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", this.TipHashHeight);

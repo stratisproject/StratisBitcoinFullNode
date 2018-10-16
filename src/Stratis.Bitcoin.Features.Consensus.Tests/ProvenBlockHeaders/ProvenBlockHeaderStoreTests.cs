@@ -293,19 +293,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
-                // Clear chain to cause the store to revert back to Genesis.
-                var newGenesisTip = BuildChainWithProvenHeaders(1, this.network).chainedHeader;
+                // Revert back to Genesis.
+                await store.InitializeAsync(chainWithHeaders.chainedHeader.Previous.Previous);
 
-                await store.InitializeAsync(newGenesisTip);
-
-                store.TipHashHeight.Hash.Should().Be(newGenesisTip.HashBlock);
+                store.TipHashHeight.Hash.Should().Be(chainWithHeaders.chainedHeader.Previous.Previous.HashBlock);
             }
         }
 
         [Fact]
-        public async Task InitializeAsync_When_Tip_Reorg_Occurs_Tip_Is_At_Most_RecentAsync()
+        public async Task InitializeAsync_When_Tip_Reorg_Occurs_Behind_Current_TipAsync()
         {
-            // Chain - 1a | 2a | 3a | 4a | 5a (tip at 5a).
+            // Chain - 1 - 2 - 3 - 4 - 5 (tip at 5).
             var chainWithHeaders = BuildChainWithProvenHeaders(5, this.network);
             var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
 
@@ -314,14 +312,34 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 provenBlockheaders,
                 new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
-            // Reorganised chain - 1b | 2b | 3b (tip now at 3b).
-            var chainWithHeadersReorg = BuildChainWithProvenHeaders(3, this.network);
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                // Reorganised chain - 1 - 2 - 3  (tip at 3).
+                await store.InitializeAsync(chainWithHeaders.chainedHeader.Previous.Previous).ConfigureAwait(true);
+
+                store.TipHashHeight.Hash.Should().Be(chainWithHeaders.chainedHeader.Previous.Previous.Header.GetHash());
+            }
+        }
+
+        [Fact]
+        public async Task InitializeAsync_When_Behind_Reorg_Occurs_Throws_Exception_When_New_ChainHeader_Tip_Doesnt_ExistAsync()
+        {
+            // Chain - Chain - 1 - 2 - 3
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network, true);
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders.Take(5).ToList(),
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
+            // Create a new chain which a different hash block.
+            chainWithHeaders = BuildChainWithProvenHeaders(1, this.network, true);
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
-                await store.InitializeAsync(chainWithHeadersReorg.chainedHeader);
+                Func<Task> act = async () => { await store.InitializeAsync(chainWithHeaders.chainedHeader).ConfigureAwait(false); };
 
-                store.TipHashHeight.Hash.Should().Be(chainWithHeadersReorg.chainedHeader.Header.GetHash());
+                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Proven block header failed to recover.  Unable to find chain header in the store.");
             }
         }
 

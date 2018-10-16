@@ -173,12 +173,14 @@ namespace Stratis.Bitcoin.Tests.Common
             return block;
         }
 
-        public (ChainedHeader chainedHeader, List<ProvenBlockHeader> provenBlockHeaders) BuildChainWithProvenHeaders(int blockCount, Network network)
+        public (ChainedHeader chainedHeader, List<ProvenBlockHeader> provenBlockHeaders) BuildChainWithProvenHeaders(int blockCount, Network network, bool addNext = false)
         {
             Guard.Assert(blockCount > 0);
 
             var provenBlockHeaders = new List<ProvenBlockHeader>();
+
             ChainedHeader chainedHeader = null;
+            ChainedHeader previousChainHeader = null;
 
             for (int i = 0; i < blockCount; i++)
             {
@@ -190,6 +192,16 @@ namespace Stratis.Bitcoin.Tests.Common
                 header.Bits = Target.Difficulty1;
 
                 chainedHeader = new ChainedHeader(header, header.GetHash(), i);
+
+                if (previousChainHeader != null)
+                {
+                    chainedHeader.SetPrivatePropertyValue("Previous", previousChainHeader);
+
+                    if (addNext)
+                        chainedHeader.Previous.Next.Add(chainedHeader);
+                }
+
+                previousChainHeader = chainedHeader;
 
                 provenBlockHeaders.Add(header);
             }
