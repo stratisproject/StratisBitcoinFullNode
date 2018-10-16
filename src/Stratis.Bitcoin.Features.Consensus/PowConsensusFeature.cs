@@ -16,7 +16,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class PosConsensusFeature : FullNodeFeature
+    public class PowConsensusFeature : FullNodeFeature
     {
         private readonly IChainState chainState;
         private readonly IConnectionManager connectionManager;
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IPeerBanning peerBanning;
         private readonly ILoggerFactory loggerFactory;
 
-        public PosConsensusFeature(
+        public PowConsensusFeature(
             Network network,
             IChainState chainState,
             IConnectionManager connectionManager,
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
-            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+            connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
             return Task.CompletedTask;
         }
 
@@ -67,5 +67,5 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
     }
 
-    
+   
 }

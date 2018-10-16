@@ -22,12 +22,12 @@ namespace Stratis.Bitcoin.Features.Consensus
     {
         public static IFullNodeBuilder UsePowConsensus(this IFullNodeBuilder fullNodeBuilder)
         {
-            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+            LoggingConfiguration.RegisterFeatureNamespace<PowConsensusFeature>("powconsensus");
 
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
-                    .AddFeature<ConsensusFeature>()
+                    .AddFeature<PowConsensusFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<ConsensusOptions, ConsensusOptions>();
@@ -117,6 +117,63 @@ namespace Stratis.Bitcoin.Features.Consensus
                 };
             }
         }
+
+        public class PosConsensusRulesRegistration : IRuleRegistration
+        {
+            public void RegisterRules(IConsensus consensus)
+            {
+                consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+                {
+                    new HeaderTimeChecksRule(),
+                    new HeaderTimeChecksPosRule(),
+                    new StratisBigFixPosFutureDriftRule(),
+                    new CheckDifficultyPosRule(),
+                    new StratisHeaderVersionRule(),
+                };
+
+                consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+                {
+                    new BlockMerkleRootRule(),
+                    new PosBlockSignatureRepresentationRule(),
+                    new PosBlockSignatureRule(),
+                };
+
+                consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+                {
+                    new SetActivationDeploymentsPartialValidationRule(),
+
+                    new PosTimeMaskRule(),
+
+                    // rules that are inside the method ContextualCheckBlock
+                    new TransactionLocktimeActivationRule(), // implements BIP113
+                    new CoinbaseHeightActivationRule(), // implements BIP34
+                    new WitnessCommitmentsRule(), // BIP141, BIP144
+                    new BlockSizeRule(),
+
+                    // rules that are inside the method CheckBlock
+                    new EnsureCoinbaseRule(),
+                    new CheckPowTransactionRule(),
+                    new CheckPosTransactionRule(),
+                    new CheckSigOpsRule(),
+                    new PosCoinstakeRule(),
+                };
+
+                consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+                {
+                    new SetActivationDeploymentsFullValidationRule(),
+
+                    new CheckDifficultyHybridRule(),
+
+                    // rules that require the store to be loaded (coinview)
+                    new LoadCoinviewRule(),
+                    new TransactionDuplicationActivationRule(), // implements BIP30
+                    new PosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
+                    new SaveCoinviewRule()
+                };
+            }
+        }
+
+        
 
         
     }
