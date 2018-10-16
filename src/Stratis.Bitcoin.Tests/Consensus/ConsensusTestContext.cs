@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                         int blockWeight = block.GetSerializedSize();
 
-                        int requiredScriptWeight = avgBlockSize.Value - blockWeight - 2;
+                        int requiredScriptWeight = avgBlockSize.Value - blockWeight;
                         block.Transactions[0].Outputs.Clear();
                         // generate nonsense script with required bytes to reach required weight.
                         Script script = Script.FromBytesUnsafe(new string('A', requiredScriptWeight).Select(c => (byte)c).ToArray());
@@ -355,6 +355,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             this.blockPuller.Setup(b => b.GetAverageBlockSizeBytes())
                 .Returns(amount);            
+        }
+
+
+        internal void VerifyNoBlocksAskedToBlockPuller()
+        {
+            this.blockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(0));
         }
 
 

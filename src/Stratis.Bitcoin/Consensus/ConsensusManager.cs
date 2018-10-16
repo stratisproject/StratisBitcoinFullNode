@@ -300,7 +300,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="peerId">The peer that was disconnected.</param>
         private void PeerDisconnectedLocked(int peerId)
         {
-            bool removed = this.peersByPeerId.Remove(peerId);
+            bool removed = this.PeersByPeerId.Remove(peerId);
 
             if (removed)
             {
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Consensus
                         {
                             foreach (int peerId in connectBlocksResult.PeersToBan)
                             {
-                                if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                                if (this.PeersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
                                     peersToBan.Add(peer);
                             }
                         }
