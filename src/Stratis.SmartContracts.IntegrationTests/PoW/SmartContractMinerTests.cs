@@ -40,7 +40,7 @@ using Xunit;
 using Key = NBitcoin.Key;
 
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     /// <summary>
     /// This is taken from 'MinerTests.cs' and adjusted to use a different block validator.

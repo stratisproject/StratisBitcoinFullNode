@@ -1,29 +1,28 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
 using Xunit;
 using Block = NBitcoin.Block;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
-    public class ContractParameterSerializationTests : IClassFixture<MockChainFixture>
+    public class ContractParameterSerializationTests : IClassFixture<PoWMockChainFixture>
     {
-        private readonly Chain mockChain;
-        private readonly Node node1;
-        private readonly Node node2;
+        private readonly PoWMockChain mockChain;
+        private readonly MockChainNode node1;
+        private readonly MockChainNode node2;
 
-        private readonly IContractPrimitiveSerializer serializer; // TODO: May need to use a different serializer after serialization PR
+        private readonly IContractPrimitiveSerializer serializer;
 
-        public ContractParameterSerializationTests(MockChainFixture fixture)
+        public ContractParameterSerializationTests(PoWMockChainFixture fixture)
         {
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];

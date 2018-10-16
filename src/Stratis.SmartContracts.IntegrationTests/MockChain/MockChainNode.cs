@@ -23,23 +23,23 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
     /// <summary>
     /// Facade for CoreNode.
     /// </summary>
-    public class Node
+    public class MockChainNode
     {
         public readonly string WalletName = "mywallet";
         public readonly string Password = "123456";
         public readonly string Passphrase = "passphrase";
         public readonly string AccountName = "account 0";
 
-        /// <summary>
-        /// Chain this node is part of.
-        /// </summary>
-        private readonly Chain chain;
-
         // Services on the node. Used to retrieve information about the state of the network.
         private readonly SmartContractsController smartContractsController;
         private readonly SmartContractWalletController smartContractWalletController;
         private readonly IStateRepositoryRoot stateRoot;
         private readonly IBlockStore blockStore;
+
+        /// <summary>
+        /// The chain / network this node is part of.
+        /// </summary>
+        private readonly IMockChain chain;
 
         /// <summary>
         /// Reference to the complex underlying node object.
@@ -81,7 +81,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             get { return TestHelper.IsNodeSynced(this.CoreNode); }
         }
 
-        public Node(CoreNode coreNode, Chain chain)
+        public MockChainNode(CoreNode coreNode, IMockChain chain)
         {
             this.CoreNode = coreNode;
             this.chain = chain;
@@ -126,7 +126,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 AccountReference = new WalletAccountReference(this.WalletName, this.AccountName),
                 MinConfirmations = 1,
                 FeeType = FeeType.Medium,
-                WalletPassword = Password,
+                WalletPassword = this.Password,
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList()
             };
 
@@ -160,15 +160,15 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             var request = new BuildCreateContractTransactionRequest
             {
                 Amount = amount.ToString(),
-                AccountName = AccountName,
+                AccountName = this.AccountName,
                 ContractCode = contractCode.ToHexString(),
                 FeeAmount = feeAmount.ToString(),
                 GasLimit = gasLimit.ToString(),
                 GasPrice = gasPrice.ToString(),
                 Parameters = parameters,
-                Password = Password,
+                Password = this.Password,
                 Sender = this.MinerAddress.Address,
-                WalletName = WalletName
+                WalletName = this.WalletName
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
             return (BuildCreateContractTransactionResponse)response.Value;
@@ -204,7 +204,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         {
             var request = new BuildCallContractTransactionRequest
             {
-                AccountName = AccountName,
+                AccountName = this.AccountName,
                 Amount = amount.ToString(),
                 ContractAddress = contractAddress,
                 FeeAmount = feeAmount.ToString(),
@@ -212,9 +212,9 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 GasPrice = gasPrice.ToString(),
                 MethodName = methodName,
                 Parameters = parameters,
-                Password = Password,
+                Password = this.Password,
                 Sender = this.MinerAddress.Address,
-                WalletName = WalletName
+                WalletName = this.WalletName
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
             return (BuildCallContractTransactionResponse)response.Value;

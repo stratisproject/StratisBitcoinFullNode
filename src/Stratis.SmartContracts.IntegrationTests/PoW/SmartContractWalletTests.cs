@@ -3,8 +3,10 @@ using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using NBitcoin.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -18,9 +20,10 @@ using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     public sealed class SmartContractWalletTests
     {
@@ -35,10 +38,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void SendAndReceiveCorrectly()
         {
-            using (Chain chain = new Chain(2))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                Node scSender = chain.Nodes[0];
-                Node scReceiver = chain.Nodes[1];
+                MockChainNode scSender = chain.Nodes[0];
+                MockChainNode scReceiver = chain.Nodes[1];
 
                 // Mining adds coins to wallet.
                 var maturity = (int)chain.Network.Consensus.CoinbaseMaturity;
@@ -63,6 +66,8 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void SendAndReceiveSmartContractTransactions()
         {
+            NetworkRegistration.Register(new SmartContractsRegTest());
+
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD();
@@ -424,10 +429,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void MockChain_AuctionTest()
         {
-            using (Chain chain = new Chain(2))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                Node sender = chain.Nodes[0];
-                Node receiver = chain.Nodes[1];
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
 
                 sender.MineBlocks(1);
 
@@ -474,10 +479,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Create_WithFunds()
         {
-            using (Chain chain = new Chain(2))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                Node sender = chain.Nodes[0];
-                Node receiver = chain.Nodes[1];
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
 
                 // Mine some coins so we have balance
                 int maturity = (int)chain.Network.Consensus.CoinbaseMaturity;
