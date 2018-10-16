@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         }
 
         /// <inheritdoc />
-        public Task<uint256> Rewind()
+        public Task<uint256> RewindAsync()
         {
             throw new NotImplementedException();
         }

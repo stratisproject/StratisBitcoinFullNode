@@ -411,7 +411,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task<uint256> Rewind()
+        public async Task<uint256> RewindAsync()
         {
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
@@ -436,7 +436,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
 
                 // Rewind data was not found in cache, try underlying storage.
-                uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
+                uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
 
                 // All the cached utxos are now on disk so we can clear the cached entry list.
                 this.cachedUtxoItems.Clear();

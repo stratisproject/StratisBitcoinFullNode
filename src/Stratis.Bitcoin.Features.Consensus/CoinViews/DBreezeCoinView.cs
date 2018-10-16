@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task<uint256> Rewind()
+        public Task<uint256> RewindAsync()
         {
             Task<uint256> task = Task.Run(() =>
             {
