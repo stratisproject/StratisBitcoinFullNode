@@ -114,44 +114,6 @@ namespace NBitcoin
         }
 
         /// <inheritdoc />
-        public override uint256 GetHash()
-        {
-            uint256 hash = null;
-            uint256[] innerHashes = this.hashes;
-
-            if (innerHashes != null)
-                hash = innerHashes[0];
-
-            if (hash != null)
-                return hash;
-
-            if (this.version > 6)
-                hash = this.CalculateHash();
-            else
-                hash = HashX13.Instance.Hash(this.CalculateHash().ToBytes());
-
-            innerHashes = this.hashes;
-            if (innerHashes != null)
-            {
-                innerHashes[0] = hash;
-            }
-
-            return hash;
-        }
-
-        /// <inheritdoc />
-        protected override uint256 CalculateHash()
-        {
-            using (var hs = new HashStream())
-            {
-                // We are using base serialization to avoid using signature during hash calculation.
-                base.ReadWrite(new BitcoinStream(hs, true));
-                uint256 hash = hs.GetHash();
-                return hash;
-            }
-        }
-
-        /// <inheritdoc />
         public override string ToString()
         {
             return this.GetHash().ToString();
