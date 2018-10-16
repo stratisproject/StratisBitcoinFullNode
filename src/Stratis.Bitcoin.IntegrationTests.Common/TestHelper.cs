@@ -139,12 +139,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             Guard.NotNull(node, nameof(node));
 
-            if (node.Runner is BitcoinCoreRunner)
-            {
-                node.CreateRPCClient().Generate(numberOfBlocks);
-                return (null, null);
-            }
-
             if (numberOfBlocks == 0)
                 throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
@@ -217,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return transactions;
 
             var result = new List<Transaction>();
-            Dictionary<uint256, TransactionNode> dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
+            var dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
             foreach (TransactionNode transaction in dictionary.Select(d => d.Value))
             {
                 foreach (TxIn input in transaction.Transaction.Inputs)
@@ -289,9 +283,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             };
         }
 
-        public static void Connect(CoreNode from, CoreNode to, bool oneTry = true)
+        public static void Connect(CoreNode from, CoreNode to)
         {
-            from.CreateRPCClient().AddNode(to.Endpoint, oneTry);
+            from.CreateRPCClient().AddNode(to.Endpoint, true);
             WaitLoop(() => IsNodeConnectedTo(from, to));
         }
 
