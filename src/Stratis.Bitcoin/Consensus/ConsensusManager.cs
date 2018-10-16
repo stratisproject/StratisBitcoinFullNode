@@ -680,7 +680,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // After successfully connecting all blocks set the tree tip and claim the branch.
-            List<int> peersToResync = this.SetConsensusTip(lastValidatedBlockHeader);
+            List<int> peersToResync = this.SetConsensusTip(lastValidatedBlockHeader, blockMined);
 
             // Disconnect peers that are not relevant anymore.
             await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
