@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (numberOfBlocks == 0)
                 throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            SetMinerSecret(node);
+            SetMinerSecret(node, walletName, walletPassword, accountName);
 
             var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
