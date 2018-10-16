@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight--);
 
-                    if (latestHeader == null  && pendingTip.Height > 0)
+                    if (latestHeader == null  && tipHeight < 1)
                     {
                         // Happens when unable to find a common header, ignoring genesis.
                         throw new ProvenBlockHeaderException("Proven block header failed to recover.  Unable to find chain header in the store.");
