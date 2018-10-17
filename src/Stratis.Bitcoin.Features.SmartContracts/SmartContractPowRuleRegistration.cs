@@ -56,14 +56,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 new SetActivationDeploymentsFullValidationRule(),
 
-                new SmartContractLoadCoinviewRule(),
+                new LoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new CanGetSenderRule(new SenderRetriever()),
                 new SmartContractFormatRule(new CallDataSerializer(new ContractPrimitiveSerializer(this.network))), // Can we inject these serializers?
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
-                new SmartContractSaveCoinviewRule()
+                new SaveCoinviewRule()
             };
         }
     }

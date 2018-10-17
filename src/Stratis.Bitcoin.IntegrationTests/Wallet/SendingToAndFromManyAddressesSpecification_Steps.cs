@@ -16,7 +16,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingToAndFromManyAddressesSpecification : BddSpecification
     {
-
         private NodeBuilder nodeBuilder;
         private Network network;
         private CoreNode firstNode;
@@ -50,11 +49,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_connected_nodes()
         {
-            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.firstNode.Start();
-
-            this.secondNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.secondNode.Start();
+            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.secondNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
             TestHelper.Connect(this.firstNode, this.secondNode);
         }

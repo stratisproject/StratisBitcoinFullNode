@@ -15,9 +15,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             {
                 var network = new StratisRegTest();
 
-                CoreNode node = nodeBuilder.CreateStratisPosNode(network).NotInIBD().WithWallet();
-                CoreNode syncer = nodeBuilder.CreateStratisPosNode(network).NotInIBD();
-                nodeBuilder.StartAll();
+                CoreNode node = nodeBuilder.CreateStratisPosNode(network).NotInIBD().WithWallet().Start();
+                CoreNode syncer = nodeBuilder.CreateStratisPosNode(network).NotInIBD().Start();
 
                 TestHelper.MineBlocks(node, 1);
                 Assert.NotEqual(node.FullNode.ConsensusManager().Tip, syncer.FullNode.ConsensusManager().Tip);
@@ -34,8 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             {
                 var network = new StratisRegTest();
 
-                CoreNode node = nodeBuilder.CreateStratisPosNode(network).NotInIBD().WithWallet();
-                nodeBuilder.StartAll();
+                CoreNode node = nodeBuilder.CreateStratisPosNode(network).NotInIBD().WithWallet().Start();
 
                 // Mine two blocks (OK).
                 TestHelper.MineBlocks(node, 2);
