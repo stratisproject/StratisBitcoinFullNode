@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// The pending batch is saved to the database and cleared every minute.
     /// </para>
     /// <para>
-    /// Items in the pending batch are also saved to the least recently used <see cref="MemorySizeCache{int, ProvenBlockHeader}"/>. This cache has a memory size limit of 100MB (see <see cref="MemoryCacheSizeLimitInBytes"/>).
+    /// Items in the pending batch are also saved to the least recently used <see cref="MemorySizeCache{int, ProvenBlockHeader}"/>. Where the memory size is limited by <see cref="MemoryCacheSizeLimitInBytes"/>.
     /// </para>
     /// <para>
     /// When new <see cref="ProvenBlockHeader"/> items are saved to the database - in case <see cref="IProvenBlockHeaderRepository"/> contains headers that
@@ -356,11 +356,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 throw new ProvenBlockHeaderException("Proven block header store failed to recover.");
             }
 
-            ChainedHeader pendingTip = null;
-
             // This happens when the new chain reorg is behind this current chain store.
             if (newChainedHeader.Height < tipHeight)
             {
+                ChainedHeader pendingTip = null;
+
                 while (true)
                 {
                     pendingTip = newChainedHeader.FindAncestorOrSelf(latestHeader.GetHash());
