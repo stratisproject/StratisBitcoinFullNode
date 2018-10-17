@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 features
                 .AddFeature<MempoolFeature>()
-                .DependOn<ConsensusFeature>()
+                .DependOn<PowConsensusFeature, PosConsensusFeature>()
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<MempoolSchedulerLock>();

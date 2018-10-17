@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Utilities;
@@ -50,6 +52,15 @@ namespace Stratis.Bitcoin.Builder.Feature
         IFeatureRegistration DependOn<TImplementation>() where TImplementation : class, IFullNodeFeature;
 
         /// <summary>
+        /// 
+        /// </summary>
+        /// <typeparam name="TOneImplementation"></typeparam>
+        /// <typeparam name="TTwoImplementation"></typeparam>
+        /// <returns></returns>
+        IFeatureRegistration DependOn<TOneImplementation, TTwoImplementation>()
+            where TOneImplementation : class, IFullNodeFeature where TTwoImplementation : class, IFullNodeFeature;
+
+        /// <summary>
         /// Ensures dependency feature types are present in the registered features list.
         /// </summary>
         /// <param name="featureRegistrations">List of registered features.</param>
@@ -72,6 +83,8 @@ namespace Stratis.Bitcoin.Builder.Feature
             this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
             this.FeatureType = typeof(TImplementation);
             this.dependencies = new List<Type>();
+
+            this.dependencyTable = new Hashtable();
         }
 
         /// <inheritdoc />
@@ -82,6 +95,10 @@ namespace Stratis.Bitcoin.Builder.Feature
 
         /// <summary> List of dependency features that should be registered in order to add this feature.</summary>
         private List<Type> dependencies;
+
+        private Hashtable dependencyTable;
+
+        private const string OneOfManyDependency = "oneOfManyDependency";
 
         /// <inheritdoc />
         public void BuildFeature(IServiceCollection serviceCollection)
@@ -120,19 +137,37 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <inheritdoc />
         public IFeatureRegistration DependOn<TFeatureImplementation>() where TFeatureImplementation : class, IFullNodeFeature
         {
-            this.dependencies.Add(typeof(TFeatureImplementation));
+            this.dependencyTable.Add(typeof(TFeatureImplementation), typeof(TFeatureImplementation).Name);
 
+            return this;
+        }
+
+        public IFeatureRegistration DependOn<TOneImplementation, TTwoImplementation>() where TOneImplementation : class, IFullNodeFeature where TTwoImplementation : class, IFullNodeFeature
+        {
+            var oneOfManyDependency = new HashSet<Type> {typeof(TOneImplementation), typeof(TTwoImplementation)};
+            this.dependencyTable.Add(oneOfManyDependency, OneOfManyDependency);
             return this;
         }
 
         /// <inheritdoc />
         public void EnsureDependencies(List<IFeatureRegistration> featureRegistrations)
         {
-            foreach (Type dependency in this.dependencies)
+            foreach (DictionaryEntry entry in this.dependencyTable)
             {
-                if (!featureRegistrations.Any(x => x.FeatureType == dependency))
+                if ((string)entry.Value == OneOfManyDependency)
                 {
-                    throw new MissingDependencyException($"Dependency feature {dependency.Name} cannot be found.");
+                    var featureCollection = (HashSet<Type>)entry.Key;
+                    if (!featureRegistrations.Any(x=>featureCollection.Contains(x.FeatureType)))
+                    {
+                        throw new MissingDependencyException($"Non of {featureCollection.Count} dependency features {string.Join(", ", featureCollection.Select(x=>x.Name).ToArray())} cannot be found.");
+                    }
+                }
+                else
+                {
+                    if (featureRegistrations.All(x => x.FeatureType != (Type) entry.Key))
+                    {
+                        throw new MissingDependencyException($"Dependency feature {entry.Value} cannot be found.");
+                    }
                 }
             }
         }
