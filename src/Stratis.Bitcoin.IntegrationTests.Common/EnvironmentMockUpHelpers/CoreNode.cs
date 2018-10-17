@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NetworkCredential creds;
         private readonly object lockObject = new object();
         private readonly ILoggerFactory loggerFactory;
-        private readonly NodeRunner runner;
+        internal readonly NodeRunner runner;
         private List<Transaction> transactions = new List<Transaction>();
 
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
