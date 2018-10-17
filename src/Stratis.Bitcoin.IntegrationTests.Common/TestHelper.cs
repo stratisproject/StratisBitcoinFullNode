@@ -11,8 +11,10 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common
@@ -41,6 +43,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
+            if (node1.runner is BitcoinCoreRunner || node2.runner is BitcoinCoreRunner)
+            {
+                return node1.CreateRPCClient().GetBestBlockHash() == node2.CreateRPCClient().GetBestBlockHash();
+            }
+
             // If the nodes are at genesis they are considered synced.
             if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
                 return true;
@@ -85,7 +92,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return false;
 
             // Check that node1 tip exists in store (either in disk or in the pending list) 
-
             if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
@@ -342,7 +348,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the address exists in this node's connected peers collection.</returns>
         public static bool IsNodeConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
         {
-            return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Equals(isConnectedToNode.Endpoint));
+            if (thisNode.runner is BitcoinCoreRunner)
+            {
+                var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
+                return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
+            }
+            else
+                return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint));
         }
 
         public static BlockBuilder BuildBlocks { get { return new BlockBuilder(); } }
