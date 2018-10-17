@@ -56,8 +56,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusManager.Tip);
             if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
                 this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
+
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
+
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+
             return Task.CompletedTask;
         }
 

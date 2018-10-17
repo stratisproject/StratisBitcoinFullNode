@@ -82,7 +82,6 @@ namespace Stratis.Bitcoin.Builder.Feature
         {
             this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
             this.FeatureType = typeof(TImplementation);
-            this.dependencies = new List<Type>();
 
             this.dependencyTable = new Hashtable();
         }
@@ -94,8 +93,6 @@ namespace Stratis.Bitcoin.Builder.Feature
         public Type FeatureType { get; private set; }
 
         /// <summary> List of dependency features that should be registered in order to add this feature.</summary>
-        private List<Type> dependencies;
-
         private Hashtable dependencyTable;
 
         private const string OneOfManyDependency = "oneOfManyDependency";
@@ -146,6 +143,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         {
             var oneOfManyDependency = new HashSet<Type> {typeof(TOneImplementation), typeof(TTwoImplementation)};
             this.dependencyTable.Add(oneOfManyDependency, OneOfManyDependency);
+
             return this;
         }
 
