@@ -11,6 +11,7 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
     {
         private PoANetwork network;
 
+        /// <inheritdoc />
         public override void Initialize()
         {
             base.Initialize();
@@ -42,6 +43,9 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
         /// <inheritdoc/>
         public override Money GetProofOfWorkReward(int height)
         {
+            if (height == this.network.Consensus.PremineHeight)
+                return this.network.Consensus.PremineReward;
+
             return 0;
         }
 
