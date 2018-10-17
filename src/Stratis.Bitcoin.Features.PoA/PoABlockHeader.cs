@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using NBitcoin.Crypto;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -23,15 +22,10 @@ namespace Stratis.Bitcoin.Features.PoA
             stream.ReadWrite(ref this.blockSignature);
         }
 
-        protected override uint256 CalculateHash()
+        /// <inheritdoc />
+        protected override void ReadWriteHashingStream(BitcoinStream stream)
         {
-            using (var hs = new HashStream())
-            {
-                // We are using base serialization to avoid using signature during hash calculation.
-                base.ReadWrite(new BitcoinStream(hs, true));
-                uint256 hash = hs.GetHash();
-                return hash;
-            }
+            base.ReadWrite(stream);
         }
     }
 }
