@@ -156,6 +156,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             if (this.runner is BitcoinCoreRunner)
                 StartBitcoinCoreRunner();
+            else if (this.runner is StratisXRunner)
+                StartStratisXRunner();
             else
                 StartStratisRunner();
 
@@ -210,6 +212,26 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 }
             }, cancellationToken: cancellationToken,
                 failureReason: $"Failed to invoke GetBlockHash on BitcoinCore instance after {duration}");
+        }
+
+        private void StartStratisXRunner()
+        {
+            TimeSpan duration = TimeSpan.FromMinutes(2);
+            var cancellationToken = new CancellationTokenSource(duration).Token;
+            TestHelper.WaitLoop(() =>
+                {
+                    try
+                    {
+                        CreateRPCClient().GetBlockHashAsync(0).GetAwaiter().GetResult();
+                        this.State = CoreNodeState.Running;
+                        return true;
+                    }
+                    catch
+                    {
+                        return false;
+                    }
+                }, cancellationToken: cancellationToken,
+                failureReason: $"Failed to invoke GetBlockHash on StratisX instance after {duration}");
         }
 
         private void StartStratisRunner()
