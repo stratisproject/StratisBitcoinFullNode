@@ -155,13 +155,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
-            this.storeTip = chainedHeader.Height == this.provenBlockHeaderRepository.TipHashHeight.Height ? chainedHeader : null;
+            int currentHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
 
-            if (this.storeTip == null)
+            this.storeTip = chainedHeader;
+
+            if (chainedHeader.Height != currentHeight)
             {
-                this.storeTip = chainedHeader;
-
-                await this.RecoverStoreTipAsync(chainedHeader).ConfigureAwait(false);
+                this.TipHashHeight = await this.RecoverStoreTipAsync(chainedHeader).ConfigureAwait(false);
             }
             else
             {
@@ -323,72 +323,48 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Will recover the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> 
-        /// that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ChainedHeader"/>.
+        /// Will try to recover the <see cref="IProvenBlockHeaderStore"/> tip to the <see cref="ChainedHeader"/> tip.  
         /// </summary>
-        /// <param name="newChainedHeader">Current <see cref="ChainedHeader"/> tip with all its ancestors.</param>
+        /// <param name="newChainedHeader"><see cref="ChainedHeader"/> to try and recover to.</param>
         /// <exception cref="ProvenBlockHeaderException">
         /// Thrown when :
         /// <list type="bullet">
         /// <item>
-        /// <term>Corrupt.</term>
-        /// <description>When the latest <see cref="ProvenBlockHeader"/> does not exist in the <see cref="BlockHeaderRepository"/>.</description>
+        /// <term>Missing.</term>
+        /// <description>When the <see cref="ProvenBlockHeader"/> selected by <see cref="ChainedHeader.Height"/> does not exist in the database.</description>
         /// </item>
         /// <item>
-        /// <term>No common block hash exists.</term>
-        /// <description>When the chain header block hash cannot be found within the <see cref="ProvenBlockHeaderStore"/>.</description>
-        /// </item>
-        /// <item>
-        /// <term><see cref="ChainedHeader"/> ahead.</term>
-        /// <description>When the <see cref="newChainedHeader"/> tip is ahead of the <see cref="ProvenBlockHeaderStore"/> tip.</description>
+        /// <term>Block hash mismatch.</term>
+        /// <description>Checks the <see cref="ChainedHeader"/> ancestor block hash is equal to the previously saved <see cref="ProvenBlockHeader"/> hash.</description>
         /// </item>
         /// </list>
         /// </exception>
-        private async Task RecoverStoreTipAsync(ChainedHeader newChainedHeader)
+        /// <returns>Recovered <see cref="HashHeightPair"/>.</returns>
+        private async Task<HashHeightPair> RecoverStoreTipAsync(ChainedHeader newChainedHeader)
         {
-            int tipHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
+            int height = newChainedHeader.Height;
 
-            ProvenBlockHeader latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight);
+            // Load the previous proven block header to compare with the chain header ancestor.
+            if (height > 0)
+                height--;
 
-            if ((tipHeight > 0) && (latestHeader == null))
+            ProvenBlockHeader header = 
+                await this.provenBlockHeaderRepository.GetAsync(height);
+
+            if (header == null)
+                throw new ProvenBlockHeaderException("Unable to find proven block header in the repository.");
+
+            if (newChainedHeader.Previous != null)
             {
-                // Happens when the proven header store is corrupt.
-                throw new ProvenBlockHeaderException("Proven block header store failed to recover.");
+                if (header.GetHash() != newChainedHeader.Previous.HashBlock)
+                    throw new ProvenBlockHeaderException("Chain header ancestor hash does not match proven block header hash.");
             }
 
-            // This happens when the new chain reorg is behind this current chain store.
-            if (newChainedHeader.Height < tipHeight)
-            {
-                ChainedHeader pendingTip = null;
+            var hashHeightPair = new HashHeightPair(newChainedHeader.HashBlock, newChainedHeader.Height);
 
-                while (true)
-                {
-                    pendingTip = newChainedHeader.FindAncestorOrSelf(latestHeader.GetHash());
+            this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", hashHeightPair);
 
-                    latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight--);
-
-                    if ((pendingTip != null) && (this.storeTip.Height >= pendingTip.Height))
-                        break;
-
-                    if (latestHeader == null  && tipHeight < 1)
-                    {
-                        // Happens when unable to find a common header, ignoring genesis.
-                        throw new ProvenBlockHeaderException("Proven block header failed to recover. Unable to find chain header in the store.");
-                    }
-                }
-
-                if (pendingTip != null)
-                {
-                    this.TipHashHeight = new HashHeightPair(pendingTip.HashBlock, pendingTip.Height);
-                    this.storeTip = pendingTip;
-                }
-            }
-            else if (newChainedHeader.Height > tipHeight)
-            {
-                throw new ProvenBlockHeaderException("Chain header is ahead of the store.");
-            }
-
-            this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", this.TipHashHeight);
+            return hashHeightPair;
         }
 
         /// <summary>

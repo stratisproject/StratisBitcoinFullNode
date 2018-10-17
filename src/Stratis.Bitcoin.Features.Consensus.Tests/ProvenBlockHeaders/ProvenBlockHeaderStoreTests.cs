@@ -333,13 +333,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
             // Create a new chain which a different hash block.
-            chainWithHeaders = BuildChainWithProvenHeaders(1, this.network, true);
+            chainWithHeaders = BuildChainWithProvenHeaders(2, this.network, true);
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
                 Func<Task> act = async () => { await store.InitializeAsync(chainWithHeaders.chainedHeader).ConfigureAwait(false); };
 
-                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Proven block header failed to recover. Unable to find chain header in the store.");
+                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Chain header ancestor hash does not match proven block header hash.");
             }
         }
 

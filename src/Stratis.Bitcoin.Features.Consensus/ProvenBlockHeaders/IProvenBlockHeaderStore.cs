@@ -11,33 +11,28 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public interface IProvenBlockHeaderStore : IProvenBlockHeaderProvider
     {
         /// <summary>
-        /// Initializes the <see cref="ProvenBlockHeaderStore"/>.
+        /// Initializes the <see cref="IProvenBlockHeaderStore"/>.
         /// <para>
-        /// If the <see cref="storeTip"/> is <c>null</c> the store is out of sync. This can happen when:</para>
+        /// If the <see cref="ProvenBlockHeaderStore.TipHashHeight"/> is out of sync. This can happen when:</para>
         /// <list>
         ///     <item>The node crashed.</item>
         ///     <item>The node was not closed down properly.</item>
         /// </list>
         /// <para>
-        /// To recover it will walk back the <see cref= "ChainedHeader"/> until a common <see cref= "HashHeightPair"/> is found.
-        /// Then the <see cref="ProvenBlockHeaderStore"/>'s <see cref="storeTip"/> will be set to that.
+        /// To recover it will overwrite the <see cref= "ChainedHeader"/> tip <see cref= "HashHeightPair"/>.
         /// </para>
         /// </summary>
-        /// <param name="chainedHeader">Current <see cref="ChainedHeader"/> tip with all its ancestors.</param>
+        /// <param name="chainedHeader"><see cref="ChainedHeader"/> consensus tip after <see cref="Bitcoin.Consensus.IConsensusManager"/> initialization.</param>
         /// <exception cref="ProvenBlockHeaderException">
         /// Thrown when :
         /// <list type="bullet">
         /// <item>
-        /// <term>Corrupt.</term>
-        /// <description>When the latest <see cref="ProvenBlockHeader"/> does not exist in the <see cref="BlockHeaderRepository"/>.</description>
+        /// <term>Missing.</term>
+        /// <description>When the <see cref="ProvenBlockHeader"/> selected by <see cref="ChainedHeader.Height"/> does not exist in the database.</description>
         /// </item>
         /// <item>
-        /// <term>No common block hash exists.</term>
-        /// <description>When the chain header block hash cannot be found within the <see cref="ProvenBlockHeaderStore"/>.</description>
-        /// </item>
-        /// <item>
-        /// <term><see cref="ChainedHeader"/> ahead.</term>
-        /// <description>When the <see cref="newChainedHeader"/> tip is ahead of the <see cref="ProvenBlockHeaderStore"/> tip.</description>
+        /// <term>Block hash mismatch.</term>
+        /// <description>Checks the <see cref="ChainedHeader"/> ancestor block hash is equal to the previously saved <see cref="ProvenBlockHeader"/> hash.</description>
         /// </item>
         /// </list>
         /// </exception>
