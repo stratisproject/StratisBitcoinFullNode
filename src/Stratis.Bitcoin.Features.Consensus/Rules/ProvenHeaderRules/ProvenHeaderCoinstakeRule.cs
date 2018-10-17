@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             if (header.Coinstake.IsCoinStake)
                 return;
 
-            this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_MERKLE_PROOF_SIZE]");
+            this.Logger.LogTrace("(-)[COIN_STAKE_NOT_FOUND]");
             ConsensusErrors.NonCoinstake.Throw();
         }
 
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             if (this.stakeValidator.VerifySignature(unspentOutputs, header.Coinstake, 0, ScriptVerify.None))
                 return;
-            
+
             this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
             ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
         }
