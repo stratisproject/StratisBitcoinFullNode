@@ -23,6 +23,9 @@ namespace Stratis.SmartContracts.Token.Tests
         [Fact]
         public void Constructor_Sets_TotalSupply()
         {
+            Address owner = new Address("owner");
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(new Address("contract"), owner, 0));
+
             uint totalSupply = 100_000;
             var standardToken = new StandardToken(this.mockContractState.Object, totalSupply);
 
@@ -31,10 +34,26 @@ namespace Stratis.SmartContracts.Token.Tests
         }
 
         [Fact]
+        public void Constructor_Assigns_TotalSupply_To_Owner()
+        {
+            uint totalSupply = 100_000;
+            Address owner = new Address("owner");
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(new Address("contract"), owner, 0));
+
+            var standardToken = new StandardToken(this.mockContractState.Object, totalSupply);
+
+            // Verify that PersistentState was called with the total supply
+            this.mockPersistentState.Verify(s => s.SetUInt32($"Balance:{owner}", totalSupply));
+        }
+
+        [Fact]
         public void GetBalance_Returns_Correct_Balance()
         {
             uint balance = 100;
+            Address owner = new Address("owner");
             Address address = new Address("test address 1");
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(new Address("contract"), owner, 0));
+
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 
             // Setup the balance of the address in persistent state
@@ -53,8 +72,7 @@ namespace Stratis.SmartContracts.Token.Tests
             Address spender = new Address("spender");
 
             // Setup the Message.Sender address
-            this.mockContractState.Setup(m => m.Message)
-                .Returns(new Message(new Address("contract"), owner, 0));
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(new Address("contract"), owner, 0));
 
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 
@@ -73,6 +91,8 @@ namespace Stratis.SmartContracts.Token.Tests
 
             Address owner = new Address("owner");
             Address spender = new Address("spender");
+
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(new Address("contract"), new Address(), 0));
 
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 

@@ -7,6 +7,7 @@ public class StandardToken : SmartContract, IStandardToken
         : base(smartContractState)
     {
         this.TotalSupply = totalSupply;
+        this.SetBalance(Message.Sender, totalSupply);
     }
 
     public uint TotalSupply
