@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
 
-                throw new ProvenBlockHeaderException("Invalid new tip hash. The new tip hash is the same a the most recent proven block header tip hash that was saved to disk.");
+                throw new ProvenBlockHeaderException("Invalid new tip hash, tip hash has not changed.");
             }
 
             Task task = Task.Run(() =>

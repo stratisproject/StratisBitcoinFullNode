@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             {
                 Func<Task> act = async () => { await store.InitializeAsync(chainWithHeaders.chainedHeader).ConfigureAwait(false); };
 
-                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Proven block header failed to recover.  Unable to find chain header in the store.");
+                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Proven block header failed to recover. Unable to find chain header in the store.");
             }
         }
 

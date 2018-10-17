@@ -24,6 +24,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </para>
         /// </summary>
         /// <param name="chainedHeader">Current <see cref="ChainedHeader"/> tip with all its ancestors.</param>
+        /// <exception cref="ProvenBlockHeaderException">
+        /// Thrown when :
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Corrupt.</term>
+        /// <description>When the latest <see cref="ProvenBlockHeader"/> does not exist in the <see cref="BlockHeaderRepository"/>.</description>
+        /// </item>
+        /// <item>
+        /// <term>No common block hash exists.</term>
+        /// <description>When the chain header block hash cannot be found within the <see cref="ProvenBlockHeaderStore"/>.</description>
+        /// </item>
+        /// <item>
+        /// <term><see cref="ChainedHeader"/> ahead.</term>
+        /// <description>When the <see cref="newChainedHeader"/> tip is ahead of the <see cref="ProvenBlockHeaderStore"/> tip.</description>
+        /// </item>
+        /// </list>
+        /// </exception>
         Task InitializeAsync(ChainedHeader chainedHeader);
 
         /// <summary>
