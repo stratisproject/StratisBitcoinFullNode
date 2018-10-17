@@ -40,9 +40,7 @@ namespace Stratis.SmartContracts.Core
             if (scriptBytes.Length == 0)
                 return false;
 
-            var firstOp = script.ToBytes().FirstOrDefault();
-
-            return firstOp == opcode;
+            return scriptBytes[0] == opcode;
         }
     }
 
