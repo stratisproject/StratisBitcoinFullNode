@@ -10,7 +10,6 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Mempool
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         public MemoryPoolTests()
         {
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
         }
 
         [Fact]
@@ -29,13 +28,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 Transaction prevTrx = block.Transactions.First();
@@ -58,13 +53,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 Transaction prevTrx = block.Transactions.First();
@@ -101,12 +92,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 201); // coinbase maturity = 100
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 var trxs = new List<Transaction>();
                 foreach (int index in Enumerable.Range(1, 100))
@@ -138,15 +126,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
                 stratisNodeSync.FullNode.NodeService<MempoolSettings>().RequireStandard = true; // make sure to test standard tx
 
                 TestHelper.MineBlocks(stratisNodeSync, 100); // coinbase maturity = 100
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 // Make sure skipping validation of transctions that were
                 // validated going into the memory pool does not allow
@@ -205,17 +189,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             var rand = new Random();
             var randByte = new byte[32];
-            Func<uint256> randHash = () =>
+            uint256 randHash()
             {
                 rand.NextBytes(randByte);
                 return new uint256(randByte);
-            };
+            }
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.network);
-                builder.StartAll();
-
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.network).Start();
                 stratisNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode.FullNode.Network));
 
                 // 50 orphan transactions:
@@ -280,14 +262,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 101); // coinbase maturity = 100
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 Block block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
                 Transaction prevTrx = block.Transactions.First();
@@ -321,22 +298,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
-                builder.StartAll();
-
-                // generate blocks and wait for the downloader to pickup
+                // Generate blocks and wait for the downloader to pickup
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
-                // sync both nodes
-                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
+                // Sync both nodes.
+                TestHelper.ConnectAndSync(stratisNode1, stratisNodeSync);
+                TestHelper.ConnectAndSync(stratisNode2, stratisNodeSync);
 
-                // create some transactions and push them to the pool
+                // Create some transactions and push them to the pool.
                 var trxs = new List<Transaction>();
                 foreach (int index in Enumerable.Range(1, 5))
                 {
@@ -388,12 +361,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 string name = "mywallet";
                 string accountName = "account 0";
 
-                CoreNode node1 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet();
-                CoreNode node2 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet();
+                CoreNode node1 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
+                CoreNode node2 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
 
                 MempoolValidationState mempoolValidationState = new MempoolValidationState(true);
-
-                builder.StartAll();
 
                 int maturity = (int)node1.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(node1, maturity + 20);
@@ -423,7 +394,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 // Sync nodes and reorg occurs.
                 TestHelper.ConnectAndSync(node1, true, node2);
-                
+
                 // Block mined by Node 1 is orphaned.
                 Assert.Null(node1.FullNode.ChainBehaviorState.ConsensusTip.FindAncestorOrSelf(minedBlockHash));
 

@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
@@ -44,17 +44,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void four_miners()
         {
-            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.jingNode.Start();
-
-            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.bobNode.Start();
-
-            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.charlieNode.Start();
-
-            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.daveNode.Start();
+            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
             TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.Connect(this.bobNode, this.charlieNode);
@@ -130,7 +123,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void jings_connection_comes_back()
         {
-            this.jingNode.CreateRPCClient().AddNode(this.bobNode.Endpoint);
+            TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.WaitForNodeToSyncIgnoreMempool(this.jingNode, this.bobNode, this.charlieNode, this.daveNode);
         }
 

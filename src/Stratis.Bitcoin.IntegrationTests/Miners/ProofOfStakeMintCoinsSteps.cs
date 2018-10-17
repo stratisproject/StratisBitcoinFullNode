@@ -55,6 +55,5 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             this.proofOfStakeSteps.PosRewardForAllCoinstakeTransactionsIsCorrect();
         }
-        
     }
 }
