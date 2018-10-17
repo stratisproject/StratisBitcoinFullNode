@@ -308,6 +308,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
+        [Trait("Unstable", "True")]
         public void WalletCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
