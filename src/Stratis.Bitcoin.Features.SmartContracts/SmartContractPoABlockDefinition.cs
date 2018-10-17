@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -30,12 +31,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ILoggerFactory loggerFactory,
             ITxMempool mempool, 
             MempoolSchedulerLock mempoolLock,
-            MinerSettings minerSettings,
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot) 
-            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, minerSettings, network, senderRetriever, stateRoot)
+            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, new MinerSettings(NodeSettings.Default(network)), network, senderRetriever, stateRoot)
         {
+            // TODO: Fix gross MinerSettings injection ^^
         }
 
         /// <inheritdoc/>

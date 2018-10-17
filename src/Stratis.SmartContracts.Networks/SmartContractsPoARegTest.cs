@@ -12,48 +12,12 @@ namespace Stratis.SmartContracts.Networks
     /// <summary>
     /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
     /// </summary>
-    public class SmartContractsPoARegTest : Network
+    public class SmartContractsPoARegTest : PoANetwork
     {
-        /// <summary> The name of the root folder containing the different PoA blockchains.</summary>
-        private const string NetworkRootFolderName = "poa";
-
-        /// <summary> The default name used for the Stratis configuration file. </summary>
-        private const string NetworkDefaultConfigFilename = "poa.conf";
-
-        /// <summary>Public keys of all federation members.</summary>
-        /// <remarks>
-        /// Blocks that are not signed with private keys that correspond
-        /// to public keys from this list are considered to be invalid.
-        /// </remarks>
-        public List<PubKey> FederationPublicKeys { get; protected set; }
-
-        public uint TargetSpacingSeconds { get; protected set; }
-
         public SmartContractsPoARegTest()
         {
-            this.TargetSpacingSeconds = 16;
-
-            // The message start string is designed to be unlikely to occur in normal data.
-            // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
-            // a large 4-byte int at any alignment.
-            var messageStart = new byte[4];
-            messageStart[0] = 0x76;
-            messageStart[1] = 0x36;
-            messageStart[2] = 0x23;
-            messageStart[3] = 0x06;
-            uint magic = BitConverter.ToUInt32(messageStart, 0);
 
             this.Name = "SmartContractsPoARegTest";
-            this.Magic = magic;
-            this.DefaultPort = 16438;
-            this.RPCPort = 16474;
-            this.MaxTipAge = 2 * 60 * 60;
-            this.MinTxFee = 10000;
-            this.FallbackFee = 10000;
-            this.MinRelayTxFee = 10000;
-            this.RootFolderName = NetworkRootFolderName;
-            this.DefaultConfigFilename = NetworkDefaultConfigFilename;
-            this.MaxTimeOffsetSeconds = 25 * 60;
             this.CoinTicker = "SCPOA";
 
             var consensusFactory = new SmartContractPoAConsensusFactory();
@@ -95,7 +59,7 @@ namespace Stratis.SmartContracts.Networks
 
             var bip9Deployments = new BIP9DeploymentsArray();
 
-            this.Consensus = new NBitcoin.Consensus(
+            this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: 105,
@@ -129,19 +93,19 @@ namespace Stratis.SmartContracts.Networks
                 proofOfStakeReward: Money.Zero
             );
 
-            // https://en.bitcoin.it/wiki/List_of_address_prefixes
+            // Same as current smart contracts test networks to keep tests working
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (55) }; // 'P' prefix
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (117) }; // 'p' prefix
-            this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (63 + 128) };
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
+            this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
-            this.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x88), (0xB2), (0x1E) };
-            this.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x88), (0xAD), (0xE4) };
+            this.Base58Prefixes[(int)Base58Type.EXT_PUBLIC_KEY] = new byte[] { (0x04), (0x35), (0x87), (0xCF) };
+            this.Base58Prefixes[(int)Base58Type.EXT_SECRET_KEY] = new byte[] { (0x04), (0x35), (0x83), (0x94) };
             this.Base58Prefixes[(int)Base58Type.PASSPHRASE_CODE] = new byte[] { 0x2C, 0xE9, 0xB3, 0xE1, 0xFF, 0x39, 0xE2 };
             this.Base58Prefixes[(int)Base58Type.CONFIRMATION_CODE] = new byte[] { 0x64, 0x3B, 0xF6, 0xA8, 0x9A };
-            this.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2a };
-            this.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 23 };
+            this.Base58Prefixes[(int)Base58Type.STEALTH_ADDRESS] = new byte[] { 0x2b };
+            this.Base58Prefixes[(int)Base58Type.ASSET_ID] = new byte[] { 115 };
             this.Base58Prefixes[(int)Base58Type.COLORED_ADDRESS] = new byte[] { 0x13 };
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
@@ -161,45 +125,12 @@ namespace Stratis.SmartContracts.Networks
             string[] seedNodes = { };
             this.SeedNodes = this.ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
-            // TODO: Hash is different because of SC fields. Do we need these asserts?
-            //Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
-            //Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x9928b372fd9e4cf62a31638607344c03c48731ba06d24576342db9c8591e1432"));
+            // TODO: Hash is different because of SC fields. Do we need asserts?
 
             if ((this.FederationPublicKeys == null) || (this.FederationPublicKeys.Count == 0))
             {
                 throw new Exception("No keys for federation members are configured!");
             }
-        }
-
-        private static Block CreatePoAGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
-        {
-            string data = "506f41202d204345485450414a6c75334f424148484139205845504839";
-
-            Transaction txNew = consensusFactory.CreateTransaction();
-            txNew.Version = 1;
-            txNew.Time = nTime;
-            txNew.AddInput(new TxIn()
-            {
-                ScriptSig = new Script(Op.GetPushOp(0), new Op()
-                {
-                    Code = (OpcodeType)0x1,
-                    PushData = new[] { (byte)42 }
-                }, Op.GetPushOp(Encoders.ASCII.DecodeData(data)))
-            });
-            txNew.AddOutput(new TxOut()
-            {
-                Value = genesisReward,
-            });
-
-            Block genesis = consensusFactory.CreateBlock();
-            genesis.Header.BlockTime = Utils.UnixTimeToDateTime(nTime);
-            genesis.Header.Bits = nBits;
-            genesis.Header.Nonce = nNonce;
-            genesis.Header.Version = nVersion;
-            genesis.Transactions.Add(txNew);
-            genesis.Header.HashPrevBlock = uint256.Zero;
-            genesis.UpdateMerkleRoot();
-            return genesis;
         }
     }
 }

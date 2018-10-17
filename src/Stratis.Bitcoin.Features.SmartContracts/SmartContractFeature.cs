@@ -55,10 +55,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
         public override Task InitializeAsync()
         {
+            // TODO: This check should be more robust
             if (this.network.Consensus.IsProofOfStake)
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPosConsensusFactory);
             else
-                Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory);
+                Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory || this.network.Consensus.ConsensusFactory is SmartContractPoAConsensusFactory);
 
             this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
 
@@ -282,7 +283,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
                         services.AddSingleton<SlotsManager>();
-                        services.AddSingleton<SmartContractPoABlockDefinition>();
+                        services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
+                        services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();
                     });
             });
 

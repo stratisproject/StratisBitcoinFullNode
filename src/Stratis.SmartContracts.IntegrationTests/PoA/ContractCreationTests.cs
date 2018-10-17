@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             this.addressGenerator = new AddressGenerator();
         }
 
-        [Fact]
+        [Fact(Skip = "TODO: Overhaul to meet new test requirements")]
         public void Test_CatCreation()
         {
             using (PoAMockChain chain = new PoAMockChain(2))
