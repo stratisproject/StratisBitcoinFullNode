@@ -25,6 +25,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.keyEncodingStrategy = keyEncodingStrategy;
         }
 
+        public bool ContractExists(uint160 address)
+        {
+            this.gasMeter.Spend((Gas)GasPriceList.StorageCheckContractExistsCost);
+
+            return this.stateDb.IsExist(address);
+        }
+
         public byte[] FetchBytes(uint160 address, byte[] key)
         {
             byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
