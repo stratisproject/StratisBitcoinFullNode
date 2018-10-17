@@ -169,6 +169,11 @@ public class Contract : SmartContract
             this.stateDb = stateDb;
         }
 
+        public bool ContractExists(uint160 address)
+        {
+            return this.stateDb.IsExist(address);
+        }
+
         public byte[] FetchBytes(uint160 address, byte[] key)
         {
             return this.stateDb.GetStorageValue(address, key);
