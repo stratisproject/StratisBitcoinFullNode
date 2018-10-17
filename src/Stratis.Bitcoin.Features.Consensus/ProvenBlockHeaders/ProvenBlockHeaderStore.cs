@@ -323,9 +323,27 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Will recover the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ChainedHeader"/>.
+        /// Will recover the <see cref="IProvenBlockHeaderStore"/> tip to the most recent <see cref="ProvenBlockHeader"/> 
+        /// that exists in the <see cref="IProvenBlockHeaderRepository"/> and/or <see cref="ChainedHeader"/>.
         /// </summary>
         /// <param name="newChainedHeader">Current <see cref="ChainedHeader"/> tip with all its ancestors.</param>
+        /// <exception cref="ProvenBlockHeaderException">
+        /// Thrown when :
+        /// <list type="bullet">
+        /// <item>
+        /// <term>Corrupt.</term>
+        /// <description>When the latest <see cref="ProvenBlockHeader"/> does not exist in the <see cref="BlockHeaderRepository"/>.</description>
+        /// </item>
+        /// <item>
+        /// <term>No common block hash exists.</term>
+        /// <description>When the chain header block hash cannot be found within the <see cref="ProvenBlockHeaderStore"/>.</description>
+        /// </item>
+        /// <item>
+        /// <term><see cref="ChainedHeader"/> ahead.</term>
+        /// <description>When the <see cref="newChainedHeader"/> tip is ahead of the <see cref="ProvenBlockHeaderStore"/> tip.</description>
+        /// </item>
+        /// </list>
+        /// </exception>
         private async Task RecoverStoreTipAsync(ChainedHeader newChainedHeader)
         {
             int tipHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
@@ -349,14 +367,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     latestHeader = await this.provenBlockHeaderRepository.GetAsync(tipHeight--);
 
+                    if ((pendingTip != null) && (this.storeTip.Height >= pendingTip.Height))
+                        break;
+
                     if (latestHeader == null  && tipHeight < 1)
                     {
                         // Happens when unable to find a common header, ignoring genesis.
-                        throw new ProvenBlockHeaderException("Proven block header failed to recover.  Unable to find chain header in the store.");
+                        throw new ProvenBlockHeaderException("Proven block header failed to recover. Unable to find chain header in the store.");
                     }
-
-                    if ((pendingTip != null) && (this.storeTip.Height >= pendingTip.Height))
-                        break;
                 }
 
                 if (pendingTip != null)
