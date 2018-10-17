@@ -45,10 +45,7 @@ public class StandardToken : SmartContract, IStandardToken
 
         SetBalance(Message.Sender, senderBalance - amount);
 
-        checked
-        {
-            SetBalance(to, toBalance + amount);
-        }
+        SetBalance(to, checked(toBalance + amount));
 
         Log(new TransferLog { From = Message.Sender, To = to, Amount = amount });
 
@@ -77,10 +74,7 @@ public class StandardToken : SmartContract, IStandardToken
         SetApproval(from, Message.Sender, senderAllowance - amount);
         SetBalance(from, fromBalance - amount);
 
-        checked
-        {
-            SetBalance(to, toBalance + amount);
-        }
+        SetBalance(to, checked(toBalance + amount));
 
         Log(new TransferLog { From = from, To = to, Amount = amount });
 
