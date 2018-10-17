@@ -53,10 +53,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new SetActivationDeploymentsFullValidationRule(),
 
                 new CheckDifficultyHybridRule(),
-                new SmartContractLoadCoinviewRule(),
+                new LoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new SmartContractPosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
-                new SmartContractSaveCoinviewRule()
+                new SaveCoinviewRule()
             };
         }
     }
