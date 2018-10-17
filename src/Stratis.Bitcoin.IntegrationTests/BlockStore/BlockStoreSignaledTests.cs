@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -70,7 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             this.loggerFactory = new LoggerFactory();
 
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
             var serializer = new DBreezeSerializer();
             serializer.Initialize(this.network);
         }
@@ -80,16 +81,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD();
-
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
-
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 // Change the second node's list of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
@@ -97,12 +92,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 node1ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 
                 // Connect node1 to initial node.
-                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
+                TestHelper.Connect(stratisNode1, stratisNodeSync);
 
                 INetworkPeer connectedPeer = node1ConnectionManager.ConnectedPeers.FindByEndpoint(stratisNodeSync.Endpoint);
                 TestBehavior testBehavior = connectedPeer.Behavior<TestBehavior>();
 
-                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
 
                 HashSet<uint256> advertised = new HashSet<uint256>();
 
@@ -133,19 +128,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD();
-                CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network).NotInIBD();
-
-                builder.StartAll();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
-
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 // Change the other nodes' lists of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
@@ -161,9 +150,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 node3ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 
                 // Connect other nodes to initial node.
-                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                stratisNode3.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
+                TestHelper.Connect(stratisNode1, stratisNodeSync);
+                TestHelper.Connect(stratisNode2, stratisNodeSync);
+                TestHelper.Connect(stratisNode3, stratisNodeSync);
 
                 INetworkPeer connectedPeer1 = node1ConnectionManager.ConnectedPeers.FindByEndpoint(stratisNodeSync.Endpoint);
                 TestBehavior testBehavior1 = connectedPeer1.Behavior<TestBehavior>();
@@ -175,8 +164,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 TestBehavior testBehavior3 = connectedPeer3.Behavior<TestBehavior>();
 
                 // If the announce queue is not getting stalled, the other 2 nodes should sync properly.
-                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
-                TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
 
                 HashSet<uint256> advertised = new HashSet<uint256>();
 
@@ -222,13 +211,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
-                var blockStoreSignaled = stratisNodeSync.FullNode.NodeService<BlockStoreSignaled>();
+                BlockStoreSignaled blockStoreSignaled = stratisNodeSync.FullNode.NodeService<BlockStoreSignaled>();
 
                 AsyncQueue<ChainedHeader> blocksToAnnounce = (AsyncQueue<ChainedHeader>)blockStoreSignaled.GetMemberValue("blocksToAnnounce");
 
@@ -245,11 +232,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD();
-
-                builder.StartAll();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
                 // Start up sync node and mine chain0
                 TestHelper.MineBlocks(stratisNodeSync, 10);
@@ -268,11 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 // Mine longer chain1 using node1
                 TestHelper.MineBlocks(stratisNode1, 15);
-
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ChainBehaviorState.ConsensusTip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-
+                
                 IConnectionManager node1ConnectionManager = stratisNode1.FullNode.NodeService<IConnectionManager>();
                 node1ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 
@@ -280,26 +261,26 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 node2ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 
                 // Connect node0 and node1
-                stratisNode1.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
+                TestHelper.Connect(stratisNode1, stratisNodeSync);
 
                 INetworkPeer connectedPeer = node1ConnectionManager.ConnectedPeers.FindByEndpoint(stratisNodeSync.Endpoint);
                 TestBehavior testBehavior = connectedPeer.Behavior<TestBehavior>();
 
                 // We expect that node0 will abandon the 10 block chain and use the 15 block chain from node1
-                TestHelper.WaitLoop(() => stratisNode1.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode1, stratisNodeSync));
 
                 // Connect all nodes together
-                stratisNode2.CreateRPCClient().AddNode(stratisNodeSync.Endpoint, true);
-                stratisNode1.CreateRPCClient().AddNode(stratisNode2.Endpoint, true);
+                TestHelper.Connect(stratisNode2, stratisNodeSync);
+                TestHelper.Connect(stratisNode1, stratisNode2);
 
                 INetworkPeer connectedPeer2 = node2ConnectionManager.ConnectedPeers.FindByEndpoint(stratisNodeSync.Endpoint);
                 TestBehavior testBehavior2 = connectedPeer2.Behavior<TestBehavior>();
 
                 // Wait for node2 to sync; it should have the 15 block chain
-                TestHelper.WaitLoop(() => stratisNode2.CreateRPCClient().GetBestBlockHash() == stratisNodeSync.CreateRPCClient().GetBestBlockHash());
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode2, stratisNodeSync));
 
                 // Insert block 1 from chain0 into node1's announce queue
-                var node1BlockStoreSignaled = stratisNode1.FullNode.NodeService<BlockStoreSignaled>();
+                BlockStoreSignaled node1BlockStoreSignaled = stratisNode1.FullNode.NodeService<BlockStoreSignaled>();
 
                 AsyncQueue<ChainedHeader> node1BlocksToAnnounce = (AsyncQueue<ChainedHeader>)node1BlockStoreSignaled.GetMemberValue("blocksToAnnounce");
 
