@@ -85,8 +85,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionBuildContext context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = this.GetAccount(),
-                Recipients = new [] {new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
-                WalletPassword = "_" // Want private key to pull from cache, so pass in non empty string so tx will be signed.
+                Recipients = new [] {new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),               
             };
 
             try
