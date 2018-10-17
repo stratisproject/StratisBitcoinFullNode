@@ -188,19 +188,22 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
+        public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
         {
-            List<UnspentOutputs> all = unspentOutputs.ToList();
-
-            int insertedEntities = 0;
-
             Task task = Task.Run(() =>
             {
+                int insertedEntities = 0;
+
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
-                    //transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins"); // Why it was there and what is it for? No one knows.
+
+                    // Speed can degrade when keys are in random order and, especially, if these keys have high entropy.
+                    // This settings helps with speed, see DBreeze documentations about details.
+                    // We should double check if this settings help in our scenario, or sorting keys and operations is enough.
+                    // Refers to issue #2483. https://github.com/stratisproject/StratisBitcoinFullNode/issues/2483
+                    transaction.Technical_SetTable_OverwriteIsNotAllowed("Coins");
 
                     using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
                     {
@@ -213,15 +216,30 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         this.SetBlockHash(transaction, nextBlockHash);
 
-                        all.Sort(UnspentOutputsComparer.Instance);
-                        foreach (UnspentOutputs coin in all)
-                        {
-                            this.logger.LogTrace("Outputs of transaction ID '{0}' are {1} and will be {2} to the database.", coin.TransactionId, coin.IsPrunable ? "PRUNABLE" : "NOT PRUNABLE", coin.IsPrunable ? "removed" : "inserted");
+                        // Here we'll add items to be inserted in a second pass.
+                        List<UnspentOutputs> toInsert = new List<UnspentOutputs>();
 
+                        foreach (var coin in unspentOutputs.OrderBy(utxo => utxo.TransactionId, new UInt256Comparer()))
+                        {
                             if (coin.IsPrunable)
+                            {
+                                this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and will be removed from the database. {1}/{2}.", coin.TransactionId);
                                 transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
+                            }
                             else
-                                transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
+                            {
+                                // Add the item to another list that will be used in the second pass.
+                                // This is for performance reasons: DBreeze is optimized to run the same kind of operations, sorted.
+                                toInsert.Add(coin);
+                            }
+                        }
+
+                        for (int i = 0; i < toInsert.Count; i++)
+                        {
+                            var coin = toInsert[i];
+                            this.logger.LogTrace("Outputs of transaction ID '{0}' are NOT PRUNABLE and will be inserted into the database. {1}/{2}.", coin.TransactionId, i, toInsert.Count);
+
+                            transaction.Insert("Coins", coin.TransactionId.ToBytes(false), coin.ToCoins());
                         }
 
                         if (rewindDataList != null)
@@ -236,7 +254,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             }
                         }
 
-                        insertedEntities += all.Count;
+                        insertedEntities += unspentOutputs.Count;
                         transaction.Commit();
                     }
                 }
@@ -266,7 +284,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task<uint256> Rewind()
+        public Task<uint256> RewindAsync()
         {
             Task<uint256> task = Task.Run(() =>
             {
@@ -306,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     transaction.Commit();
                 }
-                
+
                 return res;
             });
 

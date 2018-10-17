@@ -148,7 +148,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var resolver = new DefaultAssemblyResolver();
             resolver.AddSearchDirectory(AppContext.BaseDirectory);
-            int aimGasAmount;
 
             using (ModuleDefinition moduleDefinition = ModuleDefinition.ReadModule(
                 new MemoryStream(originalAssemblyBytes),
@@ -156,9 +155,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             {
                 TypeDefinition contractType = moduleDefinition.GetType(ContractName);
                 MethodDefinition testMethod = contractType.Methods.FirstOrDefault(x => x.Name == MethodName);
-                aimGasAmount =
-                    testMethod?.Body?.Instructions?
-                        .Count ?? 10000000;
             }
 
             var callData = new MethodCall("TestMethod", new object[] { 1 });
@@ -172,8 +168,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
             IContractInvocationResult result = contract.Invoke(callData);
-
-            Assert.Equal((ulong)aimGasAmount, this.state.GasMeter.GasConsumed);
+            // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
+            Assert.Equal(22uL, this.state.GasMeter.GasConsumed);
         }
 
         [Fact]
@@ -194,7 +190,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
 
-            IContractInvocationResult result = contract.Invoke(callData);
+            // Because our contract contains an infinite loop, we want to kill our test after
+            // some amount of time without achieving a result. 3 seconds is an arbitrarily high enough timeout
+            // for the method body to have finished execution while minimising the amount of time we spend 
+            // running tests
+            // If you're running with the debugger on this will obviously be a source of failures
+            IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(3, () => contract.Invoke(callData));
 
             Assert.False(result.IsSuccess);
             Assert.Equal((Gas)0, this.gasMeter.GasAvailable);
@@ -221,12 +222,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             IContractInvocationResult result = contract.InvokeConstructor(null);
 
-            // TODO: Un-hard-code this. 
-            // Constructor: 15
-            // Property setter: 22
-            // Storage: 150
-            // "string newString = this.Owner + 1;": 36
-            Assert.Equal((Gas)223, this.gasMeter.GasConsumed);
+            // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
+            Assert.Equal((Gas)219, this.gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -248,10 +245,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
 
-            // Constructor: 15
-            // Property setter: 17
-            // Storage: 150
-            Assert.Equal((Gas)182, this.gasMeter.GasConsumed);
+            // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
+            Assert.Equal((Gas)178, this.gasMeter.GasConsumed);
         }
 
         [Fact]

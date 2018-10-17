@@ -3,27 +3,28 @@ using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
-using Xunit;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
+using Xunit;
 using Block = NBitcoin.Block;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
-    public class ContractInternalTransferTests : IClassFixture<MockChainFixture>
+    public class ContractInternalTransferTests : IClassFixture<PoWMockChainFixture>
     {
-        private readonly Chain mockChain;
-        private readonly Node node1;
-        private readonly Node node2;
+        private readonly PoWMockChain mockChain;
+        private readonly MockChainNode node1;
+        private readonly MockChainNode node2;
 
         private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
-        public ContractInternalTransferTests(MockChainFixture fixture)
+        public ContractInternalTransferTests(PoWMockChainFixture fixture)
         {
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
@@ -239,10 +240,73 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.To);
         }
 
-        [Fact(Skip = "TODO")]
+        [Fact]
         public void InternalTransfer_BetweenContracts()
         {
-            //Method calls back and forth between 2 contracts
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            // Deploy contract to send to
+            ContractCompilationResult receiveCompilationResult = ContractCompiler.CompileFile("SmartContracts/NestedCallsReceiver.cs");
+            Assert.True(receiveCompilationResult.Success);
+            BuildCreateContractTransactionResponse receiveResponse = this.node1.SendCreateContractTransaction(receiveCompilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(receiveResponse.NewContractAddress));
+
+            // Deploy contract to send from
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NestedCallsStarter.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 25;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+            string[] parameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress)
+            };
+
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(NestedCallsStarter.Start), preResponse.NewContractAddress, amount, parameters);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Storage set correctly
+            Assert.Equal(BitConverter.GetBytes(NestedCallsStarter.Return), this.node1.GetStorageValue(preResponse.NewContractAddress, NestedCallsStarter.Key));
+
+            // Block contains a condensing transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction condensingTransaction = lastBlock.Transactions[2];
+            Assert.Equal(2, condensingTransaction.Outputs.Count);
+
+            // 1 output which is starting contract
+            byte[] toBytes = condensingTransaction.Outputs[0].ScriptPubKey.ToBytes();
+            Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
+            uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
+            Assert.Equal(preResponse.NewContractAddress, toAddress.ToAddress(this.mockChain.Network).Value);
+
+            // Received 1/2 the sent funds + 1/2 of those funds
+            Money transferAmount1 = new Money((long) amount, MoneyUnit.BTC) / 2;
+            Money transferAmount2 = new Money((long)amount, MoneyUnit.BTC) / 4;
+            Assert.Equal(transferAmount1 + transferAmount2, condensingTransaction.Outputs[0].Value);
+            Assert.Equal((ulong)(transferAmount1 + transferAmount2), this.node1.GetContractBalance(preResponse.NewContractAddress));
+
+            // 1 output to other deployed contract
+            toBytes = condensingTransaction.Outputs[1].ScriptPubKey.ToBytes();
+            Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
+            toAddress = new uint160(toBytes.Skip(1).ToArray());
+            Assert.Equal(receiveResponse.NewContractAddress, toAddress.ToAddress(this.mockChain.Network).Value);
+
+            // Received 1/2 the sent funds, but sent 1/2 of those funds back
+            Assert.Equal(new Money((long) amount, MoneyUnit.BTC) - (transferAmount1 + transferAmount2), condensingTransaction.Outputs[1].Value);
+            Assert.Equal((ulong)(new Money((long)amount, MoneyUnit.BTC) - (transferAmount1 + transferAmount2)), this.node1.GetContractBalance(receiveResponse.NewContractAddress));
         }
 
         [Fact]

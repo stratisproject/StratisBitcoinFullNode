@@ -17,6 +17,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             this.primitiveSerializer = primitiveSerializer;
         }
 
+        public byte[] Serialize(char c)
+        {
+            return this.primitiveSerializer.Serialize(c);
+        }
+
         public byte[] Serialize(Address address)
         {
             if (address.Value == null)
@@ -164,6 +169,16 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             (bool success, string result) = this.TryDeserializeValue<string>(val);
 
             return success ? result : string.Empty;
+        }
+
+        public char ToChar(byte[] val)
+        {
+            if (val == null || val.Length < sizeof(char))
+                return default(char);
+
+            (bool success, char result) = this.TryDeserializeValue<char>(val);
+
+            return success ? result : default(char);
         }
 
         public T[] ToArray<T>(byte[] val)

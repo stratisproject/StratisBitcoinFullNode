@@ -13,6 +13,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public sealed class SmartContractPowRuleRegistration : IRuleRegistration
     {
+        private readonly Network network;
+
+        public SmartContractPowRuleRegistration(Network network)
+        {
+            this.network = network;
+        }
+
         public void RegisterRules(IConsensus consensus)
         {
             consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
@@ -54,7 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new CanGetSenderRule(new SenderRetriever()),
-                new SmartContractFormatRule(new CallDataSerializer(new MethodParameterStringSerializer())), // Can we inject these serializers?
+                new SmartContractFormatRule(new CallDataSerializer(new ContractPrimitiveSerializer(this.network))), // Can we inject these serializers?
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
                 new SmartContractSaveCoinviewRule()
             };

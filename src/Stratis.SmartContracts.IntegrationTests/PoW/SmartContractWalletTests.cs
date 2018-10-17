@@ -3,8 +3,10 @@ using System.Linq;
 using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using NBitcoin.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -18,33 +20,28 @@ using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
     public sealed class SmartContractWalletTests
     {
-        private ICallDataSerializer callDataSerializer;
         private const string WalletName = "mywallet";
         private const string Password = "123456";
         private const string Passphrase = "passphrase";
         private const string AccountName = "account 0";
-
-        public SmartContractWalletTests()
-        {
-            this.callDataSerializer = new CallDataSerializer(new MethodParameterStringSerializer());
-        }
-
+        
         /// <summary>
         /// These are the same tests as in WalletTests.cs, just using the smart contract classes instead.
         /// </summary>
         [Fact]
         public void SendAndReceiveCorrectly()
         {
-            using (Chain chain = new Chain(2))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                Node scSender = chain.Nodes[0];
-                Node scReceiver = chain.Nodes[1];
+                MockChainNode scSender = chain.Nodes[0];
+                MockChainNode scReceiver = chain.Nodes[1];
 
                 // Mining adds coins to wallet.
                 var maturity = (int)chain.Network.Consensus.CoinbaseMaturity;
@@ -69,12 +66,16 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void SendAndReceiveSmartContractTransactions()
         {
+            NetworkRegistration.Register(new SmartContractsRegTest());
+
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD();
                 CoreNode scReceiver = builder.CreateSmartContractPowNode().NotInIBD();
 
                 builder.StartAll();
+
+                var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 
                 scSender.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
                 scReceiver.FullNode.WalletManager().CreateWallet(Password, WalletName, Passphrase);
@@ -99,7 +100,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, compilationResult.Compilation);
 
-                var contractCreateScript = new Script(this.callDataSerializer.Serialize(contractTxData));
+                var contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));
                 var txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -139,7 +140,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
                 contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, compilationResult.Compilation);
-                contractCreateScript = new Script(this.callDataSerializer.Serialize(contractTxData));
+                contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -173,7 +174,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Create a call contract transaction which will transfer funds.
                 contractTxData = new ContractTxData(1, gasPrice, gasLimit, tokenContractAddress, "Test");
-                Script contractCallScript = new Script(this.callDataSerializer.Serialize(contractTxData));
+                Script contractCallScript = new Script(callDataSerializer.Serialize(contractTxData));
                 txBuildContext = new TransactionBuildContext(scSender.FullNode.Network)
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
@@ -428,10 +429,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void MockChain_AuctionTest()
         {
-            using (Chain chain = new Chain(2))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                Node sender = chain.Nodes[0];
-                Node receiver = chain.Nodes[1];
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
 
                 sender.MineBlocks(1);
 
@@ -478,10 +479,10 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Create_WithFunds()
         {
-            using (Chain chain = new Chain(2))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                Node sender = chain.Nodes[0];
-                Node receiver = chain.Nodes[1];
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
 
                 // Mine some coins so we have balance
                 int maturity = (int)chain.Network.Consensus.CoinbaseMaturity;

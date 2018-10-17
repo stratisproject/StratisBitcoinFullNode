@@ -11,12 +11,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// <summary>
     /// Class that handles method parameter serialization.
     /// </summary>
-    public sealed class MethodParameterStringSerializer : IMethodParameterSerializer
+    public sealed class MethodParameterStringSerializer : IMethodParameterStringSerializer
     {
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>
-        public byte[] Serialize(object[] methodParameters)
+        public string Serialize(object[] methodParameters)
         {
             var sb = new List<string>();
 
@@ -25,11 +25,13 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 sb.Add(SerializeObject(obj));
             }
 
-            return Encoding.UTF8.GetBytes(this.EscapeAndJoin(sb.ToArray()));
+            return this.EscapeAndJoin(sb.ToArray());
         }
 
         private static string SerializeObject(object obj)
         {
+            var prefix = Prefix.ForObject(obj);
+
             var primitiveType = GetPrimitiveType(obj);
 
             // ToString works fine for all of our data types except byte arrays.
@@ -37,7 +39,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 ? ((byte[])obj).ToHexString()
                 : obj.ToString();
 
-            return string.Format("{0}#{1}", (int) primitiveType, serialized);
+            return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
         }
 
         private static MethodParameterDataType GetPrimitiveType(object o)
@@ -81,10 +83,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return StringToObjects(this.EscapeAndJoin(parameters));
         }
 
-        /// <inheritdoc />
-        public object[] Deserialize(byte[] parameterBytes)
+        public object[] Deserialize(string parameters)
         {
-            var parameters = Encoding.UTF8.GetString(parameterBytes);
             return StringToObjects(parameters);
         }
 
