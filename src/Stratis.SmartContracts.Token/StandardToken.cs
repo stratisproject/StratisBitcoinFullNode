@@ -109,15 +109,23 @@ public class StandardToken : SmartContract, IStandardToken
 
     public struct TransferLog
     {
+        [Index]
         public Address From;
+
+        [Index]
         public Address To;
+
         public uint Amount;
     }
 
     public struct ApprovalLog
     {
+        [Index]
         public Address Owner;
+
+        [Index]
         public Address Spender;
+
         public uint Amount;
     }
 }
