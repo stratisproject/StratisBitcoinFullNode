@@ -1,4 +1,5 @@
 ﻿using System;
+using NBitcoin.Crypto;
 
 namespace NBitcoin
 {
@@ -106,6 +107,20 @@ namespace NBitcoin
 
             stream.ReadWrite(ref this.coinstake);
             this.CoinstakeSize = stream.ProcessedBytes - Size - this.MerkleProofSize - this.SignatureSize;
+        }
+
+        /// <inheritdoc />
+        protected override uint256 CalculateHash()
+        {
+            using (var hs = new HashStream())
+            {
+                // We are using base serialization to avoid serializing properties
+                // on the current component (signature, merkle root, coinstake).
+
+                base.ReadWrite(new BitcoinStream(hs, true));
+                uint256 hash = hs.GetHash();
+                return hash;
+            }
         }
 
         /// <inheritdoc />
