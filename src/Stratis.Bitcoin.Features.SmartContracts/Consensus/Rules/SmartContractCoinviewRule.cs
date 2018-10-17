@@ -47,6 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             this.blockTxsProcessed = new List<Transaction>();
             this.receipts = new List<Receipt>();
+            this.refundCounter = 1;
             NBitcoin.Block block = context.ValidationContext.BlockToValidate;
             
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
