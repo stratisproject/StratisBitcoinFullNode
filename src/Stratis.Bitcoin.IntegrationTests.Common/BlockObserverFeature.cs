@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// Adds a feature to the node that will observe when blocks are connected or disconnected.
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
-        /// <param name="interceptor">Callback routine to be called when miner settings are loaded.</param>
+        /// <param name="interceptor">Callback routine to be called when a certain block has been disconnected.</param>
         /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder InterceptBlockDisconnected(this IFullNodeBuilder fullNodeBuilder, Func<ChainedHeaderBlock, bool> interceptor)
         {
@@ -60,6 +60,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             this.interceptor = interceptor;
         }
 
+        /// <summary>
+        /// Execution of the interceptor will only happen once in this implementation.
+        /// </summary>
         protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
             if (!this.interceptorExecuted)
