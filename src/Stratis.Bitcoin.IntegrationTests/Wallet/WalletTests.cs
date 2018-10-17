@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Retry(2)]
+        [Trait("Unstable", "True")]
         public void WalletCanReceiveAndSendCorrectly()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -77,6 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Retry(2)]
+        [Trait("Unstable", "True")]
         public void WalletCanReorg()
         {
             // This test has 4 parts:
