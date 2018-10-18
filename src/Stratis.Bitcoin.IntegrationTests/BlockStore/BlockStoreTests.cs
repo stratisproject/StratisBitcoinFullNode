@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
                 CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
 
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -133,8 +133,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
 
                 // Sync both nodes.
                 TestHelper.Connect(stratisNodeSync, stratisNode1);
@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
 
                 // Sync both nodes.

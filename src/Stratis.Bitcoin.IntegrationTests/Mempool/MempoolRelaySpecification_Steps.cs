@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         private int coinbaseMaturity;
         private Transaction transaction;
 
-        // NOTE: This constructor is allows test steps names to be logged
+        // NOTE: This constructor allows test step names to be logged
         public MempoolRelaySpecification(ITestOutputHelper outputHelper) : base(outputHelper)
         {
         }
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             Network regTest = KnownNetworks.RegTest;
 
-            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().WithWallet().Start();
+            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().WithDummyWallet().Start();
             this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
             this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
 

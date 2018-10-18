@@ -91,7 +91,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.WalletName, this.AccountName));
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;
-            this.CoreNode.SetDummyMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
+            this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
             // Set up services for later
             this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();

@@ -22,7 +22,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 builder.StartAll();
 
-                stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+                stratisNodeSync.SetMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
@@ -54,7 +54,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(stratisNodeSync.FullNode.Network));
 
-                stratisNodeSync.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
+                stratisNodeSync.SetMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
                 TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);

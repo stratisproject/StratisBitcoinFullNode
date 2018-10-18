@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
                 Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);
                 Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
-                coreNode.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
+                coreNode.SetMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
             }
         }
 

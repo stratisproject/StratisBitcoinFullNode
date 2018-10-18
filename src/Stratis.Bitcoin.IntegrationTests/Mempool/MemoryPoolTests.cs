@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 201); // coinbase maturity = 100
 
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 stratisNodeSync.FullNode.NodeService<MempoolSettings>().RequireStandard = true; // make sure to test standard tx
 
@@ -197,8 +197,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.network).Start();
-                stratisNode.SetDummyMinerSecret(new BitcoinSecret(new Key(), stratisNode.FullNode.Network));
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 // 50 orphan transactions:
                 for (ulong i = 0; i < 50; i++)
@@ -262,7 +261,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 101); // coinbase maturity = 100
 
@@ -298,7 +297,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
                 CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
@@ -364,7 +363,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 CoreNode node1 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
                 CoreNode node2 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
 
-                MempoolValidationState mempoolValidationState = new MempoolValidationState(true);
+                var mempoolValidationState = new MempoolValidationState(true);
 
                 int maturity = (int)node1.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(node1, maturity + 20);
