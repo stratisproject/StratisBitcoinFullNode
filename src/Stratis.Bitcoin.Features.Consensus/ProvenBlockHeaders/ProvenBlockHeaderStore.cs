@@ -335,29 +335,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </item>
         /// <item>
         /// <term>Block hash mismatch.</term>
-        /// <description>The <see cref="ChainedHeader"/> ancestor block hash is not equal to the previously saved <see cref="ProvenBlockHeader"/> hash.</description>
+        /// <description>The <see cref="ChainedHeader"/> tip hash does not match the latest <see cref="ProvenBlockHeader"/> hash saved to disk.</description>
         /// </item>
         /// </list>
         /// </exception>
         /// <returns>Recovered <see cref="HashHeightPair"/>.</returns>
         private async Task<HashHeightPair> RecoverStoreTipAsync(ChainedHeader newChainedHeader)
         {
-            int height = newChainedHeader.Height;
-
-            // Load the previous proven block header to compare with the chain header ancestor.
-            if (height > 0)
-                height--;
-
-            ProvenBlockHeader header =
-                await this.provenBlockHeaderRepository.GetAsync(height);
-
-            if (header == null)
-                throw new ProvenBlockHeaderException("Unable to find proven block header in the repository.");
-
-            if (newChainedHeader.Previous != null)
+            if (newChainedHeader.Height > 0)
             {
-                if (header.GetHash() != newChainedHeader.Previous.HashBlock)
-                    throw new ProvenBlockHeaderException("Chain header ancestor hash does not match proven block header hash.");
+                ProvenBlockHeader repoHeader =
+                    await this.provenBlockHeaderRepository.GetAsync(newChainedHeader.Height);
+
+                if (repoHeader == null)
+                    throw new ProvenBlockHeaderException("Unable to find proven block header in the repository.");
+
+                if (repoHeader.GetHash() != newChainedHeader.HashBlock)
+                    throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
             }
 
             var hashHeightPair = new HashHeightPair(newChainedHeader.HashBlock, newChainedHeader.Height);

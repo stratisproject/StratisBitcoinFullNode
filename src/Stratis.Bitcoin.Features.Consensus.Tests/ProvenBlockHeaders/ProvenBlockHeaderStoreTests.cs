@@ -339,7 +339,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             {
                 Func<Task> act = async () => { await store.InitializeAsync(chainWithHeaders.chainedHeader).ConfigureAwait(false); };
 
-                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Chain header ancestor hash does not match proven block header hash.");
+                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Chain header tip hash does not match the latest proven block header hash saved to disk.");
             }
         }
 
