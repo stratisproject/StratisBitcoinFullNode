@@ -38,6 +38,17 @@ namespace Stratis.SmartContracts
             this.Value = address;
         }
 
+        public Address(Address other)
+        {
+            this.network = other.network;
+            this.pn0 = other.pn0;
+            this.pn1 = other.pn1;
+            this.pn2 = other.pn2;
+            this.pn3 = other.pn3;
+            this.pn4 = other.pn4;
+            this.Bytes = other.Bytes;
+        }
+
         private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4, Network network)
         {
             this.pn0 = pn0;
