@@ -203,6 +203,11 @@ namespace NBitcoin
             return new PosBlockHeader();
         }
 
+        public ProvenBlockHeader CreateProvenBlockHeader()
+        {
+            return new ProvenBlockHeader();
+        }
+
         public ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
         {
             return new ProvenBlockHeader(block);

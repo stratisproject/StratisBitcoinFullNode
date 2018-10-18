@@ -3,7 +3,7 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
