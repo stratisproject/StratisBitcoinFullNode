@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        public override bool IsCacheFull(CacheItem item)
+        protected override bool IsCacheFull(CacheItem item)
         {
             return (this.keys.Count == this.maxItemsCount);
         }
