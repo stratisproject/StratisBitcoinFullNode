@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using NBitcoin.Crypto;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
     public sealed class SmartContractPosBlockHeader : SmartContractBlockHeader
     {

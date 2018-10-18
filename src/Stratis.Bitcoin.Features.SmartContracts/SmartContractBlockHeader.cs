@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.SmartContracts.Core;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public class SmartContractBlockHeader : BlockHeader
     {

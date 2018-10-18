@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     /// <summary>
     /// If OP_SPEND, check that the transaction before is a contract call

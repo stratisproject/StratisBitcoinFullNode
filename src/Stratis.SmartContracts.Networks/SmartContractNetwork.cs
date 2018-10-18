@@ -1,7 +1,6 @@
 ﻿using System.Transactions;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {

@@ -2,9 +2,10 @@
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Mining;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
     public sealed class SmartContractBlockProvider : IBlockProvider
     {

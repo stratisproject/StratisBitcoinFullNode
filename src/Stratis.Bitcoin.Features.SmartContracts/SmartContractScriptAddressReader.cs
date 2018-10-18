@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts
 {
     /// <summary>
     /// Smart contract specific logic to get the contract address from the <see cref="ContractTxData"/>.

@@ -3,11 +3,10 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Block = NBitcoin.Block;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     /// <summary>
     /// Enforces that only certain script types are used on the network.

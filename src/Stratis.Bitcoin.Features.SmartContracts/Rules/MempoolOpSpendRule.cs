@@ -3,7 +3,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     /// <summary>
     /// Checks that transactions sent to the mempool don't include the OP_SPEND opcode.

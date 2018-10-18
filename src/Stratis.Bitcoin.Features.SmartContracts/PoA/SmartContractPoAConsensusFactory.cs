@@ -1,10 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using Stratis.Bitcoin.Features.PoA;
+﻿using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
     public class SmartContractPoAConsensusFactory : ConsensusFactory
     {

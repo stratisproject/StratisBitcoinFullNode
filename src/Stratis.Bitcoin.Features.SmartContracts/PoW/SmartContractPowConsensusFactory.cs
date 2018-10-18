@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 {
     public sealed class SmartContractPowConsensusFactory : ConsensusFactory
     {

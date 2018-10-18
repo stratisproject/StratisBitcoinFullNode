@@ -1,12 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using NBitcoin.Crypto;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.SmartContracts.Core;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
     public class SmartContractPoABlockHeader : PoABlockHeader
     {

@@ -1,6 +1,6 @@
-﻿using Stratis.Bitcoin.Consensus.Rules;
+﻿using Stratis.Bitcoin.Features.SmartContracts.Rules;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.Bitcoin.Features.SmartContracts.PoW.Rules
 {
     public sealed class SmartContractPowCoinviewRule : SmartContractCoinviewRule
     {

@@ -1,6 +1,6 @@
 ﻿using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
     /// <summary>
     /// A smart contract proof of stake block that contains the additional block signature serialization.

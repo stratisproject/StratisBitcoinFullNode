@@ -3,9 +3,10 @@ using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.PoS.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 
-namespace Stratis.Bitcoin.Features.SmartContracts
+namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
     public sealed class SmartContractPosRuleRegistration : IRuleRegistration
     {

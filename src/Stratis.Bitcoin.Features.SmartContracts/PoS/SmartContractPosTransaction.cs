@@ -2,7 +2,7 @@
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
+namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
     /// <summary>A smart contract proof of stake transaction.</summary>
     public class SmartContractPosTransaction : PosTransaction

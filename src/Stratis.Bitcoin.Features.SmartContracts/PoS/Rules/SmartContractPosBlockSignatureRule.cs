@@ -6,9 +6,8 @@ using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
 {
     /// <summary>
     /// A rule that will validate the signature of a PoS block.

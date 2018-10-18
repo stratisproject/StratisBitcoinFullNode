@@ -1,7 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -13,7 +11,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
 using Block = NBitcoin.Block;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     public class CanGetSenderRule : UtxoStoreConsensusRule, ISmartContractMempoolRule
     {

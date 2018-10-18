@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules
+namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     /// <summary>
     /// Each transaction should have only 1 'SmartContractExec' output.
