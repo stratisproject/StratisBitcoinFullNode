@@ -112,7 +112,13 @@ namespace Stratis.SmartContracts
 
         public bool Equals(Address obj)
         {
-            return this.Value == obj.Value;
+            bool equals = true;
+            equals &= this.pn0 == obj.pn0;
+            equals &= this.pn1 == obj.pn1;
+            equals &= this.pn2 == obj.pn2;
+            equals &= this.pn3 == obj.pn3;
+            equals &= this.pn4 == obj.pn4;
+            return equals;
         }
 
         public override int GetHashCode()
