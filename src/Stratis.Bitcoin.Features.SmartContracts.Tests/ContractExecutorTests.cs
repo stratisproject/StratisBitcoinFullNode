@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas)100_000;
 
-            object[] parameters = { address1.ToAddress(this.network).ToString() };
+            object[] parameters = { address1.ToAddress(this.network) };
 
             contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", parameters);
             transaction = new Transaction();
