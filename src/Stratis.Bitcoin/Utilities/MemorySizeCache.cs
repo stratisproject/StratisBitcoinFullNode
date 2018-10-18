@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Utilities
             base.AddOrUpdate(item);
         }
 
-        public override bool IsCacheFull(CacheItem item)
+        protected override bool IsCacheFull(CacheItem item)
         {
             return this.TotalSize > (this.maxSize - item.Size);
         }

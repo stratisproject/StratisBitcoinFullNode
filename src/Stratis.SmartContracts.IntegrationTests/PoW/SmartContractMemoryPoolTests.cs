@@ -18,20 +18,16 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNodeSync = builder.CreateSmartContractPowNode();
+                var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
 
-                builder.StartAll();
 
-                stratisNodeSync.SetMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 var block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 var prevTrx = block.Transactions.First();
                 var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
-                Transaction tx = new Transaction();
+                var tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
                 tx.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
@@ -48,23 +44,18 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNodeSync = builder.CreateSmartContractPowNode();
-
-                builder.StartAll();
+                var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(stratisNodeSync.FullNode.Network));
 
-                stratisNodeSync.SetMinerSecret(new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network));
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.GetBlockStoreTip().HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
 
                 var block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;
                 var prevTrx = block.Transactions.First();
                 var dest = new BitcoinSecret(new Key(), stratisNodeSync.FullNode.Network);
 
                 // Gas higher than allowed limit
-                Transaction tx = new Transaction();
+                var tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 var contractTxData = new ContractTxData(1, 1, new Gas(10_000_000), new uint160(0), "Test");
                 tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(contractTxData))));
@@ -72,13 +63,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 stratisNodeSync.Broadcast(tx);
 
                 // OP_SPEND in user's tx - we can't sign this because the TransactionBuilder recognises the ScriptPubKey is invalid.
-                tx = new Transaction();
+                tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), new Script(new[] { (byte)ScOpcodeType.OP_SPEND })));
                 tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(contractTxData))));
                 stratisNodeSync.Broadcast(tx);
 
                 // 2 smart contract outputs
-                tx = new Transaction();
+                tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(contractTxData))));
                 tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(contractTxData))));
@@ -90,7 +81,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var state = stratisNodeSync.FullNode.NodeService<IStateRepositoryRoot>();
                 state.CreateAccount(contractAddress);
                 state.Commit();
-                tx = new Transaction();
+                tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 tx.AddOutput(new TxOut(100, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(contractAddress))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
@@ -101,7 +92,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Empty(stratisNodeSync.CreateRPCClient().GetRawMempool());
 
                 // Valid tx still works
-                tx = new Transaction();
+                tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 tx.AddOutput(new TxOut("25", dest.PubKey.Hash));
                 tx.AddOutput(new TxOut("24", new Key().PubKey.Hash)); // 1 btc fee
