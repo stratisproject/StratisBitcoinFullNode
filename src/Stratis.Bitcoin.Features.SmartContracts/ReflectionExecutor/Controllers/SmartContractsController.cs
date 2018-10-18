@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
         {
-            uint160 addressNumeric = new Address(address).ToUint160(this.network);
+            uint160 addressNumeric = address.ToUint160(this.network);
             byte[] contractCode = this.stateRoot.GetCode(addressNumeric);
 
             if (contractCode == null || !contractCode.Any())
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
         {
-            uint160 addressNumeric = new Address(address).ToUint160(this.network);
+            uint160 addressNumeric = address.ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
             
             return Json(balance);
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
             }
 
-            uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
+            uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
 
             return Json(GetStorageValue(request.DataType, storageValue).ToString());
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
         {
             // Build the bytes we can use to check for this event.
-            uint160 addressUint160 = new Address(contractAddress).ToUint160(this.network);
+            uint160 addressUint160 = contractAddress.ToUint160(this.network);
             byte[] addressBytes = addressUint160.ToBytes();
             byte[] eventBytes = Encoding.UTF8.GetBytes(eventName);
 
@@ -357,7 +357,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             ulong gasPrice = ulong.Parse(request.GasPrice);
             ulong gasLimit = ulong.Parse(request.GasLimit);
-            uint160 addressNumeric = new Address(request.ContractAddress).ToUint160(this.network);
+            uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
 
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())

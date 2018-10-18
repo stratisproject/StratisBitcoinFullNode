@@ -12,15 +12,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class MethodParameterStringSerializerTests
     {
-        public IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer();
         public static Network Network = new SmartContractPosRegTest();
+        public static IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer(Network);
 
         [Theory]
         [MemberData(nameof(GetData), parameters: 1)]
         public void Roundtrip_Method_Param_Successfully(object value)
         {
             // Roundtrip serialization
-            var methodParamObjects = this.Serializer.Deserialize(this.Serializer.Serialize(new [] { value }));
+            var methodParamObjects = Serializer.Deserialize(Serializer.Serialize(new [] { value }));
 
             Type paramType = value.GetType();
                 
@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 '#'
             };
 
-            var serialized = this.Serializer.Serialize(methodParameters);
+            var serialized = Serializer.Serialize(methodParameters);
 
             Assert.Equal("6#12|1#True|4#te\\|s\\|t|4#te\\#st|4#\\#4\\#te\\#st\\#|3#\\#", serialized);
         }

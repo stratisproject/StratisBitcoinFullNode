@@ -1,6 +1,7 @@
 ﻿using System.Linq;
 using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
@@ -54,7 +55,8 @@ namespace Stratis.SmartContracts.Tools.Sct
 
             Assembly smartContract = Assembly.Load(compilation);
 
-            var serializer = new MethodParameterStringSerializer();
+            // TODO don't hardcode the network
+            var serializer = new MethodParameterStringSerializer(new SmartContractPosRegTest());
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {
