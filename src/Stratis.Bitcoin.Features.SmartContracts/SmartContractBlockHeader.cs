@@ -40,5 +40,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Consensus
             stream.ReadWrite(ref this.receiptRoot);
             stream.ReadWrite(ref this.logsBloom);
         }
+
+        /// <summary>
+        /// Overridden so we can add these fields to the hash.
+        /// </summary>
+        protected override void ReadWriteHashingStream(BitcoinStream stream)
+        {
+            base.ReadWriteHashingStream(stream);
+            stream.ReadWrite(ref this.hashStateRoot);
+            stream.ReadWrite(ref this.receiptRoot);
+            stream.ReadWrite(ref this.logsBloom);
+        }
+
     }
 }

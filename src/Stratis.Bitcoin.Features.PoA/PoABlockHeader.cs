@@ -21,11 +21,5 @@ namespace Stratis.Bitcoin.Features.PoA
             // Adding the signature to header because it will be needed for header validation on PoA networks.
             stream.ReadWrite(ref this.blockSignature);
         }
-
-        /// <inheritdoc />
-        protected override void ReadWriteHashingStream(BitcoinStream stream)
-        {
-            base.ReadWrite(stream);
-        }
     }
 }

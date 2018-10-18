@@ -98,7 +98,12 @@ namespace NBitcoin
         /// <summary>Populates stream with items that will be used during hash calculation.</summary>
         protected virtual void ReadWriteHashingStream(BitcoinStream stream)
         {
-            this.ReadWrite(stream);
+            stream.ReadWrite(ref this.version);
+            stream.ReadWrite(ref this.hashPrevBlock);
+            stream.ReadWrite(ref this.hashMerkleRoot);
+            stream.ReadWrite(ref this.time);
+            stream.ReadWrite(ref this.bits);
+            stream.ReadWrite(ref this.nonce);
         }
 
         /// <summary>
