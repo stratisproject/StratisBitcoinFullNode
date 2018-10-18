@@ -90,11 +90,6 @@ namespace Stratis.SmartContracts
             return Encoders.Base58Check.EncodeData(versionBytes.Concat(this.Bytes).ToArray());
         }
 
-        public static explicit operator Address(string value)
-        {
-            return new Address(value);
-        }
-
         public static implicit operator string(Address x)
         {
             return x.Value;

@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.GasMeter = new Mock<IGasMeter>();
 
             var smartContractState = Mock.Of<ISmartContractState>(s =>
-                s.Message == new Message((Address)"SeMvVcDKTLBrxVua5GXmdF8qBYTbJZt4NJ", (Address)"Sipqve53hyjzTo2oU7PUozpT1XcmATnkTn", 100) &&
+                s.Message == new Message(new Address("SeMvVcDKTLBrxVua5GXmdF8qBYTbJZt4NJ"), new Address("Sipqve53hyjzTo2oU7PUozpT1XcmATnkTn"), 100) &&
                 s.GasMeter == this.GasMeter.Object);
 
             this.SmartContractState = smartContractState;

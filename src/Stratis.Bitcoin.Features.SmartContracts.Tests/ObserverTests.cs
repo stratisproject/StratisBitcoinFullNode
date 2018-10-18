@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private const string ContractName = "Test";
         private const string MethodName = "TestMethod";
-        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        private static readonly Address TestAddress = new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
         private ISmartContractState state;
         private const ulong Balance = 0;
         private const ulong GasLimit = 10000;
