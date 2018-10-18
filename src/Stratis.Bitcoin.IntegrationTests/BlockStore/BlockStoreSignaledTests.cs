@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         [Fact]
-        public void CheckBlocksAnnouncedAndQueueEmptiesOverTime()
+        public void CheckBlocksAnnounced_AndQueueEmptiesOverTime()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         [Fact]
-        public void CheckBlocksAnnouncedAndQueueEmptiesOverTimeForMultiplePeersWhenOneIsDisconnected()
+        public void CheckBlocksAnnounced_AndQueueEmptiesOverTime_ForMultiplePeers_WhenOneIsDisconnected()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         [Fact]
-        public void QueueEmptiesWithNoPeersConnected()
+        public void QueueEmpties_WithNoPeersConnected()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         [Fact]
-        public void MustNotAnnounceABlockWhenNotInBestChain()
+        public void MustNotAnnounceABlock_WhenNotInBestChain()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
