@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             else
                 Guard.Assert(this.network.Consensus.ConsensusFactory is SmartContractPowConsensusFactory || this.network.Consensus.ConsensusFactory is SmartContractPoAConsensusFactory);
 
-            this.stateRoot.SyncToRoot(((SmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
+            this.stateRoot.SyncToRoot(((ISmartContractBlockHeader)this.consensusManager.Tip.Header).HashStateRoot.ToBytes());
 
             this.logger.LogInformation("Smart Contract Feature Injected.");
             return Task.CompletedTask;

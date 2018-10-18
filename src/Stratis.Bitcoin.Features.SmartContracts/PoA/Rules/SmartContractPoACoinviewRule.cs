@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
 
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
-            byte[] blockRoot = ((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
+            byte[] blockRoot = ((SmartContractPoABlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
             this.mutableStateRepository = this.ContractCoinviewRule.OriginalStateRoot.GetSnapshotTo(blockRoot);
 
             this.receipts = new List<Receipt>();
@@ -144,10 +144,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             }
             else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
 
-            if (new uint256(this.mutableStateRepository.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
+            if (new uint256(this.mutableStateRepository.Root) != ((SmartContractPoABlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
-            ValidateAndStoreReceipts(((SmartContractBlockHeader)block.Header).ReceiptRoot);
+            ValidateAndStoreReceipts(((SmartContractPoABlockHeader)block.Header).ReceiptRoot);
 
             // Push to underlying database
             this.mutableStateRepository.Commit();

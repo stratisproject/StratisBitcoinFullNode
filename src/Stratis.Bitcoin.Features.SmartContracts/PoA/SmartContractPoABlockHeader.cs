@@ -4,7 +4,7 @@ using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
-    public class SmartContractPoABlockHeader : PoABlockHeader
+    public class SmartContractPoABlockHeader : PoABlockHeader, ISmartContractBlockHeader
     {
         /// <summary>
         /// Root of the state trie after execution of this block. 

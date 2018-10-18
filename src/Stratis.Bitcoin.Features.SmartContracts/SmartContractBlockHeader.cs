@@ -3,7 +3,7 @@ using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
-    public class SmartContractBlockHeader : BlockHeader
+    public class SmartContractBlockHeader : BlockHeader, ISmartContractBlockHeader
     {
         /// <summary>
         /// Root of the state trie after execution of this block. 

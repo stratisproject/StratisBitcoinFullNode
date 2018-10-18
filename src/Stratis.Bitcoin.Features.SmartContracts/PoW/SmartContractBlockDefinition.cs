@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
             this.coinbaseAddress = getSenderResult.Sender;
 
-            this.stateSnapshot = this.stateRoot.GetSnapshotTo(((SmartContractBlockHeader)this.ConsensusManager.Tip.Header).HashStateRoot.ToBytes());
+            this.stateSnapshot = this.stateRoot.GetSnapshotTo(((ISmartContractBlockHeader)this.ConsensusManager.Tip.Header).HashStateRoot.ToBytes());
 
             this.refundOutputs.Clear();
             this.receipts.Clear();
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
             this.block.Header.Bits = this.block.Header.GetWorkRequired(this.Network, this.ChainTip);
 
-            var scHeader = (SmartContractBlockHeader)this.block.Header;
+            var scHeader = (ISmartContractBlockHeader)this.block.Header;
 
             scHeader.HashStateRoot = new uint256(this.stateSnapshot.Root);
 
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         /// <summary>
         /// Sets the receipt root based on all the receipts generated in smart contract execution inside this block.
         /// </summary>
-        private void UpdateReceiptRoot(SmartContractBlockHeader scHeader)
+        private void UpdateReceiptRoot(ISmartContractBlockHeader scHeader)
         {
             List<uint256> leaves = this.receipts.Select(x => x.GetHash()).ToList();
             bool mutated = false; // TODO: Do we need this?
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
         /// <summary>
         /// Sets the bloom filter for all logs that occurred in this block's execution.
         /// </summary>
-        private void UpdateLogsBloom(SmartContractBlockHeader scHeader)
+        private void UpdateLogsBloom(ISmartContractBlockHeader scHeader)
         {
             Bloom logsBloom = new Bloom();
             foreach (Receipt receipt in this.receipts)
