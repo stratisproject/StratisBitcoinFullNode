@@ -323,7 +323,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <summary>
-        /// Will try to recover the <see cref="IProvenBlockHeaderStore"/> tip to the <see cref="ChainedHeader"/> tip.  
+        /// Will try to recover the <see cref="IProvenBlockHeaderStore"/> tip to the <see cref="ChainedHeader"/> tip.
         /// </summary>
         /// <param name="newChainedHeader"><see cref="ChainedHeader"/> to try and recover to.</param>
         /// <exception cref="ProvenBlockHeaderException">
@@ -331,11 +331,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <list type="bullet">
         /// <item>
         /// <term>Missing.</term>
-        /// <description>When the <see cref="ProvenBlockHeader"/> selected by <see cref="ChainedHeader.Height"/> does not exist in the database.</description>
+        /// <description>The <see cref="ProvenBlockHeader"/> selected by <see cref="ChainedHeader.Height"/> does not exist in the database.</description>
         /// </item>
         /// <item>
         /// <term>Block hash mismatch.</term>
-        /// <description>Checks the <see cref="ChainedHeader"/> ancestor block hash is equal to the previously saved <see cref="ProvenBlockHeader"/> hash.</description>
+        /// <description>The <see cref="ChainedHeader"/> ancestor block hash is not equal to the previously saved <see cref="ProvenBlockHeader"/> hash.</description>
         /// </item>
         /// </list>
         /// </exception>
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             if (height > 0)
                 height--;
 
-            ProvenBlockHeader header = 
+            ProvenBlockHeader header =
                 await this.provenBlockHeaderRepository.GetAsync(height);
 
             if (header == null)

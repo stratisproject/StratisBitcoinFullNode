@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </item>
         /// <item>
         /// <term>Block hash mismatch.</term>
-        /// <description>Checks the <see cref="ChainedHeader"/> ancestor block hash is equal to the previously saved <see cref="ProvenBlockHeader"/> hash.</description>
+        /// <description>The <see cref="ChainedHeader"/> ancestor block hash is not equal to the previously saved <see cref="ProvenBlockHeader"/> hash.</description>
         /// </item>
         /// </list>
         /// </exception>
