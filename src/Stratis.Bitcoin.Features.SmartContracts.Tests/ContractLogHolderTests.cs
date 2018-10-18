@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var log2 = new Example1("John", 123);
 
             var state2 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress2.ToAddress(this.network) }, null, null, null, null, null, null, null);
-            var log3 = new Example2(new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"), 16, "This is a test message.");
+            var log3 = new Example2("0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(this.network), 16, "This is a test message.");
 
             this.logHolder.Log(state1, log1);
             this.logHolder.Log(state1, log2);

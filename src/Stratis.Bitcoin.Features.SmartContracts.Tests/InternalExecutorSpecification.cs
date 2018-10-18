@@ -132,14 +132,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Call_StateTransition_Success()
         {
+            var fixture = new InternalExecutorTestFixture();
+
             ulong amount = 100UL;
-            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
+            var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(fixture.Network);
             var method = "Test";
             var parameters = new object[] { };
             var gasLimit = (Gas)100_000;
 
-            var fixture = new InternalExecutorTestFixture();
-
+            
             fixture.SetGasMeterLimitAbove(gasLimit);
 
             StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)1000, uint160.One, new object());
@@ -179,14 +180,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Call_StateTransition_Error()
         {
+            var fixture = new InternalExecutorTestFixture();
+
             ulong amount = 100UL;
-            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
+            var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(fixture.Network);
             var method = "Test";
             var parameters = new object[] { };
             var gasLimit = (Gas)100_000;
-
-            var fixture = new InternalExecutorTestFixture();
-
+            
             fixture.SetGasMeterLimitAbove(gasLimit);
 
             StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, StateTransitionErrorKind.VmError);
@@ -226,13 +227,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Call_GasRemaining_Error()
         {
+            var fixture = new InternalExecutorTestFixture();
+
             ulong amount = 100UL;
-            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
+            var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(fixture.Network);
             var method = "Test";
             var parameters = new object[] { };
             var gasLimit = (Gas)100_000;
-
-            var fixture = new InternalExecutorTestFixture();
 
             fixture.SetGasMeterLimitBelow(gasLimit);
 
@@ -260,10 +261,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Transfer_StateTransition_Success()
         {
-            ulong amount = 100UL;
-            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
-
             var fixture = new InternalExecutorTestFixture();
+
+            ulong amount = 100UL;
+            var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(fixture.Network);
 
             fixture.SetGasMeterLimitAbove((Gas) InternalExecutor.DefaultGasLimit);
 
@@ -302,10 +303,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Transfer_StateTransition_Error()
         {
-            ulong amount = 100UL;
-            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
-
             var fixture = new InternalExecutorTestFixture();
+
+            ulong amount = 100UL;
+            var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(fixture.Network);
 
             fixture.SetGasMeterLimitAbove((Gas)InternalExecutor.DefaultGasLimit);
 
@@ -344,10 +345,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Transfer_GasRemaining_Error()
         {
-            ulong amount = 100UL;
-            var to = new Address("Sj2p6ZRHdLvywyi43HYoE4bu2TF1nvavjR");
-
             var fixture = new InternalExecutorTestFixture();
+
+            ulong amount = 100UL;
+            var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(fixture.Network);
 
             fixture.SetGasMeterLimitBelow((Gas) InternalExecutor.DefaultGasLimit);
 
