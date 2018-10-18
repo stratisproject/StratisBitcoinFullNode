@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text.RegularExpressions;
+using NBitcoin;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
@@ -11,6 +12,13 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// </summary>
     public sealed class MethodParameterStringSerializer : IMethodParameterStringSerializer
     {
+        private readonly Network network;
+
+        public MethodParameterStringSerializer(Network network)
+        {
+            this.network = network;
+        }
+
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>
@@ -86,7 +94,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return StringToObjects(parameters);
         }
 
-        private static object[] StringToObjects(string parameters)
+        private  object[] StringToObjects(string parameters)
         {
             string[] split = Regex.Split(parameters, @"(?<!(?<!\\)*\\)\|").ToArray();
 
@@ -122,7 +130,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(long.Parse(parameterSignature[1]));
                 
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
-                    processedParameters.Add(new Address(parameterSignature[1]));
+                    processedParameters.Add(parameterSignature[1].ToUint160(this.network));
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
                     processedParameters.Add(parameterSignature[1].HexToByteArray());

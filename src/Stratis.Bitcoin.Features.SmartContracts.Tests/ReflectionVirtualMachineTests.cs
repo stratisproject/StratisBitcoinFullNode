@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Take what's needed for these tests
             this.context = new ContractExecutorTestContext();
             this.network = context.Network;
-            this.TestAddress = "0x0000000000000000000000000000000000000001".ToAddress(this.network);
+            this.TestAddress = "0x0000000000000000000000000000000000000001".HexToAddress(this.network);
             this.vm = context.Vm;
             this.state = context.State;
             this.contractState = new SmartContractState(

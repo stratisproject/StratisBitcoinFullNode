@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var network = new SmartContractsRegTest();
 
-            this.TestAddress = "0x0000000000000000000000000000000000000001".ToAddress(network);
+            this.TestAddress = "0x0000000000000000000000000000000000000001".HexToAddress(network);
 
             var block = new TestBlock
             {

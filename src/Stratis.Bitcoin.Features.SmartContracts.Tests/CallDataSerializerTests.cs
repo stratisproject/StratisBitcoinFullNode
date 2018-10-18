@@ -129,8 +129,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 "test",
                 (uint)36,
                 (ulong)29,
-                "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(new SmartContractPosRegTest()),
-                "0x95D34980095380851902ccd9A1Fb4C813C2cb639".ToAddress(new SmartContractPosRegTest())
+                "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress(new SmartContractPosRegTest()),
+                "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress(new SmartContractPosRegTest())
             };
 
             var contractTxData = new ContractTxData(1, 1, (Gas)5000, 100, "Execute", methodParameters);

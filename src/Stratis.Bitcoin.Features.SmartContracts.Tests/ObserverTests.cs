@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public ObserverTests()
         {
-            this.TestAddress = "0x0000000000000000000000000000000000000001".ToAddress(this.network);
+            this.TestAddress = "0x0000000000000000000000000000000000000001".HexToAddress(this.network);
             var context = new ContractExecutorTestContext();
             this.repository = context.State;
             this.network = context.Network;
