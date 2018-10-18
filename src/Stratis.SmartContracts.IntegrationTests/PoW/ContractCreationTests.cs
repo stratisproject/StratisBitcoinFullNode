@@ -81,5 +81,39 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.True(block.Transactions[2].Outputs[0].ScriptPubKey.IsSmartContractInternalCall());
             }
         }
+
+        [Fact]
+        public void Test_IsContract_On_InternallyCreatedContract()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
+
+                sender.MineBlocks(1);
+
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ContractCreation.cs");
+                Assert.True(compilationResult.Success);
+
+                // Create contract and ensure code exists
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0);
+                receiver.WaitMempoolCount(1);
+                receiver.MineBlocks(2);
+                Assert.NotNull(receiver.GetCode(response.NewContractAddress));
+                Assert.NotNull(sender.GetCode(response.NewContractAddress));
+
+                // Call contract and ensure internal contract was created.
+                BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("CreateCatIsContract", response.NewContractAddress, 0);
+                receiver.WaitMempoolCount(1);
+                receiver.MineBlocks(1);
+
+                Assert.Equal(1, BitConverter.ToInt32(sender.GetStorageValue(response.NewContractAddress, "CatCounter")));
+                uint160 lastCreatedCatAddress = new uint160(sender.GetStorageValue(response.NewContractAddress, "LastCreatedCat"));
+                uint160 expectedCreatedCatAddress = this.addressGenerator.GenerateAddress(callResponse.TransactionId, 0);
+                Assert.Equal(expectedCreatedCatAddress, lastCreatedCatAddress);
+
+                Assert.True(BitConverter.ToBoolean(sender.GetStorageValue(response.NewContractAddress, "IsContract")));
+            }
+        }
     }
 }

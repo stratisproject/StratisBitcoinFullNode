@@ -25,6 +25,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public const int LogPerByteCost = 1;
         public const int MethodCallGasCost = 5;
         public const int InstructionGasCost = 1;
+        public const ulong StorageCheckContractExistsCost = 5;
 
         public static Gas ContractDoesNotExist()
         {

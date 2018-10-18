@@ -40,11 +40,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             Network regTest = KnownNetworks.RegTest;
 
-            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().WithWallet();
-            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD();
-            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD();
-
-            this.nodeBuilder.StartAll();
+            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().WithWallet().Start();
+            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
+            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
 
             this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }
@@ -57,8 +55,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeA_connects_to_nodeB()
         {
-            this.nodeA.CreateRPCClient().AddNode(this.nodeB.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeA, this.nodeB));
+            TestHelper.ConnectAndSync(this.nodeA, this.nodeB);
         }
 
         protected void nodeA_nodeB_and_nodeC_are_NON_whitelisted()
@@ -70,8 +67,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeB_connects_to_nodeC()
         {
-            this.nodeB.CreateRPCClient().AddNode(this.nodeC.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeB, this.nodeC));
+            TestHelper.ConnectAndSync(this.nodeB, this.nodeC);
         }
 
         protected void nodeA_creates_a_transaction_and_propagates_to_nodeB()

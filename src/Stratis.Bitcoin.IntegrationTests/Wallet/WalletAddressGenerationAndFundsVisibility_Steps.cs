@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
         }
 
         protected override void AfterTest()
@@ -62,12 +63,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void a_default_gap_limit_of_20()
         {
-            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.sendingStratisBitcoinNode.Start();
+            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
             this.sendingStratisBitcoinNode.Mnemonic = this.sendingStratisBitcoinNode.Mnemonic;
 
-            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.receivingStratisBitcoinNode.Start();
+            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
             this.receivingStratisBitcoinNode.Mnemonic = this.receivingStratisBitcoinNode.Mnemonic;
 
             TestHelper.ConnectAndSync(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
@@ -79,12 +78,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             int customUnusedAddressBuffer = 21;
             var configParameters = new NodeConfigParameters { { "walletaddressbuffer", customUnusedAddressBuffer.ToString() } };
 
-            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.sendingStratisBitcoinNode.Start();
+            this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
             this.sendingStratisBitcoinNode.Mnemonic = this.sendingStratisBitcoinNode.Mnemonic;
 
-            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisCustomPowNode(this.network, configParameters).NotInIBD().WithWallet();
-            this.receivingStratisBitcoinNode.Start();
+            this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisCustomPowNode(this.network, configParameters).NotInIBD().WithWallet().Start();
             this.receivingStratisBitcoinNode.Mnemonic = this.receivingStratisBitcoinNode.Mnemonic;
 
             TestHelper.ConnectAndSync(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
