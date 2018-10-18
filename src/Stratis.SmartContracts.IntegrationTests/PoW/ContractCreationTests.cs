@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Text;
 using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
