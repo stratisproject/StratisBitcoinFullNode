@@ -225,7 +225,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public ulong GetContractBalance(string contractAddress)
         {
-            return this.stateRoot.GetCurrentBalance(new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network));
+            return this.stateRoot.GetCurrentBalance(contractAddress.ToUint160(this.CoreNode.FullNode.Network));
         }
 
         /// <summary>
@@ -233,7 +233,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public byte[] GetCode(string contractAddress)
         {
-            return this.stateRoot.GetCode(new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network));
+            return this.stateRoot.GetCode(contractAddress.ToUint160(this.CoreNode.FullNode.Network));
         }
 
         /// <summary>
@@ -241,8 +241,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public byte[] GetStorageValue(string contractAddress, string key)
         {
-            return this.stateRoot.GetStorageValue(
-                new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network), Encoding.UTF8.GetBytes(key));
+            return this.stateRoot.GetStorageValue(contractAddress.ToUint160(this.CoreNode.FullNode.Network), Encoding.UTF8.GetBytes(key));
         }
 
         /// <summary>

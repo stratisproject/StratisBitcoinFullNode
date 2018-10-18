@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.True(compilationResult.Success);
 
             const char testChar = 'c';
-            Address testAddress = new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
+            Address testAddress = "0x0000000000000000000000000000000000000001".ToAddress(this.mockChain.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Test that the contract address, event name, and logging values are available in the bloom.
             var scBlockHeader = lastBlock.Header as SmartContractBlockHeader;
-            Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(this.mockChain.Network).ToBytes()));
+            Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToUint160(this.mockChain.Network).ToBytes()));
             Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Log")));
             Assert.True(scBlockHeader.LogsBloom.Test(this.serializer.Serialize(testChar)));
             Assert.True(scBlockHeader.LogsBloom.Test(this.serializer.Serialize(testAddress)));
@@ -140,7 +140,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
-            Address testAddress = new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
+            Address testAddress = "0x0000000000000000000000000000000000000001".ToAddress(this.mockChain.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
@@ -204,7 +204,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
-            Address testAddress = new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
+            Address testAddress = "0x0000000000000000000000000000000000000001".ToAddress(this.mockChain.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;

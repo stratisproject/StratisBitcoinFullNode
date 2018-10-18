@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly Network network;
         private readonly ReflectionVirtualMachine vm;
 
-        private static readonly Address TestAddress = new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn");
+        private readonly Address TestAddress;
         private IStateRepository state;
         private SmartContractState contractState;
         private ContractExecutorTestContext context;
@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Take what's needed for these tests
             this.context = new ContractExecutorTestContext();
             this.network = context.Network;
+            this.TestAddress = "0x0000000000000000000000000000000000000001".ToAddress(this.network);
             this.vm = context.Vm;
             this.state = context.State;
             this.contractState = new SmartContractState(

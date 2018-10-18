@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Serialize_Address_With_Null_Value_Returns_Null()
         {
-            var val = new Address("");
+            var val = (Address) null;
             var result = this.serializer.Serialize(val);
 
             Assert.Null(result);
