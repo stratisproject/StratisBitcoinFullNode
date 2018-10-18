@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.Token.Tests
             Address owner = new Address("owner");
             Address spender = new Address("spender");
 
-            this.mockContractState.Setup(m => m.Message).Returns(new Message(new Address("contract"), new Address(), 0));
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(new Address("contract"), new Address(""), 0));
 
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 

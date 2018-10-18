@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts
         public readonly string Value;
 
         private Network network;
-        private byte[] bytes;
+        public byte[] Bytes { get; }
 
         private const int AddressWidth = 160 / 8;
         internal readonly uint pn0;
@@ -34,7 +34,7 @@ namespace Stratis.SmartContracts
         public Address(string address)
         {
             this.network = null;
-            this.bytes = new byte[0];
+            this.Bytes = new byte[0];
             this.Value = address;
         }
 
@@ -46,7 +46,7 @@ namespace Stratis.SmartContracts
             this.pn3 = pn3;
             this.pn4 = pn4;
             this.network = network;
-            this.bytes = this.ToBytes();
+            this.Bytes = this.ToBytes();
             this.Value = "";
         }
 
@@ -87,7 +87,7 @@ namespace Stratis.SmartContracts
         public override string ToString()
         {
             byte[] versionBytes = this.network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true);
-            return Encoders.Base58Check.EncodeData(versionBytes.Concat(this.bytes).ToArray());
+            return Encoders.Base58Check.EncodeData(versionBytes.Concat(this.Bytes).ToArray());
         }
 
         public static explicit operator Address(string value)

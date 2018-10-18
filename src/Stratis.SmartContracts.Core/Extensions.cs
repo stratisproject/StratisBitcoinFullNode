@@ -29,12 +29,12 @@ namespace Stratis.SmartContracts.Core
 
         public static uint160 ToUint160(this Address address, Network network)
         {
-            return new uint160(new BitcoinPubKeyAddress(address.Value, network).Hash.ToBytes());
+            return new uint160(address.Bytes);
         }
 
         public static Address ToAddress(this uint160 address, Network network)
         {
-            return new Address(new BitcoinPubKeyAddress(new KeyId(address), network).ToString());
+            return Address.Create(address.ToBytes(), network);
         }
 
         public static Money GetFee(this Transaction transaction, UnspentOutputSet inputs)
