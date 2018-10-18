@@ -1,8 +1,17 @@
 ﻿using Stratis.SmartContracts;
 using Stratis.SmartContracts.Token;
 
+/// <summary>
+/// Implementation of a standard token contract for the Stratis Platform.
+/// DISCLAIMER: For demonstration purposes only.
+/// </summary>
 public class StandardToken : SmartContract, IStandardToken
 {
+    /// <summary>
+    /// Constructor used to create a new instance of the token. Assigns the total token supply to the creator of the contract.
+    /// </summary>
+    /// <param name="smartContractState">The execution state for the contract.</param>
+    /// <param name="totalSupply">The total token supply.</param>
     public StandardToken(ISmartContractState smartContractState, uint totalSupply) 
         : base(smartContractState)
     {
@@ -10,12 +19,14 @@ public class StandardToken : SmartContract, IStandardToken
         this.SetBalance(Message.Sender, totalSupply);
     }
 
+    /// <inheritdoc />
     public uint TotalSupply
     {
         get => PersistentState.GetUInt32(nameof(this.TotalSupply));
         private set => PersistentState.SetUInt32(nameof(this.TotalSupply), value);
     }
 
+    /// <inheritdoc />
     public uint GetBalance(Address address)
     {
         return PersistentState.GetUInt32($"Balance:{address}");
@@ -26,6 +37,7 @@ public class StandardToken : SmartContract, IStandardToken
         PersistentState.SetUInt32($"Balance:{address}", value);
     }
 
+    /// <inheritdoc />
     public bool Transfer(Address to, uint amount)
     {
         if (amount == 0)
@@ -53,6 +65,7 @@ public class StandardToken : SmartContract, IStandardToken
         return true;
     }
 
+    /// <inheritdoc />
     public bool TransferFrom(Address from, Address to, uint amount)
     {
         if (amount == 0)
@@ -97,6 +110,7 @@ public class StandardToken : SmartContract, IStandardToken
         PersistentState.SetUInt32($"Allowance:{owner}:{spender}", value);
     }
 
+    /// <inheritdoc />
     public uint Allowance(Address owner, Address spender)
     {
         return PersistentState.GetUInt32($"Allowance:{owner}:{spender}");
