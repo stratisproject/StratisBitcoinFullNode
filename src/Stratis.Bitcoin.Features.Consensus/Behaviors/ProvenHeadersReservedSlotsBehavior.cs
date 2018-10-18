@@ -57,17 +57,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             // If PeerConnectorDiscovery is not found means we are using other ways to connect peers (like -connect) and thus we don't enforce the rule.
             if (connector != null)
             {
-                int freeSlots = connector.MaxOutboundConnections - connector.ConnectorPeers.Count;
+                // Connector.ConnectorPeers returns only handshaked peers, and passed peer is negotiating versions and
+                // it's not yet included in the ConnectorPeers collection.
+                // freeSlots returns the number of available slots, considering that passed peer is taking one slot.
+                int freeSlots = connector.MaxOutboundConnections - connector.ConnectorPeers.Count - 1;
                 if (freeSlots >= 1)
                 {
                     // There is at least one free slot, so we don't enforce this peer to be PH enabled.
                     return Task.CompletedTask;
                 }
 
-                bool peerSupportsPH = peer.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
+                bool peerSupportsPH = version.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
                 if (peerSupportsPH)
                 {
-                    INetworkPeer nodeToDisconnect = GetConnectedLegacyPeersSortedByTip(connector.ConnectorPeers).FirstOrDefault();
+                    INetworkPeer nodeToDisconnect = this.GetConnectedLegacyPeersSortedByTip(connector.ConnectorPeers).FirstOrDefault();
                     if (nodeToDisconnect != null)
                         peer.Disconnect("Reserving connection slot for a Proven Header enabled peer.");
                 }
