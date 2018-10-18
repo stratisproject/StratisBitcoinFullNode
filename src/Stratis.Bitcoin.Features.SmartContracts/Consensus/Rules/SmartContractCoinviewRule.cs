@@ -46,107 +46,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public override async Task RunAsync(RuleContext context)
         {
             this.blockTxsProcessed = new List<Transaction>();
+            this.receipts = new List<Receipt>();
+            this.refundCounter = 1;
             NBitcoin.Block block = context.ValidationContext.BlockToValidate;
-            ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
-            DeploymentFlags flags = context.Flags;
-            UnspentOutputSet view = ((UtxoRuleContext)context).UnspentOutputSet;
             
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
             byte[] blockRoot = ((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
             this.mutableStateRepository = this.ContractCoinviewRule.OriginalStateRoot.GetSnapshotTo(blockRoot);
 
-            this.receipts = new List<Receipt>();
-
-            this.refundCounter = 1;
-            long sigOpsCost = 0;
-            Money fees = Money.Zero;
-            var checkInputs = new List<Task<bool>>();
-
-            for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
-            {
-                Transaction tx = block.Transactions[txIndex];
-                if (!context.SkipValidation)
-                {
-                    if (!this.IsProtocolTransaction(tx))
-                    {
-                        if (!view.HaveInputs(tx))
-                        {
-                            this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
-                            ConsensusErrors.BadTransactionMissingInput.Throw();
-                        }
-
-                        var prevheights = new int[tx.Inputs.Count];
-                        // Check that transaction is BIP68 final.
-                        // BIP68 lock checks (as opposed to nLockTime checks) must
-                        // be in ConnectBlock because they require the UTXO set.
-                        for (int j = 0; j < tx.Inputs.Count; j++)
-                        {
-                            prevheights[j] = (int)view.AccessCoins(tx.Inputs[j].PrevOut.Hash).Height;
-                        }
-
-                        if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
-                        {
-                            this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
-                            ConsensusErrors.BadTransactionNonFinal.Throw();
-                        }
-                    }
-
-                    // GetTransactionSignatureOperationCost counts 3 types of sigops:
-                    // * legacy (always),
-                    // * p2sh (when P2SH enabled in flags and excludes coinbase),
-                    // * witness (when witness enabled in flags and excludes coinbase).
-                    sigOpsCost += this.GetTransactionSignatureOperationCost(tx, view, flags);
-                    if (sigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
-                        ConsensusErrors.BadBlockSigOps.Throw();
-
-                    if (!this.IsProtocolTransaction(tx))
-                    {
-                        this.CheckInputs(tx, view, index.Height);
-                        fees += view.GetValueIn(tx) - tx.TotalOut;
-                        var txData = new PrecomputedTransactionData(tx);
-                        for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
-                        {
-                            TxIn input = tx.Inputs[inputIndex];
-                            int inputIndexCopy = inputIndex;
-                            TxOut txout = view.GetOutputFor(input);
-                            var checkInput = new Task<bool>(() =>
-                            {
-                                if (txout.ScriptPubKey.IsSmartContractExec() || txout.ScriptPubKey.IsSmartContractInternalCall())
-                                {
-                                    return input.ScriptSig.IsSmartContractSpend();
-                                }
-
-                                var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-                                var ctx = new ScriptEvaluationContext(this.Parent.Network);
-                                ctx.ScriptVerify = flags.ScriptFlags;
-                                return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
-                            });
-
-                            checkInput.Start();
-                            checkInputs.Add(checkInput);
-                        }
-                    }
-                }
-
-                this.UpdateCoinView(context, tx);
-
-                this.blockTxsProcessed.Add(tx);
-            }
-
-            if (!context.SkipValidation)
-            {
-                this.CheckBlockReward(context, fees, index.Height, block);
-
-                foreach (Task<bool> checkInput in checkInputs)
-                {
-                    if (await checkInput.ConfigureAwait(false))
-                        continue;
-
-                    this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
-                    ConsensusErrors.BadTransactionScriptError.Throw();
-                }
-            }
-            else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
+            await base.RunAsync(context);
 
             if (new uint256(this.mutableStateRepository.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
@@ -158,6 +66,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             // Update the globally injected state so all services receive the updates.
             this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(this.mutableStateRepository.Root);
+        }
+
+        /// <inheritdoc/>
+        protected override bool CheckInput(Transaction tx, int inputIndexCopy, TxOut txout,PrecomputedTransactionData txData, TxIn input, DeploymentFlags flags)
+        {
+            if (txout.ScriptPubKey.IsSmartContractExec() || txout.ScriptPubKey.IsSmartContractInternalCall())
+            {
+                return input.ScriptSig.IsSmartContractSpend();
+            }
+
+            var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
+            var ctx = new ScriptEvaluationContext(this.Parent.Network);
+            ctx.ScriptVerify = flags.ScriptFlags;
+            return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
         }
 
         /// <inheritdoc/>
@@ -197,6 +119,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 ValidateGeneratedTransaction(transaction);
                 base.UpdateUTXOSet(context, transaction);
+                this.blockTxsProcessed.Add(transaction);
                 return;
             }
 
@@ -208,6 +131,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 // Someone submitted a standard transaction - no smart contract opcodes.
                 base.UpdateUTXOSet(context, transaction);
+                this.blockTxsProcessed.Add(transaction);
                 return;
             }
 
@@ -215,6 +139,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ExecuteContractTransaction(context, transaction);
 
             base.UpdateUTXOSet(context, transaction);
+            this.blockTxsProcessed.Add(transaction);
         }
 
         /// <summary>
