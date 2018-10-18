@@ -5,6 +5,7 @@ using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Networks.Deployments;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -47,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 [BuriedDeployments.BIP66] = 100000000
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray
+            var bip9Deployments = new BIP9Deployments
             {
                 [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999),
                 [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999),

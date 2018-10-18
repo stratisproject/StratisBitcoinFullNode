@@ -1,20 +1,51 @@
-﻿using System;
-
-namespace NBitcoin
+﻿namespace NBitcoin
 {
-    public class BIP9DeploymentsArray
+    /// <summary>
+    /// Interface for recording deployment parameters and returning deployment flags.
+    /// </summary>
+    public interface IBIP9DeploymentsArray
     {
-        private readonly BIP9DeploymentsParameters[] parameters;
+        void GetFlags(int deployment, out ScriptVerify scriptFlags, out Transaction.LockTimeFlags lockTimeFlags);
+        int Length { get; }
+        BIP9DeploymentsParameters this[int deployment] { get; set; }
+    }
 
-        public BIP9DeploymentsArray()
+    /// <summary>
+    /// Used for recording deployment parameters and returning deployment flags.
+    /// </summary>
+    public abstract class BIP9DeploymentsArray : IBIP9DeploymentsArray
+    {
+        protected readonly BIP9DeploymentsParameters[] parameters;
+
+        public BIP9DeploymentsArray(int length)
         {
-            this.parameters = new BIP9DeploymentsParameters[Enum.GetValues(typeof(BIP9Deployments)).Length];
+            this.parameters = new BIP9DeploymentsParameters[length];
         }
 
-        public BIP9DeploymentsParameters this[BIP9Deployments index]
+        public abstract void GetFlags(int deployment, out ScriptVerify scriptFlags, out Transaction.LockTimeFlags lockTimeFlags);
+
+        public BIP9DeploymentsParameters this[int deployment]
         {
-            get => this.parameters[(int)index];
-            set => this.parameters[(int)index] = value;
+            get { return this.parameters[deployment]; }
+            set { this.parameters[deployment] = value; }
+        }
+
+        public int Length => this.parameters.Length;
+    }
+
+    /// <summary>
+    /// Used by networks that don't define any deployments or deployment pararameters.
+    /// </summary>
+    public class NoBIP9Deployments : BIP9DeploymentsArray
+    {
+        public NoBIP9Deployments() : base(0)
+        {
+        }
+
+        public override void GetFlags(int deployment, out ScriptVerify scriptFlags, out Transaction.LockTimeFlags lockTimeFlags)
+        {
+            scriptFlags = ScriptVerify.None;
+            lockTimeFlags = Transaction.LockTimeFlags.None;
         }
     }
 }

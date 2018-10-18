@@ -14,6 +14,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SegWitTests
     {
+        // TODO: This test incorrectly assumes that SegWit is available on Stratis.
+        /*
         [Fact]
         public void TestSegwit_MinedOnCore_ActivatedOn_StratisNode()
         {
@@ -73,11 +75,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
             }
         }
+        */
 
         private void TestSegwit_MinedOnStratisNode_ActivatedOn_CoreNode()
         {
             // TODO: mine segwit onh a stratis node on the bitcoin network
-            // write a tests that mines segwit blocks on the stratis node 
+            // write a tests that mines segwit blocks on the stratis node
             // and signals them to a core not, then segwit will get activated on core
         }
     }

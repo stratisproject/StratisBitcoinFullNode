@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Networks.Deployments;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -48,7 +49,7 @@ namespace Stratis.Bitcoin.Networks
                 [BuriedDeployments.BIP66] = 363725
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray
+            var bip9Deployments = new BIP9Deployments
             {
                 [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
                 [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1462060800, 1493596800),

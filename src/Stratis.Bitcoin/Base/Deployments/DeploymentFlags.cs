@@ -51,18 +51,19 @@ namespace Stratis.Bitcoin.Base.Deployments
                 this.ScriptFlags |= ScriptVerify.CheckLockTimeVerify;
             }
 
-            // Start enforcing BIP68 (sequence locks), BIP112 (CHECKSEQUENCEVERIFY) and BIP113 (Median Time Past) using versionbits logic.
-            if (prevBlockStates[(int)BIP9Deployments.CSV] == ThresholdState.Active)
+            // Set the relevant flags for active BIP9 deployments.
+            for (int deployment = 0; deployment < prevBlockStates.Length; deployment++)
             {
-                this.ScriptFlags |= ScriptVerify.CheckSequenceVerify;
-                this.LockTimeFlags |= Transaction.LockTimeFlags.VerifySequence;
-                this.LockTimeFlags |= Transaction.LockTimeFlags.MedianTimePast;
-            }
+                if (prevBlockStates[deployment] == ThresholdState.Active)
+                {
+                    ScriptVerify scriptFlags;
+                    Transaction.LockTimeFlags lockTimeFlags;
 
-            // Start enforcing WITNESS rules using versionbits logic.
-            if (prevBlockStates[(int)BIP9Deployments.Segwit] == ThresholdState.Active)
-            {
-                this.ScriptFlags |= ScriptVerify.Witness;
+                    chain.Network.Consensus.BIP9Deployments.GetFlags(deployment, out scriptFlags, out lockTimeFlags);
+
+                    this.ScriptFlags |= scriptFlags;
+                    this.LockTimeFlags |= lockTimeFlags;
+                }
             }
 
             // Enforce block.nVersion=2 rule that the coinbase starts with serialized block height
