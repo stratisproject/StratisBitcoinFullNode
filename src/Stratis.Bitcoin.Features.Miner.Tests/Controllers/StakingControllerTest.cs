@@ -239,7 +239,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
         }
 
         [Fact]
-        public void StartStaking_OnProofOfWorkNetwork_Returns_MethodNotallowed()
+        public void StartStaking_OnProofOfWorkNetwork_Returns_MethodNotAllowed()
         {
             {
                 Mock<IFullNode> fullNodeWithPowConsensus = new Mock<IFullNode>();
