@@ -1,10 +1,19 @@
-﻿using Stratis.SmartContracts;
+﻿using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.SmartContracts;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class AddressTests
     {
+        [Fact]
+        public void Address_ToString()
+        {
+            var address = Address.Create(null, new SmartContractPosRegTest());
+
+            var str = address.ToString();
+        }
+
         [Fact]
         public void Address_Equality_Equals_Different()
         {

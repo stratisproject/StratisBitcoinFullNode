@@ -161,7 +161,7 @@ namespace Stratis.SmartContracts.Tools.Sct
 
         public Address GetAddress(string key)
         {
-            return new Address();
+            return new Address("");
         }
 
         public bool GetBool(string key)
