@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         private Task ProcessVersionAsync(INetworkPeer peer, VersionPayload version)
         {
             PeerConnectorDiscovery connector = this.connectionManager.PeerConnectors.OfType<PeerConnectorDiscovery>().FirstOrDefault();
-            // If PeerConnectorDiscovery is not found means we are using other ways to connect peers (like -connect) and thus we don't enforce the rule.
+            // If PeerConnectorDiscovery is not found it means we are using -connect and thus we don't enforce the rule.
             if (connector != null)
             {
                 // Connector.ConnectorPeers returns only handshaked peers, and passed peer is negotiating versions and
