@@ -197,8 +197,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             MiningController controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, walletManager.Object);
             WalletAccountReference walletAccountReference = controller.GetAccount();
 
-            Assert.False(string.IsNullOrEmpty(walletAccountReference.AccountName));
-            Assert.False(string.IsNullOrEmpty(walletAccountReference.WalletName));
+            Assert.Equal(account, walletAccountReference.AccountName));
+            Assert.Equal(wallet, walletAccountReference.WalletName));
         }
 
         [Fact]
