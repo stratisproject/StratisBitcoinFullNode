@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         {
                             if (coin.IsPrunable)
                             {
-                                this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and will be removed from the database. {1}/{2}.", coin.TransactionId);
+                                this.logger.LogTrace("Outputs of transaction ID '{0}' are prunable and will be removed from the database.", coin.TransactionId);
                                 transaction.RemoveKey("Coins", coin.TransactionId.ToBytes(false));
                             }
                             else

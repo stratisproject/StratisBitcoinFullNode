@@ -8,6 +8,11 @@ namespace Stratis.SmartContracts
     public interface IPersistentState
     {
         /// <summary>
+        /// Returns true if a contract exists at the given Address. If the supplied Address is invalid, returns false.
+        /// </summary>
+        bool IsContract(Address address);
+
+        /// <summary>
         /// Gets the bytes set at the value pointed to by the given key.
         /// </summary>
         byte[] GetBytes(string key);

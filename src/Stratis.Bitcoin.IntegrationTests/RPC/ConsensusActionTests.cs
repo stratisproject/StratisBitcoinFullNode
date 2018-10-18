@@ -8,10 +8,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 {
     public class ConsensusActionTests : BaseRPCControllerTest
     {
-        public ConsensusActionTests()
-        {
-        }
-
         [Fact]
         public void CanCall_GetBestBlockHash()
         {
