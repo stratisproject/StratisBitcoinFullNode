@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             WalletAccountReference walletAccountReference = controller.GetAccount();
 
             Assert.Equal(account, walletAccountReference.AccountName));
-            Assert.False(string.IsNullOrEmpty(walletAccountReference.WalletName));
+            Assert.Equal(wallet, walletAccountReference.WalletName));
         }
 
         [Fact]
