@@ -24,9 +24,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             this.BlockHash = receipt.BlockHash.ToString();
             this.PostState = receipt.PostState.ToString();
             this.GasUsed = receipt.GasUsed;
-            this.From = receipt.From.ToAddress(network);
-            this.To = receipt.To?.ToAddress(network);
-            this.NewContractAddress = receipt.NewContractAddress?.ToAddress(network);
+            this.From = receipt.From.ToAddress(network).ToString();
+            this.To = receipt.To?.ToAddress(network).ToString();
+            this.NewContractAddress = receipt.NewContractAddress?.ToAddress(network).ToString();
             this.Success = receipt.Success;
             this.Bloom = receipt.Bloom.ToString();
             this.Error = receipt.ErrorMessage;
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
 
         public LogResponse(Log log, Network network)
         {
-            this.Address = log.Address.ToAddress(network);
+            this.Address = log.Address.ToAddress(network).ToString();
             this.Topics = log.Topics.Select(x => x.ToHexString()).ToArray();
             this.Data = log.Data.ToHexString();
         }

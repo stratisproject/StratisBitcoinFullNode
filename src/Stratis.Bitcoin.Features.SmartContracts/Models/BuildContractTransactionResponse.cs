@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
 
                 Hex = transaction.ToHex(),
                 Fee = transactionFee,
-                NewContractAddress = address,
+                NewContractAddress = address.ToString(),
                 TransactionId = transaction.GetHash(),
             };
         }
