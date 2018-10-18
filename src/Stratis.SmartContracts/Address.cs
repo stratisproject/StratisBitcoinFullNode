@@ -13,11 +13,6 @@ namespace Stratis.SmartContracts
     /// </summary>
     public class Address
     {
-        /// <summary>
-        /// The address as a string, in base58 format.
-        /// </summary>
-        public readonly string Value;
-
         private Network network;
         public byte[] Bytes { get; }
 
@@ -35,7 +30,6 @@ namespace Stratis.SmartContracts
         {
             this.network = null;
             this.Bytes = new byte[0];
-            this.Value = address;
         }
 
         public Address(Address other)
@@ -58,7 +52,6 @@ namespace Stratis.SmartContracts
             this.pn4 = pn4;
             this.network = network;
             this.Bytes = this.ToBytes();
-            this.Value = "";
         }
 
         private byte[] ToBytes()

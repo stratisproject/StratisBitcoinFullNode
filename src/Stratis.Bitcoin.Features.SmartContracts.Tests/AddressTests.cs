@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var address = new Address("address1");
 
-            var address2 = new Address(address.Value);
+            var address2 = new Address(address);
 
             Assert.True(address.Equals(address2));
         }
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Address_Equality_Equals_Operator_Same()
         {
             var address = new Address("address1");
-            var address2 = new Address(address.Value);
+            var address2 = new Address(address);
 
             Assert.True(address == address2);
         }
