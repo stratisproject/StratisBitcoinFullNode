@@ -123,7 +123,7 @@ namespace Stratis.SmartContracts
 
         public override int GetHashCode()
         {
-            return this.Value.GetHashCode();
+            return HashCode.Combine(this.pn0, this.pn1, this.pn2, this.pn3, this.pn4);
         }
     }
 }
