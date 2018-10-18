@@ -468,9 +468,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD();
+                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
-                builder.StartAll();
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
                 TestHelper.MineBlocks(miner, 1);
 

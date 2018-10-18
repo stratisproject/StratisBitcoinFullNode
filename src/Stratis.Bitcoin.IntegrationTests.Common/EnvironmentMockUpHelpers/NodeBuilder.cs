@@ -172,14 +172,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return dataFolderName;
         }
 
-        public void StartAll()
-        {
-            foreach (CoreNode node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
-            {
-                node.Start();
-            }
-        }
-
         public void Dispose()
         {
             foreach (CoreNode node in this.Nodes)
