@@ -155,20 +155,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
-            int currentHeight = this.provenBlockHeaderRepository.TipHashHeight.Height;
+            if (chainedHeader.Height > 0)
+            {
+                ProvenBlockHeader repoHeader =
+                    await this.provenBlockHeaderRepository.GetAsync(chainedHeader.Height);
+
+                if (repoHeader == null)
+                    throw new ProvenBlockHeaderException("Unable to find proven block header in the repository.");
+
+                if (repoHeader.GetHash() != chainedHeader.HashBlock)
+                    throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
+            }
 
             this.storeTip = chainedHeader;
 
-            if (chainedHeader.Height != currentHeight)
-            {
-                this.TipHashHeight = await this.RecoverStoreTipAsync(chainedHeader).ConfigureAwait(false);
-            }
-            else
-            {
-                this.TipHashHeight = new HashHeightPair(this.storeTip);
-            }
+            this.TipHashHeight = new HashHeightPair(chainedHeader.HashBlock, chainedHeader.Height);
 
-            this.logger.LogDebug("Initialized ProvenBlockHeader store tip at '{0}'.", this.storeTip);
+            this.logger.LogDebug("Proven block header store tip at block '{0}'.", this.TipHashHeight);
 
             this.asyncLoop = this.asyncLoopFactory.Run("ProvenBlockHeaders job", async token =>
             {
@@ -320,45 +323,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
             }
-        }
-
-        /// <summary>
-        /// Will try to recover the <see cref="IProvenBlockHeaderStore"/> tip to the <see cref="ChainedHeader"/> tip.
-        /// </summary>
-        /// <param name="newChainedHeader"><see cref="ChainedHeader"/> to try and recover to.</param>
-        /// <exception cref="ProvenBlockHeaderException">
-        /// Thrown when :
-        /// <list type="bullet">
-        /// <item>
-        /// <term>Missing.</term>
-        /// <description>The <see cref="ProvenBlockHeader"/> selected by <see cref="ChainedHeader.Height"/> does not exist in the database.</description>
-        /// </item>
-        /// <item>
-        /// <term>Block hash mismatch.</term>
-        /// <description>The <see cref="ChainedHeader"/> tip hash does not match the latest <see cref="ProvenBlockHeader"/> hash saved to disk.</description>
-        /// </item>
-        /// </list>
-        /// </exception>
-        /// <returns>Recovered <see cref="HashHeightPair"/>.</returns>
-        private async Task<HashHeightPair> RecoverStoreTipAsync(ChainedHeader newChainedHeader)
-        {
-            if (newChainedHeader.Height > 0)
-            {
-                ProvenBlockHeader repoHeader =
-                    await this.provenBlockHeaderRepository.GetAsync(newChainedHeader.Height);
-
-                if (repoHeader == null)
-                    throw new ProvenBlockHeaderException("Unable to find proven block header in the repository.");
-
-                if (repoHeader.GetHash() != newChainedHeader.HashBlock)
-                    throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
-            }
-
-            var hashHeightPair = new HashHeightPair(newChainedHeader.HashBlock, newChainedHeader.Height);
-
-            this.logger.LogWarning("Proven block header store tip recovered at block '{0}'.", hashHeightPair);
-
-            return hashHeightPair;
         }
 
         /// <summary>
