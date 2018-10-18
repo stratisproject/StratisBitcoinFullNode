@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 new HeaderTimeChecksRule(),
                 new HeaderTimeChecksPosRule(),
-                new StratisBigFixPosFutureDriftRule(),
+                new StratisBugFixPosFutureDriftRule(),
                 new CheckDifficultyPosRule(),
                 new StratisHeaderVersionRule(),
             };

@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             headerValidationRules.Count.Should().Be(5);
             headerValidationRules[0].Should().BeOfType<HeaderTimeChecksRule>();
             headerValidationRules[1].Should().BeOfType<HeaderTimeChecksPosRule>();
-            headerValidationRules[2].Should().BeOfType<StratisBigFixPosFutureDriftRule>();
+            headerValidationRules[2].Should().BeOfType<StratisBugFixPosFutureDriftRule>();
             headerValidationRules[3].Should().BeOfType<CheckDifficultyPosRule>();
             headerValidationRules[4].Should().BeOfType<StratisHeaderVersionRule>();
 
