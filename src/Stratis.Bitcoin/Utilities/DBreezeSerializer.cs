@@ -126,7 +126,9 @@ namespace Stratis.Bitcoin.Utilities
 
             if (type == typeof(ProvenBlockHeader))
             {
-                var provenBlockHeader = new ProvenBlockHeader();
+                ProvenBlockHeader provenBlockHeader =
+                    ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader();
+
                 provenBlockHeader.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return provenBlockHeader;
             }

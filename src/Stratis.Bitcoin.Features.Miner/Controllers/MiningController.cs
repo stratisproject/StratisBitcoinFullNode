@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Runtime.CompilerServices;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -13,6 +14,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests.Controllers")]
 namespace Stratis.Bitcoin.Features.Miner.Controllers
 {
     /// <summary>
@@ -125,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         /// Finds first available wallet and its account.
         /// </summary>
         /// <returns>Reference to wallet account.</returns>
-        private WalletAccountReference GetAccount()
+        internal WalletAccountReference GetAccount()
         {
             const string noWalletMessage = "No wallet found";
             const string noAccountMessage = "No account found on wallet";
