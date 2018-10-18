@@ -30,8 +30,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.serializer = new ContractPrimitiveSerializer(this.mockChain.Network);
         }
 
-        // TODO: Tests with serializing arrays, both in params and PersistentState
-
         [Fact]
         public void CreateContract_OneOfEachParameterType()
         {
@@ -240,6 +238,78 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Contract called internally gets balance
             Assert.Equal((ulong)new Money((ulong)amount, MoneyUnit.BTC), this.node1.GetContractBalance(preResponse.NewContractAddress));
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.True(receipt.Success);
+            Assert.Empty(receipt.Logs);
+            Assert.True(receipt.GasUsed > GasPriceList.BaseCost);
+            Assert.Equal(response.NewContractAddress, receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.Null(receipt.To);
+            Assert.Null(receipt.Error);
+        }
+
+        [Fact]
+        public void SerializeArrays_ForEachMethodParamType()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            double amount = 25;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CreateWithAllArrays.cs");
+            Assert.True(compilationResult.Success);
+
+            char[] chars = new char[] {'a', '9'};
+            Address[] addresses = new Address[]{new Address(this.node1.MinerAddress.Address), new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn")};
+            bool[] bools = new bool[]{false, true, false};
+            int[] ints = new int[]{1, -123, int.MaxValue};
+            long[] longs = new long[]{1, -123, long.MaxValue};
+            uint[] uints = new uint[]{1, 123, uint.MaxValue};
+            ulong[] ulongs = new ulong[]{1, 123, ulong.MaxValue};
+            string[] strings = new string[]{"Test", "", "The quick brown fox jumps over the lazy dog" }; // TODO: Ensure Assert checks "" equality in contract when null bug fixed
+
+            string[] parameters = new string[]
+            {
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(chars).ToHexString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(addresses).ToHexString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(bools).ToHexString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(ints).ToHexString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(longs).ToHexString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(uints).ToHexString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(ulongs).ToHexString()),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(strings).ToHexString())
+            };
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Contract was created
+            Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
+
+            // Block doesn't contain any extra transactions
+            Assert.Equal(2, lastBlock.Transactions.Count);
+
+            // Contract keeps balance
+            Assert.Equal((ulong)new Money((ulong)amount, MoneyUnit.BTC), this.node1.GetContractBalance(response.NewContractAddress));
+
+            // All values were stored
+            Assert.Equal(this.serializer.Serialize(chars), this.node1.GetStorageValue(response.NewContractAddress, "chars"));
+            Assert.Equal(this.serializer.Serialize(addresses), this.node1.GetStorageValue(response.NewContractAddress, "addresses"));
+            Assert.Equal(this.serializer.Serialize(bools), this.node1.GetStorageValue(response.NewContractAddress, "bools"));
+            Assert.Equal(this.serializer.Serialize(ints), this.node1.GetStorageValue(response.NewContractAddress, "ints"));
+            Assert.Equal(this.serializer.Serialize(longs), this.node1.GetStorageValue(response.NewContractAddress, "longs"));
+            Assert.Equal(this.serializer.Serialize(uints), this.node1.GetStorageValue(response.NewContractAddress, "uints"));
+            Assert.Equal(this.serializer.Serialize(ulongs), this.node1.GetStorageValue(response.NewContractAddress, "ulongs"));
+            Assert.Equal(this.serializer.Serialize(strings), this.node1.GetStorageValue(response.NewContractAddress, "strings"));
 
             // Receipt is correct
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
