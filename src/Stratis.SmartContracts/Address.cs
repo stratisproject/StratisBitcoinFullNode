@@ -11,14 +11,15 @@ namespace Stratis.SmartContracts
     /// </summary>
     public struct Address
     {
-        public byte[] Bytes { get; }
         private readonly string addressString;
-        public const int AddressWidth = 160 / 8;
-        internal readonly uint pn0;
-        internal readonly uint pn1;
-        internal readonly uint pn2;
-        internal readonly uint pn3;
-        internal readonly uint pn4;
+        private readonly uint pn0;
+        private readonly uint pn1;
+        private readonly uint pn2;
+        private readonly uint pn3;
+        private readonly uint pn4;
+
+        public const int Width = 160 / 8;
+        public readonly byte[] Bytes;
 
         public Address(Address other)
         {
@@ -31,7 +32,7 @@ namespace Stratis.SmartContracts
             this.addressString = other.addressString;
         }
 
-        private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4, string str)
+        private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4, byte[] bytes, string str)
         {
             this.pn0 = pn0;
             this.pn1 = pn1;
@@ -39,33 +40,18 @@ namespace Stratis.SmartContracts
             this.pn3 = pn3;
             this.pn4 = pn4;
             this.addressString = str;
-            this.Bytes = ToBytes(pn0, pn1, pn2, pn3, pn4);
-        }
-
-        private static byte[] ToBytes(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
-        {
-            var arr = new byte[AddressWidth];
-            Buffer.BlockCopy(Utils.ToBytes(pn0, true), 0, arr, 4 * 0, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn1, true), 0, arr, 4 * 1, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn2, true), 0, arr, 4 * 2, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn3, true), 0, arr, 4 * 3, 4);
-            Buffer.BlockCopy(Utils.ToBytes(pn4, true), 0, arr, 4 * 4, 4);
-            return arr;
+            this.Bytes = bytes;
         }
         
         internal static Address Create(byte[] bytes, string str)
         {
-            // Default to empty bytes
-            if (bytes == null)
-                return new Address(0, 0, 0, 0, 0, str);
-
             var pn0 = ToUInt32(bytes, 0);
             var pn1 = ToUInt32(bytes, 4);
             var pn2 = ToUInt32(bytes, 8);
             var pn3 = ToUInt32(bytes, 12);
             var pn4 = ToUInt32(bytes, 16);
 
-            return new Address(pn0, pn1, pn2, pn3, pn4, str);
+            return new Address(pn0, pn1, pn2, pn3, pn4, bytes, str);
         }
 
         private static uint ToUInt32(byte[] value, int index)

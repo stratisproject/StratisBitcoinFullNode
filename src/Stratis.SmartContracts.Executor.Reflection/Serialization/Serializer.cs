@@ -129,7 +129,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public IAddressDeserializationResult ToAddress(byte[] val)
         {
-            if (val == null || val.Length != Address.AddressWidth)
+            if (val == null || val.Length != Address.Width)
                 return AddressDeserializationResult.Failure();
 
             (bool success, Address address) = this.TryDeserializeValue<Address>(val);
