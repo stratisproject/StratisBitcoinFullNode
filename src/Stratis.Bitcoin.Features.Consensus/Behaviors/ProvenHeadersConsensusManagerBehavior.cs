@@ -3,13 +3,14 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Consensus
+namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 {
     /// <summary>
     /// Behavior that takes care of proven headers protocol. It also keeps the notion of peer's consensus tip.
