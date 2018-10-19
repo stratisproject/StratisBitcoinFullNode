@@ -2,10 +2,37 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Nethereum.RLP;
-using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
+    public class AddressDeserializationResult : IAddressDeserializationResult
+    {
+        private AddressDeserializationResult()
+        {
+            this.Success = false;
+        }
+
+        private AddressDeserializationResult(Address address)
+        {
+            this.Success = true;
+            this.Address = address;
+        }
+
+        public bool Success { get; }
+
+        public Address Address { get; }
+
+        public static IAddressDeserializationResult Failure()
+        {
+            return new AddressDeserializationResult();
+        }
+
+        public static IAddressDeserializationResult Ok(Address address)
+        {
+            return new AddressDeserializationResult(address);
+        }
+    }
+
     /// <summary>
     /// Defines the serialization functionality that is exposed to a <see cref="SmartContract"/>.
     /// </summary>
@@ -100,26 +127,30 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return success ? result : default(bool);
         }
 
-        public (bool success, Address address) ToAddress(byte[] val)
+        public IAddressDeserializationResult ToAddress(byte[] val)
         {
             if (val == null || val.Length != Address.AddressWidth)
-                return (false, default(Address));
+                return AddressDeserializationResult.Failure();
 
-            return this.TryDeserializeValue<Address>(val);
+            (bool success, Address address) = this.TryDeserializeValue<Address>(val);
+
+            return success
+                ? AddressDeserializationResult.Ok(address)
+                : AddressDeserializationResult.Failure();
         }
 
-        public (bool success, Address address) ToAddress(string val)
+        public IAddressDeserializationResult ToAddress(string val)
         {
             if (string.IsNullOrWhiteSpace(val))
-                return (false, default(Address));
+                return AddressDeserializationResult.Failure();
 
             try
             {
-                return (true, this.primitiveSerializer.ToAddress(val));
+                return AddressDeserializationResult.Ok(this.primitiveSerializer.ToAddress(val));
             }
             catch (Exception)
             {
-                return (false, default(Address));
+                return AddressDeserializationResult.Failure();
             }
         }
 

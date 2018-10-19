@@ -21,8 +21,8 @@ public class CallWithAllParameters : SmartContract
         Assert(aChar == charResult , "Char failed.");
 
         byte[] addressBytes = this.Serializer.Serialize(anAddress);
-        (bool success, Address addressResult ) = this.Serializer.ToAddress(addressBytes);
-        Assert(addressResult == anAddress, "Address failed.");
+        var result = this.Serializer.ToAddress(addressBytes);
+        Assert(result.Address == anAddress, "Address failed.");
 
         byte[] boolBytes = this.Serializer.Serialize(aBool);
         bool boolResult = this.Serializer.ToBool(boolBytes);
