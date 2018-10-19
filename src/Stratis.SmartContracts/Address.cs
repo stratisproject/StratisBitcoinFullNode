@@ -78,8 +78,6 @@ namespace Stratis.SmartContracts
 
         public override string ToString()
         {
-            //byte[] versionBytes = this.network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true);
-            //return Encoders.Base58Check.EncodeData(versionBytes.Concat(this.Bytes).ToArray());
             return this.addressString;
         }
 
