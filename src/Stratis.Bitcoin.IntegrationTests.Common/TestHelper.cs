@@ -269,9 +269,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="nodeToDisconnect">The node that will be disconnected.</param>
         public static void Disconnect(CoreNode thisNode, CoreNode nodeToDisconnect)
         {
-            if (!IsNodeConnectedTo(thisNode, nodeToDisconnect))
-                return;
-
             thisNode.CreateRPCClient().RemoveNode(nodeToDisconnect.Endpoint);
             WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
