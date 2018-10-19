@@ -23,15 +23,6 @@ namespace Stratis.SmartContracts
         internal readonly uint pn3;
         internal readonly uint pn4;
 
-        /// <summary>
-        /// Create a new address
-        /// </summary>
-        public Address(string address)
-        {
-            this.network = null;
-            this.Bytes = new byte[0];
-        }
-
         public Address(Address other)
         {
             this.network = other.network;
