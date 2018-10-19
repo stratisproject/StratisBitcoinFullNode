@@ -29,6 +29,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private class ConsensusOptionsTest : PosConsensusOptions
         {
+            public ConsensusOptionsTest():base(
+                maxBlockBaseSize: 1_000_000,
+                maxStandardVersion: 2,
+                maxStandardTxWeight: 100_000,
+                maxBlockSigopsCost: 20_000,
+                provenHeadersActivationHeight: 10_000_000)
+            {
+            }
+
             public override int GetStakeMinConfirmations(int height, Network network)
             {
                 return height < 15 ? 5 : 20;
