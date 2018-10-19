@@ -4,8 +4,8 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Features.SmartContracts.PoS;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {

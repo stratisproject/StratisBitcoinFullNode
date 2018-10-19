@@ -18,7 +18,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
     {
         private const string WalletName = "mywallet";
         private const string Password = "password";
-        private const string Passphrase = "test";
         private const string AccountName = "account 0";
 
         [Fact(Skip = "We're not immediately planning to support PoS, and this is breaking. Could be useful as a template in the future however!")]
@@ -26,18 +25,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPosNode().NotInIBD().WithWallet();
-                CoreNode scReceiver = builder.CreateSmartContractPosNode().NotInIBD().WithWallet();
-
-                builder.StartAll();
+                CoreNode scSender = builder.CreateSmartContractPosNode().NotInIBD().WithWallet().Start();
+                CoreNode scReceiver = builder.CreateSmartContractPosNode().NotInIBD().WithWallet().Start();
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 
-                scSender.WithWallet(Password, WalletName, Passphrase);
-                scReceiver.WithWallet(Password, WalletName, Passphrase);
-
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                HdAddress senderAddress = TestHelper.MineBlocks(scSender, maturity + 5, WalletName, Password, AccountName).AddressUsed;
+                HdAddress senderAddress = TestHelper.MineBlocks(scSender, maturity + 5).AddressUsed;
 
                 // The mining should add coins to the wallet.
                 var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
@@ -76,8 +70,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 TestHelper.MineBlocks(scSender, 1);
 
                 // Sync to the receiver node 
-                scSender.CreateRPCClient().AddNode(scReceiver.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                TestHelper.ConnectAndSync(scSender, scReceiver);
 
                 // Ensure that boths nodes has the contract
                 IStateRepositoryRoot senderState = scSender.FullNode.NodeService<IStateRepositoryRoot>();

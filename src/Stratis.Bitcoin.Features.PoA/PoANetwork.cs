@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        private static Block CreatePoAGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
+        protected static Block CreatePoAGenesisBlock(ConsensusFactory consensusFactory, uint nTime, uint nNonce, uint nBits, int nVersion, Money genesisReward)
         {
             string data = "506f41202d204345485450414a6c75334f424148484139205845504839";
 

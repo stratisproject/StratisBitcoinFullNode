@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Utilities
     public abstract class MemoryCache<TKey, TValue>
     {
         /// <summary>Cache item for the inner usage of the <see cref="MemoryCountCache{TKey,TValue}"/> class.</summary>
-        public class CacheItem
+        protected class CacheItem
         {
             public readonly TKey Key;
 
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Determine whether the cache has reached its limit.</summary>
         /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
-        public abstract bool IsCacheFull(CacheItem item);
+        protected abstract bool IsCacheFull(CacheItem item);
 
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
         public int Count
