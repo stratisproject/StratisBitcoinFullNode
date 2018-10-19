@@ -64,20 +64,7 @@ namespace Stratis.Bitcoin.Base
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             Directory.CreateDirectory(folder);
-
-            while (true)
-            {
-                try
-                {
-                    this.dbreeze = new DBreezeEngine(folder);
-                    break;
-                }
-                catch (Exception ex)
-                {
-                    FileLockChecker.CheckLock(folder);
-                    Task.Delay(1000).Wait();
-                }
-            }
+            this.dbreeze = new DBreezeEngine(folder);
         }
 
         public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)

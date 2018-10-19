@@ -75,7 +75,8 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <returns>The path of the directory.</returns>
         public static string GetTestDirectoryPath(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
-            return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
+            return GetTestDirectoryPath(Path.Combine(@"C:\NodeTests\", callingMethod));
+            //return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
         }
 
         /// <summary>
