@@ -11,8 +11,4 @@
 	<AssemblyVersion>0.5.0.0</AssemblyVersion>
   </PropertyGroup>
 
-  <ItemGroup>
-    <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
-  </ItemGroup>
-
 </Project>
