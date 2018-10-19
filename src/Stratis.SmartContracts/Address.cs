@@ -3,10 +3,7 @@
 namespace Stratis.SmartContracts
 {
     /// <summary>
-    /// Helper struct that represents a STRAT address and is used when sending or receiving funds.
-    /// <para>
-    /// Note that the format of the address is not validated on construction, but when trying to send funds to this address.
-    /// </para>
+    /// Represents an address used when sending or receiving funds.
     /// </summary>
     public struct Address
     {
