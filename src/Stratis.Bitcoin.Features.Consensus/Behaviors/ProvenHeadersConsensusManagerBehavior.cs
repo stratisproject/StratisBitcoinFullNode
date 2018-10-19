@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
@@ -27,9 +28,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+        private readonly IChainState chainState;
 
-        public ProvenHeadersConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState,
-            IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory, Network network) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+        public ProvenHeadersConsensusManagerBehavior(
+            ConcurrentChain chain,
+            IInitialBlockDownloadState initialBlockDownloadState,
+            IConsensusManager consensusManager,
+            IPeerBanning peerBanning,
+            ILoggerFactory loggerFactory,
+            Network network,
+            IChainState chainState) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.chain = chain;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -38,6 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             this.network = network;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.chainState = chainState;
         }
 
         /// <inheritdoc />
@@ -106,11 +115,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         public override object Clone()
         {
             return new ProvenHeadersConsensusManagerBehavior(
-                this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network);
+                this.chain,
+                this.initialBlockDownloadState,
+                this.consensusManager,
+                this.peerBanning,
+                this.loggerFactory,
+                this.network,
+                this.chainState);
         }
 
         /// <summary>
-        /// Determines whether the specified peer supports Proven Headers.
+        /// Determines whether the specified peer supports Proven Headers and PH has been activated.
         /// </summary>
         /// <param name="peer">The peer.</param>
         /// <returns>
@@ -133,6 +148,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             return peer.Behavior<IConnectionManagerBehavior>()?.Whitelisted == true;
         }
 
+
+        private bool IsProvenHeaderActivated()
+        {
+            if (this.network.Consensus.Options is PosConsensusOptions options)
+            {
+                long currentHeight = this.chainState.ConsensusTip.Height;
+                return (options.ProvenHeadersActivationHeight > 0) && (currentHeight >= options.ProvenHeadersActivationHeight);
+            }
+
+            return false;
+        }
+
         /// <summary>
         /// Builds the GetHeadersPayload.
         /// </summary>
@@ -145,20 +172,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             INetworkPeer peer = this.AttachedPeer;
 
-            if (IsPeerPhEnabled(peer))
+            if (this.IsProvenHeaderActivated())
             {
-                return new GetProvenHeadersPayload()
+                if (this.IsPeerPhEnabled(peer))
                 {
-                    BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
-                    HashStop = null
-                };
+                    return new GetProvenHeadersPayload()
+                    {
+                        BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                        HashStop = null
+                    };
+                }
+                // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
+                else if (IsPeerWhitelisted(peer) || this.IsProvenHeaderActivated())
+                    return base.BuildGetHeadersPayload();
+                // If the peer doesn't support PH and isn't whitelisted, return null (stop synch attempt with legacy StratisX nodes).
+                else
+                    return null;
             }
-            // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
-            else if (IsPeerWhitelisted(peer))
-                return base.BuildGetHeadersPayload();
-            // If the peer doesn't support PH and isn't whitelisted, return null (stop synchronization attempt).
             else
-                return null;
+            {
+                // If proven header isn't activated, build a legacy header request
+                return base.BuildGetHeadersPayload();
+            }
         }
 
         /// <summary>
@@ -170,8 +205,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <returns></returns>
         protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
-            // Only whitelisted legacy peers are allowed to handle this message.
-            if (!IsPeerPhEnabled(peer) && IsPeerWhitelisted(peer))
+            // Only legacy peers are allowed to handle this message, or ph enabled peers before PH activation.
+            if (!IsPeerPhEnabled(peer) || !IsProvenHeaderActivated())
             {
                 return base.ProcessHeadersAsync(peer, headers);
             }
