@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
@@ -14,8 +15,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class SegWitTests
     {
-        // TODO: This test incorrectly assumes that SegWit is available on Stratis.
-        /*
         [Fact]
         public void TestSegwit_MinedOnCore_ActivatedOn_StratisNode()
         {
@@ -75,7 +74,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
             }
         }
-        */
 
         private void TestSegwit_MinedOnStratisNode_ActivatedOn_CoreNode()
         {
