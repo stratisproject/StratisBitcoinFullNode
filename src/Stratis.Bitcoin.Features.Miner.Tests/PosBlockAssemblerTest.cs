@@ -191,8 +191,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 
                 // As we are effectively using StratisTest the other deployments need to be disabled
-                this.stratisTest.Consensus.BIP9Deployments[BIP9Deployments.CSV] = null;
-                this.stratisTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = null;
+                this.stratisTest.Consensus.BIP9Deployments[StratisBIP9Deployments.CSV] = null;
 
                 this.stratisTest.Consensus.MinerConfirmationWindow = 2;
                 this.stratisTest.Consensus.RuleChangeActivationThreshold = 2;
