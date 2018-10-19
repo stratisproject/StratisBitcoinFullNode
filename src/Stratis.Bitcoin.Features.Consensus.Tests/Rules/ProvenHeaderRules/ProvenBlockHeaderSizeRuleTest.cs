@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup proven header with invalid merkle proof (larger than 512).
             PosBlock posBlock = new PosBlockBuilder(this.network).WithLargeMerkleProof().Build();
             ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.ToBytes(); // this will trigger serialization to get the PH size.
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
@@ -56,6 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup proven header with invalid coinstake (larger than 1,000,000 bytes).
             PosBlock posBlock = new PosBlockBuilder(this.network).WithLargeCoinstake().Build();
             ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.ToBytes(); // this will trigger serialization to get the PH size.
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
@@ -89,6 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup proven header with invalid signature (larger than 80 bytes).
             PosBlock posBlock = new PosBlockBuilder(this.network).WithLargeSignature().Build();
             ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            provenBlockHeader.ToBytes(); // this will trigger serialization to get the PH size.
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
