@@ -30,8 +30,6 @@ namespace Stratis.SmartContracts.Core.Validation
             }
 
             policy
-                .Type(typeof(ValueTuple<>), AccessPolicy.Allowed)
-                .Type(typeof(ValueTuple<,>), AccessPolicy.Allowed)
                 .Type(typeof(Array).Name, AccessPolicy.Denied,
                     m => m.Member(nameof(Array.GetLength), AccessPolicy.Allowed)
                             .Member(nameof(Array.Copy), AccessPolicy.Allowed)
