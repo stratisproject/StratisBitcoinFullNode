@@ -60,7 +60,10 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var bytes = this.GetBytes(key);
 
-            return this.Serializer.ToAddress(bytes);
+            // TODO Make persistent state API similar
+            (bool success, Address result) = this.Serializer.ToAddress(bytes);
+            
+            return result;
         }
 
         public bool GetBool(string key)

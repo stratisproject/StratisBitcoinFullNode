@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Deserialize_Null_Address_Returns_Default()
         {
-            var result = this.serializer.ToAddress(null);
+            (bool success, Address result) = this.serializer.ToAddress((string) null);
 
             Assert.Equal(default(Address), result);
             this.contractPrimitiveSerializer.Verify(s => s.Deserialize<Address>(It.IsAny<byte[]>()), Times.Never);
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Deserialize_Byte0_Address_Returns_Default()
         {
-            var result = this.serializer.ToAddress(new byte[0]);
+            (bool success, Address result) = this.serializer.ToAddress(new byte[0]);
 
             Assert.Equal(default(Address), result);
             this.contractPrimitiveSerializer.Verify(s => s.Deserialize<Address>(It.IsAny<byte[]>()), Times.Never);

@@ -16,7 +16,7 @@ namespace Stratis.SmartContracts
         private Network network;
         public byte[] Bytes { get; }
 
-        private const int AddressWidth = 160 / 8;
+        public const int AddressWidth = 160 / 8;
         internal readonly uint pn0;
         internal readonly uint pn1;
         internal readonly uint pn2;

@@ -192,7 +192,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", type.Name));
         }
-        
+
+        public Address ToAddress(string address)
+        {            
+            return address.ToAddress(this.network);
+        }
+
         #region Primitive Deserialization
 
         private bool ToBool(byte[] val)

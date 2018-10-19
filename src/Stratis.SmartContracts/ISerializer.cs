@@ -62,9 +62,16 @@ namespace Stratis.SmartContracts
         bool ToBool(byte[] val);
 
         /// <summary>
-        /// Deserializes 20-bytes into an address. If the given bytes are null, empty, or deserialization fails, returns default(Address).
+        /// Deserializes 20-bytes into an address. If the given bytes are null, empty, or deserialization fails, success will be false and the returned
+        /// Address should not be used.
         /// </summary>
-        Address ToAddress(byte[] val);
+        (bool success, Address address) ToAddress(byte[] val);
+
+        /// <summary>
+        /// Deserializes a string into an address. If the given string is null, empty, or deserialization fails, success will be false and the returned
+        /// Address should not be used.
+        /// </summary>
+        (bool success, Address address) ToAddress(string val);
 
         /// <summary>
         /// Deserializes the first 4 bytes of a byte array into an integer. If the given bytes are null, empty, or deserialization fails, returns default(int).

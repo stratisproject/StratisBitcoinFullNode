@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Nethereum.RLP;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
@@ -99,14 +100,27 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return success ? result : default(bool);
         }
 
-        public Address ToAddress(byte[] val)
+        public (bool success, Address address) ToAddress(byte[] val)
         {
-            if (val == null || val.Length == 0)
-                return default(Address);
+            if (val == null || val.Length != Address.AddressWidth)
+                return (false, default(Address));
 
-            (bool success, Address result) = this.TryDeserializeValue<Address>(val);
+            return this.TryDeserializeValue<Address>(val);
+        }
 
-            return success ? result : default(Address);
+        public (bool success, Address address) ToAddress(string val)
+        {
+            if (string.IsNullOrWhiteSpace(val))
+                return (false, default(Address));
+
+            try
+            {
+                return (true, this.primitiveSerializer.ToAddress(val));
+            }
+            catch (Exception)
+            {
+                return (false, default(Address));
+            }
         }
 
         public int ToInt32(byte[] val)
