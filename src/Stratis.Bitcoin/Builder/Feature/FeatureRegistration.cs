@@ -52,13 +52,11 @@ namespace Stratis.Bitcoin.Builder.Feature
         IFeatureRegistration DependOn<TImplementation>() where TImplementation : class, IFullNodeFeature;
 
         /// <summary>
-        /// 
+        /// Adds a feature type list where one of the feature to be used by the feature registration. 
         /// </summary>
-        /// <typeparam name="TOneImplementation"></typeparam>
-        /// <typeparam name="TTwoImplementation"></typeparam>
-        /// <returns></returns>
-        IFeatureRegistration DependOn<TOneImplementation, TTwoImplementation>()
-            where TOneImplementation : class, IFullNodeFeature where TTwoImplementation : class, IFullNodeFeature;
+        /// <param name="featureList">List of feature types</param>
+        /// <returns>This interface to allow fluent code.</returns>
+        IFeatureRegistration DependOn(IEnumerable<Type> featureList);
 
         /// <summary>
         /// Ensures dependency feature types are present in the registered features list.
@@ -139,9 +137,13 @@ namespace Stratis.Bitcoin.Builder.Feature
             return this;
         }
 
-        public IFeatureRegistration DependOn<TOneImplementation, TTwoImplementation>() where TOneImplementation : class, IFullNodeFeature where TTwoImplementation : class, IFullNodeFeature
+        public IFeatureRegistration DependOn(IEnumerable<Type> featureList)
         {
-            var oneOfManyDependency = new HashSet<Type> {typeof(TOneImplementation), typeof(TTwoImplementation)};
+            var oneOfManyDependency = new HashSet<Type>();
+
+            foreach (Type fullNodeFeature in featureList)
+             oneOfManyDependency.Add(fullNodeFeature);
+
             this.dependencyTable.Add(oneOfManyDependency, OneOfManyDependency);
 
             return this;

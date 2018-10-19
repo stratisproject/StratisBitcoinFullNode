@@ -1,4 +1,6 @@
-﻿using System.Runtime.CompilerServices;
+﻿using System;
+using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -168,7 +170,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 features
                 .AddFeature<MempoolFeature>()
-                .DependOn<PowConsensusFeature, PosConsensusFeature>()
+                .DependOn(new List<Type>(){typeof(PosConsensusFeature),typeof(PowConsensusFeature)})
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<MempoolSchedulerLock>();

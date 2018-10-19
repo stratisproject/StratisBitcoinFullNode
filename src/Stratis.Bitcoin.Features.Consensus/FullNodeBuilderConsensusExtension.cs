@@ -172,9 +172,5 @@ namespace Stratis.Bitcoin.Features.Consensus
                 };
             }
         }
-
-        
-
-        
     }
 }

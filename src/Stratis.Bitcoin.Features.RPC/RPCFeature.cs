@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -121,7 +122,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 features
                 .AddFeature<RPCFeature>()
-                .DependOn<PosConsensusFeature, PowConsensusFeature>()
+                .DependOn(new List<Type>(){typeof(PosConsensusFeature),typeof(PowConsensusFeature)})
                 .FeatureServices(services => services.AddSingleton(fullNodeBuilder));
             });
 
