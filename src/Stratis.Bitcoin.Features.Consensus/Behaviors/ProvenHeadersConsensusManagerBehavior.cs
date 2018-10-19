@@ -155,17 +155,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             }
             // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
             else if (IsPeerWhitelisted(peer))
-            {
-                return new GetHeadersPayload()
-                {
-                    BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
-                    HashStop = null
-                };
-            }
+                return base.BuildGetHeadersPayload();
+            // If the peer doesn't support PH and isn't whitelisted, return null (stop synchronization attempt).
             else
-            {
                 return null;
-            }
         }
 
         /// <summary>
