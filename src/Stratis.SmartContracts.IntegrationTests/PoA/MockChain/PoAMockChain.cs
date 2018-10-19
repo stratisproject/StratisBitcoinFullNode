@@ -40,7 +40,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 
             for (int i = 0; i < numNodes; i++)
             {
-                CoreNode node = this.builder.CreateSmartContractPowNode().NotInIBD();
+                CoreNode node = this.builder.CreateSmartContractPoANode().NotInIBD();
                 node.Start();
                 // Add other nodes
                 RPCClient rpcClient = node.CreateRPCClient();

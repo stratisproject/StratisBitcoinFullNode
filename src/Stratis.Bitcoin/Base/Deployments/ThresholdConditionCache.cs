@@ -8,29 +8,40 @@ namespace Stratis.Bitcoin.Base.Deployments
 {
     public class ThresholdConditionCache
     {
-        /** What block version to use for new blocks (pre versionbits) */
-        private static int VersionbitsLastOldBlockVersion = 4;
+        // What block version to use for new blocks (pre versionbits).
+        private const int VersionbitsLastOldBlockVersion = 4;
 
-        /** What bits to set in version for versionbits blocks */
-        public static uint VersionbitsTopBits = 0x20000000;
+        // BIP9 reserves the top 3 bits to identify this (001) and future mechanisms (top bits 010 and 011).
+        // When a block nVersion does not have top bits 001, it is treated as if all bits are 0 for the purposes of deployments.
+        private const uint VersionbitsTopMask = 0xE0000000;
 
-        /** What bitmask determines whether versionbits is in use */
-        private static uint VersionbitsTopMask = 0xE0000000;
+        // Represents bits 001 of the VersionBitsTopMask to indicate that this is a BIP9 version.
+        public const uint VersionbitsTopBits = 0x20000000;
 
-        /** Total bits available for versionbits */
-        private static int VersionbitsNumBits = 29;
+        // Total bits available for versionbits.
+        private const int VersionbitsNumBits = 29;
 
+        // Array size required to hold all BIP9 deployment activation states.
         private static readonly int ArraySize;
 
+        // Used to access the deployments, confirmation window and activation threshold.
+        private IConsensus consensus;
+
+        // Cache of BIP9 deployment states keyed by block hash.
+        private Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
+
+        /// <summary>
+        /// Constructor for statics.
+        /// </summary>
         static ThresholdConditionCache()
         {
             ArraySize = Enum.GetValues(typeof(BIP9Deployments)).Length;
         }
 
-        private IConsensus consensus;
-
-        private Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
-
+        /// <summary>
+        /// Constructs this object containing the BIP9 deployment states cache.
+        /// </summary>
+        /// <param name="consensus">Records the consensus object containing the activation parameters.</param>
         public ThresholdConditionCache(IConsensus consensus)
         {
             Guard.NotNull(consensus, nameof(consensus));
@@ -38,6 +49,11 @@ namespace Stratis.Bitcoin.Base.Deployments
             this.consensus = consensus;
         }
 
+        /// <summary>
+        /// Get the states of all BIP 9 deployments listed in the <see cref="BIP9Deployments"/> enumeration.
+        /// </summary>
+        /// <param name="pindexPrev">The previous header of the block to determine the states for.</param>
+        /// <returns>An array of <see cref="ThresholdState"/> objects.</returns>
         public ThresholdState[] GetStates(ChainedHeader pindexPrev)
         {
             return Enum.GetValues(typeof(BIP9Deployments))
@@ -46,6 +62,12 @@ namespace Stratis.Bitcoin.Base.Deployments
                 .ToArray();
         }
 
+        /// <summary>
+        /// Determines the state of a BIP from the cache and/or the chain header history and the corresponding version bits.
+        /// </summary>
+        /// <param name="indexPrev">The previous header of the chain header to determine the states for.</param>
+        /// <param name="deployment">The deployment to check the state of.</param>
+        /// <returns>The current state of the deployment.</returns>
         public ThresholdState GetState(ChainedHeader indexPrev, BIP9Deployments deployment)
         {
             int period = this.consensus.MinerConfirmationWindow;
@@ -65,13 +87,13 @@ namespace Stratis.Bitcoin.Base.Deployments
                 indexPrev = indexPrev.GetAncestor(indexPrev.Height - ((indexPrev.Height + 1) % period));
             }
 
-            // Walk backwards in steps of nPeriod to find a pindexPrev whose information is known
+            // Walk backwards in steps of nPeriod to find a pindexPrev whose information is known.
             var vToCompute = new List<ChainedHeader>();
             while (!this.ContainsKey(indexPrev?.HashBlock, deployment))
             {
                 if (indexPrev.GetMedianTimePast() < timeStart)
                 {
-                    // Optimization: don't recompute down further, as we know every earlier block will be before the start time
+                    // Optimization: don't recompute down further, as we know every earlier block will be before the start time.
                     this.Set(indexPrev?.HashBlock, deployment, ThresholdState.Defined);
                     break;
                 }
@@ -80,11 +102,11 @@ namespace Stratis.Bitcoin.Base.Deployments
                 indexPrev = indexPrev.GetAncestor(indexPrev.Height - period);
             }
 
-            // At this point, cache[pindexPrev] is known
+            // At this point, cache[pindexPrev] is known.
             this.Assert(this.ContainsKey(indexPrev?.HashBlock, deployment));
             ThresholdState state = this.Get(indexPrev?.HashBlock, deployment);
 
-            // Now walk forward and compute the state of descendants of pindexPrev
+            // Now walk forward and compute the state of descendants of pindexPrev.
             while (vToCompute.Count != 0)
             {
                 ThresholdState stateNext = state;
@@ -115,7 +137,8 @@ namespace Stratis.Bitcoin.Base.Deployments
                                 break;
                             }
 
-                            // We need to count
+                            // Counts the "votes" in the confirmation window to determine
+                            // whether the rule change activation threshold has been met.
                             ChainedHeader pindexCount = indexPrev;
                             int count = 0;
                             for (int i = 0; i < period; i++)
@@ -128,6 +151,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                                 pindexCount = pindexCount.Previous;
                             }
 
+                            // If the threshold has been met then lock in the BIP activation.
                             if (count >= threshold)
                             {
                                 stateNext = ThresholdState.LockedIn;
@@ -157,6 +181,12 @@ namespace Stratis.Bitcoin.Base.Deployments
             return state;
         }
 
+        /// <summary>
+        /// Gets the activation state within a given block of a specific BIP9 deployment.
+        /// </summary>
+        /// <param name="hash">The block hash to determine the BIP9 activation state for.</param>
+        /// <param name="deployment">The deployment for which to determine the activation state.</param>
+        /// <returns>The activation state.</returns>
         private ThresholdState Get(uint256 hash, BIP9Deployments deployment)
         {
             if (hash == null)
@@ -169,6 +199,12 @@ namespace Stratis.Bitcoin.Base.Deployments
             return threshold[(int)deployment].Value;
         }
 
+        /// <summary>
+        /// Sets the activation state for a given block of a specific BIP9 deployment.
+        /// </summary>
+        /// <param name="hash">The block hash to set the BIP9 activation state for.</param>
+        /// <param name="deployment">The deployment for which to set the activation state.</param>
+        /// <param name="state">The activation state to set.</param>
         private void Set(uint256 hash, BIP9Deployments deployment, ThresholdState state)
         {
             if (hash == null)
@@ -183,6 +219,12 @@ namespace Stratis.Bitcoin.Base.Deployments
             threshold[(int)deployment] = state;
         }
 
+        /// <summary>
+        /// Deterines if the activation state is available for a given block hash for a specific deployment.
+        /// </summary>
+        /// <param name="hash">The block hash to determine the BIP9 activation state for.</param>
+        /// <param name="deployment">The deployment for which to determine the activation state.</param>
+        /// <returns>Returns <c>true</c> if the state is available and <c>false</c> otherwise.</returns>
         private bool ContainsKey(uint256 hash, BIP9Deployments deployment)
         {
             if (hash == null)
@@ -193,16 +235,31 @@ namespace Stratis.Bitcoin.Base.Deployments
             return threshold[(int)deployment].HasValue;
         }
 
+        /// <summary>
+        /// Inspects the chain header to determine whether the version bit of a deployment is active.
+        /// </summary>
         private bool Condition(ChainedHeader pindex, BIP9Deployments deployment)
         {
+            // This restricts us to at most 30 independent deployments. By restricting the top 3 bits to 001 we get 29 out of those
+            // for the purposes of this proposal, and support two future upgrades for different mechanisms (top bits 010 and 011).
+            // When a block nVersion does not have top bits 001, it is treated as if all bits are 0 for the purposes of deployments.
             return (((pindex.Header.Version & VersionbitsTopMask) == VersionbitsTopBits) && (pindex.Header.Version & this.Mask(deployment)) != 0);
         }
 
+        /// <summary>
+        /// Returns the bit mask of the bit representing a specific deployment within the version bits.
+        /// </summary>
+        /// <param name="deployment">The BIP9 deployment to return the bit mask for.</param>
+        /// <returns>The bit mask of the bit representing the deployment within the version bits.</returns>
         public uint Mask(BIP9Deployments deployment)
         {
             return ((uint)1) << this.consensus.BIP9Deployments[deployment].Bit;
         }
 
+        /// <summary>
+        /// Throws an 'Assertion failed' exception if the passed argument is <c>false</c>.
+        /// </summary>
+        /// <param name="v">The passed argument which, if false, raises a 'Assertion Failed' exception.</param>
         private void Assert(bool v)
         {
             if (!v)

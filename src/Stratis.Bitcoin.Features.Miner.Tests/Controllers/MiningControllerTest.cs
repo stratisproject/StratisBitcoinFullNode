@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Moq;
@@ -179,6 +180,55 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             Assert.NotNull(result);
             var okResult = Assert.IsType<OkResult>(result);
             Assert.NotNull(okResult);
+        }
+
+        [Fact]
+        public void MiningController_Calls_GetAccount_Returns_Reference_To_Wallet_Account()
+        {
+            Mock<IConsensusManager> consensusManager = new Mock<IConsensusManager>();
+            Mock<IPowMining> powMining = new Mock<IPowMining>();
+
+            var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(f => f.GetWalletsNames()).Returns(new List<string> { wallet });
+            walletManager.Setup(f => f.GetAccounts(wallet)).Returns(new List<HdAccount> { new HdAccount { Name = account } });
+
+            this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(false)).Returns(new MiningFeature(this.network, new MinerSettings(Configuration.NodeSettings.Default(this.network)), Configuration.NodeSettings.Default(this.network), this.loggerFactory, new Mock<ITimeSyncBehaviorState>().Object, powMining.Object, null));
+
+            MiningController controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, walletManager.Object);
+            WalletAccountReference walletAccountReference = controller.GetAccount();
+
+            Assert.Equal(account, walletAccountReference.AccountName);
+            Assert.Equal(wallet, walletAccountReference.WalletName);
+        }
+
+        [Fact]
+        public void MiningController_Calls_GetAccount_Error_No_Account_Found()
+        {
+            Mock<IConsensusManager> consensusManager = new Mock<IConsensusManager>();
+            Mock<IPowMining> powMining = new Mock<IPowMining>();
+
+            var walletManager = new Mock<IWalletManager>();
+            walletManager.Setup(f => f.GetWalletsNames()).Returns(new List<string> { wallet });
+
+            this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(false)).Returns(new MiningFeature(this.network, new MinerSettings(Configuration.NodeSettings.Default(this.network)), Configuration.NodeSettings.Default(this.network), this.loggerFactory, new Mock<ITimeSyncBehaviorState>().Object, powMining.Object, null));
+
+            MiningController controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, walletManager.Object);
+            Exception ex = Assert.Throws<Exception>(() => controller.GetAccount());
+            Assert.Equal("No account found on wallet", ex.Message);
+        }
+
+        [Fact]
+        public void MiningController_Calls_GetAccount_Error_No_Wallet_Found()
+        {
+            Mock<IConsensusManager> consensusManager = new Mock<IConsensusManager>();
+            Mock<IPowMining> powMining = new Mock<IPowMining>();
+
+            this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(false)).Returns(new MiningFeature(this.network, new MinerSettings(Configuration.NodeSettings.Default(this.network)), Configuration.NodeSettings.Default(this.network), this.loggerFactory, new Mock<ITimeSyncBehaviorState>().Object, powMining.Object, null));
+
+            MiningController controller = new MiningController(consensusManager.Object, this.fullNode.Object, this.loggerFactory, this.network, new Mock<IPowMining>().Object, new Mock<IWalletManager>().Object);
+
+            Exception ex = Assert.Throws<Exception>(() => controller.GetAccount());
+            Assert.Equal("No wallet found", ex.Message);
         }
     }
 }

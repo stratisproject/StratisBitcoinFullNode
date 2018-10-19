@@ -12,11 +12,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public interface IProvenBlockHeaderProvider : IDisposable
     {
         /// <summary>
-        /// Initializes <see cref="ProvenBlockHeader"/> items database.
-        /// </summary>
-        Task InitializeAsync();
-
-        /// <summary>
         /// Get a <see cref="ProvenBlockHeader"/> corresponding to a block.
         /// </summary>
         /// <param name="blockHeight"> Height used to retrieve the <see cref="ProvenBlockHeader"/>.</param>
