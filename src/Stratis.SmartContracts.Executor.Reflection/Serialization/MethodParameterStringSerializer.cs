@@ -130,7 +130,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(long.Parse(parameterSignature[1]));
                 
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
-                    processedParameters.Add(parameterSignature[1].ToUint160(this.network));
+                    processedParameters.Add(parameterSignature[1].ToAddress(this.network));
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
                     processedParameters.Add(parameterSignature[1].HexToByteArray());

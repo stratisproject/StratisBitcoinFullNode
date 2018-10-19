@@ -36,17 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Null(result);
             this.contractPrimitiveSerializer.Verify(s => s.Serialize(val), Times.Never);
         }
-
-        [Fact]
-        public void Serialize_Address_With_Null_Value_Returns_Null()
-        {
-            var val = (Address) null;
-            var result = this.serializer.Serialize(val);
-
-            Assert.Null(result);
-            this.contractPrimitiveSerializer.Verify(s => s.Serialize(val), Times.Never);
-        }
-
+        
         [Fact]
         public void Deserialize_Null_Bool_Returns_Default()
         {

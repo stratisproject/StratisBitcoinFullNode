@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
 
@@ -38,17 +40,27 @@ namespace Stratis.SmartContracts.Core
 
         public static Address ToAddress(this uint160 address, Network network)
         {
-            return Address.Create(address.ToBytes(), network);
+            return Address.Create(address.ToBytes(), Uint160ToAddressString(address, network));
         }
 
         public static Address ToAddress(this string address, Network network)
         {
-            return Address.Create(address.ToUint160(network).ToBytes(), network);
+            return Address.Create(address.ToUint160(network).ToBytes(), address);
         }
 
         public static Address HexToAddress(this string hexString, Network network)
         {
             return ToAddress(new uint160(hexString), network);
+        }
+
+        public static string BytesToAddressString(this byte[] bytes, Network network)
+        {
+            return new BitcoinPubKeyAddress(new KeyId(new uint160(bytes)), network).ToString();
+        }
+
+        private static string Uint160ToAddressString(uint160 address, Network network)
+        {
+            return new BitcoinPubKeyAddress(new KeyId(address), network).ToString();
         }
 
         public static Money GetFee(this Transaction transaction, UnspentOutputSet inputs)

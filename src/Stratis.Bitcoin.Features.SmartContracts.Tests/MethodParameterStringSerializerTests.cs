@@ -4,6 +4,7 @@ using System.Linq;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
@@ -23,11 +24,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var methodParamObjects = Serializer.Deserialize(Serializer.Serialize(new [] { value }));
 
             Type paramType = value.GetType();
-                
+
             // Equality comparison using .Equal is possible for these Types
-            if (paramType.IsValueType || paramType == typeof(uint160) || paramType == typeof(string))
+            if (value is Address address)
             {
-                Assert.Equal(value, methodParamObjects[0]);
+                Assert.Equal(address, methodParamObjects[0]);
+            }
+            else
+            {
+                // Equality comparison using .Equal is possible for these Types
+                if (paramType.IsValueType || paramType == typeof(string))
+                {
+                    Assert.Equal(value, methodParamObjects[0]);
+                }
             }
 
             // For byte arrays we must compare each element

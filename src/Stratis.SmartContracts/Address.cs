@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 
 namespace Stratis.SmartContracts
 {
@@ -11,11 +9,10 @@ namespace Stratis.SmartContracts
     /// Note that the format of the address is not validated on construction, but when trying to send funds to this address.
     /// </para>
     /// </summary>
-    public class Address
+    public struct Address
     {
-        private Network network;
         public byte[] Bytes { get; }
-
+        private readonly string addressString;
         public const int AddressWidth = 160 / 8;
         internal readonly uint pn0;
         internal readonly uint pn1;
@@ -25,42 +22,42 @@ namespace Stratis.SmartContracts
 
         public Address(Address other)
         {
-            this.network = other.network;
             this.pn0 = other.pn0;
             this.pn1 = other.pn1;
             this.pn2 = other.pn2;
             this.pn3 = other.pn3;
             this.pn4 = other.pn4;
             this.Bytes = other.Bytes;
+            this.addressString = other.addressString;
         }
 
-        private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4, Network network)
+        private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4, string str)
         {
             this.pn0 = pn0;
             this.pn1 = pn1;
             this.pn2 = pn2;
             this.pn3 = pn3;
             this.pn4 = pn4;
-            this.network = network;
-            this.Bytes = this.ToBytes();
+            this.addressString = str;
+            this.Bytes = ToBytes(pn0, pn1, pn2, pn3, pn4);
         }
 
-        private byte[] ToBytes()
+        private static byte[] ToBytes(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
         {
             var arr = new byte[AddressWidth];
-            Buffer.BlockCopy(Utils.ToBytes(this.pn0, true), 0, arr, 4 * 0, 4);
-            Buffer.BlockCopy(Utils.ToBytes(this.pn1, true), 0, arr, 4 * 1, 4);
-            Buffer.BlockCopy(Utils.ToBytes(this.pn2, true), 0, arr, 4 * 2, 4);
-            Buffer.BlockCopy(Utils.ToBytes(this.pn3, true), 0, arr, 4 * 3, 4);
-            Buffer.BlockCopy(Utils.ToBytes(this.pn4, true), 0, arr, 4 * 4, 4);
+            Buffer.BlockCopy(Utils.ToBytes(pn0, true), 0, arr, 4 * 0, 4);
+            Buffer.BlockCopy(Utils.ToBytes(pn1, true), 0, arr, 4 * 1, 4);
+            Buffer.BlockCopy(Utils.ToBytes(pn2, true), 0, arr, 4 * 2, 4);
+            Buffer.BlockCopy(Utils.ToBytes(pn3, true), 0, arr, 4 * 3, 4);
+            Buffer.BlockCopy(Utils.ToBytes(pn4, true), 0, arr, 4 * 4, 4);
             return arr;
         }
-
-        internal static Address Create(byte[] bytes, Network network)
+        
+        internal static Address Create(byte[] bytes, string str)
         {
             // Default to empty bytes
             if (bytes == null)
-                return new Address(0, 0, 0, 0, 0, network);
+                return new Address(0, 0, 0, 0, 0, str);
 
             var pn0 = ToUInt32(bytes, 0);
             var pn1 = ToUInt32(bytes, 4);
@@ -68,7 +65,7 @@ namespace Stratis.SmartContracts
             var pn3 = ToUInt32(bytes, 12);
             var pn4 = ToUInt32(bytes, 16);
 
-            return new Address(pn0, pn1, pn2, pn3, pn4, network);
+            return new Address(pn0, pn1, pn2, pn3, pn4, str);
         }
 
         private static uint ToUInt32(byte[] value, int index)
@@ -81,8 +78,9 @@ namespace Stratis.SmartContracts
 
         public override string ToString()
         {
-            byte[] versionBytes = this.network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true);
-            return Encoders.Base58Check.EncodeData(versionBytes.Concat(this.Bytes).ToArray());
+            //byte[] versionBytes = this.network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true);
+            //return Encoders.Base58Check.EncodeData(versionBytes.Concat(this.Bytes).ToArray());
+            return this.addressString;
         }
 
         public static bool operator ==(Address obj1, Address obj2)
