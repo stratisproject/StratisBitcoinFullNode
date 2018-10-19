@@ -67,11 +67,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var contract = new Auction(this.smartContractState, duration);
 
             ((TestMessage)smartContractState.Message).Value = 100;
-            Assert.Null(smartContractState.PersistentState.GetAddress("HighestBidder"));
+            Assert.Equal(default(Address), smartContractState.PersistentState.GetAddress("HighestBidder"));
             Assert.Equal(0uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
 
             contract.Bid();
-            Assert.NotNull(smartContractState.PersistentState.GetAddress("HighestBidder"));
+            Assert.Equal(TestAddress, smartContractState.PersistentState.GetAddress("HighestBidder"));
             Assert.Equal(100uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
 
             ((TestMessage)this.smartContractState.Message).Value = 90;
