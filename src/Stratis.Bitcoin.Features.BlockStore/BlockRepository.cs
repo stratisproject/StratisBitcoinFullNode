@@ -8,6 +8,7 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -105,7 +106,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             Directory.CreateDirectory(folder);
-            this.DBreeze = new DBreezeEngine(folder);
+            while (true)
+            {
+                try
+                {
+                    this.DBreeze = new DBreezeEngine(folder);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    FileLockChecker.CheckLock(folder);
+                    Task.Delay(1000).Wait();
+                }
+            }
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
         }

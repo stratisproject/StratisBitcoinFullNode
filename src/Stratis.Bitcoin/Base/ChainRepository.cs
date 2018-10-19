@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -13,6 +13,29 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
 {
+    public static class FileLockChecker
+    {
+        public static void CheckLock(string folder)
+        {
+            Process tool = new Process();
+            tool.StartInfo.FileName = @"c:\github\handle.exe";
+            tool.StartInfo.Arguments = folder;
+            tool.StartInfo.UseShellExecute = false;
+            tool.StartInfo.RedirectStandardOutput = true;
+            tool.Start();
+            tool.WaitForExit();
+            string outputTool = tool.StandardOutput.ReadToEnd();
+
+            string matchPattern = @"(?<=\s+pid:\s+)\b(\d+)\b(?=\s+)";
+            foreach (System.Text.RegularExpressions.Match match in
+                     System.Text.RegularExpressions.Regex.Matches(outputTool, matchPattern))
+            {
+                Process p = Process.GetProcessById(int.Parse(match.Value));
+                Console.WriteLine("Holding Process: " + p.Id);
+            }
+        }
+    }
+
     public interface IChainRepository : IDisposable
     {
         /// <summary>Loads the chain of headers from the database.</summary>
@@ -41,7 +64,20 @@ namespace Stratis.Bitcoin.Base
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             Directory.CreateDirectory(folder);
-            this.dbreeze = new DBreezeEngine(folder);
+
+            while (true)
+            {
+                try
+                {
+                    this.dbreeze = new DBreezeEngine(folder);
+                    break;
+                }
+                catch (Exception ex)
+                {
+                    FileLockChecker.CheckLock(folder);
+                    Task.Delay(1000).Wait();
+                }
+            }
         }
 
         public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
