@@ -49,7 +49,7 @@ namespace Stratis.SmartContracts.Core
 
         public static Address ToAddress(this uint160 address, Network network)
         {
-            return Address.Create(address.ToBytes(), Uint160ToAddressString(address, network));
+            return Address.Create(address.ToBytes(), UInt160ToAddressString(address, network));
         }
 
         public static Address ToAddress(this string address, Network network)
@@ -62,7 +62,7 @@ namespace Stratis.SmartContracts.Core
             return ToAddress(new uint160(hexString), network);
         }
 
-        private static string Uint160ToAddressString(uint160 address, Network network)
+        private static string UInt160ToAddressString(uint160 address, Network network)
         {
             return new BitcoinPubKeyAddress(new KeyId(address), network).ToString();
         }
