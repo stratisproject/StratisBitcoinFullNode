@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// </summary>
     public class SmartContractFormatRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
-        public const ulong GasLimitMaximum = 5_000_000;
+        public const ulong GasLimitMaximum = 1_000_000;
 
         public const ulong GasLimitMinimum = GasPriceList.BaseCost;
 

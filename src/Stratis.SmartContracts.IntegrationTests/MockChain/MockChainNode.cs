@@ -153,8 +153,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             byte[] contractCode,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = 500_000, // half of BaseCost
+            ulong gasPrice = 100,
             double feeAmount = 0.01)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -198,8 +198,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             string contractAddress,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = 500_000, // half of BaseCost
+            ulong gasPrice = 100,
             double feeAmount = 0.01)
         {
             var request = new BuildCallContractTransactionRequest
