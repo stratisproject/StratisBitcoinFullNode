@@ -765,7 +765,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
             // MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
             // merely non-standard transaction.
-            if (context.SigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
+            if (context.SigOpsCost > this.ConsensusOptions.MaxStandardTxSigopsCost)
             {
                 this.logger.LogTrace("(-)[FAIL_TOO_MANY_SIGOPS]");
                 context.State.Fail(MempoolErrors.TooManySigops).Throw();
