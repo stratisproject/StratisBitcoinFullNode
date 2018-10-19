@@ -1,4 +1,6 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -46,7 +48,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <param name="message">Received message to process.</param>
         protected override async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            await base.OnMessageReceivedAsync(peer, message).ConfigureAwait(false);
             switch (message.Message.Payload)
             {
                 case ProvenHeadersPayload provenHeaders:
@@ -55,6 +56,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
                 case GetProvenHeadersPayload getHeaders:
                     await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
+                    break;
+
+                case HeadersPayload headers:
+                    await this.ProcessLegacyHeadersAsync(peer, headers.Headers).ConfigureAwait(false);
+                    break;
+
+                default:
+                    // Rely on base.OnMessageReceivedAsync only if the message hasn't be already processed.
+                    await base.OnMessageReceivedAsync(peer, message).ConfigureAwait(false);
                     break;
             }
         }
@@ -92,16 +102,88 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             return headers;
         }
 
-        protected override void AttachCore()
-        {
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
-        }
-
         /// <inheritdoc />
         public override object Clone()
         {
             return new ProvenHeadersConsensusManagerBehavior(
                 this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network);
+        }
+
+        /// <summary>
+        /// Determines whether the specified peer supports Proven Headers.
+        /// </summary>
+        /// <param name="peer">The peer.</param>
+        /// <returns>
+        ///   <c>true</c> if is peer is PH enabled; otherwise, <c>false</c>.
+        /// </returns>
+        private bool IsPeerPhEnabled(INetworkPeer peer)
+        {
+            return peer.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
+        }
+
+        /// <summary>
+        /// Determines whether the specified peer is Whitelisted.
+        /// </summary>
+        /// <param name="peer">The peer.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified peer is Whitelisted; otherwise, <c>false</c>.
+        /// </returns>
+        private bool IsPeerWhitelisted(INetworkPeer peer)
+        {
+            return peer.Behavior<IConnectionManagerBehavior>()?.Whitelisted == true;
+        }
+
+        /// <summary>
+        /// Builds the GetHeadersPayload.
+        /// </summary>
+        /// <returns>The GetHeadersPayload instance.
+        /// If the peer can serve PH, GetProvenHeadersPayload is returned, otherwise if it's a legacy peer but it's whitelisted,
+        /// GetHeadersPayload is returned.
+        /// If the attached peer is a legacy peer and it's not whitelisted, returns null.
+        /// </returns>
+        protected override GetHeadersPayload BuildGetHeadersPayload()
+        {
+            INetworkPeer peer = this.AttachedPeer;
+
+            if (IsPeerPhEnabled(peer))
+            {
+                return new GetProvenHeadersPayload()
+                {
+                    BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                    HashStop = null
+                };
+            }
+            // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
+            else if (IsPeerWhitelisted(peer))
+            {
+                return new GetHeadersPayload()
+                {
+                    BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                    HashStop = null
+                };
+            }
+            else
+            {
+                return null;
+            }
+        }
+
+        /// <summary>
+        /// Processes the legacy GetHeaders message.
+        /// Only whitelisted legacy peers are allowed to handle this message.
+        /// </summary>
+        /// <param name="peer">The peer.</param>
+        /// <param name="headers">The headers.</param>
+        /// <returns></returns>
+        protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
+        {
+            // Only whitelisted legacy peers are allowed to handle this message.
+            if (!IsPeerPhEnabled(peer) && IsPeerWhitelisted(peer))
+            {
+                return base.ProcessHeadersAsync(peer, headers);
+            }
+
+            return Task.CompletedTask;
         }
     }
 }

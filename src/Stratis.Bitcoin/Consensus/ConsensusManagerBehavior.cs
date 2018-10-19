@@ -442,11 +442,12 @@ namespace Stratis.Bitcoin.Consensus
 
             if ((peer != null) && (peer.State == NetworkPeerState.HandShaked))
             {
-                var headersPayload = new GetHeadersPayload()
+                var headersPayload = this.BuildGetHeadersPayload();
+                if (headersPayload == null)
                 {
-                    BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
-                    HashStop = null
-                };
+                    this.logger.LogTrace("Ignoring sync request, headersPayload is null.");
+                    return;
+                }
 
                 try
                 {
@@ -454,11 +455,24 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 catch (OperationCanceledException)
                 {
-                    this.logger.LogTrace("Unable to send getheaders message to peer '{0}'.", peer.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Unable to send getheaders ({0}) message to peer '{1}'.", headersPayload.GetType().Name, peer.RemoteSocketEndpoint);
                 }
             }
             else
                 this.logger.LogTrace("Can't sync. Peer's state is not handshaked or peer was not attached.");
+        }
+
+        /// <summary>
+        /// Builds the GetHeadersPayload.
+        /// </summary>
+        /// <returns>The GetHeadersPayload instance. May return <c>null</c>; in such case the sync process wouldn't happen.</returns>
+        protected virtual GetHeadersPayload BuildGetHeadersPayload()
+        {
+            return new GetHeadersPayload()
+            {
+                BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                HashStop = null
+            };
         }
 
         /// <inheritdoc />
