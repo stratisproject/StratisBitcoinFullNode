@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Consensus;
+﻿using System;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
@@ -8,6 +9,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 {
     public class ProofOfStakeMiningTests
     {
+        private class StratisRegTestLastPowBlock : StratisRegTest
+        {
+            public StratisRegTestLastPowBlock()
+            {
+                this.Name = Guid.NewGuid().ToString();
+            }
+        }
+
         [Fact]
         public void MiningAndPropagatingPOS_MineBlockCheckPeerHasNewBlock()
         {
@@ -31,7 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(this))
             {
-                var network = new StratisRegTest();
+                var network = new StratisRegTestLastPowBlock();
 
                 CoreNode node = nodeBuilder.CreateStratisPosNode(network).NotInIBD().WithDummyWallet().Start();
 
@@ -39,11 +48,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 TestHelper.MineBlocks(node, 2);
 
                 // Mine another block after LastPOWBlock height (Error).
-                var lastPowBlock = node.FullNode.Network.Consensus.LastPOWBlock;
                 node.FullNode.Network.Consensus.LastPOWBlock = 2;
                 var error = Assert.Throws<ConsensusException>(() => TestHelper.MineBlocks(node, 1));
                 Assert.True(error.Message == ConsensusErrors.ProofOfWorkTooHigh.Message);
-                node.FullNode.Network.Consensus.LastPOWBlock = lastPowBlock;
             }
         }
     }

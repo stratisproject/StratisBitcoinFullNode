@@ -6,7 +6,6 @@ using System.Threading;
 using FluentAssertions;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Networks;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -18,17 +17,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class NodeSyncTests
     {
-        private readonly Network posNetwork;
         private readonly Network powNetwork;
-
-        const string walletName = "myWallet";
-        const string walletPassword = "123456";
-        const string walletPassphrase = "123456";
-        const string walletAccount = "account 0";
 
         public NodeSyncTests()
         {
-            this.posNetwork = NetworkRegistration.Register(new StratisRegTestMaxReorg());
             this.powNetwork = KnownNetworks.RegTest;
         }
 
@@ -67,8 +59,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 lastPowBlock: 12500,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.COIN
-            );
+                proofOfStakeReward: Money.COIN);
+
+                this.Name = Guid.NewGuid().ToString();
             }
         }
 
@@ -165,9 +158,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisMiner = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
-                CoreNode stratisSyncer = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().Start();
-                CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
+                var stratisRegTestMaxReorg = new StratisRegTestMaxReorg();
+                CoreNode stratisMiner = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisSyncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().Start();
+                CoreNode stratisReorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisMiner, 1);
 
@@ -226,11 +220,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
+                var stratisRegTest = new StratisRegTest();
+
                 // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
 
                 // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
 
                 // Let's mine block Ap and Bp.
                 TestHelper.MineBlocks(stratisMinerRemote, 2);
