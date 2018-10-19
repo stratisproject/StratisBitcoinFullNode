@@ -68,8 +68,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // MinerB syncs with MinerA
                 TestHelper.ConnectAndSync(minerB, minerA);
 
-                // Disconnect minerA from miner B
-                TestHelper.Disconnect(minerA, minerB);
+                // Disconnect miner B from minerA
+                TestHelper.Disconnect(minerB, minerA);
 
                 // Miner A continues to mine to height 9
                 TestHelper.MineBlocks(minerA, 4);
@@ -109,9 +109,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectAndSync(minerB, minerA);
                 TestHelper.ConnectAndSync(syncer, minerA);
 
-                // Disconnect minerB from miner A and syncer
-                TestHelper.Disconnect(minerA, minerB);
-                TestHelper.Disconnect(syncer, minerB);
+                // Disconnect minerB from miner A
+                TestHelper.Disconnect(minerB, minerA);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(minerB));
 
                 // Miner A continues to mine to height 9
@@ -120,8 +119,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 5);
                 TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
 
-                // Disconnect minerA from syncer
-                TestHelper.Disconnect(minerA, syncer);
+                // Disconnect syncer from minerA
+                TestHelper.Disconnect(syncer, minerA);
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(minerA));
 
                 // MinerB mines 5 more blocks:
@@ -193,7 +192,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectAndSync(minerB, minerA);
 
                 // Disconnect minerA from miner B
-                TestHelper.Disconnect(minerA, minerB);
+                TestHelper.Disconnect(minerB, minerA);
 
                 // Miner A continues to mine to height 9
                 TestHelper.MineBlocks(minerA, 4);
