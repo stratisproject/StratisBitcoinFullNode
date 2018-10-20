@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private class ConsensusOptionsTest : PosConsensusOptions
         {
-            public ConsensusOptionsTest():base(
+            public ConsensusOptionsTest() : base(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
