@@ -148,7 +148,6 @@ namespace Stratis.Bitcoin
                         this.finalizedBlockInfo = row.Value;
                 }
             });
-
             return task;
         }
 
@@ -173,7 +172,6 @@ namespace Stratis.Bitcoin
                 this.finalizedBlockInfosToSave.Enqueue(finalizedInfo);
                 this.queueUpdatedEvent.Set();
             }
-
             return true;
         }
 
