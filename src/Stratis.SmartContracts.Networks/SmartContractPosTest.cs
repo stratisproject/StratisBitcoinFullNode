@@ -47,11 +47,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 [BuriedDeployments.BIP66] = 330776
             };
 
-            var bip9Deployments = new BIP9Deployments
+            var bip9Deployments = new BitcoinBIP9Deployments
             {
-                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
-                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1456790400, 1493596800),
-                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1462060800, 1493596800)
+                [BitcoinBIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
+                [BitcoinBIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1456790400, 1493596800),
+                [BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1462060800, 1493596800)
             };
 
             this.Consensus = new NBitcoin.Consensus(

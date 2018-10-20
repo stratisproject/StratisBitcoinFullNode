@@ -138,8 +138,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                     new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
 
                 // As we are effectively using TestNet the other deployments need to be disabled
-                this.testNet.Consensus.BIP9Deployments[BIP9Deployments.CSV] = null;
-                this.testNet.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = null;
+                this.testNet.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV] = null;
+                this.testNet.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit] = null;
 
                 this.testNet.Consensus.MinerConfirmationWindow = 2;
                 this.testNet.Consensus.RuleChangeActivationThreshold = 2;

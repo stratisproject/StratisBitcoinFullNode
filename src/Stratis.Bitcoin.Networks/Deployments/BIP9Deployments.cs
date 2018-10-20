@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Networks.Deployments
     /// <summary>
     /// BIP9 deployments for the Bitcoin network.
     /// </summary>
-    public class BIP9Deployments : BIP9DeploymentsArray
+    public class BitcoinBIP9Deployments : BIP9DeploymentsArray
     {
         // The position of each deployment in the deployments array.
         public const int TestDummy = 0;
@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Networks.Deployments
         /// <summary>
         /// Constructs the BIP9 deployments array.
         /// </summary>
-        public BIP9Deployments() : base(NumberOfDeployments)
+        public BitcoinBIP9Deployments() : base(NumberOfDeployments)
         {
         }
 
