@@ -75,8 +75,7 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <returns>The path of the directory.</returns>
         public static string GetTestDirectoryPath(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
         {
-            return GetTestDirectoryPath(Path.Combine(@"C:\NodeTests\", callingMethod));
-            //return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
+            return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
         }
 
         /// <summary>
@@ -87,8 +86,7 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <returns>The path of the directory.</returns>
         public static string GetTestDirectoryPath(string testDirectory)
         {
-            return Path.Combine(@"C:\NodeTests\", testDirectory);
-            //return Path.Combine("TestCase", testDirectory);
+            return Path.Combine(@"..\..\..\..\TestCase", testDirectory);
         }
 
         public void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
