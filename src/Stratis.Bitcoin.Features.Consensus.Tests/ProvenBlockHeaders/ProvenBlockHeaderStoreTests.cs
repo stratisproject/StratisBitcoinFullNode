@@ -229,14 +229,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             ProvenBlockHeader provenHeaderMock;
 
-            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
-
+            await this.provenBlockHeaderStore.InitializeAsync(this.BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
+            uint nonceIndex = 1; // a random index to change the header hash.
+          
             // Save items 0 - 9 to disk.
             for (int i = 0; i < 10; i++)
             {
                 provenHeaderMock = CreateNewProvenBlockHeaderMock();
-
+                provenHeaderMock.Nonce = ++nonceIndex;
                 this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), i));
+                inItems.Add(provenHeaderMock);
             }
 
             // Save to disk and cache is cleared.
@@ -255,12 +257,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
 
             // Add item 4 to cache
-            provenHeaderMock = CreateNewProvenBlockHeaderMock();
-            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), 4));
+            var provenHeaderMock1 = CreateNewProvenBlockHeaderMock();
+            provenHeaderMock1.Nonce = ++nonceIndex;
+            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock1, new HashHeightPair(provenHeaderMock1.GetHash(), 4));
+            inItems[4] = provenHeaderMock1;
 
             // Add item 6 to cache.
-            provenHeaderMock = CreateNewProvenBlockHeaderMock();
-            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), 6));
+            var provenHeaderMock2 = CreateNewProvenBlockHeaderMock();
+            provenHeaderMock2.Nonce = ++nonceIndex;
+            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock2, new HashHeightPair(provenHeaderMock2.GetHash(), 6));
+            inItems[6] = provenHeaderMock2;
 
             // Load the items and make sure in sequence.
             var outItems = await this.provenBlockHeaderStore.GetAsync(0, 9).ConfigureAwait(false);
@@ -268,16 +274,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             outItems.Count.Should().Be(10);
 
             // Items 4 and 6 were added to pending cache and have the same block hash.
-            for(int i =  0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
-                if ((i == 4) || (i == 6))
-                {
-                    outItems[i].GetHash().Should().Be(provenHeaderMock.GetHash());
-                }
-                else
-                {
-                    outItems[i].GetHash().Should().NotBe(provenHeaderMock.GetHash());
-                }
+                outItems[i].GetHash().Should().Be(inItems[i].GetHash());
             }
         }
 
