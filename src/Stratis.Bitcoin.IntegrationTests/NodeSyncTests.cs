@@ -3,14 +3,12 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using FluentAssertions;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -21,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public NodeSyncTests()
         {
-            this.powNetwork = KnownNetworks.RegTest;
+            this.powNetwork = new BitcoinRegTest();
         }
 
         private class StratisRegTestMaxReorg : StratisRegTest
@@ -237,16 +235,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Disconnect(stratisMinerLocal, stratisMinerRemote);
 
                 // Mine block C2p.
-                TestHelper.MineBlocks(stratisMinerRemote, 1);
+                TestHelper.MineBlocks(stratisMinerRemote, 1, true);
                 Thread.Sleep(2000);
 
                 // Now reconnect nodes and mine block C1s before C2p arrives.
-                TestHelper.ConnectAndSync(stratisMinerLocal, stratisMinerRemote);
-
-                TestHelper.MineBlocks(stratisMinerLocal, 1);
+                TestHelper.Connect(stratisMinerLocal, stratisMinerRemote);
+                TestHelper.MineBlocks(stratisMinerLocal, 1, true);
 
                 // Mine block Dp.
-                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, 1).BlockHashes[0];
+                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, 1, false).BlockHashes[0];
 
                 // Now we wait until the local node's chain tip has correct hash of Dp.
                 TestHelper.WaitLoop(() => stratisMinerLocal.FullNode.Chain.Tip.HashBlock.Equals(dpHash));
@@ -297,7 +294,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Random node on network generates a block.
                 TestHelper.MineBlocks(firstNode, 1);
                 TestHelper.WaitForNodeToSync(firstNode, connectorNode, secondNode);
-            
+
                 // Miner mines the block.
                 TestHelper.MineBlocks(minerNode, 1);
                 TestHelper.WaitForNodeToSync(minerNode, connectorNode);
