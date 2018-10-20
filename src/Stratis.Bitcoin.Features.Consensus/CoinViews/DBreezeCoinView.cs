@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dbreeze = new DBreezeEngine(folder);
-
             this.network = network;
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
 

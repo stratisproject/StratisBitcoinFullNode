@@ -105,7 +105,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
-
             this.network = network;
             this.dateTimeProvider = dateTimeProvider;
         }
