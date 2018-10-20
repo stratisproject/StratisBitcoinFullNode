@@ -51,7 +51,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
         public override void Start()
         {
-            string logMode = Debugger.IsAttached ? "-debug=1" : "-debug=1";
             TimeSpan duration = TimeSpan.FromSeconds(15);
 
             // The complete path stratisd uses to locate (e.g.) the block files consists of the source code build folder,
@@ -68,7 +67,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 try
                 {
                     this.process = Process.Start(new FileInfo(this.stratisDPath).FullName,
-                        $"-conf=stratis.conf -datadir={this.DataFolder} {logMode}");
+                        $"-conf=stratis.conf -datadir={this.DataFolder}");
                     return true;
                 }
                 catch
