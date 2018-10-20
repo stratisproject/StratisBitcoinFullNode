@@ -26,25 +26,25 @@ namespace Stratis.Bitcoin.Networks.Deployments
         /// Gets the deployment flags to set when the deployment activates.
         /// </summary>
         /// <param name="deployment">The deployment number.</param>
-        /// <param name="scriptFlags">The script flags to set.</param>
-        /// <param name="lockTimeFlags">The lock time flags to set.</param>
-        public override void GetFlags(int deployment, out ScriptVerify scriptFlags, out Transaction.LockTimeFlags lockTimeFlags)
+        /// <returns>The deployment flags.</returns>
+        public override BIP9DeploymentFlags GetFlags(int deployment)
         {
-            scriptFlags = ScriptVerify.None;
-            lockTimeFlags = Transaction.LockTimeFlags.None;
+            BIP9DeploymentFlags flags = new BIP9DeploymentFlags();
 
             switch (deployment)
             {
                 case CSV:
                     // Start enforcing BIP68 (sequence locks), BIP112 (CHECKSEQUENCEVERIFY) and BIP113 (Median Time Past) using versionbits logic.
-                    scriptFlags = ScriptVerify.CheckSequenceVerify;
-                    lockTimeFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
+                    flags.ScriptFlags = ScriptVerify.CheckSequenceVerify;
+                    flags.LockTimeFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
                     break;
                 case Segwit:
                     // Start enforcing WITNESS rules using versionbits logic.
-                    scriptFlags = ScriptVerify.Witness;
+                    flags.ScriptFlags = ScriptVerify.Witness;
                     break;
             }
+
+            return flags;
         }
     }
 }

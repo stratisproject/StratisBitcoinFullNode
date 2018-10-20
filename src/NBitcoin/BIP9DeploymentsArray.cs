@@ -1,11 +1,27 @@
 ﻿namespace NBitcoin
 {
     /// <summary>
+    /// Contains the <see cref="ScriptVerify" /> and <see cref="Transaction.LockTimeFlags" /> flags to set
+    /// when the deployment goes active.
+    /// </summary>
+    public class BIP9DeploymentFlags
+    {
+        public ScriptVerify ScriptFlags { get; set; }
+        public Transaction.LockTimeFlags LockTimeFlags { get; set; }
+
+        public BIP9DeploymentFlags()
+        {
+            this.ScriptFlags = ScriptVerify.None;
+            this.LockTimeFlags = Transaction.LockTimeFlags.None;
+        }
+    }
+
+    /// <summary>
     /// Interface for recording deployment parameters and returning deployment flags.
     /// </summary>
     public interface IBIP9DeploymentsArray
     {
-        void GetFlags(int deployment, out ScriptVerify scriptFlags, out Transaction.LockTimeFlags lockTimeFlags);
+        BIP9DeploymentFlags GetFlags(int deployment);
         int Length { get; }
         BIP9DeploymentsParameters this[int deployment] { get; set; }
     }
@@ -22,7 +38,7 @@
             this.parameters = new BIP9DeploymentsParameters[length];
         }
 
-        public abstract void GetFlags(int deployment, out ScriptVerify scriptFlags, out Transaction.LockTimeFlags lockTimeFlags);
+        public abstract BIP9DeploymentFlags GetFlags(int deployment);
 
         public BIP9DeploymentsParameters this[int deployment]
         {
@@ -42,10 +58,9 @@
         {
         }
 
-        public override void GetFlags(int deployment, out ScriptVerify scriptFlags, out Transaction.LockTimeFlags lockTimeFlags)
+        public override BIP9DeploymentFlags GetFlags(int deployment)
         {
-            scriptFlags = ScriptVerify.None;
-            lockTimeFlags = Transaction.LockTimeFlags.None;
+            return new BIP9DeploymentFlags();
         }
     }
 }

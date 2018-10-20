@@ -56,13 +56,10 @@ namespace Stratis.Bitcoin.Base.Deployments
             {
                 if (prevBlockStates[deployment] == ThresholdState.Active)
                 {
-                    ScriptVerify scriptFlags;
-                    Transaction.LockTimeFlags lockTimeFlags;
+                    BIP9DeploymentFlags flags = chain.Network.Consensus.BIP9Deployments.GetFlags(deployment);
 
-                    chain.Network.Consensus.BIP9Deployments.GetFlags(deployment, out scriptFlags, out lockTimeFlags);
-
-                    this.ScriptFlags |= scriptFlags;
-                    this.LockTimeFlags |= lockTimeFlags;
+                    this.ScriptFlags |= flags.ScriptFlags;
+                    this.LockTimeFlags |= flags.LockTimeFlags;
                 }
             }
 
