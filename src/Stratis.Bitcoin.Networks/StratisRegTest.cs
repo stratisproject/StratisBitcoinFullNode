@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Networks
             this.GenesisBits = 0x1e0fffff;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
-            
+
             Block genesisBlock = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
 
             genesisBlock.Header.Time = 1494909211;
@@ -48,6 +48,7 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
+                maxStandardTxSigopsCost: 20_000 / 5,
                 provenHeadersActivationHeight: 10_000_000 // TODO: Set it to the real value once it is known.
             );
 
