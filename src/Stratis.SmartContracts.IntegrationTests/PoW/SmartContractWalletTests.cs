@@ -86,7 +86,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Create a token contract.
                 ulong gasPrice = 1;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)5000;
+                Gas gasLimit = (Gas)500_000;
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 
@@ -97,6 +97,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
                     MinConfirmations = maturity,
+                    TransactionFee = new Money(1, MoneyUnit.BTC),
                     FeeType = FeeType.High,
                     WalletPassword = Password,
                     Recipients = new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList()
@@ -135,6 +136,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
                     MinConfirmations = maturity,
+                    TransactionFee = new Money(1, MoneyUnit.BTC),
                     FeeType = FeeType.High,
                     WalletPassword = Password,
                     Recipients = new[] { new Recipient { Amount = 0, ScriptPubKey = contractCreateScript } }.ToList()
@@ -166,6 +168,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountReference = new WalletAccountReference(WalletName, AccountName),
                     MinConfirmations = maturity,
+                    TransactionFee = new Money(1, MoneyUnit.BTC),
                     FeeType = FeeType.High,
                     WalletPassword = Password,
                     Recipients = new[] { new Recipient { Amount = 1000, ScriptPubKey = contractCallScript } }.ToList()
@@ -257,7 +260,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = "10000",
+                    GasLimit = "500000",
                     GasPrice = "1",
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "0.001",
@@ -318,7 +321,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var callRequest = new BuildCallContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = "10000",
+                    GasLimit = "500000",
                     GasPrice = "1",
                     Amount = "0",
                     MethodName = "Increment",
@@ -365,7 +368,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var serializationRequest = new BuildCallContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = "10000",
+                    GasLimit = "500000",
                     GasPrice = "1",
                     Amount = "0",
                     MethodName = "TestSerializer",
