@@ -22,21 +22,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         }
 
         [Fact]
-        public void SignatureDoesntAffectHeaderHash()
-        {
-            Key key = this.tool.GeneratePrivateKey();
-            PoABlockHeader header = this.CreateHeader();
-
-            uint256 hashBefore = header.GetHash();
-
-            this.validator.Sign(key, header);
-
-            uint256 hashAfter = header.GetHash();
-
-            Assert.Equal(hashBefore, hashAfter);
-        }
-
-        [Fact]
         public void VerifyHeaderSignature_SignatureIsValid()
         {
             Key key = this.tool.GeneratePrivateKey();
@@ -66,6 +51,67 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             header.HashMerkleRoot = new uint256(RandomUtils.GetBytes(32));
 
             return header;
+        }
+
+        [Fact]
+        public void SignatureDoesntAffectHeaderHash()
+        {
+            Key key = this.tool.GeneratePrivateKey();
+            PoABlockHeader header = this.CreateHeader();
+
+            uint256 hashBefore = header.GetHash();
+
+            this.validator.Sign(key, header);
+
+            uint256 hashAfter = header.GetHash();
+
+            Assert.Equal(hashBefore, hashAfter);
+        }
+
+        [Fact]
+        public void ExtendedHeaderDoesntAddSignatureToHashingStream()
+        {
+            Key key = this.tool.GeneratePrivateKey();
+
+            var header = new TestHeader();
+            header.HashMerkleRoot = new uint256(RandomUtils.GetBytes(32));
+
+            uint256 hashBeforeSignature = header.GetHash();
+
+            this.validator.Sign(key, header);
+
+            uint256 hashAfterSignature = header.GetHash();
+
+            Assert.Equal(hashBeforeSignature, hashAfterSignature);
+
+            header.Data = 150;
+
+            uint256 hashAfterDataChanged = header.GetHash();
+            Assert.NotEqual(hashAfterSignature, hashAfterDataChanged);
+
+            Key key2 = this.tool.GeneratePrivateKey();
+            this.validator.Sign(key2, header);
+
+            uint256 hashAfterNewSignature = header.GetHash();
+
+            Assert.Equal(hashAfterNewSignature, hashAfterDataChanged);
+        }
+
+        public class TestHeader : PoABlockHeader
+        {
+            public int Data = 100;
+
+            public override void ReadWrite(BitcoinStream stream)
+            {
+                base.ReadWrite(stream);
+                stream.ReadWrite(ref this.Data);
+            }
+
+            protected override void ReadWriteHashingStream(BitcoinStream stream)
+            {
+                base.ReadWriteHashingStream(stream);
+                stream.ReadWrite(ref this.Data);
+            }
         }
     }
 }

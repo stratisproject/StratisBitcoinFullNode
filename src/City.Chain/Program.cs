@@ -5,6 +5,7 @@
     using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
+    using City.Features.BlockExplorer;
     using City.Networks;
     using NBitcoin;
     using NBitcoin.Networks;
@@ -131,6 +132,7 @@
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
+                    .UseBlockExplorer()
                     .UsePosConsensus()
                     .UseMempool()
                     .UseWallet()

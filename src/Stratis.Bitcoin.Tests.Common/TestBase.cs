@@ -2,7 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Tests.Common
 {
     public class TestBase
     {
-        public Network Network { get; }
+        public Network Network { get; protected set; }
 
         /// <summary>
         /// Initializes logger factory for inherited tests.
@@ -136,6 +136,77 @@ namespace Stratis.Bitcoin.Tests.Common
             block.UpdateMerkleRoot();
 
             return block;
+        }
+
+        public ProvenBlockHeader CreateNewProvenBlockHeaderMock(PosBlock posBlock = null)
+        {
+            PosBlock block = posBlock == null ? CreatePosBlockMock() : posBlock;
+            ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
+
+            return provenBlockHeader;
+        }
+
+        public PosBlock CreatePosBlockMock()
+        {
+            // Create coinstake Tx.
+            Transaction previousTx = this.Network.CreateTransaction();
+            previousTx.AddOutput(new TxOut());
+            Transaction coinstakeTx = this.Network.CreateTransaction();
+            coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
+            coinstakeTx.AddOutput(new TxOut(50, new Script()));
+            coinstakeTx.AddInput(previousTx, 0);
+            coinstakeTx.IsCoinStake.Should().BeTrue();
+            coinstakeTx.IsCoinBase.Should().BeFalse();
+
+            // Create coinbase Tx.
+            Transaction coinBaseTx = this.Network.CreateTransaction();
+            coinBaseTx.AddOutput(100, new Script());
+            coinBaseTx.AddInput(new TxIn());
+            coinBaseTx.IsCoinBase.Should().BeTrue();
+            coinBaseTx.IsCoinStake.Should().BeFalse();
+
+            var block = (PosBlock)this.Network.CreateBlock();
+            block.AddTransaction(coinBaseTx);
+            block.AddTransaction(coinstakeTx);
+            block.BlockSignature = new BlockSignature { Signature = new byte[] { 0x2, 0x3 } };
+
+            return block;
+        }
+
+        public (ChainedHeader chainedHeader, List<ProvenBlockHeader> provenBlockHeaders) BuildChainWithProvenHeaders(int blockCount, Network network, bool addNext = false)
+        {
+            Guard.Assert(blockCount > 0);
+
+            var provenBlockHeaders = new List<ProvenBlockHeader>();
+
+            ChainedHeader chainedHeader = null;
+            ChainedHeader previousChainHeader = null;
+
+            for (int i = 0; i < blockCount; i++)
+            {
+                PosBlock block = CreatePosBlockMock();
+                ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
+
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = i > 0 ? chainedHeader.HashBlock : null;
+                header.Bits = Target.Difficulty1;
+
+                chainedHeader = new ChainedHeader(header, header.GetHash(), i);
+
+                if (previousChainHeader != null)
+                {
+                    chainedHeader.SetPrivatePropertyValue("Previous", previousChainHeader);
+
+                    if (addNext)
+                        chainedHeader.Previous.Next.Add(chainedHeader);
+                }
+
+                previousChainHeader = chainedHeader;
+
+                provenBlockHeaders.Add(header);
+            }
+
+            return (chainedHeader, provenBlockHeaders);
         }
     }
 }

@@ -1,7 +1,6 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Text;
-using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -12,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public sealed class CallDataSerializerTests
     {
-        public ICallDataSerializer Serializer = new CallDataSerializer(new MethodParameterStringSerializer());
+        public ICallDataSerializer Serializer = new CallDataSerializer(new ContractPrimitiveSerializer(new SmartContractsRegTest()));
 
         [Fact]
         public void SmartContract_CanSerialize_OP_CREATECONTRACT_WithoutMethodParameters()
@@ -130,7 +129,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 "test",
                 (uint)36,
                 (ulong)29,
-                new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639"),
+                new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy"),
                 new Address("mxKorCkWmtrPoekfWiMzERJPhaT13nnkMy")
             };
 

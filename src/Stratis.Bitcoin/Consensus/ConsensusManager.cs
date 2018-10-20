@@ -170,6 +170,8 @@ namespace Stratis.Bitcoin.Consensus
                 if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
+                this.logger.LogInformation("Block store at height {0} is ahead of consensus, rewinding consensus from height {1}.", this.chainState.BlockStoreTip, pendingTip);
+
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
                 RewindState transitionState = await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
@@ -257,7 +259,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (fullValidationRequired)
                     {
-                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
+                        ConnectBlocksResult fullValidationResult = await this.FullyValidateLockedAsync(validationContext.ChainedHeaderToValidate, true).ConfigureAwait(false);
                         if (!fullValidationResult.Succeeded)
                         {
                             this.logger.LogTrace("Miner produced an invalid block, full validation failed: {0}", fullValidationResult.Error.Message);
@@ -503,8 +505,9 @@ namespace Stratis.Bitcoin.Consensus
         /// Should be locked by <see cref="reorgLock"/>.
         /// </remarks>
         /// <param name="newTip">Tip of the chain that will become the tip of our consensus chain if full validation will succeed.</param>
+        /// <param name="blockMined">Was the block mined or received from the network.</param>
         /// <returns>Validation related information.</returns>
-        private async Task<ConnectBlocksResult> FullyValidateLockedAsync(ChainedHeader newTip)
+        private async Task<ConnectBlocksResult> FullyValidateLockedAsync(ChainedHeader newTip, bool blockMined = false)
         {
             ChainedHeader oldTip = this.Tip;
 
@@ -536,7 +539,7 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConsensusException("Blocks to connect are missing!");
             }
 
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(newTip, blocksToConnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(blocksToConnect, blockMined).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -557,7 +560,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             // Reconnect disconnected blocks.
-            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(fork, disconnectedBlocks).ConfigureAwait(false);
+            ConnectBlocksResult reconnectionResult = await this.ReconnectOldChainAsync(disconnectedBlocks).ConfigureAwait(false);
 
             // Add peers that needed to be banned as a result of a failure to connect blocks.
             // Otherwise they get lost as we are returning a different ConnnectBlocksResult.
@@ -630,9 +633,9 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Connects new chain.</summary>
-        /// <param name="newTip">New tip.</param>
         /// <param name="blocksToConnect">List of blocks to connect.</param>
-        private async Task<ConnectBlocksResult> ConnectChainAsync(ChainedHeader newTip, List<ChainedHeaderBlock> blocksToConnect)
+        /// <param name="blockMined">Was the block mined or received from the network.</param>
+        private async Task<ConnectBlocksResult> ConnectChainAsync(List<ChainedHeaderBlock> blocksToConnect, bool blockMined = false)
         {
             ChainedHeader lastValidatedBlockHeader = null;
             ConnectBlocksResult connectBlockResult = null;
@@ -654,9 +657,10 @@ namespace Stratis.Bitcoin.Consensus
                     lastValidatedBlockHeader = blockToConnect.ChainedHeader;
 
                     // Block connected successfully.
-                    List<int> peersToResync = this.SetConsensusTip(blockToConnect.ChainedHeader);
-
-                    await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
+                    lock (this.peerLock)
+                    {
+                        this.SetConsensusTipInternalLocked(lastValidatedBlockHeader);
+                    }
 
                     if (this.network.Consensus.MaxReorgLength != 0)
                     {
@@ -677,16 +681,21 @@ namespace Stratis.Bitcoin.Consensus
                 }
             }
 
+            // After successfully connecting all blocks set the tree tip and claim the branch.
+            List<int> peersToResync = this.SetConsensusTip(lastValidatedBlockHeader, blockMined);
+
+            // Disconnect peers that are not relevant anymore.
+            await this.ResyncPeersAsync(peersToResync).ConfigureAwait(false);
+
             return connectBlockResult;
         }
 
         /// <summary>Reconnects the old chain.</summary>
-        /// <param name="currentTip">Current tip.</param>
         /// <param name="blocksToReconnect">List of blocks to reconnect.</param>
-        private async Task<ConnectBlocksResult> ReconnectOldChainAsync(ChainedHeader currentTip, List<ChainedHeaderBlock> blocksToReconnect)
+        private async Task<ConnectBlocksResult> ReconnectOldChainAsync(List<ChainedHeaderBlock> blocksToReconnect)
         {
             // Connect back the old blocks.
-            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(currentTip, blocksToReconnect).ConfigureAwait(false);
+            ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(blocksToReconnect).ConfigureAwait(false);
 
             if (connectBlockResult.Succeeded)
             {
@@ -815,11 +824,12 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Sets the consensus tip.</summary>
         /// <param name="newTip">New consensus tip.</param>
-        private List<int> SetConsensusTip(ChainedHeader newTip)
+        /// <param name="blockMined">Was the block mined or received from the network.</param>
+        private List<int> SetConsensusTip(ChainedHeader newTip, bool blockMined = false)
         {
             lock (this.peerLock)
             {
-                List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip);
+                List<int> peerIdsToResync = this.chainedHeaderTree.ConsensusTipChanged(newTip, blockMined);
 
                 this.SetConsensusTipInternalLocked(newTip);
 

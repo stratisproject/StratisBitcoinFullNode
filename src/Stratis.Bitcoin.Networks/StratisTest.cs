@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Networks
             this.GenesisReward = Money.Zero;
 
             Block genesisBlock = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            
+
             genesisBlock.Header.Time = 1493909211;
             genesisBlock.Header.Nonce = 2433759;
             genesisBlock.Header.Bits = powLimit;
@@ -52,6 +52,7 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
+                maxStandardTxSigopsCost: 20_000 / 5,
                 provenHeadersActivationHeight: 10_000_000 // TODO: Set it to the real value once it is known.
             );
 
@@ -127,8 +128,8 @@ namespace Stratis.Bitcoin.Networks
             this.SeedNodes = new List<NetworkAddress>
             {
                 new NetworkAddress(IPAddress.Parse("51.140.231.125"), this.DefaultPort), // danger cloud node
-                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
-                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
+                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node
+                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node
                 new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
             };
 

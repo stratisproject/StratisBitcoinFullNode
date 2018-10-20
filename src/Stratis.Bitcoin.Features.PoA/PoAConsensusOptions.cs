@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -12,8 +9,9 @@ namespace Stratis.Bitcoin.Features.PoA
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
-                : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
+                : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
         }
     }

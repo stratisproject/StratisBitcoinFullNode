@@ -11,10 +11,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class PosTimeMaskRule : PartialValidationConsensusRule
     {
-        /// <summary>PoS block's timestamp mask.</summary>
-        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
-        public const uint StakeTimestampMask = 0x0000000F;
-
         public PosFutureDriftRule FutureDriftRule { get; set; }
 
         public override void Initialize()
@@ -74,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <returns><c>true</c> if block timestamp is equal to transaction timestamp, <c>false</c> otherwise.</returns>
         private bool CheckCoinStakeTimestamp(long blockTime, long transactionTime)
         {
-            return (blockTime == transactionTime) && ((transactionTime & StakeTimestampMask) == 0);
+            return (blockTime == transactionTime) && ((transactionTime & PosConsensusOptions.StakeTimestampMask) == 0);
         }
     }
 }

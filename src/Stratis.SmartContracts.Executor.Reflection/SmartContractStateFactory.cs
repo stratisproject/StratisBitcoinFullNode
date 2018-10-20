@@ -8,17 +8,21 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public class SmartContractStateFactory : ISmartContractStateFactory
     {
-        public SmartContractStateFactory(IContractPrimitiveSerializer serializer,
+        private readonly ISerializer serializer;
+
+        public SmartContractStateFactory(IContractPrimitiveSerializer primitiveSerializer,
             Network network,
-            IInternalExecutorFactory internalTransactionExecutorFactory)
+            IInternalExecutorFactory internalTransactionExecutorFactory,
+            ISerializer serializer)
         {
-            this.Serializer = serializer;
+            this.serializer = serializer;
+            this.PrimitiveSerializer = primitiveSerializer;
             this.Network = network;
             this.InternalTransactionExecutorFactory = internalTransactionExecutorFactory;
         }
 
         public Network Network { get; }
-        public IContractPrimitiveSerializer Serializer { get; }
+        public IContractPrimitiveSerializer PrimitiveSerializer { get; }
         public IInternalExecutorFactory InternalTransactionExecutorFactory { get; }
 
         /// <summary>
@@ -28,9 +32,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
 
-            var persistentState = new PersistentState(persistenceStrategy, this.Serializer, address);
+            var persistentState = new PersistentState(persistenceStrategy, this.serializer, address);
 
-            var contractLogger = new MeteredContractLogger(gasMeter, state.LogHolder, this.Network, this.Serializer);
+            var contractLogger = new MeteredContractLogger(gasMeter, state.LogHolder, this.Network, this.PrimitiveSerializer);
 
             var contractState = new SmartContractState(
                 state.Block,
@@ -40,7 +44,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
                     message.Amount
                 ),
                 persistentState,
-                this.Serializer,
+                this.serializer,
                 gasMeter,
                 contractLogger,
                 this.InternalTransactionExecutorFactory.Create(state),
