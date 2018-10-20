@@ -113,8 +113,17 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.powNodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
             this.posNodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
 
-            this.powNetwork = new BitcoinRegTest();
+            this.powNetwork = new RegTestOverrideCoinbaseMaturity();
             this.posNetwork = new StratisRegTest();
+        }
+
+        private class RegTestOverrideCoinbaseMaturity : BitcoinRegTest
+        {
+            public RegTestOverrideCoinbaseMaturity()
+            {
+                this.Name = Guid.NewGuid().ToString();
+                this.Consensus.CoinbaseMaturity = 1;
+            }
         }
 
         protected override void AfterTest()

@@ -87,7 +87,8 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <returns>The path of the directory.</returns>
         public static string GetTestDirectoryPath(string testDirectory)
         {
-            return Path.Combine("TestCase", testDirectory);
+            return Path.Combine(@"C:\NodeTests\", testDirectory);
+            //return Path.Combine("TestCase", testDirectory);
         }
 
         public void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)

@@ -18,7 +18,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         private CoreNode nodeA;
         private CoreNode nodeB;
         private CoreNode nodeC;
-        private int coinbaseMaturity;
         private Transaction transaction;
 
         // NOTE: This constructor allows test step names to be logged
@@ -43,14 +42,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
             this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().WithDummyWallet().Start();
             this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
             this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
-
-            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
         }
 
         protected void nodeA_mines_coins_that_are_spendable()
         {
             // add some coins to nodeA
-            TestHelper.MineBlocks(this.nodeA, this.coinbaseMaturity + 1);
+            TestHelper.MineBlocks(this.nodeA, (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity + 1);
         }
 
         protected void nodeA_connects_to_nodeB()
