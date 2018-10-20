@@ -87,8 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void CanStratisSyncFromCore()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -150,8 +149,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry(2)]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -211,8 +209,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </para>
         /// </summary>
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void PullerVsMinerRaceCondition()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -263,8 +260,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Network - Node1 - MiningNode
         /// </para>
         /// </summary>
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void MiningNodeWithOneConnection_AlwaysSynced()
         {
             string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnection_AlwaysSynced));

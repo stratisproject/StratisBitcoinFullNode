@@ -104,7 +104,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public void MineBlocks(int amountOfBlocks)
         {
-            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks, this.WalletName, this.Password, this.AccountName);
+            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks, true, this.WalletName, this.Password, this.AccountName);
             this.chain.WaitForAllNodesToSync();
         }
 
