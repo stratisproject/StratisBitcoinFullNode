@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -17,22 +18,22 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
+                var network = new BitcoinRegTest();
+                CoreNode node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet();
                 builder.StartAll();
                 RPCClient rpcClient = node.CreateRPCClient();
 
-                int maturity = (int)KnownNetworks.RegTest.Consensus.CoinbaseMaturity;
+                int maturity = (int)network.Consensus.CoinbaseMaturity;
 
-                // This shouldn't be necessary but is required to make this test pass.
+                // This shouldn't be necessary but is required to make the zero assertion below pass.
                 // - looks like a bug in the wallet?
                 maturity--; 
                 
-                TestHelper.MineBlocks(node, maturity);
-                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == maturity);                             
-                Assert.Equal(Money.Zero, rpcClient.GetBalance());
+                TestHelper.MineBlocks(node, maturity);                                     
+                Assert.Equal(Money.Zero, rpcClient.GetBalance()); // test with defaults.
 
-                rpcClient.Generate(1);
-                Assert.Equal(Money.Coins(50), rpcClient.GetBalance());
+                TestHelper.MineBlocks(node, 1);                
+                Assert.Equal(Money.Coins(50), rpcClient.GetBalance(0, false)); // test with parameters.
             }
         }
 
