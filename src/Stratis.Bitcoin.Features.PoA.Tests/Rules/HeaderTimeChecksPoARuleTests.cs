@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Threading;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -81,10 +80,11 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             prevHeader.Header.Time = (uint)time.ToUnixTimeSeconds();
 
-            this.currentHeader.Header.Time = prevHeader.Header.Time + this.network.TargetSpacingSeconds;
+            var validFutureDriftOffset = HeaderTimeChecksPoARule.MaxFutureDriftSeconds / this.network.TargetSpacingSeconds * this.network.TargetSpacingSeconds;
+            this.currentHeader.Header.Time = prevHeader.Header.Time + validFutureDriftOffset;
             this.timeChecksRule.Run(ruleContext);
 
-            this.currentHeader.Header.Time = prevHeader.Header.Time + this.network.TargetSpacingSeconds + 2;
+            this.currentHeader.Header.Time = prevHeader.Header.Time + validFutureDriftOffset + this.network.TargetSpacingSeconds;
             Assert.Throws<ConsensusErrorException>(() => this.timeChecksRule.Run(ruleContext));
 
             try

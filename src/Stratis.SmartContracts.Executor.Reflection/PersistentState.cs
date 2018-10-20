@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -25,6 +24,20 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         internal ISerializer Serializer { get; }
 
+        public bool IsContract(Address address)
+        {
+            byte[] serialized = this.Serializer.Serialize(address);
+
+            if (serialized == null)
+            {
+                return false;
+            }
+
+            var contractAddress = new uint160(serialized);
+
+            return this.persistenceStrategy.ContractExists(contractAddress);
+        }
+
         public byte[] GetBytes(string key)
         {
             byte[] keyBytes = this.Serializer.Serialize(key);
@@ -40,11 +53,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var bytes = this.GetBytes(key);
 
-            var s = this.Serializer.ToString(bytes);
-
-            if (s.Any()) return s[0];
-
-            return default(char);
+            return this.Serializer.ToChar(bytes);
         }
 
         public Address GetAddress(string key)
@@ -170,6 +179,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private byte[] SerializeStruct<T>(T value) where T : struct
         {
             return this.Serializer.Serialize(value);
+        }
+
+        public void Clear(string key)
+        {
+            this.SetBytes(key, null);
         }
     }
 }

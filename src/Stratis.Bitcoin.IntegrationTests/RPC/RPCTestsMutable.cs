@@ -1,9 +1,10 @@
-﻿using NBitcoin;
+﻿using System.Linq;
+using System.Threading;
+using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.RPC
@@ -19,8 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var network = new BitcoinRegTest();
-                CoreNode node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet();
-                builder.StartAll();
+                CoreNode node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet().Start();
                 RPCClient rpcClient = node.CreateRPCClient();
 
                 int maturity = (int)network.Consensus.CoinbaseMaturity;
@@ -42,9 +42,9 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
-                builder.StartAll();
-                RPCClient rpc = node.CreateRPCClient();             
+                CoreNode node = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
+
+                RPCClient rpc = node.CreateRPCClient();
                 uint256 blockHash = rpc.Generate(1)[0];
                 Block block = rpc.GetBlock(blockHash);
                 RPCResponse walletTx = rpc.SendCommand(RPCOperations.gettransaction, block.Transactions[0].GetHash().ToString());
@@ -57,8 +57,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet();
-                builder.StartAll();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
+
                 RPCClient rpcClient = node.CreateRPCClient();
 
                 TestHelper.MineBlocks(node, 2);
@@ -67,6 +67,66 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 uint256 blockId = rpcClient.GetBestBlockHash();
                 Block block = rpcClient.GetBlock(blockId);
                 Assert.True(block.CheckMerkleRoot());
+            }
+        }
+
+        [Fact]
+        public void TestRpcSendToAddressIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
+                TestHelper.MineBlocks(node, blocksToMine);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
+
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+                rpcClient.WalletPassphrase("password", 60);
+                var txid = rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
+                rpcClient.SendCommand(RPCOperations.walletlock);
+
+                // Check the hash calculated correctly.
+                var tx = rpcClient.GetRawTransaction(txid);
+                Assert.Equal(txid, tx.GetHash());
+
+                // Check the output is the right amount.
+                var coin = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == aliceAddress.ScriptPubKey);
+                Assert.Equal(coin.Amount, Money.Coins(1.0m));
+            }
+        }
+
+        [Fact]
+        public void TestRpcSendToAddressCantSpendWhenLocked()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
+                TestHelper.MineBlocks(node, blocksToMine);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
+
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+
+                // Not unlocked case.                
+                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+
+                // Unlock and lock case.
+                rpcClient.WalletPassphrase("password", 60);
+                rpcClient.SendCommand(RPCOperations.walletlock);
+                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+
+                // Unlock timesout case.
+                rpcClient.WalletPassphrase("password", 5);
+                Thread.Sleep(120 * 1000); // 2 minutes.
+                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
             }
         }
     }

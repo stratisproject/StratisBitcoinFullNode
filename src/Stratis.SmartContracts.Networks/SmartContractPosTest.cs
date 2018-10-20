@@ -4,7 +4,7 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
+                maxStandardTxSigopsCost: 20_000 / 5,
                 provenHeadersActivationHeight: 10_000_000 // TODO: Set it to the real value once it is known.
             );
 

@@ -21,7 +21,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
     {
         private readonly Network network = KnownNetworks.StratisTest;
         private readonly Mock<IConsensusManager> consensusManager;
-        private readonly ConcurrentChain concurrentChain;
         private readonly ProvenBlockHeaderStore provenBlockHeaderStore;
         private IProvenBlockHeaderRepository provenBlockHeaderRepository;
         private readonly Mock<INodeLifetime> nodeLifetime;
@@ -32,7 +31,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public ProvenBlockHeaderStoreTests() : base(KnownNetworks.StratisTest)
         {
             this.consensusManager = new Mock<IConsensusManager>();
-            this.concurrentChain = this.GenerateChainWithHeight(3);
             this.nodeLifetime = new Mock<INodeLifetime>();
             this.nodeStats = new NodeStats(DateTimeProvider.Default);
             this.asyncLoopFactoryLoop = new Mock<IAsyncLoopFactory>();
@@ -42,49 +40,39 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.provenBlockHeaderRepository = new ProvenBlockHeaderRepository(this.network, this.Folder, this.LoggerFactory.Object);
 
             this.provenBlockHeaderStore = new ProvenBlockHeaderStore(
-                this.concurrentChain, DateTimeProvider.Default, this.LoggerFactory.Object,
-                this.provenBlockHeaderRepository, this.nodeLifetime.Object, this.nodeStats, this.asyncLoopFactoryLoop.Object);
+                DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository,
+                this.nodeLifetime.Object, this.nodeStats, this.asyncLoopFactoryLoop.Object);
         }
 
         [Fact]
         public async Task InitialiseStoreToGenesisChainHeaderAsync()
         {
-            ChainedHeader chainedHeader = this.concurrentChain.Genesis;
 
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            var genesis = BuildChainWithProvenHeaders(1, this.network).chainedHeader;
 
-            this.provenBlockHeaderStore.TipHashHeight.Hash.Should().Be(this.network.GetGenesis().GetHash());
+            await this.provenBlockHeaderStore.InitializeAsync(genesis).ConfigureAwait(false);
+
+            this.provenBlockHeaderStore.TipHashHeight.Hash.Should().Be(genesis.HashBlock);
         }
 
         [Fact]
-        public async Task LoadItemsAsync()
+        public async Task GetAsync_Get_Items_From_StoreAsync()
         {
-            var inItems = new List<ProvenBlockHeader>();
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
 
-            var provenHeaderMock = CreateNewProvenBlockHeaderMock();
+            var inHeaders = chainWithHeaders.provenBlockHeaders;
 
-            ChainedHeader chainedHeader = this.concurrentChain.Tip;
-
-            while(chainedHeader != null)
-            {
-                inItems.Add(provenHeaderMock);
-
-                chainedHeader = chainedHeader.Previous;
-            }
-
-            await this.provenBlockHeaderRepository.PutAsync(inItems, new HashHeightPair(provenHeaderMock.GetHash(), inItems.Count - 1)).ConfigureAwait(false);
+            await this.provenBlockHeaderRepository.PutAsync(inHeaders, new HashHeightPair(inHeaders.Last().GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
 
             // Then load them.
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
-                var outItems = await store.GetAsync(0, inItems.Count).ConfigureAwait(false);
+                var outHeaders = await store.GetAsync(0, inHeaders.Count).ConfigureAwait(false);
 
-                outItems.Count.Should().Be(inItems.Count);
+                outHeaders.Count.Should().Be(inHeaders.Count);
 
-                foreach(var item in outItems)
-                {
-                    item.GetHash().Should().Be(provenHeaderMock.GetHash());
-                }
+                // inHeaders should exist in outHeaders (from the repository).
+                inHeaders.All(inHeader => outHeaders.Any(outHeader => inHeader.GetHash() == outHeader.GetHash())).Should().BeTrue();
             }
         }
 
@@ -92,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task AddToPending_Adds_To_CacheAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
@@ -115,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task AddToPending_Adds_To_Cache_Then_Save_To_DiskAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
@@ -147,7 +135,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task Add_2k_ProvenHeaders_ToPending_CacheAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             ProvenBlockHeader inHeader = null;
 
@@ -171,7 +159,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task Add_2k_ProvenHeaders_To_PendingBatch_Then_Save_Then_PendingBatch_Should_Be_EmptyAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             ProvenBlockHeader inHeader = null;
 
@@ -210,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task GetAsync_Add_Items_Greater_Than_Max_Size_Cache_Stays_Below_Max_SizeAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
             var inHeaders = new List<ProvenBlockHeader>();
 
@@ -241,14 +229,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             ProvenBlockHeader provenHeaderMock;
 
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
-
+            await this.provenBlockHeaderStore.InitializeAsync(this.BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
+            uint nonceIndex = 1; // a random index to change the header hash.
+          
             // Save items 0 - 9 to disk.
             for (int i = 0; i < 10; i++)
             {
                 provenHeaderMock = CreateNewProvenBlockHeaderMock();
-
+                provenHeaderMock.Nonce = ++nonceIndex;
                 this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), i));
+                inItems.Add(provenHeaderMock);
             }
 
             // Save to disk and cache is cleared.
@@ -267,12 +257,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
 
             // Add item 4 to cache
-            provenHeaderMock = CreateNewProvenBlockHeaderMock();
-            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), 4));
+            var provenHeaderMock1 = CreateNewProvenBlockHeaderMock();
+            provenHeaderMock1.Nonce = ++nonceIndex;
+            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock1, new HashHeightPair(provenHeaderMock1.GetHash(), 4));
+            inItems[4] = provenHeaderMock1;
 
             // Add item 6 to cache.
-            provenHeaderMock = CreateNewProvenBlockHeaderMock();
-            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), 6));
+            var provenHeaderMock2 = CreateNewProvenBlockHeaderMock();
+            provenHeaderMock2.Nonce = ++nonceIndex;
+            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock2, new HashHeightPair(provenHeaderMock2.GetHash(), 6));
+            inItems[6] = provenHeaderMock2;
 
             // Load the items and make sure in sequence.
             var outItems = await this.provenBlockHeaderStore.GetAsync(0, 9).ConfigureAwait(false);
@@ -280,71 +274,128 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             outItems.Count.Should().Be(10);
 
             // Items 4 and 6 were added to pending cache and have the same block hash.
-            for(int i =  0; i < 10; i++)
+            for (int i = 0; i < 10; i++)
             {
-                if ((i == 4) || (i == 6))
-                {
-                    outItems[i].GetHash().Should().Be(provenHeaderMock.GetHash());
-                }
-                else
-                {
-                    outItems[i].GetHash().Should().NotBe(provenHeaderMock.GetHash());
-                }
+                outItems[i].GetHash().Should().Be(inItems[i].GetHash());
             }
         }
 
         [Fact]
-        public async Task SaveAsync_Headers_Not_In_Consecutive_Order_Throws_ExceptionAsync()
+        public async Task InitializeAsync_When_Chain_Tip_Reverts_Back_To_Genesis_Store_Tip_Is_In_SyncAsync()
         {
-            var inItems = new List<ProvenBlockHeader>();
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
 
-            ProvenBlockHeader provenHeaderMock;
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders,
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
-            await this.provenBlockHeaderStore.InitializeAsync().ConfigureAwait(false);
-
-            // Add items with incorrect sequence.
-            for (int i = 0; i < 4; i += 2)
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
-                provenHeaderMock = CreateNewProvenBlockHeaderMock();
+                // Revert back to Genesis.
+                await store.InitializeAsync(chainWithHeaders.chainedHeader.Previous.Previous);
 
-                this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), i));
+                store.TipHashHeight.Hash.Should().Be(chainWithHeaders.chainedHeader.Previous.Previous.HashBlock);
+            }
+        }
+
+        [Fact]
+        public async Task InitializeAsync_When_Tip_Reorg_Occurs_Behind_Current_TipAsync()
+        {
+            // Chain - 1 - 2 - 3 - 4 - 5 (tip at 5).
+            var chainWithHeaders = BuildChainWithProvenHeaders(5, this.network);
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            // Persist current chain.
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders,
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                // Reorganised chain - 1 - 2 - 3  (tip at 3).
+                await store.InitializeAsync(chainWithHeaders.chainedHeader.Previous.Previous).ConfigureAwait(true);
+
+                store.TipHashHeight.Hash.Should().Be(chainWithHeaders.chainedHeader.Previous.Previous.Header.GetHash());
+            }
+        }
+
+        [Fact]
+        public async Task InitializeAsync_When_Behind_Reorg_Occurs_Throws_Exception_When_New_ChainHeader_Tip_Doesnt_ExistAsync()
+        {
+            // Chain - Chain - 1 - 2 - 3
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network, true);
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders.Take(5).ToList(),
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
+            // Create a new chain which a different hash block.
+            chainWithHeaders = BuildChainWithProvenHeaders(2, this.network, true);
+
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                Func<Task> act = async () => { await store.InitializeAsync(chainWithHeaders.chainedHeader).ConfigureAwait(false); };
+
+                act.Should().Throw<ProvenBlockHeaderException>().WithMessage("Chain header tip hash does not match the latest proven block header hash saved to disk.");
+            }
+        }
+
+        [Fact]
+        public void AddToPending_Then_Save_Incorrect_Sequence_Throws_Exception()
+        {
+            var inHeader = CreateNewProvenBlockHeaderMock();
+
+            // Add headers to pending batch in the wrong height order.
+            for(int i = 1; i >= 0; i--)
+            {
+                this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), i));
             }
 
-            // Try to save items to disk.
             var taskResult = this.provenBlockHeaderStore.InvokeMethod("SaveAsync") as Task;
 
             taskResult.IsFaulted.Should().BeTrue();
             taskResult.Exception.InnerExceptions.Count.Should().Be(1);
-            taskResult.Exception.InnerExceptions[0].Should().BeOfType<InvalidOperationException>();
-            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Proven block headers are not in the correct sequence.");
+            taskResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenBlockHeaderException>();
+            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Proven block headers are not in the correct consecutive sequence.");
+        }
+
+        [Fact]
+        public async Task AddToPending_Store_TipHash_Is_The_Same_As_ChainHeaderTipAsync()
+        {
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network);
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            // Persist current chain.
+            await this.provenBlockHeaderRepository.PutAsync(
+                provenBlockheaders,
+                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                var header = CreateNewProvenBlockHeaderMock();
+
+                this.provenBlockHeaderStore.AddToPendingBatch(header, new HashHeightPair(header.GetHash(), chainWithHeaders.chainedHeader.Height));
+
+                this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
+
+                HashHeightPair tipHashHeight = null;
+
+                WaitLoop(() => {
+                    tipHashHeight = this.provenBlockHeaderStore.GetMemberValue("TipHashHeight") as HashHeightPair;
+                    return tipHashHeight == this.provenBlockHeaderRepository.TipHashHeight;
+                });
+
+                tipHashHeight.Height.Should().Be(chainWithHeaders.chainedHeader.Height);
+            }
         }
 
         private ProvenBlockHeaderStore SetupStore(string folder)
         {
             return new ProvenBlockHeaderStore(
-                this.concurrentChain, DateTimeProvider.Default,
-                this.LoggerFactory.Object, this.provenBlockHeaderRepository,
+                DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository,
                 this.nodeLifetime.Object, new NodeStats(DateTimeProvider.Default), this.asyncLoopFactoryLoop.Object);
-        }
-
-        private ConcurrentChain GenerateChainWithHeight(int blockAmount)
-        {
-            var chain = new ConcurrentChain(this.network);
-            uint nonce = RandomUtils.GetUInt32();
-            uint256 prevBlockHash = chain.Genesis.HashBlock;
-            for (int i = 0; i < blockAmount; i++)
-            {
-                Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
-                block.AddTransaction(this.network.CreateTransaction());
-                block.UpdateMerkleRoot();
-                block.Header.BlockTime = new DateTimeOffset(new DateTime(2017, 1, 1, 0, 0, 0, DateTimeKind.Utc).AddDays(i));
-                block.Header.HashPrevBlock = prevBlockHash;
-                block.Header.Nonce = nonce;
-                chain.SetTip(block.Header);
-                prevBlockHash = block.GetHash();
-            }
-
-            return chain;
         }
 
         private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))

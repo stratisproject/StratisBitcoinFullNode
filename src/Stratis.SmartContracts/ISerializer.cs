@@ -4,10 +4,13 @@ namespace Stratis.SmartContracts
 {
     public interface ISerializer
     {
-        // TODO: Document the requirements for inputs for these fields?
+        /// <summary>
+        /// Serializes a char into its 2-byte representation.
+        /// </summary>
+        byte[] Serialize(char c);
 
         /// <summary>
-        /// Serializes an address into its 20-bytes representation.
+        /// Serializes an address into its 20-byte representation.
         /// </summary>
         byte[] Serialize(Address address);
 
@@ -17,27 +20,27 @@ namespace Stratis.SmartContracts
         byte[] Serialize(bool b);
 
         /// <summary>
-        /// Serializes an integer into bytes via BitConverter. 
+        /// Serializes an integer into its 4-byte representation. 
         /// </summary>
         byte[] Serialize(int i);
 
         /// <summary>
-        /// Serializes a long into bytes via BitConverter.
+        /// Serializes a long into its 8-byte representation.
         /// </summary>
         byte[] Serialize(long l);
 
         /// <summary>
-        /// Serializes an unsigned integer into bytes via BitConverter.
+        /// Serializes an unsigned integer into its 4-byte representation.
         /// </summary>
         byte[] Serialize(uint u);
 
         /// <summary>
-        /// Serializes a unsigned long into bytes via BitConverter.
+        /// Serializes a unsigned long into its 8-byte representation.
         /// </summary>
         byte[] Serialize(ulong ul);
 
         /// <summary>
-        /// Serializes a string into its UTF8 encoding.
+        /// Serializes a string into its UTF8 encoded byte array.
         /// </summary>
         byte[] Serialize(string s);
 
@@ -64,29 +67,34 @@ namespace Stratis.SmartContracts
         Address ToAddress(byte[] val);
 
         /// <summary>
-        /// Deserializes first 4 bytes of a byte array into an integer. If the given bytes are null, empty, or deserialization fails, returns default(int).
+        /// Deserializes the first 4 bytes of a byte array into an integer. If the given bytes are null, empty, or deserialization fails, returns default(int).
         /// </summary>
         int ToInt32(byte[] val);
 
         /// <summary>
-        /// Deserializes first 4 bytes of a byte array into an unsigned integer.If the given bytes are null, empty, or deserialization fails, returns default(uint).
+        /// Deserializes the first 4 bytes of a byte array into an unsigned integer.If the given bytes are null, empty, or deserialization fails, returns default(uint).
         /// </summary>
         uint ToUInt32(byte[] val);
 
         /// <summary>
-        /// Deserializes first 8 bytes of a  byte array into a long. If the given bytes are null, empty, or deserialization fails, returns default(long).
+        /// Deserializes the first 8 bytes of a  byte array into a long. If the given bytes are null, empty, or deserialization fails, returns default(long).
         /// </summary>
         long ToInt64(byte[] val);
 
         /// <summary>
-        /// Deserializes first 8 bytes of a byte array into an unsigned long. If the given bytes are null, empty, or deserialization fails, returns default(ulong).
+        /// Deserializes the first 8 bytes of a byte array into an unsigned long. If the given bytes are null, empty, or deserialization fails, returns default(ulong).
         /// </summary>
         ulong ToUInt64(byte[] val);
 
         /// <summary>
-        /// Deserializes UTF8-encoded bytes into a string. If the given bytes are null, empty, or deserialization fails, returns <see cref="string.Empty"/>.
+        /// Deserializes bytes into a string using UTF8. If the given bytes are null, empty, or deserialization fails, returns <see cref="string.Empty"/>.
         /// </summary>
         string ToString(byte[] val);
+
+        /// <summary>
+        /// Deserializes 2 bytes into a Unicode character.
+        /// </summary>
+        char ToChar(byte[] val);
 
         /// <summary>
         /// Deserializes RLP-encoded bytes to an array. If the given bytes are null, empty, or deserialization fails, returns new T[0].

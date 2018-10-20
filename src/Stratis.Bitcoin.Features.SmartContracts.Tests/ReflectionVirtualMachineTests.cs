@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
@@ -134,6 +135,29 @@ public class Contract : SmartContract
             Assert.False(result.IsSuccess);
             Assert.Equal(VmExecutionErrorKind.OutOfGas, result.Error.ErrorKind);
         }
+
+        [Fact]
+        public void VM_ExecuteContract_ClearStorage()
+        {
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ClearStorage.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] contractExecutionCode = compilationResult.Compilation;
+            var callData = new MethodCall(nameof(ClearStorage.ClearKey), new object[] { });
+
+            uint160 contractAddress = this.contractState.Message.ContractAddress.ToUint160(this.network);
+            byte[] keyToClear = Encoding.UTF8.GetBytes(ClearStorage.KeyToClear);
+
+            // Set a value to be cleared
+            this.state.SetStorageValue(contractAddress, keyToClear, new byte[] { 1, 2, 3 });
+
+            VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
+                callData,
+                contractExecutionCode, nameof(ClearStorage));
+
+            Assert.Null(result.Error);
+            Assert.Null(this.state.GetStorageValue(contractAddress, keyToClear));
+        }
     }
 
     public class TestPersistenceStrategy : IPersistenceStrategy
@@ -143,6 +167,11 @@ public class Contract : SmartContract
         public TestPersistenceStrategy(IStateRepository stateDb)
         {
             this.stateDb = stateDb;
+        }
+
+        public bool ContractExists(uint160 address)
+        {
+            return this.stateDb.IsExist(address);
         }
 
         public byte[] FetchBytes(uint160 address, byte[] key)

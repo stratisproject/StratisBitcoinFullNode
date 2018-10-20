@@ -140,6 +140,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             return default(T);
         }
 
+        public bool IsContract(Address address)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte[] GetBytes(string key)
         {
             return this.GetObject<byte[]>(key);
@@ -251,6 +256,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         public void SetArray(string key, Array a)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Clear(string key)
         {
             throw new NotImplementedException();
         }
