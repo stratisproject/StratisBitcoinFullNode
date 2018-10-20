@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Create a reorg by mining on two different chains                
                 TestHelper.Disconnect(stratisMiner, stratisReorg);
-                TestHelper.Disconnect(stratisSyncer, stratisReorg);
+                TestHelper.Disconnect(stratisMiner, stratisSyncer);
 
                 TestHelper.MineBlocks(stratisMiner, 11);
                 TestHelper.MineBlocks(stratisReorg, 12);
@@ -179,8 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // make sure the nodes are actually on different chains.
                 Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(2).HashBlock, stratisReorg.FullNode.Chain.GetBlock(2).HashBlock);
 
-                TestHelper.TriggerSync(stratisSyncer);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
+                TestHelper.ConnectAndSync(stratisSyncer, stratisMiner);
 
                 // The hash before the reorg node is connected.
                 uint256 hashBeforeReorg = stratisMiner.FullNode.Chain.Tip.HashBlock;
