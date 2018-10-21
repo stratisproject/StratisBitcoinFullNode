@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -12,44 +13,62 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 {
     public class ConnectivityTests
     {
-        private readonly Network Network;
+        private readonly Network network;
 
         public ConnectivityTests()
         {
-            this.Network = new StratisRegTest();
+            this.network = new StratisRegTest();
         }
-
+        
         [Fact]
-        public void WhenStartingNodeWithAListOfIPAddressesTheAddressesArePropagatedToAnotherPeer()
+        public async Task EnsurePeerInAddressManagerAlsoConnectsAndSeenInPeerAddressManagerBehaviour()
         {
-            // TS100_Connectivity_CanGetIPList.
+            // node1 connects to node2.
+            // node3 adds node2 to the Address Manager.
+            // node3 connects to node1 - and picks up node2 to connect to.
+            // Extra check to see node2 in the AddressManagerBehaviour.
+
+            const string PeerAddressManagerMemberName = "peerAddressManager";
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node3 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
-                var node1DNSSeeds = node1.FullNode.Network.DNSSeeds;
-                var node2DNSSeeds = node2.FullNode.Network.DNSSeeds;
+                var node1ConnectionMgr = node1.FullNode.NodeService<IConnectionManager>();
 
-                node1DNSSeeds.Should().BeEmpty();
-                node2DNSSeeds.Should().BeEmpty();
+                // node1 connects to node2.
+                TestHelper.Connect(node2, node1);
+                TestHelper.WaitLoop(() => node1ConnectionMgr.ConnectedPeers.Count() == 1);
 
-                string hostname = string.Empty;
+                // node3 adds node2 to the Address Manager.
+                var node3ConnectionMgr = node3.FullNode.NodeService<IConnectionManager>();
+                var node3PeerAddressManager = node3ConnectionMgr.GetMemberValue(PeerAddressManagerMemberName) as PeerAddressManager;
 
-                for (int i = 0; i < 10; i++)
-                {
-                    hostname = $"testnet{i}.stratisplatform.com";
-                    node2DNSSeeds.Add(new DNSSeedData(hostname, hostname));
-                }
+                var node3PeersDictionary = node3PeerAddressManager.GetMemberValue("peers") as ConcurrentDictionary<IPEndPoint, PeerAddress>;
+                node3PeersDictionary.TryAdd(node2.Endpoint, new PeerAddress() { Endpoint = node2.Endpoint });
 
-                node1DNSSeeds.Should().HaveSameCount(node2DNSSeeds);
+                // node3 connects to node1 - and picks up node2 to connect to.
+                TestHelper.Connect(node3, node1);
+                TestHelper.WaitLoop(() => node3ConnectionMgr.ConnectedPeers.Count() == 2);
+
+                node3ConnectionMgr.ConnectedPeers.Should().Contain(c => c.PeerEndPoint.Port == node2.Endpoint.Port);
+
+                // Extra check to see node2 in the AddressManagerBehaviour.
+                var node3PeerAddressManagerBehaviour = node3ConnectionMgr.ConnectedPeers.First().
+                    Behaviors.Where(b => b.GetType() == typeof(PeerAddressManagerBehaviour)).FirstOrDefault();
+
+                var behaviourPeerAddressManager = node3PeerAddressManagerBehaviour?.GetMemberValue(PeerAddressManagerMemberName) as PeerAddressManager;
+
+                behaviourPeerAddressManager.FindPeer(node2.Endpoint).Should().NotBeNull();
             }
         }
 
@@ -60,10 +79,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode node3 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode syncerNode = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node3 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode syncerNode = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
                 // Connects with AddNode inside Connect().
                 TestHelper.Connect(node1, syncerNode);
@@ -96,8 +115,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
                 var node2ConnectionMgr = node2.FullNode.NodeService<IConnectionManager>();
 
@@ -124,8 +143,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
                 node1 = BanNode(node1, node2);
 
@@ -149,7 +168,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
                 var node1ConnectionMgr = node1.FullNode.NodeService<IConnectionManager>();
 
@@ -190,6 +209,5 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             return sourceNode;
         }
-
     }
 }
