@@ -148,6 +148,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        [Trait("Unstable", "True")]
         public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_InvalidStakeDepth()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
