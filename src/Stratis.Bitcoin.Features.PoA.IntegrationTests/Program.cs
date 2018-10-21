@@ -1,14 +1,9 @@
-﻿using System;
-using Xunit;
-
-namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
+﻿namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 {
-    public class Program
+    internal class Program
     {
-        [Fact]
-        public void DoSmth()
+        public static void Main(string[] args)
         {
-            Console.WriteLine("Hello World!");
         }
     }
 }
