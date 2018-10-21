@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             outHeaderRepo.FirstOrDefault().Should().BeNull();
         }
 
-        [Fact]
+        [Fact(Skip = "Unstable")]
         public async Task AddToPending_Adds_To_Cache_Then_Save_To_DiskAsync()
         {
             // Initialise store.
@@ -121,7 +121,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
 
             // when pendingTipHashHeight is null we can safely say the items were saved to the repository, based on the above SaveAsync.
-            WaitLoop(() => {
+            WaitLoop(() =>
+            {
                 var pendingTipHashHeight = this.provenBlockHeaderStore.GetMemberValue("pendingTipHashHeight");
                 return pendingTipHashHeight == null;
             });
@@ -178,12 +179,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
 
             // when pendingTipHashHeight is null we can safely say the items were saved to the repository, based on the above SaveAsync.
-            WaitLoop(() => {
+            WaitLoop(() =>
+            {
                 var pendingTipHashHeight = this.provenBlockHeaderStore.GetMemberValue("pendingTipHashHeight");
                 return pendingTipHashHeight == null;
             });
 
-            WaitLoop(() => {
+            WaitLoop(() =>
+            {
                 // Check if it has been saved to disk.
                 var outHeaderRepo = this.provenBlockHeaderRepository.GetAsync(1999).ConfigureAwait(false).GetAwaiter().GetResult();
                 return outHeaderRepo != null;
@@ -231,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             await this.provenBlockHeaderStore.InitializeAsync(this.BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
             uint nonceIndex = 1; // a random index to change the header hash.
-          
+
             // Save items 0 - 9 to disk.
             for (int i = 0; i < 10; i++)
             {
@@ -245,7 +248,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
 
             // When pendingTipHashHeight is null we can safely say the items were saved to the repository, based on the above SaveAsync.
-            WaitLoop(() => {
+            WaitLoop(() =>
+            {
                 var tipHashHeight = this.provenBlockHeaderStore.GetMemberValue("TipHashHeight") as HashHeightPair;
                 return tipHashHeight.Height == 9;
             });
@@ -348,7 +352,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var inHeader = CreateNewProvenBlockHeaderMock();
 
             // Add headers to pending batch in the wrong height order.
-            for(int i = 1; i >= 0; i--)
+            for (int i = 1; i >= 0; i--)
             {
                 this.provenBlockHeaderStore.AddToPendingBatch(inHeader, new HashHeightPair(inHeader.GetHash(), i));
             }
@@ -382,7 +386,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
                 HashHeightPair tipHashHeight = null;
 
-                WaitLoop(() => {
+                WaitLoop(() =>
+                {
                     tipHashHeight = this.provenBlockHeaderStore.GetMemberValue("TipHashHeight") as HashHeightPair;
                     return tipHashHeight == this.provenBlockHeaderRepository.TipHashHeight;
                 });
