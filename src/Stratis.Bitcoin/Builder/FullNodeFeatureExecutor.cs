@@ -78,9 +78,9 @@ namespace Stratis.Bitcoin.Builder
         /// Executes start or stop method of all the features registered with the associated full node.
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
-        /// <param name="disposing">Reverse the order of which the features are executed.</param>
+        /// <param name="reverseOrder">Reverse the order of which the features are executed.</param>
         /// <exception cref="AggregateException">Thrown in case one or more callbacks threw an exception.</exception>
-        private void Execute(Action<IFullNodeFeature> callback, bool disposing = false)
+        private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
         {
             List<Exception> exceptions = null;
 
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Builder
 
             IEnumerable<IFullNodeFeature> features = this.node.Services.Features;
 
-            if (disposing)
+            if (reverseOrder)
                 features = features.Reverse();
 
             foreach (IFullNodeFeature feature in features)
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Builder
                         exceptions = new List<Exception>();
 
                     exceptions.Add(ex);
-                    if (disposing)
+                    if (reverseOrder)
                         this.logger.LogError("An error occurred disposing feature {0}: '{1}'", feature.GetType().Name, ex.ToString());
                     else
                         this.logger.LogError("An error occurred: '{0}'", ex.ToString());
