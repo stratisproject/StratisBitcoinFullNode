@@ -134,53 +134,10 @@ namespace Stratis.Bitcoin.Features.PoA
                         await Task.Delay(waitingTimeInSeconds * 1000, this.cancellation.Token).ConfigureAwait(false);
                     }
 
-                    ChainedHeader tip = this.consensusManager.Tip;
-
-                    Script walletScriptPubKey = this.GetScriptPubKeyFromWallet();
-
-                    if (walletScriptPubKey == null)
-                    {
-                        this.logger.LogWarning("Miner wasn't able to get address from the wallet! You will not receive any rewards.");
-                        walletScriptPubKey = new Script();
-                    }
-
-                    BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
-
-                    blockTemplate.Block.Header.Time = myTimestamp;
-
-                    // Timestamp should always be greater than prev one.
-                    if (blockTemplate.Block.Header.Time <= tip.Header.Time)
-                    {
-                        // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
-                        this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
-                        continue;
-                    }
-
-                    // Update merkle root.
-                    blockTemplate.Block.UpdateMerkleRoot();
-
-                    // Sign block with our private key.
-                    var header = blockTemplate.Block.Header as PoABlockHeader;
-                    this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
-
-                    ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
+                    ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
 
                     if (chainedHeader == null)
                     {
-                        // Block wasn't accepted because we already connected block from the network.
-                        continue;
-                    }
-
-                    ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, blockTemplate.Block);
-                    if (result.Error != null)
-                    {
-                        // Sanity check. Should never happen.
-                        throw new Exception(result.Error.ToString());
-                    }
-
-                    if (chainedHeader == null)
-                    {
-                        this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]:false");
                         continue;
                     }
 
@@ -201,6 +158,55 @@ namespace Stratis.Bitcoin.Features.PoA
                     break;
                 }
             }
+        }
+
+        protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
+        {
+            ChainedHeader tip = this.consensusManager.Tip;
+
+            Script walletScriptPubKey = this.GetScriptPubKeyFromWallet();
+
+            if (walletScriptPubKey == null)
+            {
+                this.logger.LogWarning("Miner wasn't able to get address from the wallet! You will not receive any rewards.");
+                walletScriptPubKey = new Script();
+            }
+
+            BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
+
+            blockTemplate.Block.Header.Time = timestamp;
+
+            // Timestamp should always be greater than prev one.
+            if (blockTemplate.Block.Header.Time <= tip.Header.Time)
+            {
+                // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
+                this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
+                return null;
+            }
+
+            // Update merkle root.
+            blockTemplate.Block.UpdateMerkleRoot();
+
+            // Sign block with our private key.
+            var header = blockTemplate.Block.Header as PoABlockHeader;
+            this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
+
+            ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
+
+            if (chainedHeader == null)
+            {
+                // Block wasn't accepted because we already connected block from the network.
+                return null;
+            }
+
+            ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, blockTemplate.Block);
+            if (result.Error != null)
+            {
+                // Sanity check. Should never happen.
+                throw new Exception(result.Error.ToString());
+            }
+
+            return chainedHeader;
         }
 
         /// <summary>Gets scriptPubKey from the wallet.</summary>
