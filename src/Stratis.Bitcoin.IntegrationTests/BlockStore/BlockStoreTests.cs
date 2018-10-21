@@ -14,39 +14,37 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public class BlockStoreTests
     {
-        protected readonly ILoggerFactory loggerFactory;
-        private readonly Network network;
+        private readonly ILoggerFactory loggerFactory;
         private readonly Network regTest;
 
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
 
-            this.network = new BitcoinMain();
             this.regTest = new BitcoinRegTest();
             var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.network);
+            serializer.Initialize(this.regTest);
         }
 
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepository = new BlockRepository(this.regTest, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
             {
                 blockRepository.SetTxIndexAsync(true).Wait();
 
                 var blocks = new List<Block>();
                 for (int i = 0; i < 5; i++)
                 {
-                    Block block = this.network.CreateBlock();
-                    block.AddTransaction(this.network.CreateTransaction());
-                    block.AddTransaction(this.network.CreateTransaction());
+                    Block block = this.regTest.CreateBlock();
+                    block.AddTransaction(this.regTest.CreateTransaction());
+                    block.AddTransaction(this.regTest.CreateTransaction());
                     block.Transactions[0].AddInput(new TxIn(Script.Empty));
                     block.Transactions[0].AddOutput(Money.COIN + i * 2, Script.Empty);
                     block.Transactions[1].AddInput(new TxIn(Script.Empty));
                     block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
                     block.UpdateMerkleRoot();
-                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : this.network.GenesisHash;
+                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : this.regTest.GenesisHash;
                     blocks.Add(block);
                 }
 
