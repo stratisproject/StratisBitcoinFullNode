@@ -107,10 +107,7 @@ namespace Stratis.Bitcoin.Builder
                         exceptions = new List<Exception>();
 
                     exceptions.Add(ex);
-                    if (reverseOrder)
-                        this.logger.LogError("An error occurred disposing feature {0}: '{1}'", feature.GetType().Name, ex.ToString());
-                    else
-                        this.logger.LogError("An error occurred: '{0}'", ex.ToString());
+                    this.logger.LogError("An error occurred: '{0}'", ex.ToString());
                 }
             }
 
