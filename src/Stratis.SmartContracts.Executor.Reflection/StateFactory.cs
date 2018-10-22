@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         {
             var logHolder = new ContractLogHolder();
             var internalTransfers = new List<TransferInfo>();
-            return new State(this.smartContractStateFactory, stateRoot, logHolder, internalTransfers, block, this.network, transactionHash);
+            return new State(this.smartContractStateFactory, stateRoot, logHolder, internalTransfers, block, transactionHash);
         }
     }
 }
