@@ -55,8 +55,7 @@ namespace Stratis.SmartContracts.Tools.Sct
 
             Assembly smartContract = Assembly.Load(compilation);
 
-            // TODO don't hardcode the network
-            var serializer = new MethodParameterStringSerializer(new SmartContractPosRegTest());
+            var serializer = new MethodParameterStringSerializer();
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {

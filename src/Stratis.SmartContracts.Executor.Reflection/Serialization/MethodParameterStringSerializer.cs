@@ -12,13 +12,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// </summary>
     public sealed class MethodParameterStringSerializer : IMethodParameterStringSerializer
     {
-        private readonly Network network;
-
-        public MethodParameterStringSerializer(Network network)
-        {
-            this.network = network;
-        }
-
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>

@@ -13,8 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class MethodParameterStringSerializerTests
     {
-        public static Network Network = new SmartContractPosRegTest();
-        public static IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer(Network);
+        public static IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer();
 
         [Theory]
         [MemberData(nameof(GetData), parameters: 1)]
