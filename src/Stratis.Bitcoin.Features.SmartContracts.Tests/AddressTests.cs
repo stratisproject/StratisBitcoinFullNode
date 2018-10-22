@@ -22,13 +22,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x01
         };
 
-        private static Address address0 = Address.Create(address0Bytes, BytesToAddressString(address0Bytes, network));
-        private static Address address1 = Address.Create(address1Bytes, BytesToAddressString(address1Bytes, network));
+        private static Address address0 = Address.Create(address0Bytes, address0Bytes.BytesToAddressString(network));
+        private static Address address1 = Address.Create(address1Bytes, address1Bytes.BytesToAddressString(network));
 
         [Fact]
         public void Address_ToString()
         {
-            var addressString = BytesToAddressString(address0Bytes, network);
+            var addressString = address0Bytes.BytesToAddressString(network);
 
             Assert.Equal(addressString, address0.ToString());
         }
@@ -83,11 +83,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Address_Equality_Equals_Operator_Null()
         {
             Assert.False(address0 == null);
-        }
-
-        private static string BytesToAddressString(byte[] bytes, Network network)
-        {
-            return new BitcoinPubKeyAddress(new KeyId(new uint160(bytes)), network).ToString();
         }
     }
 }

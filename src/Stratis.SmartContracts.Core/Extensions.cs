@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Linq;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
 
@@ -26,20 +28,9 @@ namespace Stratis.SmartContracts.Core
             return bytes;
         }
 
-        public static byte[] ToBytes(this Address address)
-        {
-            var arr = new byte[Address.Width];
-            Buffer.BlockCopy(Utils.ToBytes(address.pn0, true), 0, arr, 4 * 0, 4);
-            Buffer.BlockCopy(Utils.ToBytes(address.pn1, true), 0, arr, 4 * 1, 4);
-            Buffer.BlockCopy(Utils.ToBytes(address.pn2, true), 0, arr, 4 * 2, 4);
-            Buffer.BlockCopy(Utils.ToBytes(address.pn3, true), 0, arr, 4 * 3, 4);
-            Buffer.BlockCopy(Utils.ToBytes(address.pn4, true), 0, arr, 4 * 4, 4);
-            return arr;
-        }
-        
         public static uint160 ToUint160(this Address address, Network network)
         {
-            return new uint160(address.ToBytes());
+            return new uint160(address.Bytes);
         }
 
         public static uint160 ToUint160(this string addressString, Network network)
