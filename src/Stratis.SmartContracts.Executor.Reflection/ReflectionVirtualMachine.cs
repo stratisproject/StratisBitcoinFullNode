@@ -81,7 +81,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             Result<IContract> contractLoadResult = this.Load(
                 code,
                 typeToInstantiate,
-                contractState.Message.ContractAddress.ToUint160(this.network),
+                contractState.Message.ContractAddress.ToUint160(),
                 contractState);
 
             if (!contractLoadResult.IsSuccess)
@@ -134,7 +134,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             Result<IContract> contractLoadResult = this.Load(
                 code,
                 typeName,
-                contractState.Message.ContractAddress.ToUint160(this.network),
+                contractState.Message.ContractAddress.ToUint160(),
                 contractState);
 
             if (!contractLoadResult.IsSuccess)
@@ -219,7 +219,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var builder = new StringBuilder();
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
-            builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress(this.network)));
+            builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress()));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
             logger.LogTrace("{0}", builder.ToString());
         }

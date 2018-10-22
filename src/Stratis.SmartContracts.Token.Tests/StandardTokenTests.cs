@@ -25,11 +25,11 @@ namespace Stratis.SmartContracts.Token.Tests
             this.mockContractState = new Mock<ISmartContractState>();
             this.mockContractState.Setup(s => s.PersistentState).Returns(this.mockPersistentState.Object);
             this.mockContractState.Setup(s => s.ContractLogger).Returns(this.mockContractLogger.Object);
-            this.owner = "0x0000000000000000000000000000000000000001".HexToAddress(network);
-            this.sender = "0x0000000000000000000000000000000000000002".HexToAddress(network);
-            this.contract = "0x0000000000000000000000000000000000000003".HexToAddress(network);
-            this.spender = "0x0000000000000000000000000000000000000004".HexToAddress(network);
-            this.destination = "0x0000000000000000000000000000000000000005".HexToAddress(network);
+            this.owner = "0x0000000000000000000000000000000000000001".HexToAddress();
+            this.sender = "0x0000000000000000000000000000000000000002".HexToAddress();
+            this.contract = "0x0000000000000000000000000000000000000003".HexToAddress();
+            this.spender = "0x0000000000000000000000000000000000000004".HexToAddress();
+            this.destination = "0x0000000000000000000000000000000000000005".HexToAddress();
         }
 
         [Fact]

@@ -18,7 +18,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
         /// <inheritdoc />
         public void Log<T>(ISmartContractState smartContractState, T toLog) where T : struct 
         {
-            this.rawLogs.Add(new RawLog(smartContractState.Message.ContractAddress.ToUint160(this.network), toLog));
+            this.rawLogs.Add(new RawLog(smartContractState.Message.ContractAddress.ToUint160(), toLog));
         }
 
         /// <inheritdoc />

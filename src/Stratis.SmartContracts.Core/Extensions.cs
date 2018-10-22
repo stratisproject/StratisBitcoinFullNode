@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Core
             return bytes;
         }
 
-        public static uint160 ToUint160(this Address address, Network network)
+        public static uint160 ToUint160(this Address address)
         {
             return new uint160(address.Bytes);
         }
@@ -38,7 +38,7 @@ namespace Stratis.SmartContracts.Core
             return new uint160(new BitcoinPubKeyAddress(addressString, network).Hash.ToBytes());
         }
 
-        public static Address ToAddress(this uint160 address, Network network)
+        public static Address ToAddress(this uint160 address)
         {
             return Address.Create(address.ToBytes());
         }
@@ -48,12 +48,12 @@ namespace Stratis.SmartContracts.Core
             return Address.Create(address.ToUint160(network).ToBytes());
         }
 
-        public static Address HexToAddress(this string hexString, Network network)
+        public static Address HexToAddress(this string hexString)
         {
-            return ToAddress(new uint160(hexString), network);
+            return ToAddress(new uint160(hexString));
         }
 
-        private static string UInt160ToAddressString(uint160 address, Network network)
+        public static string ToAddressString(this uint160 address, Network network)
         {
             return new BitcoinPubKeyAddress(new KeyId(address), network).ToString();
         }

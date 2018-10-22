@@ -8,8 +8,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class AddressTests
     {
-        private static readonly Network network = new SmartContractPosRegTest();
-
         private static readonly byte[] address0Bytes = new byte[20]
         {
             0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,

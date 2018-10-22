@@ -41,9 +41,19 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             var primitiveType = GetPrimitiveType(obj);
 
             // ToString works fine for all of our data types except byte arrays.
-            var serialized = primitiveType == MethodParameterDataType.ByteArray
-                ? ((byte[])obj).ToHexString()
-                : obj.ToString();
+            string serialized;
+            if (primitiveType == MethodParameterDataType.ByteArray)
+            {
+                serialized = ((byte[]) obj).ToHexString();
+            }
+            else if (primitiveType == MethodParameterDataType.Address)
+            {
+                serialized = ((Address) obj).Bytes.ToHexString();
+            }
+            else
+            {
+                serialized = obj.ToString();
+            }
 
             return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
         }
@@ -130,7 +140,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(long.Parse(parameterSignature[1]));
                 
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
-                    processedParameters.Add(parameterSignature[1].ToAddress(this.network));
+                    processedParameters.Add(parameterSignature[1].HexToAddress());
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
                     processedParameters.Add(parameterSignature[1].HexToByteArray());

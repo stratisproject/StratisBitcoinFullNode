@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 
         public void Log<T>(ISmartContractState smartContractState, T toLog) where T : struct 
         {
-            var rawLog = new RawLog(smartContractState.Message.ContractAddress.ToUint160(this.network), toLog);
+            var rawLog = new RawLog(smartContractState.Message.ContractAddress.ToUint160(), toLog);
             Log log = rawLog.ToLog(this.serializer);
             this.gasMeter.Spend(GasPriceList.LogOperationCost(log.Topics, log.Data));
 

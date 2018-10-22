@@ -30,12 +30,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.GasMeter = new Mock<IGasMeter>();
 
             var smartContractState = Mock.Of<ISmartContractState>(s =>
-                s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(this.Network), "0x0000000000000000000000000000000000000002".HexToAddress(this.Network), 100) &&
+                s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(), "0x0000000000000000000000000000000000000002".HexToAddress(), 100) &&
                 s.GasMeter == this.GasMeter.Object);
 
             this.SmartContractState = smartContractState;
 
-            this.FromAddress = smartContractState.Message.ContractAddress.ToUint160(this.Network);
+            this.FromAddress = smartContractState.Message.ContractAddress.ToUint160();
         }
 
         public uint160 FromAddress { get; }

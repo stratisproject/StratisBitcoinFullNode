@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         private byte[] Serialize(Address address)
         {
-            return address.ToUint160(this.network).ToBytes();
+            return address.ToUint160().ToBytes();
         }
 
         private byte[] Serialize(bool b)
@@ -207,7 +207,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         private Address ToAddress(byte[] val)
         {
-            return new uint160(val).ToAddress(this.network);
+            return new uint160(val).ToAddress();
         }
 
         private int ToInt32(byte[] val)

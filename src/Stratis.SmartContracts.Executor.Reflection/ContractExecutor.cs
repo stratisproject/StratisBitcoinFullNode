@@ -55,7 +55,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var block = new Block(
                 transactionContext.BlockHeight,
-                transactionContext.CoinbaseAddress.ToAddress(this.network)
+                transactionContext.CoinbaseAddress.ToAddress()
             );
 
             IState state = this.stateFactory.Create(

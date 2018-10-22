@@ -39,8 +39,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             var contractState = new SmartContractState(
                 state.Block,
                 new Message(
-                    address.ToAddress(this.Network),
-                    message.From.ToAddress(this.Network),
+                    address.ToAddress(),
+                    message.From.ToAddress(),
                     message.Amount
                 ),
                 persistentState,

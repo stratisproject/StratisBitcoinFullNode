@@ -686,7 +686,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters =  { newContractAddress.ToAddress(context.network) };
+            object[] testMethodParameters =  { newContractAddress.ToAddress() };
             
             var transferContractCall = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransfer", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCall, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
@@ -740,7 +740,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters =  { newContractAddress.ToAddress(context.network) };
+            object[] testMethodParameters =  { newContractAddress.ToAddress() };
 
             var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "Tester", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCallData, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
@@ -868,7 +868,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters = { receiveContractAddress2.ToAddress(context.network), fundsToSend };
+            object[] testMethodParameters = { receiveContractAddress2.ToAddress(), fundsToSend };
             
             var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, receiveContractAddress1, "SendFunds", testMethodParameters);
 
