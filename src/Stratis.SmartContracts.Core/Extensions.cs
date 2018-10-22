@@ -1,7 +1,5 @@
 ﻿using System;
-using System.Linq;
 using NBitcoin;
-using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Utilities;
 
@@ -46,6 +44,14 @@ namespace Stratis.SmartContracts.Core
         public static Address ToAddress(this string address, Network network)
         {
             return Address.Create(address.ToUint160(network).ToBytes());
+        }
+
+        public static Address ToAddress(this byte[] bytes)
+        {
+            if (bytes.Length != Address.Width)
+                throw new ArgumentOutOfRangeException(nameof(bytes), "Address must be 20 bytes wide");
+
+            return Address.Create(bytes);
         }
 
         public static Address HexToAddress(this string hexString)

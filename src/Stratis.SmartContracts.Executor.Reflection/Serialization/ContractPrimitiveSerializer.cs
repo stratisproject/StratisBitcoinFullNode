@@ -207,7 +207,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         private Address ToAddress(byte[] val)
         {
-            return new uint160(val).ToAddress();
+            return val.ToAddress();
         }
 
         private int ToInt32(byte[] val)
