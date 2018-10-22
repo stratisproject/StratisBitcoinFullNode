@@ -46,10 +46,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             {
                 serialized = ((byte[]) obj).ToHexString();
             }
-            else if (primitiveType == MethodParameterDataType.Address)
-            {
-                serialized = ((Address) obj).Bytes.ToHexString();
-            }
             else
             {
                 serialized = obj.ToString();

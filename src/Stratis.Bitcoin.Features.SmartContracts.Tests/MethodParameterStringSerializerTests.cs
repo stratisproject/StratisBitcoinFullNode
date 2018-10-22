@@ -26,17 +26,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Type paramType = value.GetType();
 
             // Equality comparison using .Equal is possible for these Types
-            if (value is Address address)
+            if (paramType.IsValueType || paramType == typeof(string))
             {
-                Assert.Equal(address, methodParamObjects[0]);
-            }
-            else
-            {
-                // Equality comparison using .Equal is possible for these Types
-                if (paramType.IsValueType || paramType == typeof(string))
-                {
-                    Assert.Equal(value, methodParamObjects[0]);
-                }
+                Assert.Equal(value, methodParamObjects[0]);
             }
 
             // For byte arrays we must compare each element
