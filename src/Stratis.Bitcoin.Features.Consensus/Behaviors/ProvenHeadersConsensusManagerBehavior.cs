@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
             // Only legacy peers are allowed to handle this message, or ph enabled peers before PH activation.
-            if (!IsPeerPhEnabled(peer) || !IsProvenHeaderActivated())
+            if (!this.IsPeerPhEnabled(peer) || !this.IsProvenHeaderActivated())
             {
                 return base.ProcessHeadersAsync(peer, headers);
             }
