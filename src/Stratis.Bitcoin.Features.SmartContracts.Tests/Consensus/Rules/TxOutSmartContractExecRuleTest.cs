@@ -3,8 +3,8 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.Core;
 using Xunit;
 

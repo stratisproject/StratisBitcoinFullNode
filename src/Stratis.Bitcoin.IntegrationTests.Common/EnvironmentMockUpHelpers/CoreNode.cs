@@ -22,6 +22,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -33,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NetworkCredential creds;
         private readonly object lockObject = new object();
         private readonly ILoggerFactory loggerFactory;
-        private readonly NodeRunner runner;
+        internal readonly NodeRunner runner;
         private List<Transaction> transactions = new List<Transaction>();
 
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
@@ -55,6 +56,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
+        private Func<ChainedHeaderBlock, bool> builderInterceptor;
         private bool builderNotInIBD;
         private bool builderNoValidation;
         private bool builderWithWallet;
@@ -110,6 +112,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
+        /// <summary>
+        /// Executes a function when a block has disconnected.
+        /// </summary>
+        /// <param name="interceptor">A function that is called when a block disconnects, it will return true if it executed.</param>
+        /// <returns>This node.</returns>
+        public CoreNode BlockDisconnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        {
+            this.builderInterceptor = interceptor;
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a wallet to this node with defaulted parameters.
+        /// </summary>
+        /// <param name="walletPassword">Wallet password defaulted to "password".</param>
+        /// <param name="walletName">Wallet name defaulted to "mywallet".</param>
+        /// <param name="walletPassphrase">Wallet passphrase defaulted to "passphrase".</param>
+        /// <returns>This node.</returns>
         public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
         {
             this.builderWithWallet = true;
@@ -149,6 +169,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                if (this.builderInterceptor != null)
+                    this.runner.Interceptor = this.builderInterceptor;
+
                 this.runner.BuildNode();
                 this.runner.Start();
                 this.State = CoreNodeState.Starting;
@@ -235,6 +258,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 DisableValidation();
         }
 
+        /// <summary>
+        /// Clears all consensus rules for this node.
+        /// </summary>
         public void DisableValidation()
         {
             this.FullNode.Network.Consensus.FullValidationRules.Clear();

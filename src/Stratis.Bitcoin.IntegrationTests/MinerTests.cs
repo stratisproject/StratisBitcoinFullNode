@@ -363,10 +363,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD();
+                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
-                builder.StartAll();
-                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
                 TestHelper.MineBlocks(miner, 1);
 
                 var txMempoolHelper = new TestMemPoolEntryHelper();
@@ -470,9 +468,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD();
+                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
-                builder.StartAll();
                 miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
                 TestHelper.MineBlocks(miner, 1);
 
@@ -684,10 +681,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-                builder.StartAll();
-
-                node.SetDummyMinerSecret(new BitcoinSecret(new Key(), node.FullNode.Network));
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet().Start();
 
                 TestHelper.MineBlocks(node, 10);
                 node.GetProofOfWorkRewardForMinedBlocks(10).Should().Be(Money.Coins(500));
@@ -708,14 +702,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet().Start();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().Start();
 
-                builder.StartAll();
-
-                miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
-
-                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                TestHelper.Connect(miner, syncer);
 
                 TestHelper.MineBlocks(miner, 1);
 
@@ -728,16 +718,13 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD();
-
-                builder.StartAll();
-
-                miner.SetDummyMinerSecret(new BitcoinSecret(new Key(), miner.FullNode.Network));
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithWallet().Start();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().Start();
 
                 TestHelper.MineBlocks(miner, 1);
 
-                miner.CreateRPCClient().AddNode(syncer.Endpoint, true);
+                TestHelper.Connect(miner, syncer);
+
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncer));
             }
         }
@@ -884,9 +871,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet();
-
-                builder.StartAll();
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet().Start();
 
                 TestHelper.MineBlocks(miner, 5);
 

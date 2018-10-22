@@ -144,6 +144,11 @@ namespace Stratis.SmartContracts.Tools.Sct
             throw new NotImplementedException();
         }
 
+        public bool IsContract(Address address)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte[] GetBytes(string key)
         {
             return new byte[] { };
