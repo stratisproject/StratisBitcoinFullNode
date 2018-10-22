@@ -50,7 +50,23 @@ namespace Stratis.SmartContracts.Core
 
         public static Address HexToAddress(this string hexString)
         {
-            return ToAddress(new uint160(hexString));
+            // uint160 only parses a big-endian hex string
+            var result = HexStringToBytes(hexString);
+            return Address.Create(result);
+        }
+
+        private static byte[] HexStringToBytes(string val)
+        {
+            if (val.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                val = val.Substring(2);
+
+            byte[] ret = new byte[val.Length / 2];
+            for (int i = 0; i < val.Length; i = i + 2)
+            {
+                string hexChars = val.Substring(i, 2);
+                ret[i / 2] = byte.Parse(hexChars, System.Globalization.NumberStyles.HexNumber);
+            }
+            return ret;
         }
 
         public static string ToAddressString(this uint160 address, Network network)

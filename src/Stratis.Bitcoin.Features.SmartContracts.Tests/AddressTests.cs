@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Linq;
+using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
@@ -29,6 +30,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private static Address address0 = Address.Create(address0Bytes);
         private static Address address1 = Address.Create(address1Bytes);
         private static Address address2 = Address.Create(address2Bytes);
+
+        [Fact]
+        public void Create_Address_Success()
+        {
+            Assert.True(address0.Bytes.SequenceEqual(address0Bytes));
+            Assert.True(address1.Bytes.SequenceEqual(address1Bytes));
+            Assert.True(address2.Bytes.SequenceEqual(address2Bytes));
+        }
+
+        [Fact]
+        public void UInt160_RoundTrip_Address_Success()
+        {
+            var uint160 = address2.ToUint160();
+            Assert.Equal(address2, uint160.ToAddress());
+        }
 
         [Fact]
         public void Address_ToString()
