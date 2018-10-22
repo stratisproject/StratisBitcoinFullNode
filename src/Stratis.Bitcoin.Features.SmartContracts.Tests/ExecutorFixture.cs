@@ -25,8 +25,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public ExecutorFixture(ContractTxData txData)
         {
-            this.Network = new SmartContractsRegTest();
-
             this.ContractTransactionContext = Mock.Of<IContractTransactionContext>(c =>
                 c.Data == this.Data &&
                 c.MempoolFee == this.MempoolFee &&

@@ -97,7 +97,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -130,7 +129,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -157,7 +155,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -189,7 +186,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -219,7 +215,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -257,7 +252,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -311,7 +305,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -349,7 +342,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
