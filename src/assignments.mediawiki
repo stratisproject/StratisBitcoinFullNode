@@ -17,21 +17,21 @@ State can be defined, active, failed. Dates are in UTC.
 |-
 | csv
 | 0
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
 | [[https://github.com/bitcoin/bips/edit/master/bip-0068.mediawiki|68]], [[https://github.com/bitcoin/bips/edit/master/bip-0112.mediawiki|112]], [[https://github.com/bitcoin/bips/edit/master/bip-0113.mediawiki|113]]
 |-
 | segwit
 | 1
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
+| TBD
 | [[https://github.com/bitcoin/bips/edit/master/bip-0141.mediawiki|141]], [[https://github.com/bitcoin/bips/edit/master/bip-0143.mediawiki|143]], [[https://github.com/bitcoin/bips/edit/master/bip-0147.mediawiki|147]]
 |}
