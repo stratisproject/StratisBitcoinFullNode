@@ -118,10 +118,5 @@ namespace Stratis.SmartContracts
             equals &= this.pn4 == obj.pn4;
             return equals;
         }
-
-        public override int GetHashCode()
-        {
-            return HashCode.Combine(this.pn0, this.pn1, this.pn2, this.pn3, this.pn4);
-        }
     }
 }
