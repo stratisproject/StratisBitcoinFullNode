@@ -7,12 +7,6 @@ State can be defined, active, failed. Dates are in UTC.
 {| class="wikitable sortable"
 ! Name
 ! Bit
-! Mainnet Start
-! Mainnet Expire
-! Mainnet State
-! Testnet Start
-! Testnet Expire
-! Testnet State
 ! StratisMain Start
 ! StratisMain Expire
 ! StratisMain State
@@ -23,12 +17,6 @@ State can be defined, active, failed. Dates are in UTC.
 |-
 | csv
 | 0
-| 2016-05-01 00:00:00
-| 2017-05-01 00:00:00
-| active since #419328
-| 2016-03-01 00:00:00
-| 2017-05-01 00:00:00
-| active since #770112
 | not planned for activation
 | not planned for activation
 | not planned for activation
@@ -39,17 +27,11 @@ State can be defined, active, failed. Dates are in UTC.
 |-
 | segwit
 | 1
-| 2016-11-15 00:00:00
-| 2017-11-15 00:00:00
-| active since #481824
-| 2016-05-01 00:00:00
-| 2017-05-01 00:00:00
-| active since #834624
+| not planned for activation
+| not planned for activation
+| not planned for activation
+| not planned for activation
+| not planned for activation
+| not planned for activation
 | [[https://github.com/bitcoin/bips/edit/master/bip-0141.mediawiki|141]], [[https://github.com/bitcoin/bips/edit/master/bip-0143.mediawiki|143]], [[https://github.com/bitcoin/bips/edit/master/bip-0147.mediawiki|147]]
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
-| not planned for activation
 |}
