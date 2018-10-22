@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     if (timeNow <= this.consensusManager.Tip.Header.Time)
                     {
-                        await Task.Delay(500).ConfigureAwait(false);
+                        await this.WaitBeforeCanMineAsync(500).ConfigureAwait(false);
                         continue;
                     }
 
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     if (waitingTimeInSeconds > 0)
                     {
                         // Wait until we can mine.
-                        await Task.Delay(waitingTimeInSeconds * 1000, this.cancellation.Token).ConfigureAwait(false);
+                        await this.WaitBeforeCanMineAsync(waitingTimeInSeconds * 1000, this.cancellation.Token).ConfigureAwait(false);
                     }
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
@@ -162,7 +162,8 @@ namespace Stratis.Bitcoin.Features.PoA
                     builder.AppendLine("<<==============================================================>>");
                     this.logger.LogInformation(builder.ToString());
 
-                    await Task.Delay(TimeSpan.FromSeconds((double) this.network.TargetSpacingSeconds / 2.0), this.cancellation.Token).ConfigureAwait(false);
+                    int halfTargetSpacingMs = (int)this.network.TargetSpacingSeconds * 1000 / 2;
+                    await this.WaitBeforeCanMineAsync(halfTargetSpacingMs, this.cancellation.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -173,6 +174,11 @@ namespace Stratis.Bitcoin.Features.PoA
                     break;
                 }
             }
+        }
+
+        protected virtual async Task WaitBeforeCanMineAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
+        {
+            await Task.Delay(delayMs, cancellation).ConfigureAwait(false);
         }
 
         protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)

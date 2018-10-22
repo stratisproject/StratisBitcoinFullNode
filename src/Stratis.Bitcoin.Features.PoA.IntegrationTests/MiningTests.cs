@@ -37,11 +37,12 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         [Fact]
         public void NodeCanMine()
         {
-            var network = new TestPoANetwork(1);
+            var network = new TestPoANetwork();
 
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
                 CoreNode node = builder.CreatePoANode(network, network.FederationKey1).Start();
+                node.EnableFastMining();
 
                 var tipBefore = node.GetTip().Height;
                 TestHelper.WaitLoop(() => node.GetTip().Height >= tipBefore + 5);
@@ -51,12 +52,13 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         [Fact]
         public void PremineIsReceived()
         {
-            TestPoANetwork network = new TestPoANetwork(1);
+            TestPoANetwork network = new TestPoANetwork();
 
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
                 string walletName = "mywallet";
                 CoreNode node = builder.CreatePoANode(network, network.FederationKey1).WithWallet("pass", walletName).Start();
+                node.EnableFastMining();
 
                 IWalletManager walletManager = node.FullNode.NodeService<IWalletManager>();
                 long balanceOnStart = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);

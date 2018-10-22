@@ -7,15 +7,19 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
 {
     public class PoANodeRunner : NodeRunner
     {
-        public PoANodeRunner(string dataDir, PoANetwork network)
+        private IDateTimeProvider timeProvider;
+
+        public PoANodeRunner(string dataDir, PoANetwork network, IDateTimeProvider timeProvider)
             : base(dataDir)
         {
             this.Network = network;
+            this.timeProvider = timeProvider;
         }
 
         public override void BuildNode()
@@ -31,6 +35,8 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
                 .UseApi()
                 .AddRPC()
                 .MockIBD()
+                .ReplaceTimeProvider(this.timeProvider)
+                .AddFastMiningCapability()
                 .Build();
         }
     }

@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
 
         public Key FederationKey3 { get; private set; }
 
-        public TestPoANetwork(uint targetSpacing = 60)
+        public TestPoANetwork()
         {
             this.FederationKey1 = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey;
             this.FederationKey2 = new Mnemonic("idle power swim wash diesel blouse photo among eager reward govern menu").DeriveExtKey().PrivateKey;
@@ -23,8 +23,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
                 this.FederationKey2.PubKey, // 03b539807c64abafb2d14c52a0d1858cc29d7c7fad0598f92a1274789c18d74d2d
                 this.FederationKey3.PubKey  // 02d6792cf941b68edd1e9056653573917cbaf974d46e9eeb9801d6fcedf846477a
             };
-
-            this.TargetSpacingSeconds = targetSpacing;
         }
     }
 }
