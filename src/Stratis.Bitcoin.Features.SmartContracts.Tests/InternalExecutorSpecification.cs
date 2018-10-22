@@ -28,7 +28,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -72,7 +71,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -110,7 +108,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -151,7 +148,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -198,7 +194,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -239,7 +234,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -276,7 +270,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -318,7 +311,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -354,7 +346,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
-                fixture.Network,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 

@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IInternalTransactionExecutor Create(IState state)
         {
-            return new InternalExecutor(this.loggerFactory, this.network, state, this.stateProcessor);
+            return new InternalExecutor(this.loggerFactory, state, this.stateProcessor);
         }
     }
 }

@@ -12,16 +12,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
-        private readonly Network network;
         private readonly IState state;
         private readonly IStateProcessor stateProcessor;
 
-        public InternalExecutor(ILoggerFactory loggerFactory, Network network, IState state,
+        public InternalExecutor(ILoggerFactory loggerFactory, IState state,
             IStateProcessor stateProcessor)
         {
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.network = network;
             this.state = state;
             this.stateProcessor = stateProcessor;
         }

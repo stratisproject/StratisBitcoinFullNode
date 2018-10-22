@@ -12,9 +12,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         public InternalExecutorTestFixture()
         {
-            // The addresses used in related tests are for this Network
-            this.Network = new SmartContractPosTest();
-
             var logger = new Mock<ILogger>();
             this.LoggerFactory = Mock.Of<ILoggerFactory>
                 (l => l.CreateLogger(It.IsAny<string>()) == logger.Object);
