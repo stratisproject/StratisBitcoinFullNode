@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
 using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.Consensus
@@ -129,6 +130,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new StratisBigFixPosFutureDriftRule(),
                     new CheckDifficultyPosRule(),
                     new StratisHeaderVersionRule(),
+                    new ProvenHeaderCoinstakeRule(),
+                    new ProvenHeaderSizeRule()
                 };
 
                 consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
