@@ -157,7 +157,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             byte[] toBytes = condensingTransaction.Outputs[0].ScriptPubKey.ToBytes();
             Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
             uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
-            Assert.Equal(receiveResponse.NewContractAddress, toAddress.ToAddressString(this.mockChain.Network));
+            Assert.Equal(receiveResponse.NewContractAddress, toAddress.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), condensingTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -212,7 +212,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             byte[] toBytes = condensingTransaction.Outputs[0].ScriptPubKey.ToBytes();
             Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
             uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
-            Assert.Equal(response.NewContractAddress, toAddress.ToAddressString(this.mockChain.Network));
+            Assert.Equal(response.NewContractAddress, toAddress.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC) / 2, condensingTransaction.Outputs[1].Value);
 
             // 1 output to address sent in params
@@ -290,7 +290,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             byte[] toBytes = condensingTransaction.Outputs[0].ScriptPubKey.ToBytes();
             Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
             uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
-            Assert.Equal(preResponse.NewContractAddress, toAddress.ToAddressString(this.mockChain.Network));
+            Assert.Equal(preResponse.NewContractAddress, toAddress.ToBase58Address(this.mockChain.Network));
 
             // Received 1/2 the sent funds + 1/2 of those funds
             Money transferAmount1 = new Money((long) amount, MoneyUnit.BTC) / 2;
@@ -302,7 +302,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             toBytes = condensingTransaction.Outputs[1].ScriptPubKey.ToBytes();
             Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
             toAddress = new uint160(toBytes.Skip(1).ToArray());
-            Assert.Equal(receiveResponse.NewContractAddress, toAddress.ToAddressString(this.mockChain.Network));
+            Assert.Equal(receiveResponse.NewContractAddress, toAddress.ToBase58Address(this.mockChain.Network));
 
             // Received 1/2 the sent funds, but sent 1/2 of those funds back
             Assert.Equal(new Money((long) amount, MoneyUnit.BTC) - (transferAmount1 + transferAmount2), condensingTransaction.Outputs[1].Value);
@@ -338,7 +338,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             byte[] toBytes = condensingTransaction.Outputs[0].ScriptPubKey.ToBytes();
             Assert.Equal((byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER, toBytes[0]);
             uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
-            Assert.Equal(response.NewContractAddress, toAddress.ToAddressString(this.mockChain.Network));
+            Assert.Equal(response.NewContractAddress, toAddress.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC) / 2, condensingTransaction.Outputs[0].Value);
             Assert.Equal((ulong)new Money((long)amount, MoneyUnit.BTC) / 2, this.node1.GetContractBalance(response.NewContractAddress));
 
@@ -349,7 +349,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             toAddress = new uint160(toBytes.Skip(1).ToArray());
             Assert.Equal(internalContract, toAddress);
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC) / 2, condensingTransaction.Outputs[1].Value);
-            Assert.Equal((ulong)new Money((long)amount, MoneyUnit.BTC) / 2, this.node1.GetContractBalance(internalContract.ToAddressString(this.mockChain.Network)));
+            Assert.Equal((ulong)new Money((long)amount, MoneyUnit.BTC) / 2, this.node1.GetContractBalance(internalContract.ToBase58Address(this.mockChain.Network)));
         }
 
         [Fact]
@@ -404,7 +404,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal((ulong)0, this.node1.GetContractBalance(preResponse.NewContractAddress));
 
             // Created contract received full amount
-            Assert.Equal((ulong)new Money((ulong)amount, MoneyUnit.BTC), this.node1.GetContractBalance(createdAddress.ToAddressString(this.mockChain.Network)));
+            Assert.Equal((ulong)new Money((ulong)amount, MoneyUnit.BTC), this.node1.GetContractBalance(createdAddress.ToBase58Address(this.mockChain.Network)));
 
             // Receipt is correct
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
@@ -439,13 +439,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint160 successAddress1 = this.addressGenerator.GenerateAddress(response.TransactionId, 1);
             uint160 failAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 2);
             uint160 successAddress2 = this.addressGenerator.GenerateAddress(response.TransactionId, 3);
-            Assert.NotNull(this.node1.GetCode(successAddress1.ToAddressString(this.mockChain.Network)));
-            Assert.Null(this.node1.GetCode(failAddress.ToAddressString(this.mockChain.Network)));
-            Assert.NotNull(this.node1.GetCode(successAddress2.ToAddressString(this.mockChain.Network)));
+            Assert.NotNull(this.node1.GetCode(successAddress1.ToBase58Address(this.mockChain.Network)));
+            Assert.Null(this.node1.GetCode(failAddress.ToBase58Address(this.mockChain.Network)));
+            Assert.NotNull(this.node1.GetCode(successAddress2.ToBase58Address(this.mockChain.Network)));
 
-            Assert.Equal((ulong) 1, this.node1.GetContractBalance(successAddress1.ToAddressString(this.mockChain.Network)));
-            Assert.Equal((ulong) 0, this.node1.GetContractBalance(failAddress.ToAddressString(this.mockChain.Network)));
-            Assert.Equal((ulong) 1, this.node1.GetContractBalance(successAddress2.ToAddressString(this.mockChain.Network)));
+            Assert.Equal((ulong) 1, this.node1.GetContractBalance(successAddress1.ToBase58Address(this.mockChain.Network)));
+            Assert.Equal((ulong) 0, this.node1.GetContractBalance(failAddress.ToBase58Address(this.mockChain.Network)));
+            Assert.Equal((ulong) 1, this.node1.GetContractBalance(successAddress2.ToBase58Address(this.mockChain.Network)));
         }
 
         [Fact]
@@ -474,7 +474,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.node2.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
-            byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddressString(this.mockChain.Network), "ReceiveBalance");
+            byte[] saved = this.node1.GetStorageValue(contractAddress.ToBase58Address(this.mockChain.Network), "ReceiveBalance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
         }
@@ -497,7 +497,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint160 contractAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
 
             // Stored balance in PersistentState should be only that which was sent
-            byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddressString(this.mockChain.Network), "Balance");
+            byte[] saved = this.node1.GetStorageValue(contractAddress.ToBase58Address(this.mockChain.Network), "Balance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
         }
@@ -520,7 +520,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint160 internalContract = this.addressGenerator.GenerateAddress(response.TransactionId, 1);
 
             // Stored balance in PersistentState should be only that which was sent (10)
-            byte[] saved = this.node1.GetStorageValue(internalContract.ToAddressString(this.mockChain.Network), "Balance");
+            byte[] saved = this.node1.GetStorageValue(internalContract.ToBase58Address(this.mockChain.Network), "Balance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.Equal((ulong) 10, savedUlong);
         }
@@ -550,7 +550,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.node2.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
-            byte[] saved = this.node1.GetStorageValue(contractAddress.ToAddressString(this.mockChain.Network), "Balance");
+            byte[] saved = this.node1.GetStorageValue(contractAddress.ToBase58Address(this.mockChain.Network), "Balance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
         }
@@ -596,7 +596,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.node2.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
-            byte[] saved = this.node1.GetStorageValue(contract2Address.ToAddressString(this.mockChain.Network), "ReceiveBalance");
+            byte[] saved = this.node1.GetStorageValue(contract2Address.ToBase58Address(this.mockChain.Network), "ReceiveBalance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
             Assert.Equal(transferredAmount, savedUlong);
         }
@@ -636,7 +636,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.node2.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
-            byte[] saved = this.node1.GetStorageValue(contract1Address.ToAddressString(this.mockChain.Network), "ReceiveBalance");
+            byte[] saved = this.node1.GetStorageValue(contract1Address.ToBase58Address(this.mockChain.Network), "ReceiveBalance");
             ulong savedUlong = BitConverter.ToUInt64(saved);
 
             // Balance should be the same as the initial amount
