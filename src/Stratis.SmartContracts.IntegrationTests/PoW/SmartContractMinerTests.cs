@@ -312,7 +312,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
                 this.serializer = new Serializer(this.primitiveSerializer);
-                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.network, this.internalTxExecutorFactory, this.serializer);
+                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.internalTxExecutorFactory, this.serializer);
                 this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
                 this.ExecutorFactory = new ReflectionExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.primitiveSerializer);
             }

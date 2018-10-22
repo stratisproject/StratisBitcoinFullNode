@@ -11,17 +11,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISerializer serializer;
 
         public SmartContractStateFactory(IContractPrimitiveSerializer primitiveSerializer,
-            Network network,
             IInternalExecutorFactory internalTransactionExecutorFactory,
             ISerializer serializer)
         {
             this.serializer = serializer;
             this.PrimitiveSerializer = primitiveSerializer;
-            this.Network = network;
             this.InternalTransactionExecutorFactory = internalTransactionExecutorFactory;
         }
 
-        public Network Network { get; }
         public IContractPrimitiveSerializer PrimitiveSerializer { get; }
         public IInternalExecutorFactory InternalTransactionExecutorFactory { get; }
 
