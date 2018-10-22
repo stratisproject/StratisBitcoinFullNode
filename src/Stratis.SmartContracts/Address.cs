@@ -1,20 +1,19 @@
-﻿using System;
-using System.Linq;
-
-namespace Stratis.SmartContracts
+﻿namespace Stratis.SmartContracts
 {
     /// <summary>
     /// Represents an address used when sending or receiving funds.
     /// </summary>
     public struct Address
     {
+        public static Address Zero = new Address();
+        public const int Width = 160 / 8;
+
         private readonly uint pn0;
         private readonly uint pn1;
         private readonly uint pn2;
         private readonly uint pn3;
         private readonly uint pn4;
 
-        public const int Width = 160 / 8;
         public readonly byte[] Bytes;
 
         public Address(Address other)

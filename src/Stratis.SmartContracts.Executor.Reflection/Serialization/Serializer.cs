@@ -5,34 +5,6 @@ using Nethereum.RLP;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
-    public class AddressDeserializationResult : IAddressDeserializationResult
-    {
-        private AddressDeserializationResult()
-        {
-            this.Success = false;
-        }
-
-        private AddressDeserializationResult(Address address)
-        {
-            this.Success = true;
-            this.Address = address;
-        }
-
-        public bool Success { get; }
-
-        public Address Address { get; }
-
-        public static IAddressDeserializationResult Failure()
-        {
-            return new AddressDeserializationResult();
-        }
-
-        public static IAddressDeserializationResult Ok(Address address)
-        {
-            return new AddressDeserializationResult(address);
-        }
-    }
-
     /// <summary>
     /// Defines the serialization functionality that is exposed to a <see cref="SmartContract"/>.
     /// </summary>
@@ -124,30 +96,30 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return success ? result : default(bool);
         }
 
-        public IAddressDeserializationResult ToAddress(byte[] val)
+        public Address ToAddress(byte[] val)
         {
             if (val == null || val.Length != Address.Width)
-                return AddressDeserializationResult.Failure();
+                return Address.Zero;
 
             (bool success, Address address) = this.TryDeserializeValue<Address>(val);
 
             return success
-                ? AddressDeserializationResult.Ok(address)
-                : AddressDeserializationResult.Failure();
+                ? address
+                : Address.Zero;
         }
 
-        public IAddressDeserializationResult ToAddress(string val)
+        public Address ToAddress(string val)
         {
             if (string.IsNullOrWhiteSpace(val))
-                return AddressDeserializationResult.Failure();
+                return Address.Zero;
 
             try
             {
-                return AddressDeserializationResult.Ok(this.primitiveSerializer.ToAddress(val));
+                return this.primitiveSerializer.ToAddress(val);
             }
             catch (Exception)
             {
-                return AddressDeserializationResult.Failure();
+                return Address.Zero;
             }
         }
 

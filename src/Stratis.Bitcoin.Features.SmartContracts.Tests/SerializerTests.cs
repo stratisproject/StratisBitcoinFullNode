@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var result = this.serializer.ToAddress((string) null);
 
-            Assert.Equal(default(Address), result.Address);
+            Assert.Equal(default(Address), result);
             this.contractPrimitiveSerializer.Verify(s => s.Deserialize<Address>(It.IsAny<byte[]>()), Times.Never);
         }
 
@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var result = this.serializer.ToAddress(new byte[0]);
 
-            Assert.Equal(default(Address), result.Address);
+            Assert.Equal(default(Address), result);
             this.contractPrimitiveSerializer.Verify(s => s.Deserialize<Address>(It.IsAny<byte[]>()), Times.Never);
         }
 
