@@ -60,35 +60,28 @@ namespace Stratis.SmartContracts
 
         public override string ToString()
         {
-            string result = "";
-
-            result += UIntToHexString(this.pn0);
-            result += UIntToHexString(this.pn1);
-            result += UIntToHexString(this.pn2);
-            result += UIntToHexString(this.pn3);
-            result += UIntToHexString(this.pn4);
-
-            return result;
+            return string.Concat(
+                UIntToHexString(this.pn0),
+                UIntToHexString(this.pn1),
+                UIntToHexString(this.pn2),
+                UIntToHexString(this.pn3),
+                UIntToHexString(this.pn4)
+            );
         }
 
         private static string UIntToHexString(uint val)
         {
-            string result = "";
             const string alphabet = "0123456789ABCDEF";
 
-            result += alphabet[(int)((val & 0x000000F0) >> 1 * 4)];
-            result += alphabet[(int)(val & 0x0000000F)];
-
-            result += alphabet[(int)((val & 0x0000F000) >> 3 * 4)];
-            result += alphabet[(int)((val & 0x00000F00) >> 2 * 4)];
-
-            result += alphabet[(int)((val & 0x00F00000) >> 5 * 4)];
-            result += alphabet[(int)((val & 0x000F0000) >> 4 * 4)];
-
-            result += alphabet[(int)((val & 0xF0000000) >> 7 * 4)];
-            result += alphabet[(int)((val & 0x0F000000) >> 6 * 4)];
-
-            return result;
+            return string.Concat(
+                alphabet[(int) ((val & 0x000000F0) >> 1 * 4)],
+                alphabet[(int) (val & 0x0000000F)],
+                alphabet[(int) ((val & 0x0000F000) >> 3 * 4)],
+                alphabet[(int) ((val & 0x00000F00) >> 2 * 4)],
+                alphabet[(int) ((val & 0x00F00000) >> 5 * 4)],
+                alphabet[(int) ((val & 0x000F0000) >> 4 * 4)],
+                alphabet[(int) ((val & 0xF0000000) >> 7 * 4)],
+                alphabet[(int) ((val & 0x0F000000) >> 6 * 4)]);
         }
 
         public static bool operator ==(Address obj1, Address obj2)
