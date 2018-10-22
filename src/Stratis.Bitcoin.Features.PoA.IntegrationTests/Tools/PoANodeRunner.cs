@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
                 .UseWallet()
                 .UseApi()
                 .AddRPC()
+                .MockIBD()
                 .Build();
         }
     }
