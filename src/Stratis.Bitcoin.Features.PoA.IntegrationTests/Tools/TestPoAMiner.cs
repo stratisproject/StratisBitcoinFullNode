@@ -18,9 +18,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
 {
     public class TestPoAMiner : PoAMiner
     {
-        public bool EnableFastMining { get; set; }
+        public bool FastMiningEnabled { get; private set; } = false;
 
         private readonly DateTimeProvider timeProvider;
+
+        private CancellationTokenSource cancellationSource;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -39,11 +41,24 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
                 connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager)
         {
             this.timeProvider = dateTimeProvider as DateTimeProvider;
+            this.cancellationSource = new CancellationTokenSource();
+        }
+
+        public void EnableFastMining()
+        {
+            this.FastMiningEnabled = true;
+            this.cancellationSource.Cancel();
+        }
+
+        public void DisableFastMining()
+        {
+            this.FastMiningEnabled = false;
+            this.cancellationSource = new CancellationTokenSource();
         }
 
         protected override async Task WaitBeforeCanMineAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
         {
-            if (this.EnableFastMining)
+            if (this.FastMiningEnabled)
             {
                 TimeSpan span = (TimeSpan)this.timeProvider.GetMemberValue("adjustedTimeOffset");
                 TimeSpan newSpan = span + TimeSpan.FromMilliseconds(delayMs);
@@ -51,7 +66,15 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
             }
             else
             {
-                await base.WaitBeforeCanMineAsync(delayMs, cancellation).ConfigureAwait(false);
+                try
+                {
+                    CancellationToken token = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationSource.Token, cancellation).Token;
+
+                    await base.WaitBeforeCanMineAsync(delayMs, token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException exception)
+                {
+                }
             }
         }
     }

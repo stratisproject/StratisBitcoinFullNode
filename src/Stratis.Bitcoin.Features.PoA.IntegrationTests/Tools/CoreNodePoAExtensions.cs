@@ -6,7 +6,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
     {
         public static void EnableFastMining(this CoreNode node)
         {
-            (node.FullNode.NodeService<IPoAMiner>() as TestPoAMiner).EnableFastMining = true;
+            (node.FullNode.NodeService<IPoAMiner>() as TestPoAMiner).EnableFastMining();
         }
     }
 }
