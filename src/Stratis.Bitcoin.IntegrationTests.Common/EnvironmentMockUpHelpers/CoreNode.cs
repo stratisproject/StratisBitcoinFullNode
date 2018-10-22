@@ -571,5 +571,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             dest = rpc.DumpPrivKey(address);
             return dest;
         }
+
+        public ChainedHeader GetTip()
+        {
+            return this.FullNode.NodeService<IConsensusManager>().Tip;
+        }
     }
 }

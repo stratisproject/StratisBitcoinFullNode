@@ -29,7 +29,10 @@ namespace Stratis.Bitcoin.Features.PoA
     /// </remarks>
     public interface IPoAMiner : IDisposable
     {
+        /// <summary>Starts mining loop.</summary>
         void InitializeMining();
+
+        bool IsMining();
     }
 
     /// <inheritdoc cref="IPoAMiner"/>
@@ -97,13 +100,18 @@ namespace Stratis.Bitcoin.Features.PoA
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
         }
 
-        /// <summary>Starts mining loop.</summary>
+        /// <inheritdoc />
         public void InitializeMining()
         {
             if (this.miningTask == null)
             {
                 this.miningTask = this.CreateBlocksAsync();
             }
+        }
+
+        public bool IsMining()
+        {
+            return this.miningTask != null;
         }
 
         private async Task CreateBlocksAsync()

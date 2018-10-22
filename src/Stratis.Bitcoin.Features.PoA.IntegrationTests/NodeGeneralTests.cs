@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
-                CoreNode node = builder.CreatePoANode(network).NotInIBD().Start();
+                CoreNode node = builder.CreatePoANode(network).Start();
                 node.FullNode.Dispose();
             }
         }
