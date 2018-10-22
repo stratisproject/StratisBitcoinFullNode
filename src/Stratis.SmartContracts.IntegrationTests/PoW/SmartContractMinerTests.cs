@@ -307,7 +307,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
-                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
+                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader);
                 this.stateProcessor = new StateProcessor(this.reflectionVirtualMachine, this.AddressGenerator);
                 this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);

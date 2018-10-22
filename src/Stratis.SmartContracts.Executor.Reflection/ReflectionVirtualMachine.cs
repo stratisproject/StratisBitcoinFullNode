@@ -20,7 +20,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public class ReflectionVirtualMachine : IVirtualMachine
     {
         private readonly ILogger logger;
-        private readonly Network network;
         private readonly ISmartContractValidator validator;
         private readonly ILoader assemblyLoader;
         private readonly IContractModuleDefinitionReader moduleDefinitionReader;
@@ -29,13 +28,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public ReflectionVirtualMachine(ISmartContractValidator validator,
             ILoggerFactory loggerFactory,
-            Network network,
             ILoader assemblyLoader,
             IContractModuleDefinitionReader moduleDefinitionReader)
         {
             this.validator = validator;
             this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.network = network;
             this.assemblyLoader = assemblyLoader;
             this.moduleDefinitionReader = moduleDefinitionReader;
         }
