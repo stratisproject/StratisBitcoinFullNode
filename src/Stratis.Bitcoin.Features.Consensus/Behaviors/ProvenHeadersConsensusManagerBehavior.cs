@@ -183,7 +183,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                     };
                 }
                 // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
-                else if (IsPeerWhitelisted(peer) || this.IsProvenHeaderActivated())
+                else if (IsPeerWhitelisted(peer))
                     return base.BuildGetHeadersPayload();
                 // If the peer doesn't support PH and isn't whitelisted, return null (stop synch attempt with legacy StratisX nodes).
                 else
