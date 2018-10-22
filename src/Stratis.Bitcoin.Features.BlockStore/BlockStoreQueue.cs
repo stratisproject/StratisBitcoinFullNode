@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -46,9 +47,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="INodeLifetime"/>
-        private readonly INodeLifetime nodeLifetime;
-
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
@@ -78,11 +76,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>Write access should be protected by <see cref="blocksCacheLock"/>.</remarks>
         private readonly Dictionary<uint256, ChainedHeaderBlock> pendingBlocksCache;
 
+        private readonly CancellationTokenSource cancellation;
+
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
             StoreSettings storeSettings,
-            INodeLifetime nodeLifetime,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             INodeStats nodeStats)
@@ -90,11 +89,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(storeSettings, nameof(storeSettings));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
             this.chainState = chainState;
-            this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
             this.chain = chain;
             this.blockRepository = blockRepository;
@@ -103,6 +100,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.cancellation = new CancellationTokenSource();
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
@@ -306,7 +304,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Task<ChainedHeaderBlock> dequeueTask = null;
             Task timerTask = null;
 
-            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            while (!this.cancellation.IsCancellationRequested)
             {
                 // Start new dequeue task if not started already.
                 dequeueTask = dequeueTask ?? this.blocksQueue.DequeueAsync();
@@ -322,7 +320,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
                 catch (OperationCanceledException)
                 {
-                    // Happens when node is shutting down or Dispose() is called.
+                    // Can happen if Dispose() was called.
                     // We want to save whatever is in the batch before exiting the loop.
                     saveBatch = true;
 
@@ -377,7 +375,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 else
                 {
                     // Start timer if it is not started already.
-                    timerTask = timerTask ?? Task.Delay(BatchMaxSaveIntervalSeconds * 1000, this.nodeLifetime.ApplicationStopping);
+                    timerTask = timerTask ?? Task.Delay(BatchMaxSaveIntervalSeconds * 1000, this.cancellation.Token);
                 }
             }
 
@@ -437,7 +435,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             batchCleared.Reverse();
-            
+
             return batchCleared;
         }
 
@@ -467,6 +465,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             // Let current batch saving task finish.
             this.blocksQueue.Dispose();
+            this.cancellation.Cancel();
             this.dequeueLoopTask?.GetAwaiter().GetResult();
             this.blockRepository.Dispose();
         }
