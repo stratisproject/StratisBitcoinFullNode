@@ -130,6 +130,13 @@ namespace Stratis.Bitcoin.Features.PoA
                     }
 
                     uint timeNow = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+
+                    if (timeNow <= this.consensusManager.Tip.Header.Time)
+                    {
+                        await Task.Delay(500).ConfigureAwait(false);
+                        continue;
+                    }
+
                     uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
                     int waitingTimeInSeconds = (int)(myTimestamp - timeNow) - 1;
