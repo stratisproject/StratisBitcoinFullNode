@@ -23,9 +23,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             uint version = ThresholdConditionCache.VersionbitsTopBits;
             var thresholdConditionCache = new ThresholdConditionCache(this.Parent.Network.Consensus);
 
-            IEnumerable<BIP9Deployments> deployments = Enum.GetValues(typeof(BIP9Deployments)).OfType<BIP9Deployments>();
-
-            foreach (BIP9Deployments deployment in deployments)
+            for (int deployment = 0; deployment < thresholdConditionCache.ArraySize; deployment++)
             {
                 ThresholdState state = thresholdConditionCache.GetState(prevChainedHeader, deployment);
                 if ((state == ThresholdState.LockedIn) || (state == ThresholdState.Started))
