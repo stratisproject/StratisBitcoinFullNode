@@ -16,7 +16,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IContractRefundProcessor refundProcessor;
         private readonly IContractTransferProcessor transferProcessor;
         private readonly ICallDataSerializer serializer;
-        private readonly Network network;
         private readonly IStateFactory stateFactory;
         private readonly IStateProcessor stateProcessor;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
@@ -25,7 +24,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             ICallDataSerializer serializer,
             IContractRefundProcessor refundProcessor,
             IContractTransferProcessor transferProcessor,
-            Network network,
             IStateFactory stateFactory,
             IStateProcessor stateProcessor,
             IContractPrimitiveSerializer contractPrimitiveSerializer)
@@ -34,7 +32,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
             this.serializer = serializer;
-            this.network = network;
             this.stateFactory = stateFactory;
             this.stateProcessor = stateProcessor;
             this.contractPrimitiveSerializer = contractPrimitiveSerializer;
