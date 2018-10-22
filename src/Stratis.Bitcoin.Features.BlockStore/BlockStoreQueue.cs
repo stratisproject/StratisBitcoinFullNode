@@ -464,8 +464,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public void Dispose()
         {
             // Let current batch saving task finish.
-            this.blocksQueue.Dispose();
             this.cancellation.Cancel();
+            this.blocksQueue.Dispose();
             this.dequeueLoopTask?.GetAwaiter().GetResult();
             this.blockRepository.Dispose();
         }
