@@ -47,8 +47,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public Mock<IState> State { get; }
 
-        public Network Network { get; }
-
         public ILoggerFactory LoggerFactory { get; }
 
         public void SetGasMeterLimitAbove(Gas minimum)

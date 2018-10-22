@@ -109,7 +109,5 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public Mock<ICallDataSerializer> CallDataSerializer { get; }
 
         public ILoggerFactory LoggerFactory { get; }
-
-        public SmartContractsRegTest Network { get; }
     }
 }
