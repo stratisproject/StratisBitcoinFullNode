@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             {
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
                 uint160 contractAddress = this.addressGenerator.GenerateAddress(transaction.GetHash(), 0);
-                return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, contractAddress.ToAddress());
+                return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, contractAddress.ToAddressString(this.network));
             }
             catch (Exception exception)
             {
