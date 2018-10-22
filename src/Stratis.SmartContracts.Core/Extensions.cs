@@ -40,12 +40,12 @@ namespace Stratis.SmartContracts.Core
 
         public static Address ToAddress(this uint160 address, Network network)
         {
-            return Address.Create(address.ToBytes(), UInt160ToAddressString(address, network));
+            return Address.Create(address.ToBytes());
         }
 
         public static Address ToAddress(this string address, Network network)
         {
-            return Address.Create(address.ToUint160(network).ToBytes(), address);
+            return Address.Create(address.ToUint160(network).ToBytes());
         }
 
         public static Address HexToAddress(this string hexString, Network network)
