@@ -52,9 +52,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public byte[] Serialize(Address address)
         {
-            if (address == null)
-                return null;
-
             return this.primitiveSerializer.Serialize(address);
         }
 
