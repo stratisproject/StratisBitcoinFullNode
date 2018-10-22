@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts
+﻿using System;
+
+namespace Stratis.SmartContracts
 {
     /// <summary>
     /// Represents an address used when sending or receiving funds.
@@ -14,8 +16,6 @@
         private readonly uint pn3;
         private readonly uint pn4;
 
-        public readonly byte[] Bytes;
-
         public Address(Address other)
         {
             this.pn0 = other.pn0;
@@ -23,36 +23,39 @@
             this.pn2 = other.pn2;
             this.pn3 = other.pn3;
             this.pn4 = other.pn4;
-            this.Bytes = other.Bytes;
         }
 
-        private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4, byte[] bytes)
+        private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
         {
             this.pn0 = pn0;
             this.pn1 = pn1;
             this.pn2 = pn2;
             this.pn3 = pn3;
             this.pn4 = pn4;
-            this.Bytes = bytes;
         }
         
         internal static Address Create(byte[] bytes)
         {
-            var pn0 = ToUInt32(bytes, 0);
-            var pn1 = ToUInt32(bytes, 4);
-            var pn2 = ToUInt32(bytes, 8);
-            var pn3 = ToUInt32(bytes, 12);
-            var pn4 = ToUInt32(bytes, 16);
+            var pn0 = BitConverter.ToUInt32(bytes, 0);
+            var pn1 = BitConverter.ToUInt32(bytes, 4);
+            var pn2 = BitConverter.ToUInt32(bytes, 8);
+            var pn3 = BitConverter.ToUInt32(bytes, 12);
+            var pn4 = BitConverter.ToUInt32(bytes, 16);
 
-            return new Address(pn0, pn1, pn2, pn3, pn4, bytes);
+            return new Address(pn0, pn1, pn2, pn3, pn4);
         }
 
-        private static uint ToUInt32(byte[] value, int index)
+        public byte[] ToBytes()
         {
-            return value[index]
-                   + ((uint)value[index + 1] << 8)
-                   + ((uint)value[index + 2] << 16)
-                   + ((uint)value[index + 3] << 24);
+            const int uintSize = sizeof(uint);
+            var arr = new byte[Width];
+            Buffer.BlockCopy(BitConverter.GetBytes(this.pn0), 0, arr, uintSize * 0, uintSize);
+            Buffer.BlockCopy(BitConverter.GetBytes(this.pn1), 0, arr, uintSize * 1, uintSize);
+            Buffer.BlockCopy(BitConverter.GetBytes(this.pn2), 0, arr, uintSize * 2, uintSize);
+            Buffer.BlockCopy(BitConverter.GetBytes(this.pn3), 0, arr, uintSize * 3, uintSize);
+            Buffer.BlockCopy(BitConverter.GetBytes(this.pn4), 0, arr, uintSize * 4, uintSize);
+
+            return arr;
         }
 
         public override string ToString()
@@ -82,8 +85,8 @@
             result += alphabet[(int)((val & 0x00F00000) >> 5 * 4)];
             result += alphabet[(int)((val & 0x000F0000) >> 4 * 4)];
 
-            result += alphabet[(int)((val & 0xF0000000) >> 7*4)];
-            result += alphabet[(int)((val & 0x0F000000) >> 6*4)];
+            result += alphabet[(int)((val & 0xF0000000) >> 7 * 4)];
+            result += alphabet[(int)((val & 0x0F000000) >> 6 * 4)];
 
             return result;
         }

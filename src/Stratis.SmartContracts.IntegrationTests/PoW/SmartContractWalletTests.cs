@@ -422,7 +422,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Test that the contract address, event name, and logging values are available in the bloom.
                 var scBlockHeader = receiver.GetLastBlock().Header as SmartContractBlockHeader;
-                Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToAddress(chain.Network).Bytes));
+                Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToAddress(chain.Network).ToBytes()));
                 Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong)20)));
                 // And sanity test that a non-indexed field and random value is not available in bloom.

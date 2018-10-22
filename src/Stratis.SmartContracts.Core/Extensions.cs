@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Core
 
         public static uint160 ToUint160(this Address address)
         {
-            return new uint160(address.Bytes);
+            return new uint160(address.ToBytes());
         }
 
         public static uint160 ToUint160(this string base58Address, Network network)

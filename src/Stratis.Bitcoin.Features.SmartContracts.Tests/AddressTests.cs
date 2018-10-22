@@ -34,9 +34,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Create_Address_Success()
         {
-            Assert.True(address0.Bytes.SequenceEqual(address0Bytes));
-            Assert.True(address1.Bytes.SequenceEqual(address1Bytes));
-            Assert.True(address2.Bytes.SequenceEqual(address2Bytes));
+            Assert.True(address0.ToBytes().SequenceEqual(address0Bytes));
+            Assert.True(address1.ToBytes().SequenceEqual(address1Bytes));
+            Assert.True(address2.ToBytes().SequenceEqual(address2Bytes));
         }
 
         [Fact]
