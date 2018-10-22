@@ -21,7 +21,7 @@ public class CreateWithAllArrays : SmartContract
 
         Address[] addresses = this.Serializer.ToArray<Address>(addressBytes);
         Assert(addresses[0] == this.Message.Sender);
-        Assert(addresses[1] == new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"));
+        Assert(addresses[1] == this.Serializer.ToAddress("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"));
         this.PersistentState.SetArray("addresses", addresses);
 
         bool[] bools = this.Serializer.ToArray<bool>(boolBytes);

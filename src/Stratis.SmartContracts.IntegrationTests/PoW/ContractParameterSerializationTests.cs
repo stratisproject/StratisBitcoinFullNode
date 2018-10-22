@@ -265,7 +265,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.True(compilationResult.Success);
 
             char[] chars = new char[] {'a', '9'};
-            Address[] addresses = new Address[]{new Address(this.node1.MinerAddress.Address), new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn")};
+            Address[] addresses = new Address[]{ this.node1.MinerAddress.Address.ToAddress(this.mockChain.Network), "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn".ToAddress(this.mockChain.Network)};
             bool[] bools = new bool[]{false, true, false};
             int[] ints = new int[]{1, -123, int.MaxValue};
             long[] longs = new long[]{1, -123, long.MaxValue};
