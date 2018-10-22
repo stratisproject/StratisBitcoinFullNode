@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.network = new SmartContractsRegTest();
             this.serializer = new ContractPrimitiveSerializer(this.network);
-            this.logHolder = new ContractLogHolder(this.network);
+            this.logHolder = new ContractLogHolder();
         }
 
         [Fact]

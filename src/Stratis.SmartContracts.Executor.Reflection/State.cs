@@ -35,7 +35,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ContractState = state.ContractState.StartTracking();
             
             // We create a new log holder but use references to the original raw logs
-            this.LogHolder = new ContractLogHolder(state.Network);
+            this.LogHolder = new ContractLogHolder();
             this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
 
             // We create a new list but use references to the original transfers.

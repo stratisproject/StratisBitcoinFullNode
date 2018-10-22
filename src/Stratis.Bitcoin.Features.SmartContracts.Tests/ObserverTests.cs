@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     context.Serializer, TestAddress.ToUint160()),
                 context.Serializer,
                 this.gasMeter,
-                new ContractLogHolder(this.network),
+                new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
                 () => 1000);

@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         public IState Create(IStateRepository stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash)
         {
-            var logHolder = new ContractLogHolder(this.network);
+            var logHolder = new ContractLogHolder();
             var internalTransfers = new List<TransferInfo>();
             return new State(this.smartContractStateFactory, stateRoot, logHolder, internalTransfers, block, this.network, transactionHash);
         }

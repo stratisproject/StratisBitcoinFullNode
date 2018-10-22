@@ -6,12 +6,10 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 {
     public class ContractLogHolder : IContractLogHolder
     {
-        private readonly Network network;
         private readonly List<RawLog> rawLogs;
 
-        public ContractLogHolder(Network network)
+        public ContractLogHolder()
         {
-            this.network = network;
             this.rawLogs = new List<RawLog>();
         }
 

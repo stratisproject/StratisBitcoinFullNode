@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     this.context.Serializer, TestAddress.ToUint160()),
                 context.Serializer,
                 new GasMeter((Gas)5000000),
-                new ContractLogHolder(this.network),
+                new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
                 () => 1000);
@@ -126,7 +126,7 @@ public class Contract : SmartContract
                     this.context.Serializer, TestAddress.ToUint160()) &&
                 s.Serializer == this.context.Serializer &&
                 s.GasMeter == new GasMeter((Gas) 0) &&
-                s.ContractLogger == new ContractLogHolder(this.network) &&
+                s.ContractLogger == new ContractLogHolder() &&
                 s.InternalTransactionExecutor == Mock.Of<IInternalTransactionExecutor>() &&
                 s.InternalHashHelper == new InternalHashHelper() &&
                 s.GetBalance == new Func<ulong>(() => 0));
