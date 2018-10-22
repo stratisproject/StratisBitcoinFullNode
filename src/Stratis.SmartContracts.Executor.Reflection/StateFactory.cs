@@ -11,14 +11,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class StateFactory : IStateFactory
     {
-        private readonly Network network;
         private readonly IInternalExecutorFactory internalTransactionExecutorFactory;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
-        public StateFactory(Network network,
-            ISmartContractStateFactory smartContractStateFactory)
+        public StateFactory(ISmartContractStateFactory smartContractStateFactory)
         {
-            this.network = network;
             this.smartContractStateFactory = smartContractStateFactory;
         }
 

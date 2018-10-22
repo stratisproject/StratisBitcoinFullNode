@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             
             this.callDataSerializer = new CallDataSerializer(this.contractPrimitiveSerializer);
 
-            this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
+            this.stateFactory = new StateFactory(this.smartContractStateFactory);
         }
 
         [Fact]
