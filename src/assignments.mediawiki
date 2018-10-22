@@ -35,7 +35,7 @@ State can be defined, active, failed. Dates are in UTC.
 |
 |
 |
-| [[/bip-0068.mediawiki|68]], [[/bip-0112.mediawiki|112]], [[/bip-0113.mediawiki|113]]
+| [[https://github.com/bitcoin/bips/edit/master/bip-0068.mediawiki|68]], [[https://github.com/bitcoin/bips/edit/master/bip-0112.mediawiki|112]], [[https://github.com/bitcoin/bips/edit/master/bip-0113.mediawiki|113]]
 |-
 | segwit
 | 1
@@ -45,7 +45,7 @@ State can be defined, active, failed. Dates are in UTC.
 | 2016-05-01 00:00:00
 | 2017-05-01 00:00:00
 | active since #834624
-| [[/bip-0141.mediawiki|141]], [[/bip-0143.mediawiki|143]], [[/bip-0147.mediawiki|147]]
+| [[https://github.com/bitcoin/bips/edit/master/bip-0141.mediawiki|141]], [[https://github.com/bitcoin/bips/edit/master/bip-0143.mediawiki|143]], [[https://github.com/bitcoin/bips/edit/master/bip-0147.mediawiki|147]]
 |
 |
 |
