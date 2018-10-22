@@ -1,7 +1,7 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
 using Xunit;
 
@@ -16,20 +16,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.posNetwork = new StratisRegTest();
         }
 
-        private class StratisNoValidationRulesNetwork : StratisRegTest
-        {
-            public StratisNoValidationRulesNetwork()
-            {
-                this.Name = Guid.NewGuid().ToString();
-            }
-        }
-
         [Fact]
         public void ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_Connected()
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisNoValidationRulesNetwork();
+                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
 
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NotInIBD().NoValidation().WithDummyWallet().Start();
@@ -68,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisNoValidationRulesNetwork();
+                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
 
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NotInIBD().NoValidation().WithDummyWallet().Start();
@@ -109,7 +101,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisNoValidationRulesNetwork();
+                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
 
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().Start();
@@ -162,7 +154,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisNoValidationRulesNetwork();
+                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
 
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NotInIBD().NoValidation().WithDummyWallet().Start();
@@ -197,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisNoValidationRulesNetwork();
+                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
 
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NotInIBD().NoValidation().WithDummyWallet().Start();
@@ -246,11 +238,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisNoValidationRulesNetwork();
+                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
 
                 var minerA = builder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithDummyWallet().Start();
-                var minerC = builder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().NoValidation().WithDummyWallet().Start();
+                var minerC = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NotInIBD().NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);

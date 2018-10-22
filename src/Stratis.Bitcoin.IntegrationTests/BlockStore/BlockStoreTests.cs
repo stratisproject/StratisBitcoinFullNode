@@ -15,36 +15,36 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
     public class BlockStoreTests
     {
         private readonly ILoggerFactory loggerFactory;
-        private readonly Network regTest;
+        private readonly Network network;
 
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
 
-            this.regTest = new BitcoinRegTest();
+            this.network = new BitcoinRegTest();
             var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.regTest);
+            serializer.Initialize(this.network);
         }
 
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepository = new BlockRepository(this.regTest, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
             {
                 blockRepository.SetTxIndexAsync(true).Wait();
 
                 var blocks = new List<Block>();
                 for (int i = 0; i < 5; i++)
                 {
-                    Block block = this.regTest.CreateBlock();
-                    block.AddTransaction(this.regTest.CreateTransaction());
-                    block.AddTransaction(this.regTest.CreateTransaction());
+                    Block block = this.network.CreateBlock();
+                    block.AddTransaction(this.network.CreateTransaction());
+                    block.AddTransaction(this.network.CreateTransaction());
                     block.Transactions[0].AddInput(new TxIn(Script.Empty));
                     block.Transactions[0].AddOutput(Money.COIN + i * 2, Script.Empty);
                     block.Transactions[1].AddInput(new TxIn(Script.Empty));
                     block.Transactions[1].AddOutput(Money.COIN + i * 2 + 1, Script.Empty);
                     block.UpdateMerkleRoot();
-                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : this.regTest.GenesisHash;
+                    block.Header.HashPrevBlock = blocks.Any() ? blocks.Last().GetHash() : this.network.GenesisHash;
                     blocks.Add(block);
                 }
 
@@ -76,9 +76,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
                 // Generate blocks and wait for the downloader to pickup.
                 TestHelper.MineBlocks(stratisNodeSync, 10); // coinbase maturity = 10
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -129,9 +129,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 // Sync both nodes.
                 TestHelper.Connect(stratisNodeSync, stratisNode1);
@@ -173,8 +173,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
                 // Sync both nodes.
                 TestHelper.Connect(stratisNode1, stratisNode2);
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
                 uint256 genesisHash = node.FullNode.Chain.Genesis.HashBlock;
                 Block genesisBlock = node.FullNode.BlockStore().GetBlockAsync(genesisHash).Result;
                 Assert.Equal(genesisHash, genesisBlock.GetHash());

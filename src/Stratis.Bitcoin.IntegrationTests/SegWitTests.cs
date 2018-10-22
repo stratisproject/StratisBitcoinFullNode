@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
@@ -19,13 +19,15 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
+                var regTest = new BitcoinRegTest();
+
                 CoreNode coreNode = builder.CreateBitcoinCoreNode(version: "0.15.1");
 
                 coreNode.ConfigParameters.AddOrReplace("debug", "1");
                 coreNode.ConfigParameters.AddOrReplace("printtoconsole", "0");
                 coreNode.Start();
 
-                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest).Start();
+                CoreNode stratisNode = builder.CreateStratisPowNode(regTest).Start();
 
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
                 RPCClient coreRpc = coreNode.CreateRPCClient();
@@ -36,8 +38,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // core (in version 0.15.1) only mines segwit blocks above a certain height on regtest
                 // future versions of core will change that behaviour so this test may need to be changed in the future
                 // see issue for more details https://github.com/stratisproject/StratisBitcoinFullNode/issues/1028
-                BIP9DeploymentsParameters prevSegwitDeployment = KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
-                KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
+                BIP9DeploymentsParameters prevSegwitDeployment = regTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
+                regTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
 
                 try
                 {
@@ -68,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
                 finally
                 {
-                    KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = prevSegwitDeployment;
+                    regTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = prevSegwitDeployment;
                 }
             }
         }

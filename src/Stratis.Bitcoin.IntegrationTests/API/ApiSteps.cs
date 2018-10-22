@@ -23,6 +23,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
@@ -113,17 +114,8 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             this.powNodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
             this.posNodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
 
-            this.powNetwork = new RegTestOverrideCoinbaseMaturity();
+            this.powNetwork = new BitcoinRegTestOverrideCoinbaseMaturity(1);
             this.posNetwork = new StratisRegTest();
-        }
-
-        private class RegTestOverrideCoinbaseMaturity : BitcoinRegTest
-        {
-            public RegTestOverrideCoinbaseMaturity()
-            {
-                this.Name = Guid.NewGuid().ToString();
-                this.Consensus.CoinbaseMaturity = 1;
-            }
         }
 
         protected override void AfterTest()

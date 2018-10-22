@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -8,7 +7,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -30,15 +29,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         public SendingToAndFromManyAddressesSpecification(ITestOutputHelper outputHelper) : base(outputHelper) { }
 
-        private class RegTestOverrideCoinbaseMaturity : BitcoinRegTest
-        {
-            public RegTestOverrideCoinbaseMaturity()
-            {
-                this.Name = Guid.NewGuid().ToString();
-                this.Consensus.CoinbaseMaturity = 1;
-            }
-        }
-
         protected override void BeforeTest()
         {
             this.nodeBuilder = NodeBuilder.Create(this.CurrentTest.DisplayName);
@@ -51,8 +41,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_connected_nodes()
         {
-            this.firstNode = this.nodeBuilder.CreateStratisPowNode(new RegTestOverrideCoinbaseMaturity()).NotInIBD().WithWallet().Start();
-            this.secondNode = this.nodeBuilder.CreateStratisPowNode(new RegTestOverrideCoinbaseMaturity()).NotInIBD().WithWallet().Start();
+            this.firstNode = this.nodeBuilder.CreateStratisPowNode(new BitcoinRegTestOverrideCoinbaseMaturity(1)).NotInIBD().WithWallet().Start();
+            this.secondNode = this.nodeBuilder.CreateStratisPowNode(new BitcoinRegTestOverrideCoinbaseMaturity(1)).NotInIBD().WithWallet().Start();
 
             TestHelper.Connect(this.firstNode, this.secondNode);
         }

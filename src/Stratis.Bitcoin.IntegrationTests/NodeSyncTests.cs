@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         [Trait("Unstable", "True")]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
@@ -233,12 +233,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Disconnect(stratisMinerLocal, stratisMinerRemote);
 
                 // Mine block C2p.
-                TestHelper.MineBlocks(stratisMinerRemote, 1, true);
+                TestHelper.MineBlocks(stratisMinerRemote, 1);
                 Thread.Sleep(2000);
 
                 // Now reconnect nodes and mine block C1s before C2p arrives.
                 TestHelper.Connect(stratisMinerLocal, stratisMinerRemote);
-                TestHelper.MineBlocks(stratisMinerLocal, 1, true);
+                TestHelper.MineBlocks(stratisMinerLocal, 1);
 
                 // Mine block Dp.
                 uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, 1, false).BlockHashes[0];

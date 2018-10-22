@@ -1,5 +1,4 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
@@ -8,7 +7,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
@@ -34,16 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         protected override void BeforeTest()
         {
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
-            this.network = new RegTestOverrideCoinbaseMaturity();
-        }
-
-        private class RegTestOverrideCoinbaseMaturity : BitcoinRegTest
-        {
-            public RegTestOverrideCoinbaseMaturity()
-            {
-                this.Name = Guid.NewGuid().ToString();
-                this.Consensus.CoinbaseMaturity = 1;
-            }
+            this.network = new BitcoinRegTestOverrideCoinbaseMaturity(1);
         }
 
         protected override void AfterTest()
@@ -59,21 +49,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity.Should().Be(this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity);
 
-            this.sendingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = 1;
-            this.receivingStratisBitcoinNode.FullNode.Network.Consensus.CoinbaseMaturity = 1;
-
             TestHelper.MineBlocks(this.sendingStratisBitcoinNode, 2);
         }
 
         private void a_default_gap_limit_of_20()
         {
             this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-            this.sendingStratisBitcoinNode.Mnemonic = this.sendingStratisBitcoinNode.Mnemonic;
-
             this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-            this.receivingStratisBitcoinNode.Mnemonic = this.receivingStratisBitcoinNode.Mnemonic;
 
             TestHelper.ConnectAndSync(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
+
             this.MineSpendableCoins();
         }
 
@@ -83,10 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var configParameters = new NodeConfigParameters { { "walletaddressbuffer", customUnusedAddressBuffer.ToString() } };
 
             this.sendingStratisBitcoinNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-            this.sendingStratisBitcoinNode.Mnemonic = this.sendingStratisBitcoinNode.Mnemonic;
-
             this.receivingStratisBitcoinNode = this.nodeBuilder.CreateStratisCustomPowNode(this.network, configParameters).NotInIBD().WithWallet().Start();
-            this.receivingStratisBitcoinNode.Mnemonic = this.receivingStratisBitcoinNode.Mnemonic;
 
             TestHelper.ConnectAndSync(this.sendingStratisBitcoinNode, this.receivingStratisBitcoinNode);
             this.MineSpendableCoins();
