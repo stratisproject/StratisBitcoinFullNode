@@ -13,14 +13,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
     {
         private readonly IGasMeter gasMeter;
         private readonly IContractLogger logger;
-        private readonly Network network;
         private readonly IContractPrimitiveSerializer serializer;
 
-        public MeteredContractLogger(IGasMeter gasMeter, IContractLogger logger, Network network, IContractPrimitiveSerializer serializer)
+        public MeteredContractLogger(IGasMeter gasMeter, IContractLogger logger, IContractPrimitiveSerializer serializer)
         {
             this.gasMeter = gasMeter;
             this.logger = logger;
-            this.network = network;
             this.serializer = serializer;
         }
 

@@ -34,7 +34,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var persistentState = new PersistentState(persistenceStrategy, this.serializer, address);
 
-            var contractLogger = new MeteredContractLogger(gasMeter, state.LogHolder, this.Network, this.PrimitiveSerializer);
+            var contractLogger = new MeteredContractLogger(gasMeter, state.LogHolder, this.PrimitiveSerializer);
 
             var contractState = new SmartContractState(
                 state.Block,
