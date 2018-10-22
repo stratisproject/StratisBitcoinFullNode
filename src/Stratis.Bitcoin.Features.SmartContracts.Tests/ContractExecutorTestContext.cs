@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.ModuleDefinitionReader = new ContractModuleDefinitionReader();
             this.Vm = new ReflectionVirtualMachine(this.Validator, this.LoggerFactory, this.AssemblyLoader, this.ModuleDefinitionReader);
             this.StateProcessor = new StateProcessor(this.Vm, this.AddressGenerator);
-            this.InternalTxExecutorFactory = new InternalExecutorFactory(this.LoggerFactory, this.Network, this.StateProcessor);
+            this.InternalTxExecutorFactory = new InternalExecutorFactory(this.LoggerFactory, this.StateProcessor);
             this.SmartContractStateFactory = new SmartContractStateFactory(this.ContractPrimitiveSerializer, this.InternalTxExecutorFactory, this.Serializer);
         }
     }
