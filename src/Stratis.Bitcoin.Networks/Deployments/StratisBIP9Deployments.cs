@@ -9,10 +9,9 @@ namespace Stratis.Bitcoin.Networks.Deployments
     {
         // The position of each deployment in the deployments array.
         public const int TestDummy = 0;
-        public const int CSV = 1;
 
         // The number of deployments.
-        public const int NumberOfDeployments = 2;
+        public const int NumberOfDeployments = 1;
 
         /// <summary>
         /// Constructs the BIP9 deployments array.
@@ -28,18 +27,7 @@ namespace Stratis.Bitcoin.Networks.Deployments
         /// <returns>The deployment flags.</returns>
         public override BIP9DeploymentFlags GetFlags(int deployment)
         {
-            BIP9DeploymentFlags flags = new BIP9DeploymentFlags();
-
-            switch (deployment)
-            {
-                case CSV:
-                    // Start enforcing BIP68 (sequence locks), BIP112 (CHECKSEQUENCEVERIFY) and BIP113 (Median Time Past) using versionbits logic.
-                    flags.ScriptFlags = ScriptVerify.CheckSequenceVerify;
-                    flags.LockTimeFlags = Transaction.LockTimeFlags.VerifySequence | Transaction.LockTimeFlags.MedianTimePast;
-                    break;
-            }
-
-            return flags;
+            return new BIP9DeploymentFlags();
         }
     }
 }
