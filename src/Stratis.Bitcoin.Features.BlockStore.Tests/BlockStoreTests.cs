@@ -8,10 +8,6 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -91,7 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chainState = new ChainState();
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
         }
 
         private ConcurrentChain CreateChain(int blocksCount)
@@ -169,7 +165,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(longChain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime,  this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = longChain.Tip;
@@ -294,14 +290,14 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         /// <summary>
         /// Tests reorgs inside the batch and inside the database at the same time.
         /// </summary>
-        [Fact]
+        [Retry(2)]
         public async Task ReorgedBlocksAreDeletedFromRepositoryIfReorgDetectedAsync()
         {
             this.chain = CreateChain(1000);
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = this.chain.Tip;

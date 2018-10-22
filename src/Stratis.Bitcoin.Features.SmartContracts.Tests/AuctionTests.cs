@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var getBalance = new Func<ulong>(() => Balance);
             var persistentState = new TestPersistentState();
             var network = new SmartContractsRegTest();
-            var serializer = new ContractPrimitiveSerializer(network);
+            var serializer = new Serializer(new ContractPrimitiveSerializer(network));
             this.smartContractState = new TestSmartContractState(
                 block,
                 message,
@@ -138,6 +138,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 return (T)this.objects[key];
 
             return default(T);
+        }
+
+        public bool IsContract(Address address)
+        {
+            throw new NotImplementedException();
         }
 
         public byte[] GetBytes(string key)
@@ -251,6 +256,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         public void SetArray(string key, Array a)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void Clear(string key)
         {
             throw new NotImplementedException();
         }

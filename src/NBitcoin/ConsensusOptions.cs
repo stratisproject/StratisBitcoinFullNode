@@ -39,6 +39,9 @@
         /// <summary>The maximum allowed number of signature check operations in a block (network rule).</summary>
         public int MaxBlockSigopsCost { get; set; }
 
+        /// <summary>The maximum number of sigops we're willing to relay/mine in a single tx.</summary>
+        public int MaxStandardTxSigopsCost { get; set; }
+
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
@@ -52,6 +55,7 @@
             this.MaxStandardTxWeight = 400000;
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
+            this.MaxStandardTxSigopsCost = this.MaxBlockSigopsCost / 5;
         }
 
         /// <summary>
@@ -64,7 +68,8 @@
             int witnessScaleFactor,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
             this.MaxBlockWeight = maxBlockWeight;
@@ -73,6 +78,7 @@
             this.MaxStandardVersion = maxStandardVersion;
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
+            this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
         }
 
         /// <summary>
@@ -82,7 +88,8 @@
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
 
@@ -95,6 +102,7 @@
             this.MaxStandardVersion = maxStandardVersion;
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
+            this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
         }
     }
 
@@ -112,8 +120,9 @@
         /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
 
-        /// <summary>The cold staking activation height.</summary>
-        public int ColdStakingActivationHeight { get; }
+        /// <summary>A mask for coinstake transaction's timestamp and header's timestamp.</summary>
+        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
+        public const uint StakeTimestampMask = 0x0000000F;
 
         /// <summary>
         /// Maximum coinstake serialized size in bytes.
@@ -153,7 +162,8 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxStandardTxSigopsCost,
+            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
             this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
@@ -166,8 +176,8 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int provenHeadersActivationHeight,
-            int coldStakingActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxStandardTxSigopsCost,
+            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
             this.ColdStakingActivationHeight = coldStakingActivationHeight;
             this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;

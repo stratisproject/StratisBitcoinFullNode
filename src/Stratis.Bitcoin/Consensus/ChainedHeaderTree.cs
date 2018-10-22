@@ -93,8 +93,9 @@ namespace Stratis.Bitcoin.Consensus
         /// All peers are checked against max reorg violation and if they violate their chain will be reset.
         /// </remarks>
         /// <param name="newConsensusTip">The new consensus tip.</param>
+        /// <param name="blockMined">Was the block mined or received from the network.</param>
         /// <returns>List of peer Ids that violate max reorg rule.</returns>
-        List<int> ConsensusTipChanged(ChainedHeader newConsensusTip);
+        List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, bool blockMined = false);
 
         /// <summary>
         /// Handles situation when the block's data is downloaded for a given chained header.
@@ -411,7 +412,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip)
+        public List<int> ConsensusTipChanged(ChainedHeader newConsensusTip, bool blockMined = false)
         {
             ChainedHeader oldConsensusTip = this.GetConsensusTip();
             ChainedHeader fork = newConsensusTip.FindFork(oldConsensusTip);
@@ -420,7 +421,7 @@ namespace Stratis.Bitcoin.Consensus
             this.logger.LogTrace("Old consensus tip: '{0}', new consensus tip: '{1}', fork point: '{2}'.", oldConsensusTip, newConsensusTip, fork);
 
             // Consider blocks that became a part of our best chain as consumed.
-            while (currentHeader != fork)
+            while ((newConsensusTip.Block != null) && (currentHeader != fork) && !blockMined)
             {
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.UnconsumedBlocksCount--;
@@ -908,7 +909,9 @@ namespace Stratis.Bitcoin.Consensus
             this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
 
             ChainedHeader chainedHeader = this.GetChainedHeader(block.GetHash());
-            this.BlockDataDownloaded(chainedHeader, block);
+
+            chainedHeader.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
+            chainedHeader.Block = block;
 
             return chainedHeader;
         }

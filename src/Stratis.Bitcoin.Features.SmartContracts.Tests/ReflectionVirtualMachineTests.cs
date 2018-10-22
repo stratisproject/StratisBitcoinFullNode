@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
@@ -36,8 +37,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new Message(TestAddress, TestAddress, 0),
                 new PersistentState(
                     new TestPersistenceStrategy(this.state),
-                    context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)),
-                context.ContractPrimitiveSerializer,
+                    this.context.Serializer, TestAddress.ToUint160(this.network)),
+                context.Serializer,
                 new GasMeter((Gas)5000000),
                 new ContractLogHolder(this.network),
                 Mock.Of<IInternalTransactionExecutor>(),
@@ -121,8 +122,8 @@ public class Contract : SmartContract
                 s.Message == new Message(TestAddress, TestAddress, 0) &&
                 s.PersistentState == new PersistentState(
                     new TestPersistenceStrategy(this.state),
-                    this.context.ContractPrimitiveSerializer, TestAddress.ToUint160(this.network)) &&
-                s.Serializer == this.context.ContractPrimitiveSerializer &&
+                    this.context.Serializer, TestAddress.ToUint160(this.network)) &&
+                s.Serializer == this.context.Serializer &&
                 s.GasMeter == new GasMeter((Gas) 0) &&
                 s.ContractLogger == new ContractLogHolder(this.network) &&
                 s.InternalTransactionExecutor == Mock.Of<IInternalTransactionExecutor>() &&
@@ -134,6 +135,29 @@ public class Contract : SmartContract
             Assert.False(result.IsSuccess);
             Assert.Equal(VmExecutionErrorKind.OutOfGas, result.Error.ErrorKind);
         }
+
+        [Fact]
+        public void VM_ExecuteContract_ClearStorage()
+        {
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ClearStorage.cs");
+            Assert.True(compilationResult.Success);
+
+            byte[] contractExecutionCode = compilationResult.Compilation;
+            var callData = new MethodCall(nameof(ClearStorage.ClearKey), new object[] { });
+
+            uint160 contractAddress = this.contractState.Message.ContractAddress.ToUint160(this.network);
+            byte[] keyToClear = Encoding.UTF8.GetBytes(ClearStorage.KeyToClear);
+
+            // Set a value to be cleared
+            this.state.SetStorageValue(contractAddress, keyToClear, new byte[] { 1, 2, 3 });
+
+            VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
+                callData,
+                contractExecutionCode, nameof(ClearStorage));
+
+            Assert.Null(result.Error);
+            Assert.Null(this.state.GetStorageValue(contractAddress, keyToClear));
+        }
     }
 
     public class TestPersistenceStrategy : IPersistenceStrategy
@@ -143,6 +167,11 @@ public class Contract : SmartContract
         public TestPersistenceStrategy(IStateRepository stateDb)
         {
             this.stateDb = stateDb;
+        }
+
+        public bool ContractExists(uint160 address)
+        {
+            return this.stateDb.IsExist(address);
         }
 
         public byte[] FetchBytes(uint160 address, byte[] key)

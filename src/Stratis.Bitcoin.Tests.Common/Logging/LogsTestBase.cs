@@ -18,6 +18,12 @@ namespace Stratis.Bitcoin.Tests.Common.Logging
             this.RPCLogger = new Mock<ILogger>();
             this.Logger = new Mock<ILogger>();
             this.LoggerFactory = new Mock<ILoggerFactory>();
+
+            Initialise();
+        }
+
+        private void Initialise()
+        {
             this.LoggerFactory.Setup(l => l.CreateLogger(It.IsAny<string>()))
                .Returns(this.Logger.Object);
             this.LoggerFactory.Setup(l => l.CreateLogger(typeof(FullNode).FullName))

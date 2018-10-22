@@ -37,6 +37,13 @@ public class CatOwner : SmartContract
         UpdateLastCreatedCat(result.NewContractAddress);
     }
 
+    public void CreateCatIsContract()
+    {
+        var result = Create<Cat>(0, new object[] { CatCounter });
+        UpdateLastCreatedCat(result.NewContractAddress);
+        PersistentState.SetBool("IsContract", PersistentState.IsContract(result.NewContractAddress));
+    }
+
     public void CreateCatWithFunds()
     {
         var result = Create<Cat>(Balance, new object[] { CatCounter });

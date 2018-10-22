@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             {
                 Flags = BlockFlag.BLOCK_PROOF_OF_STAKE,
                 StakeModifierV2 = 0,
-                StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosTimeMaskRule.StakeTimestampMask
+                StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask
             });
         }
 

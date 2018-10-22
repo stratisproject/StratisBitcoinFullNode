@@ -4,7 +4,8 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Features.SmartContracts.PoS;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -37,8 +38,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                provenHeadersActivationHeight: 10_000_000, // TODO: Set it to the real value once it is known.
-                coldStakingActivationHeight: 0
+                maxStandardTxSigopsCost: 20_000 / 5,
+                provenHeadersActivationHeight: 10_000_000 // TODO: Set it to the real value once it is known.
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -48,12 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 [BuriedDeployments.BIP66] = 100000000
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray
-            {
-                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999),
-                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999),
-                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
-            };
+            var bip9Deployments = new NoBIP9Deployments();
 
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,

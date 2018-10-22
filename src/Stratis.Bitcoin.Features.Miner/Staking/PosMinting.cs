@@ -404,7 +404,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     blockTemplate = null;
                 }
 
-                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosTimeMaskRule.StakeTimestampMask;
+                uint coinstakeTimestamp = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() & ~PosConsensusOptions.StakeTimestampMask;
                 if (coinstakeTimestamp <= this.lastCoinStakeSearchTime)
                 {
                     this.logger.LogTrace("Current coinstake time {0} is not greater than last search timestamp {1}.", coinstakeTimestamp, this.lastCoinStakeSearchTime);
@@ -640,7 +640,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             // If the time after applying the mask is lower than minimal allowed time,
             // it is simply too early for us to mine, there can't be any valid solution.
-            if ((coinstakeContext.CoinstakeTx.Time & ~PosTimeMaskRule.StakeTimestampMask) < minimalAllowedTime)
+            if ((coinstakeContext.CoinstakeTx.Time & ~PosConsensusOptions.StakeTimestampMask) < minimalAllowedTime)
             {
                 this.logger.LogTrace("(-)[TOO_EARLY_TIME_AFTER_LAST_BLOCK]:false");
                 return false;
@@ -816,7 +816,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     if (txTime < minimalAllowedTime)
                         break;
 
-                    if ((txTime & PosTimeMaskRule.StakeTimestampMask) != 0)
+                    if ((txTime & PosConsensusOptions.StakeTimestampMask) != 0)
                         continue;
 
                     context.Logger.LogTrace("Trying with transaction time {0}.", txTime);
@@ -1097,7 +1097,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             if (stakesTime != 0) res = stakeKernelsAvg / stakesTime;
 
-            res *= PosTimeMaskRule.StakeTimestampMask + 1;
+            res *= PosConsensusOptions.StakeTimestampMask + 1;
 
             return res;
         }

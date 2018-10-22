@@ -1,4 +1,5 @@
 ﻿using System;
+using System.IO;
 using NBitcoin.Crypto;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -204,6 +205,11 @@ namespace NBitcoin
             return new PosBlockHeader();
         }
 
+        public ProvenBlockHeader CreateProvenBlockHeader()
+        {
+            return new ProvenBlockHeader();
+        }
+
         public ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
         {
             return new ProvenBlockHeader(block);
@@ -231,7 +237,9 @@ namespace NBitcoin
     /// <summary>
     /// A POS block header, this will create a work hash based on the X13 hash algos.
     /// </summary>
+#pragma warning disable 618
     public class PosBlockHeader : BlockHeader
+#pragma warning restore 618
     {
         /// <inheritdoc />
         public override int CurrentVersion => 7;
@@ -249,9 +257,17 @@ namespace NBitcoin
                 return hash;
 
             if (this.version > 6)
-                hash = Hashes.Hash256(this.ToBytes());
+            {
+                using (var hs = new HashStream())
+                {
+                    this.ReadWriteHashingStream(new BitcoinStream(hs, true));
+                    hash = hs.GetHash();
+                }
+            }
             else
+            {
                 hash = this.GetPoWHash();
+            }
 
             innerHashes = this.hashes;
             if (innerHashes != null)
@@ -265,7 +281,11 @@ namespace NBitcoin
         /// <inheritdoc />
         public override uint256 GetPoWHash()
         {
-            return HashX13.Instance.Hash(this.ToBytes());
+            using (var ms = new MemoryStream())
+            {
+                this.ReadWriteHashingStream(new BitcoinStream(ms, true));
+                return HashX13.Instance.Hash(ms.ToArray());
+            }
         }
     }
 

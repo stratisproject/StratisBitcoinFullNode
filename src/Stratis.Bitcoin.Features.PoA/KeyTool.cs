@@ -1,8 +1,6 @@
-﻿using System;
-using System.IO;
+﻿using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -17,14 +15,16 @@ namespace Stratis.Bitcoin.Features.PoA
             this.dataFolder = dataFolder;
         }
 
+        /// <summary>Generates a new private key.</summary>
         public Key GeneratePrivateKey()
         {
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            Key privKey = mnemonic.DeriveExtKey().PrivateKey;
+            Key privateKey = mnemonic.DeriveExtKey().PrivateKey;
 
-            return privKey;
+            return privateKey;
         }
 
+        /// <summary>Gets the default path for private key saving and loading.</summary>
         public string GetPrivateKeySavePath()
         {
             string path = Path.Combine(this.dataFolder.RootPath, KeyTool.KeyFileDefaultName);
@@ -32,11 +32,12 @@ namespace Stratis.Bitcoin.Features.PoA
             return path;
         }
 
-        public void SavePrivateKey(Key privKey)
+        /// <summary>Saves private key to default path.</summary>
+        public void SavePrivateKey(Key privateKey)
         {
             var ms = new MemoryStream();
             var stream = new BitcoinStream(ms, true);
-            stream.ReadWrite(ref privKey);
+            stream.ReadWrite(ref privateKey);
 
             ms.Seek(0, SeekOrigin.Begin);
             FileStream fileStream = File.Create(this.GetPrivateKeySavePath());
@@ -44,6 +45,7 @@ namespace Stratis.Bitcoin.Features.PoA
             fileStream.Close();
         }
 
+        /// <summary>Loads the private key from default path.</summary>
         public Key LoadPrivateKey()
         {
             string path = this.GetPrivateKeySavePath();
@@ -53,12 +55,12 @@ namespace Stratis.Bitcoin.Features.PoA
 
             FileStream readStream = File.OpenRead(path);
 
-            var privKey = new Key();
+            var privateKey = new Key();
             var stream = new BitcoinStream(readStream, false);
-            stream.ReadWrite(ref privKey);
+            stream.ReadWrite(ref privateKey);
             readStream.Close();
 
-            return privKey;
+            return privateKey;
         }
     }
 }
