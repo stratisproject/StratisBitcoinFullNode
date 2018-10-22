@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
     public class MockChainNode
     {
         public readonly string WalletName = "mywallet";
-        public readonly string Password = "123456";
+        public readonly string Password = "password";
         public readonly string Passphrase = "passphrase";
         public readonly string AccountName = "account 0";
 
@@ -104,7 +104,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public void MineBlocks(int amountOfBlocks)
         {
-            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks, true, this.WalletName, this.Password, this.AccountName);
+            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks);
             this.chain.WaitForAllNodesToSync();
         }
 
