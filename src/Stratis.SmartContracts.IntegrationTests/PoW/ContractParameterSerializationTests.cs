@@ -222,7 +222,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 string.Format("{0}#{1}", (int)MethodParameterDataType.UInt, testUint),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, testUlong),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.String, testString),
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, preResponse.NewContractAddress) // sendTo
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, preResponse.NewContractAddress.ToAddress(this.mockChain.Network)) // sendTo
             };
             compilationResult = ContractCompiler.CompileFile("SmartContracts/ForwardParameters.cs");
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
