@@ -99,7 +99,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             outHeaderRepo.FirstOrDefault().Should().BeNull();
         }
 
-        [Fact(Skip = "Unstable")]
+        [Fact]
+        [Trait("Unstable", "True")]
         public async Task AddToPending_Adds_To_Cache_Then_Save_To_DiskAsync()
         {
             // Initialise store.
