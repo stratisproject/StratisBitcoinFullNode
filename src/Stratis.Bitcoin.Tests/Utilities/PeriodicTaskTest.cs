@@ -21,7 +21,8 @@ namespace Stratis.Bitcoin.Tests.Utilities
             this.iterationCount = 0;
         }
 
-        [Fact(Skip = "Unstable")]
+        [Fact]
+        [Trait("Unstable", "True")]
         public void StartLogsStartAndStop()
         {
             var periodicTask = new PeriodicTask("TestTask", this.FullNodeLogger.Object, async token =>
