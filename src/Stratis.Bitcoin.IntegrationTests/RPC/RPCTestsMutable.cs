@@ -25,10 +25,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 int maturity = (int)network.Consensus.CoinbaseMaturity;
 
-                // This shouldn't be necessary but is required to make the zero assertion below pass.
-                // - looks like a bug in the wallet?
-                maturity--; 
-                
                 TestHelper.MineBlocks(node, maturity);                                     
                 Assert.Equal(Money.Zero, rpcClient.GetBalance()); // test with defaults.
 
