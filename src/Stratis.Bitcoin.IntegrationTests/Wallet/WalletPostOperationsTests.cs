@@ -17,13 +17,9 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public class WalletPostOperationsTests : IDisposable
+    public class WalletPostOperationsTests
     {
-        private readonly NodeBuilder builder;
-
         private readonly Network network;
-
-        private CoreNode Node { get; }
 
         private string WalletName => "wallet-with-funds";
 
@@ -32,24 +28,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         public WalletPostOperationsTests()
         {
             this.network = new StratisRegTest();
-            this.builder = NodeBuilder.Create("WalletPostOperationsTests");
-            this.Node = this.builder.CreateStratisPosNode(this.network).NotInIBD();
-            this.builder.StartAll();
         }
 
-        public void Dispose()
+        private void AddAndLoadWalletFileToWalletFolder(CoreNode node = null)
         {
-            this.builder.Dispose();
-        }
-
-        private void AddAndLoadWalletFileToWalletFolder()
-        {
-            string walletsFolderPath = this.Node.FullNode.DataFolder.WalletPath;
+            string walletsFolderPath = node.FullNode.DataFolder.WalletPath;
             string filename = "wallet-with-funds.wallet.json";
             this.WalletFilePath = Path.Combine(walletsFolderPath, filename);
             File.Copy(Path.Combine("Wallet", "Data", filename), this.WalletFilePath, true);
 
-            var result = $"http://localhost:{this.Node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
+            var result = $"http://localhost:{node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
                 Name = this.WalletName,
                 Password = "123456"
@@ -59,224 +47,267 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public async Task CreateAnAccountWhenAnUnusedAccountExists()
         {
-            // Arrange.
-            this.AddAndLoadWalletFileToWalletFolder();
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD();
+                builder.StartAll();
 
-            // Make sure the wallet has two account.
-            string newAccountName = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/account")
-                .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
-                .ReceiveJson<string>();
+                this.AddAndLoadWalletFileToWalletFolder(node);
 
-            IEnumerable<string> accountsNames = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/accounts")
-                .SetQueryParams(new { walletName = this.WalletName })
-                .GetJsonAsync<IEnumerable<string>>();
+                // Make sure the wallet has two account.
+                string newAccountName = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/account")
+                    .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
+                    .ReceiveJson<string>();
 
-            accountsNames.Count().Should().Be(2);
+                IEnumerable<string> accountsNames = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/accounts")
+                    .SetQueryParams(new { walletName = this.WalletName })
+                    .GetJsonAsync<IEnumerable<string>>();
 
-            // Make sure the first account is used, i.e, it has transactions.
-            WalletHistoryModel firstAccountHistory = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/history")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
-                .GetJsonAsync<WalletHistoryModel>();
+                accountsNames.Count().Should().Be(2);
 
-            firstAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
-            firstAccountHistory.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
+                // Make sure the first account is used, i.e, it has transactions.
+                WalletHistoryModel firstAccountHistory = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .GetJsonAsync<WalletHistoryModel>();
 
-            // Make sure the second account is not used, i.e, it doesn't have transactions.
-            WalletHistoryModel secondAccountHistory = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/history")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 1" })
-                .GetJsonAsync<WalletHistoryModel>();
+                firstAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
+                firstAccountHistory.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
 
-            secondAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
-            secondAccountHistory.AccountsHistoryModel.First().TransactionsHistory.Should().BeEmpty();
+                // Make sure the second account is not used, i.e, it doesn't have transactions.
+                WalletHistoryModel secondAccountHistory = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 1" })
+                    .GetJsonAsync<WalletHistoryModel>();
 
-            // Act.
-            string newAddedAccountName = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/account")
-                .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
-                .ReceiveJson<string>();
+                secondAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
+                secondAccountHistory.AccountsHistoryModel.First().TransactionsHistory.Should().BeEmpty();
 
-            // Assert.
-            // Check the returned account name is the second one.
-            newAddedAccountName.Should().Be(newAccountName);
+                // Act.
+                string newAddedAccountName = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/account")
+                    .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
+                    .ReceiveJson<string>();
 
-            // Check that the number of accounts found in the wallet hasn't changed.
-            IEnumerable<string> newAccountsNames = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/accounts")
-                .SetQueryParams(new { walletName = this.WalletName })
-                .GetJsonAsync<IEnumerable<string>>();
+                // Assert.
+                // Check the returned account name is the second one.
+                newAddedAccountName.Should().Be(newAccountName);
 
-            accountsNames.Count().Should().Be(2);
+                // Check that the number of accounts found in the wallet hasn't changed.
+                IEnumerable<string> newAccountsNames = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/accounts")
+                    .SetQueryParams(new { walletName = this.WalletName })
+                    .GetJsonAsync<IEnumerable<string>>();
+
+                accountsNames.Count().Should().Be(2);
+            }
         }
 
         [Fact]
         public async Task CreateAnAccountWhenNoUnusedAccountExists()
         {
-            // Arrange.
-            this.AddAndLoadWalletFileToWalletFolder();
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD();
+                builder.StartAll();
 
-            // Make sure the wallet only has one account.
-            IEnumerable<string> accountsNames = await $"http://localhost:{this.Node.ApiPort}/api"
+                this.AddAndLoadWalletFileToWalletFolder(node);
+
+                // Make sure the wallet only has one account.
+                IEnumerable<string> accountsNames = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/accounts")
                 .SetQueryParams(new { walletName = this.WalletName })
                 .GetJsonAsync<IEnumerable<string>>();
 
-            accountsNames.Should().ContainSingle();
-            accountsNames.Single().Should().Be("account 0");
+                accountsNames.Should().ContainSingle();
+                accountsNames.Single().Should().Be("account 0");
 
-            // Make sure the account is used, i.e, it has transactions.
-            WalletHistoryModel history = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/history")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
-                .GetJsonAsync<WalletHistoryModel>();
+                // Make sure the account is used, i.e, it has transactions.
+                WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .GetJsonAsync<WalletHistoryModel>();
 
-            history.AccountsHistoryModel.Should().NotBeEmpty();
-            history.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
+                history.AccountsHistoryModel.Should().NotBeEmpty();
+                history.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
 
-            // Act.
-            string newAccountName = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/account")
-                .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
-                .ReceiveJson<string>();
+                // Act.
+                string newAccountName = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/account")
+                    .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
+                    .ReceiveJson<string>();
 
-            // Assert.
-            newAccountName.Should().Be("account 1");
+                // Assert.
+                newAccountName.Should().Be("account 1");
+            }
         }
 
         [Fact]
         public async Task GetWalletFilesWhenNoFilesArePresent()
         {
-            // Act.
-            WalletFileModel walletFileModel = await $"http://localhost:{this.Node.ApiPort}/api"
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD();
+                builder.StartAll();
+
+
+                // Act.
+                WalletFileModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/files")
                 .GetJsonAsync<WalletFileModel>();
 
-            // Assert.
-            walletFileModel.WalletsPath.Should().Be(this.Node.FullNode.DataFolder.WalletPath);
-            walletFileModel.WalletsFiles.Should().BeEmpty();
+                // Assert.
+                walletFileModel.WalletsPath.Should().Be(node.FullNode.DataFolder.WalletPath);
+                walletFileModel.WalletsFiles.Should().BeEmpty();
+            }
         }
 
         [Fact]
         public async Task GetUnusedAddressesInAccountWhenAddressesNeedToBeCreated()
         {
-            // Arrange.
-            this.AddAndLoadWalletFileToWalletFolder();
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD();
+                builder.StartAll();
 
-            AddressesModel addressesModel = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/addresses")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
-                .GetJsonAsync<AddressesModel>();
+                this.AddAndLoadWalletFileToWalletFolder(node);
 
-            int unusedReceiveAddressesCount = addressesModel.Addresses.Count(a => !a.IsUsed && !a.IsChange);
+                AddressesModel addressesModel = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/addresses")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .GetJsonAsync<AddressesModel>();
 
-            // Act.
-            IEnumerable<string> unusedaddresses = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/unusedAddresses")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0", count = unusedReceiveAddressesCount + 5 })
-                .GetJsonAsync<IEnumerable<string>>();
+                int unusedReceiveAddressesCount = addressesModel.Addresses.Count(a => !a.IsUsed && !a.IsChange);
 
-            // Assert.
-            unusedaddresses.Count().Should().Be(unusedReceiveAddressesCount + 5);
+                // Act.
+                IEnumerable<string> unusedaddresses = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/unusedAddresses")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0", count = unusedReceiveAddressesCount + 5 })
+                    .GetJsonAsync<IEnumerable<string>>();
+
+                // Assert.
+                unusedaddresses.Count().Should().Be(unusedReceiveAddressesCount + 5);
+            }
         }
 
         [Fact]
         public async Task GetUnusedAddressesInAccountWhenNoAddressesNeedToBeCreated()
         {
-            // Arrange.
-            this.AddAndLoadWalletFileToWalletFolder();
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD();
+                builder.StartAll();
 
-            AddressesModel addressesModel = await $"http://localhost:{this.Node.ApiPort}/api"
+                this.AddAndLoadWalletFileToWalletFolder(node);
+
+                AddressesModel addressesModel = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/addresses")
                 .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
                 .GetJsonAsync<AddressesModel>();
 
-            int totalAddressesCount = addressesModel.Addresses.Count();
+                int totalAddressesCount = addressesModel.Addresses.Count();
 
-            int unusedReceiveAddressesCount = addressesModel.Addresses.Count(a => !a.IsUsed && !a.IsChange);
+                int unusedReceiveAddressesCount = addressesModel.Addresses.Count(a => !a.IsUsed && !a.IsChange);
 
-            // Act.
-            IEnumerable<string> unusedaddresses = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/unusedAddresses")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0", count = unusedReceiveAddressesCount - 1 })
-                .GetJsonAsync<IEnumerable<string>>();
+                // Act.
+                IEnumerable<string> unusedaddresses = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/unusedAddresses")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0", count = unusedReceiveAddressesCount - 1 })
+                    .GetJsonAsync<IEnumerable<string>>();
 
-            // Assert.
-            AddressesModel addressesModelAgain = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/addresses")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
-                .GetJsonAsync<AddressesModel>();
+                // Assert.
+                AddressesModel addressesModelAgain = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/addresses")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .GetJsonAsync<AddressesModel>();
 
-            addressesModelAgain.Addresses.Count().Should().Be(totalAddressesCount);
-
+                addressesModelAgain.Addresses.Count().Should().Be(totalAddressesCount);
+            }
         }
 
         [Fact]
         public async Task RemoveAllTransactionsFromWallet()
         {
-            // Arrange.
-            this.AddAndLoadWalletFileToWalletFolder();
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD();
+                builder.StartAll();
 
-            // Make sure the account is used, i.e, it has transactions.
-            WalletHistoryModel history = await $"http://localhost:{this.Node.ApiPort}/api"
+                this.AddAndLoadWalletFileToWalletFolder(node);
+
+                // Make sure the account is used, i.e, it has transactions.
+                WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/history")
                 .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
                 .GetJsonAsync<WalletHistoryModel>();
 
-            history.AccountsHistoryModel.Should().NotBeEmpty();
-            history.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
+                history.AccountsHistoryModel.Should().NotBeEmpty();
+                history.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
 
-            // Act.
-            HashSet<(uint256 transactionId, DateTimeOffset creationTime)> results = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/remove-transactions")
-                .SetQueryParams(new { walletName = this.WalletName, all = true })
-                .DeleteAsync()
-                .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
+                // Act.
+                HashSet<(uint256 transactionId, DateTimeOffset creationTime)> results = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/remove-transactions")
+                    .SetQueryParams(new { walletName = this.WalletName, all = true })
+                    .DeleteAsync()
+                    .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
 
-            // Assert.
-            WalletHistoryModel historyAgain = await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/history")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
-                .GetJsonAsync<WalletHistoryModel>();
+                // Assert.
+                WalletHistoryModel historyAgain = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/history")
+                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .GetJsonAsync<WalletHistoryModel>();
 
-            historyAgain.AccountsHistoryModel.Should().NotBeEmpty();
-            historyAgain.AccountsHistoryModel.First().TransactionsHistory.Should().BeEmpty();
+                historyAgain.AccountsHistoryModel.Should().NotBeEmpty();
+                historyAgain.AccountsHistoryModel.First().TransactionsHistory.Should().BeEmpty();
+            }
         }
 
         [Fact]
         public async Task RemoveTransactionsWithoutIdsOrAllFlagFromWallet()
         {
-            // Arrange.
-            this.AddAndLoadWalletFileToWalletFolder();
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD();
+                builder.StartAll();
 
-            // Make sure the account is used, i.e, it has transactions.
-            WalletHistoryModel history = await $"http://localhost:{this.Node.ApiPort}/api"
+                this.AddAndLoadWalletFileToWalletFolder(node);
+                
+                // Make sure the account is used, i.e, it has transactions.
+                WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/history")
                 .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
                 .GetJsonAsync<WalletHistoryModel>();
 
-            history.AccountsHistoryModel.Should().NotBeEmpty();
-            history.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
+                history.AccountsHistoryModel.Should().NotBeEmpty();
+                history.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
 
-            // Act.
-            Func<Task> act = async () => await $"http://localhost:{this.Node.ApiPort}/api"
-                .AppendPathSegment("wallet/remove-transactions")
-                .SetQueryParams(new { walletName = this.WalletName })
-                .DeleteAsync()
-                .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
+                // Act.
+                Func<Task> act = async () => await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/remove-transactions")
+                    .SetQueryParams(new { walletName = this.WalletName })
+                    .DeleteAsync()
+                    .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
 
-            // Assert.
-            var exception = act.Should().Throw<FlurlHttpException>().Which;
-            var response = exception.Call.Response;
+                // Assert.
+                var exception = act.Should().Throw<FlurlHttpException>().Which;
+                var response = exception.Call.Response;
 
-            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
-            List<ErrorModel> errors = errorResponse.Errors;
+                ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+                List<ErrorModel> errors = errorResponse.Errors;
 
-            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
-            errors.Should().ContainSingle();
-            errors.First().Message.Should().Be("Transaction ids need to be specified if the 'all' flag is not set.");
+                response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+                errors.Should().ContainSingle();
+                errors.First().Message.Should().Be("Transaction ids need to be specified if the 'all' flag is not set.");
+            }
         }
     }
 }
