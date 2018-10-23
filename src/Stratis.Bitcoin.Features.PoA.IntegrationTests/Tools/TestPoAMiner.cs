@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
     {
         public bool FastMiningEnabled { get; private set; } = false;
 
-        private readonly DateTimeProvider timeProvider;
+        private readonly EditableTimeProvider timeProvider;
 
         private CancellationTokenSource cancellationSource;
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
             IWalletManager walletManager) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
                 connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager)
         {
-            this.timeProvider = dateTimeProvider as DateTimeProvider;
+            this.timeProvider = dateTimeProvider as EditableTimeProvider;
             this.cancellationSource = new CancellationTokenSource();
         }
 
@@ -60,9 +60,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
         {
             if (this.FastMiningEnabled)
             {
-                TimeSpan span = (TimeSpan)this.timeProvider.GetMemberValue("adjustedTimeOffset");
-                TimeSpan newSpan = span + TimeSpan.FromMilliseconds(delayMs);
-                this.timeProvider.SetPrivateVariableValue("adjustedTimeOffset", newSpan);
+                this.timeProvider.AdjustedTimeOffset += TimeSpan.FromMilliseconds(delayMs);
             }
             else
             {

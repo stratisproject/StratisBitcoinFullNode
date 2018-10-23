@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
     {
         private IDateTimeProvider timeProvider;
 
-        public PoANodeRunner(string dataDir, PoANetwork network, IDateTimeProvider timeProvider)
+        public PoANodeRunner(string dataDir, PoANetwork network, EditableTimeProvider timeProvider)
             : base(dataDir)
         {
             this.Network = network;

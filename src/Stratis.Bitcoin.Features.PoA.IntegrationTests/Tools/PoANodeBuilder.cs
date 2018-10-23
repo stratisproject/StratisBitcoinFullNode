@@ -3,17 +3,16 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
 {
     public class PoANodeBuilder : NodeBuilder
     {
-        public IDateTimeProvider TimeProvider { get; }
+        public EditableTimeProvider TimeProvider { get; }
 
         private PoANodeBuilder(string rootFolder) : base(rootFolder)
         {
-            this.TimeProvider = DateTimeProvider.Default;
+            this.TimeProvider = new EditableTimeProvider();
         }
 
         public static PoANodeBuilder CreatePoANodeBuilder(object caller, [CallerMemberName] string callingMethod = null)

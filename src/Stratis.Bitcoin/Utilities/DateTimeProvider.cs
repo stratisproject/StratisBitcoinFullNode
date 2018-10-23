@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Utilities
         public static IDateTimeProvider Default { get; }
 
         /// <summary>UTC adjusted timestamp, or null if no adjusted time is set.</summary>
-        private TimeSpan adjustedTimeOffset;
+        protected TimeSpan adjustedTimeOffset;
 
         /// <summary>
         /// Initializes a default instance of the object.
