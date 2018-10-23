@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
         {
             Guard.NotNull(node, nameof(node));
 
@@ -164,7 +164,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
-            WaitLoop(() => IsNodeSynced(node));
+            if (syncNode)
+                WaitLoop(() => IsNodeSynced(node));
 
             return (node.MinerHDAddress, blockHashes);
         }
@@ -178,7 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
                 Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);
                 Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
-                coreNode.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
+                coreNode.SetMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
             }
         }
 
