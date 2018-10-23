@@ -45,7 +45,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Mining adds coins to wallet.
                 var maturity = (int)chain.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(scSender.CoreNode, maturity + 5, scSender.WalletName, scSender.Password, scSender.AccountName);
+                TestHelper.MineBlocks(scSender.CoreNode, maturity + 5);
                 chain.WaitForAllNodesToSync();
                 int spendable = GetSpendableBlocks(maturity + 5, maturity);
                 Assert.Equal(Money.COIN * spendable * 50, (long)scSender.WalletSpendableBalance);
@@ -378,7 +378,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(serializationRequest);
                 var serializationResponse = (BuildCallContractTransactionResponse)result.Value;
                 SmartContractSharedSteps.SendTransaction(scSender, scReceiver, senderWalletController, serializationResponse.Hex);
-                TestHelper.MineBlocks(scReceiver, 2, WalletName, Password, AccountName);
+                TestHelper.MineBlocks(scReceiver, 2);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // Would have only saved if execution completed successfully
