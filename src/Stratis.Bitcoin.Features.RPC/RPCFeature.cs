@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 features
                 .AddFeature<RPCFeature>()
-                .DependOn(new List<Type>(){typeof(PosConsensusFeature),typeof(PowConsensusFeature)})
+                .DependOn<ConsensusFeature>()
                 .FeatureServices(services => services.AddSingleton(fullNodeBuilder));
             });
 

@@ -52,13 +52,6 @@ namespace Stratis.Bitcoin.Builder.Feature
         IFeatureRegistration DependOn<TImplementation>() where TImplementation : class, IFullNodeFeature;
 
         /// <summary>
-        /// Adds a feature type list where one of the feature to be used by the feature registration. 
-        /// </summary>
-        /// <param name="featureList">List of feature types</param>
-        /// <returns>This interface to allow fluent code.</returns>
-        IFeatureRegistration DependOn(IEnumerable<Type> featureList);
-
-        /// <summary>
         /// Ensures dependency feature types are present in the registered features list.
         /// </summary>
         /// <param name="featureRegistrations">List of registered features.</param>
@@ -81,7 +74,7 @@ namespace Stratis.Bitcoin.Builder.Feature
             this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
             this.FeatureType = typeof(TImplementation);
 
-            this.dependencyTable = new Hashtable();
+            this.dependencies = new List<Type>();
         }
 
         /// <inheritdoc />
@@ -91,9 +84,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         public Type FeatureType { get; private set; }
 
         /// <summary> List of dependency features that should be registered in order to add this feature.</summary>
-        private Hashtable dependencyTable;
-
-        private const string OneOfManyDependency = "oneOfManyDependency";
+        private List<Type> dependencies;
 
         /// <inheritdoc />
         public void BuildFeature(IServiceCollection serviceCollection)
@@ -132,45 +123,19 @@ namespace Stratis.Bitcoin.Builder.Feature
         /// <inheritdoc />
         public IFeatureRegistration DependOn<TFeatureImplementation>() where TFeatureImplementation : class, IFullNodeFeature
         {
-            this.dependencyTable.Add(typeof(TFeatureImplementation), typeof(TFeatureImplementation).Name);
+            this.dependencies.Add(typeof(TFeatureImplementation));
 
             return this;
         }
 
-        public IFeatureRegistration DependOn(IEnumerable<Type> featureList)
-        {
-            var oneOfManyDependency = new HashSet<Type>();
-
-            foreach (Type fullNodeFeature in featureList)
-             oneOfManyDependency.Add(fullNodeFeature);
-
-            this.dependencyTable.Add(oneOfManyDependency, OneOfManyDependency);
-
-            return this;
-        }
-
-        /// <inheritdoc />
-        public void EnsureDependencies(List<IFeatureRegistration> featureRegistrations)
-        {
-            foreach (DictionaryEntry entry in this.dependencyTable)
+       public void EnsureDependencies(List<IFeatureRegistration> featureRegistrations)
+       {
+            foreach (Type dependency in this.dependencies)
             {
-                if ((string)entry.Value == OneOfManyDependency)
-                {
-                    var featureCollection = (HashSet<Type>)entry.Key;
-                    if (!featureRegistrations.Any(x=>featureCollection.Contains(x.FeatureType)))
-                    {
-                        throw new MissingDependencyException($"Non of {featureCollection.Count} dependency features {string.Join(", ", featureCollection.Select(x=>x.Name).ToArray())} cannot be found.");
-                    }
-                }
-                else
-                {
-                    if (featureRegistrations.All(x => x.FeatureType != (Type) entry.Key))
-                    {
-                        throw new MissingDependencyException($"Dependency feature {entry.Value} cannot be found.");
-                    }
-                }
+                if (featureRegistrations.All(x => x.FeatureType.BaseType != dependency))
+                    throw new MissingDependencyException($"Dependency feature {dependency.Name} cannot be found.");
             }
-        }
+       }
 
         /// <summary>
         /// A feature can use specified method to configure its services.

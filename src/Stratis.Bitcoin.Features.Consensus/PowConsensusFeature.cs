@@ -16,7 +16,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class PowConsensusFeature : FullNodeFeature
+    public class PowConsensusFeature : ConsensusFeature
     {
         private readonly IChainState chainState;
         private readonly IConnectionManager connectionManager;
@@ -36,7 +36,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConcurrentChain chain,
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
-            ILoggerFactory loggerFactory)
+            Signals.Signals signals,
+            ILoggerFactory loggerFactory) : base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
         {
             this.chainState = chainState;
             this.connectionManager = connectionManager;
