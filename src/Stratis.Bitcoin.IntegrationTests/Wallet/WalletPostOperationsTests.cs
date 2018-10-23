@@ -26,19 +26,19 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         internal readonly string walletWithFundsName = "wallet-with-funds";
 
-        private string WalletFilePath { get; set; }
+        private string walletFilePath;
 
         public WalletPostOperationsTests()
         {
             this.network = new StratisRegTest();
         }
 
-        private void AddAndLoadWalletFileToWalletFolder(CoreNode node = null)
+        private void AddAndLoadWalletFileToWalletFolder(CoreNode node)
         {
             string walletsFolderPath = node.FullNode.DataFolder.WalletPath;
             string filename = "wallet-with-funds.wallet.json";
-            this.WalletFilePath = Path.Combine(walletsFolderPath, filename);
-            File.Copy(Path.Combine("Wallet", "Data", filename), this.WalletFilePath, true);
+            this.walletFilePath = Path.Combine(walletsFolderPath, filename);
+            File.Copy(Path.Combine("Wallet", "Data", filename), this.walletFilePath, true);
 
             var result = $"http://localhost:{node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
