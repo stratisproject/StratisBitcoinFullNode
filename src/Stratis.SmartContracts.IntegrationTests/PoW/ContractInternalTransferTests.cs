@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Core;
@@ -86,6 +87,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Receipt is correct
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            string val = JsonConvert.SerializeObject(receipt);
             Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs); // TODO: Could add logs to this test
