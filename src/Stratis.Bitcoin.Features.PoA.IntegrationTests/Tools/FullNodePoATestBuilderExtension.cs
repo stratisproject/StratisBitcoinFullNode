@@ -1,5 +1,5 @@
-﻿using System.Linq;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 
@@ -15,10 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
                 {
                     feature.FeatureServices(services =>
                     {
-                        ServiceDescriptor defaultProivider = services.FirstOrDefault(x => x.ServiceType == typeof(PoAMiner));
-
-                        services.Remove(defaultProivider);
-                        services.AddSingleton<IPoAMiner, TestPoAMiner>();
+                        services.Replace(new ServiceDescriptor(typeof(IPoAMiner), typeof(TestPoAMiner), ServiceLifetime.Singleton));
                     });
                 }
             });
