@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Threading.Tasks;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -15,22 +14,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 {
     public class ConnectivityTests
     {
-        private readonly Network Network;
+        private readonly Network network;
 
         public ConnectivityTests()
         {
-            this.Network = new StratisRegTest();
+            this.network = new StratisRegTest();
         }
 
         [Fact]
-        public async Task WhenConnectingWithAddnodeConnectToPeerAndAnyPeersInTheAddressManager()
+        public void WhenConnectingWithAddnodeConnectToPeerAndAnyPeersInTheAddressManager()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode node3 = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
-                CoreNode syncerNode = builder.CreateStratisPosNode(this.Network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node3 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode syncerNode = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
                 // Connects with AddNode inside Connect().
                 TestHelper.Connect(node1, syncerNode);
