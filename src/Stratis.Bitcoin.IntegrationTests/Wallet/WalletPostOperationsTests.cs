@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
     {
         private readonly Network network;
 
-        private string WalletName => "wallet-with-funds";
+        internal readonly string walletWithFundsName = "wallet-with-funds";
 
         private string WalletFilePath { get; set; }
 
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             var result = $"http://localhost:{node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
-                Name = this.WalletName,
+                Name = this.walletWithFundsName,
                 Password = "123456"
             }).Result;
         }
@@ -60,12 +60,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Make sure the wallet has two account.
                 string newAccountName = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/account")
-                    .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
+                    .PostJsonAsync(new { walletName = this.walletWithFundsName, password = "123456" })
                     .ReceiveJson<string>();
 
                 IEnumerable<string> accountsNames = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/accounts")
-                    .SetQueryParams(new { walletName = this.WalletName })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName })
                     .GetJsonAsync<IEnumerable<string>>();
 
                 accountsNames.Count().Should().Be(2);
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Make sure the first account is used, i.e, it has transactions.
                 WalletHistoryModel firstAccountHistory = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/history")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                     .GetJsonAsync<WalletHistoryModel>();
 
                 firstAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Make sure the second account is not used, i.e, it doesn't have transactions.
                 WalletHistoryModel secondAccountHistory = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/history")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 1" })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 1" })
                     .GetJsonAsync<WalletHistoryModel>();
 
                 secondAccountHistory.AccountsHistoryModel.Should().NotBeEmpty();
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Act.
                 string newAddedAccountName = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/account")
-                    .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
+                    .PostJsonAsync(new { walletName = this.walletWithFundsName, password = "123456" })
                     .ReceiveJson<string>();
 
                 // Assert.
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Check that the number of accounts found in the wallet hasn't changed.
                 IEnumerable<string> newAccountsNames = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/accounts")
-                    .SetQueryParams(new { walletName = this.WalletName })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName })
                     .GetJsonAsync<IEnumerable<string>>();
 
                 accountsNames.Count().Should().Be(2);
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Make sure the wallet only has one account.
                 IEnumerable<string> accountsNames = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/accounts")
-                .SetQueryParams(new { walletName = this.WalletName })
+                .SetQueryParams(new { walletName = this.walletWithFundsName })
                 .GetJsonAsync<IEnumerable<string>>();
 
                 accountsNames.Should().ContainSingle();
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Make sure the account is used, i.e, it has transactions.
                 WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/history")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                     .GetJsonAsync<WalletHistoryModel>();
 
                 history.AccountsHistoryModel.Should().NotBeEmpty();
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Act.
                 string newAccountName = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/account")
-                    .PostJsonAsync(new { walletName = this.WalletName, password = "123456" })
+                    .PostJsonAsync(new { walletName = this.walletWithFundsName, password = "123456" })
                     .ReceiveJson<string>();
 
                 // Assert.
@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 AddressesModel addressesModel = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/addresses")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                     .GetJsonAsync<AddressesModel>();
 
                 int unusedReceiveAddressesCount = addressesModel.Addresses.Count(a => !a.IsUsed && !a.IsChange);
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Act.
                 IEnumerable<string> unusedaddresses = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/unusedAddresses")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0", count = unusedReceiveAddressesCount + 5 })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0", count = unusedReceiveAddressesCount + 5 })
                     .GetJsonAsync<IEnumerable<string>>();
 
                 // Assert.
@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 AddressesModel addressesModel = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/addresses")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                 .GetJsonAsync<AddressesModel>();
 
                 int totalAddressesCount = addressesModel.Addresses.Count();
@@ -216,13 +216,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Act.
                 IEnumerable<string> unusedaddresses = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/unusedAddresses")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0", count = unusedReceiveAddressesCount - 1 })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0", count = unusedReceiveAddressesCount - 1 })
                     .GetJsonAsync<IEnumerable<string>>();
 
                 // Assert.
                 AddressesModel addressesModelAgain = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/addresses")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                     .GetJsonAsync<AddressesModel>();
 
                 addressesModelAgain.Addresses.Count().Should().Be(totalAddressesCount);
@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Make sure the account is used, i.e, it has transactions.
                 WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/history")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                 .GetJsonAsync<WalletHistoryModel>();
 
                 history.AccountsHistoryModel.Should().NotBeEmpty();
@@ -251,14 +251,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Act.
                 HashSet<(uint256 transactionId, DateTimeOffset creationTime)> results = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/remove-transactions")
-                    .SetQueryParams(new { walletName = this.WalletName, all = true })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, all = true })
                     .DeleteAsync()
                     .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
 
                 // Assert.
                 WalletHistoryModel historyAgain = await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/history")
-                    .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                     .GetJsonAsync<WalletHistoryModel>();
 
                 historyAgain.AccountsHistoryModel.Should().NotBeEmpty();
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Make sure the account is used, i.e, it has transactions.
                 WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/history")
-                .SetQueryParams(new { walletName = this.WalletName, accountName = "account 0" })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                 .GetJsonAsync<WalletHistoryModel>();
 
                 history.AccountsHistoryModel.Should().NotBeEmpty();
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 // Act.
                 Func<Task> act = async () => await $"http://localhost:{node.ApiPort}/api"
                     .AppendPathSegment("wallet/remove-transactions")
-                    .SetQueryParams(new { walletName = this.WalletName })
+                    .SetQueryParams(new { walletName = this.walletWithFundsName })
                     .DeleteAsync()
                     .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
 
