@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Reflection;
 using System.Text;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Nethereum.RLP;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
@@ -196,6 +197,16 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         public Address ToAddress(string address)
         {            
             return address.ToAddress(this.network);
+        }
+
+        public string ToBase58(Address val)
+        {
+            byte[] versionBytes = this.network.GetVersionBytes(Base58Type.PUBKEY_ADDRESS, true);
+            byte[] addressBytes = val.ToBytes();
+            byte[] versionPrefixedBytes = new byte[versionBytes.Length + addressBytes.Length];
+            Buffer.BlockCopy(versionBytes, 0, versionPrefixedBytes, 0, versionBytes.Length);
+            Buffer.BlockCopy(addressBytes, 0, versionPrefixedBytes, versionBytes.Length, addressBytes.Length);
+            return Encoders.Base58Check.EncodeData(versionPrefixedBytes);
         }
 
         #region Primitive Deserialization

@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Reflection;
 using Nethereum.RLP;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {
@@ -121,6 +122,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             {
                 return Address.Zero;
             }
+        }
+
+        public string ToBase58Address(Address val)
+        {
+            return this.primitiveSerializer.ToBase58(val);
         }
 
         public int ToInt32(byte[] val)
