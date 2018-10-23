@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// </summary>
         /// <remarks>Takes a while to run as block generation cannot
         /// be sped up for this test.</remarks>
-        [Fact]
+        [Fact(Skip = "Awaiting fix for issue #2468")]
         public void SBFNMinesTransactionAndXSyncs()
         {
             // TODO: Currently fails due to issue #2468 (coinbase
