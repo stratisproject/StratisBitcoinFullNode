@@ -10,16 +10,17 @@ using Flurl;
 using Flurl.Http;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public class WalletFixture : IDisposable
+    public class WalletCreationTestsFixture : IDisposable
     {
         private readonly NodeBuilder builder;
 
@@ -27,10 +28,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         public CoreNode Node { get; }
 
-        public WalletFixture()
+        public WalletCreationTestsFixture()
         {
-            this.network = KnownNetworks.StratisRegTest;
-            this.builder = NodeBuilder.Create(this, "WalletCreationTests");
+            this.network = new StratisRegTest();
+            this.builder = NodeBuilder.Create("WalletCreationTests");
             CoreNode stratisNode = this.builder.CreateStratisPosNode(this.network).NotInIBD();
             this.builder.StartAll();
 
@@ -53,13 +54,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
     }
 
-    public class WalletCreationTests : IClassFixture<WalletFixture>
+    public class WalletCreationTests : IClassFixture<WalletCreationTestsFixture>
     {
         private readonly CoreNode node;
 
-        private readonly WalletFixture fixture;
+        private readonly WalletCreationTestsFixture fixture;
 
-        public WalletCreationTests(WalletFixture fixture)
+        public WalletCreationTests(WalletCreationTestsFixture fixture)
         {
             this.node = fixture.Node;
             this.fixture = fixture;
@@ -137,7 +138,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletPath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet wallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletPath));
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
             wallet.IsExtPubKeyWallet.Should().BeFalse();
             wallet.ChainCode.Should().NotBeNullOrEmpty();
             wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
@@ -188,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletPath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet wallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletPath));
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
             wallet.IsExtPubKeyWallet.Should().BeFalse();
             wallet.ChainCode.Should().NotBeNullOrEmpty();
             wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
@@ -239,7 +240,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletPath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet wallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletPath));
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
             wallet.IsExtPubKeyWallet.Should().BeFalse();
             wallet.ChainCode.Should().NotBeNullOrEmpty();
             wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
@@ -290,7 +291,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletPath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet wallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletPath));
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
             wallet.IsExtPubKeyWallet.Should().BeFalse();
             wallet.ChainCode.Should().NotBeNullOrEmpty();
             wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
@@ -338,7 +339,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletPath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet wallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletPath));
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
             wallet.IsExtPubKeyWallet.Should().BeFalse();
             wallet.ChainCode.Should().NotBeNullOrEmpty();
             wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
@@ -427,12 +428,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletWithoutPassphrasePath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet walletWithPassphrase = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletWithPassphrasePath));
+            Features.Wallet.Wallet walletWithPassphrase = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletWithPassphrasePath));
             walletWithPassphrase.IsExtPubKeyWallet.Should().BeFalse();
             walletWithPassphrase.ChainCode.Should().NotBeNullOrEmpty();
             walletWithPassphrase.EncryptedSeed.Should().NotBeNullOrEmpty();
 
-            Wallet walletWithoutPassphrase = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletWithoutPassphrasePath));
+            Features.Wallet.Wallet walletWithoutPassphrase = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletWithoutPassphrasePath));
             walletWithoutPassphrase.IsExtPubKeyWallet.Should().BeFalse();
             walletWithoutPassphrase.ChainCode.Should().NotBeNullOrEmpty();
             walletWithoutPassphrase.EncryptedSeed.Should().NotBeNullOrEmpty();
@@ -560,7 +561,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
             string importWalletPath = Path.Combine("Wallet", "Data", "test.wallet.json");
 
-            Wallet importedWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(importWalletPath));
+            Features.Wallet.Wallet importedWallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(importWalletPath));
             importedWallet.Name = walletName;
             File.WriteAllText(Path.Combine(walletsFolderPath, $"{walletName}.wallet.json"), JsonConvert.SerializeObject(importedWallet, Formatting.Indented));
 
@@ -593,7 +594,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
             string importWalletPath = Path.Combine("Wallet", "Data", "test.wallet.json");
 
-            Wallet importedWallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(importWalletPath));
+            Features.Wallet.Wallet importedWallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(importWalletPath));
             importedWallet.Name = walletName;
             File.WriteAllText(Path.Combine(walletsFolderPath, $"{walletName}.wallet.json"), JsonConvert.SerializeObject(importedWallet, Formatting.Indented));
 
@@ -608,7 +609,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             var exception = act.Should().Throw<FlurlHttpException>().Which;
             var response = exception.Call.Response;
 
-            // Assert.
             ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
             List<ErrorModel> errors = errorResponse.Errors;
 
@@ -736,7 +736,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletPath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet wallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletPath));
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
             wallet.IsExtPubKeyWallet.Should().BeFalse();
             wallet.ChainCode.Should().NotBeNullOrEmpty();
             wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
@@ -780,7 +780,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             File.Exists(walletPath).Should().BeTrue();
 
             // Check the wallet.
-            Wallet wallet = JsonConvert.DeserializeObject<Wallet>(File.ReadAllText(walletPath));
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
             wallet.IsExtPubKeyWallet.Should().BeFalse();
             wallet.ChainCode.Should().NotBeNullOrEmpty();
             wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
