@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
@@ -12,7 +11,6 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Connectivity
@@ -25,54 +23,48 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         {
             this.network = new StratisRegTest();
         }
-        
+
+        /// <summary>
+        /// Peer A_1 connects to Peer A_2
+        /// Peer B_1 connects to Peer B_2
+        /// Peer A_1 connects to Peer B_1
+        /// 
+        /// Peer A_1 asks Peer B_1 for its addresses and gets Peer B_2
+        /// Peer A_1 now also connects to Peer B_2
+        /// </summary>
         [Fact]
-        public async Task EnsurePeerInAddressManagerAlsoConnectsAndSeenInPeerAddressManagerBehaviour()
+        public void Ensure_Peer_CanDiscover_Address_From_ConnectedPeers_And_Connect_ToThem()
         {
-            // node1 connects to node2.
-            // node3 adds node2 to the Address Manager.
-            // node3 connects to node1 - and picks up node2 to connect to.
-            // Extra check to see node2 in the AddressManagerBehaviour.
-
-            const string PeerAddressManagerMemberName = "peerAddressManager";
-
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
-                CoreNode node3 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode nodeGroupA_1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode nodeGroupA_2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode nodeGroupB_1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode nodeGroupB_2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
-                var node1ConnectionMgr = node1.FullNode.NodeService<IConnectionManager>();
+                // Connect group 1 nodes.
+                TestHelper.WaitLoop(() => nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 0);
+                nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupA_2.Endpoint, IPAddress.Loopback);
+                TestHelper.WaitLoop(() => nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 1);
 
-                // node1 connects to node2.
-                TestHelper.Connect(node2, node1);
-                TestHelper.WaitLoop(() => node1ConnectionMgr.ConnectedPeers.Count() == 1);
+                // Connect group 2 nodes.
+                TestHelper.WaitLoop(() => nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 0);
+                nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_2.Endpoint, IPAddress.Loopback);
+                TestHelper.WaitLoop(() => nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 1);
 
-                // node3 adds node2 to the Address Manager.
-                var node3ConnectionMgr = node3.FullNode.NodeService<IConnectionManager>();
-                var node3PeerAddressManager = node3ConnectionMgr.GetMemberValue(PeerAddressManagerMemberName) as PeerAddressManager;
+                // Connect group 1 to group 2
+                // This will add all nodeGroupB_1's addresses which includes nodeGroupB_2 to nodeGroupA_1
+                TestHelper.WaitLoop(() => nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 1);
+                nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_1.Endpoint, IPAddress.Loopback);
+                TestHelper.WaitLoop(() => nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 3);
 
-                var node3PeersDictionary = node3PeerAddressManager.GetMemberValue("peers") as ConcurrentDictionary<IPEndPoint, PeerAddress>;
-                node3PeersDictionary.TryAdd(node2.Endpoint, new PeerAddress() { Endpoint = node2.Endpoint });
-
-                // node3 connects to node1 - and picks up node2 to connect to.
-                TestHelper.Connect(node3, node1);
-                TestHelper.WaitLoop(() => node3ConnectionMgr.ConnectedPeers.Count() == 2);
-
-                node3ConnectionMgr.ConnectedPeers.Should().Contain(c => c.PeerEndPoint.Port == node2.Endpoint.Port);
-
-                // Extra check to see node2 in the AddressManagerBehaviour.
-                var node3PeerAddressManagerBehaviour = node3ConnectionMgr.ConnectedPeers.First().
-                    Behaviors.Where(b => b.GetType() == typeof(PeerAddressManagerBehaviour)).FirstOrDefault();
-
-                var behaviourPeerAddressManager = node3PeerAddressManagerBehaviour?.GetMemberValue(PeerAddressManagerMemberName) as PeerAddressManager;
-
-                behaviourPeerAddressManager.FindPeer(node2.Endpoint).Should().NotBeNull();
+                // As nodeGroupB_1 is connected to nodeGroupB_2, nodeGroupA_1 should eventually connect to nodeGroupB_2
+                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2));
             }
         }
 
         [Fact]
-        public void WhenConnectingWithAddnodeConnectToPeerAndAnyPeersInTheAddressManager()
+        public void When_Connecting_WithAddnode_Connect_ToPeer_AndAnyPeers_InTheAddressManager()
         {
             // TS101_Connectivity_CallAddNode.
 
@@ -83,23 +75,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 CoreNode node3 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
                 CoreNode syncerNode = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
-                // Connects with AddNode inside Connect().
                 TestHelper.Connect(node1, syncerNode);
 
                 node2.FullNode.ConnectionManager.ConnectedPeers.Count().Should().Be(0);
                 node3.FullNode.ConnectionManager.ConnectedPeers.Count().Should().Be(0);
 
-                var syncerConnectionMgr = syncerNode.FullNode.NodeService<IConnectionManager>();
+                syncerNode.FullNode.NodeService<IConnectionManager>().AddNodeAddress(node2.Endpoint);
+                syncerNode.FullNode.NodeService<IConnectionManager>().AddNodeAddress(node3.Endpoint);
 
-                var syncerAddNodeConnector = syncerConnectionMgr.PeerConnectors.
-                    Where(p => p.GetType() == typeof(PeerConnectorAddNode)).First() as PeerConnectorAddNode;
-
-                // Adding these endpoints will add the items to the internal address manager.
-                syncerAddNodeConnector.ConnectionSettings.AddNode = new List<IPEndPoint>() { node2.Endpoint, node3.Endpoint };
-
-                syncerConnectionMgr.Initialize(syncerNode.FullNode.NodeService<IConsensusManager>());
-
-                TestHelper.WaitLoop(() => syncerConnectionMgr.ConnectedPeers.Count() == 3);
+                TestHelper.WaitLoop(() => syncerNode.FullNode.ConnectionManager.ConnectedPeers.Count() == 3);
 
                 node1.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
                 node2.FullNode.ConnectionManager.ConnectedPeers.Should().ContainSingle();
@@ -108,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         }
 
         [Fact]
-        public void WhenConnectingWithConnectOnlyConnectToTheRequestedPeer()
+        public void When_Connecting_WithConnectOnly_Connect_ToTheRequestedPeer()
         {
             // TS102_Connectivity_CallConnect.
 
@@ -135,9 +119,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         }
 
         [Fact]
-        public void IfBannedNodeTriesToConnectItFailsToEstablishConnection()
+        public void BannedNode_Tries_ToConnect_ItFails_ToEstablishConnection()
         {
-
             // TS105_Connectivity_PreventConnectingToBannedNodes.
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -161,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         }
 
         [Fact]
-        public async Task NotFailIfTryToConnectToNonExistingNodeAsync()
+        public void Not_Fail_IfTry_ToConnect_ToNonExisting_NodeAsync()
         {
             // TS106_Connectivity_CanErrorHandleConnectionToNonExistingNodes.
 
@@ -171,15 +154,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
                 var node1ConnectionMgr = node1.FullNode.NodeService<IConnectionManager>();
 
-                var node1PeerNodeConnector = node1ConnectionMgr.PeerConnectors.
-                    Where(p => p.GetType() == typeof(PeerConnectorConnectNode)).First() as PeerConnectorConnectNode;
+                var node1PeerNodeConnector = node1ConnectionMgr.PeerConnectors.Where(p => p.GetType() == typeof(PeerConnectorConnectNode)).First() as PeerConnectorConnectNode;
 
                 var nonExistentEndpoint = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 90);
                 node1PeerNodeConnector.ConnectionSettings.Connect = new List<IPEndPoint>() { nonExistentEndpoint };
 
                 node1ConnectionMgr.Initialize(node1.FullNode.NodeService<IConsensusManager>());
 
-                await node1PeerNodeConnector.OnConnectAsync().ConfigureAwait(false);
+                node1PeerNodeConnector.OnConnectAsync().GetAwaiter().GetResult();
 
                 node1.FullNode.ConnectionManager.ConnectedPeers.Should().BeEmpty();
             }
