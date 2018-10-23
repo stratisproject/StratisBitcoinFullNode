@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
             var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, new Mock<StoreSettings>().Object,
-                new Mock<INodeLifetime>().Object, blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
+                blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
 
             await blockStore.InitializeAsync();
 

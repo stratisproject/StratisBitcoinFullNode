@@ -14,16 +14,14 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 {
     public class BlockStoreTests
     {
-        protected readonly ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
-        private readonly Network regTest;
 
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
 
-            this.network = new BitcoinMain();
-            this.regTest = new BitcoinRegTest();
+            this.network = new BitcoinRegTest();
             var serializer = new DBreezeSerializer();
             serializer.Initialize(this.network);
         }
@@ -78,9 +76,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
                 // Generate blocks and wait for the downloader to pickup.
                 TestHelper.MineBlocks(stratisNodeSync, 10); // coinbase maturity = 10
@@ -101,13 +99,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             }
         }
 
-        [Retry(2)]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void BlockStoreCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -132,9 +129,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 // Sync both nodes.
                 TestHelper.Connect(stratisNodeSync, stratisNode1);
@@ -176,8 +173,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithWallet().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
 
                 // Sync both nodes.
                 TestHelper.Connect(stratisNode1, stratisNode2);
@@ -201,7 +198,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
                 uint256 genesisHash = node.FullNode.Chain.Genesis.HashBlock;
                 Block genesisBlock = node.FullNode.BlockStore().GetBlockAsync(genesisHash).Result;
                 Assert.Equal(genesisHash, genesisBlock.GetHash());

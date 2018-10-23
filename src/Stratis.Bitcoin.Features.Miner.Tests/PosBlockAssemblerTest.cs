@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Mining;
+using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -188,10 +189,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.stratisTest.Consensus.BIP9Deployments[0] = new BIP9DeploymentsParameters(19,
                     new DateTimeOffset(new DateTime(2016, 1, 1, 0, 0, 0, DateTimeKind.Utc)),
                     new DateTimeOffset(new DateTime(2018, 1, 1, 0, 0, 0, DateTimeKind.Utc)));
-
-                // As we are effectively using StratisTest the other deployments need to be disabled
-                this.stratisTest.Consensus.BIP9Deployments[BIP9Deployments.CSV] = null;
-                this.stratisTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = null;
 
                 this.stratisTest.Consensus.MinerConfirmationWindow = 2;
                 this.stratisTest.Consensus.RuleChangeActivationThreshold = 2;
