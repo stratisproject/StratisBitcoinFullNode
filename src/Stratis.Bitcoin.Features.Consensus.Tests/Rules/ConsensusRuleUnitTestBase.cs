@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Crypto;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
@@ -246,8 +247,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
     {
         private readonly PosBlock posBlock;
 
-        public PosBlockBuilder(Network network)
+        public PosBlockBuilder(Network network, Key privateKey = null)
         {
+            if (privateKey == null)
+            {
+                var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                privateKey = mnemonic.DeriveExtKey().PrivateKey;
+            }
+
             // Create coinstake Tx.
             Transaction previousTx = network.CreateTransaction();
             previousTx.AddOutput(new TxOut());
@@ -264,7 +271,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var block = (PosBlock)network.CreateBlock();
             block.AddTransaction(coinBaseTx);
             block.AddTransaction(coinstakeTx);
-            block.BlockSignature = new BlockSignature { Signature = new byte[] { 0x2, 0x3 } };
+
+            ECDSASignature signature = privateKey.Sign(block.Header.GetHash());
+            block.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
             this.posBlock = block;
         }

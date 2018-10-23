@@ -199,38 +199,33 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.regTest);
-                CoreNode coreNode1 = builder.CreateBitcoinCoreNode();
-                CoreNode coreNode2 = builder.CreateBitcoinCoreNode();
-                builder.StartAll();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode coreNode1 = builder.CreateBitcoinCoreNode().Start();
+                CoreNode coreNode2 = builder.CreateBitcoinCoreNode().Start();
 
                 //Core1 discovers 10 blocks, sends to stratis
-                Block tip = coreNode1.FindBlock(10).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
-                stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
+                coreNode1.FindBlock(10).Last();
+                TestHelper.ConnectAndSync(stratisNode, coreNode1);
+                TestHelper.Disconnect(stratisNode, coreNode1);
 
                 //Core2 discovers 20 blocks, sends to stratis
-                tip = coreNode2.FindBlock(20).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
-                stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
+                coreNode2.FindBlock(20).Last();
+                TestHelper.ConnectAndSync(stratisNode, coreNode2);
+                TestHelper.Disconnect(stratisNode, coreNode2);
                 ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
 
                 //Core1 discovers 30 blocks, sends to stratis
-                tip = coreNode1.FindBlock(30).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode1.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode1.CreateRPCClient().GetBestBlockHash());
-                stratisNode.CreateRPCClient().RemoveNode(coreNode1.Endpoint);
+                coreNode1.FindBlock(30).Last();
+                TestHelper.ConnectAndSync(stratisNode, coreNode1);
+                TestHelper.Disconnect(stratisNode, coreNode1);
 
                 //Core2 discovers 50 blocks, sends to stratis
-                tip = coreNode2.FindBlock(50).Last();
-                stratisNode.CreateRPCClient().AddNode(coreNode2.Endpoint, true);
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
-                stratisNode.CreateRPCClient().RemoveNode(coreNode2.Endpoint);
+                coreNode2.FindBlock(50).Last();
+                TestHelper.ConnectAndSync(stratisNode, coreNode2);
+                TestHelper.Disconnect(stratisNode, coreNode2);
                 ((CachedCoinView)stratisNode.FullNode.CoinView()).FlushAsync().Wait();
 
-                TestHelper.WaitLoop(() => stratisNode.CreateRPCClient().GetBestBlockHash() == coreNode2.CreateRPCClient().GetBestBlockHash());
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisNode, coreNode2));
             }
         }
 

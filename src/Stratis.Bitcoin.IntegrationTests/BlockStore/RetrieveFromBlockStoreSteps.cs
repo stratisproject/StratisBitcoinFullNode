@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -22,11 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private IList<Block> retrievedBlocks;
         private const string password = "password";
         private const string walletName = "mywallet";
-        private string passphrase = "p@ssphr@se";
         private WalletAccountReference miningWalletAccountReference;
-        private HdAddress minerAddress;
-        private Features.Wallet.Wallet miningWallet;
-        private Key key;
         private int maturity;
         private uint256 wrongBlockId;
         private IEnumerable<uint256> retrievedBlockHashes;
@@ -40,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private Transaction wontRetrieveTransaction;
         private uint256 retrievedBlockId;
         private Transaction wontRetrieveBlockId;
-        private readonly Network network = KnownNetworks.RegTest;
+        private readonly Network network = new BitcoinRegTest();
 
         public RetrieveFromBlockStoreSpecification(ITestOutputHelper output) : base(output) { }
 
@@ -56,16 +52,13 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_pow_node_running()
         {
-            this.node = this.builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.node.Start();
+            this.node = this.builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
         }
 
         private void a_pow_node_to_transact_with()
         {
-            this.transactionNode = this.builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.transactionNode.Start();
-
-            this.transactionNode.CreateRPCClient().AddNode(this.node.Endpoint, true);
+            this.transactionNode = this.builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            TestHelper.Connect(this.transactionNode, this.node);
             TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
 
             this.receiverAddress = this.transactionNode.FullNode.WalletManager().GetUnusedAddress();

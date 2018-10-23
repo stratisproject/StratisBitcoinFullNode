@@ -59,6 +59,7 @@
         public static readonly ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");
         public static readonly ConsensusError PrevStakeNull = new ConsensusError("prev-stake-null", "previous stake is not found");
         public static readonly ConsensusError StakeHashInvalidTarget = new ConsensusError("proof-of-stake-hash-invalid-target", "proof-of-stake hash did not meet target protocol");
+        public static readonly ConsensusError EmptyCoinstake = new ConsensusError("empty-coinstake", "empty-coinstake");
 
         public static readonly ConsensusError ModifierNotFound = new ConsensusError("modifier-not-found", "unable to get last modifier");
         public static readonly ConsensusError FailedSelectBlock = new ConsensusError("failed-select-block", "unable to select block at round");

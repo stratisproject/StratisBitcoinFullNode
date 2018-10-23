@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -49,7 +50,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IInitialBlockDownloadState ibdState;
 
-        private readonly PoABlockDefinition blockDefinition;
+        private readonly BlockDefinition blockDefinition;
 
         private readonly SlotsManager slotsManager;
 
@@ -72,7 +73,7 @@ namespace Stratis.Bitcoin.Features.PoA
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
-            PoABlockDefinition blockDefinition,
+            BlockDefinition blockDefinition,
             SlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
@@ -127,35 +128,23 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTimeInSeconds );
 
-                    if (waitingTimeInSeconds  > 0)
+                    if (waitingTimeInSeconds > 0)
                     {
                         // Wait until we can mine.
-                        await Task.Delay(waitingTimeInSeconds  * 1000, this.cancellation.Token).ConfigureAwait(false);
+                        await Task.Delay(waitingTimeInSeconds * 1000, this.cancellation.Token).ConfigureAwait(false);
                     }
 
                     ChainedHeader tip = this.consensusManager.Tip;
 
-                    BlockTemplate blockTemplate = this.blockDefinition.Build(tip);
+                    Script walletScriptPubKey = this.GetScriptPubKeyFromWallet();
 
-                    // Premine.
-                    if (tip.Height + 1 == this.network.Consensus.PremineHeight)
+                    if (walletScriptPubKey == null)
                     {
-                        Script premineScriptPubKey = this.GetPremineScriptPubKey();
-
-                        if (premineScriptPubKey == null)
-                        {
-                            this.logger.LogWarning("Miner wasn't able to get address from the wallet to add premine reward!");
-                        }
-                        else
-                        {
-                            Transaction coinbase = blockTemplate.Block.Transactions[0];
-
-                            coinbase.Outputs[0].ScriptPubKey = premineScriptPubKey;
-                            coinbase.Outputs[0].Value = this.network.Consensus.PremineReward;
-
-                            this.logger.LogInformation("Premine was added to the block. It will be available after {0} confirmations.", this.network.Consensus.CoinbaseMaturity);
-                        }
+                        this.logger.LogWarning("Miner wasn't able to get address from the wallet! You will not receive any rewards.");
+                        walletScriptPubKey = new Script();
                     }
+
+                    BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
 
                     blockTemplate.Block.Header.Time = myTimestamp;
 
@@ -175,6 +164,12 @@ namespace Stratis.Bitcoin.Features.PoA
                     this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
 
                     ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
+
+                    if (chainedHeader == null)
+                    {
+                        // Block wasn't accepted because we already connected block from the network.
+                        continue;
+                    }
 
                     ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, blockTemplate.Block);
                     if (result.Error != null)
@@ -209,7 +204,7 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <summary>Gets scriptPubKey from the wallet.</summary>
-        private Script GetPremineScriptPubKey()
+        private Script GetScriptPubKeyFromWallet()
         {
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
 

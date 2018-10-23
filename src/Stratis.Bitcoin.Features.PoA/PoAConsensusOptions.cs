@@ -9,8 +9,9 @@ namespace Stratis.Bitcoin.Features.PoA
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
-                : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
+                : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
         }
     }
