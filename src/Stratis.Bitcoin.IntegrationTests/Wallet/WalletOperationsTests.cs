@@ -35,8 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             this.network = new StratisRegTest();
             this.builder = NodeBuilder.Create("WalletOperationsTests");
-            CoreNode stratisNode = this.builder.CreateStratisPosNode(this.network).NotInIBD();
-            this.builder.StartAll();
+            CoreNode stratisNode = this.builder.CreateStratisPosNode(this.network).NotInIBD().Start();
 
             string walletsFolderPath = stratisNode.FullNode.DataFolder.WalletPath;
             string filename = $"{this.WalletWithFundsName}.wallet.json";
