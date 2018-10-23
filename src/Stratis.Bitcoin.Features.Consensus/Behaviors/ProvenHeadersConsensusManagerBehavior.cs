@@ -79,15 +79,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         }
 
         /// <inheritdoc />
-        /// <summary>Constructs the proven headers payload from locator to consensus tip.</summary>
-        /// <param name="locator">Block locator.</param>
-        /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
-        /// <param name="lastHeader"><see cref="T:NBitcoin.ProvenBlockHeader" /> of the last header that was added to the <see cref="T:Stratis.Bitcoin.P2P.Protocol.Payloads.ProvenHeadersPayload" />.</param>
-        /// <returns><see cref="T:Stratis.Bitcoin.P2P.Protocol.Payloads.ProvenHeadersPayload" /> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        protected override Payload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
+        protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
-            ChainedHeader fork = this.chain.FindFork(locator);
+            // If getHeadersPayload isn't a GetProvenHeadersPayload, return base implementation result
+            if (!(getHeadersPayload is GetProvenHeadersPayload))
+                return base.ConstructHeadersPayload(getHeadersPayload, out lastHeader);
 
+            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
             lastHeader = null;
 
             if (fork == null)
@@ -104,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 lastHeader = header;
                 headers.Headers.Add(provenBlockHeader);
 
-                if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
+                if ((header.HashBlock == getHeadersPayload.HashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
             }
 
