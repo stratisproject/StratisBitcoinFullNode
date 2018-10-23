@@ -55,6 +55,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(ThresholdState.Started, cache.GetState(stratisNode.FullNode.Chain.GetBlock(startedHeight), StratisBIP9Deployments.ColdStaking));
                 Assert.Equal(ThresholdState.LockedIn, cache.GetState(stratisNode.FullNode.Chain.GetBlock(lockedInHeight), StratisBIP9Deployments.ColdStaking));
                 Assert.Equal(ThresholdState.Active, cache.GetState(stratisNode.FullNode.Chain.GetBlock(activeHeight), StratisBIP9Deployments.ColdStaking));
+
+                // Verify that the block created before activation does not have the 'CheckColdStakeVerify' flag set.
+                var rulesEngine = stratisNode.FullNode.NodeService<IConsensusRuleEngine>();
+                ChainedHeader prevHeader = stratisNode.FullNode.Chain.GetBlock(activeHeight - 1);
+                DeploymentFlags flags1 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(prevHeader);
+                Assert.Equal(0, (int)(flags1.ScriptFlags & ScriptVerify.CheckColdStakeVerify));
+
+                // Verify that the block created after activation has the 'CheckColdStakeVerify' flag set.
+                DeploymentFlags flags2 = (rulesEngine as ConsensusRuleEngine).NodeDeployments.GetFlags(stratisNode.FullNode.Chain.Tip);
+                Assert.NotEqual(0, (int)(flags2.ScriptFlags & ScriptVerify.CheckColdStakeVerify));
             }
         }
     }
