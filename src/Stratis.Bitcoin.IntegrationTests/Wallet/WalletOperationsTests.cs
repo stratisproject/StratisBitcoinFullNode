@@ -1,23 +1,21 @@
-﻿using System;
+﻿using System.Runtime.CompilerServices;
+using System;
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
-using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
@@ -29,25 +27,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         public CoreNode Node { get; }
 
-        public string WalletName => "wallet-with-funds";
+        public string WalletWithFundsName => "wallet-with-funds";
 
-        public string WalletFilePath { get; }
+        public string WalletWithFundsFilePath { get; }
 
         public WalletOperationsFixture()
         {
             this.network = new StratisRegTest();
-            this.builder = NodeBuilder.Create(this, "WalletOperationsTests");
+            this.builder = NodeBuilder.Create("WalletOperationsTests");
             CoreNode stratisNode = this.builder.CreateStratisPosNode(this.network).NotInIBD();
             this.builder.StartAll();
 
             string walletsFolderPath = stratisNode.FullNode.DataFolder.WalletPath;
-            string filename = "wallet-with-funds.wallet.json";
-            this.WalletFilePath = Path.Combine(walletsFolderPath, filename);
-            File.Copy(Path.Combine("Wallet", "Data", filename), this.WalletFilePath, true);
+            string filename = $"{this.WalletWithFundsName}.wallet.json";
+            this.WalletWithFundsFilePath = Path.Combine(walletsFolderPath, filename);
+            File.Copy(Path.Combine("Wallet", "Data", filename), this.WalletWithFundsFilePath, true);
 
             var result = $"http://localhost:{stratisNode.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
             {
-                Name = this.WalletName,
+                Name = this.WalletWithFundsName,
                 Password = "123456"
             }).Result;
 
@@ -70,19 +68,805 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
     }
 
+    /// <summary>
+    /// This class contains tests that can all be run with a single node.
+    /// </summary>
     public class WalletOperationsTests : IClassFixture<WalletOperationsFixture>
     {
         private readonly CoreNode node;
 
         private readonly WalletOperationsFixture fixture;
 
-        private readonly string walletName;
+        private readonly string walletWithFundsName;
 
         public WalletOperationsTests(WalletOperationsFixture fixture)
         {
             this.node = fixture.Node;
             this.fixture = fixture;
-            this.walletName = fixture.WalletName;
+            this.walletWithFundsName = fixture.WalletWithFundsName;
+        }
+
+        [Fact]
+        public async Task GetMnemonicWithDefaultParameters()
+        {
+            // Act.
+            var mnemonic = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/mnemonic").GetStringAsync();
+
+            // Assert.
+            mnemonic.Split(" ").Length.Should().Be(12);
+            Wordlist.AutoDetectLanguage(mnemonic).Should().Be(Language.English);
+        }
+
+        [Fact]
+        public async Task GetMnemonicWith24FrenchWords()
+        {
+            // Act.
+            var mnemonic = await $"http://localhost:{this.node.ApiPort}/api"
+                .AppendPathSegment("wallet/mnemonic")
+                .SetQueryParams(new { language = "French", wordCount = 24 }).
+                GetStringAsync();
+
+            // Assert.
+            mnemonic.Split(" ").Length.Should().Be(24);
+            Wordlist.AutoDetectLanguage(mnemonic).Should().Be(Language.French);
+        }
+
+        [Fact]
+        public async Task GetMnemonicWithUnknownLanguageFails()
+        {
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api"
+                                .AppendPathSegment("wallet/mnemonic")
+                                .SetQueryParams(new { language = "Klingon", wordCount = 24 })
+                                .GetAsync();
+
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            // Assert.
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be("Invalid language 'Klingon'. Choices are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional.");
+        }
+
+        [Fact]
+        public async Task CreateWalletWithoutMnemonic()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+          
+            // Act.
+            var response = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "",
+                Password = "123456"
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check the mnemonic returned.
+            response.Split(" ").Length.Should().Be(12);
+            Wordlist.AutoDetectLanguage(response).Should().Be(Language.English);
+            
+            // Check a wallet file has been created.
+            string walletFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
+        public async Task CreateWalletWith12WordsMnemonic()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+            string mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString();
+
+            // Act.
+            var response = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "",
+                Password = "123456",
+                Mnemonic = mnemonic
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check the mnemonic returned.
+            response = response.Replace("\"", "");
+            response.Split(" ").Length.Should().Be(12);
+            Wordlist.AutoDetectLanguage(response).Should().Be(Language.English);
+            response.Should().Be(mnemonic);
+
+            // Check a wallet file has been created.
+            string walletFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
+        public async Task CreateWalletWith12WordsChineseMnemonic()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+            string mnemonic = new Mnemonic(Wordlist.ChineseTraditional , WordCount.Twelve).ToString();
+            
+            // Act.
+            var response = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "",
+                Password = "123456",
+                Mnemonic = mnemonic
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check the mnemonic returned.
+            response = response.Replace("\"", "");
+            response.Split(" ").Length.Should().Be(12);
+            Wordlist.AutoDetectLanguage(response).Should().Be(Language.ChineseTraditional);
+            response.Should().Be(mnemonic);
+
+            // Check a wallet file has been created.
+            string walletFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
+        public async Task CreateWalletWith24WordsMnemonic()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+            string mnemonic = new Mnemonic(Wordlist.English, WordCount.TwentyFour).ToString();
+
+            // Act.
+            var response = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "",
+                Password = "123456",
+                Mnemonic = mnemonic
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check the mnemonic returned.
+            response = response.Replace("\"", "");
+            response.Split(" ").Length.Should().Be(24);
+            Wordlist.AutoDetectLanguage(response).Should().Be(Language.English);
+            response.Should().Be(mnemonic);
+
+            // Check a wallet file has been created.
+            string walletFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
+        public async Task CreateWalletWithPassphrase()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            var response = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Password = "123456"
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check the mnemonic returned.
+            response = response.Replace("\"", "");
+            response.Split(" ").Length.Should().Be(12);
+            Wordlist.AutoDetectLanguage(response).Should().Be(Language.English);
+
+            // Check a wallet file has been created.
+            string walletFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
+        public async Task CreateWalletWithoutPassword()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Password = ""
+            }).ReceiveString();
+
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            // Assert.
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be("A password is required.");
+        }
+
+        [Fact]
+        public async Task CompareWalletsCreatedWithAndWithoutPassphrase()
+        {
+            // Arrange.
+            string walletWithPassphraseName = "wallet-with-passphrase";
+            string walletWithoutPassphraseName = "wallet-without-passphrase";
+            string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
+
+            // Act.
+            var mnemonic = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletWithPassphraseName,
+                Passphrase = "passphrase",
+                Password = "123456"
+            }).ReceiveString();
+
+            var mnemonic2 = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletWithoutPassphraseName,
+                Passphrase = "",
+                Password = "123456"
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check the mnemonics returned.
+            mnemonic = mnemonic.Replace("\"", "");
+            mnemonic2 = mnemonic2.Replace("\"", "");
+            mnemonic.Split(" ").Length.Should().Be(12);
+            mnemonic2.Split(" ").Length.Should().Be(12);
+            Wordlist.AutoDetectLanguage(mnemonic).Should().Be(Language.English);
+            Wordlist.AutoDetectLanguage(mnemonic2).Should().Be(Language.English);
+            mnemonic2.Should().NotBe(mnemonic);
+
+            // Check a wallet files have been created.
+            string walletWithPassphrasePath = Path.Combine(walletsFolderPath, $"{walletWithPassphraseName}.wallet.json");
+            File.Exists(walletWithPassphrasePath).Should().BeTrue();
+
+            string walletWithoutPassphrasePath = Path.Combine(walletsFolderPath, $"{walletWithoutPassphraseName}.wallet.json");
+            File.Exists(walletWithoutPassphrasePath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet walletWithPassphrase = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletWithPassphrasePath));
+            walletWithPassphrase.IsExtPubKeyWallet.Should().BeFalse();
+            walletWithPassphrase.ChainCode.Should().NotBeNullOrEmpty();
+            walletWithPassphrase.EncryptedSeed.Should().NotBeNullOrEmpty();
+
+            Features.Wallet.Wallet walletWithoutPassphrase = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletWithoutPassphrasePath));
+            walletWithoutPassphrase.IsExtPubKeyWallet.Should().BeFalse();
+            walletWithoutPassphrase.ChainCode.Should().NotBeNullOrEmpty();
+            walletWithoutPassphrase.EncryptedSeed.Should().NotBeNullOrEmpty();
+
+            walletWithoutPassphrase.EncryptedSeed.Should().NotBe(walletWithPassphrase.EncryptedSeed);
+            walletWithoutPassphrase.ChainCode.Should().NotBeEquivalentTo(walletWithPassphrase.ChainCode);
+            walletWithoutPassphrase.AccountsRoot.First().Accounts.First().ExtendedPubKey.Should().NotBe(walletWithPassphrase.AccountsRoot.First().Accounts.First().ExtendedPubKey);
+        }
+
+        [Fact]
+        public async Task CreateWalletsWithSameMnemonicPassphraseCombinationFails()
+        {
+            // Arrange.
+            string firstWalletName = this.fixture.GetUniqueWalletName();
+            string secondWalletName = this.fixture.GetUniqueWalletName();
+            string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
+
+            // Act.
+            var mnemonic = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = firstWalletName,
+                Passphrase = "passphrase",
+                Password = "123456"
+            }).ReceiveString();
+
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = secondWalletName,
+                Passphrase = "passphrase",
+                Password = "123456",
+                Mnemonic = mnemonic.Replace("\"", "")
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check only one wallet has been created.
+            string firstWalletPath = Path.Combine(walletsFolderPath, $"{firstWalletName}.wallet.json");
+            File.Exists(firstWalletPath).Should().BeTrue();
+
+            string secondWalletPath = Path.Combine(walletsFolderPath, $"{secondWalletName}.wallet.json");
+            File.Exists(secondWalletPath).Should().BeFalse();
+            
+            // Check the error message.
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Contain("Cannot create this wallet as a wallet with the same private key already exists.");
+        }
+
+        [Fact]
+        public async Task CreateWalletsWithSameNameFails()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+            string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
+
+            // Act.
+            var mnemonic = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Password = "123456"
+            }).ReceiveString();
+
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Password = "password"
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check only one wallet has been created.
+            string firstWalletPath = Path.Combine(walletsFolderPath, $"{walletName}.wallet.json");
+            File.Exists(firstWalletPath).Should().BeTrue();
+
+            // Check the error message.
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Contain($"Wallet with name '{walletName}' already exists.");
+        }
+
+        [Fact]
+        public async Task LoadNonExistingWallet()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
+            {
+                Name = walletName,
+                Password = "password"
+            });
+
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            // Assert.
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.NotFound);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be("This wallet was not found at the specified location.");
+        }
+
+        [Fact]
+        public async Task LoadWallet()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+            string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string importWalletPath = Path.Combine("Wallet", "Data", "test.wallet.json");
+
+            Features.Wallet.Wallet importedWallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(importWalletPath));
+            importedWallet.Name = walletName;
+            File.WriteAllText(Path.Combine(walletsFolderPath, $"{walletName}.wallet.json"), JsonConvert.SerializeObject(importedWallet, Formatting.Indented));
+
+
+            // Act.
+            var response = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
+            {
+                Name = walletName,
+                Password = "123456"
+            });
+
+            // Assert.
+
+            response.StatusCode = HttpStatusCode.Accepted;
+
+            // Check the wallet is loaded.
+            var getAccountsResponse = await $"http://localhost:{this.node.ApiPort}/api"
+                .AppendPathSegment("wallet/accounts")
+                .SetQueryParams(new { walletName = walletName })
+                .GetJsonAsync<IEnumerable<string>>();
+
+            getAccountsResponse.First().Should().Be("account 0");
+        }
+
+        [Fact]
+        public async Task LoadWalletWithWrongPassword()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+            string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string importWalletPath = Path.Combine("Wallet", "Data", "test.wallet.json");
+
+            Features.Wallet.Wallet importedWallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(importWalletPath));
+            importedWallet.Name = walletName;
+            File.WriteAllText(Path.Combine(walletsFolderPath, $"{walletName}.wallet.json"), JsonConvert.SerializeObject(importedWallet, Formatting.Indented));
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/load").PostJsonAsync(new WalletLoadRequest
+            {
+                Name = walletName,
+                Password = "wrongpassword"
+            });
+
+            // Assert.
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.Forbidden);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be("Wrong password, please try again.");
+
+            // Check the wallet hasn't been loaded.
+            Func<Task> getAccounts = async () => await $"http://localhost:{this.node.ApiPort}/api"
+                .AppendPathSegment("wallet/accounts")
+                .SetQueryParams(new { walletName = walletName })
+                .GetJsonAsync<IEnumerable<string>>();
+
+            var exception2 = getAccounts.Should().Throw<FlurlHttpException>().Which;
+            var response2 = exception2.Call.Response;
+
+            // Assert.
+            ErrorResponse errorResponse2 = JsonConvert.DeserializeObject<ErrorResponse>(await response2.Content.ReadAsStringAsync());
+            List<ErrorModel> errors2 = errorResponse2.Errors;
+
+            response2.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors2.Should().ContainSingle();
+            errors2.First().Message.Should().Be($"No wallet with name '{walletName}' could be found.");
+        }
+
+        [Fact]
+        public async Task RecoverWalletWithWrongNumberOfWordsInMnemonic()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/recover").PostJsonAsync(new WalletRecoveryRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Password = "password",
+                Mnemonic = "pumpkin census skill noise write vicious plastic carpet vault"
+            }).ReceiveString();
+
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            // Assert.
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be("Word count should be equals to 12,15,18,21 or 24");
+        }
+
+        [Fact]
+        public async Task RecoverWalletWithoutMnemonic()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/recover").PostJsonAsync(new WalletRecoveryRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Password = "password"
+            }).ReceiveString();
+
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            // Assert.
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be("A mnemonic is required.");
+        }
+
+        [Fact]
+        public async Task RecoverWalletWithoutPassword()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/recover").PostJsonAsync(new WalletRecoveryRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Mnemonic = new Mnemonic(Wordlist.Japanese, WordCount.Twelve).ToString()
+            }).ReceiveString();
+
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            // Assert.
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be("A password is required.");
+        }
+
+        [Fact]
+        public async Task RecoverWalletWithPassphrase()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            var response = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/recover").PostJsonAsync(new WalletRecoveryRequest
+            {
+                Name = walletName,
+                Passphrase = "passphrase",
+                Password = "123456",
+                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString()
+            });
+
+            // Assert.
+
+            // Check a wallet file has been created.
+            string walletFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
+        public async Task RecoverWalletWithoutPassphrase()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+
+            // Act.
+            await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/recover").PostJsonAsync(new WalletRecoveryRequest
+            {
+                Name = walletName,
+                Passphrase = "",
+                Password = "123456",
+                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString()
+            });
+
+            // Assert.
+
+            // Check a wallet file has been created.
+            string walletFolderPath = this.node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
+        public async Task RecoverWalletWithSameMnemonicPassphraseAsExistingWalletFails()
+        {
+            // Arrange.
+            string firstWalletName = this.fixture.GetUniqueWalletName();
+            string secondWalletName = this.fixture.GetUniqueWalletName();
+            string walletsFolderPath = this.node.FullNode.DataFolder.WalletPath;
+
+            // Act.
+            var mnemonic = await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = firstWalletName,
+                Passphrase = "passphrase",
+                Password = "123456"
+            }).ReceiveString();
+
+            mnemonic = mnemonic.Replace("\"", "");
+
+            Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api".AppendPathSegment("wallet/recover").PostJsonAsync(new WalletRecoveryRequest
+            {
+                Name = secondWalletName,
+                Passphrase = "passphrase",
+                Password = "123456",
+                Mnemonic = mnemonic
+            }).ReceiveString();
+
+
+            // Assert.
+
+            // Check only one wallet has been created.
+            string firstWalletPath = Path.Combine(walletsFolderPath, $"{firstWalletName}.wallet.json");
+            File.Exists(firstWalletPath).Should().BeTrue();
+
+            string secondWalletPath = Path.Combine(walletsFolderPath, $"{secondWalletName}.wallet.json");
+            File.Exists(secondWalletPath).Should().BeFalse();
+
+            // Check the error message.
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.Conflict);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Contain("Cannot create this wallet as a wallet with the same private key already exists.");
         }
 
         [Fact]
@@ -91,7 +875,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             var response = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
-                .SetQueryParams(new { walletName = this.walletName })
+                .SetQueryParams(new { walletName = this.walletWithFundsName })
                 .GetJsonAsync<WalletBalanceModel>();
 
             response.AccountsBalances.Should().NotBeEmpty();
@@ -110,7 +894,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             // Arrange.
             string walletName = "no-such-wallet";
-            
+
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
@@ -135,7 +919,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
-                .SetQueryParams(new { walletName = this.walletName, accountName = "account 1" })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 1" })
                 .GetJsonAsync<WalletBalanceModel>();
 
             // Assert.
@@ -155,7 +939,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             // Arrange.
             string address = "TRCT9QP3ipb6zCvW15yKoEtaU418UaKVE2";
-            
+
             // Act.
             AddressBalanceModel addressBalance = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/received-by-address")
@@ -198,12 +982,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             var balanceResponse = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
-                .SetQueryParams(new { walletName = this.walletName })
+                .SetQueryParams(new { walletName = this.walletWithFundsName })
                 .GetJsonAsync<WalletBalanceModel>();
 
             var maxBalanceResponse = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/maxbalance")
-                .SetQueryParams(new { walletName = this.walletName, accountName = "account 0", feetype = "low", allowunconfirmed = true })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0", feetype = "low", allowunconfirmed = true })
                 .GetJsonAsync<MaxSpendableAmountModel>();
 
             var accountBalance = balanceResponse.AccountsBalances.Single();
@@ -246,7 +1030,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/extpubkey")
-                .SetQueryParams(new { walletName = this.walletName, accountName = accountName })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = accountName })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -270,7 +1054,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             string extPubKey = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/extpubkey")
-                .SetQueryParams(new { walletName = this.walletName, accountName = accountName })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = accountName })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -283,12 +1067,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             IEnumerable<string> accountsNames = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/accounts")
-                .SetQueryParams(new { walletName = this.walletName })
+                .SetQueryParams(new { walletName = this.walletWithFundsName })
                 .GetJsonAsync<IEnumerable<string>>();
 
             // Assert.
             accountsNames.Should().NotBeEmpty();
-            
+
             string firstAccountName = accountsNames.First();
             firstAccountName.Should().Be("account 0");
         }
@@ -317,14 +1101,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             errors.First().Message.Should().Be($"No wallet with name '{walletName}' could be found.");
         }
 
-        
+
         [Fact]
         public async Task GetAddressesInAccount()
         {
             // Act.
             AddressesModel addressesModel = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/addresses")
-                .SetQueryParams(new { walletName = this.walletName, accountName = "account 0" })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
                 .GetJsonAsync<AddressesModel>();
 
             // Assert.
@@ -365,7 +1149,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/addresses")
-                .SetQueryParams(new { walletName = this.walletName, accountName = accountName })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = accountName })
                 .GetJsonAsync<string>();
 
             // Assert.
@@ -386,7 +1170,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             IEnumerable<string> unusedaddresses = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/unusedAddresses")
-                .SetQueryParams(new { walletName = this.walletName, accountName = "account 0", count = 1 })
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0", count = 1 })
                 .GetJsonAsync<IEnumerable<string>>();
 
             // Assert.
@@ -402,7 +1186,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             WalletGeneralInfoModel generalInfoModel = await $"http://localhost:{this.node.ApiPort}/api"
                 .AppendPathSegment("wallet/general-info")
-                .SetQueryParams(new { name = this.walletName })
+                .SetQueryParams(new { name = this.walletWithFundsName })
                 .GetJsonAsync<WalletGeneralInfoModel>();
 
             // Assert.
@@ -411,7 +1195,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             generalInfoModel.CreationTime.ToUnixTimeSeconds().Should().Be(1540204793);
             generalInfoModel.IsDecrypted.Should().BeTrue();
             generalInfoModel.Network.Name.Should().Be(new StratisRegTest().Name);
-            generalInfoModel.WalletFilePath.Should().Be(this.fixture.WalletFilePath);
+            generalInfoModel.WalletFilePath.Should().Be(this.fixture.WalletWithFundsFilePath);
         }
 
         [Fact]
@@ -447,9 +1231,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .GetJsonAsync<WalletFileModel>();
 
             // Assert.
-            walletFileModel.WalletsPath.Should().Be(Path.GetDirectoryName(this.fixture.WalletFilePath));
-            walletFileModel.WalletsFiles.Should().ContainSingle();
-            walletFileModel.WalletsFiles.Single().Should().Be(Path.GetFileName(this.fixture.WalletFilePath));
+            walletFileModel.WalletsPath.Should().Be(Path.GetDirectoryName(this.fixture.WalletWithFundsFilePath));
+            walletFileModel.WalletsFiles.Count().Should().BeGreaterThan(0);
+            walletFileModel.WalletsFiles.Should().Contain(Path.GetFileName(this.fixture.WalletWithFundsFilePath));
         }
     }
 }

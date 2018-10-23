@@ -17,6 +17,9 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
+    /// <summary>
+    /// This class contains tests that must be run with a fresh node.
+    /// </summary>
     public class WalletPostOperationsTests
     {
         private readonly Network network;
