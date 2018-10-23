@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <returns>
         ///   <c>true</c> if is peer is PH enabled; otherwise, <c>false</c>.
         /// </returns>
-        private bool IsPeerPhEnabled(INetworkPeer peer)
+        private bool CanPeerProcessProvenHeaders(INetworkPeer peer)
         {
             return peer.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
         }
@@ -148,33 +148,32 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             return peer.Behavior<IConnectionManagerBehavior>()?.Whitelisted == true;
         }
 
-
-        private bool IsProvenHeaderActivated()
+        private bool AreProvenHeadersActivated()
         {
             if (this.network.Consensus.Options is PosConsensusOptions options)
             {
                 long currentHeight = this.chainState.ConsensusTip.Height;
-                return (options.ProvenHeadersActivationHeight > 0) && (currentHeight >= options.ProvenHeadersActivationHeight);
+                return currentHeight >= options.ProvenHeadersActivationHeight;
             }
 
             return false;
         }
 
         /// <summary>
-        /// Builds the GetHeadersPayload.
+        /// Builds the <see cref="GetHeadersPayload"/>.
         /// </summary>
-        /// <returns>The GetHeadersPayload instance.
-        /// If the peer can serve PH, GetProvenHeadersPayload is returned, otherwise if it's a legacy peer but it's whitelisted,
-        /// GetHeadersPayload is returned.
+        /// <returns>The <see cref="GetHeadersPayload"/> instance.
+        /// If the peer can serve PH, <see cref="GetProvenHeadersPayload" /> is returned, otherwise if it's a legacy peer but it's whitelisted,
+        /// <see cref="GetHeadersPayload"/> is returned.
         /// If the attached peer is a legacy peer and it's not whitelisted, returns null.
         /// </returns>
         protected override GetHeadersPayload BuildGetHeadersPayload()
         {
             INetworkPeer peer = this.AttachedPeer;
 
-            if (this.IsProvenHeaderActivated())
+            if (this.AreProvenHeadersActivated())
             {
-                if (this.IsPeerPhEnabled(peer))
+                if (this.CanPeerProcessProvenHeaders(peer))
                 {
                     return new GetProvenHeadersPayload()
                     {
@@ -183,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                     };
                 }
                 // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
-                else if (IsPeerWhitelisted(peer))
+                else if (this.IsPeerWhitelisted(peer))
                     return base.BuildGetHeadersPayload();
                 // If the peer doesn't support PH and isn't whitelisted, return null (stop synch attempt with legacy StratisX nodes).
                 else
@@ -202,12 +201,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// </summary>
         /// <param name="peer">The peer.</param>
         /// <param name="headers">The headers.</param>
-        /// <returns></returns>
         protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
-            bool isLegacyWhitelistedPeer = (!this.IsPeerPhEnabled(peer) && this.IsPeerWhitelisted(peer));
+            bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && this.IsPeerWhitelisted(peer));
             // Only legacy peers are allowed to handle this message, or any node before PH activation.
-            if (isLegacyWhitelistedPeer || !this.IsProvenHeaderActivated())
+            if (isLegacyWhitelistedPeer || !this.AreProvenHeadersActivated())
             {
                 return base.ProcessHeadersAsync(peer, headers);
             }
