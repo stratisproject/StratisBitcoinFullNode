@@ -615,7 +615,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 PosFutureDriftRule futureDriftRule = this.consensusRules.GetRule<PosFutureDriftRule>();
 
                 // nTime has different purpose from nLockTime but can be used in similar attacks
-                if (tx.Time > futureDriftRule.GetFutureDrift(adjustedTime))
+                if (tx.Time > adjustedTime + futureDriftRule.GetFutureDrift(adjustedTime))
                 {
                     context.State.Fail(MempoolErrors.TimeTooNew).Throw();
                 }
