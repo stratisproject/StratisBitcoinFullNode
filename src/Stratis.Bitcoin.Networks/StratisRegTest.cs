@@ -60,7 +60,10 @@ namespace Stratis.Bitcoin.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new StratisBIP9Deployments();
+            var bip9Deployments = new StratisBIP9Deployments()
+            {
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(0, 0, 999999999)
+            };
 
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,

@@ -5,6 +5,7 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -64,7 +65,12 @@ namespace Stratis.Bitcoin.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new StratisBIP9Deployments();
+            var bip9Deployments = new StratisBIP9Deployments()
+            {
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
+                    new DateTime(2018, 11, 1, 0, 0, 0, DateTimeKind.Utc).ToUnixTimestamp(),
+                    new DateTime(2019, 2, 1, 0, 0, 0, DateTimeKind.Utc).ToUnixTimestamp())
+            };
 
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,

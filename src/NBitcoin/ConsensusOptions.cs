@@ -179,7 +179,6 @@
             int maxStandardTxSigopsCost,
             int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
-            this.ColdStakingActivationHeight = coldStakingActivationHeight;
             this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
 
