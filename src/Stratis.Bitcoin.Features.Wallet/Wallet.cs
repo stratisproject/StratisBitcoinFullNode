@@ -737,7 +737,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // This output can unconditionally be included in the results.
                     // Or this output is a CoinBase or CoinStake and has reached maturity.
                     if ((!isCoinBase && !isCoinStake) || 
-                        ((isCoinBase || isCoinStake) && (confirmationCount >= network.Consensus.CoinbaseMaturity)))
+                        ((isCoinBase || isCoinStake) && (confirmationCount > network.Consensus.CoinbaseMaturity)))
                     {
                         yield return new UnspentOutputReference
                         {
