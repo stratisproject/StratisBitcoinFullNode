@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public NodeConfigParameters ConfigParameters { get; }
 
-        private string rootFolder;
+        private readonly string rootFolder;
 
         public NodeBuilder(string rootFolder)
         {
@@ -137,6 +138,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network), "stratis.conf");
         }
 
+        public CoreNode CreateSmartContractPoANode()
+        {
+            Network network = new SmartContractsPoARegTest();
+            return CreateNode(new SmartContractPoARunner(this.GetNextDataFolderName(), network), "stratis.conf");
+        }
+
         public CoreNode CreateSmartContractPowNode()
         {
             Network network = new SmartContractsRegTest();
@@ -186,14 +193,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             string dataFolderName = Path.Combine(this.rootFolder, numberedFolderName);
 
             return dataFolderName;
-        }
-
-        public void StartAll()
-        {
-            foreach (CoreNode node in this.Nodes.Where(n => n.State == CoreNodeState.Stopped))
-            {
-                node.Start();
-            }
         }
 
         public void Dispose()

@@ -3,33 +3,23 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading;
-using FluentAssertions;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
-using NBitcoin.Networks;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class NodeSyncTests
     {
-        private readonly Network posNetwork;
         private readonly Network powNetwork;
-
-        const string walletName = "myWallet";
-        const string walletPassword = "123456";
-        const string walletPassphrase = "123456";
-        const string walletAccount = "account 0";
 
         public NodeSyncTests()
         {
-            this.posNetwork = NetworkRegistration.Register(new StratisRegTestMaxReorg());
-            this.powNetwork = KnownNetworks.RegTest;
+            this.powNetwork = new BitcoinRegTest();
         }
 
         private class StratisRegTestMaxReorg : StratisRegTest
@@ -67,8 +57,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 lastPowBlock: 12500,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
-                proofOfStakeReward: Money.COIN
-            );
+                proofOfStakeReward: Money.COIN);
+
+                this.Name = Guid.NewGuid().ToString();
             }
         }
 
@@ -96,8 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void CanStratisSyncFromCore()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -159,15 +149,16 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry(2)]
+        [Retry]
         [Trait("Unstable", "True")]
         public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisMiner = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
-                CoreNode stratisSyncer = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().Start();
-                CoreNode stratisReorg = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                var stratisRegTestMaxReorg = new StratisRegTestMaxReorg();
+                CoreNode stratisMiner = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisSyncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().Start();
+                CoreNode stratisReorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisMiner, 1);
 
@@ -177,7 +168,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Create a reorg by mining on two different chains                
                 TestHelper.Disconnect(stratisMiner, stratisReorg);
-                TestHelper.Disconnect(stratisSyncer, stratisReorg);
+                TestHelper.Disconnect(stratisMiner, stratisSyncer);
 
                 TestHelper.MineBlocks(stratisMiner, 11);
                 TestHelper.MineBlocks(stratisReorg, 12);
@@ -185,8 +176,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // make sure the nodes are actually on different chains.
                 Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(2).HashBlock, stratisReorg.FullNode.Chain.GetBlock(2).HashBlock);
 
-                TestHelper.TriggerSync(stratisSyncer);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisMiner, stratisSyncer));
+                TestHelper.ConnectAndSync(stratisSyncer, stratisMiner);
 
                 // The hash before the reorg node is connected.
                 uint256 hashBeforeReorg = stratisMiner.FullNode.Chain.Tip.HashBlock;
@@ -220,17 +210,18 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </para>
         /// </summary>
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void PullerVsMinerRaceCondition()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
+                var stratisRegTest = new StratisRegTest();
+
                 // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
 
                 // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
 
                 // Let's mine block Ap and Bp.
                 TestHelper.MineBlocks(stratisMinerRemote, 2);
@@ -246,12 +237,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Thread.Sleep(2000);
 
                 // Now reconnect nodes and mine block C1s before C2p arrives.
-                TestHelper.ConnectAndSync(stratisMinerLocal, stratisMinerRemote);
-
+                TestHelper.Connect(stratisMinerLocal, stratisMinerRemote);
                 TestHelper.MineBlocks(stratisMinerLocal, 1);
 
                 // Mine block Dp.
-                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, 1).BlockHashes[0];
+                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, 1, false).BlockHashes[0];
 
                 // Now we wait until the local node's chain tip has correct hash of Dp.
                 TestHelper.WaitLoop(() => stratisMinerLocal.FullNode.Chain.Tip.HashBlock.Equals(dpHash));
@@ -271,18 +261,17 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// Network - Node1 - MiningNode
         /// </para>
         /// </summary>
-        [Retry]
-        [Trait("Unstable", "True")]
-        public void MiningNodeWithOneConnectionAlwaysSynced()
+        [Fact]
+        public void MiningNodeWithOneConnection_AlwaysSynced()
         {
-            string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnectionAlwaysSynced));
+            string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnection_AlwaysSynced));
 
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(testFolderPath))
             {
-                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
-                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
-                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
-                CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
+                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
+                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
+                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
+                CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.Connect(minerNode, connectorNode);
                 TestHelper.Connect(connectorNode, firstNode);
@@ -297,39 +286,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                     TestHelper.WaitForNodeToSync(nodes.ToArray());
                 });
 
-                int networkHeight = minerNode.FullNode.Chain.Height;
-                Assert.Equal(networkHeight, nodes.Count);
+                Assert.Equal(minerNode.FullNode.Chain.Height, nodes.Count);
 
                 // Random node on network generates a block.
                 TestHelper.MineBlocks(firstNode, 1);
-
-                // Wait until connector get the hash of network's block.
-                while ((connectorNode.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != firstNode.FullNode.ChainBehaviorState.ConsensusTip.HashBlock) ||
-                       (firstNode.FullNode.ChainBehaviorState.ConsensusTip.Height == networkHeight))
-                    Thread.Sleep(1);
-
-                Assert.Equal(connectorNode.FullNode.Chain.Tip.HashBlock, firstNode.FullNode.Chain.Tip.HashBlock);
-                Assert.Equal(minerNode.FullNode.Chain.Tip.Height, networkHeight);
-                Assert.Equal(connectorNode.FullNode.Chain.Tip.Height, networkHeight + 1);
+                TestHelper.WaitForNodeToSync(firstNode, connectorNode, secondNode);
 
                 // Miner mines the block.
                 TestHelper.MineBlocks(minerNode, 1);
-
-                networkHeight++;
-
-                Assert.Equal(connectorNode.FullNode.Chain.Tip.HashBlock, firstNode.FullNode.Chain.Tip.HashBlock);
-                Assert.Equal(minerNode.FullNode.Chain.Tip.Height, networkHeight);
-                Assert.Equal(connectorNode.FullNode.Chain.Tip.Height, networkHeight);
+                TestHelper.WaitForNodeToSync(minerNode, connectorNode);
 
                 TestHelper.MineBlocks(connectorNode, 1);
-                networkHeight++;
 
                 TestHelper.WaitForNodeToSync(nodes.ToArray());
-
-                nodes.All(n => n.FullNode.Chain.Height == networkHeight).Should()
-                    .BeTrue(because: "all nodes have synced to chain height");
-
-                Assert.Equal(firstNode.FullNode.Chain.Tip.HashBlock, minerNode.FullNode.Chain.Tip.HashBlock);
             }
         }
     }

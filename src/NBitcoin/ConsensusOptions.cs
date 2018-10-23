@@ -7,7 +7,7 @@
     public class ConsensusOptions
     {
         /// <summary>
-        /// Flag used to detect SegWit transactions.  
+        /// Flag used to detect SegWit transactions.
         /// </summary>
         public const int SerializeTransactionNoWitness = 0x40000000;
 
@@ -39,6 +39,9 @@
         /// <summary>The maximum allowed number of signature check operations in a block (network rule).</summary>
         public int MaxBlockSigopsCost { get; set; }
 
+        /// <summary>The maximum number of sigops we're willing to relay/mine in a single tx.</summary>
+        public int MaxStandardTxSigopsCost { get; set; }
+
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
@@ -52,6 +55,7 @@
             this.MaxStandardTxWeight = 400000;
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
+            this.MaxStandardTxSigopsCost = this.MaxBlockSigopsCost / 5;
         }
 
         /// <summary>
@@ -64,7 +68,8 @@
             int witnessScaleFactor,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
             this.MaxBlockWeight = maxBlockWeight;
@@ -73,6 +78,7 @@
             this.MaxStandardVersion = maxStandardVersion;
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
+            this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
         }
 
         /// <summary>
@@ -82,7 +88,8 @@
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
 
@@ -95,12 +102,13 @@
             this.MaxStandardVersion = maxStandardVersion;
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
+            this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
         }
     }
 
     /// <summary>
     /// Extension to ConsensusOptions for PoS-related parameters.
-    /// 
+    ///
     /// TODO: When moving rules to be part of consensus for network, move this class to the appropriate project too.
     /// Doesn't make much sense for it to be in NBitcoin. Also remove the CoinstakeMinConfirmation consts and set CointakeMinConfirmation in Network building.
     /// </summary>
@@ -154,7 +162,8 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxStandardTxSigopsCost,
+            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
             this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
@@ -167,7 +176,8 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxStandardTxSigopsCost,
+            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
             this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
