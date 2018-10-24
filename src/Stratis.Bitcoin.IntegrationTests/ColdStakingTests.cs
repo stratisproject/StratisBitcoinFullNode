@@ -11,6 +11,18 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
+    /// <summary>
+    /// Prevent network being matched by name and replaced with a different network
+    /// in the <see cref="Configuration.NodeSettings" /> constructor.
+    /// </summary>
+    public class StratisOverrideRegTest : StratisRegTest
+    {
+        public StratisOverrideRegTest() : base()
+        {
+            this.Name = Guid.NewGuid().ToString();
+        }
+    }
+
     public class ColdStakingTests
     {
         /// <summary>
@@ -22,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Create separate network parameters for this test.
-                var network = new StratisRegTest();
+                var network = new StratisOverrideRegTest();
 
                 // Set the date ranges such that ColdStaking will 'Start' immediately after the initial confirmation window.
                 network.Consensus.BIP9Deployments[StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
