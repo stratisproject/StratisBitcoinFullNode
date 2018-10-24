@@ -57,5 +57,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
             return fullNodeBuilder;
         }
+
+        public static IFullNodeBuilder ReplaceTimeProvider(this IFullNodeBuilder fullNodeBuilder, IDateTimeProvider timeProvider)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                foreach (IFeatureRegistration feature in features.FeatureRegistrations)
+                {
+                    feature.FeatureServices(services =>
+                    {
+                        ServiceDescriptor defaultProivider = services.FirstOrDefault(x => x.ServiceType == typeof(IDateTimeProvider));
+
+                        services.Remove(defaultProivider);
+                        services.AddSingleton<IDateTimeProvider>(provider => timeProvider);
+                    });
+                }
+            });
+
+            return fullNodeBuilder;
+        }
     }
 }

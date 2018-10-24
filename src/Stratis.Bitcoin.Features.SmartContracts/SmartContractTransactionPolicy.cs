@@ -9,6 +9,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         public SmartContractTransactionPolicy(Network network) : base(network)
         {
+            // Allow bigger fees to be sent as we include gas as well.
+            this.MaxTxFee = new FeeRate(Money.Coins(10));
         }
 
         protected override void CheckPubKey(Transaction transaction, List<TransactionPolicyError> errors)
@@ -38,5 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 }
             }
         }
+
+
     }
 }

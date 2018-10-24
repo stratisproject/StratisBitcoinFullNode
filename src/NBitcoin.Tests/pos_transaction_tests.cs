@@ -2127,7 +2127,7 @@ namespace NBitcoin.Tests
 
 
         [Fact]
-        [Trait("UnitTest", "UnitTest")]
+        [Trait("Unstable", "True")]
         public void TestSigHashes()
         {
             var secret = new BitcoinSecret("L5AQtV2HDm4xGsseLokK2VAT2EtYKcTm3c7HwqnJBFt9LdaQULsM", KnownNetworks.Main);

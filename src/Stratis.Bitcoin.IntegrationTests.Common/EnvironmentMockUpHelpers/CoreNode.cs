@@ -10,6 +10,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -596,6 +597,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             BitcoinAddress address = rpc.GetNewAddress();
             dest = rpc.DumpPrivKey(address);
             return dest;
+        }
+
+        public ChainedHeader GetTip()
+        {
+            return this.FullNode.NodeService<IConsensusManager>().Tip;
         }
     }
 }
