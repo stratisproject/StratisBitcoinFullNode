@@ -26,8 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.network = new BitcoinRegTest();
         }
 
-        [Retry(2)]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void WalletCanReceiveAndSendCorrectly()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -72,8 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Retry(2)]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void WalletCanReorg()
         {
             // This test has 4 parts:
@@ -252,9 +250,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
-                CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisSender, 10);
 
@@ -308,7 +306,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        [Trait("Unstable", "True")]
         public void WalletCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
