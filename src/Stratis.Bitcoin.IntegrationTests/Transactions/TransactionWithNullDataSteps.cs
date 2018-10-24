@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Transactions
         private void some_funds_in_the_sending_wallet()
         {
             int maturity = (int)this.senderNode.FullNode.Network.Consensus.CoinbaseMaturity;
-            TestHelper.MineBlocks(this.senderNode, maturity + 5);
+            TestHelper.MineBlocks(this.senderNode, maturity + 1 + 5);
 
             this.senderNode.FullNode.WalletManager().GetSpendableTransactionsInWallet(this.walletName)
                 .Sum(utxo => utxo.Transaction.Amount)

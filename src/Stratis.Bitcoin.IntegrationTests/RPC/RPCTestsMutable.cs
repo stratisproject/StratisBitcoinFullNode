@@ -25,10 +25,10 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 int maturity = (int)network.Consensus.CoinbaseMaturity;
 
-                TestHelper.MineBlocks(node, maturity);                                     
+                TestHelper.MineBlocks(node, maturity);
                 Assert.Equal(Money.Zero, rpcClient.GetBalance()); // test with defaults.
 
-                TestHelper.MineBlocks(node, 1);                
+                TestHelper.MineBlocks(node, 1);
                 Assert.Equal(Money.Coins(50), rpcClient.GetBalance(0, false)); // test with parameters.
             }
         }
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var alice = new Key().GetBitcoinSecret(network);
                 var aliceAddress = alice.GetAddress();
 
-                // Not unlocked case.                
+                // Not unlocked case.
                 Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
 
                 // Unlock and lock case.
