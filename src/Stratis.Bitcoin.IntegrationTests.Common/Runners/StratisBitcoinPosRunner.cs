@@ -36,8 +36,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .MockIBD()
                 .SubstituteDateTimeProviderFor<MiningFeature>();
 
-            if (this.Interceptor != null)
-                builder = builder.InterceptBlockDisconnected(this.Interceptor);
+            if (this.InterceptorDisconnect != null)
+                builder = builder.InterceptBlockDisconnected(this.InterceptorDisconnect);
+
+            if (this.InterceptorConnect != null)
+                builder = builder.InterceptBlockConnected(this.InterceptorConnect);
 
             this.FullNode = (FullNode)builder.Build();
         }
