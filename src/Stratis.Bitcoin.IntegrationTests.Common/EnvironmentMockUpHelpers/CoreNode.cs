@@ -56,7 +56,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public Mnemonic Mnemonic { get; set; }
 
         private Func<ChainedHeaderBlock, bool> builderInterceptor;
-        private bool builderNotInIBD = true;
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
@@ -98,12 +97,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return this.creds.UserName + ":" + this.creds.Password;
             else
                 return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
-        }
-
-        public CoreNode InIBD()
-        {
-            this.builderNotInIBD = false;
-            return this;
         }
 
         public CoreNode NoValidation()
@@ -301,9 +294,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
-
-            if (this.builderNotInIBD)
-                ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
             if (this.builderWithDummyWallet)
                 this.SetMinerSecret(new BitcoinSecret(new Key(), this.FullNode.Network));

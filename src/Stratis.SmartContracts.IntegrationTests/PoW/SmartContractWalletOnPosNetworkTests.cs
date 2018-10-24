@@ -25,8 +25,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPosNode().InIBD().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPosNode().InIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPosNode().WithWallet().Start();
+                CoreNode scReceiver = builder.CreateSmartContractPosNode().WithWallet().Start();
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 

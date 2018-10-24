@@ -71,8 +71,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().InIBD().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode().InIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 
@@ -202,7 +202,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().InIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
 
@@ -242,8 +242,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().InIBD().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode().InIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 int maturity = (int)scReceiver.FullNode.Network.Consensus.CoinbaseMaturity;
 
