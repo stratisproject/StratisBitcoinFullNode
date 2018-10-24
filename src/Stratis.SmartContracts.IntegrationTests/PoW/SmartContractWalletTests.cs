@@ -324,7 +324,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var callRequest = new BuildCallContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = "500000",
+                    GasLimit = gasLimit.ToString(),
                     GasPrice = "1",
                     Amount = "0",
                     MethodName = "Increment",
