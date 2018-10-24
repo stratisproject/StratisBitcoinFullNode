@@ -131,8 +131,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (string walletName in walletNames)
                 {
-                    IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    log.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                    foreach (HdAccount account in this.walletManager.GetAccounts(walletName))
+                    {
+                        AccountBalance accountBalance = this.walletManager.GetBalances(walletName, account.Name).Single();
+                        log.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) 
+                                                  + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
+                                                  + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                    }
                 }
             }
         }
