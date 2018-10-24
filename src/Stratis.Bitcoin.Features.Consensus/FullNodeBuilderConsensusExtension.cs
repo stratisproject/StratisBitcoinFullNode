@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 {
                     new HeaderTimeChecksRule(),
                     new HeaderTimeChecksPosRule(),
-                    new StratisBigFixPosFutureDriftRule(),
+                    new StratisBugFixPosFutureDriftRule(),
                     new CheckDifficultyPosRule(),
                     new StratisHeaderVersionRule(),
                     new ProvenHeaderCoinstakeRule(),
