@@ -52,16 +52,6 @@ namespace Stratis.Bitcoin.Features.PoA
 
             var consensusFactory = new PoAConsensusFactory();
 
-            // Configure federation public keys.
-            // Keep in mind that order in which keys are added to this list is important
-            // and should be the same for all nodes operating on this network.
-            var federationPublicKeys = new List<PubKey>()
-            {
-                new PubKey("03e6f19ea3dc6c145d98a0e0838af952755798e5bc3950bbca4f9485aa23873d7f"),
-                new PubKey("02ddebcf18207072bdd172a25f85f2ea12e2de1d9d794f136722634aad08400fcb"),
-                new PubKey("02067b38d777690aaaf23a5b371a819e6ddc6d2aae734b0199fe59df28dc056dd7")
-            };
-
             // Create the genesis block.
             this.GenesisTime = 1513622125;
             this.GenesisNonce = 1560058197;
@@ -72,6 +62,16 @@ namespace Stratis.Bitcoin.Features.PoA
             Block genesisBlock = CreatePoAGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
 
             this.Genesis = genesisBlock;
+
+            // Configure federation public keys.
+            // Keep in mind that order in which keys are added to this list is important
+            // and should be the same for all nodes operating on this network.
+            var federationPublicKeys = new List<PubKey>()
+            {
+                new PubKey("03e6f19ea3dc6c145d98a0e0838af952755798e5bc3950bbca4f9485aa23873d7f"),
+                new PubKey("02ddebcf18207072bdd172a25f85f2ea12e2de1d9d794f136722634aad08400fcb"),
+                new PubKey("02067b38d777690aaaf23a5b371a819e6ddc6d2aae734b0199fe59df28dc056dd7")
+            };
 
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
