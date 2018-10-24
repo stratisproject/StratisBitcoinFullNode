@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_proof_of_work_node_with_api_enabled()
         {
-            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
+            this.firstStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).WithWallet().Start();
             this.firstStratisPowApiNode.Mnemonic = this.firstStratisPowApiNode.Mnemonic;
 
             this.firstStratisPowApiNode.FullNode.Network.Consensus.CoinbaseMaturity = this.maturity;
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_second_proof_of_work_node_with_api_enabled()
         {
-            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
+            this.secondStratisPowApiNode = this.powNodeBuilder.CreateStratisPowNode(this.powNetwork).WithWallet().Start();
             this.secondStratisPowApiNode.Mnemonic = this.secondStratisPowApiNode.Mnemonic;
         }
 

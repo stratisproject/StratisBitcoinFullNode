@@ -363,7 +363,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode miner = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(miner, 1);
 
@@ -468,7 +468,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode miner = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(miner, 1);
 
@@ -680,7 +680,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode node = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(node, 10);
                 node.GetProofOfWorkRewardForMinedBlocks(10).Should().Be(Money.Coins(500));
@@ -701,8 +701,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithDummyWallet().Start();
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().Start();
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithDummyWallet().Start();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).Start();
 
                 TestHelper.Connect(miner, syncer);
 
@@ -717,8 +717,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithDummyWallet().Start();
-                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().Start();
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithDummyWallet().Start();
+                CoreNode syncer = builder.CreateStratisPowNode(KnownNetworks.RegTest).Start();
 
                 TestHelper.MineBlocks(miner, 1);
 

@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public Mnemonic Mnemonic { get; set; }
 
         private Func<ChainedHeaderBlock, bool> builderInterceptor;
-        private bool builderNotInIBD;
+        private bool builderNotInIBD = true;
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
@@ -102,9 +102,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
         }
 
-        public CoreNode NotInIBD()
+        public CoreNode InIBD()
         {
-            this.builderNotInIBD = true;
+            this.builderNotInIBD = false;
             return this;
         }
 

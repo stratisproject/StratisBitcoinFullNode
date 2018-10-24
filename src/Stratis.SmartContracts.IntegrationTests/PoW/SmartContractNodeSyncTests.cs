@@ -13,8 +13,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node1 = builder.CreateSmartContractPowNode().NotInIBD().Start();
-                var node2 = builder.CreateSmartContractPowNode().NotInIBD().Start();
+                var node1 = builder.CreateSmartContractPowNode().InIBD().Start();
+                var node2 = builder.CreateSmartContractPowNode().InIBD().Start();
 
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);

@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 201); // coinbase maturity = 100
 
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 stratisNodeSync.FullNode.NodeService<MempoolSettings>().RequireStandard = true; // make sure to test standard tx
 
@@ -261,7 +261,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 101); // coinbase maturity = 100
 
@@ -297,9 +297,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithDummyWallet().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).Start();
 
                 // Generate blocks and wait for the downloader to pickup
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
@@ -360,8 +360,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 string name = "mywallet";
                 string accountName = "account 0";
 
-                CoreNode node1 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
-                CoreNode node2 = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
+                CoreNode node1 = builder.CreateStratisPowNode(new BitcoinRegTest()).WithWallet().Start();
+                CoreNode node2 = builder.CreateStratisPowNode(new BitcoinRegTest()).WithWallet().Start();
 
                 var mempoolValidationState = new MempoolValidationState(true);
 
