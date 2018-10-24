@@ -10,7 +10,6 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -62,6 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private bool builderNotInIBD;
         private bool builderNoValidation;
+        private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
         private bool builderWithWallet;
         private string builderWalletName;
@@ -138,7 +138,23 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
+        /// <summary>
+        /// Overrides the node's date time provider with one where the current date time starts 2018-01-01.
+        /// <para>
+        /// This is primarily used where we want to mine coins in the past used for staking.
+        /// </para>
+        /// </summary>
+        /// <returns>This node.</returns>
+        public CoreNode OverrideDateTimeProvider()
+        {
+            this.builderOverrideDateTimeProvider = true;
+            return this;
+        }
 
+        /// <summary>
+        /// This does not create a physical wallet but only sets the miner secret on the node.
+        /// </summary>
+        /// <returns>This node.</returns>
         public CoreNode WithDummyWallet()
         {
             this.builderWithDummyWallet = true;
@@ -193,6 +209,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
+
                 if (this.builderDisconnectInterceptor != null)
                     this.runner.InterceptorDisconnect = this.builderDisconnectInterceptor;
 
@@ -204,8 +222,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.State = CoreNodeState.Starting;
             }
 
-            if (this.runner is BitcoinCoreRunner)
-                StartBitcoinCoreRunner();
+            if ((this.runner is BitcoinCoreRunner) || (this.runner is StratisXRunner))
+                WaitForExternalNodeStartup();
             else
                 StartStratisRunner();
 
@@ -229,7 +247,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 configParameters.SetDefaultValueIfUndefined("rpcpassword", this.creds.Password);
             }
 
-            configParameters.SetDefaultValueIfUndefined("printtoconsole", "1");
+            // The debug log is disabled in stratisX when printtoconsole is enabled.
+            // While further integration tests are being developed it makes sense
+            // to always have the debug logs available, as there is minimal other
+            // insight into the stratisd process while it is running.
+            if (this.runner is StratisXRunner)
+            {
+                configParameters.SetDefaultValueIfUndefined("printtoconsole", "0");
+                configParameters.SetDefaultValueIfUndefined("debug", "1");
+            }
+            else
+                configParameters.SetDefaultValueIfUndefined("printtoconsole", "1");
+
             configParameters.SetDefaultValueIfUndefined("keypool", "10");
             configParameters.SetDefaultValueIfUndefined("agentprefix", "node" + this.ProtocolPort);
             configParameters.Import(this.ConfigParameters);
@@ -242,7 +271,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.Start();
         }
 
-        private void StartBitcoinCoreRunner()
+        /// <summary>
+        /// Used with precompiled bitcoind and stratisd node
+        /// executables, not SBFN runners.
+        /// </summary>
+        private void WaitForExternalNodeStartup()
         {
             TimeSpan duration = TimeSpan.FromMinutes(5);
             var cancellationToken = new CancellationTokenSource(duration).Token;
@@ -259,7 +292,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     return false;
                 }
             }, cancellationToken: cancellationToken,
-                failureReason: $"Failed to invoke GetBlockHash on BitcoinCore instance after {duration}");
+                failureReason: $"Failed to invoke GetBlockHash on node instance after {duration}");
         }
 
         private void StartStratisRunner()

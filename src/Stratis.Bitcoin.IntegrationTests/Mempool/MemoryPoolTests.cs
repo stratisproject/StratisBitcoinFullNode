@@ -6,16 +6,25 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Mempool
 {
     public class MemoryPoolTests
     {
+        private const string Password = "password";
+        private const string WalletName = "mywallet";
+        private const string Passphrase = "passphrase";
+        private const string Account = "account 0";
+
         private readonly Network network;
 
         public MemoryPoolTests()
@@ -403,6 +412,41 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 // New mined block contains this transaction from the orphaned block.
                 TestHelper.MineBlocks(node1, 1);
                 Assert.Contains(transaction, node1.FullNode.Chain.Tip.Block.Transactions);
+            }
+        }
+
+        [Fact]
+        public void Mempool_SendPosTransaction_AheadOfFutureDrift_ShouldRejectByMempool()
+        {
+            var network = KnownNetworks.StratisRegTest;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode stratisSender = builder.CreateStratisPosNode(network).NotInIBD().WithWallet().Start();
+
+                int maturity = (int)network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(stratisSender, maturity + 5);
+
+                // Send coins to the receiver
+                var context = WalletTests.CreateContext(network, new WalletAccountReference(WalletName, Account), Password, new Key().PubKey.GetAddress(network).ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1);
+
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+                // This should make the mempool reject a POS trx.
+                trx.Time = Utils.DateTimeToUnixTime(Utils.UnixTimeToDateTime(trx.Time).AddMinutes(5));
+
+                // Sign trx again after changing the time property.
+                trx = context.TransactionBuilder.SignTransaction(trx);
+
+                // Enable standard policy relay.
+                stratisSender.FullNode.NodeService<MempoolSettings>().RequireStandard = true;
+
+                var broadcaster = stratisSender.FullNode.NodeService<IBroadcasterManager>();
+
+                broadcaster.BroadcastTransactionAsync(trx).GetAwaiter().GetResult();
+                var entry  = broadcaster.GetTransaction(trx.GetHash());
+
+                Assert.Equal("time-too-new", entry.ErrorMessage);
             }
         }
     }
