@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .UseSmartContractPosPowMining()
                 .UseReflectionExecutor()
                 .MockIBD()
-                .SubstituteDateTimeProviderFor<MiningFeature>()
+                .OverrideDateTimeProviderFor<MiningFeature>()
                 .Build();
         }
 
