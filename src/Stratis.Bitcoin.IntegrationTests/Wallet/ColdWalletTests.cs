@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 hotWalletManager.UpdateKeysLookupLocked(new[] { hotWalletAddress });
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(stratisSender, maturity + 15, WalletName, Password, Account);
+                TestHelper.MineBlocks(stratisSender, maturity + 15, true, WalletName, Password, Account);
 
                 int currentBestHeight = maturity + 15;
 
@@ -194,7 +194,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Assert.Null(coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).First().Transaction.BlockHeight);
 
                 // Allow coins to reach maturity
-                TestHelper.MineBlocks(stratisSender, maturity, WalletName, Password, Account);
+                TestHelper.MineBlocks(stratisSender, maturity, true, WalletName, Password, Account);
 
                 // Start staking.
                 var hotMiningFeature = stratisHotStake.FullNode.NodeFeature<MiningFeature>();
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
-                    TestHelper.MineBlocks(stratisSender, 1, WalletName, Password, Account);
+                    TestHelper.MineBlocks(stratisSender, 1, true, WalletName, Password, Account);
                     return coldWalletAddress.Transactions.Count > 1;
                 });
 
@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
-                    TestHelper.MineBlocks(stratisSender, 1, WalletName, Password, Account);
+                    TestHelper.MineBlocks(stratisSender, 1, true, WalletName, Password, Account);
                     return coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).Sum(s => s.Transaction.Amount) > receivetotal2;
                 });
             }

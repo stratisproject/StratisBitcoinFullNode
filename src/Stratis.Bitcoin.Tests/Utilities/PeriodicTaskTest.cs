@@ -13,15 +13,16 @@ namespace Stratis.Bitcoin.Tests.Utilities
     {
         private int iterationCount;
 
-        /// <remarks>
+        /// <summary>
         /// Unable to tests background thread exception throwing due to https://github.com/xunit/xunit/issues/157.
-        /// </remarks>
+        /// </summary>
         public PeriodicTaskTest() : base()
         {
             this.iterationCount = 0;
         }
 
         [Fact]
+        [Trait("Unstable", "True")]
         public void StartLogsStartAndStop()
         {
             var periodicTask = new PeriodicTask("TestTask", this.FullNodeLogger.Object, async token =>

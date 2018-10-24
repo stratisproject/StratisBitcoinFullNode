@@ -17,7 +17,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string WalletAccountName = "account 0";
         private const string WalletName = "mywallet";
         private const string WalletPassword = "password";
-        private const string WalletPassphrase = "passphrase";
 
         private CoreNode sendingStratisBitcoinNode;
         private CoreNode receivingStratisBitcoinNode;
