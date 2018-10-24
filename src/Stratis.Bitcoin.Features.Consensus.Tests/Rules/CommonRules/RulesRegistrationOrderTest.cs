@@ -69,8 +69,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             headerValidationRules[2].Should().BeOfType<StratisBugFixPosFutureDriftRule>();
             headerValidationRules[3].Should().BeOfType<CheckDifficultyPosRule>();
             headerValidationRules[4].Should().BeOfType<StratisHeaderVersionRule>();
-            headerValidationRules[5].Should().BeOfType<ProvenHeaderCoinstakeRule>();
-            headerValidationRules[6].Should().BeOfType<ProvenHeaderSizeRule>();
+            headerValidationRules[5].Should().BeOfType<ProvenHeaderSizeRule>();
+            headerValidationRules[6].Should().BeOfType<ProvenHeaderCoinstakeRule>();
 
             List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
 

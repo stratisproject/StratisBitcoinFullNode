@@ -130,8 +130,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new StratisBugFixPosFutureDriftRule(),
                     new CheckDifficultyPosRule(),
                     new StratisHeaderVersionRule(),
-                    new ProvenHeaderCoinstakeRule(),
-                    new ProvenHeaderSizeRule()
+                    new ProvenHeaderSizeRule(),
+                    new ProvenHeaderCoinstakeRule()
                 };
 
                 consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
