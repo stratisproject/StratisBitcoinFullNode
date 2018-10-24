@@ -10,7 +10,6 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -60,6 +59,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private Func<ChainedHeaderBlock, bool> builderInterceptor;
         private bool builderNotInIBD;
         private bool builderNoValidation;
+        private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
         private bool builderWithWallet;
         private string builderWalletName;
@@ -125,6 +125,23 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
+        /// <summary>
+        /// Overrides the node's date time provider with one where the current date time starts 2018-01-01.
+        /// <para>
+        /// This is primarily used where we want to mine coins in the past used for staking.
+        /// </para>
+        /// </summary>
+        /// <returns>This node.</returns>
+        public CoreNode OverrideDateTimeProvider()
+        {
+            this.builderOverrideDateTimeProvider = true;
+            return this;
+        }
+
+        /// <summary>
+        /// This does not create a physical wallet but only sets the miner secret on the node.
+        /// </summary>
+        /// <returns>This node.</returns>
         public CoreNode WithDummyWallet()
         {
             this.builderWithDummyWallet = true;
@@ -179,6 +196,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
+
                 if (this.builderInterceptor != null)
                     this.runner.Interceptor = this.builderInterceptor;
 

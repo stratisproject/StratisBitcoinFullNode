@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Diagnostics;
 using Xunit.Abstractions;
 using Xunit.Sdk;
 
@@ -18,10 +19,11 @@ namespace Xunit
             this.innerBus = innerBus;
         }
 
+        [DebuggerStepThrough]
         public bool QueueMessage(IMessageSinkMessage message)
         {
-            lock (messages)
-                messages.Add(message);
+            lock (this.messages)
+                this.messages.Add(message);
 
             // No way to ask the inner bus if they want to cancel without sending them the message, so
             // we just go ahead and continue always.
@@ -30,8 +32,8 @@ namespace Xunit
 
         public void Dispose()
         {
-            foreach (var message in messages)
-                innerBus.QueueMessage(message);
+            foreach (IMessageSinkMessage message in this.messages)
+                this.innerBus.QueueMessage(message);
         }
     }
 }
