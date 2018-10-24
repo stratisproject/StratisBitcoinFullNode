@@ -82,7 +82,8 @@ namespace Stratis.Bitcoin.Features.PoA
             PoABlockHeaderValidator poaHeaderValidator,
             FederationManager federationManager,
             IIntegrityValidator integrityValidator,
-            IWalletManager walletManager)
+            IWalletManager walletManager,
+            INodeStats nodeStats)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -98,6 +99,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
         /// <inheritdoc />
@@ -248,6 +251,42 @@ namespace Stratis.Bitcoin.Features.PoA
             HdAddress address = this.walletManager.GetUnusedAddress(walletAccountReference);
 
             return address.Pubkey;
+        }
+
+        private void AddComponentStats(StringBuilder log)
+        {
+            log.AppendLine();
+            log.AppendLine("======PoA Miner======");
+
+            ChainedHeader tip = this.consensusManager.Tip;
+            ChainedHeader currentHeader = tip;
+            uint currentTime = currentHeader.Header.Time;
+
+            int depth = 20;
+            int pubKeyTakeCharacters = 4;
+
+            log.AppendLine(string.Format("Mining information for the last {0} blocks.", depth));
+            log.AppendLine("MISS means that miner didn't produce a block at the timestamp he was supposed to.");
+
+            log.Append("(now)-");
+
+            for (int i = tip.Height; (i > 0) && (i > tip.Height - depth); i--)
+            {
+                // Add stats for current header.
+                string pubKeyRepresentation = this.slotsManager.GetPubKeyForTimestamp(currentTime).ToString().Substring(0, pubKeyTakeCharacters);
+                log.Append("[" + pubKeyRepresentation + "]-");
+
+                currentHeader = currentHeader.Previous;
+                currentTime -= this.network.TargetSpacingSeconds;
+
+                while (currentHeader.Header.Time != currentTime)
+                {
+                    log.Append("MISS-");
+                    currentTime -= this.network.TargetSpacingSeconds;
+                }
+            }
+
+            log.Append("...");
         }
 
         /// <inheritdoc/>
