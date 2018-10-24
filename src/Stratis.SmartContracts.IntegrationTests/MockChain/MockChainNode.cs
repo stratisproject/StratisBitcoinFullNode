@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -16,6 +17,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection;
 using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests.MockChain
@@ -153,8 +155,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             byte[] contractCode,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = 100,
             double feeAmount = 0.01)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -198,8 +200,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             string contractAddress,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = 100,
             double feeAmount = 0.01)
         {
             var request = new BuildCallContractTransactionRequest

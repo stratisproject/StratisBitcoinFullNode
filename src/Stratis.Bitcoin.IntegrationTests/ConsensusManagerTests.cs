@@ -107,8 +107,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().Start();
 
                 // MinerA mines to height 10.
@@ -155,9 +155,10 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new StratisConsensusOptionsOverrideTest();
 
-                var minerA = builder.CreateStratisPosNode(network).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(network).NotInIBD().Start();
-                var syncer = builder.CreateStratisPosNode(network).NotInIBD().Start();
+                // MinerA requires an physical wallet to stake with.
+                var minerA = builder.CreateStratisPosNode(network).NotInIBD().OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network).NotInIBD().OverrideDateTimeProvider().Start();
+                var syncer = builder.CreateStratisPosNode(network).NotInIBD().OverrideDateTimeProvider().Start();
 
                 // MinerA mines to height 55.
                 TestHelper.MineBlocks(minerA, 55);
@@ -215,8 +216,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new StratisMaxReorgOverrideTest();
 
-                var minerA = builder.CreateStratisPosNode(network).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(network).NotInIBD().WithWallet().Start();
+                var minerA = builder.CreateStratisPosNode(network).NotInIBD().WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network).NotInIBD().WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPosNode(network).NotInIBD().Start();
 
                 // MinerA mines to height 20.
@@ -262,8 +263,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().Start();
 
                 // MinerA mines to height 10.
@@ -310,8 +311,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new StratisOverrideRegTest();
 
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPosNode(syncerNetwork).NotInIBD().Start();
 
                 // MinerA mines to height 10.
@@ -360,8 +361,8 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new BitcoinOverrideRegTest();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
-                var minerB = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPowNode(syncerNetwork).NotInIBD().Start();
 
                 // MinerA mines to height 10.
@@ -406,7 +407,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var syncerNetwork = new StratisOverrideRegTest();
 
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithWallet().Start();
+                var minerA = builder.CreateStratisPosNode(this.posNetwork).NotInIBD().WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPosNode(syncerNetwork).NotInIBD().Start();
 
                 // Miner A mines to height 11.

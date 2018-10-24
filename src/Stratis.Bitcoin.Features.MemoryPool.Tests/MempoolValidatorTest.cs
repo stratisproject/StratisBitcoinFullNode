@@ -481,7 +481,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             string dataDir = GetTestDirectoryPath(this);
 
             // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
-            var network = KnownNetworks.Main;
+            var network = KnownNetworks.StratisMain;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
             IMempoolValidator validator = context.MempoolValidator;

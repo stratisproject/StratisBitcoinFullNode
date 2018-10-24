@@ -154,18 +154,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         private Network network;
 
-        /// <summary>
-        /// Constructs a memory pool validator object.
-        /// </summary>
-        /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
-        /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
-        /// <param name="dateTimeProvider">Date and time information provider.</param>
-        /// <param name="mempoolSettings">Settings from the memory pool.</param>
-        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
-        /// <param name="coinView">Coin view of the memory pool.</param>
-        /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
-        /// <param name="nodeSettings">Full node settings.</param>
-        /// <param name="consensusRules">Consensus rules engine.</param>
         public MempoolValidator(
             ITxMempool memPool,
             MempoolSchedulerLock mempoolLock,
@@ -572,7 +560,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // Coinstake is only valid in a block, not as a loose transaction
             // TODO: mempool needs to have seprate checks for POW/POS as part of the change to rules.
-            if (context.Transaction.IsCoinStake)
+            if (this.network.Consensus.IsProofOfStake && context.Transaction.IsCoinStake)
             {
                 this.logger.LogTrace("(-)[FAIL_INVALID_COINSTAKE]");
                 context.State.Fail(MempoolErrors.Coinstake).Throw();
@@ -619,6 +607,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.logger.LogTrace("(-)[FAIL_TX_VERSION]");
                 context.State.Fail(MempoolErrors.Version).Throw();
+            }
+
+            if (this.network.Consensus.IsProofOfStake)
+            {
+                long adjustedTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+                PosFutureDriftRule futureDriftRule = this.consensusRules.GetRule<PosFutureDriftRule>();
+
+                // nTime has different purpose from nLockTime but can be used in similar attacks
+                if (tx.Time > adjustedTime + futureDriftRule.GetFutureDrift(adjustedTime))
+                {
+                    context.State.Fail(MempoolErrors.TimeTooNew).Throw();
+                }
             }
 
             // Extremely large transactions with lots of inputs can cost the network
