@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     builder.AppendLine("<<==============================================================>>");
                     this.logger.LogInformation(builder.ToString());
 
-                    int halfTargetSpacingMs = (int)this.network.TargetSpacingSeconds * 1000 / 2;
+                    int halfTargetSpacingMs = (int)this.network.ConsensusOptions.TargetSpacingSeconds * 1000 / 2;
                     await this.WaitBeforeCanMineAsync(halfTargetSpacingMs, this.cancellation.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Features.PoA
             int depth = 20;
             int pubKeyTakeCharacters = 4;
 
-            log.AppendLine(string.Format("Mining information for the last {0} blocks.", depth));
+            log.AppendLine($"Mining information for the last {depth} blocks.");
             log.AppendLine("MISS means that miner didn't produce a block at the timestamp he was supposed to.");
 
             for (int i = tip.Height; (i > 0) && (i > tip.Height - depth); i--)
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 log.Append("[" + pubKeyRepresentation + "]-");
 
                 currentHeader = currentHeader.Previous;
-                currentTime -= this.network.TargetSpacingSeconds;
+                currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
 
                 if (currentHeader.Height == 0)
                     break;
@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 while (currentHeader.Header.Time != currentTime)
                 {
                     log.Append("MISS-");
-                    currentTime -= this.network.TargetSpacingSeconds;
+                    currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
                 }
             }
 
