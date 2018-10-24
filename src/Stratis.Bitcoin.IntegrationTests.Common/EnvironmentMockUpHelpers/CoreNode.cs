@@ -128,9 +128,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// Executes a function when a block has disconnected.
+        /// Executes a function when a block has connected.
         /// </summary>
-        /// <param name="interceptor">A function that is called when a block disconnects, it will return true if it executed.</param>
+        /// <param name="interceptor">A function that is called when a block connects, it will return true if it executed.</param>
         /// <returns>This node.</returns>
         public CoreNode BlockConnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
         {

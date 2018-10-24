@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
     }
 
     /// <summary>
-    /// Executes an action when a block has been disconnected at a certain height. 
+    /// Executes an action when a block has been connected at a certain height. 
     /// </summary>
     public sealed class InterceptBlockConnected : SignalObserver<ChainedHeaderBlock>
     {
