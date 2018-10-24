@@ -128,14 +128,15 @@ namespace Stratis.Bitcoin.Builder.Feature
             return this;
         }
 
-       public void EnsureDependencies(List<IFeatureRegistration> featureRegistrations)
-       {
+        /// <inheritdoc />
+        public void EnsureDependencies(List<IFeatureRegistration> featureRegistrations)
+        {
             foreach (Type dependency in this.dependencies)
             {
-                if (featureRegistrations.All(x => x.FeatureType.BaseType != dependency))
+                if (featureRegistrations.All(x => x.FeatureType.BaseType != dependency && x.FeatureType != dependency))
                     throw new MissingDependencyException($"Dependency feature {dependency.Name} cannot be found.");
             }
-       }
+        }
 
         /// <summary>
         /// A feature can use specified method to configure its services.
