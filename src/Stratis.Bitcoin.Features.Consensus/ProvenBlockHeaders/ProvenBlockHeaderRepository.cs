@@ -79,7 +79,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     this.TipHashHeight = this.GetTipHash(transaction);
 
-                    if (this.TipHashHeight != null) return;
+                    if (this.TipHashHeight != null)
+                        return;
 
                     var hashHeight = new HashHeightPair(this.network.GetGenesis().GetHash(), 0);
 
@@ -153,7 +154,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
 
-                throw new InvalidOperationException("Invalid newTip block hash.");
+                throw new ProvenBlockHeaderException("Invalid new tip hash, tip hash has not changed.");
             }
 
             Task task = Task.Run(() =>
@@ -164,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
 
-                    this.InsertHeaders(transaction, headers, newTip);
+                    this.InsertHeaders(transaction, headers);
 
                     this.SetTip(transaction, newTip);
 
@@ -194,11 +195,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="transaction"> Open DBreeze transaction.</param>
         /// <param name="headers"> List of <see cref="ProvenBlockHeader"/> items to save.</param>
-        /// <param name="newTip"> Hash and height of the new repository's tip.</param>
-        private void InsertHeaders(DBreeze.Transactions.Transaction transaction, List<ProvenBlockHeader> headers, HashHeightPair newTip)
+        private void InsertHeaders(DBreeze.Transactions.Transaction transaction, List<ProvenBlockHeader> headers)
         {
-            int tipHeight = newTip.Height;
-
             var headerDict = new Dictionary<int, ProvenBlockHeader>();
 
             // Gather headers.
@@ -213,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, header.Key.ToBytes(false), header.Value);
 
             // Store the latest ProvenBlockHeader in memory.
-            this.provenBlockHeaderTip = headers.Last();
+            this.provenBlockHeaderTip = sortedHeaders.Last().Value;
         }
 
         /// <summary>

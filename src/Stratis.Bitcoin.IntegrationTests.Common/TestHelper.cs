@@ -107,6 +107,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// </summary>
         /// <param name="node">This node.</param>
         /// <param name="height">At which height should it be synced to.</param>
+        /// <returns>Returns <c>true</c> if the node is synced at a given height.</returns>
         public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
         {
             if (IsNodeSynced(node))
@@ -151,7 +152,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
         {
             Guard.NotNull(node, nameof(node));
 
@@ -163,7 +164,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
 
-            WaitLoop(() => IsNodeSynced(node));
+            if (syncNode)
+                WaitLoop(() => IsNodeSynced(node));
 
             return (node.MinerHDAddress, blockHashes);
         }
@@ -177,7 +179,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
                 Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);
                 Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
-                coreNode.SetDummyMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
+                coreNode.SetMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
             }
         }
 
@@ -227,7 +229,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return transactions;
 
             var result = new List<Transaction>();
-            Dictionary<uint256, TransactionNode> dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
+            var dictionary = transactions.ToDictionary(t => t.GetHash(), t => new TransactionNode(t));
             foreach (TransactionNode transaction in dictionary.Select(d => d.Value))
             {
                 foreach (TxIn input in transaction.Transaction.Inputs)
@@ -268,6 +270,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="nodeToDisconnect">The node that will be disconnected.</param>
         public static void Disconnect(CoreNode thisNode, CoreNode nodeToDisconnect)
         {
+            if (!IsNodeConnectedTo(thisNode, nodeToDisconnect))
+                return;
+
             thisNode.CreateRPCClient().RemoveNode(nodeToDisconnect.Endpoint);
             WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
@@ -357,6 +362,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint));
         }
 
+        /// <summary>
+        /// A helper that constructs valid and various types of invalid blocks manually.
+        /// </summary>
         public static BlockBuilder BuildBlocks { get { return new BlockBuilder(); } }
     }
 }

@@ -3,7 +3,7 @@ using System.IO;
 using CSharpFunctionalExtensions;
 using Mono.Cecil;
 using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.Core;

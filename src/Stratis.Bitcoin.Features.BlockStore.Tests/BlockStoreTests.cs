@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chainState = new ChainState();
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
         }
 
         private ConcurrentChain CreateChain(int blocksCount)
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(longChain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = longChain.Tip;
@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
             this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = this.chain.Tip;

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Xunit;
 
@@ -12,14 +13,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node1 = builder.CreateSmartContractPowNode().NotInIBD();
-                var node2 = builder.CreateSmartContractPowNode().NotInIBD();
-                builder.StartAll();
+                var node1 = builder.CreateSmartContractPowNode().NotInIBD().Start();
+                var node2 = builder.CreateSmartContractPowNode().NotInIBD().Start();
 
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
-                var rpc1 = node1.CreateRPCClient();
-                rpc1.AddNode(node2.Endpoint, true);
+
+                TestHelper.Connect(node1, node2);
                 Assert.Single(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Single(node2.FullNode.ConnectionManager.ConnectedPeers);
 
