@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Equal(0, info.Connections);
             Assert.NotNull(info.Proxy);
             Assert.Equal(0, info.Difficulty);
-            Assert.False(info.Testnet);
+            Assert.True(info.Testnet);
             Assert.Equal(expectedRelayFee, info.RelayFee);
             Assert.Empty(info.Errors);
         }
