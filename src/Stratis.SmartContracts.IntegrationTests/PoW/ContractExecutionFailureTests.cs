@@ -124,7 +124,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
@@ -172,7 +172,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
@@ -493,7 +493,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.StartsWith(ContractInvocationErrors.MethodDoesNotExist, receipt.Error); // The error for constructor not found vs method does not exist could be different in future.
@@ -553,7 +553,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);

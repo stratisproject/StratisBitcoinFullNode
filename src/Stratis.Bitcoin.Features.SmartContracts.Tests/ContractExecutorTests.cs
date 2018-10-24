@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.NotNull(result.ErrorMessage);
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal(GasPriceList.BaseCost + 18, result.GasConsumed);
+            Assert.Equal(GasPriceList.CreateCost + 18, result.GasConsumed);
         }
 
         [Fact]
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             IContractExecutionResult result = executor.Execute(transactionContext);
             Assert.NotNull(result.ErrorMessage);
-            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+            Assert.Equal(GasPriceList.CreateCost, result.GasConsumed);
         }
 
         [Fact]
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractExecutionResult result = executor.Execute(transactionContext);
 
             Assert.NotNull(result.ErrorMessage);
-            Assert.Equal(GasPriceList.BaseCost, result.GasConsumed);
+            Assert.Equal(GasPriceList.CreateCost, result.GasConsumed);
         }
 
         [Fact]
