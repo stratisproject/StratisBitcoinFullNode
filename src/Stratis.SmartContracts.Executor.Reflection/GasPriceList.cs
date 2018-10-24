@@ -11,9 +11,9 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public static class GasPriceList
     {
         /// <summary>The base cost trying to execute a smart contract.</summary>
-        public const ulong BaseCost = 100_000;
+        public const ulong BaseCost = 10_000;
 
-        public const int StoragePerByteSavedGasCost = 10;
+        public const int StoragePerByteSavedGasCost = 20;
         public const int StoragePerByteRetrievedGasCost = 1;
         public const int LogPerTopicByteCost = 2;
         public const int LogPerByteCost = 1;

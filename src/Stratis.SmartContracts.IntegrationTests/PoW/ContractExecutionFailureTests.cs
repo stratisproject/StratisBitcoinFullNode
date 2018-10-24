@@ -6,6 +6,7 @@ using Mono.Cecil;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
@@ -565,7 +566,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.node1.MineBlocks(1);
 
             double amount = 25;
-            ulong gasLimit = 1_000_000uL;
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -620,7 +621,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
-            ulong gasLimit = 1_000_000uL;
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
