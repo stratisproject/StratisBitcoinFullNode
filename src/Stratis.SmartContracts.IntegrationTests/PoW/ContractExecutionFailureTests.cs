@@ -329,7 +329,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.True(receipt.GasUsed == 0); // TODO: THIS IS WRONG. Will fix in future work.
+            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Equal(StateTransitionErrors.NoCode, receipt.Error);

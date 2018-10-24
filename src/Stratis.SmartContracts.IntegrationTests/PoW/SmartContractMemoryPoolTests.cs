@@ -20,6 +20,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             {
                 var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
 
+
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
                 var block = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(4).HashBlock).Result;

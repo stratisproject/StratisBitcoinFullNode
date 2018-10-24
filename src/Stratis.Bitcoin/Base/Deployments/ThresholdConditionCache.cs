@@ -22,21 +22,13 @@ namespace Stratis.Bitcoin.Base.Deployments
         private const int VersionbitsNumBits = 29;
 
         // Array size required to hold all BIP9 deployment activation states.
-        private static readonly int ArraySize;
+        public int ArraySize => this.consensus.BIP9Deployments.Length;
 
         // Used to access the deployments, confirmation window and activation threshold.
         private IConsensus consensus;
 
         // Cache of BIP9 deployment states keyed by block hash.
         private Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
-
-        /// <summary>
-        /// Constructor for statics.
-        /// </summary>
-        static ThresholdConditionCache()
-        {
-            ArraySize = Enum.GetValues(typeof(BIP9Deployments)).Length;
-        }
 
         /// <summary>
         /// Constructs this object containing the BIP9 deployment states cache.
@@ -56,10 +48,14 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <returns>An array of <see cref="ThresholdState"/> objects.</returns>
         public ThresholdState[] GetStates(ChainedHeader pindexPrev)
         {
-            return Enum.GetValues(typeof(BIP9Deployments))
-                .OfType<BIP9Deployments>()
-                .Select(b => this.GetState(pindexPrev, b))
-                .ToArray();
+            ThresholdState[] array = new ThresholdState[this.consensus.BIP9Deployments.Length];
+
+            for (int i = 0; i < array.Length; i++)
+            {
+                array[i] = this.GetState(pindexPrev, i);
+            }
+
+            return array;
         }
 
         /// <summary>
@@ -68,7 +64,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <param name="indexPrev">The previous header of the chain header to determine the states for.</param>
         /// <param name="deployment">The deployment to check the state of.</param>
         /// <returns>The current state of the deployment.</returns>
-        public ThresholdState GetState(ChainedHeader indexPrev, BIP9Deployments deployment)
+        public ThresholdState GetState(ChainedHeader indexPrev, int deployment)
         {
             int period = this.consensus.MinerConfirmationWindow;
             int threshold = this.consensus.RuleChangeActivationThreshold;
@@ -187,16 +183,16 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <param name="hash">The block hash to determine the BIP9 activation state for.</param>
         /// <param name="deployment">The deployment for which to determine the activation state.</param>
         /// <returns>The activation state.</returns>
-        private ThresholdState Get(uint256 hash, BIP9Deployments deployment)
+        private ThresholdState Get(uint256 hash, int deployment)
         {
             if (hash == null)
                 return ThresholdState.Defined;
             ThresholdState?[] threshold;
             if (!this.cache.TryGetValue(hash, out threshold))
                 throw new InvalidOperationException("Should never happen");
-            if (threshold[(int)deployment] == null)
+            if (threshold[deployment] == null)
                 throw new InvalidOperationException("Should never happen");
-            return threshold[(int)deployment].Value;
+            return threshold[deployment].Value;
         }
 
         /// <summary>
@@ -205,7 +201,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <param name="hash">The block hash to set the BIP9 activation state for.</param>
         /// <param name="deployment">The deployment for which to set the activation state.</param>
         /// <param name="state">The activation state to set.</param>
-        private void Set(uint256 hash, BIP9Deployments deployment, ThresholdState state)
+        private void Set(uint256 hash, int deployment, ThresholdState state)
         {
             if (hash == null)
                 return;
@@ -216,7 +212,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                 this.cache.Add(hash, threshold);
             }
 
-            threshold[(int)deployment] = state;
+            threshold[deployment] = state;
         }
 
         /// <summary>
@@ -225,20 +221,20 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <param name="hash">The block hash to determine the BIP9 activation state for.</param>
         /// <param name="deployment">The deployment for which to determine the activation state.</param>
         /// <returns>Returns <c>true</c> if the state is available and <c>false</c> otherwise.</returns>
-        private bool ContainsKey(uint256 hash, BIP9Deployments deployment)
+        private bool ContainsKey(uint256 hash, int deployment)
         {
             if (hash == null)
                 return true;
             ThresholdState?[] threshold;
             if (!this.cache.TryGetValue(hash, out threshold))
                 return false;
-            return threshold[(int)deployment].HasValue;
+            return threshold[deployment].HasValue;
         }
 
         /// <summary>
         /// Inspects the chain header to determine whether the version bit of a deployment is active.
         /// </summary>
-        private bool Condition(ChainedHeader pindex, BIP9Deployments deployment)
+        private bool Condition(ChainedHeader pindex, int deployment)
         {
             // This restricts us to at most 30 independent deployments. By restricting the top 3 bits to 001 we get 29 out of those
             // for the purposes of this proposal, and support two future upgrades for different mechanisms (top bits 010 and 011).
@@ -251,7 +247,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// </summary>
         /// <param name="deployment">The BIP9 deployment to return the bit mask for.</param>
         /// <returns>The bit mask of the bit representing the deployment within the version bits.</returns>
-        public uint Mask(BIP9Deployments deployment)
+        public uint Mask(int deployment)
         {
             return ((uint)1) << this.consensus.BIP9Deployments[deployment].Bit;
         }
