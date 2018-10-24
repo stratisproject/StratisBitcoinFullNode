@@ -57,10 +57,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            DeploymentFlags flags = this.nodeDeployments.GetFlags(this.consensusManager.Tip);
-            if (flags.ScriptFlags.HasFlag(ScriptVerify.Witness))
-                this.connectionManager.AddDiscoveredNodesRequirement(NetworkPeerServices.NODE_WITNESS);
-
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
 
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network));
