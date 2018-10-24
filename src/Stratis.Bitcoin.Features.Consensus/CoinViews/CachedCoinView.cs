@@ -213,14 +213,20 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.performanceCounter.AddHitCount(txIds.Length - miss.Count);
             }
 
-            this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
-            FetchCoinsResponse fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoins = null;
+
+            if (missedTxIds.Count > 0 || this.blockHash == null)
+            { 
+                this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
+                fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
+            }
 
             using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
             {
-                uint256 innerblockHash = fetchedCoins.BlockHash;
                 if (this.blockHash == null)
                 {
+                    uint256 innerblockHash = fetchedCoins.BlockHash;
+
                     Debug.Assert(this.cachedUtxoItems.Count == 0);
                     this.innerBlockHash = innerblockHash;
                     this.blockHash = this.innerBlockHash;
@@ -237,6 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     cache.UnspentOutputs = unspent?.Clone();
                     this.cachedUtxoItems.TryAdd(txIds[index], cache);
                 }
+
                 result = new FetchCoinsResponse(outputs, this.blockHash);
 
                 int cacheEntryCount = this.cacheEntryCount;
@@ -246,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.EvictLocked();
                 }
             }
-            
+
             return result;
         }
 
@@ -327,7 +334,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
+        public async Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -411,7 +418,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task<uint256> Rewind()
+        public async Task<uint256> RewindAsync()
         {
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
@@ -436,14 +443,14 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 }
 
                 // Rewind data was not found in cache, try underlying storage.
-                uint256 hash = await this.inner.Rewind().ConfigureAwait(false);
+                uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
 
                 // All the cached utxos are now on disk so we can clear the cached entry list.
                 this.cachedUtxoItems.Clear();
 
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
-                
+
                 return hash;
             }
         }

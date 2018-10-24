@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Connection
                 this.logger.LogTrace("(-)[ERROR]");
                 throw e;
             }
-            
+
             return peer;
         }
     }

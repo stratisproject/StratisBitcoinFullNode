@@ -2,7 +2,7 @@
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class SendingToAndFromManyAddressesSpecification 
+    public partial class SendingToAndFromManyAddressesSpecification
     {
         [Fact]
         public void sending_from_one_address_to_fifty_addresses()
@@ -12,8 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             Then(node2_receives_the_funds);
         }
 
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void sending_from_fifty_addresses_to_one_address()
         {
             Given(funds_across_fifty_addresses_on_node2_wallet);

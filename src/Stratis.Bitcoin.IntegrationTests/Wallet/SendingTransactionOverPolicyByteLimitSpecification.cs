@@ -1,12 +1,10 @@
-﻿using Remotion.Linq.Clauses;
-using Xunit;
+﻿using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
     public partial class SendingTransactionOverPolicyByteLimit
     {
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void sending_transaction_near_policy_byte_limit()
         {
             Given(two_connected_nodes);
@@ -17,8 +15,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             Then(mempool_of_node2_has_received_transaction);
         }
 
-        [Retry]
-        [Trait("Unstable", "True")]
+        [Fact]
         public void sending_transaction_over_policy_byte_limit()
         {
             Given(two_connected_nodes);

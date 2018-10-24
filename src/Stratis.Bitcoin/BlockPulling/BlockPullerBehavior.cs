@@ -197,6 +197,7 @@ namespace Stratis.Bitcoin.BlockPulling
         {
             if (message.Message.Payload is BlockPayload block)
             {
+                block.Obj.Header.PrecomputeHash(true, true);
                 uint256 blockHash = block.Obj.GetHash();
 
                 this.logger.LogTrace("Block '{0}' delivered.", blockHash);
@@ -204,7 +205,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 this.blockPuller.PushBlock(blockHash, block.Obj, peer.Connection.Id);
                 this.lastDeliveryTime = this.dateTimeProvider.GetUtcNow();
             }
-            
+
             return Task.CompletedTask;
         }
 

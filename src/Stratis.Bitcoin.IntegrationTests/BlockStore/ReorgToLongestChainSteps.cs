@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
@@ -44,36 +44,32 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void four_miners()
         {
-            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.jingNode.Start();
-
-            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.bobNode.Start();
-
-            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.charlieNode.Start();
-
-            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet();
-            this.daveNode.Start();
+            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
 
             TestHelper.Connect(this.jingNode, this.bobNode);
+            TestHelper.Connect(this.jingNode, this.charlieNode);
+            TestHelper.Connect(this.jingNode, this.daveNode);
+
             TestHelper.Connect(this.bobNode, this.charlieNode);
             TestHelper.Connect(this.charlieNode, this.daveNode);
         }
 
         private void each_mine_a_block()
         {
-            TestHelper.MineBlocks(this.jingNode, 1);
             TestHelper.MineBlocks(this.bobNode, 1);
             TestHelper.MineBlocks(this.charlieNode, 1);
             TestHelper.MineBlocks(this.daveNode, 1);
+            TestHelper.MineBlocks(this.jingNode, 1);
         }
 
         private void jing_loses_connection_to_others_but_carries_on_mining()
         {
-            this.jingNode.FullNode.ConnectionManager.RemoveNodeAddress(this.bobNode.Endpoint);
-            this.jingNode.FullNode.ConnectionManager.RemoveNodeAddress(this.charlieNode.Endpoint);
-            this.jingNode.FullNode.ConnectionManager.RemoveNodeAddress(this.daveNode.Endpoint);
+            TestHelper.Disconnect(this.jingNode, this.bobNode);
+            TestHelper.Disconnect(this.jingNode, this.charlieNode);
+            TestHelper.Disconnect(this.jingNode, this.daveNode);
 
             TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(this.jingNode));
 
@@ -84,7 +80,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bob_creates_a_transaction_and_broadcasts()
         {
-            HdAddress nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.charlieNode);
+            HdAddress charlieAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.charlieNode);
 
             TransactionBuildContext transactionBuildContext = TestHelper.CreateTransactionBuildContext(
                 this.bobNode.FullNode.Network,
@@ -94,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 new[] {
                     new Recipient {
                         Amount = Money.COIN * 1,
-                        ScriptPubKey = nodeCReceivingAddress.ScriptPubKey
+                        ScriptPubKey = charlieAddress.ScriptPubKey
                     }
                 },
                 FeeType.Medium
@@ -128,9 +124,16 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
 
+        private void meanwhile_jings_chain_advanced_ahead_of_the_others()
+        {
+            TestHelper.MineBlocks(this.jingNode, 5);
+
+            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+        }
+
         private void jings_connection_comes_back()
         {
-            this.jingNode.CreateRPCClient().AddNode(this.bobNode.Endpoint);
+            TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.WaitForNodeToSyncIgnoreMempool(this.jingNode, this.bobNode, this.charlieNode, this.daveNode);
         }
 
@@ -159,23 +162,16 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             TestHelper.MineBlocks(this.bobNode, coinbaseMaturity);
 
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.bobNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.charlieNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.daveNode));
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
 
             // Ensure that all the nodes are synced to at least coinbase maturity.
-            TestHelper.WaitLoop(() => this.jingNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitLoop(() => this.bobNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitLoop(() => this.charlieNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitLoop(() => this.daveNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
-        }
-
-        private void meanwhile_jings_chain_advanced_ahead_of_the_others()
-        {
-            TestHelper.MineBlocks(this.jingNode, 5);
-
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            TestHelper.WaitLoop(() => this.jingNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
         }
     }
 }

@@ -10,6 +10,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -22,6 +23,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -33,7 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private readonly NetworkCredential creds;
         private readonly object lockObject = new object();
         private readonly ILoggerFactory loggerFactory;
-        private readonly NodeRunner runner;
+        internal readonly NodeRunner runner;
         private List<Transaction> transactions = new List<Transaction>();
 
         public int ApiPort => int.Parse(this.ConfigParameters["apiport"]);
@@ -55,8 +57,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
+        private Func<ChainedHeaderBlock, bool> builderInterceptor;
         private bool builderNotInIBD;
         private bool builderNoValidation;
+        private bool builderWithDummyWallet;
         private bool builderWithWallet;
         private string builderWalletName;
         private string builderWalletPassword;
@@ -110,8 +114,34 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
+        /// <summary>
+        /// Executes a function when a block has disconnected.
+        /// </summary>
+        /// <param name="interceptor">A function that is called when a block disconnects, it will return true if it executed.</param>
+        /// <returns>This node.</returns>
+        public CoreNode BlockDisconnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        {
+            this.builderInterceptor = interceptor;
+            return this;
+        }
+
+        public CoreNode WithDummyWallet()
+        {
+            this.builderWithDummyWallet = true;
+            this.builderWithWallet = false;
+            return this;
+        }
+
+        /// <summary>
+        /// Adds a wallet to this node with defaulted parameters.
+        /// </summary>
+        /// <param name="walletPassword">Wallet password defaulted to "password".</param>
+        /// <param name="walletName">Wallet name defaulted to "mywallet".</param>
+        /// <param name="walletPassphrase">Wallet passphrase defaulted to "passphrase".</param>
+        /// <returns>This node.</returns>
         public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
         {
+            this.builderWithDummyWallet = false;
             this.builderWithWallet = true;
             this.builderWalletName = walletName;
             this.builderWalletPassphrase = walletPassphrase;
@@ -149,13 +179,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                if (this.builderInterceptor != null)
+                    this.runner.Interceptor = this.builderInterceptor;
+
                 this.runner.BuildNode();
                 this.runner.Start();
                 this.State = CoreNodeState.Starting;
             }
 
-            if (this.runner is BitcoinCoreRunner)
-                StartBitcoinCoreRunner();
+            if ((this.runner is BitcoinCoreRunner) || (this.runner is StratisXRunner))
+                WaitForExternalNodeStartup();
             else
                 StartStratisRunner();
 
@@ -179,7 +212,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 configParameters.SetDefaultValueIfUndefined("rpcpassword", this.creds.Password);
             }
 
-            configParameters.SetDefaultValueIfUndefined("printtoconsole", "1");
+            // The debug log is disabled in stratisX when printtoconsole is enabled.
+            // While further integration tests are being developed it makes sense
+            // to always have the debug logs available, as there is minimal other
+            // insight into the stratisd process while it is running.
+            if (this.runner is StratisXRunner)
+            {
+                configParameters.SetDefaultValueIfUndefined("printtoconsole", "0");
+                configParameters.SetDefaultValueIfUndefined("debug", "1");
+            }
+            else
+                configParameters.SetDefaultValueIfUndefined("printtoconsole", "1");
+
             configParameters.SetDefaultValueIfUndefined("keypool", "10");
             configParameters.SetDefaultValueIfUndefined("agentprefix", "node" + this.ProtocolPort);
             configParameters.Import(this.ConfigParameters);
@@ -192,7 +236,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.Start();
         }
 
-        private void StartBitcoinCoreRunner()
+        /// <summary>
+        /// Used with precompiled bitcoind and stratisd node
+        /// executables, not SBFN runners.
+        /// </summary>
+        private void WaitForExternalNodeStartup()
         {
             TimeSpan duration = TimeSpan.FromMinutes(5);
             var cancellationToken = new CancellationTokenSource(duration).Token;
@@ -209,7 +257,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     return false;
                 }
             }, cancellationToken: cancellationToken,
-                failureReason: $"Failed to invoke GetBlockHash on BitcoinCore instance after {duration}");
+                failureReason: $"Failed to invoke GetBlockHash on node instance after {duration}");
         }
 
         private void StartStratisRunner()
@@ -228,6 +276,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             if (this.builderNotInIBD)
                 ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
+            if (this.builderWithDummyWallet)
+                this.SetMinerSecret(new BitcoinSecret(new Key(), this.FullNode.Network));
+
             if (this.builderWithWallet)
                 this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
 
@@ -235,6 +286,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 DisableValidation();
         }
 
+        /// <summary>
+        /// Clears all consensus rules for this node.
+        /// </summary>
         public void DisableValidation()
         {
             this.FullNode.Network.Consensus.FullValidationRules.Clear();
@@ -310,7 +364,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public DateTimeOffset? MockTime { get; set; }
 
-        public void SetDummyMinerSecret(BitcoinSecret secret)
+        public void SetMinerSecret(BitcoinSecret secret)
         {
             this.MinerSecret = secret;
         }
@@ -543,6 +597,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             BitcoinAddress address = rpc.GetNewAddress();
             dest = rpc.DumpPrivKey(address);
             return dest;
+        }
+
+        public ChainedHeader GetTip()
+        {
+            return this.FullNode.NodeService<IConsensusManager>().Tip;
         }
     }
 }

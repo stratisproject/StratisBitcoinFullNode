@@ -5,6 +5,7 @@ using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -16,6 +17,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Executor.Reflection;
 using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests.MockChain
@@ -26,7 +28,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
     public class MockChainNode
     {
         public readonly string WalletName = "mywallet";
-        public readonly string Password = "123456";
+        public readonly string Password = "password";
         public readonly string Passphrase = "passphrase";
         public readonly string AccountName = "account 0";
 
@@ -91,7 +93,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.WalletName, this.AccountName));
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;
-            this.CoreNode.SetDummyMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
+            this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
             // Set up services for later
             this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
@@ -104,7 +106,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public void MineBlocks(int amountOfBlocks)
         {
-            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks, this.WalletName, this.Password, this.AccountName);
+            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks);
             this.chain.WaitForAllNodesToSync();
         }
 
@@ -153,8 +155,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             byte[] contractCode,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = 100,
             double feeAmount = 0.01)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -198,8 +200,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             string contractAddress,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = 100,
             double feeAmount = 0.01)
         {
             var request = new BuildCallContractTransactionRequest

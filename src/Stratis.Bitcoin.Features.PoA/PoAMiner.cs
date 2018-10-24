@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -28,7 +29,10 @@ namespace Stratis.Bitcoin.Features.PoA
     /// </remarks>
     public interface IPoAMiner : IDisposable
     {
+        /// <summary>Starts mining loop.</summary>
         void InitializeMining();
+
+        bool IsMining();
     }
 
     /// <inheritdoc cref="IPoAMiner"/>
@@ -49,7 +53,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IInitialBlockDownloadState ibdState;
 
-        private readonly PoABlockDefinition blockDefinition;
+        private readonly BlockDefinition blockDefinition;
 
         private readonly SlotsManager slotsManager;
 
@@ -72,7 +76,7 @@ namespace Stratis.Bitcoin.Features.PoA
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState ibdState,
-            PoABlockDefinition blockDefinition,
+            BlockDefinition blockDefinition,
             SlotsManager slotsManager,
             IConnectionManager connectionManager,
             PoABlockHeaderValidator poaHeaderValidator,
@@ -96,13 +100,18 @@ namespace Stratis.Bitcoin.Features.PoA
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
         }
 
-        /// <summary>Starts mining loop.</summary>
+        /// <inheritdoc />
         public void InitializeMining()
         {
             if (this.miningTask == null)
             {
                 this.miningTask = this.CreateBlocksAsync();
             }
+        }
+
+        public bool IsMining()
+        {
+            return this.miningTask != null;
         }
 
         private async Task CreateBlocksAsync()
@@ -121,71 +130,29 @@ namespace Stratis.Bitcoin.Features.PoA
                     }
 
                     uint timeNow = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+
+                    if (timeNow <= this.consensusManager.Tip.Header.Time)
+                    {
+                        await this.WaitBeforeCanMineAsync(500).ConfigureAwait(false);
+                        continue;
+                    }
+
                     uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
                     int waitingTimeInSeconds = (int)(myTimestamp - timeNow) - 1;
 
                     this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTimeInSeconds );
 
-                    if (waitingTimeInSeconds  > 0)
+                    if (waitingTimeInSeconds > 0)
                     {
                         // Wait until we can mine.
-                        await Task.Delay(waitingTimeInSeconds  * 1000, this.cancellation.Token).ConfigureAwait(false);
+                        await this.WaitBeforeCanMineAsync(waitingTimeInSeconds * 1000, this.cancellation.Token).ConfigureAwait(false);
                     }
 
-                    ChainedHeader tip = this.consensusManager.Tip;
-
-                    BlockTemplate blockTemplate = this.blockDefinition.Build(tip);
-
-                    // Premine.
-                    if (tip.Height + 1 == this.network.Consensus.PremineHeight)
-                    {
-                        Script premineScriptPubKey = this.GetPremineScriptPubKey();
-
-                        if (premineScriptPubKey == null)
-                        {
-                            this.logger.LogWarning("Miner wasn't able to get address from the wallet to add premine reward!");
-                        }
-                        else
-                        {
-                            Transaction coinbase = blockTemplate.Block.Transactions[0];
-
-                            coinbase.Outputs[0].ScriptPubKey = premineScriptPubKey;
-                            coinbase.Outputs[0].Value = this.network.Consensus.PremineReward;
-
-                            this.logger.LogInformation("Premine was added to the block. It will be available after {0} confirmations.", this.network.Consensus.CoinbaseMaturity);
-                        }
-                    }
-
-                    blockTemplate.Block.Header.Time = myTimestamp;
-
-                    // Timestamp should always be greater than prev one.
-                    if (blockTemplate.Block.Header.Time <= tip.Header.Time)
-                    {
-                        // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
-                        this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
-                        continue;
-                    }
-
-                    // Update merkle root.
-                    blockTemplate.Block.UpdateMerkleRoot();
-
-                    // Sign block with our private key.
-                    var header = blockTemplate.Block.Header as PoABlockHeader;
-                    this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
-
-                    ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
-
-                    ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, blockTemplate.Block);
-                    if (result.Error != null)
-                    {
-                        // Sanity check. Should never happen.
-                        throw new Exception(result.Error.ToString());
-                    }
+                    ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
 
                     if (chainedHeader == null)
                     {
-                        this.logger.LogTrace("(-)[BLOCK_VALIDATION_ERROR]:false");
                         continue;
                     }
 
@@ -195,7 +162,8 @@ namespace Stratis.Bitcoin.Features.PoA
                     builder.AppendLine("<<==============================================================>>");
                     this.logger.LogInformation(builder.ToString());
 
-                    await Task.Delay(TimeSpan.FromSeconds((double) this.network.TargetSpacingSeconds / 2.0), this.cancellation.Token).ConfigureAwait(false);
+                    int halfTargetSpacingMs = (int)this.network.TargetSpacingSeconds * 1000 / 2;
+                    await this.WaitBeforeCanMineAsync(halfTargetSpacingMs, this.cancellation.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -208,8 +176,62 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
+        protected virtual async Task WaitBeforeCanMineAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
+        {
+            await Task.Delay(delayMs, cancellation).ConfigureAwait(false);
+        }
+
+        protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
+        {
+            ChainedHeader tip = this.consensusManager.Tip;
+
+            Script walletScriptPubKey = this.GetScriptPubKeyFromWallet();
+
+            if (walletScriptPubKey == null)
+            {
+                this.logger.LogWarning("Miner wasn't able to get address from the wallet! You will not receive any rewards.");
+                walletScriptPubKey = new Script();
+            }
+
+            BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
+
+            blockTemplate.Block.Header.Time = timestamp;
+
+            // Timestamp should always be greater than prev one.
+            if (blockTemplate.Block.Header.Time <= tip.Header.Time)
+            {
+                // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
+                this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
+                return null;
+            }
+
+            // Update merkle root.
+            blockTemplate.Block.UpdateMerkleRoot();
+
+            // Sign block with our private key.
+            var header = blockTemplate.Block.Header as PoABlockHeader;
+            this.poaHeaderValidator.Sign(this.federationManager.FederationMemberKey, header);
+
+            ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(blockTemplate.Block).ConfigureAwait(false);
+
+            if (chainedHeader == null)
+            {
+                // Block wasn't accepted because we already connected block from the network.
+                return null;
+            }
+
+            ValidationContext result = this.integrityValidator.VerifyBlockIntegrity(chainedHeader, blockTemplate.Block);
+            if (result.Error != null)
+            {
+                // Sanity check. Should never happen.
+                throw new Exception(result.Error.ToString());
+            }
+
+            return chainedHeader;
+        }
+
         /// <summary>Gets scriptPubKey from the wallet.</summary>
-        private Script GetPremineScriptPubKey()
+        private Script GetScriptPubKeyFromWallet()
         {
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
 
