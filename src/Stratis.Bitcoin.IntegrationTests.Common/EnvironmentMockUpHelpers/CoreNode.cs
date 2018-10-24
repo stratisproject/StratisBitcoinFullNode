@@ -30,7 +30,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     public class CoreNode
     {
-        private readonly ConnectionManagerSettings connectionManagerSettings;
         private readonly NetworkCredential creds;
         private readonly object lockObject = new object();
         private readonly ILoggerFactory loggerFactory;
@@ -82,7 +81,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
 
-            this.connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.runner.Network));
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
 
@@ -181,13 +179,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
+            ConnectionManagerSettings connectionManagerSettings = null;
+
+            if (this.runner is BitcoinCoreRunner)
+            {
+                var nodeSettings = new NodeSettings(this.runner.Network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.runner.DataFolder });
+                connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+            }
+            else
+            {
+                connectionManagerSettings = this.runner.FullNode.ConnectionManager.ConnectionSettings;
+            }
+
             var networkPeerFactory = new NetworkPeerFactory(this.runner.Network,
                 DateTimeProvider.Default,
                 this.loggerFactory,
                 new PayloadProvider().DiscoverPayloads(),
                 selfEndPointTracker,
                 ibdState.Object,
-                this.connectionManagerSettings);
+                connectionManagerSettings);
 
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
@@ -206,8 +216,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.State = CoreNodeState.Starting;
             }
 
-            if (this.runner is BitcoinCoreRunner)
-                StartBitcoinCoreRunner();
+            if ((this.runner is BitcoinCoreRunner) || (this.runner is StratisXRunner))
+                WaitForExternalNodeStartup();
             else
                 StartStratisRunner();
 
@@ -231,7 +241,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 configParameters.SetDefaultValueIfUndefined("rpcpassword", this.creds.Password);
             }
 
-            configParameters.SetDefaultValueIfUndefined("printtoconsole", "1");
+            // The debug log is disabled in stratisX when printtoconsole is enabled.
+            // While further integration tests are being developed it makes sense
+            // to always have the debug logs available, as there is minimal other
+            // insight into the stratisd process while it is running.
+            if (this.runner is StratisXRunner)
+            {
+                configParameters.SetDefaultValueIfUndefined("printtoconsole", "0");
+                configParameters.SetDefaultValueIfUndefined("debug", "1");
+            }
+            else
+                configParameters.SetDefaultValueIfUndefined("printtoconsole", "1");
+
             configParameters.SetDefaultValueIfUndefined("keypool", "10");
             configParameters.SetDefaultValueIfUndefined("agentprefix", "node" + this.ProtocolPort);
             configParameters.Import(this.ConfigParameters);
@@ -244,7 +265,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.Start();
         }
 
-        private void StartBitcoinCoreRunner()
+        /// <summary>
+        /// Used with precompiled bitcoind and stratisd node
+        /// executables, not SBFN runners.
+        /// </summary>
+        private void WaitForExternalNodeStartup()
         {
             TimeSpan duration = TimeSpan.FromMinutes(5);
             var cancellationToken = new CancellationTokenSource(duration).Token;
@@ -261,7 +286,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     return false;
                 }
             }, cancellationToken: cancellationToken,
-                failureReason: $"Failed to invoke GetBlockHash on BitcoinCore instance after {duration}");
+                failureReason: $"Failed to invoke GetBlockHash on node instance after {duration}");
         }
 
         private void StartStratisRunner()
