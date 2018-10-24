@@ -268,16 +268,18 @@ namespace Stratis.Bitcoin.Features.PoA
             log.AppendLine(string.Format("Mining information for the last {0} blocks.", depth));
             log.AppendLine("MISS means that miner didn't produce a block at the timestamp he was supposed to.");
 
-            log.Append("(now)-");
-
             for (int i = tip.Height; (i > 0) && (i > tip.Height - depth); i--)
             {
                 // Add stats for current header.
                 string pubKeyRepresentation = this.slotsManager.GetPubKeyForTimestamp(currentTime).ToString().Substring(0, pubKeyTakeCharacters);
+
                 log.Append("[" + pubKeyRepresentation + "]-");
 
                 currentHeader = currentHeader.Previous;
                 currentTime -= this.network.TargetSpacingSeconds;
+
+                if (currentHeader.Height == 0)
+                    break;
 
                 while (currentHeader.Header.Time != currentTime)
                 {
