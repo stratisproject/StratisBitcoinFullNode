@@ -109,6 +109,7 @@ namespace NBitcoin
             this.CoinstakeSize = stream.ProcessedBytes - Size - this.MerkleProofSize - this.SignatureSize;
         }
 
+        /// <inheritdoc />
         public override string ToString()
         {
             return this.GetHash().ToString();
