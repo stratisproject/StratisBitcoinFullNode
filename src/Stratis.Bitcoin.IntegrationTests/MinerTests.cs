@@ -887,7 +887,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void Mniner_PosNetwork_CreatePowTransaction_AheadOfFutureDrift_ShouldNotBeIncludedInBlock()
+        public void Miner_PosNetwork_CreatePowTransaction_AheadOfFutureDrift_ShouldNotBeIncludedInBlock()
         {
             var network = KnownNetworks.StratisRegTest;
 
