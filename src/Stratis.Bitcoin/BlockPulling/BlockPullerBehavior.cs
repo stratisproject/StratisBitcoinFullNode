@@ -198,9 +198,6 @@ namespace Stratis.Bitcoin.BlockPulling
             if (message.Message.Payload is BlockPayload block)
             {
                 block.Obj.Header.PrecomputeHash(true, true);
-                foreach (Transaction transaction in block.Obj.Transactions)
-                    transaction.PrecomputeHash(true, true);
-
                 uint256 blockHash = block.Obj.GetHash();
 
                 this.logger.LogTrace("Block '{0}' delivered.", blockHash);
