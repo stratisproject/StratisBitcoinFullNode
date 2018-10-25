@@ -201,5 +201,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         /// <summary>'multi-op-return' error returns a <see cref="RejectNonStandard"/> reject code.</summary>
         public static MempoolError MultiOpReturn = new MempoolError(RejectNonstandard, "multi-op-return");
+
+        /// <summary>'time-too-new' error returns a <see cref="RejectNonStandard"/> reject code.</summary>
+        public static MempoolError TimeTooNew = new MempoolError(RejectNonstandard, "time-too-new");
     }
 }
