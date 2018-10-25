@@ -115,11 +115,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 CoreNode stratisHotStake = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: true);
                 CoreNode stratisColdStake = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: true);
 
-                stratisSender.NotInIBD().WithWallet(Password, WalletName, Passphrase);
-                stratisHotStake.NotInIBD().WithWallet(Password, WalletName, Passphrase);
-                stratisColdStake.NotInIBD().WithWallet(Password, WalletName, Passphrase);
-
-                builder.StartAll();
+                stratisSender.NotInIBD().WithWallet(Password, WalletName, Passphrase).Start();
+                stratisHotStake.NotInIBD().WithWallet(Password, WalletName, Passphrase).Start();
+                stratisColdStake.NotInIBD().WithWallet(Password, WalletName, Passphrase).Start();
 
                 var senderWalletManager = stratisSender.FullNode.WalletManager() as ColdStakingManager;
                 var coldWalletManager = stratisColdStake.FullNode.WalletManager() as ColdStakingManager;
