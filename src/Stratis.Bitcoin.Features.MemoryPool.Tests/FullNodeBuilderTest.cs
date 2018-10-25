@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void CanHaveAllFullnodeServicesTest()
         {
             // This test is put in the mempool feature because the
-            // mempool requires all the features to be a fullnode
+            // mempool requires all the features to be a fullnode.
 
             var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new string[] {
                 $"-datadir=Stratis.Bitcoin.Features.MemoryPool.Tests/TestData/FullNodeBuilderTest/CanHaveAllServicesTest" });

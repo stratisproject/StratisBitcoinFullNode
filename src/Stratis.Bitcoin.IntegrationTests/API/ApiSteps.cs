@@ -462,7 +462,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Base.BaseFeature");
             statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Api.ApiFeature");
             statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.BlockStore.BlockStoreFeature");
-            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Consensus.ConsensusFeature");
+            statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Consensus.PowConsensusFeature");
             statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.MemoryPool.MempoolFeature");
             statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.Miner.MiningFeature");
             statusResponse.EnabledFeatures.Should().Contain("Stratis.Bitcoin.Features.RPC.RPCFeature");
