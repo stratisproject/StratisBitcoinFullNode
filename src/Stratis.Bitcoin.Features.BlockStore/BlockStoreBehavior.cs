@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int MaxBlocksToAnnounce = 8;
 
         private readonly ConcurrentChain chain;
-        
+
         private readonly IConsensusManager consensusManager;
 
         private ConsensusManagerBehavior consensusManagerBehavior;
@@ -159,6 +159,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 case SendHeadersPayload sendHeadersPayload:
                     this.PreferHeaders = true;
                     break;
+
+                    // TODO inherited PH block store behavior should handle SendProvenHeadersPayload and set bool PreferProvenHeaders to true
+                    // for more see https://github.com/stratisproject/StratisBitcoinFullNode/issues/2588
             }
         }
 
@@ -486,7 +489,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
             };
-            
+
             return res;
         }
     }
