@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Connection
 {
+    // TODO add to template behaviors for POS networks
     public class ProvenHeadersConnectionManagerBehavior : ConnectionManagerBehavior
     {
         /// <summary>Instance logger.</summary>
