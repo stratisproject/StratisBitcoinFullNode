@@ -30,13 +30,13 @@ namespace Stratis.SmartContracts
 
         /// <summary>
         /// Gets the bytes set at the value pointed to by the given key, and uses <see cref="ISerializer.ToAddress"/> to
-        /// deserialize the value to an Address. If deserialization is unsuccessful, returns default(Address).
+        /// deserialize the value to an Address. If deserialization is unsuccessful, returns returns <see cref="Address.Zero"/>.
         /// </summary>
         Address GetAddress(string key);
 
         /// <summary>
         /// Gets the bytes set at the value pointed to by the given key, and uses <see cref="ISerializer.ToBool"/> to
-        /// deserialize the value to a bool. If deserialization is unsuccessful, returns default(bool).
+        /// deserialize the value to a bool. If deserialization is unsuccessful, returns returns <see cref="Address.Zero"/>.
         /// </summary>
         bool GetBool(string key);
 

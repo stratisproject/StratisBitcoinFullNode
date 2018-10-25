@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// Substitute the <see cref="IDateTimeProvider"/> for a given feature.
         /// </summary>
         /// <typeparam name="T">The feature to substitute the provider for.</typeparam>
-        public static IFullNodeBuilder SubstituteDateTimeProviderFor<T>(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder OverrideDateTimeProviderFor<T>(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {

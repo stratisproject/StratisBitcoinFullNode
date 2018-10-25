@@ -218,10 +218,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var stratisRegTest = new StratisRegTest();
 
                 // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().OverrideDateTimeProvider().WithDummyWallet().Start();
 
                 // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().OverrideDateTimeProvider().WithDummyWallet().Start();
 
                 // Let's mine block Ap and Bp.
                 TestHelper.MineBlocks(stratisMinerRemote, 2);

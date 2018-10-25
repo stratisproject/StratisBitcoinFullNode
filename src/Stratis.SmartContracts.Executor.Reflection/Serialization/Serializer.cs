@@ -24,9 +24,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public byte[] Serialize(Address address)
         {
-            if (address.Value == null)
-                return null;
-
             return this.primitiveSerializer.Serialize(address);
         }
 
@@ -101,12 +98,29 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         public Address ToAddress(byte[] val)
         {
-            if (val == null || val.Length == 0)
-                return default(Address);
+            if (val == null || val.Length != Address.Width)
+                return Address.Zero;
 
-            (bool success, Address result) = this.TryDeserializeValue<Address>(val);
+            (bool success, Address address) = this.TryDeserializeValue<Address>(val);
 
-            return success ? result : default(Address);
+            return success
+                ? address
+                : Address.Zero;
+        }
+
+        public Address ToAddress(string val)
+        {
+            if (string.IsNullOrWhiteSpace(val))
+                return Address.Zero;
+
+            try
+            {
+                return this.primitiveSerializer.ToAddress(val);
+            }
+            catch (Exception)
+            {
+                return Address.Zero;
+            }
         }
 
         public int ToInt32(byte[] val)
