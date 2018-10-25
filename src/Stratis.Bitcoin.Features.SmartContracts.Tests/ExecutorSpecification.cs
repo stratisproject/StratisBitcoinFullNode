@@ -31,7 +31,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 fixture.ContractStateRoot.Object,
                 fixture.RefundProcessor.Object,
                 fixture.TransferProcessor.Object,
-                fixture.Network,
                 fixture.StateFactory.Object,
                 fixture.StateProcessor.Object,
                 fixture.ContractPrimitiveSerializer.Object);
@@ -104,7 +103,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 fixture.ContractStateRoot.Object,
                 fixture.RefundProcessor.Object,
                 fixture.TransferProcessor.Object,
-                fixture.Network,
                 fixture.StateFactory.Object,
                 fixture.StateProcessor.Object,
                 fixture.ContractPrimitiveSerializer.Object);
@@ -183,7 +181,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 fixture.ContractStateRoot.Object,
                 fixture.RefundProcessor.Object,
                 fixture.TransferProcessor.Object,
-                fixture.Network,
                 fixture.StateFactory.Object,
                 fixture.StateProcessor.Object,
                 fixture.ContractPrimitiveSerializer.Object);
@@ -262,7 +259,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 fixture.ContractStateRoot.Object,
                 fixture.RefundProcessor.Object,
                 fixture.TransferProcessor.Object,
-                fixture.Network,
                 fixture.StateFactory.Object,
                 fixture.StateProcessor.Object,
                 fixture.ContractPrimitiveSerializer.Object);

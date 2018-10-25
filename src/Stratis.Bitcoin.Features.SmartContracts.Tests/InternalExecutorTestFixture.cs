@@ -12,9 +12,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
     {
         public InternalExecutorTestFixture()
         {
-            // The addresses used in related tests are for this Network
-            this.Network = new SmartContractPosTest();
-
             var logger = new Mock<ILogger>();
             this.LoggerFactory = Mock.Of<ILoggerFactory>
                 (l => l.CreateLogger(It.IsAny<string>()) == logger.Object);
@@ -30,12 +27,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.GasMeter = new Mock<IGasMeter>();
 
             var smartContractState = Mock.Of<ISmartContractState>(s =>
-                s.Message == new Message((Address)"SeMvVcDKTLBrxVua5GXmdF8qBYTbJZt4NJ", (Address)"Sipqve53hyjzTo2oU7PUozpT1XcmATnkTn", 100) &&
+                s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(), "0x0000000000000000000000000000000000000002".HexToAddress(), 100) &&
                 s.GasMeter == this.GasMeter.Object);
 
             this.SmartContractState = smartContractState;
 
-            this.FromAddress = smartContractState.Message.ContractAddress.ToUint160(this.Network);
+            this.FromAddress = smartContractState.Message.ContractAddress.ToUint160();
         }
 
         public uint160 FromAddress { get; }
@@ -49,8 +46,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public Mock<IStateProcessor> StateProcessor { get; }
 
         public Mock<IState> State { get; }
-
-        public Network Network { get; }
 
         public ILoggerFactory LoggerFactory { get; }
 
