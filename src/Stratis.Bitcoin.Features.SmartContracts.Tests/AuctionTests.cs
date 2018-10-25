@@ -149,6 +149,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             throw new NotImplementedException();
         }
 
+        public byte[] GetBytes(byte[] key)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte[] GetBytes(string key)
         {
             return this.GetObject<byte[]>(key);
@@ -200,6 +205,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         public T[] GetArray<T>(string key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetBytes(byte[] key, byte[] value)
         {
             throw new NotImplementedException();
         }

@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
@@ -25,8 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 coreNode.ConfigParameters.AddOrReplace("printtoconsole", "0");
                 coreNode.Start();
 
-                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest);
-                stratisNode.Start();
+                CoreNode stratisNode = builder.CreateStratisPowNode(KnownNetworks.RegTest).Start();
 
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
                 RPCClient coreRpc = coreNode.CreateRPCClient();
@@ -37,8 +37,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // core (in version 0.15.1) only mines segwit blocks above a certain height on regtest
                 // future versions of core will change that behaviour so this test may need to be changed in the future
                 // see issue for more details https://github.com/stratisproject/StratisBitcoinFullNode/issues/1028
-                BIP9DeploymentsParameters prevSegwitDeployment = KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit];
-                KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
+                BIP9DeploymentsParameters prevSegwitDeployment = KnownNetworks.RegTest.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit];
+                KnownNetworks.RegTest.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 0, DateTime.Now.AddDays(50).ToUnixTimestamp());
 
                 try
                 {
@@ -62,14 +62,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                     ThresholdState[] segwitActiveState = consensusLoop.NodeDeployments.BIP9.GetStates(stratisNode.FullNode.Chain.GetBlock(431));
 
                     // check that segwit is got activated at block 431
-                    Assert.Equal(ThresholdState.Defined, segwitDefinedState.GetValue((int)BIP9Deployments.Segwit));
-                    Assert.Equal(ThresholdState.Started, segwitStartedState.GetValue((int)BIP9Deployments.Segwit));
-                    Assert.Equal(ThresholdState.LockedIn, segwitLockedInState.GetValue((int)BIP9Deployments.Segwit));
-                    Assert.Equal(ThresholdState.Active, segwitActiveState.GetValue((int)BIP9Deployments.Segwit));
+                    Assert.Equal(ThresholdState.Defined, segwitDefinedState.GetValue((int)BitcoinBIP9Deployments.Segwit));
+                    Assert.Equal(ThresholdState.Started, segwitStartedState.GetValue((int)BitcoinBIP9Deployments.Segwit));
+                    Assert.Equal(ThresholdState.LockedIn, segwitLockedInState.GetValue((int)BitcoinBIP9Deployments.Segwit));
+                    Assert.Equal(ThresholdState.Active, segwitActiveState.GetValue((int)BitcoinBIP9Deployments.Segwit));
                 }
                 finally
                 {
-                    KnownNetworks.RegTest.Consensus.BIP9Deployments[BIP9Deployments.Segwit] = prevSegwitDeployment;
+                    KnownNetworks.RegTest.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit] = prevSegwitDeployment;
                 }
             }
         }
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         private void TestSegwit_MinedOnStratisNode_ActivatedOn_CoreNode()
         {
             // TODO: mine segwit onh a stratis node on the bitcoin network
-            // write a tests that mines segwit blocks on the stratis node 
+            // write a tests that mines segwit blocks on the stratis node
             // and signals them to a core not, then segwit will get activated on core
         }
     }

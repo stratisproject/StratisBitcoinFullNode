@@ -213,14 +213,20 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.performanceCounter.AddHitCount(txIds.Length - miss.Count);
             }
 
-            this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
-            FetchCoinsResponse fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoins = null;
+
+            if (missedTxIds.Count > 0 || this.blockHash == null)
+            { 
+                this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
+                fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
+            }
 
             using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
             {
-                uint256 innerblockHash = fetchedCoins.BlockHash;
                 if (this.blockHash == null)
                 {
+                    uint256 innerblockHash = fetchedCoins.BlockHash;
+
                     Debug.Assert(this.cachedUtxoItems.Count == 0);
                     this.innerBlockHash = innerblockHash;
                     this.blockHash = this.innerBlockHash;
@@ -237,6 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     cache.UnspentOutputs = unspent?.Clone();
                     this.cachedUtxoItems.TryAdd(txIds[index], cache);
                 }
+
                 result = new FetchCoinsResponse(outputs, this.blockHash);
 
                 int cacheEntryCount = this.cacheEntryCount;

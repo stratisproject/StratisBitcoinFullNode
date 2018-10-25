@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractInvocationResult result = contract.InvokeConstructor(null);
 
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal((Gas)219, this.gasMeter.GasConsumed);
+            Assert.Equal((Gas)369, this.gasMeter.GasConsumed);
         }
 
         [Fact]
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
 
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal((Gas)178, this.gasMeter.GasConsumed);
+            Assert.Equal((Gas)328, this.gasMeter.GasConsumed);
         }
 
         [Fact]

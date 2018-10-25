@@ -35,6 +35,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
             ulong gasBudget = (gasLimit != 0) ? gasLimit : gasRemaining;
 
+            Debug.WriteLine("Gas budget:" + gasBudget);
+
             if (gasRemaining < gasBudget || gasRemaining < GasPriceList.BaseCost)
                 return CreateResult.Failed();
 

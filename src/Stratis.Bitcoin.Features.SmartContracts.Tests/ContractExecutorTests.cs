@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
 
             //Call smart contract and add to transaction-------------
-            var contractTxData = new ContractTxData(1, 1, (Gas)5000, ToAddress, "ThrowException");
+            var contractTxData = new ContractTxData(1, 1, (Gas)500_000, ToAddress, "ThrowException");
             var transactionCall = new Transaction();
             TxOut callTxOut = transactionCall.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
             callTxOut.Value = 100;
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
-            var contractTxData = new ContractTxData(0, (Gas) 1, (Gas)10000, contractCode);
+            var contractTxData = new ContractTxData(0, (Gas) 1, (Gas)500_000, contractCode);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
 
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             object[] methodParameters = { 5 };
 
-            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParameters);
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)500_000, contractCode, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
 
@@ -204,7 +204,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             object[] methodParameters = { true };
 
-            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)10000, contractCode, methodParameters);
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)500_000, contractCode, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
 
@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             // Add contract creation code to transaction-------------
-            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)3500, contractExecutionCode);
+            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractExecutionCode);
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
             txOut.Value = 100;
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             //-------------------------------------------------------
 
             //Call smart contract and add to transaction-------------
-            contractTxData = new ContractTxData(1, (Gas)1, (Gas)3500, contractExecutionCode);
+            contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractExecutionCode);
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
             txOut.Value = 100;
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             // Invoke infinite loop
 
-            var gasLimit = (Gas)100_000;
+            var gasLimit = (Gas)500_000;
 
             object[] parameters = { address1.ToAddress() };
 
@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(compilationResult.Success);
             byte[] contractExecutionCode = compilationResult.Compilation;
 
-            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)10000, contractExecutionCode);
+            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractExecutionCode);
 
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
@@ -360,7 +360,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractExecutionResult result = executor.Execute(transactionContext);
             uint160 contractAddress = result.NewContractAddress;
 
-            contractTxData = new ContractTxData(1, (Gas)1, (Gas)5000, contractAddress, methodName, methodParameters);
+            contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractAddress, methodName, methodParameters);
 
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
