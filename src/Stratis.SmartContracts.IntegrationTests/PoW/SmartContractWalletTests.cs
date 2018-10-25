@@ -482,7 +482,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         /// </summary>
         private static int GetSpendableBlocks(int mined, int maturity)
         {
-            return mined - (maturity - 1);
+            return mined - maturity;
         }
     }
 }
