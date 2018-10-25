@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.miningCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public void Mine(Script reserveScript)
         {
             if (this.miningLoop != null)
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Miner
             startAfter: TimeSpans.TenSeconds);
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public void StopMining()
         {
             this.miningCancellationTokenSource.Cancel();
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.miningCancellationTokenSource = null;
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong amountOfBlocksToMine, ulong maxTries)
         {
             var context = new MineBlockContext(amountOfBlocksToMine, (ulong)this.chain.Height, maxTries, reserveScript);
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             context.ChainedHeaderBlock = new ChainedHeaderBlock(context.BlockTemplate.Block, chainedHeader);
-            
+
             return true;
         }
 
