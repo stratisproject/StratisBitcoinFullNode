@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private readonly Network network;
         private readonly ReflectionVirtualMachine vm;
 
-        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        private readonly Address TestAddress;
         private IStateRepository state;
         private SmartContractState contractState;
         private ContractExecutorTestContext context;
@@ -30,6 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Take what's needed for these tests
             this.context = new ContractExecutorTestContext();
             this.network = context.Network;
+            this.TestAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
             this.vm = context.Vm;
             this.state = context.State;
             this.contractState = new SmartContractState(
@@ -37,10 +38,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new Message(TestAddress, TestAddress, 0),
                 new PersistentState(
                     new TestPersistenceStrategy(this.state),
-                    this.context.Serializer, TestAddress.ToUint160(this.network)),
+                    this.context.Serializer, TestAddress.ToUint160()),
                 context.Serializer,
                 new GasMeter((Gas)5000000),
-                new ContractLogHolder(this.network),
+                new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
                 () => 1000);
@@ -122,10 +123,10 @@ public class Contract : SmartContract
                 s.Message == new Message(TestAddress, TestAddress, 0) &&
                 s.PersistentState == new PersistentState(
                     new TestPersistenceStrategy(this.state),
-                    this.context.Serializer, TestAddress.ToUint160(this.network)) &&
+                    this.context.Serializer, TestAddress.ToUint160()) &&
                 s.Serializer == this.context.Serializer &&
                 s.GasMeter == new GasMeter((Gas) 0) &&
-                s.ContractLogger == new ContractLogHolder(this.network) &&
+                s.ContractLogger == new ContractLogHolder() &&
                 s.InternalTransactionExecutor == Mock.Of<IInternalTransactionExecutor>() &&
                 s.InternalHashHelper == new InternalHashHelper() &&
                 s.GetBalance == new Func<ulong>(() => 0));
@@ -145,7 +146,7 @@ public class Contract : SmartContract
             byte[] contractExecutionCode = compilationResult.Compilation;
             var callData = new MethodCall(nameof(ClearStorage.ClearKey), new object[] { });
 
-            uint160 contractAddress = this.contractState.Message.ContractAddress.ToUint160(this.network);
+            uint160 contractAddress = this.contractState.Message.ContractAddress.ToUint160();
             byte[] keyToClear = Encoding.UTF8.GetBytes(ClearStorage.KeyToClear);
 
             // Set a value to be cleared
@@ -167,6 +168,11 @@ public class Contract : SmartContract
         public TestPersistenceStrategy(IStateRepository stateDb)
         {
             this.stateDb = stateDb;
+        }
+
+        public bool ContractExists(uint160 address)
+        {
+            return this.stateDb.IsExist(address);
         }
 
         public byte[] FetchBytes(uint160 address, byte[] key)

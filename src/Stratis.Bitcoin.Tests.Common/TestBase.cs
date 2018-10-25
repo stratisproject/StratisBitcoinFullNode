@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <returns>The path of the directory.</returns>
         public static string GetTestDirectoryPath(string testDirectory)
         {
-            return Path.Combine("TestCase", testDirectory);
+            return Path.Combine("..", "..", "..", "..", "TestCase", testDirectory);
         }
 
         public void AppendBlocksToChain(ConcurrentChain chain, IEnumerable<Block> blocks)
@@ -171,6 +171,42 @@ namespace Stratis.Bitcoin.Tests.Common
             block.BlockSignature = new BlockSignature { Signature = new byte[] { 0x2, 0x3 } };
 
             return block;
+        }
+
+        public (ChainedHeader chainedHeader, List<ProvenBlockHeader> provenBlockHeaders) BuildChainWithProvenHeaders(int blockCount, Network network, bool addNext = false)
+        {
+            Guard.Assert(blockCount > 0);
+
+            var provenBlockHeaders = new List<ProvenBlockHeader>();
+
+            ChainedHeader chainedHeader = null;
+            ChainedHeader previousChainHeader = null;
+
+            for (int i = 0; i < blockCount; i++)
+            {
+                PosBlock block = CreatePosBlockMock();
+                ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
+
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = i > 0 ? chainedHeader.HashBlock : null;
+                header.Bits = Target.Difficulty1;
+
+                chainedHeader = new ChainedHeader(header, header.GetHash(), i);
+
+                if (previousChainHeader != null)
+                {
+                    chainedHeader.SetPrivatePropertyValue("Previous", previousChainHeader);
+
+                    if (addNext)
+                        chainedHeader.Previous.Next.Add(chainedHeader);
+                }
+
+                previousChainHeader = chainedHeader;
+
+                provenBlockHeaders.Add(header);
+            }
+
+            return (chainedHeader, provenBlockHeaders);
         }
     }
 }

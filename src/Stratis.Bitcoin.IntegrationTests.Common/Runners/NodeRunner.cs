@@ -1,5 +1,6 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -16,8 +17,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         }
 
         public FullNode FullNode { get; set; }
-
+        public Func<ChainedHeaderBlock, bool> Interceptor { get; internal set; }
         public Network Network { set; get; }
+        public bool OverrideDateTimeProvider { get; internal set; }
 
         protected NodeRunner(string dataDir)
         {

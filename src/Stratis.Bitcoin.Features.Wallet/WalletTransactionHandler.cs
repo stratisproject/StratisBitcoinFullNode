@@ -67,8 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (context.Shuffle)
                 context.TransactionBuilder.Shuffle();
 
-            bool sign = !string.IsNullOrEmpty(context.WalletPassword);
-            Transaction transaction = context.TransactionBuilder.BuildTransaction(sign);
+            Transaction transaction = context.TransactionBuilder.BuildTransaction(context.Sign);
 
             if (context.TransactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
                 return transaction;
@@ -241,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddSecrets(TransactionBuildContext context)
         {
-            if (string.IsNullOrEmpty(context.WalletPassword))
+            if (!context.Sign)
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
@@ -256,6 +255,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
+                if (string.IsNullOrEmpty(context.WalletPassword))
+                    return;
+
                 privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
                 this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
             }
@@ -429,6 +431,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.MinConfirmations = 1;
             this.SelectedInputs = new List<OutPoint>();
             this.AllowOtherInputs = false;
+            this.Sign = true;
         }
 
         /// <summary>
@@ -514,5 +517,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
         /// </summary>
         public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// Whether the transaction should be signed or not.
+        /// </summary>
+        public bool Sign { get; set; }
     }
 }

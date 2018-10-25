@@ -8,6 +8,16 @@ namespace Stratis.SmartContracts
     public interface IPersistentState
     {
         /// <summary>
+        /// Returns true if a contract exists at the given Address. If the supplied Address is invalid, returns false.
+        /// </summary>
+        bool IsContract(Address address);
+
+        /// <summary>
+        /// Gets the bytes set at the value pointed to by the given byte array.
+        /// </summary>
+        byte[] GetBytes(byte[] key);
+
+        /// <summary>
         /// Gets the bytes set at the value pointed to by the given key.
         /// </summary>
         byte[] GetBytes(string key);
@@ -20,13 +30,13 @@ namespace Stratis.SmartContracts
 
         /// <summary>
         /// Gets the bytes set at the value pointed to by the given key, and uses <see cref="ISerializer.ToAddress"/> to
-        /// deserialize the value to an Address. If deserialization is unsuccessful, returns default(Address).
+        /// deserialize the value to an Address. If deserialization is unsuccessful, returns returns <see cref="Address.Zero"/>.
         /// </summary>
         Address GetAddress(string key);
 
         /// <summary>
         /// Gets the bytes set at the value pointed to by the given key, and uses <see cref="ISerializer.ToBool"/> to
-        /// deserialize the value to a bool. If deserialization is unsuccessful, returns default(bool).
+        /// deserialize the value to a bool. If deserialization is unsuccessful, returns returns <see cref="Address.Zero"/>.
         /// </summary>
         bool GetBool(string key);
 
@@ -71,6 +81,11 @@ namespace Stratis.SmartContracts
         /// deserialize the value to an Array. If deserialization is unsuccessful, returns new T[0].
         /// </summary>
         T[] GetArray<T>(string key);
+
+        /// <summary>
+        /// Sets the given bytes against the given key in state storage.
+        /// </summary>
+        void SetBytes(byte[] key, byte[] value);
 
         /// <summary>
         /// Sets the given bytes against the given key in state storage.

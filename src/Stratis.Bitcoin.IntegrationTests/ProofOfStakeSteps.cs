@@ -18,7 +18,6 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -54,14 +53,13 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public void PremineNodeWithWallet()
         {
-            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet();
-            this.PremineNodeWithCoins.Start();
+            this.PremineNodeWithCoins = this.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet().Start();
         }
 
         public void PremineNodeWithWalletWithOverrides()
         {
             var configParameters = new NodeConfigParameters { { "savetrxhex", "true" } };
-            
+
             var callback = new Action<IFullNodeBuilder>(builder => builder
                 .UseBlockStore()
                 .UsePosConsensus()
@@ -70,11 +68,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .AddPowPosMining()
                 .AddRPC()
                 .MockIBD()
-                .SubstituteDateTimeProviderFor<MiningFeature>());
+                .OverrideDateTimeProviderFor<MiningFeature>());
 
             this.PremineNodeWithCoins = this.nodeBuilder.CreateCustomNode(callback, new StratisRegTest(), ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
-            this.PremineNodeWithCoins.NotInIBD().WithWallet();
-			this.PremineNodeWithCoins.Start();
+            this.PremineNodeWithCoins.NotInIBD().WithWallet().Start();
         }
 
         public void MineGenesisAndPremineBlocks()
@@ -138,7 +135,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 return false;
             });
         }
-
 
         public void PosRewardForAllCoinstakeTransactionsIsCorrect()
         {

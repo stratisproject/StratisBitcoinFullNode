@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using NBitcoin;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -8,7 +7,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         public uint160 ContractAddress { get; }
         private readonly IPersistenceStrategy persistenceStrategy;
-        private readonly Network network;
 
         /// <summary>
         /// Instantiate a new PersistentState instance. Each PersistentState object represents
@@ -25,15 +23,35 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         internal ISerializer Serializer { get; }
 
-        public byte[] GetBytes(string key)
+        public bool IsContract(Address address)
         {
-            byte[] keyBytes = this.Serializer.Serialize(key);
-            byte[] bytes = this.persistenceStrategy.FetchBytes(this.ContractAddress, keyBytes);
+            byte[] serialized = this.Serializer.Serialize(address);
+
+            if (serialized == null)
+            {
+                return false;
+            }
+
+            var contractAddress = new uint160(serialized);
+
+            return this.persistenceStrategy.ContractExists(contractAddress);
+        }
+
+        public byte[] GetBytes(byte[] key)
+        {
+            byte[] bytes = this.persistenceStrategy.FetchBytes(this.ContractAddress, key);
 
             if (bytes == null)
                 return new byte[0];
 
             return bytes;
+        }
+
+        public byte[] GetBytes(string key)
+        {
+            byte[] keyBytes = this.Serializer.Serialize(key);
+
+            return this.GetBytes(keyBytes);
         }
 
         public char GetChar(string key)
@@ -46,7 +64,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public Address GetAddress(string key)
         {
             var bytes = this.GetBytes(key);
-
+            
             return this.Serializer.ToAddress(bytes);
         }
 
@@ -105,12 +123,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             return this.Serializer.ToArray<T>(bytes);
         }
-        
+
+        public void SetBytes(byte[] key, byte[] value)
+        {
+            this.persistenceStrategy.StoreBytes(this.ContractAddress, key, value);
+        }
+
         public void SetBytes(string key, byte[] value)
         {
             byte[] keyBytes = this.Serializer.Serialize(key);
 
-            this.persistenceStrategy.StoreBytes(this.ContractAddress, keyBytes, value);
+            this.SetBytes(keyBytes, value);
         }
 
         public void SetChar(string key, char value)
