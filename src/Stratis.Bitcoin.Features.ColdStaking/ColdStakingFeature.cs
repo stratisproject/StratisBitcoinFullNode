@@ -8,7 +8,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -48,7 +47,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
     /// </remarks>
     /// <seealso cref="ColdStakingManager.GetColdStakingScript(NBitcoin.ScriptId, NBitcoin.ScriptId)"/>
     /// <seealso cref="FullNodeFeature"/>
-    public class ColdStakingFeature : FullNodeFeature
+    public class ColdStakingFeature : BaseWalletFeature
     {
         /// <summary>The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</summary>
         private readonly IWalletSyncManager walletSyncManager;

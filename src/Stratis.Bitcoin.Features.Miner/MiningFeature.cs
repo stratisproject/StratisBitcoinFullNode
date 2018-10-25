@@ -184,9 +184,7 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             if (services.ServiceProvider.GetService<IPosMinting>() != null)
             {
-                // TODO: Need a better way to check dependencies. This is really just dependent on IWalletManager...
-                // Alternatively "EnsureFeature" should take a list of features that will satisfy the dependency.
-                //services.Features.EnsureFeature<WalletFeature>();
+                services.Features.EnsureFeature<BaseWalletFeature>();
             }
 
             // Mining and staking require block store feature.
@@ -221,9 +219,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     .AddFeature<MiningFeature>()
                     .DependOn<MempoolFeature>()
                     .DependOn<RPCFeature>()
-                    // TODO: Need a better way to check dependencies. This is really just dependent on IWalletManager...
-                    // Alternatively "DependsOn" should take a list of features that will satisfy the dependency.
-                    //.DependOn<WalletFeature>()
+                    .DependOn<BaseWalletFeature>()
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<IPowMining, PowMining>();

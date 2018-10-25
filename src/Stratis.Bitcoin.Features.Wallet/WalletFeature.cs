@@ -25,10 +25,17 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
+    /// Common base class for any feature replacing the <see cref="WalletFeature" />.
+    /// </summary>
+    public abstract class BaseWalletFeature : FullNodeFeature
+    {
+    }
+
+    /// <summary>
     /// Wallet feature for the full node.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    public class WalletFeature : FullNodeFeature
+    public class WalletFeature : BaseWalletFeature
     {
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -134,7 +141,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     foreach (HdAccount account in this.walletManager.GetAccounts(walletName))
                     {
                         AccountBalance accountBalance = this.walletManager.GetBalances(walletName, account.Name).Single();
-                        log.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) 
+                        log.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength)
                                                   + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
                                                   + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
                     }
