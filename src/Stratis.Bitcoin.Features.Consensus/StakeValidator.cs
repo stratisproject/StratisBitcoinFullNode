@@ -255,27 +255,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
-            uint256 stakeModifierV2;
             BlockStake prevBlockStake = this.stakeChain.Get(prevChainedHeader.HashBlock);
-            if (prevBlockStake != null)
+            if (prevBlockStake == null)
             {
-                stakeModifierV2 = prevBlockStake.StakeModifierV2;
-            }
-            else
-            {
-                if (prevChainedHeader.Header is ProvenBlockHeader phHeader)
-                {
-                    stakeModifierV2 = phHeader.StakeModifierV2;
-                }
-                else
-                {
-                    stakeModifierV2 = null;
-                    this.logger.LogTrace("(-)[BAD_STAKE_BLOCK]");
-                    ConsensusErrors.BadStakeBlock.Throw();
-                }
+                this.logger.LogTrace("(-)[BAD_STAKE_BLOCK]");
+                ConsensusErrors.BadStakeBlock.Throw();
             }
 
-            this.CheckStakeKernelHash(context, headerBits, stakeModifierV2, prevUtxo, prevout, (uint)transactionTime);
+            this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, prevout, (uint)transactionTime);
         }
 
         /// <inheritdoc/>

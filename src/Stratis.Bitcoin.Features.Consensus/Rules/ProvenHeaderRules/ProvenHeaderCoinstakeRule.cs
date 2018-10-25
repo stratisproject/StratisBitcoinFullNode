@@ -217,11 +217,24 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             ChainedHeader prevChainedHeader = chainedHeader.Previous;
 
+            uint256 stakeModifierV2;
             BlockStake prevBlockStake = this.PosParent.StakeChain.Get(prevChainedHeader.HashBlock);
-            if (prevBlockStake == null)
+            if (prevBlockStake != null)
             {
-                this.Logger.LogTrace("(-)[BAD_PREV_STAKE]");
-                ConsensusErrors.PrevStakeNull.Throw();
+                stakeModifierV2 = prevBlockStake.StakeModifierV2;
+            }
+            else
+            {
+                if (prevChainedHeader.Header is ProvenBlockHeader phHeader)
+                {
+                    stakeModifierV2 = phHeader.StakeModifierV2;
+                }
+                else
+                {
+                    stakeModifierV2 = null;
+                    this.Logger.LogTrace("(-)[BAD_PREV_STAKE]");
+                    ConsensusErrors.PrevStakeNull.Throw();
+                }
             }
 
             uint headerBits = chainedHeader.Header.Bits.ToCompact();

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// </summary>
         /// <param name="context">Staking context.</param>
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
-        /// <param name="stakeModifier">Information about previous staked block.</param>
+        /// <param name="prevStakeModifier">Previous staked block modifier.</param>
         /// <param name="stakingCoins">Coins that participate in staking.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
         /// <param name="transactionTime">Transaction time.</param>
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <para>
         /// The reason this hash is chosen is the following:
         /// <list type="number">
-        /// <item><paramref name="stakeModifier"/>: Scrambles computation to make it very difficult to precompute future proof-of-stake.</item>
+        /// <item><paramref name="prevStakeModifier"/>: Scrambles computation to make it very difficult to precompute future proof-of-stake.</item>
         /// <item><paramref name="stakingCoins.Time"/>: Time of the coinstake UTXO. Slightly scrambles computation.</item>
         /// <item><paramref name="prevout.Hash"/> Hash of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.</item>
         /// <item><paramref name="prevout.N"/>: Output number of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.</item>
