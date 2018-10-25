@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         {
             foreach (Type dependency in this.dependencies)
             {
-                if (featureRegistrations.All(x => x.FeatureType.BaseType != dependency && x.FeatureType != dependency))
+                if (featureRegistrations.All(x => !dependency.IsAssignableFrom(x.FeatureType)))
                     throw new MissingDependencyException($"Dependency feature {dependency.Name} cannot be found.");
             }
         }
