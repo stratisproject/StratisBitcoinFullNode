@@ -85,7 +85,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Equal(Money.COIN * spendableBlocks * 50, total);
 
                 // Create a token contract.
-                ulong gasPrice = 1;
+                ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
                 int vmVersion = 1;
                 Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
