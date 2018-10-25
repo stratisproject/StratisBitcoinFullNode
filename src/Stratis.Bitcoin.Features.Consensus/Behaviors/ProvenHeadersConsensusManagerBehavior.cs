@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
     /// <summary>
     /// Behavior that takes care of proven headers protocol. It also keeps the notion of peer's consensus tip.
     /// </summary>
+    /// TODO add to behaviors for pos networks
     public class ProvenHeadersConsensusManagerBehavior : ConsensusManagerBehavior
     {
         private readonly IInitialBlockDownloadState initialBlockDownloadState;

@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Connection
     public class ConnectionManagerBehavior : NetworkPeerBehavior, IConnectionManagerBehavior
     {
         /// <summary>Logger factory to create loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        protected readonly ILoggerFactory loggerFactory;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         private readonly ILogger infoLogger;
 
-        private readonly IConnectionManager connectionManager;
+        protected readonly IConnectionManager connectionManager;
 
         public bool Whitelisted { get; internal set; }
 
