@@ -264,7 +264,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountName = AccountName,
                     GasLimit = gasLimit.ToString(),
-                    GasPrice = "1",
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "0.001",
                     Password = Password,
@@ -325,7 +325,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountName = AccountName,
                     GasLimit = gasLimit.ToString(),
-                    GasPrice = "1",
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
                     Amount = "0",
                     MethodName = "Increment",
                     ContractAddress = response.NewContractAddress,
@@ -372,7 +372,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountName = AccountName,
                     GasLimit = gasLimit.ToString(),
-                    GasPrice = "1",
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
                     Amount = "0",
                     MethodName = "TestSerializer",
                     ContractAddress = response.NewContractAddress,
