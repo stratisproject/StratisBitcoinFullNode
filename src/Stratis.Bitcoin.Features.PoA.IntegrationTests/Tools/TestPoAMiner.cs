@@ -37,8 +37,9 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
             PoABlockHeaderValidator poaHeaderValidator,
             FederationManager federationManager,
             IIntegrityValidator integrityValidator,
-            IWalletManager walletManager) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
-                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager)
+            IWalletManager walletManager,
+            INodeStats nodeStats) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
+                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats)
         {
             this.timeProvider = dateTimeProvider as EditableTimeProvider;
             this.cancellationSource = new CancellationTokenSource();
