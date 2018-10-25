@@ -22,10 +22,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.regTest).NotInIBD().WithDummyWallet().Start();
-                CoreNode syncerA = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
-                CoreNode syncerB = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
-                CoreNode syncerC = builder.CreateStratisPowNode(this.regTest).NotInIBD().Start();
+                CoreNode miner = builder.CreateStratisPowNode(this.regTest).WithDummyWallet().Start();
+                CoreNode syncerA = builder.CreateStratisPowNode(this.regTest).Start();
+                CoreNode syncerB = builder.CreateStratisPowNode(this.regTest).Start();
+                CoreNode syncerC = builder.CreateStratisPowNode(this.regTest).Start();
 
                 // Connect miner to all 3 syncers.
                 TestHelper.Connect(miner, syncerA);
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 CoreNode node1 = builder.CreateStratisPowNode(this.regTest).WithDummyWallet().Start();
-                CoreNode node2 = builder.CreateStratisPowNode(this.regTest).WithDummyWallet().NotInIBD().Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.regTest).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(node1, 5);
 

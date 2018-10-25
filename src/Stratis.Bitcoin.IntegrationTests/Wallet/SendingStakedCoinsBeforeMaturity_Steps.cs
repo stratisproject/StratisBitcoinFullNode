@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.proofOfStakeSteps.PremineNodeWithWallet();
             this.proofOfStakeSteps.MineGenesisAndPremineBlocks();
 
-            this.receiverNode = this.proofOfStakeSteps.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet().Start();
+            this.receiverNode = this.proofOfStakeSteps.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).WithWallet().Start();
 
             TestHelper.ConnectAndSync(this.proofOfStakeSteps.PremineNodeWithCoins, this.receiverNode);
         }

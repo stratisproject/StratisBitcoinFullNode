@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
+                CoreNode node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithWallet().Start();
 
                 RPCClient rpcClient = node.CreateRPCClient();
 
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
+                CoreNode node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithWallet().Start();
 
                 RPCClient rpc = node.CreateRPCClient();
                 uint256 blockHash = rpc.Generate(1)[0];
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).NotInIBD().WithWallet().Start();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithWallet().Start();
 
                 RPCClient rpcClient = node.CreateRPCClient();
 
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 Network network = new BitcoinRegTest();
-                var node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet().Start();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
 
                 RPCClient rpcClient = node.CreateRPCClient();
                 int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 Network network = new BitcoinRegTest();
-                var node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet().Start();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
 
                 RPCClient rpcClient = node.CreateRPCClient();
                 int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
