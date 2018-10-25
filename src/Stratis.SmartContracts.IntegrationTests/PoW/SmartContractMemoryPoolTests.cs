@@ -1,6 +1,8 @@
 ﻿using System.Linq;
 using System.Threading;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.Core;
@@ -19,7 +21,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
-
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
@@ -57,7 +58,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Gas higher than allowed limit
                 var tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                var contractTxData = new ContractTxData(1, 1, new Gas(10_000_000), new uint160(0), "Test");
+                var contractTxData = new ContractTxData(1, 100, new Gas(10_000_000), new uint160(0), "Test");
                 tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(contractTxData))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
@@ -84,6 +85,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
                 tx.AddOutput(new TxOut(100, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId(contractAddress))));
+                tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
+                stratisNodeSync.Broadcast(tx);
+
+                // Gas price lower than minimum
+                tx = stratisNodeSync.FullNode.Network.CreateTransaction();
+                tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
+                var lowGasPriceContractTxData = new ContractTxData(1, SmartContractMempoolValidator.MinGasPrice - 1, new Gas(SmartContractFormatRule.GasLimitMaximum), new uint160(0), "Test");
+                tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(lowGasPriceContractTxData))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
 

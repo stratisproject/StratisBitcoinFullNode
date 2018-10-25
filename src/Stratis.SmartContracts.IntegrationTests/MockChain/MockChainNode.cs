@@ -4,6 +4,7 @@ using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
@@ -156,7 +157,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
-            ulong gasPrice = 100,
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -201,7 +202,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
-            ulong gasPrice = 100,
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
             var request = new BuildCallContractTransactionRequest
