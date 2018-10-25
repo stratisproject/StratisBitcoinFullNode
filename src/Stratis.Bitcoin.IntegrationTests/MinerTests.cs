@@ -23,7 +23,6 @@ using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
@@ -878,7 +877,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).WithDummyWallet().Start();
+                CoreNode miner = builder.CreateStratisPowNode(KnownNetworks.RegTest).NotInIBD().WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(miner, 5);
 
@@ -900,7 +899,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Send coins to the receiver
                 var context = WalletTests.CreateContext(network, new WalletAccountReference(WalletName, Account), Password, new Key().PubKey.GetAddress(network).ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1);
-                
+
                 Transaction trx = stratisMiner.FullNode.WalletTransactionHandler().BuildTransaction(context);
 
                 // This should make the mempool reject a POS trx.
