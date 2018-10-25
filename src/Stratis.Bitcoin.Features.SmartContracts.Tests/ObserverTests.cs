@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private const string ContractName = "Test";
         private const string MethodName = "TestMethod";
-        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        private readonly Address TestAddress;
         private ISmartContractState state;
         private const ulong Balance = 0;
         private const ulong GasLimit = 10000;
@@ -101,8 +101,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public ObserverTests()
         {
             var context = new ContractExecutorTestContext();
-            this.repository = context.State;
             this.network = context.Network;
+            this.TestAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
+            this.repository = context.State;
             this.moduleReader = new ContractModuleDefinitionReader();
             this.assemblyLoader = new ContractAssemblyLoader();
             this.gasMeter = new GasMeter((Gas)5000000);
@@ -127,10 +128,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new Stratis.SmartContracts.Core.Block(1, TestAddress),
                 new Message(TestAddress, TestAddress, 0),
                 new PersistentState(new MeteredPersistenceStrategy(this.repository, this.gasMeter, new BasicKeyEncodingStrategy()),
-                    context.Serializer, TestAddress.ToUint160(this.network)),
+                    context.Serializer, TestAddress.ToUint160()),
                 context.Serializer,
                 this.gasMeter,
-                new ContractLogHolder(this.network),
+                new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
                 () => 1000);

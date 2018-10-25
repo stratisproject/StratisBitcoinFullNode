@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Text.RegularExpressions;
 using NBitcoin;
 using Stratis.SmartContracts.Core;
@@ -35,9 +34,15 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             var primitiveType = GetPrimitiveType(obj);
 
             // ToString works fine for all of our data types except byte arrays.
-            var serialized = primitiveType == MethodParameterDataType.ByteArray
-                ? ((byte[])obj).ToHexString()
-                : obj.ToString();
+            string serialized;
+            if (primitiveType == MethodParameterDataType.ByteArray)
+            {
+                serialized = ((byte[]) obj).ToHexString();
+            }
+            else
+            {
+                serialized = obj.ToString();
+            }
 
             return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
         }
@@ -88,7 +93,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return StringToObjects(parameters);
         }
 
-        private static object[] StringToObjects(string parameters)
+        private  object[] StringToObjects(string parameters)
         {
             string[] split = Regex.Split(parameters, @"(?<!(?<!\\)*\\)\|").ToArray();
 
@@ -124,7 +129,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(long.Parse(parameterSignature[1]));
                 
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
-                    processedParameters.Add(new Address(parameterSignature[1]));
+                    processedParameters.Add(parameterSignature[1].HexToAddress());
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
                     processedParameters.Add(parameterSignature[1].HexToByteArray());

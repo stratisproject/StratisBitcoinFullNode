@@ -4,7 +4,7 @@ using System.Linq;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             yield return new object[] { "test" }; // MethodParameterDataType.String
             yield return new object[] { (uint)36 }; // MethodParameterDataType.UInt
             yield return new object[] { (ulong)29 }; // MethodParameterDataType.ULong
-            yield return new object[] { new Address("SeMvVcDKTLBrxVua5GXmdF8qBYTbJZt4NJ") }; // MethodParameterDataType.Address
+            yield return new object[] { "0x0000000000000000000000000000000000000001".HexToAddress() }; // MethodParameterDataType.Address
             yield return new object[] { (long)12312321 }; // MethodParameterDataType.Long,
             yield return new object[] { (int)10000000 };// MethodParameterDataType.Int
         }
