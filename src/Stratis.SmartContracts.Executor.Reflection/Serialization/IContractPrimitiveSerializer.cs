@@ -8,6 +8,5 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         T Deserialize<T>(byte[] stream);
         object Deserialize(Type type, byte[] stream);
         Address ToAddress(string address);
-        string ToBase58(Address val);
     }
 }

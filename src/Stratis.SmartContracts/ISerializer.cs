@@ -72,11 +72,6 @@ namespace Stratis.SmartContracts
         Address ToAddress(string val);
 
         /// <summary>
-        /// Converts an Address into its base58 representation.
-        /// </summary>
-        string ToBase58Address(Address val);
-
-        /// <summary>
         /// Deserializes the first 4 bytes of a byte array into an integer. If the given bytes are null, empty, or deserialization fails, returns default(int).
         /// </summary>
         int ToInt32(byte[] val);

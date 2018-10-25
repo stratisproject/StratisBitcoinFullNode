@@ -159,13 +159,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.ThrowsAny<Exception>(() => this.serializer.Deserialize<ContainsNullInt>(serialized));
         }
 
-        [Fact]
-        public void Serializer_Address_To_Base58()
-        {
-            var base58Address = this.serializer.ToBase58(new Address());
-            Assert.Equal(new BitcoinPubKeyAddress(new KeyId(new Address().ToBytes()), this.network).ToString(), base58Address);
-        }
-
         private TestValueType NewTestValueType()
         {
             var instance = new TestValueType();
