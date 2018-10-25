@@ -20,7 +20,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
         /// <param name="transactionTime">Transaction time.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
-        void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
+        /// <returns>Returns true if a correct hash was discovered.</returns>
+        bool CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
 
         /// <summary>
         /// Checks that the stake kernel hash satisfies the target difficulty.
@@ -51,7 +52,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// </remarks>
         /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown in case transaction time is lower than it's own UTXO timestamp.</exception>
         /// <exception cref="ConsensusErrors.StakeHashInvalidTarget">Thrown in case PoS hash doesn't meet target protocol.</exception>
-        void CheckStakeKernelHash(PosRuleContext context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
+        /// /// <returns>Returns true if a correct hash was discovered.</returns>
+        bool CheckStakeKernelHash(PosRuleContext context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
             OutPoint prevout, uint transactionTime);
 
         /// <summary>
