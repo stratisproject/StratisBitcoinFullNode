@@ -505,5 +505,23 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.logger.LogTrace("(-):*.Count={0}", res.Count());
             return res;
         }
+
+        /// <summary>
+        /// Checks if the script contains a cold staking address and if so maintains the buffer.
+        /// </summary>
+        /// <param name="script">The script (possibly a cold staking script) to check.</param>
+        /// <param name="accountFilter">The account filter.</param>
+        public override void TransactionFoundInternal(Script script, Func<HdAccount, bool> accountFilter = null)
+        {
+            if (ColdStakingScriptTemplate.Instance.ExtractScriptPubKeyParameters(script, out KeyId hotPubKeyHash, out KeyId coldPubKeyHash))
+            {
+                base.TransactionFoundInternal(hotPubKeyHash.ScriptPubKey, a => a.Index == HotWalletAccountIndex);
+                base.TransactionFoundInternal(coldPubKeyHash.ScriptPubKey, a => a.Index == ColdWalletAccountIndex);
+            }
+            else
+            {
+                base.TransactionFoundInternal(script, accountFilter);
+            }
+        }
     }
 }

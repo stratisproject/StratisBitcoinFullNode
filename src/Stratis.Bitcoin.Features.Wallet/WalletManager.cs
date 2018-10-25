@@ -1091,11 +1091,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
-        private void TransactionFoundInternal(Script script)
+        public virtual void TransactionFoundInternal(Script script, Func<HdAccount, bool> accountFilter = null)
         {
             foreach (Wallet wallet in this.Wallets)
             {
-                foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType, a => true))
+                foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType, accountFilter ?? Wallet.NormalAccounts))
                 {
                     bool isChange;
                     if (account.ExternalAddresses.Any(address => address.ScriptPubKey == script))
