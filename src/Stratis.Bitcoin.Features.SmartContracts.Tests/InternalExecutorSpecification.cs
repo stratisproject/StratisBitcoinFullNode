@@ -349,7 +349,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var fixture = new InternalExecutorTestFixture();
 
-            fixture.SetGasMeterLimitBelow((Gas) InternalExecutor.DefaultGasLimit);
+            fixture.SetGasMeterLimitBelow((Gas) GasPriceList.TransferCost);
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
