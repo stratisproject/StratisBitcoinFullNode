@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="GetColdStakingInfoRequest"/> object containing the
         /// parameters  required to obtain cold staking information.</param>
         /// <returns>A <see cref="GetColdStakingInfoResponse"/> object containing the cold staking information.</returns>
-        [Route("get-cold-staking-info")]
+        [Route("cold-staking-info")]
         [HttpGet]
         public IActionResult GetColdStakingInfo([FromQuery]GetColdStakingInfoRequest request)
         {
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="CreateColdStakingAccountRequest"/> object containing the parameters
         /// required for creating the cold staking account.</param>
         /// <returns>A <see cref="CreateColdStakingAccountResponse>"/> object containing the account name.</returns>
-        [Route("create-cold-staking-account")]
+        [Route("cold-staking-account")]
         [HttpPost]
         public IActionResult CreateColdStakingAccount([FromBody]CreateColdStakingAccountRequest request)
         {
@@ -125,9 +125,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
         /// <param name="request">A <see cref="GetColdStakingAddressRequest"/> object containing the parameters
         /// required for generating the cold staking address.</param>
         /// <returns>A <see cref="GetColdStakingAddressResponse>"/> object containing the cold staking address.</returns>
-        [Route("get-cold-staking-address")]
-        [HttpPost]
-        public IActionResult GetColdStakingAddress([FromBody]GetColdStakingAddressRequest request)
+        [Route("cold-staking-address")]
+        [HttpGet]
+        public IActionResult GetColdStakingAddress([FromQuery]GetColdStakingAddressRequest request)
         {
             Guard.NotNull(request, nameof(request));
 
