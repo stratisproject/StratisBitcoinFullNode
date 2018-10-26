@@ -19,7 +19,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly IContractRefundProcessor refundProcessor;
         private readonly IContractTransferProcessor transferProcessor;
         private readonly ICallDataSerializer serializer;
-        private readonly Network network;
         private readonly IStateFactory stateFactory;
         private readonly IStateProcessor stateProcessor;
         private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
@@ -29,7 +28,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IStateRepository stateRoot,
             IContractRefundProcessor refundProcessor,
             IContractTransferProcessor transferProcessor,
-            Network network,
             IStateFactory stateFactory,
             IStateProcessor stateProcessor,
             IContractPrimitiveSerializer contractPrimitiveSerializer)
@@ -39,7 +37,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.refundProcessor = refundProcessor;
             this.transferProcessor = transferProcessor;
             this.serializer = serializer;
-            this.network = network;
             this.stateFactory = stateFactory;
             this.stateProcessor = stateProcessor;
             this.contractPrimitiveSerializer = contractPrimitiveSerializer;
@@ -55,7 +52,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var block = new Block(
                 transactionContext.BlockHeight,
-                transactionContext.CoinbaseAddress.ToAddress(this.network)
+                transactionContext.CoinbaseAddress.ToAddress()
             );
 
             IState state = this.stateFactory.Create(

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
@@ -42,7 +41,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
 
             for (int i = 0; i < numNodes; i++)
             {
-                CoreNode node = this.builder.CreateSmartContractPowNode().NotInIBD();
+                CoreNode node = this.builder.CreateSmartContractPowNode();
                 node.Start();
                 // Add other nodes
                 RPCClient rpcClient = node.CreateRPCClient();

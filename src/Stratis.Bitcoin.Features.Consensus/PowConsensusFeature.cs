@@ -1,11 +1,12 @@
 ﻿using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
@@ -13,31 +14,37 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Features.Consensus
 {
-    public class ConsensusFeature : FullNodeFeature
+    public class PowConsensusFeature : ConsensusFeature
     {
         private readonly IChainState chainState;
-
         private readonly IConnectionManager connectionManager;
-
-        private readonly Signals.Signals signals;
-
         private readonly IConsensusManager consensusManager;
-
         private readonly NodeDeployments nodeDeployments;
+        private readonly ConcurrentChain chain;
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+        private readonly IPeerBanning peerBanning;
+        private readonly ILoggerFactory loggerFactory;
 
-        public ConsensusFeature(
+        public PowConsensusFeature(
             Network network,
             IChainState chainState,
             IConnectionManager connectionManager,
-            Signals.Signals signals,
             IConsensusManager consensusManager,
-            NodeDeployments nodeDeployments)
+            NodeDeployments nodeDeployments,
+            ConcurrentChain chain,
+            IInitialBlockDownloadState initialBlockDownloadState,
+            IPeerBanning peerBanning,
+            Signals.Signals signals,
+            ILoggerFactory loggerFactory) : base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
         {
             this.chainState = chainState;
             this.connectionManager = connectionManager;
-            this.signals = signals;
             this.consensusManager = consensusManager;
             this.nodeDeployments = nodeDeployments;
+            this.chain = chain;
+            this.initialBlockDownloadState = initialBlockDownloadState;
+            this.peerBanning = peerBanning;
+            this.loggerFactory = loggerFactory;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
@@ -57,4 +64,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
     }
+
+   
 }

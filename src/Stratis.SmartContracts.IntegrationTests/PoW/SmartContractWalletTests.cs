@@ -71,8 +71,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 
@@ -202,7 +202,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 var maturity = (int)scSender.FullNode.Network.Consensus.CoinbaseMaturity;
 
@@ -242,8 +242,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
+                CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 int maturity = (int)scReceiver.FullNode.Network.Consensus.CoinbaseMaturity;
 
@@ -428,7 +428,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Test that the contract address, event name, and logging values are available in the bloom.
                 var scBlockHeader = receiver.GetLastBlock().Header as SmartContractBlockHeader;
-                Assert.True(scBlockHeader.LogsBloom.Test(new Address(response.NewContractAddress).ToUint160(chain.Network).ToBytes()));
+                Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToAddress(chain.Network).ToBytes()));
                 Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Created")));
                 Assert.True(scBlockHeader.LogsBloom.Test(BitConverter.GetBytes((ulong)20)));
                 // And sanity test that a non-indexed field and random value is not available in bloom.

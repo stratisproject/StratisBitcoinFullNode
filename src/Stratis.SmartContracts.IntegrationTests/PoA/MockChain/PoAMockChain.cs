@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
@@ -42,7 +40,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
             this.Network = network;
             for (int i = 0; i < numNodes; i++)
             {
-                CoreNode node = this.builder.CreateSmartContractPoANode(network.FederationKeys[i]).NotInIBD();
+                CoreNode node = this.builder.CreateSmartContractPoANode(network.FederationKeys[i]);
                 node.Start();
                 // Add other nodes
                 RPCClient rpcClient = node.CreateRPCClient();

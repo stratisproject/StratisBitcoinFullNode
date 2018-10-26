@@ -13,7 +13,7 @@ public class ExceptionInMethod : SmartContract
         Log(new ArbitraryLog { Id = 1 });
 
         // Create transfer that ultimately shouldn't be persisted due to failure.
-        Transfer(new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"), 1);
+        Transfer(Serializer.ToAddress("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"), 1);
 
         // Create storage that ultimately shouldn't be persisted due to failure. 
         PersistentState.SetBool("Test", true);
