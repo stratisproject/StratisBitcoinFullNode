@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
@@ -44,6 +44,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 .UseSmartContractWallet()
                 .UseReflectionExecutor()
                 .ReplaceTimeProvider(this.dateTimeProvider)
+                .AddFastMiningCapability()
                 .MockIBD()
                 .Build();
         }
