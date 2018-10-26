@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             if (script.IsSmartContractCreate() || script.IsSmartContractCall())
             {
                 Result<ContractTxData> result = this.callDataSerializer.Deserialize(script.ToBytes());
-                return result.Value.ContractAddress?.ToAddress(network);
+                return result.Value.ContractAddress?.ToAddress().ToString();
             }
 
             return this.baseAddressReader.GetAddressFromScriptPubKey(network, script);

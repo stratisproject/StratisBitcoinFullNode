@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Minimum number of 'votes' required within the conformation window to reach 'LockedIn' state.
                 network.Consensus.RuleChangeActivationThreshold = 8;
 
-                CoreNode stratisNode = builder.CreateStratisPosNode(network).NotInIBD().WithWallet();
+                CoreNode stratisNode = builder.CreateStratisPosNode(network).WithWallet();
                 stratisNode.Start();
 
                 // ColdStaking activation:

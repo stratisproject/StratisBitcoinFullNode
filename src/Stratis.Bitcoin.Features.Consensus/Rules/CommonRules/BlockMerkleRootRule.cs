@@ -57,7 +57,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         {
             var leaves = new List<uint256>(block.Transactions.Count);
             foreach (Transaction tx in block.Transactions)
+            {
+                // Mark the transaction to cache the hash next time its calculated
+                tx.PrecomputeHash(true, true);
+
                 leaves.Add(tx.GetHash());
+            }
 
             return ComputeMerkleRoot(leaves, out mutated);
         }

@@ -74,6 +74,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 rule.CheckTransaction(context);
             }
+
+            // TODO: Check for a minimum gas price on all mining nodes.
         }
     }
 }

@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -128,11 +128,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
 
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
-                CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network).Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 10);
 
@@ -232,9 +232,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).Start();
 
                 // Start up sync node and mine chain0
                 TestHelper.MineBlocks(stratisNodeSync, 10);

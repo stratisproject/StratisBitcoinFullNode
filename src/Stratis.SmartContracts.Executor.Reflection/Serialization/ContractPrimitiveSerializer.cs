@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         private byte[] Serialize(Address address)
         {
-            return address.ToUint160(this.network).ToBytes();
+            return address.ToBytes();
         }
 
         private byte[] Serialize(bool b)
@@ -192,7 +192,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", type.Name));
         }
-        
+
+        public Address ToAddress(string address)
+        {            
+            return address.ToAddress(this.network);
+        }
+
         #region Primitive Deserialization
 
         private bool ToBool(byte[] val)
@@ -202,7 +207,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
         private Address ToAddress(byte[] val)
         {
-            return new uint160(val).ToAddress(this.network);
+            return val.ToAddress();
         }
 
         private int ToInt32(byte[] val)

@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(this.network.CreateTransaction());
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(this.network.CreateTransaction());
-            this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time = (uint)(StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time = (uint)(StratisBugFixPosFutureDriftRule.DriftingBugFixTimestamp);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = this.concurrentChain.GetBlock(3);
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(this.network.CreateTransaction());
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(this.network.CreateTransaction());
-            this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time = (uint)(StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time = (uint)(StratisBugFixPosFutureDriftRule.DriftingBugFixTimestamp);
 
             // create a stake trx
             this.ruleContext.ValidationContext.BlockToValidate.Transactions[1].Inputs.Add(new TxIn(new OutPoint(uint256.One, 0)));
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate.Transactions[1].Time = this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time + MaxFutureDriftAfterHardFork + 1;
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header.Time = this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time + MaxFutureDriftAfterHardFork;
 
-            rule.FutureDriftRule = new StratisBigFixPosFutureDriftRule();
+            rule.FutureDriftRule = new StratisBugFixPosFutureDriftRule();
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
 
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate = this.network.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(this.network.CreateTransaction());
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(this.network.CreateTransaction());
-            this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time = (uint)(StratisBigFixPosFutureDriftRule.DriftingBugFixTimestamp);
+            this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time = (uint)(StratisBugFixPosFutureDriftRule.DriftingBugFixTimestamp);
 
             // create a stake trx
             this.ruleContext.ValidationContext.BlockToValidate.Transactions[1].Inputs.Add(new TxIn(new OutPoint(uint256.One, 0)));
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate.Transactions[1].Time = this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time + MaxFutureDriftAfterHardFork;
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header.Time = this.ruleContext.ValidationContext.BlockToValidate.Transactions[0].Time + MaxFutureDriftAfterHardFork;
 
-            rule.FutureDriftRule = new StratisBigFixPosFutureDriftRule();
+            rule.FutureDriftRule = new StratisBugFixPosFutureDriftRule();
 
             ConsensusErrorException exception = await Assert.ThrowsAsync<ConsensusErrorException>(() => rule.RunAsync(this.ruleContext));
 
@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.ruleContext.ValidationContext.BlockToValidate.Transactions[1].Time = previousBlockHeaderTime + 64;
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header.Time = previousBlockHeaderTime + 64;
 
-            rule.FutureDriftRule = new StratisBigFixPosFutureDriftRule();
+            rule.FutureDriftRule = new StratisBugFixPosFutureDriftRule();
 
             await rule.RunAsync(this.ruleContext);
         }

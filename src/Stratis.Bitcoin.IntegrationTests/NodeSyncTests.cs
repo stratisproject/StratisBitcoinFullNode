@@ -68,8 +68,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork).Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork).Start();
 
                 Assert.Empty(node1.FullNode.ConnectionManager.ConnectedPeers);
                 Assert.Empty(node2.FullNode.ConnectionManager.ConnectedPeers);
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().Start();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).Start();
                 CoreNode coreNode = builder.CreateBitcoinCoreNode().Start();
 
                 Block tip = coreNode.FindBlock(10).Last();
@@ -110,8 +110,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().Start();
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().Start();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.powNetwork).Start();
                 CoreNode coreCreateNode = builder.CreateBitcoinCoreNode().Start();
 
                 // first seed a core node with blocks and sync them to a stratis node
@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).NotInIBD().Start();
+                CoreNode stratisNode = builder.CreateStratisPowNode(this.powNetwork).Start();
                 CoreNode coreNodeSync = builder.CreateBitcoinCoreNode().Start();
                 CoreNode coreCreateNode = builder.CreateBitcoinCoreNode().Start();
 
@@ -156,9 +156,9 @@ namespace Stratis.Bitcoin.IntegrationTests
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisRegTestMaxReorg = new StratisRegTestMaxReorg();
-                CoreNode stratisMiner = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().WithDummyWallet().Start();
-                CoreNode stratisSyncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().Start();
-                CoreNode stratisReorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisMiner = builder.CreateStratisPosNode(stratisRegTestMaxReorg).WithDummyWallet().Start();
+                CoreNode stratisSyncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg).Start();
+                CoreNode stratisReorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisMiner, 1);
 
@@ -218,10 +218,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var stratisRegTest = new StratisRegTest();
 
                 // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(stratisRegTest).OverrideDateTimeProvider().WithDummyWallet().Start();
 
                 // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(stratisRegTest).NotInIBD().WithDummyWallet().Start();
+                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(stratisRegTest).OverrideDateTimeProvider().WithDummyWallet().Start();
 
                 // Let's mine block Ap and Bp.
                 TestHelper.MineBlocks(stratisMinerRemote, 2);
@@ -268,10 +268,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(testFolderPath))
             {
-                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
-                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
-                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
-                CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).NotInIBD().WithDummyWallet().Start();
+                CoreNode minerNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                CoreNode connectorNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                CoreNode firstNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                CoreNode secondNode = nodeBuilder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
 
                 TestHelper.Connect(minerNode, connectorNode);
                 TestHelper.Connect(connectorNode, firstNode);
