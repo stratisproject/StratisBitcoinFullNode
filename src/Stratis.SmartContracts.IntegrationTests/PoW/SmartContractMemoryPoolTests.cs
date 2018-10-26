@@ -18,7 +18,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNodeSync = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
+                var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 TestHelper.MineBlocks(stratisNodeSync, 105); // coinbase maturity = 100
 
@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var stratisNodeSync = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
+                var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(stratisNodeSync.FullNode.Network));
 
