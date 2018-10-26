@@ -134,9 +134,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 hotWalletManager.UpdateKeysLookupLocked(new[] { hotWalletAddress });
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(stratisSender, maturity + 15, true, WalletName, Password, Account);
+                TestHelper.MineBlocks(stratisSender, maturity + 16, true, WalletName, Password, Account);
 
-                int currentBestHeight = maturity + 15;
+                int currentBestHeight = maturity + 16;
 
                 // Wait for block repo for block sync to work
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
