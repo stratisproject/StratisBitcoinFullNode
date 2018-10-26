@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void NodesCanConnectToEachOthers()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 var node1 = builder.CreateSmartContractPowNode().NotInIBD().Start();
                 var node2 = builder.CreateSmartContractPowNode().NotInIBD().Start();

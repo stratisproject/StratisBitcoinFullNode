@@ -15,11 +15,7 @@ namespace Stratis.SmartContracts.Networks
     /// </summary>
     public class SmartContractsPoARegTest : PoANetwork
     {
-        public Key FederationKey1 { get; private set; }
-
-        public Key FederationKey2 { get; private set; }
-
-        public Key FederationKey3 { get; private set; }
+        public Key[] FederationKeys { get; private set; }
 
         public SmartContractsPoARegTest()
         {
@@ -117,15 +113,18 @@ namespace Stratis.SmartContracts.Networks
 
             // TODO: Do we need Asserts for block hash
 
-            this.FederationKey1 = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey;
-            this.FederationKey2 = new Mnemonic("idle power swim wash diesel blouse photo among eager reward govern menu").DeriveExtKey().PrivateKey;
-            this.FederationKey3 = new Mnemonic("high neither night category fly wasp inner kitchen phone current skate hair").DeriveExtKey().PrivateKey;
+            this.FederationKeys = new Key[]
+            {
+                new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey,
+                new Mnemonic("idle power swim wash diesel blouse photo among eager reward govern menu").DeriveExtKey().PrivateKey,
+                new Mnemonic("high neither night category fly wasp inner kitchen phone current skate hair").DeriveExtKey().PrivateKey
+            };
 
             this.FederationPublicKeys = new List<PubKey>()
             {
-                this.FederationKey1.PubKey, // 029528e83f065153d7fa655e73a07fc96fc759162f1e2c8936fa592f2942f39af0
-                this.FederationKey2.PubKey, // 03b539807c64abafb2d14c52a0d1858cc29d7c7fad0598f92a1274789c18d74d2d
-                this.FederationKey3.PubKey  // 02d6792cf941b68edd1e9056653573917cbaf974d46e9eeb9801d6fcedf846477a
+                this.FederationKeys[0].PubKey, // 029528e83f065153d7fa655e73a07fc96fc759162f1e2c8936fa592f2942f39af0
+                this.FederationKeys[1].PubKey, // 03b539807c64abafb2d14c52a0d1858cc29d7c7fad0598f92a1274789c18d74d2d
+                this.FederationKeys[2].PubKey  // 02d6792cf941b68edd1e9056653573917cbaf974d46e9eeb9801d6fcedf846477a
             };
         }
     }

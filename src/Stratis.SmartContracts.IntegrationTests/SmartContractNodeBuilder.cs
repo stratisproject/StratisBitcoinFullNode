@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Runtime.CompilerServices;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -8,6 +9,7 @@ using Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.IntegrationTests
@@ -25,15 +27,13 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             Network network = new SmartContractsPoARegTest();
             string dataFolder = this.GetNextDataFolderName();
-            CoreNode node = this.CreateNode(new PoANodeRunner(dataFolder, network, this.TimeProvider), "poa.conf");
+            CoreNode node = this.CreateNode(new SmartContractPoARunner(dataFolder, network, this.TimeProvider), "poa.conf");
 
             var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
             var tool = new KeyTool(settings.DataFolder);
             tool.SavePrivateKey(key);
 
             return node;
-            Network network = new SmartContractsPoARegTest();
-            return CreateNode(new SmartContractPoARunner(this.GetNextDataFolderName(), network), "stratis.conf");
         }
 
         public CoreNode CreateSmartContractPowNode()
@@ -46,6 +46,14 @@ namespace Stratis.SmartContracts.IntegrationTests
         {
             Network network = new SmartContractPosRegTest();
             return CreateNode(new StratisSmartContractPosNode(this.GetNextDataFolderName(), network), "stratis.conf");
+        }
+
+        public static SmartContractNodeBuilder Create(object caller, [CallerMemberName] string callingMethod = null)
+        {
+            string testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
+            var builder = new SmartContractNodeBuilder(testFolderPath);
+            builder.WithLogsDisabled();
+            return builder;
         }
     }
 }

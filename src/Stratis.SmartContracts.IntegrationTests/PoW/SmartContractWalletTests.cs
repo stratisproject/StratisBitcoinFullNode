@@ -69,7 +69,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             NetworkRegistration.Register(new SmartContractsRegTest());
 
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
                 CoreNode scReceiver = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
@@ -200,7 +200,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void SmartContractsController_Builds_Transaction_With_Minimum_Inputs()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
 
@@ -240,7 +240,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();
                 CoreNode scReceiver = builder.CreateSmartContractPowNode().NotInIBD().WithWallet().Start();

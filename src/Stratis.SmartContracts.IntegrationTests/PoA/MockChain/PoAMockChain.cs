@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 {
@@ -16,7 +17,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
     {
         // TODO: This and PoWMockChain could share most logic
 
-        private readonly NodeBuilder builder;
+        private readonly SmartContractNodeBuilder builder;
 
         protected readonly MockChainNode[] nodes;
 
@@ -35,12 +36,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 
         public PoAMockChain(int numNodes)
         {
-            this.builder = NodeBuilder.Create(this);
+            this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
-
+            var network = new SmartContractsPoARegTest();
+            this.Network = network;
             for (int i = 0; i < numNodes; i++)
             {
-                CoreNode node = this.builder.CreateSmartContractPoANode().NotInIBD();
+                CoreNode node = this.builder.CreateSmartContractPoANode(network.FederationKeys[i]).NotInIBD();
                 node.Start();
                 // Add other nodes
                 RPCClient rpcClient = node.CreateRPCClient();
