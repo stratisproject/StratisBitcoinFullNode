@@ -43,5 +43,5 @@ State can be defined, active, failed. Dates are in UTC.
 | 2018-11-01 00:00:00
 | 2019-02-01 00:00:00
 | TBD
-| [[https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/ColdStaking.md|ColdStaking]]
+| [[https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/coldstaking.md|ColdStaking]]
 |}
