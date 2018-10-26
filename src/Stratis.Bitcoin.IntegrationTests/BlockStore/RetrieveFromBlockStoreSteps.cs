@@ -52,12 +52,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_pow_node_running()
         {
-            this.node = this.builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.node = this.builder.CreateStratisPowNode(this.network).WithWallet().Start();
         }
 
         private void a_pow_node_to_transact_with()
         {
-            this.transactionNode = this.builder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.transactionNode = this.builder.CreateStratisPowNode(this.network).WithWallet().Start();
             TestHelper.Connect(this.transactionNode, this.node);
             TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
 

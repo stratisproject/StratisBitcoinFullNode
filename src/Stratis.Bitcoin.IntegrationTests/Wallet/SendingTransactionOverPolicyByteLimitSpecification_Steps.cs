@@ -45,8 +45,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void two_connected_nodes()
         {
-            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-            this.secondNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.firstNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.secondNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
 
             TestHelper.Connect(this.firstNode, this.secondNode);
         }

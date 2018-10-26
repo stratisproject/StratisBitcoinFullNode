@@ -80,7 +80,7 @@ public class Auction : SmartContract
         this.EndBlock = this.Block.Number + durationBlocks;
         this.HasEnded = false;
 
-        Log(new Created { duration = durationBlocks, sender = Message.Sender });
+        Log(new Created { duration = durationBlocks, sender = Message.Sender.ToString() });
     }
 
     public void Bid()

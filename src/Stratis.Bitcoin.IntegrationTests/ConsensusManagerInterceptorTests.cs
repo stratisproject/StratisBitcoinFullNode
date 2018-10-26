@@ -17,9 +17,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet();
-                var minerB = builder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().NoValidation().WithWallet();
-                var minerC = builder.CreateStratisPosNode(new StratisRegTest()).NotInIBD().WithWallet();
+                var minerA = builder.CreateStratisPosNode(new StratisRegTest()).OverrideDateTimeProvider().WithDummyWallet();
+                var minerB = builder.CreateStratisPosNode(new StratisRegTest()).OverrideDateTimeProvider().NoValidation().WithDummyWallet();
+                var minerC = builder.CreateStratisPosNode(new StratisRegTest()).OverrideDateTimeProvider().WithDummyWallet();
 
                 // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
                 bool interceptor(ChainedHeaderBlock chainedHeaderBlock)

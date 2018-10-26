@@ -37,10 +37,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode nodeGroupA_1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
-                CoreNode nodeGroupA_2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
-                CoreNode nodeGroupB_1 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
-                CoreNode nodeGroupB_2 = builder.CreateStratisPowNode(this.network).NotInIBD().Start();
+                CoreNode nodeGroupA_1 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode nodeGroupA_2 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode nodeGroupB_1 = builder.CreateStratisPowNode(this.network).Start();
+                CoreNode nodeGroupB_2 = builder.CreateStratisPowNode(this.network).Start();
 
                 // Connect group 1 nodes.
                 TestHelper.WaitLoop(() => nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 0);
@@ -70,10 +70,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
-                CoreNode node3 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
-                CoreNode syncerNode = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node3 = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode syncerNode = builder.CreateStratisPosNode(this.network).Start();
 
                 TestHelper.Connect(node1, syncerNode);
 
@@ -98,8 +98,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).Start();
 
                 var node2ConnectionMgr = node2.FullNode.NodeService<IConnectionManager>();
 
@@ -125,8 +125,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
-                CoreNode node2 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).Start();
 
                 node1 = BanNode(node1, node2);
 
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).Start();
 
                 var node1ConnectionMgr = node1.FullNode.NodeService<IConnectionManager>();
 
