@@ -7,7 +7,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         public uint160 ContractAddress { get; }
         private readonly IPersistenceStrategy persistenceStrategy;
-        private readonly Network network;
 
         /// <summary>
         /// Instantiate a new PersistentState instance. Each PersistentState object represents
@@ -65,7 +64,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public Address GetAddress(string key)
         {
             var bytes = this.GetBytes(key);
-
+            
             return this.Serializer.ToAddress(bytes);
         }
 

@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.PoA
             if (this.FederationMemberKey != null)
             {
                 // Loaded key has to be a key for current federation.
-                if (!this.network.FederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
+                if (!this.network.ConsensusOptions.FederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
                 {
                     string message = "Key provided is not registered on the network!";
 
@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             this.logger.LogInformation("Federation contains {0} members. Their public keys are: {1}",
-                this.network.FederationPublicKeys.Count, Environment.NewLine + string.Join(Environment.NewLine, this.network.FederationPublicKeys));
+                this.network.ConsensusOptions.FederationPublicKeys.Count, Environment.NewLine + string.Join(Environment.NewLine, this.network.ConsensusOptions.FederationPublicKeys));
         }
 
         /// <summary>Loads federation key if it exists.</summary>

@@ -1,13 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
-using Message = Stratis.SmartContracts.Core.Message;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
@@ -99,5 +97,5 @@ namespace Stratis.SmartContracts.Tools.Sct
                      this.ConstructorExists;
             }
         }
-    }    
+    }
 }

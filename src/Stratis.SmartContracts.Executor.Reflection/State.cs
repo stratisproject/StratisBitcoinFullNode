@@ -35,7 +35,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.ContractState = state.ContractState.StartTracking();
             
             // We create a new log holder but use references to the original raw logs
-            this.LogHolder = new ContractLogHolder(state.Network);
+            this.LogHolder = new ContractLogHolder();
             this.LogHolder.AddRawLogs(state.LogHolder.GetRawLogs());
 
             // We create a new list but use references to the original transfers.
@@ -43,7 +43,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             // Create a new balance state based off the old one but with the repository and internal transfers list reference
             this.BalanceState = new BalanceState(this.ContractState, this.internalTransfers, state.BalanceState.InitialTransfer);
-            this.Network = state.Network;
             this.NonceGenerator = state.NonceGenerator;
             this.Block = state.Block;
             this.TransactionHash = state.TransactionHash;
@@ -55,14 +54,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
             IContractLogHolder contractLogHolder,
             List<TransferInfo> internalTransfers,
             IBlock block,
-            Network network,
             uint256 transactionHash)
         {
             this.ContractState = repository;
             this.LogHolder = contractLogHolder;
             this.internalTransfers = internalTransfers;
             this.BalanceState = new BalanceState(this.ContractState, this.InternalTransfers);
-            this.Network = network;
             this.NonceGenerator = new NonceGenerator();
             this.Block = block;
             this.TransactionHash = transactionHash;
@@ -72,8 +69,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public uint256 TransactionHash { get; }
 
         public IBlock Block { get; }
-
-        private Network Network { get; }
 
         public NonceGenerator NonceGenerator { get; }
 

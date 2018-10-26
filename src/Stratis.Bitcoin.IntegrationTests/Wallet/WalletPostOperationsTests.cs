@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 // Act.
                 WalletFileModel walletFileModel = await $"http://localhost:{node.ApiPort}/api"
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 
@@ -200,7 +200,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 
@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
 
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 // Arrange.
-                CoreNode node = builder.CreateStratisPosNode(this.network).NotInIBD().Start();
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
                 

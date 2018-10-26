@@ -1,7 +1,10 @@
-﻿using System.Linq;
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
@@ -25,9 +28,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
+        private readonly IChainState chainState;
 
-        public ProvenHeadersConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState,
-            IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory, Network network) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+        public ProvenHeadersConsensusManagerBehavior(
+            ConcurrentChain chain,
+            IInitialBlockDownloadState initialBlockDownloadState,
+            IConsensusManager consensusManager,
+            IPeerBanning peerBanning,
+            ILoggerFactory loggerFactory,
+            Network network,
+            IChainState chainState) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.chain = chain;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -36,6 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             this.network = network;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
+            this.chainState = chainState;
         }
 
         /// <inheritdoc />
@@ -46,7 +57,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <param name="message">Received message to process.</param>
         protected override async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            await base.OnMessageReceivedAsync(peer, message).ConfigureAwait(false);
             switch (message.Message.Payload)
             {
                 case ProvenHeadersPayload provenHeaders:
@@ -56,19 +66,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 case GetProvenHeadersPayload getHeaders:
                     await this.ProcessGetHeadersAsync(peer, getHeaders).ConfigureAwait(false);
                     break;
+
+                case HeadersPayload headers:
+                    await this.ProcessLegacyHeadersAsync(peer, headers.Headers).ConfigureAwait(false);
+                    break;
+
+                default:
+                    // Rely on base.OnMessageReceivedAsync only if the message hasn't be already processed.
+                    await base.OnMessageReceivedAsync(peer, message).ConfigureAwait(false);
+                    break;
             }
         }
 
         /// <inheritdoc />
-        /// <summary>Constructs the proven headers payload from locator to consensus tip.</summary>
-        /// <param name="locator">Block locator.</param>
-        /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
-        /// <param name="lastHeader"><see cref="T:NBitcoin.ProvenBlockHeader" /> of the last header that was added to the <see cref="T:Stratis.Bitcoin.P2P.Protocol.Payloads.ProvenHeadersPayload" />.</param>
-        /// <returns><see cref="T:Stratis.Bitcoin.P2P.Protocol.Payloads.ProvenHeadersPayload" /> with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        protected override Payload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
+        protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
-            ChainedHeader fork = this.chain.FindFork(locator);
+            // If getHeadersPayload isn't a GetProvenHeadersPayload, return base implementation result
+            if (!(getHeadersPayload is GetProvenHeadersPayload))
+                return base.ConstructHeadersPayload(getHeadersPayload, out lastHeader);
 
+            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
             lastHeader = null;
 
             if (fork == null)
@@ -85,23 +102,117 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 lastHeader = header;
                 headers.Headers.Add(provenBlockHeader);
 
-                if ((header.HashBlock == hashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
+                if ((header.HashBlock == getHeadersPayload.HashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
             }
 
             return headers;
         }
 
-        protected override void AttachCore()
-        {
-            this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
-        }
-
         /// <inheritdoc />
         public override object Clone()
         {
             return new ProvenHeadersConsensusManagerBehavior(
-                this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network);
+                this.chain,
+                this.initialBlockDownloadState,
+                this.consensusManager,
+                this.peerBanning,
+                this.loggerFactory,
+                this.network,
+                this.chainState);
+        }
+
+        /// <summary>
+        /// Determines whether the specified peer supports Proven Headers and PH has been activated.
+        /// </summary>
+        /// <param name="peer">The peer.</param>
+        /// <returns>
+        ///   <c>true</c> if is peer is PH enabled; otherwise, <c>false</c>.
+        /// </returns>
+        private bool CanPeerProcessProvenHeaders(INetworkPeer peer)
+        {
+            return peer.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
+        }
+
+        /// <summary>
+        /// Determines whether the specified peer is Whitelisted.
+        /// </summary>
+        /// <param name="peer">The peer.</param>
+        /// <returns>
+        ///   <c>true</c> if the specified peer is Whitelisted; otherwise, <c>false</c>.
+        /// </returns>
+        private bool IsPeerWhitelisted(INetworkPeer peer)
+        {
+            return peer.Behavior<IConnectionManagerBehavior>()?.Whitelisted == true;
+        }
+
+        private bool AreProvenHeadersActivated()
+        {
+            if (this.network.Consensus.Options is PosConsensusOptions options)
+            {
+                long currentHeight = this.chainState.ConsensusTip.Height;
+                return currentHeight >= options.ProvenHeadersActivationHeight;
+            }
+
+            return false;
+        }
+
+        /// <summary>
+        /// Builds the <see cref="GetHeadersPayload"/>.
+        /// </summary>
+        /// <returns>The <see cref="GetHeadersPayload"/> instance.
+        /// If the peer can serve PH, <see cref="GetProvenHeadersPayload" /> is returned, otherwise if it's a legacy peer but it's whitelisted,
+        /// <see cref="GetHeadersPayload"/> is returned.
+        /// If the attached peer is a legacy peer and it's not whitelisted, returns null.
+        /// </returns>
+        protected override GetHeadersPayload BuildGetHeadersPayload()
+        {
+            INetworkPeer peer = this.AttachedPeer;
+
+            if (this.AreProvenHeadersActivated())
+            {
+                if (this.CanPeerProcessProvenHeaders(peer))
+                {
+                    return new GetProvenHeadersPayload()
+                    {
+                        BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                        HashStop = null
+                    };
+                }
+                // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
+                else if (this.IsPeerWhitelisted(peer))
+                {
+                    return base.BuildGetHeadersPayload();
+                }
+                // If the peer doesn't support PH and isn't whitelisted, return null (stop synch attempt with legacy StratisX nodes).
+                else
+                {
+                    return null;
+                }
+            }
+            else
+            {
+                // If proven header isn't activated, build a legacy header request
+                return base.BuildGetHeadersPayload();
+            }
+        }
+
+        /// <summary>
+        /// Processes the legacy GetHeaders message.
+        /// Only whitelisted legacy peers are allowed to handle this message.
+        /// </summary>
+        /// <param name="peer">The peer.</param>
+        /// <param name="headers">The headers.</param>
+        protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
+        {
+            bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && this.IsPeerWhitelisted(peer));
+            // Only legacy peers are allowed to handle this message, or any node before PH activation.
+            if (isLegacyWhitelistedPeer || !this.AreProvenHeadersActivated())
+            {
+                return base.ProcessHeadersAsync(peer, headers);
+            }
+
+            return Task.CompletedTask;
         }
     }
 }

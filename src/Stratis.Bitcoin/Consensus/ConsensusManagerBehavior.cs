@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Consensus
                 return;
             }
 
-            Payload headersPayload = this.ConstructHeadersPayload(getHeadersPayload.BlockLocator, getHeadersPayload.HashStop, out ChainedHeader lastHeader);
+            Payload headersPayload = this.ConstructHeadersPayload(getHeadersPayload, out ChainedHeader lastHeader);
 
             if (headersPayload != null)
             {
@@ -195,13 +195,12 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Constructs the headers from locator to consensus tip.</summary>
-        /// <param name="locator">Block locator.</param>
-        /// <param name="hashStop">Hash of the block after which constructing headers payload should stop.</param>
+        /// <param name="getHeadersPayload">The <see cref="GetHeadersPayload"/> payload that triggered the creation of this payload.</param>
         /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
         /// <returns>Payload with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        protected virtual Payload ConstructHeadersPayload(BlockLocator locator, uint256 hashStop, out ChainedHeader lastHeader)
+        protected virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
-            ChainedHeader fork = this.chain.FindFork(locator);
+            ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
 
             lastHeader = null;
 
@@ -218,7 +217,7 @@ namespace Stratis.Bitcoin.Consensus
                 lastHeader = header;
                 headersPayload.Headers.Add(header.Header);
 
-                if ((header.HashBlock == hashStop) || (headersPayload.Headers.Count == MaxItemsPerHeadersMessage))
+                if ((header.HashBlock == getHeadersPayload.HashStop) || (headersPayload.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
             }
 
@@ -442,11 +441,12 @@ namespace Stratis.Bitcoin.Consensus
 
             if ((peer != null) && (peer.State == NetworkPeerState.HandShaked))
             {
-                var headersPayload = new GetHeadersPayload()
+                var headersPayload = this.BuildGetHeadersPayload();
+                if (headersPayload == null)
                 {
-                    BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
-                    HashStop = null
-                };
+                    this.logger.LogTrace("Ignoring sync request, headersPayload is null.");
+                    return;
+                }
 
                 try
                 {
@@ -454,11 +454,24 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 catch (OperationCanceledException)
                 {
-                    this.logger.LogTrace("Unable to send getheaders message to peer '{0}'.", peer.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Unable to send getheaders ({0}) message to peer '{1}'.", headersPayload.GetType().Name, peer.RemoteSocketEndpoint);
                 }
             }
             else
                 this.logger.LogTrace("Can't sync. Peer's state is not handshaked or peer was not attached.");
+        }
+
+        /// <summary>
+        /// Builds the GetHeadersPayload.
+        /// </summary>
+        /// <returns>The GetHeadersPayload instance. May return <c>null</c>; in such case the sync process wouldn't happen.</returns>
+        protected virtual GetHeadersPayload BuildGetHeadersPayload()
+        {
+            return new GetHeadersPayload()
+            {
+                BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                HashStop = null
+            };
         }
 
         /// <inheritdoc />

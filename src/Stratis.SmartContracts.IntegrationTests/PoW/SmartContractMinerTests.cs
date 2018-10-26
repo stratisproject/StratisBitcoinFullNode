@@ -308,14 +308,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 this.assemblyLoader = new ContractAssemblyLoader();
                 this.callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
                 this.moduleDefinitionReader = new ContractModuleDefinitionReader();
-                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
+                this.reflectionVirtualMachine = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader);
                 this.stateProcessor = new StateProcessor(this.reflectionVirtualMachine, this.AddressGenerator);
-                this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
+                this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.stateProcessor);
                 this.primitiveSerializer = new ContractPrimitiveSerializer(this.network);
                 this.serializer = new Serializer(this.primitiveSerializer);
-                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.network, this.internalTxExecutorFactory, this.serializer);
-                this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
-                this.ExecutorFactory = new ReflectionExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.network, this.stateFactory, this.stateProcessor, this.primitiveSerializer);
+                this.smartContractStateFactory = new SmartContractStateFactory(this.primitiveSerializer, this.internalTxExecutorFactory, this.serializer);
+                this.stateFactory = new StateFactory(this.smartContractStateFactory);
+                this.ExecutorFactory = new ReflectionExecutorFactory(this.loggerFactory, this.callDataSerializer, this.refundProcessor, this.transferProcessor, this.stateFactory, this.stateProcessor, this.primitiveSerializer);
             }
         }
 
@@ -687,7 +687,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters =  { newContractAddress.ToAddress(context.network).Value };
+            object[] testMethodParameters =  { newContractAddress.ToAddress() };
             
             var transferContractCall = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "ContractTransfer", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCall, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
@@ -741,7 +741,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters =  { newContractAddress.ToAddress(context.network).Value };
+            object[] testMethodParameters =  { newContractAddress.ToAddress() };
 
             var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, newContractAddress2, "Tester", testMethodParameters);
             blockTemplate = await this.AddTransactionToMemPoolAndBuildBlockAsync(context, transferContractCallData, context.txFirst[2].GetHash(), fundsToSend, gasBudget);
@@ -869,7 +869,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             context.mempool.Clear();
 
             ulong fundsToSend = 1000;
-            object[] testMethodParameters = { receiveContractAddress2.ToAddress(context.network), fundsToSend };
+            object[] testMethodParameters = { receiveContractAddress2.ToAddress(), fundsToSend };
             
             var transferContractCallData = new ContractTxData(1, gasPrice, gasLimit, receiveContractAddress1, "SendFunds", testMethodParameters);
 

@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.PoA
     /// </summary>
     public class SlotsManager
     {
-        private readonly PoANetwork network;
+        private readonly PoAConsensusOptions consensusOptions;
 
         private readonly FederationManager federationManager;
 
@@ -21,9 +21,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public SlotsManager(Network network, FederationManager federationManager, ILoggerFactory loggerFactory)
         {
-            this.network = Guard.NotNull(network as PoANetwork, nameof(network));
+            Guard.NotNull(network, nameof(network));
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
 
+            this.consensusOptions = (network as PoANetwork).ConsensusOptions;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Features.PoA
             if (!this.IsValidTimestamp(headerUnixTimestamp))
                 PoAConsensusErrors.InvalidHeaderTimestamp.Throw();
 
-            List<PubKey> keys = this.network.FederationPublicKeys;
+            List<PubKey> keys = this.consensusOptions.FederationPublicKeys;
 
             uint roundTime = this.GetRoundLengthSeconds();
 
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA
             uint roundStartTimestamp = (headerUnixTimestamp / roundTime) * roundTime;
 
             // Slot number in current round.
-            int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.network.TargetSpacingSeconds);
+            int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.consensusOptions.TargetSpacingSeconds);
 
             return keys[currentSlotNumber];
         }
@@ -59,18 +60,18 @@ namespace Stratis.Bitcoin.Features.PoA
             uint roundTime = this.GetRoundLengthSeconds();
 
             // Index of a slot that current node can take in each round.
-            uint slotIndex = (uint)this.network.FederationPublicKeys.IndexOf(this.federationManager.FederationMemberKey.PubKey);
+            uint slotIndex = (uint)this.consensusOptions.FederationPublicKeys.IndexOf(this.federationManager.FederationMemberKey.PubKey);
 
             // Time when current round started.
             uint roundStartTimestamp = (currentTime / roundTime) * roundTime;
-            uint nextTimestampForMining = roundStartTimestamp + slotIndex * this.network.TargetSpacingSeconds;
+            uint nextTimestampForMining = roundStartTimestamp + slotIndex * this.consensusOptions.TargetSpacingSeconds;
 
             // We already passed our slot in this round.
             // Get timestamp of our slot from next round.
             if (nextTimestampForMining < currentTime)
             {
                 // Get timestamp for next round.
-                nextTimestampForMining = roundStartTimestamp + roundTime + slotIndex * this.network.TargetSpacingSeconds;
+                nextTimestampForMining = roundStartTimestamp + roundTime + slotIndex * this.consensusOptions.TargetSpacingSeconds;
             }
 
             return nextTimestampForMining;
@@ -79,12 +80,12 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Determines whether timestamp is valid according to the network rules.</summary>
         public bool IsValidTimestamp(uint headerUnixTimestamp)
         {
-            return (headerUnixTimestamp % this.network.TargetSpacingSeconds) == 0;
+            return (headerUnixTimestamp % this.consensusOptions.TargetSpacingSeconds) == 0;
         }
 
         private uint GetRoundLengthSeconds()
         {
-            uint roundLength = (uint)(this.network.FederationPublicKeys.Count * this.network.TargetSpacingSeconds);
+            uint roundLength = (uint)(this.consensusOptions.FederationPublicKeys.Count * this.consensusOptions.TargetSpacingSeconds);
 
             return roundLength;
         }
