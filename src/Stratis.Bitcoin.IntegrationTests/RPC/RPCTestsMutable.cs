@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var network = new BitcoinRegTest();
-                CoreNode node = builder.CreateStratisPowNode(network).NotInIBD().WithWallet().Start();
+                CoreNode node = builder.CreateStratisPowNode(network).WithWallet().Start();
 
                 RPCClient rpcClient = node.CreateRPCClient();
 
