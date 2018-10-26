@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             try
             {
                 this.transaction = this.firstNode.FullNode.WalletTransactionHandler().BuildTransaction(this.transactionBuildContext);
-                Money transactionFee = this.firstNode.GetFee(this.transactionBuildContext);
+                Money transactionFee = this.firstNode.FullNode.WalletTransactionHandler().EstimateFee(this.transactionBuildContext);
             }
             catch (Exception e)
             {
