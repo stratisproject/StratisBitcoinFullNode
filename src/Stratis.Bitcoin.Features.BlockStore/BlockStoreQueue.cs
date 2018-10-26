@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Block block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
 
-            this.logger.LogTrace("Block was{0} found in the repository.", (block == null) ? " not" : "");
+            this.logger.LogTrace("Block '{0}' was{1} found in the repository.", blockHash, (block == null) ? " not" : "");
 
             return block;
         }
@@ -289,7 +289,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             lock (this.blocksCacheLock)
             {
-                this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+                bool added = this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+
+                if (added)
+                {
+                    this.logger.LogTrace("Block '{0}' was added to pending.", chainedHeaderBlock.ChainedHeader);
+                }
+                else
+                {
+                    this.logger.LogCritical("Unable to add block '{0}' to pending!", chainedHeaderBlock.ChainedHeader);
+                    throw new Exception("Can't add block to pending!");
+                }
             }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
