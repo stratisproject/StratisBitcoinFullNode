@@ -29,6 +29,11 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
             this.Headers.AddRange(headers);
         }
 
+        public ProvenHeadersPayload(IEnumerable<ProvenBlockHeader> headers)
+        {
+            this.Headers.AddRange(headers);
+        }
+
         /// <inheritdoc />
         public override void ReadWriteCore(BitcoinStream stream)
         {
