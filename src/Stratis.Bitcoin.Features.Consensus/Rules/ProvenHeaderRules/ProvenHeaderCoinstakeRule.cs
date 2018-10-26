@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
@@ -73,6 +74,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             this.CheckCoinstakeAgeRequirement(chainedHeader, prevUtxo);
 
             this.CheckSignature(header, prevUtxo);
+
+            this.ComputeStakeModifier((PosRuleContext)context, header, chainedHeader);
 
             this.CheckStakeKernelHash((PosRuleContext)context, prevUtxo, header, chainedHeader);
 
@@ -204,6 +207,45 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
             ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
+        }
+
+        /// <summary>
+        /// Computes the stake modifier.
+        /// </summary>
+        /// <param name="header">The proven header to be validated.</param>
+        /// <param name="previousHeader">The previous header.</param>
+        private void ComputeStakeModifier(PosRuleContext context, ProvenBlockHeader header, ChainedHeader chainedHeader)
+        {
+            uint256 previousStakeModifier = null;
+
+            int lastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
+            // We are ahead of last checkpoint so we should always have at a StakeModifier
+            if (chainedHeader.Height > lastCheckpointHeight)
+            {
+                // Compute stake modifier.
+                ChainedHeader prevChainedHeader = chainedHeader.Previous;
+                BlockStake blockStakePrev = prevChainedHeader == null ? null : this.stakeChain.Get(prevChainedHeader.HashBlock);
+                blockStake.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(prevChainedHeader, blockStakePrev?.StakeModifierV2, blockStake.IsProofOfWork() ? chainedHeader.HashBlock : blockStake.PrevoutStake.Hash);
+            }
+            else if (chainedHeader.Height == lastCheckpointHeight)
+            {
+                // Copy checkpointed stake modifier.
+                CheckpointInfo checkpoint = this.Parent.Checkpoints.GetCheckpoint(lastCheckpointHeight);
+                header.StakeModifierV2 = checkpoint.StakeModifierV2;
+                this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", header.StakeModifierV2);
+            }
+            else
+            {
+                this.Logger.LogTrace("POS stake modifier computation skipped for block at height {0} because it is not above last checkpoint block height {1}.", chainedHeader.Height, lastCheckpointHeight);
+            }
+
+
+            // If current rule context doesn't have yet a BlockStake, try to get from the store
+            context.BlockStake = context.BlockStake ?? this.PosParent.StakeChain.Get(previousHeader.HashBlock);
+
+            ChainedHeader prevChainedHeader = chainedHeader.Previous;
+            BlockStake blockStakePrev = prevChainedHeader == null ? null : this.stakeChain.Get(prevChainedHeader.HashBlock);
+            blockStake.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(prevChainedHeader, blockStakePrev?.StakeModifierV2, blockStake.IsProofOfWork() ? chainedHeader.HashBlock : blockStake.PrevoutStake.Hash);
         }
 
         /// <see cref="IStakeValidator.CheckStakeKernelHash"/>
