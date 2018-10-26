@@ -543,15 +543,18 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
-                // Mark disconnected blocks as not available.
-                // This is needed in case of large reorgs when we disconnect more than CHT.KeepBlockDataForLastBlocks blocks.
-                // In case we disconnect more than that we would expect some of disconnected blocks to be in memory and some in store,
-                // but those that are in store are reorged.
-                // Removing block data will result in redownloading blocks next time node would like to reconnect this chain.
-                foreach (ChainedHeaderBlock disconnectedBlock in disconnectedBlocks)
+                if (!isExtension)
                 {
-                    disconnectedBlock.ChainedHeader.Block = null;
-                    disconnectedBlock.ChainedHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
+                    // Mark disconnected blocks as not available.
+                    // This is needed in case of large reorgs when we disconnect more than CHT.KeepBlockDataForLastBlocks blocks.
+                    // In case we disconnect more than that we would expect some of disconnected blocks to be in memory and some in store,
+                    // but those that are in store are reorged.
+                    // Removing block data will result in redownloading blocks next time node would like to reconnect this chain.
+                    foreach (ChainedHeaderBlock disconnectedBlock in disconnectedBlocks)
+                    {
+                        disconnectedBlock.ChainedHeader.Block = null;
+                        disconnectedBlock.ChainedHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
+                    }
                 }
 
                 this.logger.LogTrace("(-)[SUCCEEDED]:'{0}'", connectBlockResult);
