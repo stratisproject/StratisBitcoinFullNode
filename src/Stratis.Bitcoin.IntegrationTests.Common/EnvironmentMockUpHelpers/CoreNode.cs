@@ -55,7 +55,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
-        private Func<ChainedHeaderBlock, bool> builderInterceptor;
+        private Func<ChainedHeaderBlock, bool> builderDisconnectInterceptor;
+        private Func<ChainedHeaderBlock, bool> builderConnectInterceptor;
+
+        private bool builderNotInIBD;
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
@@ -112,7 +115,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode BlockDisconnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
         {
-            this.builderInterceptor = interceptor;
+            this.builderDisconnectInterceptor = interceptor;
+            return this;
+        }
+
+        /// <summary>
+        /// Executes a function when a block has connected.
+        /// </summary>
+        /// <param name="interceptor">A function that is called when a block connects, it will return true if it executed.</param>
+        /// <returns>This node.</returns>
+        public CoreNode BlockConnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        {
+            this.builderConnectInterceptor = interceptor;
             return this;
         }
 
@@ -201,8 +215,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 
-                if (this.builderInterceptor != null)
-                    this.runner.Interceptor = this.builderInterceptor;
+                if (this.builderDisconnectInterceptor != null)
+                    this.runner.InterceptorDisconnect = this.builderDisconnectInterceptor;
+
+                if (this.builderConnectInterceptor != null)
+                    this.runner.InterceptorConnect = this.builderConnectInterceptor;
 
                 this.runner.BuildNode();
                 this.runner.Start();
