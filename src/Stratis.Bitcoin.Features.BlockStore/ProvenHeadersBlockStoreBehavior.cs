@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Gets or sets the height from which start serving Proven Headers, if > 0.
         /// </summary>
-        public int AnnounceProvenHeaderFromHeight { get; set; } = 0;
+        public int AnnounceProvenHeadersFromHeight { get; set; } = 0;
 
         public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
             : base(chain, chainState, loggerFactory, consensusManager)
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             var provenHeadersActivationHeight = (this.network.Consensus.Options as PosConsensusOptions).ProvenHeadersActivationHeight;
             // Ensures we don't announce ProvenHeaders before ProvenHeadersActivationHeight.
-            this.AnnounceProvenHeaderFromHeight = Math.Max(provenHeadersActivationHeight, sendProvenHeadersPayload.RequireFromHeight);
+            this.AnnounceProvenHeadersFromHeight = Math.Max(provenHeadersActivationHeight, sendProvenHeadersPayload.RequireFromHeight);
 
             return Task.CompletedTask;
         }
@@ -57,16 +57,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <returns>The <see cref="HeadersPayload"/> instance to announce to the peer, or <see cref="ProvenHeadersPayload"/> if the peers requires it.</returns>
         protected override Payload BuildAnnouncedHeaderPayload(int blockstoreTipHeight, params BlockHeader[] headers)
         {
-            if (this.AnnounceProvenHeaderFromHeight > 0 && blockstoreTipHeight >= this.AnnounceProvenHeaderFromHeight)
+            if (this.AnnounceProvenHeadersFromHeight > 0 && blockstoreTipHeight >= this.AnnounceProvenHeadersFromHeight)
             {
-                ProvenHeadersPayload provenHeadersPayload = new ProvenHeadersPayload();
-                foreach (var header in headers)
-                {
-                    var posBock = new PosBlock(header);
-                    ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBock);
-                    provenHeadersPayload.Headers.Add(provenBlockHeader);
-                }
-
                 return new ProvenHeadersPayload(
                     from header in headers
                     let posBlock = new PosBlock(header)

@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public override Task InitializeAsync()
         {
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
-            if (this.network.Consensus.Options is PosConsensusOptions)
+            if (this.network.Consensus.IsProofOfStake)
             {
                 this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager));
             }
