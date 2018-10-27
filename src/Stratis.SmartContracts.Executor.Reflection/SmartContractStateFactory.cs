@@ -11,17 +11,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private readonly ISerializer serializer;
 
         public SmartContractStateFactory(IContractPrimitiveSerializer primitiveSerializer,
-            Network network,
             IInternalExecutorFactory internalTransactionExecutorFactory,
             ISerializer serializer)
         {
             this.serializer = serializer;
             this.PrimitiveSerializer = primitiveSerializer;
-            this.Network = network;
             this.InternalTransactionExecutorFactory = internalTransactionExecutorFactory;
         }
 
-        public Network Network { get; }
         public IContractPrimitiveSerializer PrimitiveSerializer { get; }
         public IInternalExecutorFactory InternalTransactionExecutorFactory { get; }
 
@@ -34,13 +31,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             var persistentState = new PersistentState(persistenceStrategy, this.serializer, address);
 
-            var contractLogger = new MeteredContractLogger(gasMeter, state.LogHolder, this.Network, this.PrimitiveSerializer);
+            var contractLogger = new MeteredContractLogger(gasMeter, state.LogHolder, this.PrimitiveSerializer);
 
             var contractState = new SmartContractState(
                 state.Block,
                 new Message(
-                    address.ToAddress(this.Network),
-                    message.From.ToAddress(this.Network),
+                    address.ToAddress(),
+                    message.From.ToAddress(),
                     message.Amount
                 ),
                 persistentState,

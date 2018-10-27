@@ -78,6 +78,23 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             throw new FileNotFoundException($"Could not load the file {path}.");
         }
 
+        private static string GetStratisXPath(string version)
+        {
+            string path;
+
+            if (RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+                path = $"../../../../External libs/StratisX/{version}/Windows/stratisd.exe";
+            else if (RuntimeInformation.IsOSPlatform(OSPlatform.Linux))
+                path = $"../../../../External libs/StratisX/{version}/Linux/stratisd";
+            else
+                path = $"../../../../External libs/StratisX/{version}/OSX/stratisd";
+
+            if (File.Exists(path))
+                return path;
+
+            throw new FileNotFoundException($"Could not load the file {path}.");
+        }
+
         protected CoreNode CreateNode(NodeRunner runner, string configFile = "bitcoin.conf", bool useCookieAuth = false)
         {
             var node = new CoreNode(runner, this.ConfigParameters, configFile, useCookieAuth);
@@ -89,6 +106,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             string bitcoinDPath = GetBitcoinCorePath(version);
             return CreateNode(new BitcoinCoreRunner(this.GetNextDataFolderName(), bitcoinDPath), useCookieAuth: useCookieAuth);
+        }
+
+        public CoreNode CreateStratisXNode(string version = "2.0.0.5", bool useCookieAuth = false)
+        {
+            string stratisDPath = GetStratisXPath(version);
+            return CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth);
         }
 
         public CoreNode CreateStratisPowNode(Network network)

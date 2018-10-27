@@ -318,7 +318,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 send.Inventory.Add(new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), inv.Hash));
             }
 
-            if (peer.IsConnected)
+            if (peer.IsConnected && (send.Inventory.Count > 0))
             {
                 this.logger.LogTrace("Asking for transaction data from peer '{0}'.", peer.RemoteSocketEndpoint);
                 await peer.SendMessageAsync(send).ConfigureAwait(false);

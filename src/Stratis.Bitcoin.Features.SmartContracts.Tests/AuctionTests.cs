@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
@@ -9,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class AuctionTests
     {
-        private static readonly Address TestAddress = (Address)"mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn";
+        private readonly Address TestAddress;
         private TestSmartContractState smartContractState;
         private const ulong Balance = 0;
         private const ulong GasLimit = 10000;
@@ -17,6 +18,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public AuctionTests()
         {
+            var network = new SmartContractsRegTest();
+
+            this.TestAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
+
             var block = new TestBlock
             {
                 Coinbase = TestAddress,
@@ -31,7 +36,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             };
             var getBalance = new Func<ulong>(() => Balance);
             var persistentState = new TestPersistentState();
-            var network = new SmartContractsRegTest();
             var serializer = new Serializer(new ContractPrimitiveSerializer(network));
             this.smartContractState = new TestSmartContractState(
                 block,
@@ -63,11 +67,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var contract = new Auction(this.smartContractState, duration);
 
             ((TestMessage)smartContractState.Message).Value = 100;
-            Assert.Null(smartContractState.PersistentState.GetAddress("HighestBidder").Value);
+            Assert.Equal(default(Address), smartContractState.PersistentState.GetAddress("HighestBidder"));
             Assert.Equal(0uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
 
             contract.Bid();
-            Assert.NotNull(smartContractState.PersistentState.GetAddress("HighestBidder").Value);
+            Assert.Equal(TestAddress, smartContractState.PersistentState.GetAddress("HighestBidder"));
             Assert.Equal(100uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
 
             ((TestMessage)this.smartContractState.Message).Value = 90;
@@ -145,6 +149,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             throw new NotImplementedException();
         }
 
+        public byte[] GetBytes(byte[] key)
+        {
+            throw new NotImplementedException();
+        }
+
         public byte[] GetBytes(string key)
         {
             return this.GetObject<byte[]>(key);
@@ -196,6 +205,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         public T[] GetArray<T>(string key)
+        {
+            throw new NotImplementedException();
+        }
+
+        public void SetBytes(byte[] key, byte[] value)
         {
             throw new NotImplementedException();
         }

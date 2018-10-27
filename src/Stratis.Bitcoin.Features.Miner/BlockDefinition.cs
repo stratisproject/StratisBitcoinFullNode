@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                if (!this.TestPackage(packageSize, packageSigOpsCost))
+                if (!this.TestPackage(iter, packageSize, packageSigOpsCost))
                 {
                     if (fUsingModified)
                     {
@@ -471,7 +471,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Test if a new package would "fit" in the block.
         /// </summary>
-        private bool TestPackage(long packageSize, long packageSigOpsCost)
+        protected virtual bool TestPackage(TxMempoolEntry entry, long packageSize, long packageSigOpsCost)
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
             if (this.BlockWeight + this.Network.Consensus.Options.WitnessScaleFactor * packageSize >= this.Options.BlockMaxWeight)

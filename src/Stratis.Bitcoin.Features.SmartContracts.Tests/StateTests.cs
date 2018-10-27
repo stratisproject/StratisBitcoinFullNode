@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_Uses_Tracked_ContractState()
         {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
 
             IState newState = state.Snapshot();
 
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     new RawLog(null, null)
                 });
 
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
 
             IState newState = state.Snapshot();
 
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 new TransferInfo(null, null, 0)
             };
 
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, transfers, null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, transfers, null, null);
 
             IState newState = state.Snapshot();
 
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_Has_New_BalanceState()
         {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
 
             IState newState = state.Snapshot();
 
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_BalanceState_Has_Original_InitialBalance()
         {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
 
             ulong initialBalance = 123456;
             uint160 initialAddress = uint160.One;
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void State_Snapshot_Has_Original_NonceGenerator()
         {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
 
             IState newState = state.Snapshot();
 
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TransitionTo_Fails_If_New_State_Is_Not_Child()
         {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
 
             IState newState = state.Snapshot();
 
@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void TransitionTo_Updates_State_Correctly()
         {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
 
             var newTransfers = new List<TransferInfo>
             {
@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void New_State_NonceGenerator_Generates_Zero_Nonce()
         {
-            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null, null);
+            var state = new State(null, this.contractStateRoot.Object, this.contractLogHolder.Object, new List<TransferInfo>(), null, null);
             
             Assert.Equal(0UL, state.NonceGenerator.Next);
         }

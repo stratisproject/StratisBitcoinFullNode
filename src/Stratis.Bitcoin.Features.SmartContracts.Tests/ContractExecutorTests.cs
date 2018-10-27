@@ -1,5 +1,3 @@
-using System;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -59,14 +57,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.moduleDefinitionReader = new ContractModuleDefinitionReader();
             this.contractPrimitiveSerializer = new ContractPrimitiveSerializer(this.network);
             this.serializer = new Serializer(this.contractPrimitiveSerializer);
-            this.vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.network, this.assemblyLoader, this.moduleDefinitionReader);
+            this.vm = new ReflectionVirtualMachine(this.validator, this.loggerFactory, this.assemblyLoader, this.moduleDefinitionReader);
             this.stateProcessor = new StateProcessor(this.vm, this.addressGenerator);
-            this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.network, this.stateProcessor);
-            this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.network, this.internalTxExecutorFactory, this.serializer);
+            this.internalTxExecutorFactory = new InternalExecutorFactory(this.loggerFactory, this.stateProcessor);
+            this.smartContractStateFactory = new SmartContractStateFactory(this.contractPrimitiveSerializer, this.internalTxExecutorFactory, this.serializer);
             
             this.callDataSerializer = new CallDataSerializer(this.contractPrimitiveSerializer);
 
-            this.stateFactory = new StateFactory(this.network, this.smartContractStateFactory);
+            this.stateFactory = new StateFactory(this.smartContractStateFactory);
         }
 
         [Fact]
@@ -99,7 +97,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -132,7 +129,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -159,7 +155,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -191,7 +186,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -221,7 +215,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -259,7 +252,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -299,7 +291,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var gasLimit = (Gas)500_000;
 
-            object[] parameters = { address1.ToAddress(this.network).Value };
+            object[] parameters = { address1.ToAddress() };
 
             contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", parameters);
             transaction = new Transaction();
@@ -313,7 +305,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);
@@ -351,7 +342,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 this.state,
                 this.refundProcessor,
                 this.transferProcessor,
-                this.network,
                 this.stateFactory,
                 this.stateProcessor,
                 this.contractPrimitiveSerializer);

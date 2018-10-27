@@ -17,8 +17,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         }
 
         public FullNode FullNode { get; set; }
-        public Func<ChainedHeaderBlock, bool> Interceptor { get; internal set; }
+        public Func<ChainedHeaderBlock, bool> InterceptorDisconnect { get; internal set; }
+        public Func<ChainedHeaderBlock, bool> InterceptorConnect { get; internal set; }
         public Network Network { set; get; }
+        public bool OverrideDateTimeProvider { get; internal set; }
 
         protected NodeRunner(string dataDir)
         {

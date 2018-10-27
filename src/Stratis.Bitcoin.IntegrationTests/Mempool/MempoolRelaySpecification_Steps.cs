@@ -39,9 +39,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             Network regTest = KnownNetworks.RegTest;
 
-            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().WithDummyWallet().Start();
-            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
-            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).NotInIBD().Start();
+            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).WithDummyWallet().Start();
+            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).Start();
+            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).Start();
         }
 
         protected void nodeA_mines_coins_that_are_spendable()

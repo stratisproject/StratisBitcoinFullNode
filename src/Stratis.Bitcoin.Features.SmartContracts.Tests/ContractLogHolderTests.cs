@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             this.network = new SmartContractsRegTest();
             this.serializer = new ContractPrimitiveSerializer(this.network);
-            this.logHolder = new ContractLogHolder(this.network);
+            this.logHolder = new ContractLogHolder();
         }
 
         [Fact]
@@ -31,12 +31,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var contractAddress1 = new uint160(1);
             var contractAddress2 = new uint160(2);
 
-            var state1 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress1.ToAddress(this.network) }, null, null, null, null, null, null, null);
+            var state1 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress1.ToAddress() }, null, null, null, null, null, null, null);
             var log1 = new Example1("Jordan", 12345);
             var log2 = new Example1("John", 123);
 
-            var state2 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress2.ToAddress(this.network) }, null, null, null, null, null, null, null);
-            var log3 = new Example2(new Address("mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn"), 16, "This is a test message.");
+            var state2 = new TestSmartContractState(null, new TestMessage { ContractAddress = contractAddress2.ToAddress() }, null, null, null, null, null, null, null);
+            var log3 = new Example2("0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress(), 16, "This is a test message.");
 
             this.logHolder.Log(state1, log1);
             this.logHolder.Log(state1, log2);
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(contractAddress2, logs[2].Address);
             Assert.Equal(3, logs[2].Topics.Count);
             Assert.Equal(nameof(Example2), Encoding.UTF8.GetString(logs[2].Topics[0]));
-            Assert.Equal(log3.Address, new uint160(logs[2].Topics[1]).ToAddress(this.network));
+            Assert.Equal(log3.Address, new uint160(logs[2].Topics[1]).ToAddress());
             Assert.Equal(log3.Id, BitConverter.ToInt32(logs[2].Topics[2]));
         }
 

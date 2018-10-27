@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
         /// <summary>
         /// A mock feature.
         /// </summary>
-        private class FeatureA : IFullNodeFeature
+        private class FeatureBase : IFullNodeFeature
         {
             /// <inheritdoc />
             public void LoadConfiguration()
@@ -46,10 +46,19 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             }
         }
 
+        /// <inheritdoc />
         /// <summary>
         /// A mock feature.
         /// </summary>
-        private class FeatureB : FeatureA
+        private class FeatureB : FeatureBase
+        {
+        }
+
+        /// <inheritdoc />
+        /// <summary>
+        /// A mock feature.
+        /// </summary>
+        private class FeatureA : FeatureBase
         {
         }
 
@@ -73,7 +82,7 @@ namespace Stratis.Bitcoin.Tests.Builder.Feature
             {
                 features
                     .AddFeature<FeatureA>()
-                    .DependOn<FeatureB>();
+                    .DependOn<FeatureBase>();
             });
 
             builder.UsePosConsensus().Build();
