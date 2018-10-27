@@ -110,7 +110,7 @@ namespace City.Chain.Tests
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
             Assert.Equal(new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimitV2);
             Assert.Equal(new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"), network.Consensus.DefaultAssumeValid);
-            Assert.Equal(500, network.Consensus.CoinbaseMaturity);
+            Assert.Equal(50, network.Consensus.CoinbaseMaturity);
             Assert.Equal(Money.Coins(13736000000), network.Consensus.PremineReward);
             Assert.Equal(2, network.Consensus.PremineHeight);
             Assert.Equal(Money.Coins(2), network.Consensus.ProofOfWorkReward);

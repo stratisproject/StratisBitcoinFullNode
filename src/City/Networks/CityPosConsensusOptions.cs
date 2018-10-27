@@ -29,7 +29,7 @@ namespace City
                 return height < CityCoinstakeMinConfirmationActivationHeightTestnet ? 10 : 20;
             }
 
-            // The coinstake confirmation minimum should be 50 until activation at height 5 million (~347 days).
+            // The coinstake confirmation minimum should be 50 until activation at height 500K (~347 days).
             return height < CityCoinstakeMinConfirmationActivationHeightMainnet ? 50 : 500;
         }
     }
