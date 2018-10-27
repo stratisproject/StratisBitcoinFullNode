@@ -31,7 +31,7 @@ namespace City.Networks
             this.RPCPort = 4334;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
-            this.FallbackFee = 60000;
+            this.FallbackFee = 10000;
             this.MinRelayTxFee = 10000;
             this.RootFolderName = CityRootFolderName;
             this.DefaultConfigFilename = CityDefaultConfigFilename;
@@ -71,7 +71,7 @@ namespace City.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray();
+            var bip9Deployments = new CityBIP9Deployments();
 
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
@@ -90,7 +90,7 @@ namespace City.Networks
                 maxReorgLength: 500,
                 defaultAssumeValid: new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"),
                 maxMoney: long.MaxValue,
-                coinbaseMaturity: 500,
+                coinbaseMaturity: 50,
                 premineHeight: 2,
                 premineReward: Money.Coins(13736000000),
                 proofOfWorkReward: Money.Coins(2), // Produced up until last POW block.
@@ -101,7 +101,7 @@ namespace City.Networks
                 powLimit: new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: null,
                 isProofOfStake: true,
-                lastPowBlock: 125000,
+                lastPowBlock: 12500,
                 proofOfStakeLimit: new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeLimitV2: new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)),
                 proofOfStakeReward: Money.Coins(20)

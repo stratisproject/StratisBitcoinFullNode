@@ -38,7 +38,9 @@ namespace Stratis.SmartContracts.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5
+                maxStandardTxSigopsCost: 20_000 / 5,
+                federationPublicKeys: this.ConsensusOptions.FederationPublicKeys,
+                targetSpacingSeconds: this.ConsensusOptions.TargetSpacingSeconds
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -48,7 +50,7 @@ namespace Stratis.SmartContracts.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray();
+            var bip9Deployments = new NoBIP9Deployments();
 
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,

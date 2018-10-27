@@ -65,7 +65,7 @@ namespace City.Chain.Tests
             Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(CityMain.CityDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
-            Assert.Equal(60000, network.FallbackFee);
+            Assert.Equal(10000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
             Assert.Equal("CITY", network.CoinTicker);
 
@@ -103,9 +103,7 @@ namespace City.Chain.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
+            Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(1926, network.Consensus.CoinType);
@@ -236,7 +234,7 @@ namespace City.Chain.Tests
             Assert.Equal(CityMain.CityMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(CityMain.CityDefaultMaxTipAgeInSeconds, network.MaxTipAge);
             Assert.Equal(10000, network.MinTxFee);
-            Assert.Equal(60000, network.FallbackFee);
+            Assert.Equal(10000, network.FallbackFee);
             Assert.Equal(10000, network.MinRelayTxFee);
             Assert.Equal("TCITY", network.CoinTicker);
 
@@ -274,9 +272,7 @@ namespace City.Chain.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
+            Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(1926, network.Consensus.CoinType);
@@ -353,9 +349,7 @@ namespace City.Chain.Tests
             Assert.True(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
+            Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
             Assert.Equal(125000, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(1926, network.Consensus.CoinType);

@@ -60,7 +60,7 @@ namespace City.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray();
+            var bip9Deployments = new CityBIP9Deployments();
 
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,

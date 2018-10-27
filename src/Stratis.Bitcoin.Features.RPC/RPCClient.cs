@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             if (!string.IsNullOrEmpty(home))
             {
-                string bitcoinFolder = Path.Combine(home,  "." + network.Name.ToLower());
+                string bitcoinFolder = Path.Combine(home, "." + network.Name.ToLower());
 
                 if (network.IsRegTest())
                 {
@@ -402,8 +402,6 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         /// <summary>Get the a whole block.</summary>
-        /// <param name="blockId"></param>
-        /// <returns></returns>
         public async Task<RPCBlock> GetRPCBlockAsync(uint256 blockId)
         {
             RPCResponse resp = await SendCommandAsync(RPCOperations.getblock, blockId.ToString(), false).ConfigureAwait(false);
@@ -412,8 +410,6 @@ namespace Stratis.Bitcoin.Features.RPC
 
         /// <summary>Send a command.</summary>
         /// <param name="commandName">https://en.bitcoin.it/wiki/Original_Bitcoin_client/API_calls_list</param>
-        /// <param name="parameters"></param>
-        /// <returns></returns>
         public RPCResponse SendCommand(string commandName, params object[] parameters)
         {
             return SendCommand(new RPCRequest(commandName, parameters));

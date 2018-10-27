@@ -20,18 +20,18 @@ public class CallContract : SmartContract
         }
     }
 
-    public bool CallOther(string addressString)
+    public bool CallOther(Address address)
     {
 
-        ITransferResult result = Call(new Address(addressString), 100, "IncrementCount");
+        ITransferResult result = Call(address, 100, "IncrementCount");
 
         return result.Success;
     }
 
-    public bool Tester(string addressString)
+    public bool Tester(Address address)
     {
         Test = "Not Initial!";
-        ITransferResult result = Call(new Address(addressString), 0, "Callback");
+        ITransferResult result = Call(address, 0, "Callback");
         return (bool)result.ReturnValue;
     }
 

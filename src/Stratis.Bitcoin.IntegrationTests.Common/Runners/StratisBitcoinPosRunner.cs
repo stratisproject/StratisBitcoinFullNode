@@ -33,8 +33,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .AddPowPosMining()
                 .AddRPC()
                 .UseApi()
-                .MockIBD()
-                .SubstituteDateTimeProviderFor<MiningFeature>();
+                .MockIBD();
+
+            if (this.OverrideDateTimeProvider)
+                builder.OverrideDateTimeProviderFor<MiningFeature>();
 
             if (this.Interceptor != null)
                 builder = builder.InterceptBlockDisconnected(this.Interceptor);

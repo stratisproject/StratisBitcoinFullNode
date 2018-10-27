@@ -12,16 +12,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
         private readonly ILogger logger;
         private readonly ILoggerFactory loggerFactory;
-        private readonly Network network;
         private readonly IState state;
         private readonly IStateProcessor stateProcessor;
 
-        public InternalExecutor(ILoggerFactory loggerFactory, Network network, IState state,
+        public InternalExecutor(ILoggerFactory loggerFactory, IState state,
             IStateProcessor stateProcessor)
         {
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType());
-            this.network = network;
             this.state = state;
             this.stateProcessor = stateProcessor;
         }
@@ -37,11 +35,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
             ulong gasBudget = (gasLimit != 0) ? gasLimit : gasRemaining;
 
+            Debug.WriteLine("Gas budget:" + gasBudget);
+
             if (gasRemaining < gasBudget || gasRemaining < GasPriceList.BaseCost)
                 return CreateResult.Failed();
 
             var message = new InternalCreateMessage(
-                smartContractState.Message.ContractAddress.ToUint160(this.network),
+                smartContractState.Message.ContractAddress.ToUint160(),
                 amountToTransfer,
                 (Gas) gasBudget,
                 parameters,
@@ -61,7 +61,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             smartContractState.GasMeter.Spend(result.GasConsumed);
 
             return result.IsSuccess
-                ? CreateResult.Succeeded(result.Success.ContractAddress.ToAddress(this.network))
+                ? CreateResult.Succeeded(result.Success.ContractAddress.ToAddress())
                 : CreateResult.Failed();
         }
 
@@ -83,8 +83,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return TransferResult.Failed();
 
             var message = new InternalCallMessage(
-                addressTo.ToUint160(this.network),
-                smartContractState.Message.ContractAddress.ToUint160(this.network),
+                addressTo.ToUint160(),
+                smartContractState.Message.ContractAddress.ToUint160(),
                 amountToTransfer,
                 (Gas) gasBudget,
                 new MethodCall(methodName, parameters)
@@ -118,8 +118,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 return TransferResult.Failed();
 
             var message = new ContractTransferMessage(
-                addressTo.ToUint160(this.network),
-                smartContractState.Message.ContractAddress.ToUint160(this.network),
+                addressTo.ToUint160(),
+                smartContractState.Message.ContractAddress.ToUint160(),
                 amountToTransfer,
                 (Gas) gasBudget
             );
