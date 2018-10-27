@@ -372,9 +372,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                // Prevent mining if not fully synced.
-                if (this.initialBlockDownloadState.IsInitialBlockDownload() ||
-                    this.consensusManager.Tip != this.chain.Tip)
+                // Prevent staking if not in initial block download.
+                if (this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started.");
 
@@ -382,12 +381,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                ChainedHeader chainTip = this.chain.Tip;
-                if (chainTip != this.consensusManager.Tip)
-                {
-                    this.logger.LogTrace("(-)[SYNC_OR_REORG]");
-                    return;
-                }
+                ChainedHeader chainTip = this.consensusManager.Tip;
 
                 if (this.lastCoinStakeSearchPrevBlockHash != chainTip.HashBlock)
                 {
