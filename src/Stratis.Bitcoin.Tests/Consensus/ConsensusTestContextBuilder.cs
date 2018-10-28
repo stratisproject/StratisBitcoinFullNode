@@ -12,11 +12,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.testContext = new TestContext();
         }
 
-        public TestContextBuilder(Network network)
-        {
-            this.testContext = new TestContext(network);
-        }
-
         internal TestContextBuilder WithInitialChain(int initialChainSize, bool assignBlocks = true)
         {
             if (initialChainSize < 0)

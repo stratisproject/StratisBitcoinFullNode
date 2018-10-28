@@ -40,129 +40,88 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public Network Network;
 
-        // public Mock<IChainState> ChainState = new Mock<IChainState>();
         internal ChainedHeaderTree ChainedHeaderTree;
-
-        // private Mock<IFinalizedBlockInfo> finalizedBlockInfo;
-        // private Mock<INodeStats> nodeStats;
         private INodeStats nodeStats;
         private Mock<IInitialBlockDownloadState> ibd;
         public readonly Mock<IBlockPuller> BlockPuller;
         public readonly Mock<IBlockStore> BlockStore;
-        // public Mock<ICheckpoints> Checkpoints = new Mock<ICheckpoints>();
-        // private ICheckpoints checkpoints;
         private Mock<ICheckpoints> checkpoints = new Mock<ICheckpoints>();
-
         public TestConsensusManager ConsensusManager;
-        // public readonly Mock<IConsensusRuleEngine> ConsensusRulesEngine = new Mock<IConsensusRuleEngine>();
         public Mock<IFinalizedBlockInfoRepository> FinalizedBlockMock = new Mock<IFinalizedBlockInfoRepository>();
-
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;
         public Mock<IIntegrityValidator> IntegrityValidator = new Mock<IIntegrityValidator>();
         public readonly Mock<IPartialValidator> PartialValidator;
         public readonly Mock<IFullValidator> FullValidator;
         public BlockPuller.OnBlockDownloadedCallback blockPullerBlockDownloadCallback;
-        // public readonly Mock<IPeerBanning> PeerBanning = new Mock<IPeerBanning>();
         private IPeerBanning peerBanning;
         private IConnectionManager connectionManager;
-
         private static int nonceValue;
-
-        // public Mock<ISignals> Signals = new Mock<ISignals>();
         private ConcurrentChain chain;
-        // private ExtendedLoggerFactory extendedLoggerFactory;
         private DateTimeProvider dateTimeProvider;
         private InvalidBlockHashStore hashStore;
         private NodeSettings nodeSettings;
         private ILoggerFactory loggerFactory;
         private IRuleRegistration ruleRegistration;
-
-        // todo: merge
-        public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));
-        private ConsensusSettings consensusSettings;
+        public ConsensusSettings ConsensusSettings;
         private INetworkPeerFactory networkPeerFactory;
         public Mock<IChainState> ChainState;
-
         private readonly IConsensusRuleEngine consensusRules;
-        public readonly TestInMemoryCoinView coinView;
-        // private readonly IConsensusRuleEngine powConsensusRulesEngine;
+        public readonly TestInMemoryCoinView coinView;       
         private NodeDeployments deployments;
         private ISelfEndpointTracker selfEndpointTracker;
         private INodeLifetime nodeLifetime;
 
         private PeerAddressManager peerAddressManager;
 
-        public TestContext() : this(KnownNetworks.RegTest)
+        public TestContext()
         {
-        }
-
-        public TestContext(Network network)
-        {
-            this.Network = network;
+            this.Network = KnownNetworks.RegTest;
 
             this.chain = new ConcurrentChain(this.Network);
-            // this.extendedLoggerFactory = new ExtendedLoggerFactory();
             this.dateTimeProvider = new DateTimeProvider();
             this.hashStore = new InvalidBlockHashStore(this.dateTimeProvider);
 
-            // todo:merge
-            //  new Mock<ICoinView>().Object
             this.coinView = new TestInMemoryCoinView(this.chain.Tip.HashBlock);
             this.HeaderValidator = new Mock<IHeaderValidator>();
             this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
 
-            this.nodeLifetime = new NodeLifetime();
-            // this.nodeStats = new Mock<INodeStats>();
+            this.nodeLifetime = new NodeLifetime();            
             this.ibd = new Mock<IInitialBlockDownloadState>();
             this.BlockPuller = new Mock<IBlockPuller>();
 
             this.BlockPuller.Setup(b => b.Initialize(It.IsAny<BlockPuller.OnBlockDownloadedCallback>()))
                 .Callback<BlockPuller.OnBlockDownloadedCallback>((d) => { this.blockPullerBlockDownloadCallback = d; });
             this.BlockStore = new Mock<IBlockStore>();
-            // this.checkpoints = new Checkpoints();
             this.checkpoints = new Mock<ICheckpoints>();
-            // this.chainState = new ChainState();
             this.ChainState = new Mock<IChainState>();
             this.nodeStats = new NodeStats(this.dateTimeProvider);
 
 
             string[] param = new string[] { };
             this.nodeSettings = new NodeSettings(this.Network, args: param);
+            this.ConsensusSettings = new ConsensusSettings(this.nodeSettings);
 
-
-            // if (loggerFactory == null)
             this.loggerFactory = this.nodeSettings.LoggerFactory;
-            // if (dateTimeProvider == null)
-            //     dateTimeProvider = DateTimeProvider.Default;
 
             this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory);
-            this.ChainedHeaderTree = new ChainedHeaderTree(
-              this.Network,
-              this.loggerFactory,
-              this.HeaderValidator.Object,
-              // this.Checkpoints.Object,
-              this.checkpoints.Object,
-              // this.ChainState.Object,
-              this.ChainState.Object,
-              this.FinalizedBlockMock.Object,
-              this.ConsensusSettings,
-              this.hashStore);
-
             this.Network.Consensus.Options = new ConsensusOptions();
 
             this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
             this.ruleRegistration.RegisterRules(this.Network.Consensus);
 
             // Dont check PoW of a header in this test.
-            this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
+            this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));            
 
-            this.consensusSettings = new ConsensusSettings(this.nodeSettings);
-
-            // if (chain == null)
-            //     chain = new ConcurrentChain(network);
-
-            // inMemoryCoinView = new InMemoryCoinView(chain.Tip.HashBlock);
+            this.ChainedHeaderTree = new ChainedHeaderTree(
+                  this.Network,
+                  this.loggerFactory,
+                  this.HeaderValidator.Object,
+                  this.checkpoints.Object,
+                  this.ChainState.Object,
+                  this.FinalizedBlockMock.Object,
+                  this.ConsensusSettings,
+                  this.hashStore);
 
             this.networkPeerFactory = new NetworkPeerFactory(this.Network,
                 this.dateTimeProvider,
@@ -179,35 +138,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.nodeLifetime, new NetworkPeerConnectionParameters(), this.peerAddressManager, new IPeerConnector[] { },
                 peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats);
 
-
-            // this.chainState = new ChainState();
-
-
-            // todo: merge
-
             this.deployments = new NodeDeployments(this.Network, this.chain);
-
-            // this.powConsensusRulesEngine = new PowConsensusRuleEngine(this.Network, this.extendedLoggerFactory, this.dateTimeProvider, this.chain,
-            //     new NodeDeployments(this.Network, this.chain), this.ConsensusSettings, this.Checkpoints.Object, this.coinView,
-            //     this.ChainState.Object, this.hashStore, new NodeStats(this.dateTimeProvider));
 
             this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chain, this.deployments, this.ConsensusSettings,
                      this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats);
 
             this.consensusRules.Register();
-            // this.powConsensusRulesEngine.Register();
 
-            // new HeaderValidator(this.consensusRules, this.loggerFactory)
             var tree = new ChainedHeaderTree(this.Network, this.loggerFactory, this.HeaderValidator.Object, this.checkpoints.Object,
-                this.ChainState.Object, this.FinalizedBlockMock.Object, this.consensusSettings, this.hashStore);
-
-
-            // new PartialValidator(powConsensusRulesEngine, loggerFactory)
-            // new FullValidator(powConsensusRulesEngine, loggerFactory)
-
-
-            // this.PartialValidation = new PartialValidator(this.consensusRules, this.loggerFactory);
-            // this.FullValidation = new FullValidator(this.consensusRules, this.loggerFactory);
+                this.ChainState.Object, this.FinalizedBlockMock.Object, this.ConsensusSettings, this.hashStore);
 
             this.PartialValidator = new Mock<IPartialValidator>();
             this.FullValidator = new Mock<IFullValidator>();
@@ -218,7 +157,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.IntegrityValidator.Setup(i => i.VerifyBlockIntegrity(It.IsAny<ChainedHeader>(), It.IsAny<Block>()))
                 .Returns(new ValidationContext());
 
-            // new IntegrityValidator(this.consensusRules, this.loggerFactory)
             this.ConsensusManager = new TestConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
                 this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(), this.peerBanning, this.ibd.Object, this.chain,
@@ -239,12 +177,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             return block;
         }
-
-        // private IConsensusManager CreateConsensusManager()
-        // {
-        //     this.ConsensusManager = ConsensusManagerHelper.CreateConsensusManager(this.Network);
-        //     return this.ConsensusManager;
-        // }
 
         internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
         {

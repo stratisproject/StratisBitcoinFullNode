@@ -112,6 +112,25 @@ namespace Stratis.Bitcoin.Consensus
             INodeStats nodeStats,
             INodeLifetime nodeLifetime)
         {
+            Guard.NotNull(chainedHeaderTree, nameof(chainedHeaderTree));
+            Guard.NotNull(network, nameof(network));
+            Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(chainState, nameof(chainState));
+            Guard.NotNull(integrityValidator, nameof(integrityValidator));
+            Guard.NotNull(partialValidator, nameof(partialValidator));
+            Guard.NotNull(fullValidator, nameof(fullValidator));
+            Guard.NotNull(consensusRules, nameof(consensusRules));
+            Guard.NotNull(finalizedBlockInfo, nameof(finalizedBlockInfo));
+            Guard.NotNull(signals, nameof(signals));
+            Guard.NotNull(peerBanning, nameof(peerBanning));
+            Guard.NotNull(ibdState, nameof(ibdState));
+            Guard.NotNull(chain, nameof(chain));
+            Guard.NotNull(blockPuller, nameof(blockPuller));
+            Guard.NotNull(blockStore, nameof(blockStore));
+            Guard.NotNull(connectionManager, nameof(connectionManager));
+            Guard.NotNull(nodeStats, nameof(nodeStats));
+            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+
             this.network = network;
             this.chainState = chainState;
             this.integrityValidator = integrityValidator;
@@ -157,6 +176,8 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         public async Task InitializeAsync(ChainedHeader chainTip)
         {
+            Guard.NotNull(chainTip, nameof(chainTip));
+
             // TODO: consensus store
             // We should consider creating a consensus store class that will internally contain
             // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
@@ -193,6 +214,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public ConnectNewHeadersResult HeadersPresented(INetworkPeer peer, List<BlockHeader> headers, bool triggerDownload = true)
         {
+            Guard.NotNull(peer, nameof(peer));
+            Guard.NotNull(headers, nameof(headers));
+
             ConnectNewHeadersResult connectNewHeadersResult;
 
             lock (this.peerLock)
@@ -1017,6 +1041,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public async Task GetOrDownloadBlocksAsync(List<uint256> blockHashes, OnBlockDownloadedCallback onBlockDownloadedCallback)
         {
+            Guard.NotNull(blockHashes, nameof(blockHashes));
+            Guard.NotNull(onBlockDownloadedCallback, nameof(onBlockDownloadedCallback));
+
             var blocksToDownload = new List<ChainedHeader>();
 
             foreach (uint256 blockHash in blockHashes)
@@ -1049,6 +1076,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public async Task<ChainedHeaderBlock> GetBlockDataAsync(uint256 blockHash)
         {
+            Guard.NotNull(blockHash, nameof(blockHash));
+
             ChainedHeaderBlock chainedHeaderBlock;
 
             lock (this.peerLock)

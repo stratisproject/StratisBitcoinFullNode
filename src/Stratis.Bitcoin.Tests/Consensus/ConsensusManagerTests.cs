@@ -15,30 +15,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
 {
     public class ConsensusManagerTests
     {
-        // https://github.com/stratisproject/StratisBitcoinFullNode/issues/1937
-
-        [Fact(Skip = "To be finished")]
-        public void BlockMined_PartialValidationOnly_Succeeded_Consensus_TipUpdated()
-        {
-            TestContext builder = new TestContextBuilder().WithInitialChain(10).BuildOnly();
-            ChainedHeader chainTip = builder.InitialChainTip;
-
-            // builder.ConsensusRulesEngine.Setup(c => c.GetBlockHashAsync()).Returns(Task.FromResult(chainTip.HashBlock));
-            builder.coinView.UpdateTipHash(chainTip.Header.GetHash());
-            builder.ConsensusManager.InitializeAsync(chainTip).GetAwaiter().GetResult();
-
-            var minedBlock = builder.CreateBlock(chainTip);
-            var result = builder.ConsensusManager.BlockMinedAsync(minedBlock).GetAwaiter().GetResult();
-            Xunit.Assert.NotNull(result);
-            Xunit.Assert.Equal(minedBlock.GetHash(), builder.ConsensusManager.Tip.HashBlock);
-        }
-
-
         [Fact]
         public void HeadersPresented_NewHeaders_ProducesExpectedBlocks()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10);
-            TestContext builder = contextBuilder.Build();
+            TestContext builder = GetBuildTestContext(10);
 
             builder.SetupAverageBlockSize(200);
             builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
@@ -59,8 +39,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact(Skip = "Does not work. Needs to been reviewed if possible to fix or test case is incorrect.")]
         public void HeadersPresented_NewHeaders_BlockSizeTotalHigherThanMaxUnconsumedBlocksDataBytes_UnexpectedlyBiggerBlocksThanAverage_LimitsDownloadedBlocks()
         {
-            var contextBuilder = new TestContextBuilder().UseCheckpoints(false).WithInitialChain(10);
-            TestContext builder = contextBuilder.Build();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false);
 
             builder.SetupAverageBlockSize(200);
             builder.ConsensusManager.SetMaxUnconsumedBlocksDataBytes(1000);
@@ -84,8 +63,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void HeadersPresented_NewHeaders_BlockSizeTotalHigherThanMaxUnconsumedBlocksDataBytes_LimitsDownloadedBlocks()
         {
-            var contextBuilder = new TestContextBuilder().UseCheckpoints(false).WithInitialChain(10);
-            TestContext builder = contextBuilder.Build();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false);
 
             builder.SetupAverageBlockSize(200);
             builder.ConsensusManager.SetMaxUnconsumedBlocksDataBytes(1000);
@@ -109,10 +87,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void HeadersPresented_DownloadBlocks_ReturnsCorrectHeaderResult()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(10, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 10);
@@ -128,10 +103,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void HeadersPresented_NoTriggerDownload_ReturnsCorrectHeaderResult()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(10, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 10);
@@ -148,10 +120,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ProcessDownloadedBlock_PartialValidationCalledWhenBlockImmediatelyAfterTip()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
@@ -168,10 +137,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ProcessDownloadedBlock_PartialValidationNotCalledWhenBlockNotImmediatelyAfterTip()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(2, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 2).ToList();
@@ -188,10 +154,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDownloaded_CallbackRegisteredForHash_UnknownHeader_BlockNotExpected_ThrowsInvalidOperationException()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
@@ -216,10 +179,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDownloaded_CallbackRegisteredForHash_KnownHeader_BlockExpected_CallbackNotRegistered_CallbackNotCalled()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
@@ -247,17 +207,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDownloaded_CallbackRegisteredForHash_KnownHeader_NotBlockExpected_ThrowsInvalidOperationException()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
             var peer = builder.GetNetworkPeerWithConnection();
 
-
-            // todo: either load and clear or not load at all.
             var result = builder.ConsensusManager.HeadersPresented(peer.Object, headerTree, true);
             builder.ConsensusManager.ClearExpectedBlockSizes();
 
@@ -278,10 +233,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDownloaded_CallbackRegisteredForHash_KnownHeader_BlockExpected_CallbackRegistered_CallbackCalled()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
@@ -306,10 +258,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDownloaded_KnownHeader_BlockIntegrityInvalidated_BansPeer_DoesNotCallCallback()
         {
-            var contextBuilder = new TestContextBuilder(KnownNetworks.StratisMain).WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
@@ -344,10 +293,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDownloaded_ExpectedBlockDataBytesCalculatedCorrectly()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             builder.SetupAverageBlockSize(100);
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip, avgBlockSize: 100);
@@ -380,10 +326,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockDownloaded_NullBlock_CallsCallbacks()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(10).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(2, builder.InitialChainTip);
             var headerTree = builder.ChainedHeaderToList(additionalHeaders, 2);
@@ -428,8 +371,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetBlockDataAsync_ChainedHeaderBlockNotInCT_ReturnsNull()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false);
 
             var result = builder.ConsensusManager.GetBlockDataAsync(new uint256(234)).GetAwaiter().GetResult();
 
@@ -439,10 +381,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetBlockDataAsync_ChainedHeaderBlockInCT_HasBlock_ReturnsBlock()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var result = builder.ConsensusManager.GetBlockDataAsync(builder.InitialChainTip.HashBlock).GetAwaiter().GetResult();
 
@@ -455,8 +394,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetBlockDataAsync_ChainedHeaderBlockInCT_HasNoBlock_BlockInBlockStore_ReturnsBlockFromBlockStore()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false);
 
             var initialChainTipBlock = builder.InitialChainTip.Block;
             builder.InitialChainTip.Block = null;
@@ -479,8 +417,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetBlockDataAsync_ChainedHeaderBlockInCT_HasNoBlock_BlockNotInBlockStore_ReturnsChainedHeaderBlockFromCT()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false);
 
             builder.InitialChainTip.Block = null;
             builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
@@ -503,18 +440,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetOrDownloadBlocksAsync_ChainedHeaderBlockNotInCT_CallsBlockDownloadedCallbackForBlock_BlocksNotDownloaded()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-            var blockHashes = new List<uint256>()
-             {
-                builder.InitialChainTip.HashBlock
-             };
-
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false);
 
             var callbackCalled = false;
             ChainedHeaderBlock calledWith = null;
             var blockDownloadedCallback = new Bitcoin.Consensus.OnBlockDownloadedCallback(d => { callbackCalled = true; calledWith = d; });
 
+            var blockHashes = new List<uint256>()
+             {
+                builder.InitialChainTip.HashBlock
+             };
             builder.ConsensusManager.GetOrDownloadBlocksAsync(blockHashes, blockDownloadedCallback).GetAwaiter().GetResult();
 
             Assert.True(callbackCalled);
@@ -525,12 +460,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetOrDownloadBlocksAsync_ChainedHeaderBlockInCTWithoutBlock_DoesNotCallBlockDownloadedCallbackForBlock_BlockDownloaded()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false);
             var blockHashes = new List<uint256>()
-             {
+            {
                 builder.InitialChainTip.HashBlock
-             };
+            };
 
             builder.InitialChainTip.Block = null;
             builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
@@ -549,18 +483,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetOrDownloadBlocksAsync_ChainedHeaderBlockInCTWithBlock_CallsBlockDownloadedCallbackForBlock_BlockNotDownloaded()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-            var blockHashes = new List<uint256>()
-             {
-                builder.InitialChainTip.HashBlock
-             };
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip : true);
 
             var callbackCalled = false;
             ChainedHeaderBlock calledWith = null;
             var blockDownloadedCallback = new Bitcoin.Consensus.OnBlockDownloadedCallback(d => { callbackCalled = true; calledWith = d; });
+
+            var blockHashes = new List<uint256>()
+             {
+                builder.InitialChainTip.HashBlock
+             };
 
             builder.ConsensusManager.GetOrDownloadBlocksAsync(blockHashes, blockDownloadedCallback).GetAwaiter().GetResult();
 
@@ -575,10 +507,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockMinedAsync_InvalidPreviousTip_ReturnsNull()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(2, builder.InitialChainTip);
 
@@ -591,11 +520,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockMinedAsync_CorrectPreviousTip_PartialValidationError_ThrowsConsensusException()
         {
-
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
 
@@ -612,11 +537,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockMinedAsync_CorrectPreviousTip_NoPartialValidationError_FullValidationNotRequired_ThrowsConsensusException()
         {
-
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             builder.InitialChainTip.BlockValidationState = ValidationState.HeaderValidated;
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip, validationState: ValidationState.FullyValidated);
@@ -634,10 +555,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockMinedAsync_CorrectPreviousTip_NoPartialValidationError_FullValidationRequired_PassesValidation_ReturnsChainedHeaderToValidate()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
 
@@ -662,10 +580,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void BlockMinedAsync_CorrectPreviousTip_NoPartialValidationError_FullValidationRequired_DoesNotPassFullValidation_ThrowsConsensusException()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
 
@@ -688,10 +603,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void OnPartialValidationCompletedCallbackAsync_PartialValidationFails_BansPeer()
         {
-            var contextBuilder = new TestContextBuilder().WithInitialChain(3);
-            TestContext builder = contextBuilder.Build();
-
-            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             builder.InitialChainTip.BlockValidationState = ValidationState.PartiallyValidated;
             var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
@@ -713,7 +625,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 });
 
-            builder.blockPullerBlockDownloadCallback(additionalHeaders.HashBlock, additionalHeaders.Block, peer.Object.Connection.Id);           
+            builder.blockPullerBlockDownloadCallback(additionalHeaders.HashBlock, additionalHeaders.Block, peer.Object.Connection.Id);
 
             builder.AssertPeerBanned(peer.Object);
         }
@@ -726,6 +638,26 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 // checks it exists and is expectedsize at the same time.
                 Assert.Equal(expectedSize, blockSize[hash]);
             }
+        }
+
+        private static TestContext GetBuildTestContext(int initialChainAmount, bool? useCheckpoints = false, bool initializeWithChainTip = false)
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(initialChainAmount);
+
+            if (useCheckpoints.HasValue)
+            {
+                contextBuilder = contextBuilder.UseCheckpoints(useCheckpoints.Value);
+            }
+
+            var builder = contextBuilder.Build();
+
+
+            if (initializeWithChainTip)
+            {
+                builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+            }
+
+            return builder;
         }
     }
 }
