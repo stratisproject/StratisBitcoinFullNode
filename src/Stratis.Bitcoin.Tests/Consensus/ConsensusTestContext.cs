@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         private PeerAddressManager peerAddressManager;
 
-        public TestContext() : this( KnownNetworks.RegTest)
+        public TestContext() : this(KnownNetworks.RegTest)
         {
         }
 
@@ -305,7 +305,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
                 if (assignBlocks)
                 {
-                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();                    
+                    block.Header.Bits = header.Bits;
+                    block.Header.HashPrevBlock = header.HashPrevBlock;
+                    block.Header.Nonce = header.Nonce;
+
                     block.GetSerializedSize();
 
                     if (avgBlockSize.HasValue)
@@ -412,6 +416,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             networkPeer.Setup(n => n.RemoteSocketPort)
                 .Returns(9999);
 
+            networkPeer.Setup(n => n.RemoteSocketEndpoint)
+                .Returns(new System.Net.IPEndPoint(IPAddress.Loopback.EnsureIPv6(), 9999));
+
             networkPeer.Setup(n => n.State)
                 .Returns(NetworkPeerState.Connected);
 
@@ -420,7 +427,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 .Returns(behavior.Object);
 
             this.peerAddressManager.AddPeer(networkPeer.Object.PeerEndPoint, networkPeer.Object.PeerEndPoint.Address);
-            this.connectionManager.AddConnectedPeer(networkPeer.Object);            
+            this.connectionManager.AddConnectedPeer(networkPeer.Object);
 
             return networkPeer;
         }

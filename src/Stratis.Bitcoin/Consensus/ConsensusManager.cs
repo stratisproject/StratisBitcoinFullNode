@@ -230,6 +230,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public async Task<ChainedHeader> BlockMinedAsync(Block block)
         {
+            Guard.NotNull(block, nameof(block));
+
             ValidationContext validationContext;
 
             using (await this.reorgLock.LockAsync().ConfigureAwait(false))

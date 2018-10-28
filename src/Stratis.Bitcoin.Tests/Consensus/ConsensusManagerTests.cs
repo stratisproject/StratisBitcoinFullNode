@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         [Fact]
-        public void HeadersPresented_DownloadHeaders_ReturnsCorrectHeaderResult()
+        public void HeadersPresented_DownloadBlocks_ReturnsCorrectHeaderResult()
         {
             var contextBuilder = new TestContextBuilder().WithInitialChain(10);
             TestContext builder = contextBuilder.Build();
@@ -555,7 +555,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
              {
                 builder.InitialChainTip.HashBlock
              };
-            
+
             builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
 
             var callbackCalled = false;
@@ -563,7 +563,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var blockDownloadedCallback = new Bitcoin.Consensus.OnBlockDownloadedCallback(d => { callbackCalled = true; calledWith = d; });
 
             builder.ConsensusManager.GetOrDownloadBlocksAsync(blockHashes, blockDownloadedCallback).GetAwaiter().GetResult();
-            
+
             Assert.True(callbackCalled);
             Assert.NotNull(calledWith);
             Assert.IsType<ChainedHeaderBlock>(calledWith);
@@ -571,6 +571,150 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(builder.InitialChainTip, calledWith.ChainedHeader);
             builder.BlockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(0));
         }
+
+        [Fact]
+        public void BlockMinedAsync_InvalidPreviousTip_ReturnsNull()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var additionalHeaders = builder.ExtendAChain(2, builder.InitialChainTip);
+
+            var result = builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult();
+
+            Assert.Null(result);
+        }
+
+
+        [Fact]
+        public void BlockMinedAsync_CorrectPreviousTip_PartialValidationError_ThrowsConsensusException()
+        {
+
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
+
+            builder.PartialValidator.Setup(p => p.ValidateAsync(It.Is<ChainedHeader>(c => c.Block == additionalHeaders.Block), additionalHeaders.Block))
+                .ReturnsAsync(new Bitcoin.Consensus.ValidationContext()
+                {
+                    Error = Bitcoin.Consensus.ConsensusErrors.BadBlockSignature
+                });
+
+            Assert.Throws<Bitcoin.Consensus.ConsensusException>(() => builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult());
+        }
+
+        [Fact]
+        public void BlockMinedAsync_CorrectPreviousTip_NoPartialValidationError_FullValidationNotRequired_ThrowsConsensusException()
+        {
+
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            builder.InitialChainTip.BlockValidationState = ValidationState.HeaderValidated;
+            var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip, validationState: ValidationState.FullyValidated);
+
+            builder.PartialValidator.Setup(p => p.ValidateAsync(It.Is<ChainedHeader>(c => c.Block == additionalHeaders.Block), additionalHeaders.Block))
+                .ReturnsAsync(new Bitcoin.Consensus.ValidationContext()
+                {
+                    ChainedHeaderToValidate = additionalHeaders
+                });
+
+            Assert.Throws<Bitcoin.Consensus.ConsensusException>(() => builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult());
+        }
+
+        [Fact]
+        public void BlockMinedAsync_CorrectPreviousTip_NoPartialValidationError_FullValidationRequired_PassesValidation_ReturnsChainedHeaderToValidate()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
+
+            builder.PartialValidator.Setup(p => p.ValidateAsync(It.Is<ChainedHeader>(c => c.Block == additionalHeaders.Block), additionalHeaders.Block))
+                .ReturnsAsync(new Bitcoin.Consensus.ValidationContext()
+                {
+                    ChainedHeaderToValidate = additionalHeaders
+                });
+
+            builder.FullValidator.Setup(p => p.ValidateAsync(It.Is<ChainedHeader>(c => c.Block == additionalHeaders.Block), additionalHeaders.Block))
+                .ReturnsAsync(new Bitcoin.Consensus.ValidationContext()
+                {
+                    ChainedHeaderToValidate = additionalHeaders
+                });
+
+            var result = builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult();
+
+            Assert.Equal(additionalHeaders, result);
+            Assert.Equal(additionalHeaders, builder.ConsensusManager.Tip);
+        }
+
+        [Fact]
+        public void BlockMinedAsync_CorrectPreviousTip_NoPartialValidationError_FullValidationRequired_DoesNotPassFullValidation_ThrowsConsensusException()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
+
+            builder.PartialValidator.Setup(p => p.ValidateAsync(It.Is<ChainedHeader>(c => c.Block == additionalHeaders.Block), additionalHeaders.Block))
+                .ReturnsAsync(new Bitcoin.Consensus.ValidationContext()
+                {
+                    ChainedHeaderToValidate = additionalHeaders
+                });
+            builder.FullValidator.Setup(p => p.ValidateAsync(It.Is<ChainedHeader>(c => c.Block == additionalHeaders.Block), additionalHeaders.Block))
+                .ReturnsAsync(new Bitcoin.Consensus.ValidationContext()
+                {
+                    Error = Bitcoin.Consensus.ConsensusErrors.BadBlockSignature
+                });
+
+            Assert.Throws<Bitcoin.Consensus.ConsensusException>(() => builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult());
+        }
+
+
+        [Fact]
+        public void OnPartialValidationCompletedCallbackAsync_PartialValidationFails_BansPeer()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            builder.InitialChainTip.BlockValidationState = ValidationState.PartiallyValidated;
+            var additionalHeaders = builder.ExtendAChain(1, builder.InitialChainTip);
+            var headerTree = builder.ChainedHeaderToList(additionalHeaders, 1);
+            var peer = builder.GetNetworkPeerWithConnection();
+
+            var result = builder.ConsensusManager.HeadersPresented(peer.Object, headerTree, true);
+
+            builder.PartialValidator.Setup(p => p.StartPartialValidation(It.IsAny<ChainedHeader>(), It.IsAny<Block>(), It.IsAny<OnPartialValidationCompletedAsyncCallback>()))
+                .Callback<ChainedHeader, Block, OnPartialValidationCompletedAsyncCallback>((header, block, callback) =>
+                {
+                    callback(new Bitcoin.Consensus.ValidationContext()
+                    {
+                        BanDurationSeconds = 3000,
+                        BlockToValidate = block,
+                        ChainedHeaderToValidate = header,
+                        Error = Bitcoin.Consensus.ConsensusErrors.BadTransactionScriptError
+                    });
+
+                });
+
+            builder.blockPullerBlockDownloadCallback(additionalHeaders.HashBlock, additionalHeaders.Block, peer.Object.Connection.Id);           
+
+            builder.AssertPeerBanned(peer.Object);
+        }
+
 
         private static void AssertBlockSizes(Dictionary<uint256, long> blockSize, List<uint256> expectedBlocks, int expectedSize)
         {
