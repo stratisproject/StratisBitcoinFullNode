@@ -606,6 +606,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 });
 
             Assert.Throws<Bitcoin.Consensus.ConsensusException>(() => builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult());
+            Assert.Equal(builder.InitialChainTip, builder.ConsensusManager.Tip);
         }
 
         [Fact]
@@ -627,6 +628,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 });
 
             Assert.Throws<Bitcoin.Consensus.ConsensusException>(() => builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult());
+            Assert.Equal(builder.InitialChainTip, builder.ConsensusManager.Tip);
         }
 
         [Fact]
@@ -679,6 +681,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 });
 
             Assert.Throws<Bitcoin.Consensus.ConsensusException>(() => builder.ConsensusManager.BlockMinedAsync(additionalHeaders.Block).GetAwaiter().GetResult());
+            Assert.Equal(builder.InitialChainTip, builder.ConsensusManager.Tip);
         }
 
 
