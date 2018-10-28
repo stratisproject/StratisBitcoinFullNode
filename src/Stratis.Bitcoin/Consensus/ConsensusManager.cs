@@ -318,7 +318,6 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                     this.logger.LogDebug("Node is shutting down therefore underlying components won't be updated.");
-
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
@@ -407,7 +406,7 @@ namespace Stratis.Bitcoin.Consensus
                         chainedHeaderBlocksToValidate = this.chainedHeaderTree.PartialValidationSucceeded(chainedHeader, out fullValidationRequired);
                     }
 
-                    this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? "" : " NOT");
+                    this.logger.LogTrace("Full validation is{0} required.", fullValidationRequired ? string.Empty : " NOT");
 
                     if (fullValidationRequired)
                     {
@@ -1111,7 +1110,7 @@ namespace Stratis.Bitcoin.Consensus
                 long freeBytes = this.MaxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.ExpectedBlockDataBytes;
                 this.logger.LogTrace("{0} bytes worth of blocks is available for download.", freeBytes);
 
-                if (freeBytes <= ConsumptionThresholdBytes)
+                if (freeBytes <= this.ConsumptionThresholdBytes)
                 {
                     this.logger.LogTrace("(-)[THRESHOLD_NOT_MET]");
                     return;
@@ -1214,12 +1213,12 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                string unconsumedBlocks = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
+                string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
-                string unconsumedBytes = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
-                string maxUnconsumedBytes = this.formatBigNumber(MaxUnconsumedBlocksDataBytes);
+                string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
+                string maxUnconsumedBytes = this.FormatBigNumber(this.MaxUnconsumedBlocksDataBytes);
 
-                double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)MaxUnconsumedBlocksDataBytes) * 100, 2);
+                double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.MaxUnconsumedBlocksDataBytes) * 100, 2);
 
                 log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
             }
@@ -1227,7 +1226,7 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Formats the big number.</summary>
         /// <remarks><c>123456789</c> => <c>123 456 789</c></remarks>
-        private string formatBigNumber(long number)
+        private string FormatBigNumber(long number)
         {
             string temp = number.ToString("N").Replace(',', ' ');
 

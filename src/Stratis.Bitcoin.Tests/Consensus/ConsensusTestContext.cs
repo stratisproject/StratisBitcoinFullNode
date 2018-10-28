@@ -47,8 +47,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         // private Mock<INodeStats> nodeStats;
         private INodeStats nodeStats;
         private Mock<IInitialBlockDownloadState> ibd;
-        private Mock<IBlockPuller> blockPuller;
-        private Mock<IBlockStore> blockStore;
+        public readonly Mock<IBlockPuller> BlockPuller;
+        public readonly Mock<IBlockStore> BlockStore;
         // public Mock<ICheckpoints> Checkpoints = new Mock<ICheckpoints>();
         // private ICheckpoints checkpoints;
         private Mock<ICheckpoints> checkpoints = new Mock<ICheckpoints>();
@@ -115,11 +115,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.nodeLifetime = new NodeLifetime();
             // this.nodeStats = new Mock<INodeStats>();
             this.ibd = new Mock<IInitialBlockDownloadState>();
-            this.blockPuller = new Mock<IBlockPuller>();
+            this.BlockPuller = new Mock<IBlockPuller>();
 
-            this.blockPuller.Setup(b => b.Initialize(It.IsAny<BlockPuller.OnBlockDownloadedCallback>()))
+            this.BlockPuller.Setup(b => b.Initialize(It.IsAny<BlockPuller.OnBlockDownloadedCallback>()))
                 .Callback<BlockPuller.OnBlockDownloadedCallback>((d) => { this.blockPullerBlockDownloadCallback = d; });
-            this.blockStore = new Mock<IBlockStore>();
+            this.BlockStore = new Mock<IBlockStore>();
             // this.checkpoints = new Checkpoints();
             this.checkpoints = new Mock<ICheckpoints>();
             // this.chainState = new ChainState();
@@ -222,7 +222,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.ConsensusManager = new TestConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
                 this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(), this.peerBanning, this.ibd.Object, this.chain,
-                this.blockPuller.Object, this.blockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime);
+                this.BlockPuller.Object, this.BlockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime);
         }
 
         public Block CreateBlock(ChainedHeader previous)
@@ -374,14 +374,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         internal void SetupAverageBlockSize(int amount)
         {
-            this.blockPuller.Setup(b => b.GetAverageBlockSizeBytes())
+            this.BlockPuller.Setup(b => b.GetAverageBlockSizeBytes())
                 .Returns(amount);
         }
 
 
         internal void VerifyNoBlocksAskedToBlockPuller()
         {
-            this.blockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(0));
+            this.BlockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(0));
         }
 
         internal void AssertPeerBanned(INetworkPeer peer)

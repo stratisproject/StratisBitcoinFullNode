@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using NBitcoin.Crypto;
@@ -424,6 +425,152 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Null(calledWith3);
         }
 
+        [Fact]
+        public void GetBlockDataAsync_ChainedHeaderBlockNotInCT_ReturnsNull()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            var result = builder.ConsensusManager.GetBlockDataAsync(new uint256(234)).GetAwaiter().GetResult();
+
+            Assert.Null(result);
+        }
+
+        [Fact]
+        public void GetBlockDataAsync_ChainedHeaderBlockInCT_HasBlock_ReturnsBlock()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var result = builder.ConsensusManager.GetBlockDataAsync(builder.InitialChainTip.HashBlock).GetAwaiter().GetResult();
+
+            Assert.NotNull(result);
+            Assert.IsType<ChainedHeaderBlock>(result);
+            Assert.Equal(builder.InitialChainTip.Block, result.Block);
+            Assert.Equal(builder.InitialChainTip, result.ChainedHeader);
+        }
+
+        [Fact]
+        public void GetBlockDataAsync_ChainedHeaderBlockInCT_HasNoBlock_BlockInBlockStore_ReturnsBlockFromBlockStore()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            var initialChainTipBlock = builder.InitialChainTip.Block;
+            builder.InitialChainTip.Block = null;
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            builder.BlockStore.Setup(g => g.GetBlockAsync(builder.InitialChainTip.HashBlock))
+             .ReturnsAsync(() =>
+             {
+                 return initialChainTipBlock;
+             });
+
+            var result = builder.ConsensusManager.GetBlockDataAsync(builder.InitialChainTip.HashBlock).GetAwaiter().GetResult();
+
+            Assert.NotNull(result);
+            Assert.IsType<ChainedHeaderBlock>(result);
+            Assert.Equal(initialChainTipBlock, result.Block);
+            Assert.Equal(builder.InitialChainTip, result.ChainedHeader);
+        }
+
+        [Fact]
+        public void GetBlockDataAsync_ChainedHeaderBlockInCT_HasNoBlock_BlockNotInBlockStore_ReturnsChainedHeaderBlockFromCT()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+
+            builder.InitialChainTip.Block = null;
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            builder.BlockStore.Setup(g => g.GetBlockAsync(builder.InitialChainTip.HashBlock))
+                .ReturnsAsync(() =>
+                {
+                    return null;
+                });
+
+            var result = builder.ConsensusManager.GetBlockDataAsync(builder.InitialChainTip.HashBlock).GetAwaiter().GetResult();
+
+            Assert.NotNull(result);
+            Assert.IsType<ChainedHeaderBlock>(result);
+            Assert.Null(result.Block);
+            Assert.Equal(builder.InitialChainTip, result.ChainedHeader);
+        }
+
+
+        [Fact]
+        public void GetOrDownloadBlocksAsync_ChainedHeaderBlockNotInCT_CallsBlockDownloadedCallbackForBlock_BlocksNotDownloaded()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+            var blockHashes = new List<uint256>()
+             {
+                builder.InitialChainTip.HashBlock
+             };
+
+
+            var callbackCalled = false;
+            ChainedHeaderBlock calledWith = null;
+            var blockDownloadedCallback = new Bitcoin.Consensus.OnBlockDownloadedCallback(d => { callbackCalled = true; calledWith = d; });
+
+            builder.ConsensusManager.GetOrDownloadBlocksAsync(blockHashes, blockDownloadedCallback).GetAwaiter().GetResult();
+
+            Assert.True(callbackCalled);
+            Assert.Null(calledWith);
+            builder.BlockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(0));
+        }
+
+        [Fact]
+        public void GetOrDownloadBlocksAsync_ChainedHeaderBlockInCTWithoutBlock_DoesNotCallBlockDownloadedCallbackForBlock_BlockDownloaded()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+            var blockHashes = new List<uint256>()
+             {
+                builder.InitialChainTip.HashBlock
+             };
+
+            builder.InitialChainTip.Block = null;
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var callbackCalled = false;
+            ChainedHeaderBlock calledWith = null;
+            var blockDownloadedCallback = new Bitcoin.Consensus.OnBlockDownloadedCallback(d => { callbackCalled = true; calledWith = d; });
+
+            builder.ConsensusManager.GetOrDownloadBlocksAsync(blockHashes, blockDownloadedCallback).GetAwaiter().GetResult();
+
+            Assert.True(builder.ConsensusManager.CallbacksByBlocksRequestedHashContainsKeyForHash(builder.InitialChainTip.HashBlock));
+            Assert.False(callbackCalled);
+            builder.BlockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(1));
+        }
+
+        [Fact]
+        public void GetOrDownloadBlocksAsync_ChainedHeaderBlockInCTWithBlock_CallsBlockDownloadedCallbackForBlock_BlockNotDownloaded()
+        {
+            var contextBuilder = new TestContextBuilder().WithInitialChain(3).UseCheckpoints(false);
+            TestContext builder = contextBuilder.Build();
+            var blockHashes = new List<uint256>()
+             {
+                builder.InitialChainTip.HashBlock
+             };
+            
+            builder.ConsensusManager.InitializeAsync(builder.InitialChainTip).GetAwaiter().GetResult();
+
+            var callbackCalled = false;
+            ChainedHeaderBlock calledWith = null;
+            var blockDownloadedCallback = new Bitcoin.Consensus.OnBlockDownloadedCallback(d => { callbackCalled = true; calledWith = d; });
+
+            builder.ConsensusManager.GetOrDownloadBlocksAsync(blockHashes, blockDownloadedCallback).GetAwaiter().GetResult();
+            
+            Assert.True(callbackCalled);
+            Assert.NotNull(calledWith);
+            Assert.IsType<ChainedHeaderBlock>(calledWith);
+            Assert.Equal(builder.InitialChainTip.Block, calledWith.Block);
+            Assert.Equal(builder.InitialChainTip, calledWith.ChainedHeader);
+            builder.BlockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(0));
+        }
 
         private static void AssertBlockSizes(Dictionary<uint256, long> blockSize, List<uint256> expectedBlocks, int expectedSize)
         {
