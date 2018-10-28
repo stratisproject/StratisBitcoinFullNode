@@ -1,4 +1,5 @@
 ﻿using System;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
@@ -9,6 +10,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public TestContextBuilder()
         {
             this.testContext = new TestContext();
+        }
+
+        public TestContextBuilder(Network network)
+        {
+            this.testContext = new TestContext(network);
         }
 
         internal TestContextBuilder WithInitialChain(int initialChainSize, bool assignBlocks = true)

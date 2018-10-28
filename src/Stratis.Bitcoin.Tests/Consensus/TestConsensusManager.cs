@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
@@ -53,6 +55,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
             return base.ExpectedBlockDataBytes;
         }
 
+        public void SetExpectedBlockDataBytes(long val)
+        {
+            base.ExpectedBlockDataBytes = val;
+        }
+
         public Dictionary<uint256, long> GetExpectedBlockSizes()
         {
             return base.ExpectedBlockSizes;
@@ -63,6 +70,31 @@ namespace Stratis.Bitcoin.Tests.Consensus
             base.MaxUnconsumedBlocksDataBytes = newSize;
         }
 
+        public void SetupCallbackByBlocksRequestedHash(uint256 hash, params OnBlockDownloadedCallback[] callbacks)
+        {
+            if (base.CallbacksByBlocksRequestedHash.ContainsKey(hash))
+            {
+                base.CallbacksByBlocksRequestedHash[hash] = callbacks.ToList();
+            }
+            else
+            {
+                base.CallbacksByBlocksRequestedHash.Add(hash, callbacks.ToList());
+            }
+        }
 
+        public bool CallbacksByBlocksRequestedHashContainsKeyForHash(uint256 hash)
+        {
+            return base.CallbacksByBlocksRequestedHash.ContainsKey(hash);
+        }
+
+        public void AddExpectedBlockSize(uint256 key, long size)
+        {
+            base.ExpectedBlockSizes.Add(key, size);
+        }
+
+        public void ClearExpectedBlockSizes()
+        {
+            base.ExpectedBlockSizes.Clear();
+        }
     }
 }

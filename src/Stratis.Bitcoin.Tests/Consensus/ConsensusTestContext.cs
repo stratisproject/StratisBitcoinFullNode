@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
 using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
@@ -37,7 +38,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
     {
         public Mock<IHeaderValidator> HeaderValidator { get; }
 
-        public Network Network = KnownNetworks.RegTest;
+        public Network Network;
 
         // public Mock<IChainState> ChainState = new Mock<IChainState>();
         internal ChainedHeaderTree ChainedHeaderTree;
@@ -90,8 +91,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private ISelfEndpointTracker selfEndpointTracker;
         private INodeLifetime nodeLifetime;
 
-        public TestContext()
+        private PeerAddressManager peerAddressManager;
+
+        public TestContext() : this( KnownNetworks.RegTest)
         {
+        }
+
+        public TestContext(Network network)
+        {
+            this.Network = network;
+
             this.chain = new ConcurrentChain(this.Network);
             // this.extendedLoggerFactory = new ExtendedLoggerFactory();
             this.dateTimeProvider = new DateTimeProvider();
@@ -162,12 +171,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.ibd.Object,
                 new ConnectionManagerSettings(this.nodeSettings));
 
-            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory, this.selfEndpointTracker);
-            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, peerAddressManager);
+            this.peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, this.nodeSettings.DataFolder, this.loggerFactory, this.selfEndpointTracker);
+            var peerDiscovery = new PeerDiscovery(new AsyncLoopFactory(this.loggerFactory), this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeLifetime, this.nodeSettings, this.peerAddressManager);
             var connectionSettings = new ConnectionManagerSettings(this.nodeSettings);
 
             this.connectionManager = new ConnectionManager(this.dateTimeProvider, this.loggerFactory, this.Network, this.networkPeerFactory, this.nodeSettings,
-                this.nodeLifetime, new NetworkPeerConnectionParameters(), peerAddressManager, new IPeerConnector[] { },
+                this.nodeLifetime, new NetworkPeerConnectionParameters(), this.peerAddressManager, new IPeerConnector[] { },
                 peerDiscovery, this.selfEndpointTracker, connectionSettings, new VersionProvider(), this.nodeStats);
 
 
@@ -204,9 +213,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.FullValidator = new Mock<IFullValidator>();
 
 
-            this.peerBanning = new PeerBanning(this.connectionManager, this.loggerFactory, this.dateTimeProvider, peerAddressManager);
+            this.peerBanning = new PeerBanning(this.connectionManager, this.loggerFactory, this.dateTimeProvider, this.peerAddressManager);
 
-            this.ConsensusManager = new TestConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, new IntegrityValidator(this.consensusRules, this.loggerFactory),
+            this.IntegrityValidator.Setup(i => i.VerifyBlockIntegrity(It.IsAny<ChainedHeader>(), It.IsAny<Block>()))
+                .Returns(new ValidationContext());
+
+            // new IntegrityValidator(this.consensusRules, this.loggerFactory)
+            this.ConsensusManager = new TestConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
                 this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(), this.peerBanning, this.ibd.Object, this.chain,
                 this.blockPuller.Object, this.blockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime);
@@ -371,6 +384,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.blockPuller.Verify(b => b.RequestBlocksDownload(It.IsAny<List<ChainedHeader>>(), It.IsAny<bool>()), Times.Exactly(0));
         }
 
+        internal void AssertPeerBanned(INetworkPeer peer)
+        {
+            Assert.True(this.peerBanning.IsBanned(peer.PeerEndPoint));
+        }
+
+        internal void AssertExpectedBlockSizesEmpty()
+        {
+            Assert.Empty(this.ConsensusManager.GetExpectedBlockSizes());
+        }
+
 
         internal Mock<INetworkPeer> GetNetworkPeerWithConnection()
         {
@@ -380,6 +403,24 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.dateTimeProvider, this.loggerFactory, new PayloadProvider().DiscoverPayloads());
             networkPeer.Setup(n => n.Connection)
                 .Returns(connection);
+
+            networkPeer.Setup(n => n.PeerEndPoint)
+                .Returns(new System.Net.IPEndPoint(IPAddress.Loopback, 9999));
+
+            networkPeer.Setup(n => n.RemoteSocketAddress)
+                .Returns(IPAddress.Loopback.EnsureIPv6());
+            networkPeer.Setup(n => n.RemoteSocketPort)
+                .Returns(9999);
+
+            networkPeer.Setup(n => n.State)
+                .Returns(NetworkPeerState.Connected);
+
+            var behavior = new Mock<IConnectionManagerBehavior>();
+            networkPeer.Setup(n => n.Behavior<IConnectionManagerBehavior>())
+                .Returns(behavior.Object);
+
+            this.peerAddressManager.AddPeer(networkPeer.Object.PeerEndPoint, networkPeer.Object.PeerEndPoint.Address);
+            this.connectionManager.AddConnectedPeer(networkPeer.Object);            
 
             return networkPeer;
         }

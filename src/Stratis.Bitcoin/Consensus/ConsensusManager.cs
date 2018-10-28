@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public IConsensusRuleEngine ConsensusRules { get; private set; }
 
-        private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> callbacksByBlocksRequestedHash;
+        protected readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> CallbacksByBlocksRequestedHash;
 
         /// <summary>Peers mapped by their ID.</summary>
         /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Consensus
             IPartialValidator partialValidator,
             IFullValidator fullValidator,
             IConsensusRuleEngine consensusRules,
-            IFinalizedBlockInfoRepository finalizedBlockInfo,            
+            IFinalizedBlockInfoRepository finalizedBlockInfo,
             ISignals signals,
             IPeerBanning peerBanning,
             IInitialBlockDownloadState ibdState,
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Consensus
             this.ExpectedBlockDataBytes = 0;
             this.ExpectedBlockSizes = new Dictionary<uint256, long>();
 
-            this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
+            this.CallbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
             this.PeersByPeerId = new Dictionary<int, INetworkPeer>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
             this.performanceCounter = new ConsensusManagerPerformanceCounter();
@@ -861,7 +861,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Request a list of block headers to download their respective blocks.
         /// If <paramref name="chainedHeaders"/> is not an array of consecutive headers it will be split to batches of consecutive header requests.
-        /// Callbacks of all entries are added to <see cref="callbacksByBlocksRequestedHash"/>. If a block header was already requested
+        /// Callbacks of all entries are added to <see cref="CallbacksByBlocksRequestedHash"/>. If a block header was already requested
         /// to download and not delivered yet, it will not be requested again, instead just it's callback will be called when the block arrives.
         /// </summary>
         /// <param name="chainedHeaders">Array of chained headers to download.</param>
@@ -877,12 +877,12 @@ namespace Stratis.Bitcoin.Consensus
             {
                 foreach (ChainedHeader chainedHeader in chainedHeaders)
                 {
-                    bool blockAlreadyAsked = this.callbacksByBlocksRequestedHash.TryGetValue(chainedHeader.HashBlock, out List<OnBlockDownloadedCallback> callbacks);
+                    bool blockAlreadyAsked = this.CallbacksByBlocksRequestedHash.TryGetValue(chainedHeader.HashBlock, out List<OnBlockDownloadedCallback> callbacks);
 
                     if (!blockAlreadyAsked)
                     {
                         callbacks = new List<OnBlockDownloadedCallback>();
-                        this.callbacksByBlocksRequestedHash.Add(chainedHeader.HashBlock, callbacks);
+                        this.CallbacksByBlocksRequestedHash.Add(chainedHeader.HashBlock, callbacks);
                     }
                     else
                     {
@@ -996,8 +996,8 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.blockRequestedLock)
             {
-                if (this.callbacksByBlocksRequestedHash.TryGetValue(blockHash, out listOfCallbacks))
-                    this.callbacksByBlocksRequestedHash.Remove(blockHash);
+                if (this.CallbacksByBlocksRequestedHash.TryGetValue(blockHash, out listOfCallbacks))
+                    this.CallbacksByBlocksRequestedHash.Remove(blockHash);
             }
 
             if (listOfCallbacks != null)
