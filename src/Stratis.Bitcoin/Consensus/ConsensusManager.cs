@@ -981,7 +981,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         lock (this.blockRequestedLock)
                         {
-                            this.callbacksByBlocksRequestedHash.Remove(blockHash);
+                            this.CallbacksByBlocksRequestedHash.Remove(blockHash);
                         }
 
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
