@@ -815,7 +815,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                         var contextInformation = new PosRuleContext(BlockStake.Load(block));
 
-                        this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+                        var validKernel = this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+
+                        if (!validKernel)
+                        {
+                            continue;
+                        }
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
@@ -843,9 +848,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     catch (ConsensusErrorException cex)
                     {
                         context.Logger.LogTrace("Checking kernel failed with exception: {0}.", cex.Message);
-                        if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
-                            continue;
-
                         stopWork = true;
                     }
 

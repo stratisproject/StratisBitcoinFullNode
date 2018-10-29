@@ -353,13 +353,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
             this.stakeValidator
                 .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<BlockStake>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()))
-                .Throws(new ConsensusErrorException(ConsensusErrors.StakeHashInvalidTarget));
+                .Returns(false);
 
             // When we run the validation rule, we should hit stake hash invalid target error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.StakeHashInvalidTarget);
+                .Should().Be(ConsensusErrors.BadMerkleRoot);
         }
 
         [Fact]

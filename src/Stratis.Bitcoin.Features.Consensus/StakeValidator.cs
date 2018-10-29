@@ -232,7 +232,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
+        public bool CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
         {
             FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
@@ -262,11 +262,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadStakeBlock.Throw();
             }
 
-            this.CheckStakeKernelHash(context, headerBits, prevBlockStake, prevUtxo, prevout, (uint)transactionTime);
+            return this.CheckStakeKernelHash(context, headerBits, prevBlockStake, prevUtxo, prevout, (uint)transactionTime);
         }
 
         /// <inheritdoc/>
-        public void CheckStakeKernelHash(PosRuleContext context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
+        public bool CheckStakeKernelHash(PosRuleContext context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
             OutPoint prevout, uint transactionTime)
         {
             if (transactionTime < stakingCoins.Time)
@@ -314,8 +314,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (hashProofOfStakeTarget.CompareTo(weightedTarget) > 0)
             {
                 this.logger.LogTrace("(-)[TARGET_MISSED]");
-                ConsensusErrors.StakeHashInvalidTarget.Throw();
+                return false;
             }
+
+            return true;
         }
 
         /// <inheritdoc/>
