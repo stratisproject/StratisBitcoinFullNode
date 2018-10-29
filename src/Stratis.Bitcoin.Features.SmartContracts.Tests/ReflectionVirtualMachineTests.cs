@@ -11,7 +11,6 @@ using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
 using Xunit;
 using Block = Stratis.SmartContracts.Block;
 using InternalHashHelper = Stratis.SmartContracts.Core.Hashing.InternalHashHelper;
-using Message = Stratis.SmartContracts.Core.Message;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
