@@ -316,7 +316,6 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                     this.logger.LogDebug("Node is shutting down therefore underlying components won't be updated.");
-
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
@@ -554,6 +553,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         disconnectedBlock.ChainedHeader.Block = null;
                         disconnectedBlock.ChainedHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
+                        disconnectedBlock.ChainedHeader.BlockValidationState = ValidationState.HeaderValidated;
                     }
                 }
 

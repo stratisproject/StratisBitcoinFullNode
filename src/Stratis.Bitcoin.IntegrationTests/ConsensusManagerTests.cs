@@ -428,5 +428,42 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 10);
             }
         }
+
+        [Fact]
+        public void ConsensusManager_Fork_Of_100_Blocks_Occurs_Node_Reorgs_And_Resyncs_ToBestHeight()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork).Start();
+
+                // MinerA mines to height 10.
+                TestHelper.MineBlocks(minerA, 10);
+
+                // Sync the network to height 10.
+                TestHelper.ConnectAndSync(syncer, minerA, minerB);
+
+                TestHelper.DisableBlockPropagation(syncer, minerA);
+                TestHelper.DisableBlockPropagation(syncer, minerB);
+
+                // Miner A mines 105 blocks.
+                TestHelper.MineBlocks(minerA, 105);
+                TestHelper.WaitForNodeToSync(syncer, minerA);
+
+                //TestHelper.EnableBlockPropagation(minerA, minerB);
+
+                // Miner B continues mines 110 blocks to a longer chain.
+                TestHelper.MineBlocks(minerB, 110);
+                TestHelper.WaitForNodeToSync(syncer, minerB);
+
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitForNodeToSync(syncer, minerA);
+
+                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 125);
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 125);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 120);
+            }
+        }
     }
 }
