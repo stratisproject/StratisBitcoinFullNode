@@ -138,24 +138,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network), "stratis.conf");
         }
 
-        public CoreNode CreateSmartContractPoANode()
-        {
-            Network network = new SmartContractsPoARegTest();
-            return CreateNode(new SmartContractPoARunner(this.GetNextDataFolderName(), network), "stratis.conf");
-        }
-
-        public CoreNode CreateSmartContractPowNode()
-        {
-            Network network = new SmartContractsRegTest();
-            return CreateNode(new StratisSmartContractNode(this.GetNextDataFolderName(), network), "stratis.conf");
-        }
-
-        public CoreNode CreateSmartContractPosNode()
-        {
-            Network network = new SmartContractPosRegTest();
-            return CreateNode(new StratisSmartContractPosNode(this.GetNextDataFolderName(), network), "stratis.conf");
-        }
-
         public CoreNode CloneStratisNode(CoreNode cloneNode)
         {
             var node = new CoreNode(new StratisBitcoinPowRunner(cloneNode.FullNode.Settings.DataFolder.RootPath, cloneNode.FullNode.Network), this.ConfigParameters, "bitcoin.conf");
