@@ -111,9 +111,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPosNode(this.posNetwork).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork).Start();
 
                 // MinerA mines to height 10.
                 TestHelper.MineBlocks(minerA, 10);
@@ -409,11 +409,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var syncerNetwork = new BitcoinOverrideRegTest();
-
                 var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPowNode(syncerNetwork);
+                var syncer = builder.CreateStratisPowNode(this.powNetwork);
 
                 void flushCondition(IServiceCollection services)
                 {

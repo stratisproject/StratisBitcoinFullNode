@@ -13,6 +13,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
         /// <param name="serviceToOverride">Callback routine that will override a given service.</param>
+        /// <typeparam name="T">The feature that the service will be replaced in.</typeparam>
         /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder OverrideService<T>(this IFullNodeBuilder fullNodeBuilder, Action<IServiceCollection> serviceToOverride)
         {
