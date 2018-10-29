@@ -405,7 +405,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void Reorg_To_Longest_Chain_Without_Failed_Chain()
+        public void ConsensusManager_Reorg_To_Longest_Chain_Multiple_Times_Without_Invalid_Blocks()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
