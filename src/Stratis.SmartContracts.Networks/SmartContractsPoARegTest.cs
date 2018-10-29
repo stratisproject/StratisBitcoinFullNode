@@ -6,6 +6,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 
 namespace Stratis.SmartContracts.Networks
@@ -32,7 +33,7 @@ namespace Stratis.SmartContracts.Networks
             this.GenesisReward = Money.Zero;
 
             Block genesisBlock = CreatePoAGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-
+            ((SmartContractPoABlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856"); // Set StateRoot to empty trie.
             this.Genesis = genesisBlock;
 
             this.FederationKeys = new Key[]

@@ -110,6 +110,13 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             this.chain.WaitForAllNodesToSync();
         }
 
+        public void WaitForBlocksToBeMined(int amount)
+        {
+            int currentHeight = this.CoreNode.GetTip().Height;
+            TestHelper.WaitLoop(() => this.CoreNode.GetTip().Height >= currentHeight + 1);
+            this.chain.WaitForAllNodesToSync();
+        }
+
         /// <summary>
         /// Get an unused address that can be used to send funds to this node.
         /// </summary>
@@ -129,7 +136,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 MinConfirmations = 1,
                 FeeType = FeeType.Medium,
                 WalletPassword = this.Password,
-                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList()
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList(),
+                ChangeAddress = this.MinerAddress // yes this is unconventional, but helps us to keep the balance on the same addresses
             };
 
             Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
