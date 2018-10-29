@@ -47,6 +47,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
+        private readonly IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition;
+
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
 
@@ -81,19 +83,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
+            IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition,
             StoreSettings storeSettings,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             INodeStats nodeStats)
         {
+            Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(storeSettings, nameof(storeSettings));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
+            this.blockStoreQueueFlushCondition = blockStoreQueueFlushCondition;
+            this.chain = chain;
             this.chainState = chainState;
             this.storeSettings = storeSettings;
-            this.chain = chain;
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.blocksCacheLock = new object();
@@ -289,16 +294,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             lock (this.blocksCacheLock)
             {
-                bool added = this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
-
-                if (added)
+                ChainedHeaderBlock existing = null;
+                this.pendingBlocksCache.TryGetValue(chainedHeaderBlock.ChainedHeader.HashBlock, out existing);
+                if (existing == null)
                 {
+                    this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
                     this.logger.LogTrace("Block '{0}' was added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
                 else
                 {
-                    this.logger.LogCritical("Unable to add block '{0}' to pending!", chainedHeaderBlock.ChainedHeader);
-                    throw new Exception("Can't add block to pending!");
+                    // If the chained header block already exists, we need to remove it and add to the back of the collection.
+                    this.pendingBlocksCache.Remove(existing.ChainedHeader.HashBlock);
+                    this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+                    this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
             }
 
@@ -353,7 +361,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
-                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
+                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.blockStoreQueueFlushCondition.ShouldFlush;
                 }
                 else
                 {

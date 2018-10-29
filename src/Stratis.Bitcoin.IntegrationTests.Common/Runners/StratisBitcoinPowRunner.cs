@@ -23,17 +23,21 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
 
-            this.FullNode = (FullNode)new FullNodeBuilder()
-                .UseNodeSettings(settings)
-                .UseBlockStore()
-                .UsePowConsensus()
-                .UseMempool()
-                .AddMining()
-                .UseWallet()
-                .AddRPC()
-                .UseApi()
-                .MockIBD()
-                .Build();
+            var builder = new FullNodeBuilder()
+                        .UseNodeSettings(settings)
+                        .UseBlockStore()
+                        .UsePowConsensus()
+                        .UseMempool()
+                        .AddMining()
+                        .UseWallet()
+                        .AddRPC()
+                        .UseApi()
+                        .MockIBD();
+
+            if (this.ServiceToOverride != null)
+                builder.OverrideService<BlockStoreFeature>(this.ServiceToOverride);
+
+            this.FullNode = (FullNode)builder.Build();
         }
     }
 }
