@@ -1,17 +1,13 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Text;
 using FluentAssertions;
 using NSubstitute;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 using Stratis.Sidechains.Networks;
 using Xunit;
-
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -92,6 +88,24 @@ namespace Stratis.FederatedPeg.Tests
             opReturnDataType.Should().Be(OpReturnDataType.Hash);
             var expectedString = new uint256(opReturnBytes).ToString();
             opReturnString.Should().Be(expectedString);
+        }
+
+        [Fact]
+        public void GetStringFromOpReturn_Can_NOT_Read_Transaction_with_two_OpReturns()
+        {
+            var opReturnAddress1 = sourceChainSecret.GetAddress();
+            var opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
+
+            var transaction = buildOpReturnTransaction(this.receiverAddress, opReturnBytes1);
+
+            var opReturnAddress2 = this.sourceChainSecret.GetAddress();
+            var opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
+            transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
+
+            var opReturnString = this.opReturnDataReader.GetStringFromOpReturn(transaction, out OpReturnDataType opReturnDataType);
+
+            opReturnDataType.Should().Be(OpReturnDataType.Unknown);
+            opReturnString.Should().BeNull();
         }
 
         [Fact]

@@ -23,21 +23,27 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <inheritdoc />
         public string GetStringFromOpReturn(Transaction transaction, out OpReturnDataType opReturnDataType)
         {
-            string address = GetDestinationFromOpReturn(transaction);
+            if (!TryGetSingleOpReturnOutputContent(transaction, out var content))
+            {
+                opReturnDataType = OpReturnDataType.Unknown;
+                return null;
+            }
+
+            string address = TryConvertValidOpReturnDataToAddress(content);
             if (address != null)
             {
                 opReturnDataType = OpReturnDataType.Address;
                 return address;
             }
 
-            int blockHeight = GetBlockHeightFromOpReturn(transaction);
+            int blockHeight = TryConvertValidOpReturnDataToBlockHeight(content);
             if (blockHeight != -1)
             {
                 opReturnDataType = OpReturnDataType.BlockHeight;
                 return blockHeight.ToString();
             }
 
-            string hash = GetHashFromOpReturn(transaction);
+            string hash = TryConvertValidOpReturnDataToHash(content);
             if (hash != null)
             {
                 opReturnDataType = OpReturnDataType.Hash;
@@ -48,53 +54,40 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             return null;
         }
 
-        // Examines the outputs of the transaction to see if an OP_RETURN is present.
-        // Validates the uint256 format.
-        private string GetHashFromOpReturn(Transaction transaction)
+        private bool TryGetSingleOpReturnOutputContent(Transaction transaction, out byte[] content)
         {
-            string hash = null;
-            foreach (var txOut in transaction.Outputs)
+            try
             {
-                var data = txOut.ScriptPubKey.ToBytes();
-                if ((OpcodeType)data[0] == OpcodeType.OP_RETURN)
-                    hash = ConvertValidOpReturnDataToHash(data);
+                content = transaction.Outputs.Select(o => o.ScriptPubKey).SingleOrDefault(s => s.IsUnspendable).ToBytes();
+                if (content == null) return false;
+
+                content = RemoveOpReturnOperator(content);
+                return true;
             }
-            return hash;
+            catch (Exception e)
+            {
+                this.logger.LogDebug("Failed to find a single OP_RETURN output in transaction {0}: {1}",
+                    transaction.GetHash(), e.Message);
+                content = null;
+                return false;
+            }
         }
 
-        private int GetBlockHeightFromOpReturn(Transaction transaction)
+        private int TryConvertValidOpReturnDataToBlockHeight(byte[] data)
         {
-            foreach (var txOut in transaction.Outputs)
-            {
-                var data = txOut.ScriptPubKey.ToBytes();
-                if ((OpcodeType)data[0] != OpcodeType.OP_RETURN) continue;
-                var asString = Encoding.UTF8.GetString(RemoveOpReturnOperator(data));
-                if (int.TryParse(asString, out int blockHeight)) return blockHeight;
-            }
+
+            var asString = Encoding.UTF8.GetString(data);
+            if (int.TryParse(asString, out int blockHeight)) return blockHeight;
+
             return -1;
-        }
-
-
-        // Examines the outputs of the transaction to see if an OP_RETURN is present.
-        // Validates the base58 result against the counter chain network checksum.
-        private string GetDestinationFromOpReturn(Transaction transaction)
-        {
-            string destination = null;
-            foreach (var txOut in transaction.Outputs)
-            {
-                var data = txOut.ScriptPubKey.ToBytes();
-                if ((OpcodeType)data[0] == OpcodeType.OP_RETURN)
-                    destination = ConvertValidOpReturnDataToAddress(data);
-            }
-            return destination;
         }
 
         // Converts the raw bytes from the output into a BitcoinAddress.
         // The address is parsed using the target network bytes and returns null if validation fails.
-        private string ConvertValidOpReturnDataToAddress(byte[] data)
+        private string TryConvertValidOpReturnDataToAddress(byte[] data)
         {
             // Remove the RETURN operator and convert the remaining bytes to our candidate address.
-            string destination = Encoding.UTF8.GetString(RemoveOpReturnOperator(data));
+            string destination = Encoding.UTF8.GetString(data);
 
             // Attempt to parse the string. Validates the base58 string.
             try
@@ -110,20 +103,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
         }
 
-        private string ConvertValidOpReturnDataToHash(byte[] data)
+        private string TryConvertValidOpReturnDataToHash(byte[] data)
         {
-            byte[] hashBytes = RemoveOpReturnOperator(data).ToArray(); ;
-
             // Attempt to parse the hash. Validates the uint256 string.
             try
             {
-                var hash256 = new uint256(hashBytes);
+                var hash256 = new uint256(data);
                 logger.LogInformation($"ConvertValidOpReturnDataToHash received {hash256}.");
                 return hash256.ToString();
             }
             catch (Exception ex)
             {
-                logger.LogInformation($"Candidate hash {hashBytes} could not be converted to a valid uint256. Reason {ex.Message}.");
+                logger.LogInformation($"Candidate hash {data} could not be converted to a valid uint256. Reason {ex.Message}.");
                 return null;
             }
         }
