@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
                     continue;
                 }
-   
+
                 send.Inventory.Add(new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), inv.Hash));
             }
 
@@ -487,6 +487,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
             foreach (MempoolBehavior mempoolBehavior in behaviours)
             {
+                if (mempoolBehavior?.AttachedPeer == null)
+                {
+                    this.logger.LogTrace("Peer is null, skipped.");
+                    continue;
+                }
+
                 this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
                 if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
                 {
