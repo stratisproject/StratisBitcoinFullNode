@@ -250,7 +250,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// <summary>
         /// Get the last block mined. AKA the current tip.
         /// </summary
-        public Block GetLastBlock()
+        public NBitcoin.Block GetLastBlock()
         {
             return this.blockStore.GetBlockAsync(this.CoreNode.FullNode.Chain.Tip.HashBlock).Result;
         }
