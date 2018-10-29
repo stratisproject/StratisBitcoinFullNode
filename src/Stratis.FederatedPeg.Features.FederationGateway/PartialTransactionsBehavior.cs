@@ -29,7 +29,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly Network network;
 
-        private readonly FederationGatewaySettings federationGatewaySettings;
+        private readonly IFederationGatewaySettings federationGatewaySettings;
 
         private readonly IPAddressComparer ipAddressComparer;
 
@@ -39,7 +39,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             IFederationWalletManager federationWalletManager,
             ICounterChainSessionManager counterChainSessionManager,
             Network network,
-            FederationGatewaySettings federationGatewaySettings)
+            IFederationGatewaySettings federationGatewaySettings)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(crossChainTransactionMonitor, nameof(crossChainTransactionMonitor));
