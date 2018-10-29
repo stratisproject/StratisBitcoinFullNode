@@ -11,7 +11,7 @@ Stratis' Smart Contracts platform has been architected with these considerations
 
 This design allows for a fully modular smart contract platform, where developers can create new contract execution environments without needing to modify the underlying chain.
 
-## High level design overview
+## High-Level Design Overview
 
 The core of Stratis smart contracts is implemented in a single project - **Stratis.SmartContracts.Core**. This contains the abstraction layer neccessary to perform contract execution on top of the underlying UTXO-based chain.
 
@@ -23,7 +23,7 @@ Other projects are all related to the CIL execution environment:
 * **Stratis.Bitcoin.Features.SmartContracts.Wallet** - Contains the smart contract wallet feature definition.
 * **Stratis.SmartContracts.Tools.Sct** - SCT (Smart Contract Tool) is a command-line tool used to validate and compile C# contracts.
 
-## Implementing an Execution Environment
+## Modular Execution Environments
 
 A new smart contract execution environment must implement `Stratis.SmartContracts.Core.IContractExecutor`. `IContractExecutor` has this signature:
 
@@ -52,3 +52,35 @@ After a contract execution has occurred, an `IContractExecutionResult` object is
 ### Contract Executor
 
 The executor defines the state transition that occurs based on the transaction input received. It is responsible for updating the contract state database, and returning the results of execution to the abstraction layer.
+
+In the current architecture, the Contract Executor must have these properties:
+* **Deterministic execution.** Contracts must execute deterministically. A contract execution must produce the same output every time it is run with the same input, regardless of the time, location, platform or architecture it is being run on.
+* **Bounded execution.** Contracts must halt. They must not run forever. A contract's usage of execution resources must have an upper bound.
+
+### Integration With The Full Node
+
+Integrating a contract executor with the full node can be done by defining a new `FullNodeFeature`. This feature defines the dependencies that will be wired up by the DI framework upon starting the full node.
+
+For a sample implementation, see the **Stratis.Bitcoin.Features.SmartContracts** project.
+
+## The CIL Executor
+
+The CIL executor is an execution environment for running [Common Intermediate Language](https://en.wikipedia.org/wiki/Common_Intermediate_Language) bytecode contracts.
+
+Any CIL bytecode that passes validation can be executed, however the CIL executor has been specifically designed with Roslyn-compiled C# CIL in mind.
+
+### Overview
+
+An overview of what occurs in the CIL executor implementation (Stratis.SmartContracts.Executor.Reflection) is as follows: 
+
+* An `IContractTransactionContext` object is received
+* Contract invocation data is deserialized from the raw bytes in the `IContractTransactionContext.Data` field
+* The `ReflectionVirtualMachine` is invoked with a contract create/call, the transaction data, and the current state of the chain
+* The `ReflectionVirtualMachine` executes the bytecode of the contract
+* If execution was successful, the account state and contract state database is updated
+* If a contract was created, its address is returned as `IContractExecutionResult.NewContractAddress`
+* Internally generated transactions are condensed into a single transaction `IContractExecutionResult.InternalTransaction`
+* The gas refund is returned as a TxOut on `IContractExecutionResult.Refund`
+* Logs are returned as `IContractExecutionResult.Logs`
+* The execution result is returned to the abstraction layer
+* The abstraction layer updates the UTXO set with the value transfers that took place during execution
