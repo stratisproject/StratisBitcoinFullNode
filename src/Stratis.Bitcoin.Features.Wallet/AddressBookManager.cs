@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <inheritdoc />
         public AddressBookEntry AddNewAddress(string label, string address)
         {
             if (this.addressBook.Addresses.Any(i => i.Label == label || i.Address == address))
@@ -54,11 +55,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             return newEntry;
         }
 
+        /// <inheritdoc />
         public AddressBook GetAddressBook()
         {
             return this.addressBook;
         }
 
+        /// <inheritdoc />
         public AddressBookEntry RemoveAddress(string label)
         {
             AddressBookEntry item = this.addressBook.Addresses.SingleOrDefault(i => i.Label == label);

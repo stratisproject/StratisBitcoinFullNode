@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
     [Route("api/[controller]")]
     public class AddressBookController : Controller
     {
+        /// <summary>An instance of the address book manager.</summary>
         private readonly IAddressBookManager addressBookManager;
 
         /// <summary>Instance logger.</summary>
@@ -37,8 +38,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <summary>
         /// Add an entry to the address book.
         /// </summary>
-        /// <param name="request">The object containing the parameters used to create the wallet.</param>
-        /// <returns>A JSON object containing the mnemonic created for the new wallet.</returns>
+        /// <param name="request">The object containing the parameters used to create an entry in the address book.</param>
+        /// <returns>A JSON object containing the newly added entry.</returns>
         [Route("address")]
         [HttpPost]
         public IActionResult AddAddress([FromBody]AddressBookEntryRequest request)
@@ -69,6 +70,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
         }
 
+        /// <summary>
+        /// Remove an entry from the address book.
+        /// </summary>
+        /// <param name="label">The label of the entry to remove.</param>
+        /// <returns>A JSON object containing the removed entry.</returns>
         [Route("address")]
         [HttpDelete]
         public IActionResult RemoveAddress([FromQuery]string label)
@@ -93,6 +99,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             }
         }
 
+        /// <summary>
+        /// Get the address book, with optional pagination.
+        /// </summary>
+        /// <param name="skip">A value representing how many entries to skip.</param>
+        /// <param name="take">A value representing how many entries to take.</param>
+        /// <returns>A JSON object containing the address book.</returns>
         [Route("")]
         [HttpGet]
         public IActionResult GetAddressBook([FromQuery]int? skip, int? take)
