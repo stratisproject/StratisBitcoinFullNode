@@ -741,7 +741,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     Address = this.federationGatewaySettings.MultiSigAddress.ToString(),
                     M = this.federationGatewaySettings.MultiSigM,
                     ScriptPubKey = this.federationGatewaySettings.MultiSigAddress.ScriptPubKey,
-                    RedeemScript = this.federationGatewaySettings.RedeemScript,
+                    RedeemScript = this.federationGatewaySettings.MultiSigRedeemScript,
                     Transactions = new List<TransactionData>()
                 }
             };

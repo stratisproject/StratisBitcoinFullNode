@@ -183,7 +183,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
                 // the the session completed already (and give us the CounterChainTransactionId).
                 // We we were already the boss the status will be Requested and we will Process
                 // to get the CounterChainTransactionId.
-                var result = await ProcessSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort, monitorChainSession).ConfigureAwait(false);
+                var result = await ProcessSessionOnCounterChain(this.federationGatewaySettings.SourceChainApiPort, monitorChainSession).ConfigureAwait(false);
 
                 if (monitorChainSession.Status == SessionStatus.Requesting)
                     monitorChainSession.Status = SessionStatus.Requested;

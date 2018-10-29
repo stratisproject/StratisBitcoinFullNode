@@ -43,7 +43,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IConnectionManager connectionManager;
 
-        private readonly FederationGatewaySettings federationGatewaySettings;
+        private readonly IFederationGatewaySettings federationGatewaySettings;
 
         private IFullNode fullNode;
 
@@ -66,7 +66,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             ICrossChainTransactionMonitor crossChainTransactionMonitor,
             Signals signals,
             IConnectionManager connectionManager,
-            FederationGatewaySettings federationGatewaySettings,
+            IFederationGatewaySettings federationGatewaySettings,
             IFullNode fullNode,
             IFederationWalletManager federationWalletManager,
             IFederationWalletSyncManager walletSyncManager,
@@ -170,7 +170,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     .FeatureServices(services =>
                     {
                         services.AddSingleton<FederationGatewayController>();
-                        services.AddSingleton<FederationGatewaySettings>();
+                        services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
                         services.AddSingleton<ICrossChainTransactionMonitor, CrossChainTransactionMonitor>();
                         services.AddSingleton<ICrossChainTransactionAuditor, JsonCrossChainTransactionAuditor>();
