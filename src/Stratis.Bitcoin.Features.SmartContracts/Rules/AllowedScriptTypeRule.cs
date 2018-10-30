@@ -73,6 +73,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (PayToPubkeyHashTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig))
                 return;
 
+            // Currently necessary to spend premine. Could be stricter.
+            if (PayToPubkeyTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
+                return;
+
             new ConsensusError("disallowed-input-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
         }
     }

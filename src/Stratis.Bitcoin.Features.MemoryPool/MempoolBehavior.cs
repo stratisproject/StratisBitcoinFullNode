@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     this.logger.LogInformation("Transaction ID '{0}' inventory sent in violation of protocol peer '{1}'.", inv.Hash, peer.RemoteSocketEndpoint);
                     continue;
                 }
-   
+
                 send.Inventory.Add(new InventoryVector(peer.AddSupportedOptions(InventoryType.MSG_TX), inv.Hash));
             }
 
@@ -487,15 +487,24 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
             foreach (MempoolBehavior mempoolBehavior in behaviours)
             {
-                this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
-                if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
+                var peer = mempoolBehavior?.AttachedPeer;
+
+                if (peer == null)
+                {
+                    this.logger.LogTrace("Peer is null, skipped.");
+                    continue;
+                }
+
+                this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, peer.RemoteSocketEndpoint);
+
+                if (peer.PeerVersion.Relay)
                 {
                     mempoolBehavior.AddTransactionToSend(hash);
-                    this.logger.LogTrace("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, peer.RemoteSocketEndpoint);
                 }
                 else
                 {
-                    this.logger.LogTrace("Peer '{0}' does not support 'Relay', skipped.", mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Peer '{0}' does not support 'Relay', skipped.", peer.RemoteSocketEndpoint);
                 }
             }
         }

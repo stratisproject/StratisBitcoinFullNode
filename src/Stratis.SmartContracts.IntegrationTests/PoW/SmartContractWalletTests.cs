@@ -69,7 +69,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             NetworkRegistration.Register(new SmartContractsRegTest());
 
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
                 CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
@@ -85,7 +85,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Equal(Money.COIN * spendableBlocks * 50, total);
 
                 // Create a token contract.
-                ulong gasPrice = 1;
+                ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
                 int vmVersion = 1;
                 Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -200,7 +200,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void SmartContractsController_Builds_Transaction_With_Minimum_Inputs()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
 
@@ -240,7 +240,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
                 CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
@@ -264,7 +264,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountName = AccountName,
                     GasLimit = gasLimit.ToString(),
-                    GasPrice = "1",
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "0.001",
                     Password = Password,
@@ -325,7 +325,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountName = AccountName,
                     GasLimit = gasLimit.ToString(),
-                    GasPrice = "1",
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
                     Amount = "0",
                     MethodName = "Increment",
                     ContractAddress = response.NewContractAddress,
@@ -372,7 +372,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     AccountName = AccountName,
                     GasLimit = gasLimit.ToString(),
-                    GasPrice = "1",
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
                     Amount = "0",
                     MethodName = "TestSerializer",
                     ContractAddress = response.NewContractAddress,
