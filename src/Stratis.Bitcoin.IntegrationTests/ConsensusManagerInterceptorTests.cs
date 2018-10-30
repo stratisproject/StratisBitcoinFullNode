@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var minerA = builder.CreateStratisPosNode(new StratisRegTest()).WithDummyWallet();
                 var minerB = builder.CreateStratisPosNode(new StratisRegTest()).WithDummyWallet();
-                var minerC = builder.CreateStratisPosNode(new StratisRegTest()).WithDummyWallet();
+                var syncer = builder.CreateStratisPosNode(new StratisRegTest()).WithDummyWallet();
 
                 // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
                 bool interceptor(ChainedHeaderBlock chainedHeaderBlock)
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     {
                         // Ensure that minerA's tips has rewound to 5.
                         TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 5));
-                        TestHelper.Disconnect(minerA, minerC);
+                        TestHelper.Disconnect(minerA, minerB);
                         return true;
                     }
 
@@ -106,30 +106,30 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Start the nodes.
                 minerA.Start();
                 minerB.Start();
-                minerC.Start();
+                syncer.Start();
 
                 // MinerA mines 5 blocks.
                 TestHelper.MineBlocks(minerA, 5);
 
-                // MinerB/C syncs with MinerA.
-                TestHelper.ConnectAndSync(minerA, minerB);
-                TestHelper.ConnectAndSync(minerA, minerC);
+                // MinerB/Syncer syncs with MinerA.
+                TestHelper.ConnectAndSync(minerA, minerB, syncer);
 
-                // Disable block propagation from MinerA from MinerC so that it can mine on its own and create a fork.
-                TestHelper.DisableBlockPropagation(minerA, minerC);
+                // Disable block propagation from MinerA to MinerB so that it can mine on its own and create a fork.
+                TestHelper.DisableBlockPropagation(minerA, minerB);
 
                 // MinerA continues to mine to height 9.
                 TestHelper.MineBlocks(minerA, 4);
                 TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerC.FullNode.ConsensusManager().Tip.Height == 5);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 5);
+                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 9);
 
-                // MinerC mines 5 more blocks so that a reorg is triggered.
-                TestHelper.MineBlocks(minerC, 5);
-
-                // Miner A and B should have reorged to the longer chain.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 10));
+                // MinerB mines 5 more blocks so that a reorg is triggered.
+                TestHelper.MineBlocks(minerB, 5);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 10));
+
+                // MinerA and Syncer should have reorged to the longer chain.
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
             }
         }
     }
