@@ -18,7 +18,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void SmartContracts_AddToMempool_Success()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
 
@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void SmartContracts_AddToMempool_OnlyValid()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 var stratisNodeSync = builder.CreateSmartContractPowNode().WithWallet().Start();
 

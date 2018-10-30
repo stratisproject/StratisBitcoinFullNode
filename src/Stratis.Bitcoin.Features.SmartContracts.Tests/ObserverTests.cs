@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var network = new SmartContractsRegTest();
             var serializer = new ContractPrimitiveSerializer(network);
             this.state = new SmartContractState(
-                new Stratis.SmartContracts.Core.Block(1, TestAddress),
+                new Stratis.SmartContracts.Block(1, TestAddress),
                 new Message(TestAddress, TestAddress, 0),
                 new PersistentState(new MeteredPersistenceStrategy(this.repository, this.gasMeter, new BasicKeyEncodingStrategy()),
                     context.Serializer, TestAddress.ToUint160()),
