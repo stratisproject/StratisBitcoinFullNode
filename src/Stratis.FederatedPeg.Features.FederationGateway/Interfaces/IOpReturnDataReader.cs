@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
@@ -29,5 +30,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="opReturnDataType">Returns information about how the data was interpreted.</param>
         /// <returns>The relevant string or null of the type is Unknown.</returns>
         string GetStringFromOpReturn(Transaction transaction, out OpReturnDataType opReturnDataType);
+
+        /// <summary>
+        /// Tries to find a single OP_RETURN output that can be interpreted as an address.
+        /// </summary>
+        /// <param name="transaction">The transaction we are examining.</param>
+        /// <returns>The address as a string, or null if nothing is found, or if multiple addresses are found.</returns>
+        string TryGetTargetAddressFromOpReturn(Transaction transaction);
     }
 }

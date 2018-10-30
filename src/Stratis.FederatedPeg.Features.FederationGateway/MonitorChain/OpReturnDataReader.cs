@@ -58,7 +58,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         {
             try
             {
-                content = transaction.Outputs.Select(o => o.ScriptPubKey).SingleOrDefault(s => s.IsUnspendable).ToBytes();
+                content = transaction.Outputs.Select(o => o.ScriptPubKey)
+                    .SingleOrDefault(s => s.IsUnspendable).ToBytes();
                 if (content == null) return false;
 
                 content = RemoveOpReturnOperator(content);
@@ -122,6 +123,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private static byte[] RemoveOpReturnOperator(byte[] rawBytes)
         {
             return rawBytes.Skip(2).ToArray();
+        }
+
+        ///<inheritdoc />
+        public string TryGetTargetAddressFromOpReturn(Transaction transaction)
+        {
+            var opReturnAddresses = transaction.Outputs
+                .Select(o => o.ScriptPubKey)
+                .Where(s => s.IsUnspendable)
+                .Select(s => s.ToBytes())
+                .Select(RemoveOpReturnOperator)
+                .Select(this.TryConvertValidOpReturnDataToAddress)
+                .Where(s => s != null)
+                .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
+
+            this.logger.LogDebug("Address(es) found in OP_RETURN(s) of transaction {0}: [{1}]",
+                transaction.GetHash(), string.Join(",", opReturnAddresses));
+
+            return opReturnAddresses.Count != 1 ? null : opReturnAddresses[0];
         }
     }
 }
