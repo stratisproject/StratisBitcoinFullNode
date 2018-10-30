@@ -447,19 +447,18 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.DisableBlockPropagation(syncer, minerA);
                 TestHelper.DisableBlockPropagation(syncer, minerB);
 
-                // Miner A mines 105 blocks.
+                // Miner A mines 105 blocks to height 115.
                 TestHelper.MineBlocks(minerA, 105);
                 TestHelper.WaitForNodeToSync(syncer, minerA);
 
-                //TestHelper.EnableBlockPropagation(minerA, minerB);
-
-                // Miner B continues mines 110 blocks to a longer chain.
+                // Miner B continues mines 110 blocks to a longer chain at height 120.
                 TestHelper.MineBlocks(minerB, 110);
                 TestHelper.WaitForNodeToSync(syncer, minerB);
 
+                // Miner A mines an additional 10 blocks to height 125 that will create the longest chain. 
                 TestHelper.MineBlocks(minerA, 10);
                 TestHelper.WaitForNodeToSync(syncer, minerA);
-
+                
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 120);
