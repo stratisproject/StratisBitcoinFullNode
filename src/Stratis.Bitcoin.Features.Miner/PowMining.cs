@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -58,6 +59,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>Factory for creating loggers.</summary>
         private readonly ILoggerFactory loggerFactory;
 
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly ITxMempool mempool;
 
@@ -88,7 +91,8 @@ namespace Stratis.Bitcoin.Features.Miner
             MempoolSchedulerLock mempoolLock,
             Network network,
             INodeLifetime nodeLifetime,
-            ILoggerFactory loggerFactory)
+            ILoggerFactory loggerFactory,
+            IInitialBlockDownloadState initialBlockDownloadState)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockProvider = blockProvider;
@@ -96,6 +100,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
+            this.initialBlockDownloadState = initialBlockDownloadState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.mempool = mempool;
             this.mempoolLock = mempoolLock;
@@ -104,7 +109,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.miningCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public void Mine(Script reserveScript)
         {
             if (this.miningLoop != null)
@@ -145,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Miner
             startAfter: TimeSpans.TenSeconds);
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public void StopMining()
         {
             this.miningCancellationTokenSource.Cancel();
@@ -155,7 +160,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.miningCancellationTokenSource = null;
         }
 
-        ///<inheritdoc/>
+        /// <inheritdoc/>
         public List<uint256> GenerateBlocks(ReserveScript reserveScript, ulong amountOfBlocksToMine, ulong maxTries)
         {
             var context = new MineBlockContext(amountOfBlocksToMine, (ulong)this.chain.Height, maxTries, reserveScript);
@@ -175,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     continue;
 
                 if (!this.ValidateAndConnectBlock(context))
-                    break;
+                    continue;
 
                 this.OnBlockMined(context);
             }
@@ -191,7 +196,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
             context.ChainTip = this.consensusManager.Tip;
-            if (this.chain.Tip != context.ChainTip)
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
                 return false;
@@ -274,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Miner
             }
 
             context.ChainedHeaderBlock = new ChainedHeaderBlock(context.BlockTemplate.Block, chainedHeader);
-            
+
             return true;
         }
 

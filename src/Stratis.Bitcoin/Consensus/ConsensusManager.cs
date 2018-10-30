@@ -809,6 +809,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (chainedHeaderBlock?.Block == null)
                 {
+                    this.logger.LogError("Block '{0}' wasn't loaded from store!", currentHeader);
                     this.logger.LogTrace("(-):null");
                     return null;
                 }
@@ -1075,6 +1076,8 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
                 return newBlockPair;
             }
+            else
+                this.logger.LogDebug("Block '{0}' was not found in block store.", blockHash);
 
             return chainedHeaderBlock;
         }

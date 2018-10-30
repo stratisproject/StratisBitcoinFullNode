@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public StateTransitionResult Apply(IState state, ExternalCreateMessage message)
         {
             var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+            gasMeter.Spend((Gas)GasPriceList.CreateCost);
 
             // We need to generate an address here so that we can set the initial balance.
             uint160 address = state.GenerateAddress(this.AddressGenerator);
@@ -69,13 +69,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(IState state, InternalCreateMessage message)
         {
-            var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
             bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
-                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.InsufficientBalance);
+                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
+
+            var gasMeter = new GasMeter(message.GasLimit);
+            gasMeter.Spend((Gas)GasPriceList.CreateCost);
 
             byte[] contractCode = state.ContractState.GetCode(message.From);
 
@@ -127,13 +127,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(IState state, InternalCallMessage message)
         {
-            var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
             bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
-                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.InsufficientBalance);
+                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
+
+            var gasMeter = new GasMeter(message.GasLimit);
+            gasMeter.Spend((Gas)GasPriceList.BaseCost);
 
             byte[] contractCode = state.ContractState.GetCode(message.To);
 
@@ -179,13 +179,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// </summary>
         public StateTransitionResult Apply(IState state, ContractTransferMessage message)
         {
-            var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
-
             bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
-                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.InsufficientBalance);
+                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
+
+            var gasMeter = new GasMeter(message.GasLimit);
 
             // If it's not a contract, create a regular P2PKH tx
             // If it is a contract, do a regular contract call
@@ -193,6 +192,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             if (contractCode == null || contractCode.Length == 0)
             {
+                gasMeter.Spend((Gas)GasPriceList.TransferCost);
+
                 // No contract at this address, create a regular P2PKH xfer
                 state.AddInternalTransfer(new TransferInfo(message.From, message.To, message.Amount));
 
@@ -203,6 +204,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
             // to the internal transfer list. This must occur before we apply the message to the state.
             state.AddInternalTransfer(new TransferInfo(message.From, message.To, message.Amount));
 
+            gasMeter.Spend((Gas)GasPriceList.BaseCost);
             StateTransitionResult result = this.ApplyCall(state, message, contractCode, gasMeter);
             
             return result;

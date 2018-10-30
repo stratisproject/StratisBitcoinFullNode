@@ -19,31 +19,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             return Enumerable.Range(startBlock, numberOfBlocks)
                 .Sum(p => coinviewRule.GetProofOfWorkReward(p));
-        }
-        
-        public static Money WalletBalance(this CoreNode node, string walletName)
-        {
-            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Sum(s => s.Transaction.Amount);
-        }
-
-        public static int? WalletHeight(this CoreNode node, string walletName)
-        {
-            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).First().Transaction.BlockHeight;
-        }
-
-        public static int WalletSpendableTransactionCount(this CoreNode node, string walletName)
-        {
-            return node.FullNode.WalletManager().GetSpendableTransactionsInWallet(walletName).Count();
-        }
-
-        public static Money GetFee(this CoreNode node, TransactionBuildContext transactionBuildContext)
-        {
-            return node.FullNode.WalletTransactionHandler().EstimateFee(transactionBuildContext);
-        }
-
-        public static int GetApiPort(this CoreNode coreNode)
-        {
-            return coreNode.FullNode.NodeService<ApiSettings>()?.ApiPort ?? -1;
         }       
     }
 }
