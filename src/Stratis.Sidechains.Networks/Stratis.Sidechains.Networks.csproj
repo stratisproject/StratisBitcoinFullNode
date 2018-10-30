@@ -6,8 +6,8 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NStratis" Version="4.0.0.65" />
-    <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.1-beta" />
+    <PackageReference Include="NStratis" Version="4.0.0.67" />
+    <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.3-beta" />
   </ItemGroup>
 
 </Project>
