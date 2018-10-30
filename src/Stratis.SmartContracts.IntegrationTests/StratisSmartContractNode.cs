@@ -1,5 +1,5 @@
 ﻿using NBitcoin;
-using NBitcoin.Networks;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -8,8 +8,10 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 
-namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
+namespace Stratis.SmartContracts.IntegrationTests
 {
     public sealed class StratisSmartContractNode : NodeRunner
     {

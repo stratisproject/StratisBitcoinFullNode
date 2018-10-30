@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.Core
         /// <summary>
         /// The amount of gas units used through execution of the smart contract.
         /// </summary>
-        Gas GasConsumed { get; set; }
+        ulong GasConsumed { get; set; }
 
         /// <summary>
         /// If the execution created a new contract, its address will be stored here.

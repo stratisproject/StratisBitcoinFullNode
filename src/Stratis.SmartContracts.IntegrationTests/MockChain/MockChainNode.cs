@@ -4,6 +4,7 @@ using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
@@ -110,6 +111,13 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             this.chain.WaitForAllNodesToSync();
         }
 
+        public void WaitForBlocksToBeMined(int amount)
+        {
+            int currentHeight = this.CoreNode.GetTip().Height;
+            TestHelper.WaitLoop(() => this.CoreNode.GetTip().Height >= currentHeight + 1);
+            this.chain.WaitForAllNodesToSync();
+        }
+
         /// <summary>
         /// Get an unused address that can be used to send funds to this node.
         /// </summary>
@@ -129,7 +137,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 MinConfirmations = 1,
                 FeeType = FeeType.Medium,
                 WalletPassword = this.Password,
-                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList()
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList(),
+                ChangeAddress = this.MinerAddress // yes this is unconventional, but helps us to keep the balance on the same addresses
             };
 
             Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
@@ -156,7 +165,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
-            ulong gasPrice = 100,
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -201,7 +210,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
-            ulong gasPrice = 100,
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
             var request = new BuildCallContractTransactionRequest
@@ -249,7 +258,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// <summary>
         /// Get the last block mined. AKA the current tip.
         /// </summary
-        public Block GetLastBlock()
+        public NBitcoin.Block GetLastBlock()
         {
             return this.blockStore.GetBlockAsync(this.CoreNode.FullNode.Chain.Tip.HashBlock).Result;
         }
