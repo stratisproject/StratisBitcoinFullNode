@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         /// <inheritdoc/>
         public override void UpdateHeaders()
         {
-            base.UpdateBaseHeaders();
+            base.UpdateHeaders();
 
             this.block.Header.Bits = PoAHeaderDifficultyRule.PoABlockDifficulty;
         }
