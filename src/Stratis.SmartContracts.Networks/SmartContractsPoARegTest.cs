@@ -1,7 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
-using System.Text;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -32,8 +30,9 @@ namespace Stratis.SmartContracts.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            Block genesisBlock = CreatePoAGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            NBitcoin.Block genesisBlock = CreatePoAGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
             ((SmartContractPoABlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856"); // Set StateRoot to empty trie.
+
             this.Genesis = genesisBlock;
 
             this.FederationKeys = new Key[]

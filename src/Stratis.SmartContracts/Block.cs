@@ -1,4 +1,4 @@
-﻿namespace Stratis.SmartContracts.Core
+﻿namespace Stratis.SmartContracts
 {
     public struct Block : IBlock
     {

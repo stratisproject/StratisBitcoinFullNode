@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public ulong FutureRefund { get; set; }
 
         /// <inheritdoc/>
-        public Gas GasConsumed { get; set; }
+        public ulong GasConsumed { get; set; }
         
         /// <inheritdoc/>
         public object Return { get; set; }
