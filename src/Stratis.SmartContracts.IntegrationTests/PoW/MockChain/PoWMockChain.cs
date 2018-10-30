@@ -15,7 +15,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
     {
         // TODO: This and PoAMockChain could share most logic
 
-        private readonly NodeBuilder builder;
+        private readonly SmartContractNodeBuilder builder;
 
         protected readonly MockChainNode[] nodes;
 
@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
         {
             this.Network = new SmartContractsRegTest(); // TODO: Make this configurable.
 
-            this.builder = NodeBuilder.Create(this);
+            this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
 
             for (int i = 0; i < numNodes; i++)
