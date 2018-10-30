@@ -1,11 +1,11 @@
 ﻿using System.Text;
 using FluentAssertions;
-using NSubstitute;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NSubstitute;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
-using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
+using Stratis.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -19,33 +19,28 @@ namespace Stratis.FederatedPeg.Tests
 
         private OpReturnDataReader opReturnDataReader;
 
-        private readonly Key key;
+        private AddressHelper addressHelper;
 
-        private BitcoinSecret sourceChainSecret;
-        private BitcoinSecret targetChainSecret;
-
-        private readonly BitcoinPubKeyAddress receiverAddress;
+        private TestTransactionBuilder transactionBuilder;
 
         public OpReturnDataReaderTests()
         {
-            loggerFactory = Substitute.For<ILoggerFactory>();
-            network = new ApexRegTest();
-            opReturnDataReader = new OpReturnDataReader(loggerFactory, network);
+            this.loggerFactory = Substitute.For<ILoggerFactory>();
+            this.network = new ApexRegTest();
+            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
 
-            key = new Key();
-            sourceChainSecret = network.CreateBitcoinSecret(key);
-            targetChainSecret = network.ToCounterChainNetwork().CreateBitcoinSecret(key);
-            receiverAddress = sourceChainSecret.GetAddress();
+            this.transactionBuilder = new TestTransactionBuilder();
+            this.addressHelper = new AddressHelper(this.network);
         }
 
         [Fact]
         public void GetStringFromOpReturn_CanReadAddress()
         {
 
-            var opReturnAddress = targetChainSecret.GetAddress();
+            var opReturnAddress = this.addressHelper.TargetChainAddress;
             var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
 
-            var transaction = buildOpReturnTransaction(receiverAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetStringFromOpReturn(transaction, out OpReturnDataType opReturnDataType);
 
@@ -54,12 +49,25 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
+        public void TryGetTargetAddressFromOpReturn_CanReadAddress()
+        {
+
+            var opReturnAddress = this.addressHelper.TargetChainAddress;
+            var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+
+            var addressFromOpReturn = this.opReturnDataReader.TryGetTargetAddressFromOpReturn(transaction);
+
+            addressFromOpReturn.Should().Be(opReturnAddress.ToString());
+        }
+
+        [Fact]
         public void GetStringFromOpReturn_Can_NOT_ReadAddress_FromOwnNetwork()
         {
-            var opReturnAddress = sourceChainSecret.GetAddress();
+            var opReturnAddress = this.addressHelper.GetNewSourceChainAddress();
             var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
 
-            var transaction = buildOpReturnTransaction(this.receiverAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetStringFromOpReturn(transaction, out OpReturnDataType opReturnDataType);
 
@@ -67,21 +75,26 @@ namespace Stratis.FederatedPeg.Tests
             opReturnString.Should().BeNull();
         }
 
-        private static Transaction buildOpReturnTransaction(BitcoinPubKeyAddress receiverAddress, byte[] opReturnBytes)
+        [Fact]
+        public void TryGetTargetAddressFromOpReturn_Can_NOT_ReadAddress_FromOwnNetwork()
         {
-            var transaction = new Transaction();
-            transaction.AddOutput(new TxOut(Money.COIN, receiverAddress));
-            transaction.AddOutput(new TxOut(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes))));
-            return transaction;
+            var opReturnAddress = this.addressHelper.GetNewSourceChainAddress();
+            var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
+
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+
+            var opReturnString = this.opReturnDataReader.TryGetTargetAddressFromOpReturn(transaction);
+
+            opReturnString.Should().BeNull();
         }
 
         [Fact]
         public void GetStringFromOpReturn_CanReadTransactionHash()
         {
-            var opReturnTransactionHash = buildTransaction(this.receiverAddress).GetHash();
+            var opReturnTransactionHash = this.transactionBuilder.BuildTransaction(this.addressHelper.SourceChainAddress).GetHash();
             var opReturnBytes = opReturnTransactionHash.ToBytes();
 
-            var transaction = buildOpReturnTransaction(this.receiverAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetStringFromOpReturn(transaction, out OpReturnDataType opReturnDataType);
 
@@ -93,12 +106,12 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void GetStringFromOpReturn_Can_NOT_Read_Transaction_with_two_OpReturns()
         {
-            var opReturnAddress1 = sourceChainSecret.GetAddress();
+            var opReturnAddress1 = this.addressHelper.TargetChainAddress;
             var opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
 
-            var transaction = buildOpReturnTransaction(this.receiverAddress, opReturnBytes1);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes1);
 
-            var opReturnAddress2 = this.sourceChainSecret.GetAddress();
+            var opReturnAddress2 = this.addressHelper.GetNewTargetChainAddress();
             var opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
 
@@ -109,11 +122,51 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
+        public void TryGetTargetAddressFromOpReturn_Can_NOT_Read_Transaction_with_two_valid_OpReturns_addresses()
+        {
+            var opReturnAddress1 = this.addressHelper.TargetChainAddress;
+            var opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
+
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes1);
+
+            var opReturnAddress2 = this.addressHelper.GetNewTargetChainAddress();
+            opReturnAddress1.ToString().Should().NotBe(
+                opReturnAddress2.ToString(), "otherwise the transaction is not ambiguous");
+            var opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
+            transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
+
+            var addressFromOpReturn = this.opReturnDataReader.TryGetTargetAddressFromOpReturn(transaction);
+            addressFromOpReturn.Should().BeNull();
+        }
+
+        [Fact]
+        public void TryGetTargetAddressFromOpReturn_Can_Read_Transaction_with_many_OpReturns_but_only_a_valid_address_one()
+        {
+            var opReturnValidAddress = this.addressHelper.TargetChainAddress;
+            var opReturnValidAddressBytes = Encoding.UTF8.GetBytes(opReturnValidAddress.ToString());
+
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnValidAddressBytes);
+
+            //address 2 will be ignored as not valid for target chain
+            var opReturnInvalidAddressBytes = Encoding.UTF8.GetBytes(this.addressHelper.GetNewSourceChainAddress().ToString());
+            transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnInvalidAddressBytes)));
+
+            //add another output with the same target address, this is not ambiguous
+            transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnValidAddressBytes)));
+
+            //add other random message
+            var randomMessageBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
+            transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(randomMessageBytes)));
+
+            var addressFromOpReturn = this.opReturnDataReader.TryGetTargetAddressFromOpReturn(transaction);
+            addressFromOpReturn.Should().Be(this.addressHelper.TargetChainAddress.ToString());
+        }
+
+        [Fact]
         public void GetStringFromOpReturn_Can_NOT_ReadRandomStrings()
         {
             var opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
-
-            var transaction = buildOpReturnTransaction(this.receiverAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetStringFromOpReturn(transaction, out OpReturnDataType opReturnDataType);
 
@@ -121,11 +174,15 @@ namespace Stratis.FederatedPeg.Tests
             opReturnString.Should().BeNull();
         }
 
-        private static Transaction buildTransaction(BitcoinPubKeyAddress receiverAddress)
+        [Fact]
+        public void TryGetTargetAddressFromOpReturn_Can_NOT_ReadRandomStrings()
         {
-            var transaction = new Transaction();
-            transaction.AddOutput(new TxOut(Money.COIN, receiverAddress));
-            return transaction;
+            var opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+
+            var opReturnString = this.opReturnDataReader.TryGetTargetAddressFromOpReturn(transaction);
+
+            opReturnString.Should().BeNull();
         }
     }
 }
