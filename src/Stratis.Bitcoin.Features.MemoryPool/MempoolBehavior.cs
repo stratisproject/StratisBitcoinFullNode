@@ -500,11 +500,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 if (peer.PeerVersion.Relay)
                 {
                     mempoolBehavior.AddTransactionToSend(hash);
-                    this.logger.LogTrace("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, peer.RemoteSocketEndpoint);
                 }
                 else
                 {
-                    this.logger.LogTrace("Peer '{0}' does not support 'Relay', skipped.", mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
+                    this.logger.LogTrace("Peer '{0}' does not support 'Relay', skipped.", peer.RemoteSocketEndpoint);
                 }
             }
         }
