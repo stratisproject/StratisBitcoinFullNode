@@ -254,6 +254,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</summary>
         private readonly Action<INetworkPeer> onDisconnected;
 
+        /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
+        private readonly Action<IPEndPoint, Payload> onSendingMessage;
+
         /// <summary>
         /// Initializes parts of the object that are common for both inbound and outbound peers.
         /// </summary>
@@ -272,7 +275,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
-            Action<INetworkPeer> onDisconnected = null)
+            Action<INetworkPeer> onDisconnected = null,
+            Action<IPEndPoint, Payload> onSendingMessage = null)
         {
             this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
@@ -299,6 +303,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MessageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             this.onDisconnected = onDisconnected;
+            this.onSendingMessage = onSendingMessage;
         }
 
         /// <summary>
@@ -319,8 +324,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
-            Action<INetworkPeer> onDisconnected = null)
-            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected)
+            Action<INetworkPeer> onDisconnected = null,
+            Action<IPEndPoint, Payload> onSendingMessage = null)
+            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
         {
             var client = new TcpClient(AddressFamily.InterNetworkV6);
             client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
@@ -352,8 +358,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             INetworkPeerFactory networkPeerFactory,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
-            Action<INetworkPeer> onDisconnected = null)
-            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected)
+            Action<INetworkPeer> onDisconnected = null,
+            Action<IPEndPoint, Payload> onSendingMessage = null)
+            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
         {
             this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
@@ -637,6 +644,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.logger.LogTrace("(-)[NOT_CONNECTED]");
                 throw new OperationCanceledException("The peer has been disconnected");
             }
+
+            this.onSendingMessage?.Invoke(this.RemoteSocketEndpoint, payload);
 
             await this.Connection.SendAsync(payload, cancellation).ConfigureAwait(false);
         }
