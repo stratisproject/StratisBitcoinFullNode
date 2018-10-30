@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Networks.Deployments;
 
 namespace Stratis.Sidechains.Networks
 {
@@ -44,13 +45,15 @@ namespace Stratis.Sidechains.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray();
+            var bip9Deployments = new StratisBIP9Deployments();
 
             var consensusOptions = new ConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000);
+                maxBlockSigopsCost: 20_000,
+                maxStandardTxSigopsCost: 20_000 / 5
+            );
 
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,

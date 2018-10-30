@@ -14,14 +14,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="Stratis.Bitcoin" Version="1.2.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.2.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.2.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.2.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.2.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.2.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.2.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.1-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.BlockStore" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.RPC" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.3-beta" />
   </ItemGroup>
 
   <ItemGroup>
