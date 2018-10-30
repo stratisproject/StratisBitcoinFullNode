@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
