@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Gets or sets the height from which start serving Proven Headers, if > 0.
         /// </summary>
-        public int AnnounceProvenHeadersFromHeight { get; set; } = 0;
+        public int AnnounceProvenHeadersFromHeight { get; set; }
 
         public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
             : base(chain, chainState, loggerFactory, consensusManager)
@@ -59,11 +59,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             if (this.AnnounceProvenHeadersFromHeight > 0 && blockstoreTipHeight >= this.AnnounceProvenHeadersFromHeight)
             {
-                return new ProvenHeadersPayload(
-                    from header in headers
-                    let posBlock = new PosBlock(header)
-                    select ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock)
-                    );
+                ProvenHeadersPayload provenHeadersPayload = new ProvenHeadersPayload();
+                foreach (var header in headers)
+                {
+                    var posBock = new PosBlock(header);
+                    ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBock);
+                    provenHeadersPayload.Headers.Add(provenBlockHeader);
+                }
+                return provenHeadersPayload;
             }
             else
             {
