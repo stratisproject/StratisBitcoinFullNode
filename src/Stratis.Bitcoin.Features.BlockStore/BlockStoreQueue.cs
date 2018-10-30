@@ -294,17 +294,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             lock (this.blocksCacheLock)
             {
-                ChainedHeaderBlock existing = null;
-                this.pendingBlocksCache.TryGetValue(chainedHeaderBlock.ChainedHeader.HashBlock, out existing);
-                if (existing == null)
+                if (this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock))
                 {
-                    this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
                     this.logger.LogTrace("Block '{0}' was added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
                 else
                 {
                     // If the chained header block already exists, we need to remove it and add to the back of the collection.
-                    this.pendingBlocksCache.Remove(existing.ChainedHeader.HashBlock);
+                    this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
                     this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
                     this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
                 }

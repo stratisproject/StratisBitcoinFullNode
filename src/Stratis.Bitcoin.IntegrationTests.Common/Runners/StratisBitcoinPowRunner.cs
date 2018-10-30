@@ -1,4 +1,5 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -24,18 +25,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.DataFolder });
 
             var builder = new FullNodeBuilder()
-                        .UseNodeSettings(settings)
-                        .UseBlockStore()
-                        .UsePowConsensus()
-                        .UseMempool()
-                        .AddMining()
-                        .UseWallet()
-                        .AddRPC()
-                        .UseApi()
-                        .MockIBD();
+                            .UseNodeSettings(settings)
+                            .UseBlockStore()
+                            .UsePowConsensus()
+                            .UseMempool()
+                            .AddMining()
+                            .UseWallet()
+                            .AddRPC()
+                            .UseApi()
+                            .MockIBD();
 
             if (this.ServiceToOverride != null)
-                builder.OverrideService<BlockStoreFeature>(this.ServiceToOverride);
+                builder.OverrideService<BaseFeature>(this.ServiceToOverride);
 
             this.FullNode = (FullNode)builder.Build();
         }
