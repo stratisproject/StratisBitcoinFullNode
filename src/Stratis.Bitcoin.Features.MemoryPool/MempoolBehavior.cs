@@ -487,14 +487,17 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             IEnumerable<MempoolBehavior> behaviours = peers.Select(s => s.Behavior<MempoolBehavior>());
             foreach (MempoolBehavior mempoolBehavior in behaviours)
             {
-                if (mempoolBehavior?.AttachedPeer == null)
+                var peer = mempoolBehavior?.AttachedPeer;
+
+                if (peer == null)
                 {
                     this.logger.LogTrace("Peer is null, skipped.");
                     continue;
                 }
 
-                this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
-                if (mempoolBehavior?.AttachedPeer.PeerVersion.Relay ?? false)
+                this.logger.LogTrace("Attempting to relaying transaction ID '{0}' to peer '{1}'.", hash, peer.RemoteSocketEndpoint);
+
+                if (peer.PeerVersion.Relay)
                 {
                     mempoolBehavior.AddTransactionToSend(hash);
                     this.logger.LogTrace("Added transaction ID '{0}' to send inventory of peer '{1}'.", hash, mempoolBehavior?.AttachedPeer.RemoteSocketEndpoint);
