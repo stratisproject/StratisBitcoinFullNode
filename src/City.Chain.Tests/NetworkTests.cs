@@ -54,7 +54,7 @@ namespace City.Chain.Tests
 
             Assert.Equal(1, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
-            Assert.Equal(3, network.SeedNodes.Count);
+            Assert.Equal(4, network.SeedNodes.Count);
 
             Assert.Equal("CityMain", network.Name);
             Assert.Equal(CityMain.CityRootFolderName, network.RootFolderName);
