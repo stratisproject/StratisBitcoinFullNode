@@ -696,13 +696,11 @@ namespace Stratis.Bitcoin.Consensus
         {
             // Connect back the old blocks.
             ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(blocksToReconnect).ConfigureAwait(false);
-
             if (connectBlockResult.Succeeded)
             {
                 // Even though reconnection was successful we return result with success == false because
                 // full validation of the chain we originally wanted to connect was failed.
-                var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false };
-
+                var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false, PeersToBan = new List<int>() };
                 return result;
             }
 
