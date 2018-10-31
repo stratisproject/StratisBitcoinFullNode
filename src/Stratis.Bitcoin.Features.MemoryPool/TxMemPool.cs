@@ -523,12 +523,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else
             {
-                // If we're not searching for parents, we require this to be an
-                // entry in the mempool already.
-                //var it = mapTx.Txids.TryGet(entry.TransactionHash);
-                SetEntries memPoolParents = this.GetMemPoolParents(entry);
-                foreach (TxMempoolEntry item in memPoolParents)
-                    parentHashes.Add(item);
+                if (this.MapTx.ContainsKey(entry.TransactionHash))
+                {
+                    // If we're not searching for parents, we require this to be an
+                    // entry in the mempool already.
+                    //var it = mapTx.Txids.TryGet(entry.TransactionHash);
+                    SetEntries memPoolParents = this.GetMemPoolParents(entry);
+                    foreach (TxMempoolEntry item in memPoolParents)
+                        parentHashes.Add(item);
+                }
             }
 
             long totalSizeWithAncestors = entry.GetTxSize();
