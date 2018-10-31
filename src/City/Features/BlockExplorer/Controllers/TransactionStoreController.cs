@@ -1,15 +1,22 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
+using System.Text;
 using System.Threading.Tasks;
 using City.Features.BlockExplorer.Models;
+using City.Models;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.BlockStore.Models;
+using Stratis.Bitcoin.Features.Wallet.Broadcasting;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -24,6 +31,8 @@ namespace City.Features.BlockExplorer.Controllers
     [Route("api/transactions")]
     public class TransactionStoreController : Controller
     {
+        private readonly IWalletManager walletManager;
+
         /// <summary>An interface for getting blocks asynchronously from the blockstore cache.</summary>
         private readonly IBlockStore blockStoreCache;
 
@@ -42,12 +51,19 @@ namespace City.Features.BlockExplorer.Controllers
 
         private readonly ConcurrentChain chain;
 
+        private readonly IBroadcasterManager broadcasterManager;
+
+        private readonly IConnectionManager connectionManager;
+
         public TransactionStoreController(
             Network network,
+            IWalletManager walletManager,
             ILoggerFactory loggerFactory,
             IBlockStore blockStoreCache,
             ConcurrentChain chain,
+            IBroadcasterManager broadcasterManager,
             IBlockRepository blockRepository,
+            IConnectionManager connectionManager,
             IChainState chainState)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -55,10 +71,13 @@ namespace City.Features.BlockExplorer.Controllers
             Guard.NotNull(chainState, nameof(chainState));
 
             this.network = network;
+            this.walletManager = walletManager;
             this.blockStoreCache = blockStoreCache;
+            this.connectionManager = connectionManager;
             this.chain = chain;
             this.chainState = chainState;
             this.blockRepository = blockRepository;
+            this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(GetType().FullName);
         }
 
@@ -142,5 +161,70 @@ namespace City.Features.BlockExplorer.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
+
+        ///// <summary>
+        ///// Sends a transaction.
+        ///// </summary>
+        ///// <param name="request">The hex representing the transaction.</param>
+        ///// <returns></returns>
+        //[Route("retry-transaction")]
+        //[HttpPost]
+        //public IActionResult RetryTransaction([FromBody] BroadcastTransactionModel request)
+        //{
+        //    //Guard.NotNull(request, nameof(request));
+
+        //    //// checks the request is valid
+        //    //if (!this.ModelState.IsValid)
+        //    //{
+        //    //    return ModelStateErrors.BuildErrorResponse(this.ModelState);
+        //    //}
+
+        //    //if (!this.connectionManager.ConnectedPeers.Any())
+        //    //{
+        //    //    this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]");
+        //    //    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.Forbidden, "Can't send transaction: sending transaction requires at least one connection!", string.Empty);
+        //    //}
+
+        //    //try
+        //    //{
+        //    //    IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(request.WalletName, request.AccountName);
+
+        //    //    Transaction transaction = this.network.CreateTransaction(request.Hex);
+
+        //    //    var model = new WalletSendTransactionModel
+        //    //    {
+        //    //        TransactionId = transaction.GetHash(),
+        //    //        Outputs = new List<TransactionOutputModel>()
+        //    //    };
+
+        //    //    foreach (TxOut output in transaction.Outputs)
+        //    //    {
+        //    //        bool isUnspendable = output.ScriptPubKey.IsUnspendable;
+        //    //        model.Outputs.Add(new TransactionOutputModel
+        //    //        {
+        //    //            Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+        //    //            Amount = output.Value,
+        //    //            OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
+        //    //        });
+        //    //    }
+
+        //    //    this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+        //    //    TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
+
+        //    //    if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
+        //    //    {
+        //    //        this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
+        //    //        return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
+        //    //    }
+
+        //    //    return this.Json(model);
+        //    //}
+        //    //catch (Exception e)
+        //    //{
+        //    //    this.logger.LogError("Exception occurred: {0}", e.ToString());
+        //    //    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+        //    //}
+        //}
     }
 }

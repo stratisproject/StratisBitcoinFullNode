@@ -1031,14 +1031,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 }
 
                 // If the user chose to resync the wallet after removing transactions.
-                if (result.Any() && request.ReSync)
+                if (request.ReSync)
                 {
-                    // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
-                    DateTimeOffset earliestDate = result.Min(r => r.creationTime);
-                    ChainedHeader chainedHeader = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
-
                     // Update the wallet and save it to the file system.
                     Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+
+                    DateTimeOffset earliestDate;
+
+                    if (result.Any())
+                    {
+                        // From the list of removed transactions, check which one is the oldest and retrieve the block right before that time.
+                        earliestDate = result.Min(r => r.creationTime);
+                    }
+                    else {
+                        earliestDate = wallet.CreationTime;
+                    }
+                    
+                    ChainedHeader chainedHeader = this.chain.GetBlock(this.chain.GetHeightAtTime(earliestDate.DateTime));
+
                     wallet.SetLastBlockDetailsByCoinType(this.coinType, chainedHeader);
                     this.walletManager.SaveWallet(wallet);
 

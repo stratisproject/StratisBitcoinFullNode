@@ -141,6 +141,7 @@ namespace City.Networks
 
             this.SeedNodes = new List<NetworkAddress>
             {
+                new NetworkAddress(IPAddress.Parse("52.175.194.227"), this.DefaultPort),
                 new NetworkAddress(IPAddress.Parse("13.73.143.193"), this.DefaultPort),
                 new NetworkAddress(IPAddress.Parse("40.115.2.6"), this.DefaultPort),
                 new NetworkAddress(IPAddress.Parse("13.66.158.6"), this.DefaultPort),
