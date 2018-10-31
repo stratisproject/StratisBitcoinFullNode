@@ -348,8 +348,11 @@ namespace Stratis.Bitcoin.Connection
         {
             NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
 
-            var cmb = (cloneParameters.TemplateBehaviors.Single(x => x is IConnectionManagerBehavior) as ConnectionManagerBehavior);
-            cmb.OneTry = true;
+            var connectionManagerBehavior = cloneParameters.TemplateBehaviors.OfType<ConnectionManagerBehavior>().SingleOrDefault();
+            if (connectionManagerBehavior != null)
+            {
+                connectionManagerBehavior.OneTry = true;
+            }
 
             INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.networkPeerDisposer).ConfigureAwait(false);
 
