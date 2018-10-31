@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 long packageSize = iter.SizeWithAncestors;
                 Money packageFees = iter.ModFeesWithAncestors;
-                long packageSigOpsCost = iter.SizeWithAncestors;
+                long packageSigOpsCost = iter.SigOpCostWithAncestors;
                 if (fUsingModified)
                 {
                     packageSize = modit.SizeWithAncestors;
