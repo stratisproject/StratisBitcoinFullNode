@@ -7,7 +7,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
@@ -22,6 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreFeature : FullNodeFeature
     {
+        private readonly Network network;
         private readonly ConcurrentChain chain;
 
         private readonly Signals.Signals signals;
@@ -45,6 +45,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IConsensusManager consensusManager;
 
         public BlockStoreFeature(
+            Network network,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             Signals.Signals signals,
@@ -56,6 +57,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeStats nodeStats,
             IConsensusManager consensusManager)
         {
+            this.network = network;
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
             this.signals = signals;
@@ -85,13 +87,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override Task InitializeAsync()
         {
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager));
+            // Use ProvenHeadersBlockStoreBehavior for PoS Networks
+            if (this.network.Consensus.IsProofOfStake)
+            {
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager));
+            }
+            else
+            {
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager));
+            }
 
             // Signal to peers that this node can serve blocks.
             this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
-            
+
             return Task.CompletedTask;
         }
 
@@ -124,6 +134,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         services.AddSingleton<BlockStoreSignaled>();
                         services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
+                        services.AddSingleton<IBlockStoreQueueFlushCondition, BlockStoreQueueFlushCondition>();
                     });
             });
 

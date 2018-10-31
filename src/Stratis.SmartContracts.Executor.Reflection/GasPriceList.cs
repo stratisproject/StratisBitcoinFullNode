@@ -13,6 +13,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// <summary>The base cost trying to execute a smart contract.</summary>
         public const ulong BaseCost = 10_000;
 
+        /// <summary>The cost to create and execute the constructor of a contract. To account for validation and code storage.</summary>
+        public const ulong CreateCost = 12_000;
+
+        /// <summary>The cost for transferring funds to a P2PKH from inside a contract.</summary>
+        public const ulong TransferCost = 1_000;
+
         public const int StoragePerByteSavedGasCost = 20;
         public const int StoragePerByteRetrievedGasCost = 1;
         public const int LogPerTopicByteCost = 2;

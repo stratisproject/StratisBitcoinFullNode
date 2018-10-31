@@ -20,7 +20,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     {
         public const ulong GasLimitMaximum = 100_000;
 
-        public const ulong GasLimitMinimum = GasPriceList.BaseCost;
+        public const ulong GasLimitCallMinimum = GasPriceList.BaseCost;
+
+        public const ulong GasLimitCreateMinimum = GasPriceList.CreateCost;
 
         public const ulong GasPriceMinimum = 1;
 
@@ -90,7 +92,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
             // TODO: When checking gas limit, if checking for a CREATE, do BaseFee + CreationAndValidationFee
 
-            if (callData.GasLimit < GasLimitMinimum)
+
+            if (callData.IsCreateContract && callData.GasLimit < GasLimitCreateMinimum)
+            {
+                this.ThrowGasLessThenCreateFee();
+            }
+
+            if (!callData.IsCreateContract && callData.GasLimit < GasLimitCallMinimum)
             {
                 // Supplied gas limit is too low.
                 this.ThrowGasLessThanBaseFee();
@@ -125,7 +133,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
         private void ThrowGasLessThanBaseFee()
         {
             // TODO make nicer
-            new ConsensusError("gas-limit-less-than-base-fee", "gas limit supplied is less than the base fee for contract execution: " + GasLimitMinimum).Throw();
+            new ConsensusError("gas-limit-less-than-base-fee", "gas limit supplied is less than the base fee for contract execution: " + GasLimitCallMinimum).Throw();
+        }
+        private void ThrowGasLessThenCreateFee()
+        {
+            // TODO make nicer
+            new ConsensusError("gas-limit-less-than-create-fee", "gas limit supplied is less than the base fee for contract creation: " + GasLimitCreateMinimum).Throw();
         }
 
         private void ThrowGasGreaterThanHardLimit()
