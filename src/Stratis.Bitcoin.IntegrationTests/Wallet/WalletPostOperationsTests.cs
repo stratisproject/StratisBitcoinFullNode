@@ -10,6 +10,7 @@ using Flurl.Http;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -302,6 +303,40 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
                 errors.Should().ContainSingle();
                 errors.First().Message.Should().Be("Transaction ids need to be specified if the 'all' flag is not set.");
+            }
+        }
+
+
+        [Fact]
+        public async Task GetSpendableTransactionsInAccountAllowUnconfirmed()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
+                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
+                TestHelper.MineBlocks(miningNode, 150);
+
+                this.AddAndLoadWalletFileToWalletFolder(node);
+                TestHelper.ConnectAndSync(node, miningNode);
+
+                // Act.
+                var transactionsAllowUnconfirmed = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/spendable-transactions")
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
+                    .GetJsonAsync<SpendableTransactionsModel>();
+
+                var transactionsOnlyConfirmed = await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/spendable-transactions")
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0", minConfirmations = 1 })
+                    .GetJsonAsync<SpendableTransactionsModel>();
+
+                // Assert.
+                transactionsAllowUnconfirmed.SpendableTransactions.Should().HaveCount(30);
+                transactionsAllowUnconfirmed.SpendableTransactions.Sum(st => st.Amount).Should().Be(new Money(142290299995400));
+
+                transactionsOnlyConfirmed.SpendableTransactions.Should().HaveCount(29);
+                transactionsOnlyConfirmed.SpendableTransactions.Sum(st => st.Amount).Should().Be(new Money(142190299995400));
             }
         }
     }

@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             Debug.WriteLine("Gas budget:" + gasBudget);
 
-            if (gasRemaining < gasBudget || gasRemaining < GasPriceList.BaseCost)
+            if (gasRemaining < gasBudget || gasRemaining < GasPriceList.CreateCost)
                 return CreateResult.Failed();
 
             var message = new InternalCreateMessage(
@@ -110,12 +110,14 @@ namespace Stratis.SmartContracts.Executor.Reflection
         ///<inheritdoc />
         public ITransferResult Transfer(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer)
         {
-            ulong gasBudget = DefaultGasLimit; // for Transfer always send limited gas to prevent re-entrance.
-
             Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
 
-            if (gasRemaining < gasBudget || gasRemaining < GasPriceList.BaseCost)
+            if (gasRemaining < GasPriceList.TransferCost)
                 return TransferResult.Failed();
+
+            ulong gasBudget = (gasRemaining < DefaultGasLimit) 
+                ? gasRemaining // have enough for at least a transfer but not for the DefaultGasLimit
+                : DefaultGasLimit; // have enough for anything
 
             var message = new ContractTransferMessage(
                 addressTo.ToUint160(),

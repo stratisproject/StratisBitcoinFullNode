@@ -313,4 +313,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [IsBitcoinAddress()]
         public string Address { get; set; }
     }
+    
+    /// Model object to use as input to the Api request for getting the spendable transactions in an account.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
+    public class SpendableTransactionsRequest : RequestModel
+    {
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        [Required(ErrorMessage = "The name of the account is missing.")]
+        public string AccountName { get; set; }
+
+        /// <summary>
+        /// The min number of confirmations required. 
+        /// To allow unconfirmed transactions, set this value to 0. 
+        /// </summary>
+        public int MinConfirmations { get; set; }
+    }
 }
