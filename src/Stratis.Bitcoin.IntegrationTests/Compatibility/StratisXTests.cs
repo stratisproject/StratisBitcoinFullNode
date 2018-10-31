@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// Tests whether a quantity of blocks mined on SBFN are
         /// correctly synced to a stratisX node.
         /// </summary>
-        [Fact]
+        [Retry]
         public void SBFNMinesBlocksXSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
