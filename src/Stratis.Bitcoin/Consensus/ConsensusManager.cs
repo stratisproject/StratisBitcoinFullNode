@@ -1209,10 +1209,10 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                string unconsumedBlocks = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
+                string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
-                string unconsumedBytes = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
-                string maxUnconsumedBytes = this.formatBigNumber(MaxUnconsumedBlocksDataBytes);
+                string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
+                string maxUnconsumedBytes = this.FormatBigNumber(MaxUnconsumedBlocksDataBytes);
 
                 double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)MaxUnconsumedBlocksDataBytes) * 100, 2);
 
@@ -1221,17 +1221,10 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Formats the big number.</summary>
-        /// <remarks><c>123456789</c> => <c>123 456 789</c></remarks>
-        private string formatBigNumber(long number)
+        /// <remarks><c>123456789</c> => <c>123,456,789</c></remarks>
+        private string FormatBigNumber(long number)
         {
-            string temp = number.ToString("N").Replace(',', ' ');
-
-            int index = temp.IndexOf(".00");
-
-            if (index != -1)
-                temp = temp.Substring(0, index);
-
-            return temp;
+            return $"{number:#,##0}";
         }
 
         /// <inheritdoc />
