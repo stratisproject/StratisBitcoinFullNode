@@ -29,13 +29,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        protected async override Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
+        protected override async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
             {
                 case SendProvenHeadersPayload sendProvenHeadersPayload:
-                    await ProcessSendProvenHeadersPayload(sendProvenHeadersPayload);
+                    await this.ProcessSendProvenHeadersPayload(sendProvenHeadersPayload);
                     break;
+
                 default:
                     await base.ProcessMessageAsync(peer, message).ConfigureAwait(false); ;
                     break;
@@ -62,10 +63,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 ProvenHeadersPayload provenHeadersPayload = new ProvenHeadersPayload();
                 foreach (var header in headers)
                 {
-                    var posBock = new PosBlock(header);
-                    ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBock);
+                    // When announcing proven headers we will always announce headers that we received form peers,
+                    // this means the BlockHeader must already be of type ProvenBlockHeader.
+                    ProvenBlockHeader provenBlockHeader = header as ProvenBlockHeader;
+
+                    if (provenBlockHeader == null)
+                    {
+                        throw new BlockStoreException("BlockHeader is expected to be a ProvenBlockHeader");
+                    }
+
                     provenHeadersPayload.Headers.Add(provenBlockHeader);
                 }
+
                 return provenHeadersPayload;
             }
             else

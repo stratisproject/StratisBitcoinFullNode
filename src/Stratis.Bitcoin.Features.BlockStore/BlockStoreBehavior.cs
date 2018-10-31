@@ -380,7 +380,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // We expect peer to answer with getheaders message.
                     if (bestSentHeader == null)
                     {
-                        await peer.SendMessageAsync(BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, blocksToAnnounce.Last().Header)).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, blocksToAnnounce.Last().Header)).ConfigureAwait(false);
 
                         this.logger.LogTrace("(-)[SENT_SINGLE_HEADER]");
                         return;
@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.lastSentHeader = bestIndex;
                         this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
 
-                        await peer.SendMessageAsync(BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, headers.ToArray())).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, headers.ToArray())).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
                         return;
                     }
