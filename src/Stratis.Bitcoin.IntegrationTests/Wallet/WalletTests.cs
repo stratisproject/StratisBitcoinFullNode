@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact]
+        [Retry(1)]
         public void WalletCanReorg()
         {
             // This test has 4 parts:

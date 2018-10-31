@@ -1,4 +1,5 @@
 ﻿using System;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Primitives;
 
@@ -21,6 +22,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public Func<ChainedHeaderBlock, bool> InterceptorConnect { get; internal set; }
         public Network Network { set; get; }
         public bool OverrideDateTimeProvider { get; internal set; }
+        public Action<IServiceCollection> ServiceToOverride { get; internal set; }
 
         protected NodeRunner(string dataDir)
         {

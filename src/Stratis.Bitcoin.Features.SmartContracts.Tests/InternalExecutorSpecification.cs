@@ -339,10 +339,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var fixture = new InternalExecutorTestFixture();
 
+            fixture.SetGasMeterLimitBelow((Gas) GasPriceList.TransferCost);
+
             ulong amount = 100UL;
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
-
-            fixture.SetGasMeterLimitBelow((Gas) InternalExecutor.DefaultGasLimit);
 
             var internalExecutor = new InternalExecutor(
                 fixture.LoggerFactory,
