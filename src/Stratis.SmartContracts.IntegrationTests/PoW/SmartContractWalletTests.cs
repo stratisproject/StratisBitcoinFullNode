@@ -238,7 +238,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             }
         }
 
-        [Fact]
+        [Retry)]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
@@ -509,7 +509,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Attempt to create contract with too little gas
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
                 Assert.True(compilationResult.Success);
-                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, new string[] { "7#20" }, gasLimit:10_001);
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, new string[] { "7#20" }, gasLimit: 10_001);
 
                 // Never reaches mempool.
                 Thread.Sleep(3000);
