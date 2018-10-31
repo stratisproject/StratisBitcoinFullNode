@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Range(SmartContractFormatRule.GasPriceMinimum, SmartContractFormatRule.GasPriceMaximum)]
         public string GasPrice { get; set; }
 
-        [Range(SmartContractFormatRule.GasLimitMinimum, SmartContractFormatRule.GasLimitMaximum)]
+        [Range(SmartContractFormatRule.GasLimitCallMinimum, SmartContractFormatRule.GasLimitMaximum)]
         public string GasLimit { get; set; }
 
         [Required(ErrorMessage = "Sender is required.")]
