@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>An object capable of storing <see cref="Wallet"/>s to the file system.</summary>
         private readonly FileStorage<AddressBook> fileStorage;
 
-        private readonly AddressBook addressBook;
+        private AddressBook addressBook;
 
         public AddressBookManager(
             ILoggerFactory loggerFactory,
@@ -28,15 +28,24 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.fileStorage = new FileStorage<AddressBook>(dataFolder.RootPath);
+        }
 
+        /// <inheritdoc />
+        public void Initialize()
+        {
+            // Create an address book file if none exists.
             if (this.fileStorage.Exists(AddressBookFileName))
             {
                 this.addressBook = this.fileStorage.LoadByFileName(AddressBookFileName);
+
+                this.logger.LogInformation("Address book was loaded.");
             }
             else
             {
                 this.addressBook = new AddressBook();
                 this.fileStorage.SaveToFile(this.addressBook, AddressBookFileName);
+
+                this.logger.LogInformation("A new address book was created.");
             }
         }
 

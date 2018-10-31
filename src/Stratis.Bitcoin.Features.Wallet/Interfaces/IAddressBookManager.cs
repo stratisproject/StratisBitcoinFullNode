@@ -6,6 +6,11 @@
     public interface IAddressBookManager
     {
         /// <summary>
+        /// Initializes the address book manager.
+        /// </summary>
+        void Initialize();
+
+        /// <summary>
         /// Get the address book.
         /// </summary>
         /// <returns>The address book.</returns>
