@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools;
-using Stratis.Bitcoin.IntegrationTests.Common;
+﻿using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Stratis.SmartContracts.IntegrationTests.PoA.MockChain;
 using Xunit;
@@ -24,9 +20,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
                 chain.WaitForAllNodesToSync();
 
                 TestHelper.WaitLoop(() => node1.CoreNode.GetTip().Height >= chain.Network.Consensus.PremineHeight + chain.Network.Consensus.CoinbaseMaturity + 1);
-                Assert.Equal(chain.Network.Consensus.PremineReward.Satoshi, (long) node1.WalletSpendableBalance);
+                Assert.Equal(chain.Network.Consensus.PremineReward.Satoshi, (long)node1.WalletSpendableBalance);
             }
         }
-
     }
 }

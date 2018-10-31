@@ -19,7 +19,6 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
-using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests.MockChain
 {
@@ -76,14 +75,6 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             }
         }
 
-        /// <summary>
-        /// Whether this node is fully synced.
-        /// </summary>
-        public bool IsSynced
-        {
-            get { return TestHelper.IsNodeSynced(this.CoreNode); }
-        }
-
         public MockChainNode(CoreNode coreNode, IMockChain chain)
         {
             this.CoreNode = coreNode;
@@ -95,6 +86,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;
             this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
+
             // Set up services for later
             this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
