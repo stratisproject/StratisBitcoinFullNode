@@ -26,9 +26,6 @@ namespace Stratis.Bitcoin.Consensus.ValidationResults
             if (this.Succeeded)
                 return $"{nameof(this.Succeeded)}={this.Succeeded}";
 
-            if (this.PeersToBan == null)
-                return $"{nameof(this.Succeeded)}={this.Succeeded},{nameof(this.ConsensusTipChanged)}={this.ConsensusTipChanged}";
-
             return $"{nameof(this.Succeeded)}={this.Succeeded},{nameof(this.ConsensusTipChanged)}={this.ConsensusTipChanged},{nameof(this.PeersToBan)}.{nameof(this.PeersToBan.Count)}={this.PeersToBan.Count},{nameof(this.BanReason)}={this.BanReason},{nameof(this.BanDurationSeconds)}={this.BanDurationSeconds}";
         }
     }
