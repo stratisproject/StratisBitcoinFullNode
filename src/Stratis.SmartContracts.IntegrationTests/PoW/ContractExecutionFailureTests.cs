@@ -37,10 +37,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.senderRetriever = new SenderRetriever();
         }
 
-        // TODO: The costs definitely need to be refined! Contract execution shouldn't be so cheap relative to fees.
-
-        // Also check that validation and base cost fees are being applied correctly.
-
         [Fact]
         public void ContractTransaction_Invalid_MethodParamSerialization()
         {
