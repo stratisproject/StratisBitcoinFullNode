@@ -5,7 +5,7 @@ using Moq;
 using Stratis.Bitcoin.SignalR;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SignalR.Tests
+namespace Stratis.Bitcoin.Tests.SignalR
 {
     public class SignalRServiceTests : IDisposable
     {
