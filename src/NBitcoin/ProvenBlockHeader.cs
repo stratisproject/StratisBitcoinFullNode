@@ -75,7 +75,7 @@ namespace NBitcoin
         public long HeaderSize => Size + this.MerkleProofSize + this.SignatureSize + this.CoinstakeSize;
 
         private uint256 stakeModifierV2;
-        public uint256 StakeModifierV2 { get => this.stakeModifierV2; protected set => this.stakeModifierV2 = value; }
+        public uint256 StakeModifierV2 { get => this.stakeModifierV2; set => this.stakeModifierV2 = value; }
 
         public ProvenBlockHeader()
         {
