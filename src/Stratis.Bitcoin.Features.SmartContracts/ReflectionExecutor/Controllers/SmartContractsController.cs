@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             BuildCallContractTransactionResponse response = BuildCallTx(request);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
-
+            
             var transactionContext = new ContractTransactionContext(
                 (ulong) this.chain.Height,
                 uint160.Zero,
