@@ -22,5 +22,13 @@ namespace Stratis.Bitcoin.Networks
                 return new NetworksSelector(() => new StratisMain(), () => new StratisTest(), () => new StratisRegTest());
             }
         }
+
+        public static NetworksSelector BosStrat
+        {
+            get
+            {
+                return new NetworksSelector(() => new StratisMain(), () => new BostonStrat(), () => new StratisRegTest());
+            }
+        }
     }
 }
