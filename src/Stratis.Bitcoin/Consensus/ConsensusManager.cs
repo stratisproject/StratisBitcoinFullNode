@@ -543,6 +543,15 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
+                if (disconnectedBlocks != null)
+                {
+                    foreach (var disconnected in disconnectedBlocks)
+                    {
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}:{1}:{2}", nameof(disconnected.ChainedHeader), disconnected.ChainedHeader, disconnected.ChainedHeader.BlockValidationState);
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}:{1}:{2}", nameof(disconnected.ChainedHeader.Previous), disconnected.ChainedHeader.Previous, disconnected.ChainedHeader.Previous.BlockValidationState);
+                    }
+                }
+
                 this.logger.LogTrace("(-)[SUCCEEDED]:'{0}'", connectBlockResult);
                 return connectBlockResult;
             }

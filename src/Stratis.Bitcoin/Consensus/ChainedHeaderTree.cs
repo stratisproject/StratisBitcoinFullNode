@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Consensus
             if ((chainedHeader.Previous.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (chainedHeader.Previous.BlockValidationState != ValidationState.FullyValidated))
             {
-                this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:null");
+                this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:{0}:{1}:{2}", nameof(chainedHeader.Previous), chainedHeader.Previous, chainedHeader.Previous.BlockValidationState);
                 return null;
             }
 
@@ -597,6 +597,8 @@ namespace Stratis.Bitcoin.Consensus
 
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
+
+            this.logger.LogTrace("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}:{1}:{2}", nameof(chainedHeader.Previous), chainedHeader.Previous, chainedHeader.Previous.BlockValidationState);
 
             return partialValidationRequired;
         }
