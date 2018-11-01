@@ -51,11 +51,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int blockHeight = blockPair.ChainedHeader.Height;
             if (this.AreProvenHeadersActivated(blockHeight))
             {
-                uint256 blockHash = blockPair.Block.Header.GetHash();
 
                 if (blockPair.ChainedHeader.Header is ProvenBlockHeader phHeader)
                 {
-                    return;//TODo
+                    logger.LogTrace("Current header is already a Proven Header.");
+                    return;
                 }
 
                 ProvenBlockHeader provenHeader = this.provenBlockHeaderStore.GetAsync(blockPair.ChainedHeader.Height).GetAwaiter().GetResult();
@@ -63,38 +63,47 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (provenHeader == null)
                 {
                     logger.LogTrace("Proven Header at height {0} NOT found.", blockHeight);
-                    CreateAndStoreProvenHeader(blockHeight, (PosBlock)blockPair.Block);
 
-                    blockPair.ChainedHeader.Header ==
+                    var createdProvenHeader = CreateAndStoreProvenHeader(blockHeight, (PosBlock)blockPair.Block);
+
+                    // setters aren't accessible, not sure setting them to public is a nice idea.
+                    //blockPair.Block.Header = blockPair.ChainedHeader.Header = createdProvenHeader;
                 }
                 else
                 {
+                    uint256 blockHash = blockPair.Block.Header.GetHash();
+
                     // If the Proven Header is the right one, then it's OK and we can return without doing anything.
                     uint256 provenHeaderHash = provenHeader.GetHash();
                     if (provenHeaderHash == blockHash)
                     {
                         logger.LogTrace("Proven Header {0} found.", blockHash);
+                        return;
                     }
                     else
                     {
-                        throw new BlockStoreException("TODO");
+                        throw new BlockStoreException("Found a proven header with a different hash.");
                     }
                 }
             }
         }
 
         /// <summary>
-        /// Creates the and store a <see cref="ProvenBlockHeader"/>.
+        /// Creates the and store a <see cref="ProvenBlockHeader" />.
         /// </summary>
         /// <param name="blockHeight">Height of the block used to generate its Proven Header.</param>
         /// <param name="block">Block used to generate its Proven Header.</param>
-        private void CreateAndStoreProvenHeader(int blockHeight, PosBlock block)
+        /// <returns>Created <see cref="ProvenBlockHeader"/>.</returns>
+        private ProvenBlockHeader CreateAndStoreProvenHeader(int blockHeight, PosBlock block)
         {
             ProvenBlockHeader newProvenHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
             uint256 provenHeaderHash = newProvenHeader.GetHash();
-            logger.LogTrace("Creating Proven Header at height {0} with hash {1} and adding to the store.", blockHeight, provenHeaderHash);
             this.provenBlockHeaderStore.AddToPendingBatch(newProvenHeader, new HashHeightPair(provenHeaderHash, blockHeight));
+
+            logger.LogTrace("Created Proven Header at height {0} with hash {1} and adding to the store (pending).", blockHeight, provenHeaderHash);
+
+            return newProvenHeader;
         }
     }
 }
