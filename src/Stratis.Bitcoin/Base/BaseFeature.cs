@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -21,6 +19,7 @@ using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.SignalR;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -118,6 +117,7 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>SignalR service reference.  Allows for real-time streaming of data to interested clients.</summary>
         private readonly ISignalRService signalRService;
+
         public BaseFeature(
             NodeSettings nodeSettings,
             DataFolder dataFolder,
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Base
             IBlockPuller blockPuller,
             IBlockStore blockStore,
             Network network,
-			ISignalRService signalRService)
+            ISignalRService signalRService)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -182,7 +182,6 @@ namespace Stratis.Bitcoin.Base
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             this.signalRService.StartAsync().GetAwaiter().GetResult();
 
-            var connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
 
             connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
