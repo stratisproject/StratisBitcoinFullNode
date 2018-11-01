@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, KnownNetworks.StratisMain, chain, NodeSettings.Default(this.Network), new WalletSettings(NodeSettings.Default(this.Network)),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
-            
+
             string password = "test";
             string passphrase = "test";
 
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             chain.SetTip(block.Header);
 
             var walletManager = new WalletManager(this.LoggerFactory.Object, KnownNetworks.StratisMain, chain, NodeSettings.Default(this.Network), new WalletSettings(NodeSettings.Default(this.Network)),
-                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader() );
+                dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
             string password = "test";
             string passphrase = "this is my magic passphrase";
@@ -3239,7 +3239,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             addNewAccount.Should().Throw<WalletException>()
                 .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);
         }
-        
+
         private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)
         {
             var nodeSettings = new NodeSettings(KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, network.Name, cmdLineArgs);
