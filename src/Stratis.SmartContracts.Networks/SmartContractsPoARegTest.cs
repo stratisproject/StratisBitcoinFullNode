@@ -35,6 +35,7 @@ namespace Stratis.SmartContracts.Networks
 
             this.Genesis = genesisBlock;
 
+            // Keeping the 3rd there in case we use it in future. For our integration tests we use 2 nodes currently.
             this.FederationKeys = new Key[]
             {
                 new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey,
@@ -56,7 +57,7 @@ namespace Stratis.SmartContracts.Networks
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
-                targetSpacingSeconds: 2
+                targetSpacingSeconds: 3
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -86,7 +87,7 @@ namespace Stratis.SmartContracts.Networks
                 defaultAssumeValid: null,
                 maxMoney: long.MaxValue,
                 coinbaseMaturity: 1,
-                premineHeight: 10,
+                premineHeight: 5,
                 premineReward: Money.Coins(100_000_000),
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks

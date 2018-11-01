@@ -113,11 +113,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
             this.coinbaseAddress = (getSenderResult.Success) ? getSenderResult.Sender : uint160.Zero;
 
-            //if (!getSenderResult.Success)
-            //    throw new ConsensusErrorException(new ConsensusError("sc-block-assembler-createnewblock", getSenderResult.Error));
-
-            //this.coinbaseAddress = getSenderResult.Sender;
-
             this.stateSnapshot = this.stateRoot.GetSnapshotTo(((ISmartContractBlockHeader)this.ConsensusManager.Tip.Header).HashStateRoot.ToBytes());
 
             this.refundOutputs.Clear();

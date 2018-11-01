@@ -185,7 +185,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
 
             Script coinbaseScriptPubKey = context.ValidationContext.BlockToValidate.Transactions[0].Outputs[0].ScriptPubKey;
 
-            uint160 coinbaseAddress = (getSenderResult.Success) ? getSenderResult.Sender : uint160.Zero;
+            GetSenderResult getCoinbaseResult = this.ContractCoinviewRule.SenderRetriever.GetAddressFromScript(coinbaseScriptPubKey);
+
+            uint160 coinbaseAddress = (getCoinbaseResult.Success) ? getCoinbaseResult.Sender : uint160.Zero;
 
             Money mempoolFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
