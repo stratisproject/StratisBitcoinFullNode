@@ -1,8 +1,11 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
@@ -46,17 +49,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
             base.AddBlockToQueue(blockPair);
 
             int blockHeight = blockPair.ChainedHeader.Height;
-            PosBlock block = blockPair.Block as PosBlock;
-            if (block != null && this.AreProvenHeadersActivated(blockHeight))
+            if (this.AreProvenHeadersActivated(blockHeight))
             {
                 uint256 blockHash = blockPair.Block.Header.GetHash();
+
+                if (blockPair.ChainedHeader.Header is ProvenBlockHeader phHeader)
+                {
+                    return;//TODo
+                }
 
                 ProvenBlockHeader provenHeader = this.provenBlockHeaderStore.GetAsync(blockPair.ChainedHeader.Height).GetAwaiter().GetResult();
                 // Proven Header not found? create it now.
                 if (provenHeader == null)
                 {
                     logger.LogTrace("Proven Header at height {0} NOT found.", blockHeight);
-                    CreateAndStoreProvenHeader(blockHeight, block);
+                    CreateAndStoreProvenHeader(blockHeight, (PosBlock)blockPair.Block);
+
+                    blockPair.ChainedHeader.Header ==
                 }
                 else
                 {
@@ -68,10 +77,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     }
                     else
                     {
-                        logger.LogTrace("Proven Header at height {0} found but hashes don't match, updating the stored Proven Header.", blockHeight);
-
-                        //TODO: does AddToPendingBatch manage itself the removal of a PH at the same height? I doubt, need to investigate
-                        CreateAndStoreProvenHeader(blockHeight, block);
+                        throw new BlockStoreException("TODO");
                     }
                 }
             }
