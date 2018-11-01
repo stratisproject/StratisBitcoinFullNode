@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 catch (Exception ex)
                 {
                     this.logger.LogError("Error: {0}", ex);
-                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]{0}");
+                    this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                     throw;
                 }
             },
