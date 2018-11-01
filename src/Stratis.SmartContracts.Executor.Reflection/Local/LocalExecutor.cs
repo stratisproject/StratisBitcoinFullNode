@@ -86,7 +86,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Local
                 ErrorMessage = result.Error?.GetErrorMessage(),
                 Revert = result.IsFailure,
                 GasConsumed = result.GasConsumed,
-                Result = result.Success?.ExecutionResult,
+                Return = result.Success?.ExecutionResult,
                 InternalTransfers = state.InternalTransfers.ToList(),
                 Logs = state.GetLogs(this.contractPrimitiveSerializer)
             };

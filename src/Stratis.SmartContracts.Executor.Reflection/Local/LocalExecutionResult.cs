@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Local
         public Gas GasConsumed { get; set; }
         public bool Revert { get; set; }
         public ContractErrorMessage ErrorMessage { get; set; }
-        public object Result { get; set; }
+        public object Return { get; set; }
         public IList<Log> Logs { get; set; }
     }
 }

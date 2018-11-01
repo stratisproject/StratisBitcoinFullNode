@@ -598,7 +598,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var callResponse = (ILocalExecutionResult)result.Value;
                 
                 // Check that the locally executed transaction returns the correct results
-                Assert.Equal(12346, callResponse.Result);
+                Assert.Equal(12346, callResponse.Return);
                 Assert.False(callResponse.Revert);
                 Assert.True(callResponse.GasConsumed > 0);
                 Assert.Null(callResponse.ErrorMessage);
