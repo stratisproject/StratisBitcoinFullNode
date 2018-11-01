@@ -263,10 +263,11 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeaderBlock chainedHeaderBlock = null;
             if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
             {
+                chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+
                 if (chainedHeaderBlock.Block == null)
                     this.logger.LogTrace("[CHT_GetChainedHeaderBlock]");
 
-                chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
             }
 
             return chainedHeaderBlock;
