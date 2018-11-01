@@ -23,10 +23,10 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact(Skip = "We're not immediately planning to support PoS, and this is breaking. Could be useful as a template in the future however!")]
         public void SendAndReceiveSmartContractTransactionsOnPosNetwork()
         {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
-                CoreNode scSender = builder.CreateSmartContractPosNode().NotInIBD().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPosNode().NotInIBD().WithWallet().Start();
+                CoreNode scSender = builder.CreateSmartContractPosNode().WithWallet().Start();
+                CoreNode scReceiver = builder.CreateSmartContractPosNode().WithWallet().Start();
 
                 var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(scSender.FullNode.Network));
 

@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 var network = new StratisRegTest();
 
                 CoreNode stratisXNode = builder.CreateStratisXNode(version: "2.0.0.5").Start();
-                CoreNode stratisNode = builder.CreateStratisPosNode(network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode = builder.CreateStratisPosNode(network).WithWallet().Start();
 
                 RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .AddRPC()
                     .MockIBD());
 
-                CoreNode stratisNode = builder.CreateCustomNode(callback, network).NotInIBD().WithWallet().Start();
+                CoreNode stratisNode = builder.CreateCustomNode(callback, network).WithWallet().Start();
 
                 RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();

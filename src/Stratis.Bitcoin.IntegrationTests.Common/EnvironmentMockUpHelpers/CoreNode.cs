@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -30,7 +31,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     public class CoreNode
     {
-        private readonly ConnectionManagerSettings connectionManagerSettings;
         private readonly NetworkCredential creds;
         private readonly object lockObject = new object();
         private readonly ILoggerFactory loggerFactory;
@@ -56,8 +56,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
-        private Func<ChainedHeaderBlock, bool> builderInterceptor;
-        private bool builderNotInIBD;
+        private Func<ChainedHeaderBlock, bool> builderDisconnectInterceptor;
+        private Func<ChainedHeaderBlock, bool> builderConnectInterceptor;
+
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
@@ -82,7 +83,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.ConfigParameters.SetDefaultValueIfUndefined("rpcport", randomFoundPorts[1].ToString());
             this.ConfigParameters.SetDefaultValueIfUndefined("apiport", randomFoundPorts[2].ToString());
 
-            this.connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.runner.Network));
             this.loggerFactory = new ExtendedLoggerFactory();
             this.loggerFactory.AddConsoleWithFilters();
 
@@ -102,12 +102,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 return "cookiefile=" + Path.Combine(this.runner.DataFolder, "regtest", ".cookie");
         }
 
-        public CoreNode NotInIBD()
-        {
-            this.builderNotInIBD = true;
-            return this;
-        }
-
         public CoreNode NoValidation()
         {
             this.builderNoValidation = true;
@@ -121,7 +115,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode BlockDisconnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
         {
-            this.builderInterceptor = interceptor;
+            this.builderDisconnectInterceptor = interceptor;
+            return this;
+        }
+
+        /// <summary>
+        /// Executes a function when a block has connected.
+        /// </summary>
+        /// <param name="interceptor">A function that is called when a block connects, it will return true if it executed.</param>
+        /// <returns>This node.</returns>
+        public CoreNode BlockConnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        {
+            this.builderConnectInterceptor = interceptor;
             return this;
         }
 
@@ -135,6 +140,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode OverrideDateTimeProvider()
         {
             this.builderOverrideDateTimeProvider = true;
+            return this;
+        }
+
+        /// <summary>
+        /// Overrides a node service.
+        /// </summary>
+        /// <param name="serviceToOverride">A function that will override a given service in the node.</param>
+        /// <returns>This node.</returns>
+        public CoreNode OverrideService(Action<IServiceCollection> serviceToOverride)
+        {
+            this.runner.ServiceToOverride = serviceToOverride;
             return this;
         }
 
@@ -181,13 +197,25 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             var ibdState = new Mock<IInitialBlockDownloadState>();
             ibdState.Setup(x => x.IsInitialBlockDownload()).Returns(() => true);
 
+            ConnectionManagerSettings connectionManagerSettings = null;
+
+            if (this.runner is BitcoinCoreRunner)
+            {
+                var nodeSettings = new NodeSettings(this.runner.Network, args: new string[] { "-conf=bitcoin.conf", "-datadir=" + this.runner.DataFolder });
+                connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+            }
+            else
+            {
+                connectionManagerSettings = this.runner.FullNode.ConnectionManager.ConnectionSettings;
+            }
+
             var networkPeerFactory = new NetworkPeerFactory(this.runner.Network,
                 DateTimeProvider.Default,
                 this.loggerFactory,
                 new PayloadProvider().DiscoverPayloads(),
                 selfEndPointTracker,
                 ibdState.Object,
-                this.connectionManagerSettings);
+                connectionManagerSettings);
 
             return networkPeerFactory.CreateConnectedNetworkPeerAsync("127.0.0.1:" + this.ProtocolPort).GetAwaiter().GetResult();
         }
@@ -198,8 +226,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             {
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 
-                if (this.builderInterceptor != null)
-                    this.runner.Interceptor = this.builderInterceptor;
+                if (this.builderDisconnectInterceptor != null)
+                    this.runner.InterceptorDisconnect = this.builderDisconnectInterceptor;
+
+                if (this.builderConnectInterceptor != null)
+                    this.runner.InterceptorConnect = this.builderConnectInterceptor;
 
                 this.runner.BuildNode();
                 this.runner.Start();
@@ -291,9 +322,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             TestHelper.WaitLoop(() => this.runner.FullNode.State == FullNodeState.Started,
                 cancellationToken: new CancellationTokenSource(timeToNodeStart).Token,
                 failureReason: $"Failed to achieve state = started within {timeToNodeStart}");
-
-            if (this.builderNotInIBD)
-                ((InitialBlockDownloadStateMock)this.FullNode.NodeService<IInitialBlockDownloadState>()).SetIsInitialBlockDownload(false, DateTime.UtcNow.AddMinutes(5));
 
             if (this.builderWithDummyWallet)
                 this.SetMinerSecret(new BitcoinSecret(new Key(), this.FullNode.Network));

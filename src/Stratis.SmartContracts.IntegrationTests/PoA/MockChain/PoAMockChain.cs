@@ -1,11 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using NBitcoin;
-using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 {
@@ -16,7 +15,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
     {
         // TODO: This and PoWMockChain could share most logic
 
-        private readonly NodeBuilder builder;
+        private readonly SmartContractNodeBuilder builder;
 
         protected readonly MockChainNode[] nodes;
 
@@ -35,23 +34,26 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 
         public PoAMockChain(int numNodes)
         {
-            this.builder = NodeBuilder.Create(this);
+            this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
-
+            var network = new SmartContractsPoARegTest();
+            this.Network = network;
             for (int i = 0; i < numNodes; i++)
             {
-                CoreNode node = this.builder.CreateSmartContractPoANode().NotInIBD();
-                node.Start();
-                // Add other nodes
-                RPCClient rpcClient = node.CreateRPCClient();
+                CoreNode node = this.builder.CreateSmartContractPoANode(network.FederationKeys[i]).Start();
+
                 for (int j = 0; j < i; j++)
                 {
                     MockChainNode otherNode = this.nodes[j];
-                    rpcClient.AddNode(otherNode.CoreNode.Endpoint, true);
-                    otherNode.CoreNode.CreateRPCClient().AddNode(node.Endpoint);
+                    TestHelper.Connect(node, otherNode.CoreNode);
+                    TestHelper.Connect(otherNode.CoreNode, node);
                 }
+
                 this.nodes[i] = new MockChainNode(node, this);
             }
+
+            // Only enable on one for now. Having 2 nodes affecting the same EditableDateTimeProvider is too unpredictable.
+            this.nodes[0].CoreNode.EnableFastMining();
         }
 
         /// <summary>
@@ -61,7 +63,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
         {
             if (this.nodes.Length == 1)
             {
-                TestHelper.WaitLoop(() => this.nodes[0].IsSynced);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[0].CoreNode));
                 return;
             }
 

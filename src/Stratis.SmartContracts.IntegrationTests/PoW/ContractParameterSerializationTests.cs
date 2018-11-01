@@ -67,7 +67,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -162,7 +162,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(CallWithAllParameters.Call), preResponse.NewContractAddress, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -228,7 +228,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -287,7 +287,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());

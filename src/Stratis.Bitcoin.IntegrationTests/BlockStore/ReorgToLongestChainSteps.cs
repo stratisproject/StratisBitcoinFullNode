@@ -44,10 +44,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void four_miners()
         {
-            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
-            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).NotInIBD().WithWallet().Start();
+            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
 
             TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.Connect(this.jingNode, this.charlieNode);
@@ -160,7 +160,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             int coinbaseMaturity = (int)this.bobNode.FullNode.Network.Consensus.CoinbaseMaturity;
 
-            TestHelper.MineBlocks(this.bobNode, coinbaseMaturity);
+            TestHelper.MineBlocks(this.bobNode, coinbaseMaturity + 1);
 
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.bobNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.charlieNode));
