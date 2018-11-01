@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IConnectionManager connection;
 
         /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
             // Ensure the block is written to disk before relaying.
-            this.blockStoreQueue.AddToPending(blockPair);
+            this.AddBlockToQueue(blockPair);
 
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
@@ -95,6 +95,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedHeader);
             this.blocksToAnnounce.Enqueue(chainedHeader);
+        }
+
+        /// <summary>
+        /// Adds the block to queue.
+        /// Ensures the block is written to disk before relaying to peers.
+        /// </summary>
+        /// <param name="blockPair">The block pair.</param>
+        protected virtual void AddBlockToQueue(ChainedHeaderBlock blockPair)
+        {
+            this.blockStoreQueue.AddToPending(blockPair);
         }
 
         /// <summary>
