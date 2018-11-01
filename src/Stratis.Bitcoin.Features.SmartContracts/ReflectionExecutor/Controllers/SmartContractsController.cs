@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
@@ -278,6 +280,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
+            // Rewrite the method name to a property name
+            this.RewritePropertyGetterName(request);
+
             BuildCallContractTransactionResponse response = BuildCallTx(request);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
@@ -292,6 +297,33 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);           
 
             return Json(result);
+        }
+
+        /// <summary>
+        /// If the call is to a property, rewrites the method name to the getter method's name.
+        /// </summary>
+        private void RewritePropertyGetterName(BuildCallContractTransactionRequest request)
+        {
+            // Don't rewrite if there are params
+            if (request.Parameters != null && request.Parameters.Any())
+                return;
+
+            byte[] contractCode = this.stateRoot.GetCode(request.ContractAddress.ToUint160(this.network));
+
+            string contractType = this.stateRoot.GetContractType(request.ContractAddress.ToUint160(this.network));
+
+            Result<IContractModuleDefinition> readResult = ContractDecompiler.GetModuleDefinition(contractCode);
+
+            if (readResult.IsSuccess)
+            {
+                IContractModuleDefinition contractModule = readResult.Value;
+                string propertyGetterName = contractModule.GetPropertyGetterMethodName(contractType, request.MethodName);
+
+                if (propertyGetterName != null)
+                {
+                    request.MethodName = propertyGetterName;
+                }
+            }
         }
 
         [Route("address-balances")]
