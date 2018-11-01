@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Local
 
         public LocalExecutor(ILoggerFactory loggerFactory,
             ICallDataSerializer serializer,
-            IStateRepository stateRoot,
+            IStateRepositoryRoot stateRoot,
             IStateFactory stateFactory,
             IStateProcessor stateProcessor,
             IContractPrimitiveSerializer contractPrimitiveSerializer)
@@ -48,7 +48,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Local
             );
 
             IState state = this.stateFactory.Create(
-                this.stateRoot,
+                this.stateRoot.StartTracking(),
                 block,
                 transactionContext.TxOutValue,
                 transactionContext.TransactionHash);
