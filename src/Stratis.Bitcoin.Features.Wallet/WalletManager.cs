@@ -2,15 +2,18 @@
 using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
+using System.Reactive.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.SignalR;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
@@ -86,7 +89,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
         private Dictionary<OutPoint, TransactionData> outpointLookup;
-        internal Dictionary<Script, HdAddress> keysLookup;
+        internal Dictionary<Script, HdAddress> keysLookup;        
 
         public WalletManager(
             ILoggerFactory loggerFactory,
@@ -138,6 +141,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.keysLookup = new Dictionary<Script, HdAddress>();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
         }
+
+        /// <summary> Emits when it's determined that wallet balances have changed. </summary>
+        public IObservable<IReadOnlyList<(string walletName, IReadOnlyList<AccountBalance> balances)>> WalletBalancesChangedStream { get; }
 
         private void BroadcasterManager_TransactionStateChanged(object sender, TransactionBroadcastEntry transactionEntry)
         {
@@ -835,7 +841,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             bool foundReceivingTrx = false, foundSendingTrx = false;
 
             lock (this.lockObject)
-            {
+            { 
                 // Check the outputs.
                 foreach (TxOut utxo in transaction.Outputs)
                 {
@@ -888,10 +894,35 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     this.SaveWallets();
                 }
+                
+                //There is a requirement to publish wallet balances, but we don't want to enable this just yet.
+                //this.PublishWalletBalances();
             }
             
             return foundSendingTrx || foundReceivingTrx;
         }
+
+        //*************** There is a requirement to publish wallet balances, but we don't want to enable this just yet. ***************
+        //private class JsonWallet
+        //{
+        //    public string Name { get; set; }
+        //    public IEnumerable<AccountBalance> Balances { get; set; }
+        //}
+
+        //private void PublishWalletBalances()
+        //{
+        //    try
+        //    {
+        //        var wallets = this.Wallets.Select(w => new JsonWallet {Name = w.Name, Balances = this.GetBalances(w.Name)});
+        //        if (wallets.Any())
+        //            this.signalRService.SendAsync("balances", JsonConvert.SerializeObject(wallets));
+        //    }
+        //    catch (Exception e)
+        //    {
+        //        this.logger.LogError("Failed to PublishWalletBalances: {0}", e.Message);
+        //    }
+        //}
+        //******************************************************************************************************************************
 
         /// <summary>
         /// Adds a transaction that credits the wallet with new coins.
