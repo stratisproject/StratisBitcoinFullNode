@@ -24,6 +24,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
@@ -51,6 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IReceiptRepository receiptRepository;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
+        private readonly LocalExecutor localExecutor;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
@@ -66,7 +68,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IContractPrimitiveSerializer contractPrimitiveSerializer,
             IReceiptRepository receiptRepository,
             ICallDataSerializer callDataSerializer,
-            IMethodParameterStringSerializer methodParameterStringSerializer)
+            IMethodParameterStringSerializer methodParameterStringSerializer,
+            LocalExecutor localExecutor)
         {
             this.stateRoot = stateRoot;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -82,6 +85,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.receiptRepository = receiptRepository;
             this.callDataSerializer = callDataSerializer;
             this.methodParameterStringSerializer = methodParameterStringSerializer;
+            this.localExecutor = localExecutor;
         }
 
         [Route("code")]
@@ -265,6 +269,29 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
             return Json(response);
+        }
+
+        [Route("local-call")]
+        [HttpPost]
+        public IActionResult LocalCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            BuildCallContractTransactionResponse response = BuildCallTx(request);
+
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
+
+            var transactionContext = new ContractTransactionContext(
+                (ulong) this.chain.Height,
+                uint160.Zero,
+                0, // Safe to set this to 0 here, it's only used for the refund which we do not create when executing locally
+                request.Sender.ToUint160(this.network),
+                transaction);
+
+            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);           
+
+            return Json(result);
         }
 
         [Route("address-balances")]
