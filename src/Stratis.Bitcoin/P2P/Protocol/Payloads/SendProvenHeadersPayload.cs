@@ -6,10 +6,18 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
     /// Send proven headers payload which informs the peer that we are only willing to sync using the proven
     /// headers and not the old type of headers.
     /// </summary>
-    /// <seealso cref="Stratis.Bitcoin.P2P.Protocol.Payloads.Payload" />
     [Payload("sendprovhdr")]
     public class SendProvenHeadersPayload : Payload
     {
+        public SendProvenHeadersPayload()
+        {
+        }
+
+        public SendProvenHeadersPayload(int requireProvenHeadersFromHeight)
+        {
+            this.requireFromHeight = requireProvenHeadersFromHeight;
+        }
+
         /// <summary>
         /// <see cref="RequireFromHeight"/>
         /// </summary>
