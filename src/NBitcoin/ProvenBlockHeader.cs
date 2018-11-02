@@ -74,8 +74,14 @@ namespace NBitcoin
         /// <summary>Gets the total header size - including the <see cref="BlockHeader.Size"/> - in bytes. <see cref="ProvenBlockHeader"/> must be serialized or deserialized for this property to be set.</summary>
         public long HeaderSize => Size + this.MerkleProofSize + this.SignatureSize + this.CoinstakeSize;
 
-        private uint256 stakeModifierV2;
-        public uint256 StakeModifierV2 { get => this.stakeModifierV2; set => this.stakeModifierV2 = value; }
+        /// <summary>
+        /// Gets or sets the stake modifier v2.
+        /// </summary>
+        /// <value>
+        /// The stake modifier v2.
+        /// </value>
+        /// <remarks>This property is used only in memory, it is not persisted to disk not sent over any Payloads.</remarks>
+        public uint256 StakeModifierV2 { get; set; }
 
         public ProvenBlockHeader()
         {
@@ -96,9 +102,6 @@ namespace NBitcoin
             this.signature = block.BlockSignature;
             this.coinstake = block.Transactions[1];
             this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
-
-            BlockStake blockStake = BlockStake.Load(block);
-            this.StakeModifierV2 = blockStake.StakeModifierV2;
         }
 
         /// <inheritdoc />
@@ -113,8 +116,6 @@ namespace NBitcoin
 
             stream.ReadWrite(ref this.coinstake);
             this.CoinstakeSize = stream.ProcessedBytes - Size - this.MerkleProofSize - this.SignatureSize;
-
-            stream.ReadWrite(ref this.stakeModifierV2);
         }
 
         /// <inheritdoc />
