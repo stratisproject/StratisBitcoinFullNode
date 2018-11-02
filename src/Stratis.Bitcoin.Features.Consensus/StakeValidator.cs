@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public ChainedHeader GetLastPowPosChainedBlock(IStakeChain stakeChain, ChainedHeader startChainedHeader, bool proofOfStake)
         {
             Guard.Assert(startChainedHeader != null);
-            
+
             BlockStake blockStake = stakeChain.Get(startChainedHeader.HashBlock);
 
             while ((startChainedHeader.Previous != null) && (blockStake.IsProofOfStake() != proofOfStake))
@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 startChainedHeader = startChainedHeader.Previous;
                 blockStake = stakeChain.Get(startChainedHeader.HashBlock);
             }
-            
+
             return startChainedHeader;
         }
 
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 target = targetLimit;
 
             var finalTarget = new Target(target);
-            
+
             return finalTarget;
         }
 
@@ -169,7 +169,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             Target finalTarget = this.CalculateRetarget(lastPowPosBlock.Header.Time, lastPowPosBlock.Header.Bits, prevLastPowPosBlock.Header.Time, targetLimit);
-            
+
             return finalTarget;
         }
 
@@ -210,12 +210,13 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
-            this.CheckStakeKernelHash(context, headerBits, prevBlockStake, prevUtxo, txIn.PrevOut, transaction.Time);
+            this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, txIn.PrevOut, transaction.Time);
         }
 
         /// <inheritdoc/>
-        public uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, BlockStake blockStakePrev, uint256 kernel)
+        public uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, uint256 prevStakeModifier, uint256 kernel)
         {
+            Guard.NotNull(prevStakeModifier, nameof(prevStakeModifier));
             if (prevChainedHeader == null)
                 return 0; // Genesis block's modifier is 0.
 
@@ -224,7 +225,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             {
                 var serializer = new BitcoinStream(ms, true);
                 serializer.ReadWrite(kernel);
-                serializer.ReadWrite(blockStakePrev.StakeModifierV2);
+                serializer.ReadWrite(prevStakeModifier);
                 stakeModifier = Hashes.Hash256(ms.ToArray());
             }
 
@@ -262,11 +263,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadStakeBlock.Throw();
             }
 
-            this.CheckStakeKernelHash(context, headerBits, prevBlockStake, prevUtxo, prevout, (uint)transactionTime);
+            this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, prevout, (uint)transactionTime);
         }
 
         /// <inheritdoc/>
-        public void CheckStakeKernelHash(PosRuleContext context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
+        public void CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins,
             OutPoint prevout, uint transactionTime)
         {
             if (transactionTime < stakingCoins.Time)
@@ -292,13 +293,11 @@ namespace Stratis.Bitcoin.Features.Consensus
             context.TargetProofOfStake = ToUInt256(weightedTarget);
             this.logger.LogTrace("POS target is '{0}', weighted target for {1} coins is '{2}'.", ToUInt256(target), valueIn, context.TargetProofOfStake);
 
-            uint256 stakeModifierV2 = prevBlockStake.StakeModifierV2;
-
             // Calculate hash.
             using (var ms = new MemoryStream())
             {
                 var serializer = new BitcoinStream(ms, true);
-                serializer.ReadWrite(stakeModifierV2);
+                serializer.ReadWrite(prevStakeModifier);
                 serializer.ReadWrite(stakingCoins.Time);
                 serializer.ReadWrite(prevout.Hash);
                 serializer.ReadWrite(prevout.N);
@@ -307,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 context.HashProofOfStake = Hashes.Hash256(ms.ToArray());
             }
 
-            this.logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", stakeModifierV2, context.HashProofOfStake);
+            this.logger.LogTrace("Stake modifier V2 is '{0}', hash POS is '{1}'.", prevStakeModifier, context.HashProofOfStake);
 
             // Now check if proof-of-stake hash meets target protocol.
             var hashProofOfStakeTarget = new BigInteger(1, context.HashProofOfStake.ToBytes(false));

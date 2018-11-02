@@ -2,7 +2,6 @@
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -48,19 +47,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             this.stakeValidator = this.PosParent.StakeValidator;
         }
 
-        /// <inheritdoc/>
-        public override void Run(RuleContext context)
+        /// <inheritdoc />
+        protected override void ProcessRule(PosRuleContext context, ChainedHeader chainedHeader, ProvenBlockHeader header)
         {
-            Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
-
-            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
-            int height = chainedHeader.Height;
-
-            if (context.SkipValidation || !this.IsProvenHeaderActivated(height))
-                return;
-
-            var header = (ProvenBlockHeader)chainedHeader.Header;
-
             this.CheckCoinstakeIsNotNull(header);
 
             this.CheckIfCoinstakeIsTrue(header);
@@ -74,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.CheckSignature(header, prevUtxo);
 
-            this.CheckStakeKernelHash((PosRuleContext)context, prevUtxo, header, chainedHeader);
+            this.CheckStakeKernelHash(context, prevUtxo, header, chainedHeader);
 
             this.CheckCoinstakeMerkleProof(header);
 
@@ -186,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             var options = (PosConsensusOptions)this.PosParent.Network.Consensus.Options;
             int targetDepth = options.GetStakeMinConfirmations(chainedHeader.Height, this.PosParent.Network) - 1;
 
-            if(this.stakeValidator.IsConfirmedInNPrevBlocks(unspentOutputs, prevChainedHeader, targetDepth))
+            if (this.stakeValidator.IsConfirmedInNPrevBlocks(unspentOutputs, prevChainedHeader, targetDepth))
                 return;
 
             this.Logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
@@ -214,19 +203,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             OutPoint prevOut = this.GetPreviousOut(header);
             uint transactionTime = header.Coinstake.Time;
-
-            ChainedHeader prevChainedHeader = chainedHeader.Previous;
-
-            BlockStake prevBlockStake = this.PosParent.StakeChain.Get(prevChainedHeader.HashBlock);
-            if (prevBlockStake == null)
-            {
-                this.Logger.LogTrace("(-)[BAD_PREV_STAKE]");
-                ConsensusErrors.PrevStakeNull.Throw();
-            }
-
             uint headerBits = chainedHeader.Header.Bits.ToCompact();
 
-            this.stakeValidator.CheckStakeKernelHash(context, headerBits, prevBlockStake, stakingCoins, prevOut, transactionTime);
+            uint256 previousStakeModifier;
+
+            if (chainedHeader.Height == this.ProvenHeadersActivationHeight)
+            {
+                // If we are validating the first Proven Header, we don't have a StakeModifierV2 available and I should compute it but I can't.
+                // Proposed solution is to store the StakeModifierV2 value of the header at the height of ProvenHeaderActivation in a consensus variable
+                // called ProvenHeaderActivationStakeModifier and so I can return it
+                previousStakeModifier = uint256.Zero; //TODO to be changed after ProvenHeaderActivationStakeModifier has been created.
+            }
+            else
+            {
+                ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
+                previousStakeModifier = previousProvenHeader.StakeModifierV2;
+            }
+
+            this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+            // Computes the stake modifier and sets the value to the current validating proven header, to retain it for next header validation as previousStakeModifier.
+            uint256 currentStakeModifier = this.stakeValidator.ComputeStakeModifierV2(chainedHeader.Previous, previousStakeModifier, header.Coinstake.Inputs[0].PrevOut.Hash);
+            header.StakeModifierV2 = currentStakeModifier;
         }
 
         /// <summary>
