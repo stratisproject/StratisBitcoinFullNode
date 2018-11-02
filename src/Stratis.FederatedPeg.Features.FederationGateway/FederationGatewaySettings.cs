@@ -45,7 +45,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
 
             this.SourceChainApiPort = configReader.GetOrDefault(SourceChainApiPortParam, 0);
-            this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',').Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
+            this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
+                .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
+
+            this.MinimumDepositConfirmations = nodeSettings.Network.Consensus.MaxReorgLength + 1;
         }
 
         /// <inheritdoc/>
@@ -71,5 +74,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         /// <inheritdoc/>
         public Script MultiSigRedeemScript { get; }
+
+        /// <inheritdoc />
+        public uint MinimumDepositConfirmations { get; }
     }
 }

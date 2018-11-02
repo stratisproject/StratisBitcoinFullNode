@@ -107,7 +107,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         {
             // Subscribe to receiving blocks and transactions.
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(
-                new BlockObserver(this.walletSyncManager, this.crossChainTransactionMonitor, this.depositExtractor));
+                new BlockObserver(this.walletSyncManager, this.crossChainTransactionMonitor, this.depositExtractor, this.federationGatewaySettings, this.fullNode));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new Notifications.TransactionObserver(this.walletSyncManager));
 
             this.crossChainTransactionMonitor.Initialize(federationGatewaySettings);
