@@ -18,18 +18,18 @@ Some users of chain A decide to transfer funds to chain B. To achieve this, they
 
 ### The cross-chain transfers are triggered after chain A's maximum reorg length
 
-When the maximum reorg length is passed and the deposit transactions cannot be reverted, the federation members start to proceed with the transfers. A leader for that block's transfers is elected deterministically based on the block height in which the deposit transactions were confirmed on chain A, but each node still performs the same operations independently.
+When the maximum reorg length is passed and the deposit transactions cannot be reverted, the federation members start to proceed with the transfers. A leader responsible to create deposit transactions on chain B for that block's transfers on chain A is elected deterministically based on the block height in which the deposit transactions were confirmed on chain A, but each node still performs the same operations independently.
 
-Before the leader can process the transactions in the current block, they must first look into previous blocks and detect if there were any unprocessed transfers. It is important to note that a transfer cannot happen until all transfers from previous blocks have been processed successfully, this means a leader is also responsible for blocks belonging to other members in case they were offline.  
+Before the leader can process the transactions contained in the chain A latest mature block, they must first look into previous blocks and detect if there were any unprocessed transfers. It is important to note that a transfer cannot happen until all transfers from previous blocks have been processed successfully, this means a leader is also responsible for blocks belonging to other members in case they were offline.  
 
-Each node transfers the details of the deposit transactions made on chain A (block height, transaction id, target address and corresponding amount to transfer), then persists those details in its database.
-From that point, each node has enough information to create partially signed transactions and propagate them to the other members of the federation. Each node will also persist the partially signed transactions they receive and collect signatures (this is in case they become the leader of an unprocessed transfer and can immediately broadcast it), but only the leader will proceed to broadcast a fully signed transaction.  
+Each node transfers the details of the deposit transactions made on chain A (block height, transaction id, target address and corresponding amount to transfer) to the chain B node, which then persists those details in its database.
+From that point, each chain B node has enough information to create partially signed transactions and propagate them to the other members of the federation. Each node will also persist the partially signed transactions they receive and collect signatures (this is in case they become the leader of an unprocessed transfer and can immediately broadcast it), but only the leader will proceed to broadcast a fully signed transaction.  
 
 ![The cross-chain transfers are triggered after MaxReorg](../assets/cross-chain-transfers/happy-path-2.svg)
 
 ### The cross-chain transfers appear on the targeted chain
 
-Once the leader has collected enough signatures, they can broadcast a fully signed transaction to the network and it will appear in the mempool of all the other nodes. This transaction will then be persisted in a future block (usually the very next one) of the chain B network.
+Once the leader has collected enough signatures, they can broadcast a fully signed transaction to the chain B network and it will appear in the mempool of all the other nodes. This transaction will then be persisted in a future block (usually the very next one) of the chain B network.
 > _NB: if a non-leader happens to broadcast a transaction before the leader, we should not worry about it: it means that a quorum of federation members has agreed upon this transaction, so it should be valid, and that when the leader finally submits its version to the mempool, it will be rejected because it uses the same UTXO as the one already submitted by the non-leader, so we are not at risk of double spending._
 
 After that, each federation member monitoring chain B will match the transactions found on the chain by their inputs, outputs (including the OP_RETURNs containing the transaction ids of the deposits initially made on chain A), and update the statuses of the transfers.
