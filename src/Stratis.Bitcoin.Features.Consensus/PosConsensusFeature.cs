@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
         private readonly IPeerBanning peerBanning;
         private readonly ILoggerFactory loggerFactory;
+        private readonly ICheckpoints checkpoints;
 
         public PosConsensusFeature(
             Network network,
@@ -39,7 +40,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
             Signals.Signals signals,
-            ILoggerFactory loggerFactory): base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
+            ILoggerFactory loggerFactory,
+            ICheckpoints checkpoints): base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
         {
             this.network = network;
             this.chainState = chainState;
@@ -50,6 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.initialBlockDownloadState = initialBlockDownloadState;
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;
+            this.checkpoints = checkpoints;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
@@ -58,10 +61,17 @@ namespace Stratis.Bitcoin.Features.Consensus
         public override Task InitializeAsync()
         {
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
+
+            // Replace CMB.
             bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
             Guard.Assert(oldCMBRemoved);
-
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState));
+
+            // Replace connection manager behavior.
+            bool oldConnectionManagerRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConnectionManagerBehavior));
+            Guard.Assert(oldConnectionManagerRemoved);
+
+            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConnectionManagerBehavior(this.connectionManager, this.loggerFactory, this.checkpoints, this.network));
 
             return Task.CompletedTask;
         }
@@ -71,6 +81,4 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
         }
     }
-
-    
 }
