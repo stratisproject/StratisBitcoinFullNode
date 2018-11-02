@@ -492,6 +492,12 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         protected async Task ProcessInvAsync(INetworkPeer peer, List<InventoryVector> inventory)
         {
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                this.logger.LogTrace("(-)[IGNORE_DURING_IBD]");
+                return;
+            }
+
             if (inventory.Count == 0)
             {
                 this.logger.LogTrace("(-)[NO_INVENTORY]");
@@ -510,7 +516,7 @@ namespace Stratis.Bitcoin.Consensus
             bool blockHashAnnounced = false;
             foreach (InventoryVector inventoryVector in inventory)
             {
-                if (inventoryVector.Type == InventoryType.MSG_BLOCK)
+                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.chain.GetBlock(inventoryVector.Hash) != null))
                 {
                     blockHashAnnounced = true;
                     break;
