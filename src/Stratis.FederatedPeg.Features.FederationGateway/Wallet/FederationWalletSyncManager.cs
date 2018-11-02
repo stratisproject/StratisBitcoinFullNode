@@ -6,7 +6,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -138,7 +137,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 // The new tip can be ahead or behind the wallet.
                 // If the new tip is ahead we try to bring the wallet up to the new tip.
                 // If the new tip is behind we just check the wallet and the tip are in the same chain.
-
                 if (newTip.Height > this.walletTip.Height)
                 {
                     ChainedHeader findTip = newTip.FindAncestorOrSelf(this.walletTip);

@@ -48,5 +48,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// Pay2Multisig redeem script.
         /// </summary>
         Script MultiSigRedeemScript { get; }
+
+        /// <summary>
+        /// The amount of blocks under which multisig deposit transactions need to be buried before the cross chains transfer actually trigger.
+        /// </summary>
+        uint MinimumDepositConfirmations { get; }
     }
 }
