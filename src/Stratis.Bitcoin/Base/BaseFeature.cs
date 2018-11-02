@@ -174,7 +174,6 @@ namespace Stratis.Bitcoin.Base
             await this.StartChainAsync().ConfigureAwait(false);
 
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
-
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
 
             connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
