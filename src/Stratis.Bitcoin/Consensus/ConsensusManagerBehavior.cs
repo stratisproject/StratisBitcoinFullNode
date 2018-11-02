@@ -516,7 +516,7 @@ namespace Stratis.Bitcoin.Consensus
             bool blockHashAnnounced = false;
             foreach (InventoryVector inventoryVector in inventory)
             {
-                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.chain.GetBlock(inventoryVector.Hash) != null))
+                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.chain.GetBlock(inventoryVector.Hash) == null))
                 {
                     blockHashAnnounced = true;
                     break;
@@ -526,7 +526,7 @@ namespace Stratis.Bitcoin.Consensus
             if (blockHashAnnounced)
             {
                 this.logger.LogTrace("Block was announced, sending getheaders.");
-                await ResyncAsync().ConfigureAwait(false);
+                await this.ResyncAsync().ConfigureAwait(false);
             }
         }
 
