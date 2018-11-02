@@ -207,12 +207,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             uint256 previousStakeModifier;
 
-            if (chainedHeader.Height == this.ProvenHeadersActivationHeight)
+            if (chainedHeader.Height == this.ProvenHeadersActivationCheckpointHeight)
             {
-                // If we are validating the first Proven Header, we don't have a StakeModifierV2 available and I should compute it but I can't.
-                // Proposed solution is to store the StakeModifierV2 value of the header at the height of ProvenHeaderActivation in a consensus variable
-                // called ProvenHeaderActivationStakeModifier and so I can return it
-                previousStakeModifier = uint256.Zero; //TODO to be changed after ProvenHeaderActivationStakeModifier has been created.
+                // If we are validating the first Proven Header means that the previous one was either a Checkpoint, that has the StakeModifier stored in
+                // CheckpointInfo class) or the genesis whose StakeModifier equals zero.
+                previousStakeModifier = this.ProvenHeadersActivationCheckpoint?.StakeModifierV2 ?? uint256.Zero;
             }
             else
             {

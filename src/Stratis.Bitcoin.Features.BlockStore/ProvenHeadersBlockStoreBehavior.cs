@@ -16,16 +16,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class ProvenHeadersBlockStoreBehavior : BlockStoreBehavior
     {
         private readonly Network network;
+        private readonly ICheckpoints checkpoints;
 
         /// <summary>
         /// Gets or sets the height from which start serving Proven Headers, if > 0.
         /// </summary>
         public int AnnounceProvenHeadersFromHeight { get; set; }
 
-        public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
+        public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints)
             : base(chain, chainState, loggerFactory, consensusManager)
         {
             this.network = Guard.NotNull(network, nameof(network));
+            this.checkpoints = Guard.NotNull(checkpoints, nameof(checkpoints));
         }
 
         /// <inheritdoc />
@@ -46,11 +48,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private Task ProcessSendProvenHeadersPayload(SendProvenHeadersPayload sendProvenHeadersPayload)
         {
             this.PreferHeaders = true;
-
-            var provenHeadersActivationHeight = (this.network.Consensus.Options as PosConsensusOptions).ProvenHeadersActivationHeight;
-            // Ensures we don't announce ProvenHeaders before ProvenHeadersActivationHeight.
-            this.AnnounceProvenHeadersFromHeight = Math.Max(provenHeadersActivationHeight, sendProvenHeadersPayload.RequireFromHeight);
-
+            this.AnnounceProvenHeadersFromHeight = sendProvenHeadersPayload.RequireFromHeight;
             return Task.CompletedTask;
         }
 
@@ -58,7 +56,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <returns>The <see cref="HeadersPayload"/> instance to announce to the peer, or <see cref="ProvenHeadersPayload"/> if the peers requires it.</returns>
         protected override Payload BuildAnnouncedHeaderPayload(int blockstoreTipHeight, params BlockHeader[] headers)
         {
-            if (this.AnnounceProvenHeadersFromHeight > 0 && blockstoreTipHeight >= this.AnnounceProvenHeadersFromHeight)
+            if (blockstoreTipHeight >= this.AnnounceProvenHeadersFromHeight)
             {
                 ProvenHeadersPayload provenHeadersPayload = new ProvenHeadersPayload();
                 foreach (var header in headers)
@@ -85,7 +83,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override object Clone()
         {
-            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager)
+            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload

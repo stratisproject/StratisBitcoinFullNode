@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             IPeerBanning peerBanning,
             Signals.Signals signals,
             ILoggerFactory loggerFactory,
-            ICheckpoints checkpoints): base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
+            ICheckpoints checkpoints) : base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
         {
             this.network = network;
             this.chainState = chainState;
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Replace CMB.
             bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
             Guard.Assert(oldCMBRemoved);
-            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState));
+            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints));
 
             // Replace connection manager behavior.
             bool oldConnectionManagerRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConnectionManagerBehavior));

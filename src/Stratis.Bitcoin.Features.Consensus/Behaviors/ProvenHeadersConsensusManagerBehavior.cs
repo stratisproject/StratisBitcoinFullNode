@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
         private readonly IChainState chainState;
+        private readonly ICheckpoints checkpoints;
 
         public ProvenHeadersConsensusManagerBehavior(
             ConcurrentChain chain,
@@ -37,7 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             IPeerBanning peerBanning,
             ILoggerFactory loggerFactory,
             Network network,
-            IChainState chainState) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+            IChainState chainState,
+            ICheckpoints checkpoints) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.chain = chain;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -47,6 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
             this.chainState = chainState;
+            this.checkpoints = checkpoints;
         }
 
         /// <inheritdoc />
@@ -119,7 +122,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 this.peerBanning,
                 this.loggerFactory,
                 this.network,
-                this.chainState);
+                this.chainState,
+                this.checkpoints);
         }
 
         /// <summary>
@@ -148,13 +152,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
         private bool AreProvenHeadersActivated()
         {
-            if (this.network.Consensus.Options is PosConsensusOptions options)
-            {
-                long currentHeight = this.chainState.ConsensusTip.Height;
-                return currentHeight >= options.ProvenHeadersActivationHeight;
-            }
-
-            return false;
+            long currentHeight = this.chainState.ConsensusTip.Height;
+            // Last checkpoint height could be cached (e.g. as a consensus option) if we want to not have to query it every time
+            return currentHeight >= this.checkpoints.GetLastCheckpointHeight();
         }
 
         /// <summary>

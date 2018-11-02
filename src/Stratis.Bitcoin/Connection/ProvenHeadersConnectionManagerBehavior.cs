@@ -30,11 +30,7 @@ namespace Stratis.Bitcoin.Connection
         /// <inheritdoc />
         protected override async Task OnHandshakedAsync(INetworkPeer peer)
         {
-            // Require from height is the highest between activation height and last checkpoint height.
-            int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
-            int activationHeight = (this.network.Consensus.Options as PosConsensusOptions).ProvenHeadersActivationHeight;
-
-            int requireFromHeight = Math.Max(lastCheckpointHeight, activationHeight);
+            int requireFromHeight = this.checkpoints.GetLastCheckpointHeight() + 1;
             this.logger.LogDebug("Proven headers are requested from height {0}.", requireFromHeight);
 
             var sendProvenHeadersPayload = new SendProvenHeadersPayload(requireFromHeight);

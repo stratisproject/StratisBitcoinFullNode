@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
@@ -15,6 +16,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         private readonly Network network;
         private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
+        private readonly ICheckpoints checkpoints;
 
         public ProvenHeadersBlockStoreSignaled(
             Network network,
@@ -26,21 +28,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
-            IProvenBlockHeaderStore provenBlockHeaderStore)
+            IProvenBlockHeaderStore provenBlockHeaderStore,
+            ICheckpoints checkpoints)
             : base(blockStoreQueue, chain, storeSettings, chainState, connection, nodeLifetime, loggerFactory, initialBlockDownloadState)
         {
             this.network = Guard.NotNull(network, nameof(network));
             this.provenBlockHeaderStore = Guard.NotNull(provenBlockHeaderStore, nameof(provenBlockHeaderStore));
+            this.checkpoints = Guard.NotNull(checkpoints, nameof(checkpoints));
         }
 
         private bool AreProvenHeadersActivated(int blockHeight)
         {
-            if (this.network.Consensus.Options is PosConsensusOptions options)
-            {
-                return blockHeight >= options.ProvenHeadersActivationHeight;
-            }
-
-            return false;
+            // Last checkpoint height could be cached (e.g. as a consensus option) if we want to not have to query it every time
+            return blockHeight >= this.checkpoints.GetLastCheckpointHeight();
         }
 
         /// <inheritdoc />
