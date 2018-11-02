@@ -2,13 +2,15 @@
 using System.Threading.Channels;
 using Microsoft.AspNetCore.SignalR;
 
-namespace Stratis.Bitcoin.SignalR
+namespace Stratis.Bitcoin.Features.SignalR
 {
     /// <summary>
     /// Hub used to communicate with clients.  Instances of this class are created and managed by SignalR, not fullnode code.
     /// </summary>
     public class SignalRHub : Hub
     {
+        public const string Route = "hub";
+
         private readonly ISignalRService signalRService;
 
         public SignalRHub(ISignalRService signalRService) => this.signalRService = signalRService;

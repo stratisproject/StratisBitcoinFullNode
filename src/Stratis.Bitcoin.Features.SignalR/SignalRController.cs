@@ -1,6 +1,6 @@
 ﻿using Microsoft.AspNetCore.Mvc;
 
-namespace Stratis.Bitcoin.SignalR
+namespace Stratis.Bitcoin.Features.SignalR
 {
     /// <summary>
     /// Provides methods to support SignalR clients of the full node.
@@ -12,9 +12,9 @@ namespace Stratis.Bitcoin.SignalR
 
         public SignalRController(ISignalRService signalRService) => this.signalRService = signalRService;
 
-        /// <summary> Address used by clients when establishing a connection to the fullnode's SignalR hub. </summary>
+        /// <summary>Address used by clients when establishing a connection to the fullnode's SignalR hub.</summary>
         [HttpGet]
         [Route("address")]
-        public IActionResult Address() => this.Content($"{this.signalRService.Address.AbsoluteUri}hub");
+        public IActionResult Address() => this.Content(this.signalRService.HubRoute.AbsoluteUri);
     }
 }

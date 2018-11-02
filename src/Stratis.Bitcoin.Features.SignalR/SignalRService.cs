@@ -7,9 +7,9 @@ using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.SignalR
+namespace Stratis.Bitcoin.Features.SignalR
 {
-    public class SignalRService : IDisposable, ISignalRService
+    public class SignalRService : ISignalRService
     {
         private IWebHost webHost;
         private readonly ILogger logger;
@@ -31,10 +31,14 @@ namespace Stratis.Bitcoin.SignalR
             this.MessageStream = this.messageStream.AsObservable();
 
             this.Address = new Uri($"http://localhost:{IpHelper.NextFreePort}");
+            this.HubRoute = new Uri($"{this.Address.AbsoluteUri}hub");
         }
 
         /// <summary><see cref="ISignalRService.Address" /></summary>
         public Uri Address { get; }
+
+        /// <summary><see cref="ISignalRService.HubRoute" /></summary>
+        public Uri HubRoute { get; }
 
         /// <summary><see cref="ISignalRService.MessageStream" /></summary>
         public IObservable<(string topic, string data)> MessageStream { get; }

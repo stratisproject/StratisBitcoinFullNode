@@ -2,7 +2,7 @@
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 
-namespace Stratis.Bitcoin.SignalR
+namespace Stratis.Bitcoin.Features.SignalR
 {
     public class Startup
     {
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.SignalR
                 .AllowAnyOrigin()
                 .AllowCredentials());
 
-            app.UseSignalR(routes => routes.MapHub<SignalRHub>("/hub"));
+            app.UseSignalR(routes => routes.MapHub<SignalRHub>($"/{SignalRHub.Route}"));
         }
     }
 }

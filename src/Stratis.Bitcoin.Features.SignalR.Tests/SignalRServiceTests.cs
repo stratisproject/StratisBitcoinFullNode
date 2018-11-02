@@ -2,7 +2,7 @@
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using Moq;
-using Stratis.Bitcoin.SignalR;
+using Stratis.Bitcoin.Features.SignalR;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.SignalR

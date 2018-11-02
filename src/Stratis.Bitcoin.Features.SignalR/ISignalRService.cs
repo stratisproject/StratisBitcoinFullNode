@@ -1,12 +1,12 @@
 ﻿using System;
 using System.Threading.Tasks;
 
-namespace Stratis.Bitcoin.SignalR
+namespace Stratis.Bitcoin.Features.SignalR
 {
     /// <summary>
     /// Interface to allow for SignalR broadcast communication.
     /// </summary>
-    public interface ISignalRService
+    public interface ISignalRService : IDisposable
     {
         /// <summary>
         /// The hosting address of the SignalR server.
@@ -15,6 +15,11 @@ namespace Stratis.Bitcoin.SignalR
         /// This value is required by clients of this service when establishing a connection.
         /// </remarks>
         Uri Address { get; }
+
+        /// <summary>
+        /// The address of the hub used by the service.
+        /// </summary>
+        Uri HubRoute { get; }
 
         /// <summary>
         /// Stream of messages of topic & data, sent to this service through SendAsync.
