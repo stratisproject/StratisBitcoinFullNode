@@ -300,6 +300,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
+    /// Request object for adding an address to the address book.
+    /// </summary>
+    /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
+    public class AddressBookEntryRequest : RequestModel
+    {
+        [Required(ErrorMessage = "A label is required.")]
+        [MaxLength(200)]
+        public string Label { get; set; }
+
+        [Required(ErrorMessage = "An address is required.")]
+        [IsBitcoinAddress()]
+        public string Address { get; set; }
+    }
+    
     /// Model object to use as input to the Api request for getting the spendable transactions in an account.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />

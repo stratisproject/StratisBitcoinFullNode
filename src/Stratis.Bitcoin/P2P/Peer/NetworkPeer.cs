@@ -117,9 +117,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             public bool DisconnectCallbackRequested { get; set; }
         }
 
-        /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
-
         /// <summary>Tracker for endpoints known to be self. </summary>
         private readonly ISelfEndpointTracker selfEndpointTracker;
 
@@ -274,7 +271,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             ISelfEndpointTracker selfEndpointTracker,
             Action<INetworkPeer> onDisconnected = null)
         {
-            this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
 
             this.preferredTransactionOptions = parameters.PreferredTransactionOptions;

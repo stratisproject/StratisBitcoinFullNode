@@ -82,5 +82,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return base.BuildAnnouncedHeaderPayload(blockstoreTipHeight, headers);
             }
         }
+
+        public override object Clone()
+        {
+            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager)
+            {
+                CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
+                CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
+            };
+
+            return res;
+        }
+
     }
 }

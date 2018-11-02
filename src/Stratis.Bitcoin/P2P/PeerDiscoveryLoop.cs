@@ -95,7 +95,6 @@ namespace Stratis.Bitcoin.P2P
                 return;
 
             this.currentParameters = connectionManager.Parameters.Clone(); // TODO we shouldn't add all the behaviors, only those that we need.
-            this.currentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(connectionManager, this.loggerFactory));
 
             this.peersToFind = this.currentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
 
