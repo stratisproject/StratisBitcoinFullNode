@@ -308,7 +308,7 @@ namespace Stratis.Bitcoin.Features.Miner
             // and modifying them for their already included ancestors.
             this.UpdatePackagesForAdded(this.inBlock, mapModifiedTx);
 
-            List<TxMempoolEntry> ancestorScoreList = this.MempoolLock.ReadAsync(() => this.Mempool.MapTx.AncestorScore).GetAwaiter().GetResult().ToList();
+            List<TxMempoolEntry> ancestorScoreList = this.MempoolLock.ReadAsync(() => this.Mempool.MapTx.AncestorScore).ConfigureAwait(false).GetAwaiter().GetResult().ToList();
 
             TxMempoolEntry iter;
 
@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
                 long packageSize = iter.SizeWithAncestors;
                 Money packageFees = iter.ModFeesWithAncestors;
-                long packageSigOpsCost = iter.SizeWithAncestors;
+                long packageSigOpsCost = iter.SigOpCostWithAncestors;
                 if (fUsingModified)
                 {
                     packageSize = modit.SizeWithAncestors;
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     return;
                 }
 
-                if (!this.TestPackage(packageSize, packageSigOpsCost))
+                if (!this.TestPackage(iter, packageSize, packageSigOpsCost))
                 {
                     if (fUsingModified)
                     {
@@ -414,7 +414,8 @@ namespace Stratis.Bitcoin.Features.Miner
                 var ancestors = new TxMempool.SetEntries();
                 long nNoLimit = long.MaxValue;
                 string dummy;
-                this.Mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false);
+
+                this.MempoolLock.ReadAsync(() =>  this.Mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false)).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 this.OnlyUnconfirmed(ancestors);
                 ancestors.Add(iter);
@@ -471,7 +472,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Test if a new package would "fit" in the block.
         /// </summary>
-        private bool TestPackage(long packageSize, long packageSigOpsCost)
+        protected virtual bool TestPackage(TxMempoolEntry entry, long packageSize, long packageSigOpsCost)
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
             if (this.BlockWeight + this.Network.Consensus.Options.WitnessScaleFactor * packageSize >= this.Options.BlockMaxWeight)

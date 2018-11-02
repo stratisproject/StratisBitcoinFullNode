@@ -696,13 +696,11 @@ namespace Stratis.Bitcoin.Consensus
         {
             // Connect back the old blocks.
             ConnectBlocksResult connectBlockResult = await this.ConnectChainAsync(blocksToReconnect).ConfigureAwait(false);
-
             if (connectBlockResult.Succeeded)
             {
                 // Even though reconnection was successful we return result with success == false because
                 // full validation of the chain we originally wanted to connect was failed.
-                var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false };
-
+                var result = new ConnectBlocksResult(false) { ConsensusTipChanged = false, PeersToBan = new List<int>() };
                 return result;
             }
 
@@ -809,6 +807,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (chainedHeaderBlock?.Block == null)
                 {
+                    this.logger.LogError("Block '{0}' wasn't loaded from store!", currentHeader);
                     this.logger.LogTrace("(-):null");
                     return null;
                 }
@@ -951,6 +950,11 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (chainedHeader == null)
                     {
+                        lock (this.blockRequestedLock)
+                        {
+                            this.callbacksByBlocksRequestedHash.Remove(blockHash);
+                        }
+
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
                         return;
                     }
@@ -1070,6 +1074,8 @@ namespace Stratis.Bitcoin.Consensus
                 this.logger.LogTrace("(-)[FOUND_IN_BLOCK_STORE]:'{0}'", newBlockPair);
                 return newBlockPair;
             }
+            else
+                this.logger.LogDebug("Block '{0}' was not found in block store.", blockHash);
 
             return chainedHeaderBlock;
         }
@@ -1204,10 +1210,10 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                string unconsumedBlocks = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
+                string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
-                string unconsumedBytes = this.formatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
-                string maxUnconsumedBytes = this.formatBigNumber(MaxUnconsumedBlocksDataBytes);
+                string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
+                string maxUnconsumedBytes = this.FormatBigNumber(MaxUnconsumedBlocksDataBytes);
 
                 double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)MaxUnconsumedBlocksDataBytes) * 100, 2);
 
@@ -1216,17 +1222,10 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Formats the big number.</summary>
-        /// <remarks><c>123456789</c> => <c>123 456 789</c></remarks>
-        private string formatBigNumber(long number)
+        /// <remarks><c>123456789</c> => <c>123,456,789</c></remarks>
+        private string FormatBigNumber(long number)
         {
-            string temp = number.ToString("N").Replace(',', ' ');
-
-            int index = temp.IndexOf(".00");
-
-            if (index != -1)
-                temp = temp.Substring(0, index);
-
-            return temp;
+            return $"{number:#,##0}";
         }
 
         /// <inheritdoc />

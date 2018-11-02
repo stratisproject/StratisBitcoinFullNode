@@ -4,7 +4,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Networks.Deployments;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -49,12 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 [BuriedDeployments.BIP66] = 330776
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray
-            {
-                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 1199145601, 1230767999),
-                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 1456790400, 1493596800),
-                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, 1462060800, 1493596800)
-            };
+            var bip9Deployments = new NoBIP9Deployments();
 
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,

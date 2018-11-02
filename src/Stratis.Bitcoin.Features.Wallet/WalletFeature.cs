@@ -44,6 +44,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly IConnectionManager connectionManager;
 
+        private readonly IAddressBookManager addressBookManager;
+
         private readonly BroadcasterBehavior broadcasterBehavior;
 
         private readonly NodeSettings nodeSettings;
@@ -55,6 +57,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
         /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="addressBookManager">The address book manager.</param>
         /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="chain">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
@@ -64,6 +67,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public WalletFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
+            IAddressBookManager addressBookManager,
             Signals.Signals signals,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
@@ -74,6 +78,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
+            this.addressBookManager = addressBookManager;
             this.signals = signals;
             this.chain = chain;
             this.connectionManager = connectionManager;
@@ -131,8 +136,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (string walletName in walletNames)
                 {
-                    IEnumerable<UnspentOutputReference> items = this.walletManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    log.AppendLine("Wallet: " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(items.Sum(s => s.Transaction.Amount)).ToString());
+                    foreach (HdAccount account in this.walletManager.GetAccounts(walletName))
+                    {
+                        AccountBalance accountBalance = this.walletManager.GetBalances(walletName, account.Name).Single();
+                        log.AppendLine(($"{walletName}/{account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 10) 
+                                                  + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
+                                                  + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                    }
                 }
             }
         }
@@ -146,6 +156,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.walletManager.Start();
             this.walletSyncManager.Start();
+            this.addressBookManager.Initialize();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
@@ -192,6 +203,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         services.AddSingleton<WalletSettings>();
                         services.AddSingleton<IScriptAddressReader>(new ScriptAddressReader());
                         services.AddSingleton<StandardTransactionPolicy>();
+                        services.AddSingleton<IAddressBookManager, AddressBookManager>();
                     });
             });
 

@@ -1,10 +1,12 @@
 ﻿using System;
+using System.Diagnostics;
 using System.IO;
 using CSharpFunctionalExtensions;
 using Mono.Cecil;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
@@ -14,7 +16,6 @@ using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
 using Xunit;
-using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
@@ -24,6 +25,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         private readonly MockChainNode node1;
         private readonly MockChainNode node2;
 
+        private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
         public ContractExecutionFailureTests(PoWMockChainFixture fixture)
@@ -31,12 +33,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
+            this.addressGenerator = new AddressGenerator();
             this.senderRetriever = new SenderRetriever();
         }
-
-        // TODO: The costs definitely need to be refined! Contract execution shouldn't be so cheap relative to fees.
-
-        // Also check that validation and base cost fees are being applied correctly.
 
         [Fact]
         public void ContractTransaction_Invalid_MethodParamSerialization()
@@ -95,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(bytes, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -107,7 +106,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(3, lastBlock.Transactions.Count);
             Transaction refundTransaction = lastBlock.Transactions[2];
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long) amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -120,7 +119,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
@@ -143,7 +142,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -155,7 +154,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(3, lastBlock.Transactions.Count);
             Transaction refundTransaction = lastBlock.Transactions[2];
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -168,7 +167,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
@@ -190,7 +189,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -209,7 +208,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Transaction refundTransaction = lastBlock.Transactions[2];
             Assert.Single(refundTransaction.Outputs); // No transfers persisted
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -250,7 +249,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Method", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -266,7 +265,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Transaction refundTransaction = lastBlock.Transactions[2];
             Assert.Single(refundTransaction.Outputs); // No transfers persisted
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -297,13 +296,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             // Send call to non-existent address
-            string nonExistentAddress = new uint160(0).ToAddress(this.mockChain.Network);
+            string nonExistentAddress = new uint160(0).ToBase58Address(this.mockChain.Network);
             Assert.Null(this.node1.GetCode(nonExistentAddress));
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Method", nonExistentAddress, amount);
 
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -313,7 +312,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Transaction refundTransaction = lastBlock.Transactions[2];
             Assert.Single(refundTransaction.Outputs); // No transfers
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -326,7 +325,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.True(receipt.GasUsed == 0); // TODO: THIS IS WRONG. Will fix in future work.
+            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Equal(StateTransitionErrors.NoCode, receipt.Error);
@@ -354,7 +353,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("MethodThatDoesntExist", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -364,7 +363,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Transaction refundTransaction = lastBlock.Transactions[2];
             Assert.Single(refundTransaction.Outputs); // No transfers persisted
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -405,7 +404,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("CallMe", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -421,7 +420,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Transaction refundTransaction = lastBlock.Transactions[2];
             Assert.Single(refundTransaction.Outputs); // No transfers persisted
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -457,7 +456,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -476,7 +475,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Transaction refundTransaction = lastBlock.Transactions[2];
             Assert.Single(refundTransaction.Outputs); // No transfers persisted
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -489,7 +488,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.StartsWith(ContractInvocationErrors.MethodDoesNotExist, receipt.Error); // The error for constructor not found vs method does not exist could be different in future.
@@ -524,7 +523,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(emptyModule, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -536,7 +535,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(3, lastBlock.Transactions.Count);
             Transaction refundTransaction = lastBlock.Transactions[2];
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
-            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToAddress(this.mockChain.Network).Value);
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
             Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
 
@@ -549,10 +548,109 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
+        }
+
+        [Fact]
+        public void ContractTransaction_RecursiveContractCreate_OutOfGas()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            double amount = 25;
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/RecursiveLoopCreate.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, gasLimit: gasLimit);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            NBitcoin.Block  lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Contract was not created
+            Assert.Null(this.node2.GetCode(response.NewContractAddress));
+
+            // Block contains a refund transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction refundTransaction = lastBlock.Transactions[2];
+            uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
+            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
+
+            // Amount was refunded to wallet, minus fee
+            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee);
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs);
+            Assert.False(receipt.Success);
+            Assert.True(receipt.GasUsed > (gasLimit - GasPriceList.BaseCost)); // The amount spent should be within 1 BaseCost of being used up.
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.Null(receipt.To);
+        }
+
+        [Fact]
+        public void ContractTransaction_RecursiveContractCall_OutOfGas()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/RecursiveLoopCall.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 25;
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(RecursiveLoopCall.Call), preResponse.NewContractAddress, amount, gasLimit: gasLimit);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Block contains a refund transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction refundTransaction = lastBlock.Transactions[2];
+            Assert.Single(refundTransaction.Outputs); // No transfers persisted
+            uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
+            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
+
+            // Amount was refunded to wallet, minus fee
+            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee);
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs);
+            Assert.False(receipt.Success);
+            Assert.True(receipt.GasUsed > (gasLimit - GasPriceList.BaseCost)); // The amount spent should be within 1 BaseCost of being used up.
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.StartsWith("Stratis.SmartContracts.SmartContractAssertException", receipt.Error);
+            Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
     }
 }

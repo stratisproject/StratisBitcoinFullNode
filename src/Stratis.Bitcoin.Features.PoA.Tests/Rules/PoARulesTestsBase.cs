@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
     {
         protected readonly ChainedHeader currentHeader;
         protected readonly PoANetwork network;
+        protected readonly PoAConsensusOptions consensusOptions;
 
         protected PoAConsensusRuleEngine rulesEngine;
         protected readonly LoggerFactory loggerFactory;
@@ -32,6 +33,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         {
             this.loggerFactory = new LoggerFactory();
             this.network = network == null ? new PoANetwork() : network;
+            this.consensusOptions = this.network.ConsensusOptions;
 
             this.chain = new ConcurrentChain(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
@@ -55,9 +57,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
     {
         public TestPoANetwork(List<PubKey> pubKeysOverride = null)
         {
-            this.TargetSpacingSeconds = 60;
-
-            this.FederationPublicKeys = new List<PubKey>()
+            var federationPublicKeys = new List<PubKey>()
             {
                 new PubKey("02d485fc5ae101c2780ff5e1f0cb92dd907053266f7cf3388eb22c5a4bd266ca2e"),
                 new PubKey("026ed3f57de73956219b85ef1e91b3b93719e2645f6e804da4b3d1556b44a477ef"),
@@ -68,7 +68,19 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             };
 
             if (pubKeysOverride != null)
-                this.FederationPublicKeys = pubKeysOverride;
+                federationPublicKeys = pubKeysOverride;
+
+            var baseOptions = this.Consensus.Options as PoAConsensusOptions;
+
+            this.Consensus.Options = new PoAConsensusOptions(
+                maxBlockBaseSize: baseOptions.MaxBlockBaseSize,
+                maxStandardVersion: baseOptions.MaxStandardVersion,
+                maxStandardTxWeight: baseOptions.MaxStandardTxWeight,
+                maxBlockSigopsCost: baseOptions.MaxBlockSigopsCost,
+                maxStandardTxSigopsCost: baseOptions.MaxStandardTxSigopsCost,
+                federationPublicKeys: federationPublicKeys,
+                targetSpacingSeconds: 60
+            );
         }
     }
 }

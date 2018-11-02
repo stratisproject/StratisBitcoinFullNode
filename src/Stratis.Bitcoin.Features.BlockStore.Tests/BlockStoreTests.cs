@@ -86,8 +86,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             this.chainState = new ChainState();
 
-            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+            var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(this.chainState);
+
+            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushCondition, new StoreSettings(NodeSettings.Default(this.network)),
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
         }
 
         private ConcurrentChain CreateChain(int blocksCount)
@@ -164,8 +166,10 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             ConcurrentChain longChain = CreateChain(count);
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
-            this.blockStoreQueue = new BlockStoreQueue(longChain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+            var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(this.chainState);
+
+            this.blockStoreQueue = new BlockStoreQueue(longChain, this.chainState, blockStoreFlushCondition, new StoreSettings(NodeSettings.Default(this.network)),
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = longChain.Tip;
@@ -290,14 +294,17 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         /// <summary>
         /// Tests reorgs inside the batch and inside the database at the same time.
         /// </summary>
-        [Retry(2)]
+        [Fact]
+        [Trait("Unstable", "True")]
         public async Task ReorgedBlocksAreDeletedFromRepositoryIfReorgDetectedAsync()
         {
             this.chain = CreateChain(1000);
             this.repositoryTipHashAndHeight = new HashHeightPair(this.chain.Genesis.HashBlock, 0);
 
-            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, new StoreSettings(NodeSettings.Default(this.network)),
-                this.nodeLifetime, this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+            var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(this.chainState);
+
+            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushCondition, new StoreSettings(NodeSettings.Default(this.network)),
+                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = this.chain.Tip;

@@ -629,6 +629,47 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
+        /// Gets the spendable transactions in an account, taking into account coin maturity and number of confirmations.
+        /// </summary>
+        /// <param name="request">The request parameters.</param>
+        /// <returns></returns>
+        [Route("spendable-transactions")]
+        [HttpGet]
+        public IActionResult GetSpendableTransactions([FromQuery] SpendableTransactionsRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(new WalletAccountReference(request.WalletName, request.AccountName), request.MinConfirmations);
+
+                return this.Json(new SpendableTransactionsModel
+                {
+                    SpendableTransactions = spendableTransactions.Select(st => new SpendableTransactionModel
+                    {
+                        Id = st.Transaction.Id,
+                        Amount = st.Transaction.Amount,
+                        Address = st.Address.Address,
+                        IsChange = st.Address.IsChangeAddress(),
+                        CreationTime = st.Transaction.CreationTime,
+                        Confirmations = st.Transaction.BlockHeight == null ? 0 : this.chain.Tip.Height - st.Transaction.BlockHeight.Value
+                    }).ToList()
+                });
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
         /// Gets a transaction fee estimate.
         /// Fee can be estimated by creating a <see cref="TransactionBuildContext"/> with no password
         /// and then building the transaction and retrieving the fee from the context.

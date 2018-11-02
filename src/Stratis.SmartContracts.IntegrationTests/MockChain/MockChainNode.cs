@@ -4,7 +4,9 @@ using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -16,7 +18,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Block = NBitcoin.Block;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.SmartContracts.IntegrationTests.MockChain
 {
@@ -26,7 +28,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
     public class MockChainNode
     {
         public readonly string WalletName = "mywallet";
-        public readonly string Password = "123456";
+        public readonly string Password = "password";
         public readonly string Passphrase = "passphrase";
         public readonly string AccountName = "account 0";
 
@@ -73,14 +75,6 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             }
         }
 
-        /// <summary>
-        /// Whether this node is fully synced.
-        /// </summary>
-        public bool IsSynced
-        {
-            get { return TestHelper.IsNodeSynced(this.CoreNode); }
-        }
-
         public MockChainNode(CoreNode coreNode, IMockChain chain)
         {
             this.CoreNode = coreNode;
@@ -91,7 +85,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.WalletName, this.AccountName));
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;
-            this.CoreNode.SetDummyMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
+            this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
+
             // Set up services for later
             this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
@@ -104,7 +99,14 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public void MineBlocks(int amountOfBlocks)
         {
-            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks, this.WalletName, this.Password, this.AccountName);
+            TestHelper.MineBlocks(this.CoreNode, amountOfBlocks);
+            this.chain.WaitForAllNodesToSync();
+        }
+
+        public void WaitForBlocksToBeMined(int amount)
+        {
+            int currentHeight = this.CoreNode.GetTip().Height;
+            TestHelper.WaitLoop(() => this.CoreNode.GetTip().Height >= currentHeight + 1);
             this.chain.WaitForAllNodesToSync();
         }
 
@@ -127,7 +129,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 MinConfirmations = 1,
                 FeeType = FeeType.Medium,
                 WalletPassword = this.Password,
-                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList()
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList(),
+                ChangeAddress = this.MinerAddress // yes this is unconventional, but helps us to keep the balance on the same addresses
             };
 
             Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
@@ -153,8 +156,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             byte[] contractCode,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -198,8 +201,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             string contractAddress,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = 10000,
-            ulong gasPrice = 1,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
             var request = new BuildCallContractTransactionRequest
@@ -225,7 +228,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public ulong GetContractBalance(string contractAddress)
         {
-            return this.stateRoot.GetCurrentBalance(new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network));
+            return this.stateRoot.GetCurrentBalance(contractAddress.ToUint160(this.CoreNode.FullNode.Network));
         }
 
         /// <summary>
@@ -233,7 +236,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public byte[] GetCode(string contractAddress)
         {
-            return this.stateRoot.GetCode(new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network));
+            return this.stateRoot.GetCode(contractAddress.ToUint160(this.CoreNode.FullNode.Network));
         }
 
         /// <summary>
@@ -241,14 +244,13 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public byte[] GetStorageValue(string contractAddress, string key)
         {
-            return this.stateRoot.GetStorageValue(
-                new Address(contractAddress).ToUint160(this.CoreNode.FullNode.Network), Encoding.UTF8.GetBytes(key));
+            return this.stateRoot.GetStorageValue(contractAddress.ToUint160(this.CoreNode.FullNode.Network), Encoding.UTF8.GetBytes(key));
         }
 
         /// <summary>
         /// Get the last block mined. AKA the current tip.
         /// </summary
-        public Block GetLastBlock()
+        public NBitcoin.Block GetLastBlock()
         {
             return this.blockStore.GetBlockAsync(this.CoreNode.FullNode.Chain.Tip.HashBlock).Result;
         }

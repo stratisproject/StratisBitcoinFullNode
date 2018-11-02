@@ -29,8 +29,10 @@
 
   <ItemGroup>
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA.IntegrationTests\Stratis.Bitcoin.Features.PoA.IntegrationTests.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.SmartContracts\Stratis.Bitcoin.Features.SmartContracts.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.IntegrationTests.Common\Stratis.Bitcoin.IntegrationTests.Common.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -111,6 +113,12 @@
     </Compile>
     <Compile Update="SmartContracts\ReceiveHandlerContract.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\RecursiveLoopCall.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\RecursiveLoopCreate.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\StorageDemo.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>

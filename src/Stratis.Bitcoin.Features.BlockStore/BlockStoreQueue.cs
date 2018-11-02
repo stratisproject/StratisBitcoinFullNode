@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -46,8 +47,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="INodeLifetime"/>
-        private readonly INodeLifetime nodeLifetime;
+        private readonly IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition;
 
         /// <inheritdoc cref="IChainState"/>
         private readonly IChainState chainState;
@@ -78,31 +78,34 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>Write access should be protected by <see cref="blocksCacheLock"/>.</remarks>
         private readonly Dictionary<uint256, ChainedHeaderBlock> pendingBlocksCache;
 
+        private readonly CancellationTokenSource cancellation;
+
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
+            IBlockStoreQueueFlushCondition blockStoreQueueFlushCondition,
             StoreSettings storeSettings,
-            INodeLifetime nodeLifetime,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
             INodeStats nodeStats)
         {
+            Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(storeSettings, nameof(storeSettings));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
-            this.chainState = chainState;
-            this.nodeLifetime = nodeLifetime;
-            this.storeSettings = storeSettings;
+            this.blockStoreQueueFlushCondition = blockStoreQueueFlushCondition;
             this.chain = chain;
+            this.chainState = chainState;
+            this.storeSettings = storeSettings;
             this.blockRepository = blockRepository;
             this.batch = new List<ChainedHeaderBlock>();
             this.blocksCacheLock = new object();
             this.blocksQueue = new AsyncQueue<ChainedHeaderBlock>();
             this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.cancellation = new CancellationTokenSource();
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
@@ -220,7 +223,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Block block = await this.blockRepository.GetBlockAsync(blockHash).ConfigureAwait(false);
 
-            this.logger.LogTrace("Block was{0} found in the repository.", (block == null) ? " not" : "");
+            this.logger.LogTrace("Block '{0}' was{1} found in the repository.", blockHash, (block == null) ? " not" : "");
 
             return block;
         }
@@ -291,7 +294,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             lock (this.blocksCacheLock)
             {
-                this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+                if (this.pendingBlocksCache.TryAdd(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock))
+                {
+                    this.logger.LogTrace("Block '{0}' was added to pending.", chainedHeaderBlock.ChainedHeader);
+                }
+                else
+                {
+                    // If the chained header block already exists, we need to remove it and add to the back of the collection.
+                    this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                    this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
+                    this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
+                }
             }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
@@ -306,7 +319,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Task<ChainedHeaderBlock> dequeueTask = null;
             Task timerTask = null;
 
-            while (!this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            while (!this.cancellation.IsCancellationRequested)
             {
                 // Start new dequeue task if not started already.
                 dequeueTask = dequeueTask ?? this.blocksQueue.DequeueAsync();
@@ -322,7 +335,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
                 catch (OperationCanceledException)
                 {
-                    // Happens when node is shutting down or Dispose() is called.
+                    // Can happen if Dispose() was called.
                     // We want to save whatever is in the batch before exiting the loop.
                     saveBatch = true;
 
@@ -345,7 +358,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     this.currentBatchSizeBytes += item.Block.BlockSize.Value;
 
-                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.chainState.IsAtBestChainTip;
+                    saveBatch = saveBatch || (this.currentBatchSizeBytes >= BatchThresholdSizeBytes) || this.blockStoreQueueFlushCondition.ShouldFlush;
                 }
                 else
                 {
@@ -377,7 +390,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 else
                 {
                     // Start timer if it is not started already.
-                    timerTask = timerTask ?? Task.Delay(BatchMaxSaveIntervalSeconds * 1000, this.nodeLifetime.ApplicationStopping);
+                    timerTask = timerTask ?? Task.Delay(BatchMaxSaveIntervalSeconds * 1000, this.cancellation.Token);
                 }
             }
 
@@ -437,7 +450,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             batchCleared.Reverse();
-            
+
             return batchCleared;
         }
 
@@ -466,6 +479,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public void Dispose()
         {
             // Let current batch saving task finish.
+            this.cancellation.Cancel();
             this.blocksQueue.Dispose();
             this.dequeueLoopTask?.GetAwaiter().GetResult();
             this.blockRepository.Dispose();

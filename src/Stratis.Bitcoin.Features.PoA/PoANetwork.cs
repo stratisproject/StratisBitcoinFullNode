@@ -23,19 +23,10 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary> The default name used for the Stratis configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "poa.conf";
 
-        /// <summary>Public keys of all federation members.</summary>
-        /// <remarks>
-        /// Blocks that are not signed with private keys that correspond
-        /// to public keys from this list are considered to be invalid.
-        /// </remarks>
-        public List<PubKey> FederationPublicKeys { get; protected set; }
-
-        public uint TargetSpacingSeconds { get; protected set; }
+        public PoAConsensusOptions ConsensusOptions => this.Consensus.Options as PoAConsensusOptions;
 
         public PoANetwork()
         {
-            this.TargetSpacingSeconds = 16;
-
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
@@ -61,16 +52,6 @@ namespace Stratis.Bitcoin.Features.PoA
 
             var consensusFactory = new PoAConsensusFactory();
 
-            // Configure federation public keys.
-            // Keep in mind that order in which keys are added to this list is important
-            // and should be the same for all nodes operating on this network.
-            this.FederationPublicKeys = new List<PubKey>()
-            {
-                new PubKey("03e6f19ea3dc6c145d98a0e0838af952755798e5bc3950bbca4f9485aa23873d7f"),
-                new PubKey("02ddebcf18207072bdd172a25f85f2ea12e2de1d9d794f136722634aad08400fcb"),
-                new PubKey("02067b38d777690aaaf23a5b371a819e6ddc6d2aae734b0199fe59df28dc056dd7")
-            };
-
             // Create the genesis block.
             this.GenesisTime = 1513622125;
             this.GenesisNonce = 1560058197;
@@ -82,12 +63,24 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.Genesis = genesisBlock;
 
+            // Configure federation public keys.
+            // Keep in mind that order in which keys are added to this list is important
+            // and should be the same for all nodes operating on this network.
+            var federationPublicKeys = new List<PubKey>()
+            {
+                new PubKey("03e6f19ea3dc6c145d98a0e0838af952755798e5bc3950bbca4f9485aa23873d7f"),
+                new PubKey("02ddebcf18207072bdd172a25f85f2ea12e2de1d9d794f136722634aad08400fcb"),
+                new PubKey("02067b38d777690aaaf23a5b371a819e6ddc6d2aae734b0199fe59df28dc056dd7")
+            };
+
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5
+                maxStandardTxSigopsCost: 20_000 / 5,
+                federationPublicKeys: federationPublicKeys,
+                targetSpacingSeconds: 16
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -97,7 +90,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray();
+            var bip9Deployments = new NoBIP9Deployments();
 
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
@@ -168,7 +161,7 @@ namespace Stratis.Bitcoin.Features.PoA
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x9928b372fd9e4cf62a31638607344c03c48731ba06d24576342db9c8591e1432"));
 
-            if ((this.FederationPublicKeys == null) || (this.FederationPublicKeys.Count == 0))
+            if ((this.ConsensusOptions.FederationPublicKeys == null) || (this.ConsensusOptions.FederationPublicKeys.Count == 0))
             {
                 throw new Exception("No keys for federation members are configured!");
             }

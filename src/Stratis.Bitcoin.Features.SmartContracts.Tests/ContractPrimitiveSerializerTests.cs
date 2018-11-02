@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
@@ -25,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void PersistentState_CanSerializeAllPrimitives()
         {
-            TestType<Address>(new uint160(123456).ToAddress(this.network));
+            TestType<Address>(new uint160(123456).ToAddress());
             TestType<bool>(true);
             TestType<int>((int)32);
             TestType<long>((long)6775492);
@@ -40,7 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void PersistentState_CanSerializeDeserializeArrayOfAllPrimitives()
         {
-            TestType<Address[]>(new Address[] { new uint160(123456).ToAddress(this.network), new uint160(1234567).ToAddress(this.network) });
+            TestType<Address[]>(new Address[] { new uint160(123456).ToAddress(), new uint160(1234567).ToAddress() });
             TestType<bool[]>(new bool[] { true, false, true });
             TestType<int[]>(new int[] { 1, 2, 3 });
             TestType<long[]>(new long[] { long.MaxValue - 1, 23 });
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void PersistentState_CanSerializeDeserializeArrayOfAllPrimitives_ViaArrayMethod()
         {
-            TestTypeArrayMethod<Address>(new Address[] { new uint160(123456).ToAddress(this.network), new uint160(1234567).ToAddress(this.network) });
+            TestTypeArrayMethod<Address>(new Address[] { new uint160(123456).ToAddress(), new uint160(1234567).ToAddress() });
             TestTypeArrayMethod<bool>(new bool[] { true, false, true });
             TestTypeArrayMethod<int>(new int[] { 1, 2, 3 });
             TestTypeArrayMethod<long>(new long[] { long.MaxValue - 1, 23 });
@@ -162,7 +163,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private TestValueType NewTestValueType()
         {
             var instance = new TestValueType();
-            instance.AddressField = new uint160(123456).ToAddress(this.network);
+            instance.AddressField = new uint160(123456).ToAddress();
             instance.BoolField = true;
             instance.IntField = 123;
             instance.LongField = 123L;

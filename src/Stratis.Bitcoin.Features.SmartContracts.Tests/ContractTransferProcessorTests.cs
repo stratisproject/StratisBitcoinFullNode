@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(txContextMock.Object.TransactionHash, internalTransaction.Inputs[0].PrevOut.Hash);
             Assert.Equal(txContextMock.Object.Nvout, internalTransaction.Inputs[0].PrevOut.N);
             string output1Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
-            Assert.Equal(receiverAddress.ToAddress(this.network).Value, output1Address);
+            Assert.Equal(receiverAddress.ToBase58Address(this.network), output1Address);
             Assert.Equal(75, internalTransaction.Outputs[0].Value); // Note outputs are in descending order by value.
             Assert.True(internalTransaction.Outputs[1].ScriptPubKey.IsSmartContractInternalCall());
             Assert.Equal(25, internalTransaction.Outputs[1].Value);
@@ -313,7 +313,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(new uint256(1), internalTransaction.Inputs[0].PrevOut.Hash);
             Assert.Equal((uint) 1, internalTransaction.Inputs[0].PrevOut.N);
             string output1Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
-            Assert.Equal(receiverAddress.ToAddress(this.network).Value, output1Address);
+            Assert.Equal(receiverAddress.ToBase58Address(this.network), output1Address);
             Assert.Equal(75, internalTransaction.Outputs[0].Value);
             Assert.True(internalTransaction.Outputs[1].ScriptPubKey.IsSmartContractInternalCall());
             Assert.Equal(25, internalTransaction.Outputs[1].Value);
@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(125, internalTransaction.Outputs[0].Value);
 
             string output2Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[1].ScriptPubKey).GetAddress(this.network).ToString();
-            Assert.Equal(receiverAddress.ToAddress(this.network).Value, output2Address);
+            Assert.Equal(receiverAddress.ToBase58Address(this.network), output2Address);
             Assert.Equal(75, internalTransaction.Outputs[1].Value);
 
             // Ensure db updated
@@ -451,12 +451,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(new uint256(1), internalTransaction.Inputs[0].PrevOut.Hash);
             Assert.Equal((uint)1, internalTransaction.Inputs[0].PrevOut.N);
             string output1Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
-            Assert.Equal(receiverAddress.ToAddress(this.network).Value, output1Address);
+            Assert.Equal(receiverAddress.ToBase58Address(this.network), output1Address);
             Assert.Equal(50, internalTransaction.Outputs[0].Value);
             Assert.True(internalTransaction.Outputs[1].ScriptPubKey.IsSmartContractInternalCall());
             Assert.Equal(45, internalTransaction.Outputs[1].Value);
             string output3Address = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(internalTransaction.Outputs[2].ScriptPubKey).GetAddress(this.network).ToString();
-            Assert.Equal(thirdAddress.ToAddress(this.network).Value, output3Address);
+            Assert.Equal(thirdAddress.ToBase58Address(this.network), output3Address);
             Assert.Equal(5, internalTransaction.Outputs[2].Value);
 
             // Ensure db updated
@@ -464,7 +464,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void Create_Refund()
+        public void Execution_Failure_With_Value_No_Transfers_Creates_Refund()
         {
             var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(100);
@@ -482,8 +482,55 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Equal(txContextMock.Object.TxOutValue, (ulong) refundTransaction.Outputs[0].Value);
             string outputAddress = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(refundTransaction.Outputs[0].ScriptPubKey).GetAddress(this.network).ToString();
 
-            Assert.Equal(txContextMock.Object.Sender.ToAddress(this.network).Value, outputAddress);
+            Assert.Equal(txContextMock.Object.Sender.ToBase58Address(this.network), outputAddress);
             Assert.Equal(txContextMock.Object.Time, refundTransaction.Time);
+        }
+
+        [Fact]
+        public void Execution_Failure_No_Value_With_Transfers_Does_Not_Transfer()
+        {
+            uint160 contractAddress = new uint160(1);
+            uint160 receiverAddress = new uint160(2);
+            uint160 thirdAddress = new uint160(3);
+
+            var txContextMock = new Mock<IContractTransactionContext>();
+            txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
+            txContextMock.SetupGet(p => p.TransactionHash).Returns(new uint256(123));
+            txContextMock.SetupGet(p => p.Nvout).Returns(1);
+            txContextMock.SetupGet(p => p.Sender).Returns(new uint160(2));
+            txContextMock.SetupGet(p => p.Time).Returns(12345);
+
+            // several transfers
+            var transferInfos = new List<TransferInfo>
+            {
+                new TransferInfo(contractAddress, receiverAddress, 75),
+                new TransferInfo(receiverAddress, contractAddress, 20),
+                new TransferInfo(receiverAddress, thirdAddress, 5)
+            };
+
+            // Has balance
+            var stateMock = new Mock<IStateRepository>();
+            stateMock.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState
+            {
+                CodeHash = new byte[32],
+                StateRoot = new byte[32],
+                TypeName = "Mock",
+                UnspentHash = new byte[32]
+            });
+
+            stateMock.Setup(x => x.GetUnspent(contractAddress)).Returns(new ContractUnspentOutput
+            {
+                Hash = new uint256(1),
+                Nvout = 1,
+                Value = 100
+            });
+
+            // No internal TX should be generated
+            Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, true);
+            Assert.Null(internalTransaction);
+
+            // Ensure db not updated
+            stateMock.Verify(x => x.SetUnspent(contractAddress, It.IsAny<ContractUnspentOutput>()), Times.Never);
         }
     }
 }

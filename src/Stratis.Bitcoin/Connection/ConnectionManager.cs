@@ -181,10 +181,8 @@ namespace Stratis.Bitcoin.Connection
                 NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint);
 
                 this.Servers.Add(server);
-                cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(this, this.loggerFactory)
-                {
-                    Whitelisted = listen.Whitelisted
-                });
+                var cmb = (cloneParameters.TemplateBehaviors.Single(x => x is IConnectionManagerBehavior) as ConnectionManagerBehavior);
+                cmb.Whitelisted = listen.Whitelisted;
 
                 server.InboundNetworkPeerConnectionParameters = cloneParameters;
                 try
@@ -349,10 +347,12 @@ namespace Stratis.Bitcoin.Connection
         public async Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint)
         {
             NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
-            cloneParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(this, this.loggerFactory)
+
+            var connectionManagerBehavior = cloneParameters.TemplateBehaviors.OfType<ConnectionManagerBehavior>().SingleOrDefault();
+            if (connectionManagerBehavior != null)
             {
-                OneTry = true
-            });
+                connectionManagerBehavior.OneTry = true;
+            }
 
             INetworkPeer peer = await this.NetworkPeerFactory.CreateConnectedNetworkPeerAsync(ipEndpoint, cloneParameters, this.networkPeerDisposer).ConfigureAwait(false);
 
@@ -367,7 +367,7 @@ namespace Stratis.Bitcoin.Connection
                 this.logger.LogTrace("(-)[ERROR]");
                 throw e;
             }
-            
+
             return peer;
         }
     }

@@ -7,7 +7,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -138,8 +137,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.FullValidator = new FullValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
             var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
-            var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, new Mock<StoreSettings>().Object,
-                new Mock<INodeLifetime>().Object, blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
+
+            var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(testChainContext.ChainState);
+
+            var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, blockStoreFlushCondition, new Mock<StoreSettings>().Object,
+                blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
 
             await blockStore.InitializeAsync();
 

@@ -3,7 +3,10 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
@@ -11,19 +14,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class MethodParameterStringSerializerTests
     {
-        public IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer();
+        public static IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer();
 
         [Theory]
         [MemberData(nameof(GetData), parameters: 1)]
         public void Roundtrip_Method_Param_Successfully(object value)
         {
             // Roundtrip serialization
-            var methodParamObjects = this.Serializer.Deserialize(this.Serializer.Serialize(new [] { value }));
+            var methodParamObjects = Serializer.Deserialize(Serializer.Serialize(new [] { value }));
 
             Type paramType = value.GetType();
-                
+
             // Equality comparison using .Equal is possible for these Types
-            if (paramType.IsValueType || paramType == typeof(uint160) || paramType == typeof(string))
+            if (paramType.IsValueType || paramType == typeof(string))
             {
                 Assert.Equal(value, methodParamObjects[0]);
             }
@@ -48,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 '#'
             };
 
-            var serialized = this.Serializer.Serialize(methodParameters);
+            var serialized = Serializer.Serialize(methodParameters);
 
             Assert.Equal("6#12|1#True|4#te\\|s\\|t|4#te\\#st|4#\\#4\\#te\\#st\\#|3#\\#", serialized);
         }
@@ -62,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             yield return new object[] { "test" }; // MethodParameterDataType.String
             yield return new object[] { (uint)36 }; // MethodParameterDataType.UInt
             yield return new object[] { (ulong)29 }; // MethodParameterDataType.ULong
-            yield return new object[] { new Address("0x95D34980095380851902ccd9A1Fb4C813C2cb639") }; // MethodParameterDataType.Address
+            yield return new object[] { "0x0000000000000000000000000000000000000001".HexToAddress() }; // MethodParameterDataType.Address
             yield return new object[] { (long)12312321 }; // MethodParameterDataType.Long,
             yield return new object[] { (int)10000000 };// MethodParameterDataType.Int
         }

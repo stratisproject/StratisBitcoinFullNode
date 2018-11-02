@@ -213,12 +213,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             Script coinbaseScriptPubKey = context.ValidationContext.BlockToValidate.Transactions[0].Outputs[0].ScriptPubKey;
             GetSenderResult getCoinbaseResult = this.ContractCoinviewRule.SenderRetriever.GetAddressFromScript(coinbaseScriptPubKey);
-            if (!getCoinbaseResult.Success)
-                throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-coinbase", getCoinbaseResult.Error));
+            uint160 coinbaseAddress = (getCoinbaseResult.Success) ? getCoinbaseResult.Sender : uint160.Zero;
 
             Money mempoolFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
-            return new ContractTransactionContext(blockHeight, getCoinbaseResult.Sender, mempoolFee, getSenderResult.Sender, transaction);
+            return new ContractTransactionContext(blockHeight, coinbaseAddress, mempoolFee, getSenderResult.Sender, transaction);
         }
 
         /// <summary>

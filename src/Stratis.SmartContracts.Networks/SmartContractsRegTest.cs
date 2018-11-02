@@ -4,7 +4,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Networks.Deployments;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -51,12 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 [BuriedDeployments.BIP66] = 100000000
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray
-            {
-                [BIP9Deployments.TestDummy] = new BIP9DeploymentsParameters(28, 0, 999999999),
-                [BIP9Deployments.CSV] = new BIP9DeploymentsParameters(0, 0, 999999999),
-                [BIP9Deployments.Segwit] = new BIP9DeploymentsParameters(1, BIP9DeploymentsParameters.AlwaysActive, 999999999)
-            };
+            var bip9Deployments = new NoBIP9Deployments();
 
             this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
@@ -75,7 +70,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxReorgLength: 500,
                 defaultAssumeValid: null, // turn off assumevalid for regtest.
                 maxMoney: long.MaxValue,
-                coinbaseMaturity: 1, // Low to the point of being nonexistent to speed up integration tests.
+                coinbaseMaturity: 0, // Low to the point of being nonexistent to speed up integration tests.
                 premineHeight: default(long),
                 premineReward: Money.Zero,
                 proofOfWorkReward: Money.Coins(50),
