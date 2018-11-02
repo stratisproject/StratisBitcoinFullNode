@@ -16,7 +16,6 @@ using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
 using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
 using Xunit;
-using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
@@ -99,7 +98,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(bytes, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -124,7 +123,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
@@ -147,7 +146,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -172,7 +171,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
@@ -194,7 +193,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -254,7 +253,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Method", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -307,7 +306,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -358,7 +357,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("MethodThatDoesntExist", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -409,7 +408,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("CallMe", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -461,7 +460,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -493,7 +492,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.StartsWith(ContractInvocationErrors.MethodDoesNotExist, receipt.Error); // The error for constructor not found vs method does not exist could be different in future.
@@ -528,7 +527,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(emptyModule, amount);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -553,7 +552,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs);
             Assert.False(receipt.Success);
-            Assert.Equal(GasPriceList.BaseCost, receipt.GasUsed);
+            Assert.Equal(GasPriceList.CreateCost, receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
@@ -575,7 +574,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, gasLimit: gasLimit);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block  lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -628,7 +627,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(RecursiveLoopCall.Call), preResponse.NewContractAddress, amount, gasLimit: gasLimit);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());

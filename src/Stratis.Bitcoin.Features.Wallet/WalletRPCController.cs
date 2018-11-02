@@ -139,19 +139,24 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// RPC method that returns the spendable balance of all accounts.
+        /// RPC method that returns the total available balance.
+        /// The available balance is what the wallet considers currently spendable.
+        /// 
         /// Uses the first wallet and account.
         /// </summary>
+        /// <param name="accountName">Remains for backward compatibility. Must be excluded or set to "*" or "". Deprecated in latest bitcoin core (0.17.0).</param>
+        /// <param name="minConfirmations">Only include transactions confirmed at least this many times. (default=0)</param>
         /// <returns>Total spendable balance of the wallet.</returns>
         [ActionName("getbalance")]
         [ActionDescription("Gets wallets spendable balance.")]
-        public decimal GetBalance()
+        public decimal GetBalance(string accountName, int minConfirmations=0)
         {
+            if (!string.IsNullOrEmpty(accountName) && !accountName.Equals("*"))
+                throw new RPCServerException(RPCErrorCode.RPC_METHOD_DEPRECATED, "Account has been deprecated, must be excluded or set to \"*\"");
+
             var account = this.GetAccount();
 
-            IEnumerable<AccountBalance> balances = this.walletManager.GetBalances(account.WalletName, account.AccountName);
-
-            Money balance = balances?.Sum(i => i.AmountConfirmed);
+            Money balance = this.walletManager.GetSpendableTransactionsInAccount(account, minConfirmations).Sum(x => x.Transaction.Amount);
             return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
         }
 
