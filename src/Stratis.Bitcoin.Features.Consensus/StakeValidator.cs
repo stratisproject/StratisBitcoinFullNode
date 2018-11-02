@@ -216,6 +216,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc/>
         public uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, uint256 prevStakeModifier, uint256 kernel)
         {
+            Guard.NotNull(prevStakeModifier, nameof(prevStakeModifier));
             if (prevChainedHeader == null)
                 return 0; // Genesis block's modifier is 0.
 
