@@ -54,14 +54,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             try
             {
-                var model = new WalletHistoryModel();
+                var model = new ContractWalletHistoryModel();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
                 IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(request.WalletName, request.AccountName);
 
                 foreach (AccountHistory accountHistory in accountsHistory)
                 {
-                    var transactionItems = new List<TransactionItemModel>();
+                    var transactionItems = new List<ContractTransactionItemModel>();
 
                     List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Take(200).ToList();
 
@@ -86,9 +86,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         if (!address.IsChangeAddress())
                         {
                             // Add incoming fund transaction details.
-                            var receivedItem = new TransactionItemModel
+                            var receivedItem = new ContractTransactionItemModel
                             {
-                                Type = TransactionItemType.Received,
+                                Type = ContractTransactionItemType.Received,
                                 ToAddress = address.Address,
                                 Amount = transaction.Amount,
                                 Id = transaction.Id,
@@ -104,9 +104,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         {
                             // Create a record for a 'send' transaction.
                             uint256 spendingTransactionId = transaction.SpendingDetails.TransactionId;
-                            var sentItem = new TransactionItemModel
+                            var sentItem = new ContractTransactionItemModel
                             {
-                                Type = TransactionItemType.Send,
+                                Type = ContractTransactionItemType.Send,
                                 Id = spendingTransactionId,
                                 Timestamp = transaction.SpendingDetails.CreationTime,
                                 ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
@@ -144,14 +144,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                             if (sentItem.Fee < 0)
                                 sentItem.Fee = 0;
 
-                            if (!transactionItems.Contains(sentItem, new SentTransactionItemModelComparer()))
+                            if (!transactionItems.Contains(sentItem, new ContractSentTransactionItemModelComparer()))
                             {
                                 transactionItems.Add(sentItem);
                             }
                         }
                     }
 
-                    model.AccountsHistoryModel.Add(new AccountHistoryModel
+                    model.AccountsHistoryModel.Add(new ContractAccountHistoryModel
                     {
                         TransactionsHistory = transactionItems.OrderByDescending(t => t.Timestamp).ToList(),
                         Name = accountHistory.Account.Name,
