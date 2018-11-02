@@ -544,16 +544,14 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (!isExtension)
                 {
-                    // Mark disconnected blocks as not available.
-                    // This is needed in case of large reorgs when we disconnect more than CHT.KeepBlockDataForLastBlocks blocks.
-                    // In case we disconnect more than that we would expect some of disconnected blocks to be in memory and some in store,
-                    // but those that are in store are reorged.
-                    // Removing block data will result in redownloading blocks next time node would like to reconnect this chain.
+                    // A block might have been set to null for blocks more then 100 block behind the tip.
+                    // As this chain is not the longest chain anymore we need to put the blocks back to the header (they will not be available in store),
+                    // this is in case a reorg longer then 100 may happen later and we will need the blocks to connect on top of CT.
+                    // This might cause uncontrolled memory changes but big reorgs are not common and a chain will anyway get disconnected when the fork is more then 500 blocks.
                     foreach (ChainedHeaderBlock disconnectedBlock in disconnectedBlocks)
                     {
-                        disconnectedBlock.ChainedHeader.Block = null;
-                        disconnectedBlock.ChainedHeader.BlockDataAvailability = BlockDataAvailabilityState.HeaderOnly;
-                        disconnectedBlock.ChainedHeader.BlockValidationState = ValidationState.HeaderValidated;
+                        if (disconnectedBlock.ChainedHeader.Block == null)
+                            disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
                     }
                 }
 
