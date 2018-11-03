@@ -1,4 +1,7 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using System.Linq;
+using DBreeze.Utils;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
@@ -79,6 +82,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             this.CheckCoinstakeMerkleProof(header);
 
             this.CheckHeaderSignatureWithCoinstakeKernel(header, prevUtxo);
+
+            this.CheckIfCoinstakeIsSpentOnAnotherChain(header);
         }
 
         /// <summary>
@@ -268,6 +273,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
             ConsensusErrors.BadBlockSignature.Throw();
+        }
+
+        private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header)
+        {
+            Transaction coinstake = header.Coinstake;
+            TxIn intput = coinstake.Inputs[0];
+
+            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.GetAsync(intput.PrevOut.Hash, (int)intput.PrevOut.N).GetAwaiter().GetResult();
+            if (!rewindDataIndex.HasValue)
+                return;
+
+            RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
+            UnspentOutputs matchingUnspentUtxo = 
+                rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == intput.PrevOut.Hash);
+            if (matchingUnspentUtxo == null)
+            {
+                throw new ApplicationException("TODO: throw specific exception to be caught later");
+            }
+
+            this.CheckHeaderSignatureWithCoinstakeKernel(header, matchingUnspentUtxo);
         }
 
         private OutPoint GetPreviousOut(ProvenBlockHeader header)
