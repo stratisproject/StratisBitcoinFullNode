@@ -53,16 +53,17 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
         }
 
-        public async Task SaveAsync(uint256 transactionId, int transactionOutputIndex, int rewindDataIndex)
+        public async Task SaveAsync(Dictionary<string, int> indexData)
         {
-            string key = $"{transactionId}-{transactionOutputIndex}";
-
-            this.items[key] = rewindDataIndex;
-
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
+                foreach (KeyValuePair<string, int> indexRecord in indexData)
+                {
+                    this.items[indexRecord.Key] = indexRecord.Value;
+                }
+
                 // Save the items to disk.
-                await this.rewindDataIndexRepository.PutAsync(key, rewindDataIndex).ConfigureAwait(false);
+                await this.rewindDataIndexRepository.PutAsync(indexData).ConfigureAwait(false);
             }
         }
 

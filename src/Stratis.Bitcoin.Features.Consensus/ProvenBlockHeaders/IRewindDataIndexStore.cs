@@ -1,5 +1,5 @@
-﻿using System.Threading.Tasks;
-using NBitcoin;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
@@ -7,6 +7,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     {
         Task FlushAsync(bool force = true);
 
-        Task SaveAsync(uint256 transactionId, int transactionOutputIndex, int rewindDataIndex);
+        Task SaveAsync(Dictionary<string, int> indexData);
     }
 }

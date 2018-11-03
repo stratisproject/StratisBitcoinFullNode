@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
         /// <summary>Pending list of rewind data to be persisted to a persistent storage.</summary>
         /// <remarks>All access to this list has to be protected by <see cref="lockobj"/>.</remarks>
-        private readonly List<RewindData> cachedRewindDataList;
+        private readonly List<(int height, RewindData rewindData)> cachedRewindDataList;
 
         /// <inheritdoc />
         public ICoinView Inner => this.inner;
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             this.cachedUtxoItems = new Dictionary<uint256, CacheItem>();
             this.performanceCounter = new CachePerformanceCounter(this.dateTimeProvider);
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
-            this.cachedRewindDataList = new List<RewindData>();
+            this.cachedRewindDataList = new List<(int height, RewindData rewindData)>();
             this.random = new Random();
 
             nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 300);
@@ -313,7 +313,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     u.Value.ExistInInner = true;
                 }
 
-                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, this.cachedRewindDataList).ConfigureAwait(false);
+                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, 0, this.cachedRewindDataList.Select(c => c.rewindData).ToList()).ConfigureAwait(false);
 
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
+        public async Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
@@ -364,9 +364,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.blockHash = nextBlockHash;
                 var rewindData = new RewindData(oldBlockHash);
-                
+                var indexItems = new Dictionary<string, int>();
+
                 foreach (UnspentOutputs unspent in unspentOutputs)
-                {
+                {   
                     if (!this.cachedUtxoItems.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
                     {
                         // This can happen very rarely in the case where we fetch items from
@@ -419,6 +420,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     cacheItem.IsDirty = true;
 
+                    if (this.rewindDataIndexStore != null)
+                    {
+                        for (int i = 0; i < unspent.Outputs.Length; i++)
+                        {
+                            string key = $"{unspent.TransactionId}-{i}";
+                            indexItems[key] = checked((int)unspent.Height);
+                        }
+                    }
+
                     // Inner does not need to know pruned unspent that it never saw.
                     if (cacheItem.UnspentOutputs.IsPrunable && !cacheItem.ExistInInner)
                     {
@@ -427,7 +437,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     }
                 }
 
-                this.cachedRewindDataList.Add(rewindData);
+                if (this.rewindDataIndexStore != null && indexItems.Any())
+                {
+                    await this.rewindDataIndexStore.SaveAsync(indexItems);
+                }
+
+                this.cachedRewindDataList.Add((height,rewindData));
             }
         }
 
@@ -443,7 +458,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 // we can rewind and there is no need to check underlying storage.
                 if (this.cachedRewindDataList.Count > 0)
                 {
-                    RewindData lastRewindData = this.cachedRewindDataList.Last();
+                    RewindData lastRewindData = this.cachedRewindDataList.Last().rewindData;
 
                     this.RemoveTransactions(lastRewindData);
                     this.RestoreOutputs(lastRewindData);
@@ -467,6 +482,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 return hash;
             }
+        }
+
+        public async Task<RewindData> GetRewindData(int height)
+        {
+            RewindData existingRewindData = this.cachedRewindDataList.Where(i => i.height == height).Select(i => i.rewindData).FirstOrDefault();
+
+            if (existingRewindData != null)
+                return existingRewindData;
+
+            return await this.Inner.GetRewindData(height);
         }
 
         private void RestoreOutputs(RewindData rewindData)

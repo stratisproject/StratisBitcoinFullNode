@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null)
+        public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
         {
             Task task = Task.Run(() =>
             {
@@ -281,6 +281,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             transaction.ValuesLazyLoadingIsOn = prevLazySettings;
 
             return firstRow != null ? firstRow.Key : -1;
+        }
+
+        public Task<RewindData> GetRewindData(int height)
+        {
+            Task<RewindData> task = Task.Run(() =>
+            {
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
+                    Row<int, RewindData> row = transaction.Select<int, RewindData>("Rewind", height);
+                    return row.Exists ? row.Value : null;
+                }
+            });
+
+            return task;
         }
 
         /// <inheritdoc />
