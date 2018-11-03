@@ -8,6 +8,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NLog.Config;
+using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
@@ -94,6 +95,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <summary>Storage of POS block information.</summary>
         private readonly StakeChainStore stakeChainStore;
 
+        /// <summary>
+        /// The rewind data index store.
+        /// </summary>
+        private readonly IRewindDataIndexStore rewindDataIndexStore;
+
         /// <summary>Information about cached items mapped by transaction IDs the cached item's unspent outputs belong to.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private readonly Dictionary<uint256, CacheItem> cachedUtxoItems;
@@ -119,8 +125,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
-        public CachedCoinView(DBreezeCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats, StakeChainStore stakeChainStore = null) :
-            this(dateTimeProvider, loggerFactory, nodeStats, stakeChainStore)
+        /// <param name="rewindDataIndexStore">Rewind data index store.</param>
+        public CachedCoinView(DBreezeCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats, StakeChainStore stakeChainStore = null, IRewindDataIndexStore rewindDataIndexStore = null) :
+            this(dateTimeProvider, loggerFactory, nodeStats, stakeChainStore, rewindDataIndexStore)
         {
             Guard.NotNull(inner, nameof(inner));
             this.inner = inner;
@@ -133,12 +140,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
+        /// <param name="rewindDataIndexStore">Rewind data index store.</param>
         /// <remarks>
         /// This is used for testing the coinview.
         /// It allows a coin view that only has in-memory entries.
         /// </remarks>
-        public CachedCoinView(InMemoryCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats, StakeChainStore stakeChainStore = null) :
-            this(dateTimeProvider, loggerFactory, nodeStats, stakeChainStore)
+        public CachedCoinView(InMemoryCoinView inner, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats, StakeChainStore stakeChainStore = null, IRewindDataIndexStore rewindDataIndexStore = null) :
+            this(dateTimeProvider, loggerFactory, nodeStats, stakeChainStore, rewindDataIndexStore)
         {
             Guard.NotNull(inner, nameof(inner));
             this.inner = inner;
@@ -150,11 +158,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="stakeChainStore">Storage of POS block information.</param>
-        private CachedCoinView(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats, StakeChainStore stakeChainStore = null)
+        /// <param name="rewindDataIndexStore">Rewind data index store.</param>
+        private CachedCoinView(IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory, INodeStats nodeStats, StakeChainStore stakeChainStore = null, IRewindDataIndexStore rewindDataIndexStore = null)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.dateTimeProvider = dateTimeProvider;
             this.stakeChainStore = stakeChainStore;
+            this.rewindDataIndexStore = rewindDataIndexStore;
             this.MaxItems = CacheMaxItemsDefault;
             this.lockobj = new AsyncLock();
             this.cachedUtxoItems = new Dictionary<uint256, CacheItem>();
@@ -280,6 +290,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (this.stakeChainStore != null)
                 await this.stakeChainStore.FlushAsync(true);
 
+            // Before flushing the coinview persist the rewind data index store as well.
+            if (this.rewindDataIndexStore != null)
+                await this.rewindDataIndexStore.FlushAsync();
+
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
 
@@ -350,7 +364,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.blockHash = nextBlockHash;
                 var rewindData = new RewindData(oldBlockHash);
-
+                
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
                     if (!this.cachedUtxoItems.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
