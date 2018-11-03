@@ -78,5 +78,6 @@
         public static readonly ConsensusError BadProvenHeaderMerkleProofSize = new ConsensusError("proven-header-merkle-proof-size", "proven header's merkle proof size must be less than 512 bytes");
         public static readonly ConsensusError BadProvenHeaderCoinstakeSize = new ConsensusError("proven-header-coinstake-size", "proven header's coinstake size must be less than 1,000,000 bytes");
         public static readonly ConsensusError BadProvenHeaderSignatureSize = new ConsensusError("proven-header-signature-size", "proven header's signature size must be less than 80 bytes");
+        public static readonly ConsensusError InvalidPreviousProvenHeader = new ConsensusError("proven-header-invalid-previous-header", "proven header's previous header in chain is expected to be of proven header type");
     }
 }
