@@ -321,8 +321,9 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                     this.rpcGetStakingInfoModel.Errors = cee.Message;
                 }
-                catch
+                catch (Exception ex)
                 {
+                    this.logger.LogError("Exception: {0}", ex);
                     this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
                     throw;
                 }
