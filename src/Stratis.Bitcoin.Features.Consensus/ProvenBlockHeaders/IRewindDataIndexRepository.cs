@@ -12,12 +12,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public interface IRewindDataIndexRepository : IDisposable
     {
         /// <summary>
-        /// Initializes <see cref="RewindData"/> index items database.
-        /// </summary>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        Task InitializeAsync(CancellationToken cancellationToken = default(CancellationToken));
-
-        /// <summary>
         /// Persists key value pair for the rewind data index item.
         /// </summary>
         /// <param name="key">Transaction id + N (N is an index of output in a transaction).</param>

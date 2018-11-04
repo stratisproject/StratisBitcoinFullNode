@@ -275,6 +275,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             ConsensusErrors.BadBlockSignature.Throw();
         }
 
+        /// <summary>
+        /// Checks if coinstake is spent on another chain.
+        /// </summary>
+        /// <param name="header">The proven block header.</param>
+        /// <exception cref="ApplicationException">TODO: throw specific exception to be caught later</exception>
         private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header)
         {
             Transaction coinstake = header.Coinstake;

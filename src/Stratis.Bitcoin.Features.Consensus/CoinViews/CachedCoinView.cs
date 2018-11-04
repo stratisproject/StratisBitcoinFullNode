@@ -484,6 +484,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        /// <inheritdoc />
         public async Task<RewindData> GetRewindData(int height)
         {
             RewindData existingRewindData = this.cachedRewindDataList.Where(i => i.height == height).Select(i => i.rewindData).FirstOrDefault();

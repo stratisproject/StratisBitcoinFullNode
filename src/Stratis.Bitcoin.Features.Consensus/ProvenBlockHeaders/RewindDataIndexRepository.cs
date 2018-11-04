@@ -46,22 +46,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task InitializeAsync(CancellationToken cancellationToken = default(CancellationToken))
-        {
-            Task task = Task.Run(() =>
-            {
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    // hydrate rewind data
-
-                    transaction.Commit();
-                }
-            }, cancellationToken);
-
-            return task;
-        }
-
-        /// <inheritdoc />
         public Task<int?> GetAsync(string key, CancellationToken cancellationToken = default(CancellationToken))
         {
             Task<int?> task = Task.Run(() =>

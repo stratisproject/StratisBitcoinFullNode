@@ -10,14 +10,23 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
+    /// <inheritdoc />
     public class RewindDataIndexStore : IRewindDataIndexStore
     {
+        /// <summary>
+        /// The date time provider. 
+        /// </summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        private readonly ICoinView coinView;
-
+        /// <summary>
+        /// The rewind data index repository that is used to store and retrieve data from the disk.
+        /// </summary>
         private readonly IRewindDataIndexRepository rewindDataIndexRepository;
 
+        /// <summary>
+        /// Internal cache for rewind data index. Key is a TxId + N (N is an index of output in a transaction)
+        /// and value is a rewind data index
+        /// </summary>
         private readonly ConcurrentDictionary<string, int> items;
 
         /// <summary>Time of the last cache flush.</summary>
@@ -37,22 +46,21 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         public RewindDataIndexStore(
             IDateTimeProvider dateTimeProvider,
-            ICoinView coinView,
             ILoggerFactory loggerFactory,
             IRewindDataIndexRepository rewindDataIndexRepository)
         {
-            Guard.NotNull(coinView, nameof(coinView));
+            Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(rewindDataIndexRepository, nameof(rewindDataIndexRepository));
 
             this.items = new ConcurrentDictionary<string, int>();
             this.dateTimeProvider = dateTimeProvider;
-            this.coinView = coinView;
             this.rewindDataIndexRepository = rewindDataIndexRepository;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
         }
 
+        /// <inheritdoc />
         public async Task SaveAsync(Dictionary<string, int> indexData)
         {
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
@@ -67,6 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
         }
 
+        /// <inheritdoc />
         public async Task FlushAsync(bool force = true)
         {
             DateTime now = this.dateTimeProvider.GetUtcNow();
@@ -84,6 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
         }
 
+        /// <inheritdoc />
         public async Task<int?> GetAsync(uint256 transactionId, int transactionOutputIndex)
         {
             string key = $"{transactionId}-{transactionOutputIndex}";
