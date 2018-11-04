@@ -308,11 +308,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Setup(m => m.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), It.IsAny<int>(), It.IsAny<ScriptVerify>()))
                 .Returns(true);
 
-            // When we run the validation rule, we should hit previous stake null error.
+            // When we run the validation rule, we should hit bad merkle root.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.PrevStakeNull);
+                .Should().Be(ConsensusErrors.BadMerkleRoot);
         }
 
         [Fact]
@@ -353,13 +353,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
             this.stakeValidator
                 .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()))
-                .Throws(new ConsensusErrorException(ConsensusErrors.StakeHashInvalidTarget));
+                .Returns(false);
 
-            // When we run the validation rule, we should hit stake hash invalid target error.
+            // When we run the validation rule, we should hit bad merkle root.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.StakeHashInvalidTarget);
+                .Should().Be(ConsensusErrors.BadMerkleRoot);
         }
 
         [Fact]
