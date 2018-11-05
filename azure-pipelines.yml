@@ -1,13 +1,12 @@
-# City Chain - Continuous Integration Setup for VSTS
+# City Chain - Continuous Integration Setup for Azure DevOps
 
-#trigger:
-#  branches:
-#    include:
-#    - master
-#    - feature/*
-#    - bug/*
-#    exclude:
-#    - v* #Exclude verions tags
+trigger:
+ batch: true
+ branches:
+   include:
+   - master
+   exclude:
+   - v* #Exclude verions tags
 
 phases:
 - template: build.yml
@@ -22,12 +21,12 @@ phases:
     platform: linux
     queue: Hosted Linux Preview
 
-- template: build.yml
-  parameters:
-    name: Windows_x86
-    platform: win
-    arch: x86
-    queue: Hosted VS2017
+# - template: build.yml
+#   parameters:
+#     name: Windows_x86
+#     platform: win
+#     arch: x86
+#     queue: Hosted VS2017
 
 - template: build.yml
   parameters:
