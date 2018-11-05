@@ -303,7 +303,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     ContractAddress = response.NewContractAddress.ToString(),
                     StorageKey = "TestSave",
-                    DataType = SmartContractDataType.String
+                    DataType = MethodParameterDataType.String
                 })).Value;
                 Assert.Equal("Hello, smart contract world!", storageRequestResult);
 
@@ -311,7 +311,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     ContractAddress = response.NewContractAddress.ToString(),
                     StorageKey = "Owner",
-                    DataType = SmartContractDataType.Address
+                    DataType = MethodParameterDataType.Address
                 })).Value;
                 Assert.NotEmpty(ownerRequestResult);
 
@@ -319,7 +319,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     ContractAddress = response.NewContractAddress.ToString(),
                     StorageKey = "Counter",
-                    DataType = SmartContractDataType.Int
+                    DataType = MethodParameterDataType.Int
                 })).Value;
                 Assert.Equal("12345", counterRequestResult);
 
@@ -347,7 +347,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     ContractAddress = response.NewContractAddress.ToString(),
                     StorageKey = "Counter",
-                    DataType = SmartContractDataType.Int
+                    DataType = MethodParameterDataType.Int
                 })).Value;
                 Assert.Equal("12346", counterRequestResult);
 
@@ -394,7 +394,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     ContractAddress = response.NewContractAddress.ToString(),
                     StorageKey = "Int32",
-                    DataType = SmartContractDataType.Int
+                    DataType = MethodParameterDataType.Int
                 })).Value;
                 Assert.Equal("12345", counterRequestResult);
             }

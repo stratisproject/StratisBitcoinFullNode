@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IAddressGenerator addressGenerator;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
+        private readonly ISerializer serializer;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
             IAddressGenerator addressGenerator,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
+            ISerializer serializer,
             IReceiptRepository receiptRepository,
             ICallDataSerializer callDataSerializer,
             IMethodParameterStringSerializer methodParameterStringSerializer,
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.addressGenerator = addressGenerator;
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
+            this.serializer = serializer;
             this.receiptRepository = receiptRepository;
             this.callDataSerializer = callDataSerializer;
             this.methodParameterStringSerializer = methodParameterStringSerializer;
@@ -144,7 +144,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
 
-            return Json(GetStorageValue(request.DataType, storageValue).ToString());
+            if (storageValue == null)
+            {
+                return Json(new
+                {
+                    Message = string.Format("No data at storage with key {0}", request.StorageKey)
+                });
+            }
+
+            // Interpret the storage bytes as an object of the given type
+            var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
+
+            // Use MethodParamStringSerializer to serialize the interpreted object to a string
+            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue);
+            return Json(serialized);
         }
 
         [Route("receipt")]
@@ -460,31 +473,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
         }
 
-        private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
+        private object InterpretStorageValue(MethodParameterDataType dataType, byte[] bytes)
         {
             switch (dataType)
             {
-                case SmartContractDataType.Address:
-                    return this.contractPrimitiveSerializer.Deserialize<Address>(bytes);
-                case SmartContractDataType.Bool:
-                    return this.contractPrimitiveSerializer.Deserialize<bool>(bytes);
-                case SmartContractDataType.Bytes:
-                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes);
-                case SmartContractDataType.Char:
-                    return this.contractPrimitiveSerializer.Deserialize<char>(bytes);
-                case SmartContractDataType.Int:
-                    return this.contractPrimitiveSerializer.Deserialize<int>(bytes);
-                case SmartContractDataType.Long:
-                    return this.contractPrimitiveSerializer.Deserialize<long>(bytes);
-                case SmartContractDataType.Sbyte:
-                    return this.contractPrimitiveSerializer.Deserialize<sbyte>(bytes);
-                case SmartContractDataType.String:
-                    return this.contractPrimitiveSerializer.Deserialize<string>(bytes);
-                case SmartContractDataType.Uint:
-                    return this.contractPrimitiveSerializer.Deserialize<uint>(bytes);
-                case SmartContractDataType.Ulong:
-                    return this.contractPrimitiveSerializer.Deserialize<ulong>(bytes);
+                case MethodParameterDataType.Bool:
+                    return this.serializer.ToBool(bytes);
+                case MethodParameterDataType.Byte:
+                    return bytes[0];
+                case MethodParameterDataType.Char:
+                    return this.serializer.ToChar(bytes);
+                case MethodParameterDataType.String:
+                    return this.serializer.ToString(bytes);
+                case MethodParameterDataType.UInt:
+                    return this.serializer.ToUInt32(bytes);
+                case MethodParameterDataType.Int:
+                    return this.serializer.ToInt32(bytes);
+                case MethodParameterDataType.ULong:
+                    return this.serializer.ToUInt64(bytes);
+                case MethodParameterDataType.Long:
+                    return this.serializer.ToInt64(bytes);
+                case MethodParameterDataType.Address:
+                    return this.serializer.ToAddress(bytes);
+                case MethodParameterDataType.ByteArray:
+                    return bytes.ToHexString();
             }
+
             return null;
         }
     }
