@@ -50,85 +50,10 @@ phases:
         projects: '**/City.*.Tests.csproj'
       arguments: ${{ format('-c {0} -v m', parameters.configuration) }}
 
-  - powershell: |
-      $configuration="Release"
-      $runtime=$env:runtime
-      $git_commit=(git log --format=%h --abbrev=7 -n 1)
-      $publish_directory="$env:workdir/src/City.Chain/bin/$configuration/netcoreapp2.1/$runtime/publish"
-      $wrapped_directory="$env:workdir/src/City.Chain/bin/$configuration/netcoreapp2.1/$runtime/wrapped"
-      $download_directory=$env:temp
-      $warp="$download_directory/$env:warpfile"
-      $project_path="$env:workdir/src/City.Chain/City.Chain.csproj"
-
-      # Create the output folder for packaged output.
-      New-Item -ItemType directory -Path $wrapped_directory
-      # Not compatible with Mac.
-      # md -Path $wrapped_directory
-
-      Write-Host "Download directory is $download_directory" -foregroundcolor "Magenta"
-      Write-Host "Current directory is $PWD" -foregroundcolor "Magenta"
-      Write-Host "Git commit to build: $git_commit" -foregroundcolor "Magenta"
-
-      Write-Host "Downloading warp..." -foregroundcolor "Magenta"
-      [Net.ServicePointManager]::SecurityProtocol = [Net.SecurityProtocolType]::Tls12
-      Invoke-WebRequest https://github.com/stratisproject/warp/releases/download/v0.2.1/$env:warpfile -O $warp
-
-      If(Get-ChildItem $warp)
-      {
-          Write-Host "Warp downloaded succesfully." -foregroundcolor "Magenta"
-
-          $size=((Get-Item "$warp").Length)
-          Write-Host "Size is $size" -foregroundcolor "Magenta"
-      }
-
-      dotnet --info
-
-      Write-Host "List of files to package:" -foregroundcolor "Magenta"
-      Get-ChildItem -Path $publish_directory
-
-      Write-Host "Packaging the daemon..." -foregroundcolor "Magenta"
-      Write-Host "WARP:" $warp
-      Write-Host "WARP-CMD:" $env:warpcmd
-      Write-Host "--arch $env:arch --input_dir $publish_directory --exec $env:filename --output $wrapped_directory/$env:filename"
-
-      If (-Not $env:warpcmd) {
-        & $warp --arch $env:arch --input_dir $publish_directory --exec $env:filename --output $wrapped_directory/$env:filename
-      }
-      Else {
-        & chmod +x "$env:warpcmd"
-        & $env:warpcmd --arch $env:arch --input_dir $publish_directory --exec $env:filename --output $wrapped_directory/$env:filename
-      }
-
-      Write-Host "Done." -foregroundcolor "green"
-    env:
-      workdir: $(build.SourcesDirectory)
-
-      ${{ if eq(parameters.platform, 'win') }}:
-         runtime: 'win-x64'
-         arch: 'windows-x64'
-         warpfile: 'windows-x64.warp-packer.exe'
-         filename: 'City.Chain.exe'
-      ${{ if eq(parameters.platform, 'linux') }}:
-         runtime: 'linux-x64'
-         temp: '/tmp'
-         arch: 'linux-x64'
-         warpfile: 'linux-x64.warp-packer'
-         warpcmd: '/tmp/linux-x64.warp-packer'
-         filename: 'City.Chain'
-      ${{ if eq(parameters.platform, 'osx') }}:
-         runtime: 'osx-x64'
-         temp: '/tmp'
-         arch: 'macos-x64'
-         warpfile: 'macos-x64.warp-packer'
-         warpcmd: '/tmp/macos-x64.warp-packer'
-         filename: 'City.Chain'
-    displayName: package
-    workingDirectory: $(build.SourcesDirectory)
-
   - task: ArchiveFiles@2
     displayName: archive
     inputs:
-      rootFolderOrFile: ${{ format('src/City.Chain/bin/{0}/netcoreapp2.1/{1}-{2}/wrapped/', parameters.configuration, parameters.platform, parameters.arch) }}
+      rootFolderOrFile: ${{ format('src/City.Chain/bin/{0}/netcoreapp2.1/{1}-{2}/publish/', parameters.configuration, parameters.platform, parameters.arch) }}
       includeRootFolder: false
 
       ${{ if eq(parameters.platform, 'linux') }}:

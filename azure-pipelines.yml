@@ -21,12 +21,12 @@ phases:
     platform: linux
     queue: Hosted Linux Preview
 
-# - template: build.yml
-#   parameters:
-#     name: Windows_x86
-#     platform: win
-#     arch: x86
-#     queue: Hosted VS2017
+- template: build.yml
+  parameters:
+    name: Windows_x86
+    platform: win
+    arch: x86
+    queue: Hosted VS2017
 
 - template: build.yml
   parameters:
