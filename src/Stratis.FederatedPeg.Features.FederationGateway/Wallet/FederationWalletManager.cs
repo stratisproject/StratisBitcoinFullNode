@@ -110,7 +110,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         //    internal Dictionary<Script, MultiSigAddress> multiSigKeysLookup;
 
         // Gateway settings picked up from the node config.
-        private FederationGatewaySettings federationGatewaySettings;
+        private IFederationGatewaySettings federationGatewaySettings;
 
         public FederationWalletManager(
             ILoggerFactory loggerFactory,
@@ -121,7 +121,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
-            FederationGatewaySettings federationGatewaySettings,
+            IFederationGatewaySettings federationGatewaySettings,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));

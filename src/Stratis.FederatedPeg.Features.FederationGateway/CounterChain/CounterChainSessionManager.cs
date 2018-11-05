@@ -37,7 +37,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
 
         private readonly Network network;
 
-        private readonly FederationGatewaySettings federationGatewaySettings;
+        private readonly IFederationGatewaySettings federationGatewaySettings;
 
         // Broadcaster we use to pass our payload to peers.
         private readonly IBroadcasterManager broadcastManager;
@@ -62,7 +62,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
             IFederationWalletTransactionHandler federationWalletTransactionHandler, 
             IConnectionManager connectionManager, 
             Network network,
-            FederationGatewaySettings federationGatewaySettings, 
+            IFederationGatewaySettings federationGatewaySettings, 
             IInitialBlockDownloadState initialBlockDownloadState, 
             IFullNode fullnode,
             IBroadcasterManager broadcastManager, 

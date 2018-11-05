@@ -58,7 +58,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
         // Timer used to trigger session processing.
         private Timer actionTimer;
         
-        private readonly FederationGatewaySettings federationGatewaySettings;
+        private readonly IFederationGatewaySettings federationGatewaySettings;
 
         private readonly ConcurrentDictionary<int, MonitorChainSession> monitorSessions = new ConcurrentDictionary<int, MonitorChainSession>();
 
@@ -71,7 +71,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.MonitorChain
 
         public MonitorChainSessionManager(
             ILoggerFactory loggerFactory,
-            FederationGatewaySettings federationGatewaySettings,
+            IFederationGatewaySettings federationGatewaySettings,
             ConcurrentChain concurrentChain,
             IInitialBlockDownloadState initialBlockDownloadState,
             ICrossChainTransactionAuditor crossChainTransactionAuditor = null)
