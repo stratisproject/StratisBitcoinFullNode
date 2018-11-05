@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts
             this.pn4 = other.pn4;
         }
 
-        private Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
+        internal Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
         {
             this.pn0 = pn0;
             this.pn1 = pn1;

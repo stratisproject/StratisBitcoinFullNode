@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.CallDataSerializer = callDataSerializer;
 
             this.ContractPrimitiveSerializer = new Mock<IContractPrimitiveSerializer>();
-            this.ContractStateRoot = new Mock<IStateRepository>();
+            this.ContractStateRoot = new Mock<IStateRepositoryRoot>();
 
             var transferProcessor = new Mock<IContractTransferProcessor>();
             transferProcessor
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.StateFactory = stateFactory;
         }
 
-        public Mock<IStateRepository> ContractStateRoot { get; }
+        public Mock<IStateRepositoryRoot> ContractStateRoot { get; }
 
         public Mock<IContractPrimitiveSerializer> ContractPrimitiveSerializer { get; }
 
