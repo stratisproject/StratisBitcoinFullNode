@@ -104,7 +104,7 @@ namespace City.Chain.Tests
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
             Assert.Null(network.Consensus.BIP9Deployments[CityBIP9Deployments.TestDummy]);
-            Assert.Equal(12500, network.Consensus.LastPOWBlock);
+            Assert.Equal(2500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(1926, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
