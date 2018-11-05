@@ -12,6 +12,13 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// </summary>
     public sealed class MethodParameterStringSerializer : IMethodParameterStringSerializer
     {
+        private readonly Network network;
+
+        public MethodParameterStringSerializer(Network network)
+        {
+            this.network = network;
+        }
+
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>
@@ -129,7 +136,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(long.Parse(parameterSignature[1]));
                 
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
-                    processedParameters.Add(parameterSignature[1].HexToAddress());
+                    processedParameters.Add(parameterSignature[1].ToAddress(this.network));
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
                     processedParameters.Add(parameterSignature[1].HexToByteArray());
