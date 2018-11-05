@@ -11,7 +11,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         public int BlockHeight { get; }
         public bool HasReachedQuorum => this.PartialTransactions.Count >= FederationGatewaySettings.MultiSigM;
         public bool HaveISigned { get; set; } = false;
-        public FederationGatewaySettings FederationGatewaySettings { get; }
+        public IFederationGatewaySettings FederationGatewaySettings { get; }
 
         public IList<CrossChainTransactionInfo> CrossChainTransactions { get; set; }
 
@@ -20,7 +20,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.CounterChain
         // The transactionId of the completed transaction.
         public uint256 CounterChainTransactionId { get; internal set; } = uint256.Zero;
 
-        public CounterChainSession(ILogger logger, FederationGatewaySettings federationGatewaySettings, int blockHeight)
+        public CounterChainSession(ILogger logger, IFederationGatewaySettings federationGatewaySettings, int blockHeight)
         {
             this.logger = logger;
             this.FederationGatewaySettings = federationGatewaySettings;
