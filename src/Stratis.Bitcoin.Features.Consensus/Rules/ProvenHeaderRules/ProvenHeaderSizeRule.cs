@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 {
@@ -13,17 +11,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// <seealso cref="ProvenHeaderRuleBase" />
     public class ProvenHeaderSizeRule : ProvenHeaderRuleBase
     {
-        public override void Run(RuleContext context)
+        /// <inheritdoc />
+        protected override void ProcessRule(PosRuleContext context, ChainedHeader chainedHeader, ProvenBlockHeader header)
         {
-            Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
-
-            int height = context.ValidationContext.ChainedHeaderToValidate.Height;
-
-            if (context.SkipValidation || !this.IsProvenHeaderActivated(height))
-                return;
-
-            var header = (ProvenBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Header;
-
             if ((header.MerkleProofSize == null) || (header.MerkleProofSize > PosConsensusOptions.MaxMerkleProofSerializedSize))
             {
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_MERKLE_PROOF_SIZE]");
