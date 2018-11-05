@@ -222,7 +222,7 @@ When the new block is downloaded it should be validated using the set of rules t
    11. Verify `SciptSig` of all inputs
    12. Mark all inputs as spent in the coinview
 
-2.  Check the merle root
+2.  Check the merkle root
 
 3. Check that coinstake reward is <= fees + block subsidy
 
