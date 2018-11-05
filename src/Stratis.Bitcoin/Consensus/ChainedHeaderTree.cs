@@ -342,7 +342,7 @@ namespace Stratis.Bitcoin.Consensus
             if ((chainedHeader.Previous.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (chainedHeader.Previous.BlockValidationState != ValidationState.FullyValidated))
             {
-                this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:{0}:{1}:{2}", nameof(chainedHeader.Previous), chainedHeader.Previous, chainedHeader.Previous.BlockValidationState);
+                this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:{0}", chainedHeader.Previous);
                 return null;
             }
 
