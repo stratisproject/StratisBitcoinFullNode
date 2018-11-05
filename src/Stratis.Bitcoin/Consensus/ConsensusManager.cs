@@ -550,6 +550,9 @@ namespace Stratis.Bitcoin.Consensus
                     // This might cause uncontrolled memory changes but big reorgs are not common and a chain will anyway get disconnected when the fork is more then 500 blocks.
                     foreach (ChainedHeaderBlock disconnectedBlock in disconnectedBlocks)
                     {
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader);
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader.Previous);
+
                         if (disconnectedBlock.ChainedHeader.Block == null)
                             disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
                     }
