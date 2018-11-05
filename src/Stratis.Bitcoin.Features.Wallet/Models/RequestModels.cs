@@ -163,19 +163,32 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
-        [Required(ErrorMessage = "A destination address is required.")]
-        [IsBitcoinAddress()]
-        public string DestinationAddress { get; set; }
-
-        [Required(ErrorMessage = "An amount is required.")]
-        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
-        public string Amount { get; set; }
+        [Required(ErrorMessage = "A list of recipients is required.")]
+        [MinLength(1)]
+        public List<RecipientModel> Recipients { get; set; }
 
         public string FeeType { get; set; }
 
         public bool AllowUnconfirmed { get; set; }
 
         public bool? ShuffleOutputs { get; set; }
+    }
+
+    public class RecipientModel
+    {
+        /// <summary>
+        /// The destination address.
+        /// </summary>
+        [Required(ErrorMessage = "A destination address is required.")]
+        [IsBitcoinAddress()]
+        public string DestinationAddress { get; set; }
+
+        /// <summary>
+        /// The amount that will be sent.
+        /// </summary>
+        [Required(ErrorMessage = "An amount is required.")]
+        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
+        public string Amount { get; set; }
     }
 
     public class BuildTransactionRequest : TxFeeEstimateRequest
@@ -222,6 +235,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [JsonProperty(PropertyName = "reSync")]
         public bool ReSync { get; set; }
     }
+
     public class ListAccountsModel : RequestModel
     {
         /// <summary>
@@ -230,6 +244,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "The name of the wallet is required.")]
         public string WalletName { get; set; }
     }
+
     public class GetUnusedAddressModel : RequestModel
     {
         /// <summary>
