@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Amount { get; set; }
     }
 
-    public class BuildTransactionRequest : TxFeeEstimateRequest
+    public class BuildTransactionRequest : TxFeeEstimateRequest, IValidatableObject
     {
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
@@ -200,6 +200,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Password { get; set; }
 
         public string OpReturnData { get; set; }
+
+        /// <inheritdoc />
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!string.IsNullOrEmpty(this.FeeAmount) && !string.IsNullOrEmpty(this.FeeType))
+            {
+                yield return new ValidationResult(
+                    "The query parameters 'feeamount' and 'feetype' cannot be set at the same time. " +
+                    "Please use 'feeamount' if you'd like to set the fee manually, or 'feetype' if you want the wallet to calculate it for you.",
+                    new[] { "feetype" });
+            }
+
+            if (string.IsNullOrEmpty(this.FeeAmount) && string.IsNullOrEmpty(this.FeeType))
+            {
+                yield return new ValidationResult(
+                    "One of parameters 'feeamount' and 'feetype' is required. " +
+                    "Please use 'feeamount' if you'd like to set the fee manually, or 'feetype' is you want the wallet to calculate it for you.",
+                    new[] { "feetype" });
+            }
+        }
     }
 
     public class SendTransactionRequest : RequestModel
