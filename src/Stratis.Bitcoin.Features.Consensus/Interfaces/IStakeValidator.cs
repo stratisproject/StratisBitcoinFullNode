@@ -20,15 +20,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
         /// <param name="transactionTime">Transaction time.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
-        /// <returns>Returns true if a correct hash was discovered.</returns>
-        bool CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
+        void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
 
         /// <summary>
         /// Checks that the stake kernel hash satisfies the target difficulty.
         /// </summary>
         /// <param name="context">Staking context.</param>
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
-        /// <param name="prevBlockStake">Information about previous staked block.</param>
+        /// <param name="prevStakeModifier">Previous staked block modifier.</param>
         /// <param name="stakingCoins">Coins that participate in staking.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
         /// <param name="transactionTime">Transaction time.</param>
@@ -40,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <para>
         /// The reason this hash is chosen is the following:
         /// <list type="number">
-        /// <item><paramref name="prevBlockStake.StakeModifierV2"/>: Scrambles computation to make it very difficult to precompute future proof-of-stake.</item>
+        /// <item><paramref name="prevStakeModifier"/>: Scrambles computation to make it very difficult to precompute future proof-of-stake.</item>
         /// <item><paramref name="stakingCoins.Time"/>: Time of the coinstake UTXO. Slightly scrambles computation.</item>
         /// <item><paramref name="prevout.Hash"/> Hash of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.</item>
         /// <item><paramref name="prevout.N"/>: Output number of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.</item>
@@ -52,8 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// </remarks>
         /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown in case transaction time is lower than it's own UTXO timestamp.</exception>
         /// <exception cref="ConsensusErrors.StakeHashInvalidTarget">Thrown in case PoS hash doesn't meet target protocol.</exception>
-        /// /// <returns>Returns true if a correct hash was discovered.</returns>
-        bool CheckStakeKernelHash(PosRuleContext context, uint headerBits, BlockStake prevBlockStake, UnspentOutputs stakingCoins,
+        void CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins,
             OutPoint prevout, uint transactionTime);
 
         /// <summary>
@@ -70,10 +68,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// Computes stake modifier.
         /// </summary>
         /// <param name="prevChainedHeader">Previous chained block.</param>
-        /// <param name="blockStakePrev">Previous PoS block.</param>
+        /// <param name="prevStakeModifier">Previous PoS block StakeModifier.</param>
         /// <param name="kernel">The PoS kernel.</param>
         /// <returns>Stake modifier.</returns>
-        uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, BlockStake blockStakePrev, uint256 kernel);
+        uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, uint256 prevStakeModifier, uint256 kernel);
 
         /// <summary>
         /// Gets the last block in the chain that was generated using

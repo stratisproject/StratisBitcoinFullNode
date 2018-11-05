@@ -316,7 +316,6 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                     this.logger.LogDebug("Node is shutting down therefore underlying components won't be updated.");
-
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
@@ -543,6 +542,19 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
+                if (!isExtension)
+                {
+                    // A block might have been set to null for blocks more then 100 block behind the tip.
+                    // As this chain is not the longest chain anymore we need to put the blocks back to the header (they will not be available in store),
+                    // this is in case a reorg longer then 100 may happen later and we will need the blocks to connect on top of CT.
+                    // This might cause uncontrolled memory changes but big reorgs are not common and a chain will anyway get disconnected when the fork is more then 500 blocks.
+                    foreach (ChainedHeaderBlock disconnectedBlock in disconnectedBlocks)
+                    {
+                        if (disconnectedBlock.ChainedHeader.Block == null)
+                            disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+                    }
+                }
+
                 this.logger.LogTrace("(-)[SUCCEEDED]:'{0}'", connectBlockResult);
                 return connectBlockResult;
             }
