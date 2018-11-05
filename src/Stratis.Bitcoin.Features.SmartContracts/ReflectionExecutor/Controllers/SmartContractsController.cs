@@ -401,31 +401,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
         }
 
-        private object InterpretStorageValue(SmartContractDataType dataType, byte[] bytes)
+        private object InterpretStorageValue(MethodParameterDataType dataType, byte[] bytes)
         {
             switch (dataType)
             {
-                case SmartContractDataType.Address:
-                    return this.contractPrimitiveSerializer.Deserialize<Address>(bytes);
-                case SmartContractDataType.Bool:
+                case MethodParameterDataType.Bool:
                     return this.contractPrimitiveSerializer.Deserialize<bool>(bytes);
-                case SmartContractDataType.Bytes:
-                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes);
-                case SmartContractDataType.Char:
+                case MethodParameterDataType.Byte:
+                    return this.contractPrimitiveSerializer.Deserialize<byte>(bytes);
+                case MethodParameterDataType.Char:
                     return this.contractPrimitiveSerializer.Deserialize<char>(bytes);
-                case SmartContractDataType.Int:
-                    return this.contractPrimitiveSerializer.Deserialize<int>(bytes);
-                case SmartContractDataType.Long:
-                    return this.contractPrimitiveSerializer.Deserialize<long>(bytes);
-                case SmartContractDataType.Sbyte:
-                    return this.contractPrimitiveSerializer.Deserialize<sbyte>(bytes);
-                case SmartContractDataType.String:
+                case MethodParameterDataType.String:
                     return this.contractPrimitiveSerializer.Deserialize<string>(bytes);
-                case SmartContractDataType.Uint:
+                case MethodParameterDataType.UInt:
                     return this.contractPrimitiveSerializer.Deserialize<uint>(bytes);
-                case SmartContractDataType.Ulong:
+                case MethodParameterDataType.Int:
+                    return this.contractPrimitiveSerializer.Deserialize<int>(bytes);
+                case MethodParameterDataType.ULong:
                     return this.contractPrimitiveSerializer.Deserialize<ulong>(bytes);
+                case MethodParameterDataType.Long:
+                    return this.contractPrimitiveSerializer.Deserialize<long>(bytes);
+                case MethodParameterDataType.Address:
+                    return this.contractPrimitiveSerializer.Deserialize<Address>(bytes);
+                case MethodParameterDataType.ByteArray:
+                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes);
             }
+
             return null;
         }
     }
