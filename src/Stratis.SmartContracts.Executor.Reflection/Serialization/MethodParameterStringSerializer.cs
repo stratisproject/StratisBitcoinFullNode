@@ -31,6 +31,13 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         {
             var prefix = Prefix.ForObject(obj);
 
+            string serialized = Serialize(obj);
+
+            return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
+        }
+
+        public static string Serialize(object obj)
+        {
             var primitiveType = GetPrimitiveType(obj);
 
             // ToString works fine for all of our data types except byte arrays.
@@ -44,7 +51,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 serialized = obj.ToString();
             }
 
-            return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
+            return serialized;
         }
 
         private static MethodParameterDataType GetPrimitiveType(object o)

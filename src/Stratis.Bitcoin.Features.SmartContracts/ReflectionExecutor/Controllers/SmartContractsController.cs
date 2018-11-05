@@ -138,7 +138,30 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
 
-            return Json(InterpretStorageValue(request.DataType, storageValue).ToString());
+            if (storageValue == null)
+            {
+                return Json(new
+                {
+                    Message = string.Format("No data at storage with key {0}", request.StorageKey)
+                });
+            }
+
+            // Interpret the storage bytes as an object of the given type
+            try
+            {
+                var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
+
+                // Use MethodParamStringSerializer to serialize the interpreted object to a string
+                var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue);
+                return Json(serialized);
+            }
+            catch (Exception)
+            {
+                return Json(new
+                {
+                    Message = string.Format("Could not interpret storage with key {0} as {1}", request.StorageKey, request.DataType.ToString())
+                });
+            }
         }
 
         [Route("receipt")]
@@ -424,7 +447,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 case MethodParameterDataType.Address:
                     return this.contractPrimitiveSerializer.Deserialize<Address>(bytes);
                 case MethodParameterDataType.ByteArray:
-                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes);
+                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes).ToHexString();
             }
 
             return null;
