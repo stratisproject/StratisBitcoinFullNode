@@ -575,7 +575,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     ContractAddress = response.NewContractAddress,
                     StorageKey = "Counter",
-                    DataType = SmartContractDataType.Int
+                    DataType = MethodParameterDataType.Int
                 })).Value;
 
                 Assert.Equal("12345", counterRequestResult);
@@ -612,7 +612,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 {
                     ContractAddress = response.NewContractAddress,
                     StorageKey = "Counter",
-                    DataType = SmartContractDataType.Int
+                    DataType = MethodParameterDataType.Int
                 })).Value;
 
                 Assert.Equal("12345", counterRequestResult);
