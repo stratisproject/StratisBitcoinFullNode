@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
             byte[] storageValue = this.stateRoot.GetStorageValue(addressNumeric, Encoding.UTF8.GetBytes(request.StorageKey));
 
-            return Json(GetStorageValue(request.DataType, storageValue).ToString());
+            return Json(InterpretStorageValue(request.DataType, storageValue).ToString());
         }
 
         [Route("receipt")]
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
         }
 
-        private object GetStorageValue(SmartContractDataType dataType, byte[] bytes)
+        private object InterpretStorageValue(SmartContractDataType dataType, byte[] bytes)
         {
             switch (dataType)
             {
