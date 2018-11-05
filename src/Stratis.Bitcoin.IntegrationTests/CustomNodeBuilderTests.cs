@@ -19,10 +19,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CustomNodeBuilderTests
     {
-        [Fact]
+        [Retry(1)]
         public void CanOverrideOnlyApiPort()
         {
             var extraParams = new NodeConfigParameters { { "apiport", "12345" } };
+
             using (var nodeBuilder = NodeBuilder.Create(this))
             {
                 var buildAction = new Action<IFullNodeBuilder>(builder =>
@@ -34,6 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .AddRPC()
                         .UseApi()
                         .MockIBD());
+
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
                     ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
 
@@ -50,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry(1)]
         public void CanOverrideAllPorts()
         {
             var extraParams = new NodeConfigParameters
@@ -59,6 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 { "rpcport", "456" },
                 { "apiport", "567" }
             };
+
             using (var nodeBuilder = NodeBuilder.Create(this))
             {
                 var buildAction = new Action<IFullNodeBuilder>(builder =>
@@ -87,13 +90,14 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry(1)]
         public void CanUnderstandUnknownParams()
         {
             var extraParams = new NodeConfigParameters
             {
                 { "some_new_unknown_param", "with a value" },
             };
+
             using (var nodeBuilder = NodeBuilder.Create(this))
             {
                 var buildAction = new Action<IFullNodeBuilder>(builder =>
@@ -115,14 +119,16 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry(1)]
         public void CanUseCustomConfigFileFromParams()
         {
             var specialConf = "special.conf";
+
             var extraParams = new NodeConfigParameters
             {
                 { "conf", specialConf },
             };
+
             using (var nodeBuilder = NodeBuilder.Create(this))
             {
                 var buildAction = new Action<IFullNodeBuilder>(builder =>

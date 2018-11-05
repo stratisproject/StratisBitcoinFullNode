@@ -5,6 +5,7 @@ using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
 
@@ -41,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void Serialized_Method_Params_Are_Smaller_Than_Strings()
         {
             // Single comparative case for a sample byte vs. string encoded method params array
-            var stringSerializer = new MethodParameterStringSerializer();
+            var stringSerializer = new MethodParameterStringSerializer(Network);
 
             var parameters = GetData(0).SelectMany(o => o).ToArray();
 

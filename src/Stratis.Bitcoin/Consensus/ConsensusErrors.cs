@@ -15,7 +15,7 @@
         public static readonly ConsensusError BadBlockWeight = new ConsensusError("bad-blk-weight", "weight limit failed");
         public static readonly ConsensusError BadDiffBits = new ConsensusError("bad-diffbits", "incorrect proof of work");
         public static readonly ConsensusError TimeTooOld = new ConsensusError("time-too-old", "block's timestamp is too early");
-        public static readonly ConsensusError TimeTooNew = new ConsensusError("time-too-new", "block timestamp too far in the future");
+        public static readonly ConsensusError TimeTooNew = new ConsensusError("time-too-new", "timestamp too far in the future");
         public static readonly ConsensusError BadVersion = new ConsensusError("bad-version", "block version rejected");
         public static readonly ConsensusError BadMerkleRoot = new ConsensusError("bad-txnmrklroot", "hashMerkleRoot mismatch");
         public static readonly ConsensusError BadBlockLength = new ConsensusError("bad-blk-length", "size limits failed");

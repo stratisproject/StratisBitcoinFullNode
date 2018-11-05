@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
-using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -15,7 +14,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
     {
         // TODO: This and PoAMockChain could share most logic
 
-        private readonly NodeBuilder builder;
+        private readonly SmartContractNodeBuilder builder;
 
         protected readonly MockChainNode[] nodes;
 
@@ -36,21 +35,21 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
         {
             this.Network = new SmartContractsRegTest(); // TODO: Make this configurable.
 
-            this.builder = NodeBuilder.Create(this);
+            this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
 
             for (int i = 0; i < numNodes; i++)
             {
-                CoreNode node = this.builder.CreateSmartContractPowNode();
-                node.Start();
+                CoreNode node = this.builder.CreateSmartContractPowNode().Start();
+
                 // Add other nodes
-                RPCClient rpcClient = node.CreateRPCClient();
                 for (int j = 0; j < i; j++)
                 {
                     MockChainNode otherNode = this.nodes[j];
-                    rpcClient.AddNode(otherNode.CoreNode.Endpoint, true);
-                    otherNode.CoreNode.CreateRPCClient().AddNode(node.Endpoint);
+                    TestHelper.Connect(node, otherNode.CoreNode);
+                    TestHelper.Connect(otherNode.CoreNode, node);
                 }
+
                 this.nodes[i] = new MockChainNode(node, this);
             }
         }
@@ -62,7 +61,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
         {
             if (this.nodes.Length == 1)
             {
-                TestHelper.WaitLoop(() => this.nodes[0].IsSynced);
+                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodes[0].CoreNode));
                 return;
             }
 

@@ -9,9 +9,11 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.StratisSmartContractsD
 {
@@ -26,15 +28,15 @@ namespace Stratis.StratisSmartContractsD
         {
             try
             {
-                NodeSettings nodeSettings = new NodeSettings(new SmartContractPosTest(), ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
+                NodeSettings nodeSettings = new NodeSettings(new SmartContractsPoATest(), ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .AddRPC()
                         .AddSmartContracts()
-                        .UseSmartContractPosConsensus()
-                        .UseSmartContractPosPowMining()
+                        .UseSmartContractPoAConsensus()
+                        .UseSmartContractPoAMining()
                         .UseSmartContractWallet()
                         .UseReflectionExecutor()
                     .UseApi()
