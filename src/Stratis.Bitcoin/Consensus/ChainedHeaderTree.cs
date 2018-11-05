@@ -809,7 +809,7 @@ namespace Stratis.Bitcoin.Consensus
         private bool HeaderWasRequested(ChainedHeader chainedHeader)
         {
             return (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
-                  || (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired);
+                || (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired);
         }
 
         /// <summary>
@@ -818,8 +818,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private bool HeaderWasMarkedAsValidated(ChainedHeader chainedHeader)
         {
-            return chainedHeader.IsAssumedValid || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
-                  || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
+            return chainedHeader.IsAssumedValid
+                   || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
+                   || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
         }
 
         /// <summary>
