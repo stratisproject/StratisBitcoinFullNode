@@ -318,6 +318,12 @@ namespace Stratis.Bitcoin.Consensus
         {
             fullValidationRequired = false;
 
+            if (!chainedHeader.Previous.Next.Contains(chainedHeader))
+            {
+                this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:false");
+                return null;
+            }
+
             // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
             {
@@ -574,6 +580,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block)
         {
+            if (!chainedHeader.Previous.Next.Contains(chainedHeader))
+            {
+                this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:false");
+                return false;
+            }
+
             if (chainedHeader.BlockValidationState == ValidationState.FullyValidated)
             {
                 this.logger.LogTrace("(-)[HEADER_FULLY_VALIDATED]:false");
