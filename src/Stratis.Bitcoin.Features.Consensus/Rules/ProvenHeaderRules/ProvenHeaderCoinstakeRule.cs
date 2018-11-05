@@ -225,6 +225,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 previousStakeModifier = previousProvenHeader.StakeModifierV2;
             }
 
+            if (previousStakeModifier == null)
+            {
+                this.Logger.LogTrace("(-)[BAD_PREV_STAKE]");
+                ConsensusErrors.PrevStakeNull.Throw();
+            }
+
             this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
 
             // Computes the stake modifier and sets the value to the current validating proven header, to retain it for next header validation as previousStakeModifier.

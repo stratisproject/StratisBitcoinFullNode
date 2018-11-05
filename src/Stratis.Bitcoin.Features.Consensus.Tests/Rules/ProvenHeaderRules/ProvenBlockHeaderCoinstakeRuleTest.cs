@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using System.Threading;
 using FluentAssertions;
 using Moq;
@@ -17,10 +18,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
     public class ProvenBlockHeaderCoinstakeRuleTest : TestPosConsensusRulesUnitTestBase
     {
         private readonly PosConsensusOptions options;
+        private int provenHeadersActivationHeight;
 
         public ProvenBlockHeaderCoinstakeRuleTest()
         {
             this.options = (PosConsensusOptions)this.network.Consensus.Options;
+            this.provenHeadersActivationHeight = this.network.Checkpoints.Keys.Last();
         }
 
         [Fact]
@@ -58,8 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header.SetPrivateVariableValue<Transaction>("coinstake", null);
 
             // When we run the validation rule, we should hit coinstake empty exception.
@@ -80,8 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup chained header and move it to the height higher than proven header activation height.
             // By default no utxo are setup in coinview so fetch we return nothing.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // When we run the validation rule, we should hit coinstake read transaction error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -100,8 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // Add more than one unspent output to coinstake.
             this.coinView
@@ -125,8 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // Add more null unspent output to coinstake.
             this.coinView
@@ -149,8 +148,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // Setup coinstake transaction.
             this.coinView
@@ -176,8 +174,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // Setup coinstake transaction.
             this.coinView
@@ -210,8 +207,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            previousChainedHeader.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 1);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
@@ -221,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 2);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
             // Setup coinstake transaction with an invalid stake age.
             this.coinView
@@ -247,8 +243,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            previousChainedHeader.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 1);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
@@ -258,12 +253,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 2);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
 
             // Setup stake validator to fail signature validation.
             this.stakeValidator
@@ -289,8 +284,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            previousChainedHeader.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 1);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
@@ -300,12 +294,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 2);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
             this.stakeValidator
@@ -331,8 +325,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            previousChainedHeader.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 1);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
@@ -342,12 +335,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 2);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
             this.stakeValidator
@@ -379,8 +372,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            previousChainedHeader.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 1);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
@@ -393,12 +385,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 2);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
             this.stakeValidator
@@ -433,8 +425,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             PosBlock prevPosBlock = new PosBlockBuilder(this.network, privateKey).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            previousChainedHeader.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 1);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network, privateKey).Build();
@@ -445,10 +436,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 2);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
             // Setup coinstake transaction with a valid stake age.
-            uint unspentOutputsHeight = (uint)provenHeadersActivationHeight + 10;
+            uint unspentOutputsHeight = (uint)this.provenHeadersActivationHeight + 10;
 
             var unspentOutputs = new UnspentOutputs(unspentOutputsHeight, new Transaction())
             {
@@ -491,8 +482,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             PosBlock prevPosBlock = new PosBlockBuilder(this.network, privateKey).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
-            int provenHeadersActivationHeight = 0;
-            previousChainedHeader.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 1);
+            previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network, privateKey).Build();
@@ -510,10 +500,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", provenHeadersActivationHeight + 2);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
             // Setup coinstake transaction with a valid stake age.
-            uint unspentOutputsHeight = (uint)provenHeadersActivationHeight + 10;
+            uint unspentOutputsHeight = (uint)this.provenHeadersActivationHeight + 10;
             var unspentOutputs = new UnspentOutputs(unspentOutputsHeight, new Transaction())
             {
                 Outputs = new[] { new TxOut(new Money(100), privateKey.PubKey) }
