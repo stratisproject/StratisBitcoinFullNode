@@ -224,6 +224,6 @@ When the new block is downloaded it should be validated using the set of rules t
 
 2.  Check the merkle root
 
-3. Check that coinstake reward is <= fees + block subsidy
+3. Check that the coinstake reward is <= fees + block subsidy
 
    ​
