@@ -36,17 +36,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         // Maximum number of headers to announce when relaying blocks with headers message.
         private const int MaxBlocksToAnnounce = 8;
 
-        private readonly ConcurrentChain chain;
-        
-        private readonly IConsensusManager consensusManager;
+        protected readonly ConcurrentChain chain;
 
-        private ConsensusManagerBehavior consensusManagerBehavior;
+        protected readonly IConsensusManager consensusManager;
+
+        protected ConsensusManagerBehavior consensusManagerBehavior;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        protected readonly ILoggerFactory loggerFactory;
 
         /// <inheritdoc />
         public bool CanRespondToGetBlocksPayload { get; set; }
@@ -73,8 +73,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Chained header of the last header sent to the peer.</summary>
         private ChainedHeader lastSentHeader;
 
-        /// <inheritdoc cref="IChainState"/>
-        private readonly IChainState chainState;
+        protected readonly IChainState chainState;
 
         public BlockStoreBehavior(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
         {
@@ -125,7 +124,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
-        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
+        protected virtual async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
             {
@@ -159,6 +158,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 case SendHeadersPayload sendHeadersPayload:
                     this.PreferHeaders = true;
                     break;
+
+                    // TODO inherited PH block store behavior should handle SendProvenHeadersPayload and set bool PreferProvenHeaders to true
+                    // for more see https://github.com/stratisproject/StratisBitcoinFullNode/issues/2588
             }
         }
 
@@ -262,9 +264,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainedHeader highestHeader = this.consensusManagerBehavior.BestSentHeader;
-
-                if (highestHeader?.Height < lastAddedChainedHeader.Height)
+                // If we reached the limmit size of inv, we need to tell the downloader to send another 'getblocks' message.
+                if (count == InvPayload.MaxGetBlocksInventorySize && lastAddedChainedHeader != null)
                 {
                     this.logger.LogTrace("Setting peer's last block sent to '{0}'.", lastAddedChainedHeader);
                     this.lastSentHeader = lastAddedChainedHeader;
@@ -380,7 +381,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // We expect peer to answer with getheaders message.
                     if (bestSentHeader == null)
                     {
-                        await peer.SendMessageAsync(new HeadersPayload(blocksToAnnounce.Last().Header)).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, blocksToAnnounce.Last().Header)).ConfigureAwait(false);
 
                         this.logger.LogTrace("(-)[SENT_SINGLE_HEADER]");
                         return;
@@ -434,7 +435,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.lastSentHeader = bestIndex;
                         this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
 
-                        await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, headers.ToArray())).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
                         return;
                     }
@@ -479,6 +480,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
+        /// <summary>
+        /// Builds the announced header payload.
+        /// This method can be overridden to return different type of HeadersPayload, e.g. <see cref="ProvenHeadersPayload" />
+        /// </summary>
+        /// <param name="blockstoreTipHeight">Height of the <see cref="ChainState.BlockStoreTip"></see> height.</param>
+        /// <param name="headers">The headers.</param>
+        /// <returns>
+        /// The <see cref="HeadersPayload" /> instance to announce to the peer.
+        /// </returns>
+        protected virtual Payload BuildAnnouncedHeaderPayload(int blockstoreTipHeight, params BlockHeader[] headers)
+        {
+            return new HeadersPayload(headers);
+        }
+
         public override object Clone()
         {
             var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager)
@@ -486,7 +501,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
             };
-            
+
             return res;
         }
     }

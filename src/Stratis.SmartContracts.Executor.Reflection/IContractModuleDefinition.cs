@@ -39,5 +39,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// Rewrite the ModuleDefintion using an ILRewriter.
         /// </summary>
         void Rewrite(IILRewriter rewriter);
+
+        /// <summary>
+        /// Returns the name of the property getter method for the property with this name on the given type,
+        /// or null if no property with this name exists.
+        /// </summary>        
+        string GetPropertyGetterMethodName(string typeName, string propertyName);
     }
 }
