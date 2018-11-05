@@ -237,9 +237,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.provenBlockHeader = ((PosConsensusFactory)network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
         }
 
-        internal ProvenBlockHeader Build()
+        internal ProvenBlockHeader Build(ProvenBlockHeader previousProvenBlockHeader = null)
         {
+            this.SetStakeModifier(previousProvenBlockHeader);
             return this.provenBlockHeader;
+        }
+
+        private void SetStakeModifier(ProvenBlockHeader previousProvenBlockHeader)
+        {
+            if (previousProvenBlockHeader == null)
+            {
+                this.provenBlockHeader.StakeModifierV2 = 1; // a random value is fine.
+            }
+            else
+            {
+                this.provenBlockHeader.StakeModifierV2 = 2; // To compute the real one we need the StackValidator
+            }
         }
     }
 

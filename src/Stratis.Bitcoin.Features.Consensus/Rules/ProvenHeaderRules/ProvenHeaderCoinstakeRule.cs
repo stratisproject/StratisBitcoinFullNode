@@ -227,8 +227,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             if (previousStakeModifier == null)
             {
-                this.Logger.LogTrace("(-)[BAD_PREV_STAKE]");
-                ConsensusErrors.PrevStakeNull.Throw();
+                this.Logger.LogTrace("(-)[PROVEN_HEADER_BAD_PREV_STAKE_MODIFIER]");
+                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
             }
 
             this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);

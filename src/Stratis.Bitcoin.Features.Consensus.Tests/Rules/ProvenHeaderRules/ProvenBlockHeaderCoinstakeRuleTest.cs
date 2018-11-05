@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
         }
 
         [Fact]
-        public void RunRule_ProvenHeadersActive_And_NullPreviousStake_PrevStakeErrorIsThrown()
+        public void RunRule_ProvenHeadersActive_And_NullPreviousStake_InvalidPreviousProvenHeaderStakeModifierErrorIsThrown()
         {
             // Setup previous chained header.
             PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.PrevStakeNull);
+                .Should().Be(ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier);
         }
 
         [Fact]
@@ -329,7 +329,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
-            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build(prevProvenBlockHeader);
             provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
 
@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
-            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build(prevProvenBlockHeader);
             provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
 
@@ -430,7 +430,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup proven header with valid coinstake.
             PosBlock posBlock = new PosBlockBuilder(this.network, privateKey).Build();
             posBlock.UpdateMerkleRoot();
-            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build(prevProvenBlockHeader);
             provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
 
@@ -494,7 +494,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             ECDSASignature signature = privateKey.Sign(posBlock.Header.GetHash());
             posBlock.BlockSignature = new BlockSignature { Signature = signature.ToDER() };
 
-            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
+            ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build(prevProvenBlockHeader);
             provenBlockHeader.HashPrevBlock = prevProvenBlockHeader.GetHash();
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
 
