@@ -14,7 +14,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {
     public class MethodParameterStringSerializerTests
     {
-        public static IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer();
+        public static Network Network = new SmartContractsRegTest();
+        public static IMethodParameterStringSerializer Serializer = new MethodParameterStringSerializer(Network);
 
         [Theory]
         [MemberData(nameof(GetData), parameters: 1)]
@@ -65,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             yield return new object[] { "test" }; // MethodParameterDataType.String
             yield return new object[] { (uint)36 }; // MethodParameterDataType.UInt
             yield return new object[] { (ulong)29 }; // MethodParameterDataType.ULong
-            yield return new object[] { "0x0000000000000000000000000000000000000001".HexToAddress() }; // MethodParameterDataType.Address
+            yield return new object[] { new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(Network) }; // MethodParameterDataType.Address
             yield return new object[] { (long)12312321 }; // MethodParameterDataType.Long,
             yield return new object[] { (int)10000000 };// MethodParameterDataType.Int
         }
