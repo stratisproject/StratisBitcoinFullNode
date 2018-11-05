@@ -47,7 +47,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
         private readonly IAddressGenerator addressGenerator;
-        private readonly IContractPrimitiveSerializer contractPrimitiveSerializer;
+        private readonly ISerializer serializer;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IWalletManager walletManager,
             IWalletTransactionHandler walletTransactionHandler,
             IAddressGenerator addressGenerator,
-            IContractPrimitiveSerializer contractPrimitiveSerializer,
+            ISerializer serializer,
             IReceiptRepository receiptRepository,
             ICallDataSerializer callDataSerializer,
             IMethodParameterStringSerializer methodParameterStringSerializer)
@@ -78,7 +78,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.walletManager = walletManager;
             this.broadcasterManager = broadcasterManager;
             this.addressGenerator = addressGenerator;
-            this.contractPrimitiveSerializer = contractPrimitiveSerializer;
+            this.serializer = serializer;
             this.receiptRepository = receiptRepository;
             this.callDataSerializer = callDataSerializer;
             this.methodParameterStringSerializer = methodParameterStringSerializer;
@@ -147,21 +147,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             // Interpret the storage bytes as an object of the given type
-            try
-            {
-                var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
+            var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
 
-                // Use MethodParamStringSerializer to serialize the interpreted object to a string
-                var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue);
-                return Json(serialized);
-            }
-            catch (Exception)
-            {
-                return Json(new
-                {
-                    Message = string.Format("Could not interpret storage with key {0} as {1}", request.StorageKey, request.DataType.ToString())
-                });
-            }
+            // Use MethodParamStringSerializer to serialize the interpreted object to a string
+            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue);
+            return Json(serialized);
         }
 
         [Route("receipt")]
@@ -429,25 +419,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             switch (dataType)
             {
                 case MethodParameterDataType.Bool:
-                    return this.contractPrimitiveSerializer.Deserialize<bool>(bytes);
+                    return this.serializer.ToBool(bytes);
                 case MethodParameterDataType.Byte:
-                    return this.contractPrimitiveSerializer.Deserialize<byte>(bytes);
+                    return bytes[0];
                 case MethodParameterDataType.Char:
-                    return this.contractPrimitiveSerializer.Deserialize<char>(bytes);
+                    return this.serializer.ToChar(bytes);
                 case MethodParameterDataType.String:
-                    return this.contractPrimitiveSerializer.Deserialize<string>(bytes);
+                    return this.serializer.ToString(bytes);
                 case MethodParameterDataType.UInt:
-                    return this.contractPrimitiveSerializer.Deserialize<uint>(bytes);
+                    return this.serializer.ToUInt32(bytes);
                 case MethodParameterDataType.Int:
-                    return this.contractPrimitiveSerializer.Deserialize<int>(bytes);
+                    return this.serializer.ToInt32(bytes);
                 case MethodParameterDataType.ULong:
-                    return this.contractPrimitiveSerializer.Deserialize<ulong>(bytes);
+                    return this.serializer.ToUInt64(bytes);
                 case MethodParameterDataType.Long:
-                    return this.contractPrimitiveSerializer.Deserialize<long>(bytes);
+                    return this.serializer.ToInt64(bytes);
                 case MethodParameterDataType.Address:
-                    return this.contractPrimitiveSerializer.Deserialize<Address>(bytes);
+                    return this.serializer.ToAddress(bytes);
                 case MethodParameterDataType.ByteArray:
-                    return this.contractPrimitiveSerializer.Deserialize<byte[]>(bytes).ToHexString();
+                    return bytes.ToHexString();
             }
 
             return null;
