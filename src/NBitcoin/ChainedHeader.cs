@@ -266,7 +266,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public override string ToString()
         {
-            return this.Height + "-" + this.HashBlock;
+            return this.Height + "-" + this.HashBlock + "-" + this.BlockValidationState;
         }
 
         /// <summary>
