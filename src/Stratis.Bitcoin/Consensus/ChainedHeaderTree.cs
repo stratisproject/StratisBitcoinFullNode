@@ -266,7 +266,7 @@ namespace Stratis.Bitcoin.Consensus
                 chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
 
                 if (chainedHeaderBlock.Block == null)
-                    this.logger.LogTrace("[CHT_GetChainedHeaderBlock]");
+                    this.logger.LogTrace("[BLOCK_NULL]");
 
             }
 
@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (header.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
                 {
                     if (header.Block == null)
-                        this.logger.LogTrace("[CHT_PartialValidationSucceeded]");
+                        this.logger.LogTrace("[BLOCK_NULL]");
 
                     // Block header is not ancestor of the consensus tip so it's block data is guaranteed to be there.
                     chainedHeaderBlocksToValidate.Add(new ChainedHeaderBlock(header.Block, header));
