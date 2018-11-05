@@ -50,14 +50,22 @@ phases:
         projects: '**/City.*.Tests.csproj'
       arguments: ${{ format('-c {0} -v m', parameters.configuration) }}
 
-  - task: ShellScript@2
-    inputs:
-      ${{ if eq(parameters.platform, 'linux') }}:
-        scriptPath: '.\Scripts\city.linux-x64.package.sh'
-      ${{ if eq(parameters.platform, 'win') }}:
-        scriptPath: '.\Scripts\city.windows-x64.package.ps1'
-      ${{ if eq(parameters.platform, 'osx') }}:
-        scriptPath: '.\Scripts\city.osx-x64.package.sh'
+  ${{ if eq(parameters.platform, 'linux') }}:
+    - task: ShellScript@2
+      displayName: package daemon
+      inputs:
+        scriptPath: 'Scripts/city.linux-x64.package.sh'
+  ${{ if eq(parameters.platform, 'win') }}:
+    - powershell: 
+      displayName: package daemon
+      inputs:
+        targetType: 'filePath'
+        filePath: 'Scripts/city.windows-x64.package.ps1'
+  ${{ if eq(parameters.platform, 'osx') }}:
+    - task: ShellScript@2
+      displayName: package daemon
+      inputs:
+        scriptPath: 'Scripts\city.osx-x64.package.sh'
 
   - task: ArchiveFiles@2
     displayName: archive
