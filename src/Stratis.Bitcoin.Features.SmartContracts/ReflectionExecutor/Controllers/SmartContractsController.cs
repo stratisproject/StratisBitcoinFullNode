@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using Microsoft.AspNetCore.Mvc;
@@ -24,6 +25,8 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
@@ -51,6 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IReceiptRepository receiptRepository;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
+        private readonly LocalExecutor localExecutor;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
@@ -66,7 +70,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IContractPrimitiveSerializer contractPrimitiveSerializer,
             IReceiptRepository receiptRepository,
             ICallDataSerializer callDataSerializer,
-            IMethodParameterStringSerializer methodParameterStringSerializer)
+            IMethodParameterStringSerializer methodParameterStringSerializer,
+            LocalExecutor localExecutor)
         {
             this.stateRoot = stateRoot;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -82,6 +87,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.receiptRepository = receiptRepository;
             this.callDataSerializer = callDataSerializer;
             this.methodParameterStringSerializer = methodParameterStringSerializer;
+            this.localExecutor = localExecutor;
         }
 
         [Route("code")]
@@ -265,6 +271,59 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
             return Json(response);
+        }
+
+        [Route("local-call")]
+        [HttpPost]
+        public IActionResult LocalCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            // Rewrite the method name to a property name
+            this.RewritePropertyGetterName(request);
+
+            BuildCallContractTransactionResponse response = BuildCallTx(request);
+
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
+            
+            var transactionContext = new ContractTransactionContext(
+                (ulong) this.chain.Height,
+                uint160.Zero,
+                0, // Safe to set this to 0 here, it's only used for the refund which we do not create when executing locally
+                request.Sender.ToUint160(this.network),
+                transaction);
+
+            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);           
+
+            return Json(result);
+        }
+
+        /// <summary>
+        /// If the call is to a property, rewrites the method name to the getter method's name.
+        /// </summary>
+        private void RewritePropertyGetterName(BuildCallContractTransactionRequest request)
+        {
+            // Don't rewrite if there are params
+            if (request.Parameters != null && request.Parameters.Any())
+                return;
+
+            byte[] contractCode = this.stateRoot.GetCode(request.ContractAddress.ToUint160(this.network));
+
+            string contractType = this.stateRoot.GetContractType(request.ContractAddress.ToUint160(this.network));
+
+            Result<IContractModuleDefinition> readResult = ContractDecompiler.GetModuleDefinition(contractCode);
+
+            if (readResult.IsSuccess)
+            {
+                IContractModuleDefinition contractModule = readResult.Value;
+                string propertyGetterName = contractModule.GetPropertyGetterMethodName(contractType, request.MethodName);
+
+                if (propertyGetterName != null)
+                {
+                    request.MethodName = propertyGetterName;
+                }
+            }
         }
 
         [Route("address-balances")]
