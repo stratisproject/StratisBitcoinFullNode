@@ -171,6 +171,9 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new LoadCoinviewRule(),
                     new TransactionDuplicationActivationRule(), // implements BIP30
                     new PosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
+                    // Place the PosColdStakingRule after the PosCoinviewRule to ensure that all input scripts have been evaluated
+                    // and that the "IsColdCoinStake" flag would have been set by the OP_CHECKCOLDSTAKEVERIFY opcode if applicable.
+                    new PosColdStakingRule(),
                     new SaveCoinviewRule()
                 };
             }

@@ -97,14 +97,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             List<IFullValidationConsensusRule> fullValidationRules = network.Consensus.FullValidationRules;
 
-            fullValidationRules.Count.Should().Be(6);
+            fullValidationRules.Count.Should().Be(7);
 
             fullValidationRules[0].Should().BeOfType<SetActivationDeploymentsFullValidationRule>();
             fullValidationRules[1].Should().BeOfType<CheckDifficultyHybridRule>();
             fullValidationRules[2].Should().BeOfType<LoadCoinviewRule>();
             fullValidationRules[3].Should().BeOfType<TransactionDuplicationActivationRule>();
             fullValidationRules[4].Should().BeOfType<PosCoinviewRule>();
-            fullValidationRules[5].Should().BeOfType<SaveCoinviewRule>();
+            fullValidationRules[5].Should().BeOfType<PosColdStakingRule>();
+            fullValidationRules[6].Should().BeOfType<SaveCoinviewRule>();
         }
     }
 }
