@@ -86,7 +86,7 @@ A proven header consists of:
 
 ## Assumptions
 
-This document is written under assumption that a softfork that changes `coinstakeAge` consensus parameter from 50 to 500 is activated for Stratis.
+This document is written under the assumption that a softfork that changes `coinstakeAge` consensus parameter from 50 to 500 is activated for Stratis.
 
 Solution proposed in this document should be implemented for the C# nodes only when miners that control at least 51% of all stake adopted the softfork. 
 
