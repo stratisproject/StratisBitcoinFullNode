@@ -742,7 +742,6 @@ namespace Stratis.Bitcoin.BlockPulling
 
                     peerIdsToReassignJobs.Add(peerId);
 
-
                     int assignedCount = this.assignedHeadersByPeerId[peerId].Count;
 
                     this.logger.LogDebug("Peer {0} failed to deliver {1} blocks from which some were important.", peerId, assignedCount);

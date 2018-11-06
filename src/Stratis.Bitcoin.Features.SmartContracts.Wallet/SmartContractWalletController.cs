@@ -44,6 +44,112 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.walletManager = walletManager;
         }
 
+        private HdAddress GetFirstAccountAddress(string walletName)
+        {
+            var accounts = this.walletManager.GetAccounts(walletName).ToList();
+
+            return accounts.FirstOrDefault()?.ExternalAddresses?.FirstOrDefault();
+        }
+
+        private IEnumerable<HdAddress> GetAccountAddressesWithBalance(string walletName)
+        {
+            return this.walletManager.GetAccounts(walletName)
+                .FirstOrDefault()?
+                .ExternalAddresses
+                .Where(a => a.GetSpendableAmount().confirmedAmount > 0)
+                .ToList();
+        }
+
+        [Route("account-addresses")]
+        [HttpGet]
+        public IActionResult GetAccountAddresses(string walletName)
+        {
+            if (string.IsNullOrWhiteSpace(walletName))
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
+
+            try
+            {
+                var addresses = this.GetAccountAddressesWithBalance(walletName)
+                    .Select(a => a.Address);
+
+                if (!addresses.Any())
+                {
+                    var account = this.walletManager.GetAccounts(walletName).First();
+
+                    var walletAccountReference = new WalletAccountReference(walletName, account.Name);
+
+                    var nextAddress = this.walletManager.GetUnusedAddress(walletAccountReference);
+
+                    return this.Json(new [] { nextAddress.Address });
+                }
+                
+                return this.Json(addresses);
+            }
+            catch (WalletException e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        [Route("account-address")]
+        [HttpGet]
+        public IActionResult GetAccountAddress(string walletName)
+        {
+            if (string.IsNullOrWhiteSpace(walletName))
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
+
+            try
+            {
+                var firstAddress = this.GetFirstAccountAddress(walletName);
+
+                if (firstAddress == null)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
+                }
+
+                return this.Json(firstAddress.Address);
+            }
+            catch (WalletException e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }           
+        }
+
+        [Route("account-balance")]
+        [HttpGet]
+        public IActionResult GetAccountBalance(string walletName)
+        {
+            if (string.IsNullOrWhiteSpace(walletName))
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
+
+            try
+            {
+                var firstAddress = this.GetFirstAccountAddress(walletName);
+
+                if (firstAddress == null)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
+                }
+
+                (var spendable, _) = firstAddress.GetSpendableAmount();
+
+                return this.Json(spendable.ToUnit(MoneyUnit.BTC));
+            }
+            catch (WalletException e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        [Route("address-balance")]
+        [HttpGet]
+        public IActionResult GetAddressBalance(string address)
+        {
+            var balance = this.walletManager.GetAddressBalance(address);
+
+            return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.BTC));
+        }
+
         [Route("history")]
         [HttpGet]
         public IActionResult GetHistory([FromQuery] WalletHistoryRequest request)
