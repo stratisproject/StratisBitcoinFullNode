@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (!chainedHeader.IsConnected)
             {
-                this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:false");
+                this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:null");
                 return null;
             }
 
