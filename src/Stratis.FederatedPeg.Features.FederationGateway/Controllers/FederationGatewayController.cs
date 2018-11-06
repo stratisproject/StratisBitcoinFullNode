@@ -10,6 +10,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
 
@@ -21,17 +22,30 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     [Route("api/[controller]")]
     public class FederationGatewayController : Controller
     {
+        public const string ReceiveMaturedBlockRoute = "receive-matured-block";
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         private readonly ICounterChainSessionManager counterChainSessionManager;
 
+        private readonly IMaturedBlockReceiver maturedBlockReceiver;
+
         public FederationGatewayController(
-            ILoggerFactory loggerFactory, 
-            ICounterChainSessionManager counterChainSessionManager)
+            ILoggerFactory loggerFactory,
+            ICounterChainSessionManager counterChainSessionManager,
+            IMaturedBlockReceiver maturedBlockReceiver)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.counterChainSessionManager = counterChainSessionManager;
+            this.maturedBlockReceiver = maturedBlockReceiver;
+        }
+
+        [Route(ReceiveMaturedBlockRoute)]
+        [HttpPost]
+        void ReceiveMaturedBlock([FromBody] MaturedBlockDepositsModel maturedBlockDeposits)
+        {
+            this.maturedBlockReceiver.ReceiveMaturedBlockDeposits(maturedBlockDeposits);
         }
 
         /// <summary>

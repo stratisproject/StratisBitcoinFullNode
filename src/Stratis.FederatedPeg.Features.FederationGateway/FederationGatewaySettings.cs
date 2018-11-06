@@ -12,7 +12,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     /// <inheritdoc />
     public sealed class FederationGatewaySettings : IFederationGatewaySettings
     {
-        private const string SourceChainApiPortParam = "sourcechainapiport";
+        private const string CounterChainApiPortParam = "counterchainapiport";
 
         private const string RedeemScriptParam = "redeemscript";
 
@@ -44,7 +44,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 throw new ConfigurationException("Please make sure the public key passed as parameter was used to generate the multisig redeem script.");
             }
 
-            this.SourceChainApiPort = configReader.GetOrDefault(SourceChainApiPortParam, 0);
+            this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
             this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
                 .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
 
@@ -61,7 +61,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public PubKey[] FederationPublicKeys { get; }
 
         /// <inheritdoc/>
-        public int SourceChainApiPort { get; }
+        public int CounterChainApiPort { get; }
 
         /// <inheritdoc/>
         public int MultiSigM { get; }
