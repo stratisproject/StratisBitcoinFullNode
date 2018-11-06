@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             fullValidationRequired = false;
 
-            if (!chainedHeader.IsConnected)
+            if (!chainedHeader.IsReferenceConnected)
             {
                 this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:null");
                 return null;
@@ -588,7 +588,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block)
         {
-            if (!chainedHeader.IsConnected)
+            if (!chainedHeader.IsReferenceConnected)
             {
                 this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:false");
                 return false;

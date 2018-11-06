@@ -92,7 +92,7 @@ namespace NBitcoin
         /// <summary>
         /// An indicator that the current instance of <see cref="ChainedHeader"/> has been disconnected from the previous instance.
         /// </summary>
-        public bool IsConnected
+        public bool IsReferenceConnected
         {
             get { return this.Previous.Next.Any(c => ReferenceEquals(c, this)); }
         }
