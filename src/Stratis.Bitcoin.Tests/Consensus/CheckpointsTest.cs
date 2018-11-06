@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(400000, result);
         }
 
-        [Fact(Skip = "PH activation needed one chechpoint (temporary)"]
+        [Fact(Skip = "PH activation needed one chechpoint (temporary)")]
         public void GetLastCheckPointHeight_StratisRegTestNet_DoesNotLoadCheckpoints()
         {
             var checkpoints = new Checkpoints(KnownNetworks.StratisRegTest, new ConsensusSettings(NodeSettings.Default(KnownNetworks.StratisTest)) { UseCheckpoints = true });
