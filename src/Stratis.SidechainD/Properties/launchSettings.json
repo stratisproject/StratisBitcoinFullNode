@@ -6,6 +6,14 @@
     "SidechainD with apiport": {
       "commandName": "Project",
       "commandLineArgs": "-apiport=39000"
+    },
+    "Stratis.SidechainD - Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -apiport=39000"
+    },
+    "SidechainD with apiport - Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -apiport=39000"
     }
   }
 }

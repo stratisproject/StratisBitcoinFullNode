@@ -4,16 +4,15 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Sidechains.Networks;
 
@@ -39,19 +38,25 @@ namespace Stratis.SidechainD
                     args = args.Concat(new[] { "apiport=38225" }).ToArray();
                 }
 
-                var network = new ApexTest();
-                NodeSettings nodeSettings = new NodeSettings(network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                NodeSettings nodeSettings = new NodeSettings(networksSelector: ApexNetworks.Apex, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
-                string[] seedNodes = { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
+                Network network = nodeSettings.Network;
+                string[] seedNodes = { };
+                switch (network.Name)
+                {
+                    case "ApexTest":
+                    seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
+                        break;
+                }
+
                 network.SeedNodes.AddRange(ConvertToNetworkAddresses(seedNodes, network.DefaultPort).ToList());
 
-                var node = new FullNodeBuilder()
+                IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .UsePowConsensus()
                     .UseMempool()
                     .UseWallet()
-                    //.AddPowPosMining()
                     .UseApi()
                     .AddRPC()
                     .Build();
@@ -77,7 +82,7 @@ namespace Stratis.SidechainD
                 // Seed nodes are given a random 'last seen time' of between one and two weeks ago.
                 yield return new NetworkAddress
                 {
-                    Time = DateTime.UtcNow - (TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds)) - oneWeek,
+                    Time = DateTime.UtcNow - TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds) - oneWeek,
                     Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
                 };
             }

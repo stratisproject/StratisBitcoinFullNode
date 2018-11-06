@@ -7,6 +7,14 @@
     "Stratis.FederationGatewayD Mainchain": {
       "commandName": "Project",
       "commandLineArgs": "-mainchain -conf=stratis.gateway.conf"
+    },
+    "Stratis.FederationGatewayD Sidechain - Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -sidechain -conf=apex.gateway.conf"
+    },
+    "Stratis.FederationGatewayD Mainchain - Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -mainchain -conf=stratis.gateway.conf"
     }
   }
 }

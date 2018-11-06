@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -34,17 +35,16 @@ namespace Stratis.FederationGatewayD
         {
             try
             {
-                
                 var isMainchainNode = args.FirstOrDefault(a => a.ToLower() == MainchainArgument) != null;
                 var isSidechainNode = args.FirstOrDefault(a => a.ToLower() == SidechainArgument) != null;
 
                 if (isSidechainNode == isMainchainNode) throw new ArgumentException(
                     $"Gateway node needs to be started specifiying either a {SidechainArgument} or a {MainchainArgument} argument");
 
-                var network = isMainchainNode ? new StratisTest() : ApexNetwork.Test; 
-                var nodeSettings = new NodeSettings(network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: isMainchainNode ? Networks.Stratis : ApexNetworks.Apex, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                Network network = nodeSettings.Network;
 
-                var node = isMainchainNode
+                IFullNode node = isMainchainNode
                     ? new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
                         .UseBlockStore()
