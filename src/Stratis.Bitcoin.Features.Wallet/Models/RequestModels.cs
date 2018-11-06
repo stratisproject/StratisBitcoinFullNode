@@ -207,17 +207,17 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
             if (!string.IsNullOrEmpty(this.FeeAmount) && !string.IsNullOrEmpty(this.FeeType))
             {
                 yield return new ValidationResult(
-                    "The query parameters 'feeamount' and 'feetype' cannot be set at the same time. " +
-                    "Please use 'feeamount' if you'd like to set the fee manually, or 'feetype' if you want the wallet to calculate it for you.",
-                    new[] { "feetype" });
+                    $"The query parameters '{nameof(this.FeeAmount)}' and '{nameof(this.FeeType)}' cannot be set at the same time. " +
+                    $"Please use '{nameof(this.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(this.FeeType)}' if you want the wallet to calculate it for you.",
+                    new[] { $"{nameof(this.FeeType)}" });
             }
 
             if (string.IsNullOrEmpty(this.FeeAmount) && string.IsNullOrEmpty(this.FeeType))
             {
                 yield return new ValidationResult(
-                    "One of parameters 'feeamount' and 'feetype' is required. " +
-                    "Please use 'feeamount' if you'd like to set the fee manually, or 'feetype' is you want the wallet to calculate it for you.",
-                    new[] { "feetype" });
+                    $"One of parameters '{nameof(this.FeeAmount)}' and '{nameof(this.FeeType)}' is required. " +
+                    $"Please use '{nameof(this.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(this.FeeType)}' if you want the wallet to calculate it for you.",
+                    new[] { $"{nameof(this.FeeType)}" });
             }
         }
     }
