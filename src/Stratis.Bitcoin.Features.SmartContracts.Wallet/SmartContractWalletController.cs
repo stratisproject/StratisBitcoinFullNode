@@ -70,6 +70,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 var addresses = this.GetAccountAddressesWithBalance(walletName)
                     .Select(a => a.Address);
+
+                if (!addresses.Any())
+                {
+                    var account = this.walletManager.GetAccounts(walletName).First();
+
+                    var walletAccountReference = new WalletAccountReference(walletName, account.Name);
+
+                    var nextAddress = this.walletManager.GetUnusedAddress(walletAccountReference);
+
+                    return this.Json(new [] { nextAddress.Address });
+                }
                 
                 return this.Json(addresses);
             }
