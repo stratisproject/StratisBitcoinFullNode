@@ -134,7 +134,7 @@ Before the soft fork is activated syncing after the last checkpoint from the Str
 1. Allow syncing only from C# nodes or whitelisted StratisX nodes (list of those nodes can be requested from the seed nodes)- we suggest this option to be implemented. 
 2. Partially implement syncing using *Inv* messages without using *headers* protocol at all (this would emulate the behavior of early bitcoin nodes version).
 
-If the maximum outbound connections limit is reached and there are less than 1 outbound connection to the C# node that supports syncing with the *proven headers* one random connection should be dropped to allow node continue making connection attempts in order to find a C# node that support *proven headers*. 
+If the maximum outbound connections limit is reached and there are less than 1 outbound connection to the C# node that supports syncing with the *proven headers*, one random connection should be dropped to allow the node to continue making connection attempts in order to find a C# node that supports *proven headers*. 
 
 
 
