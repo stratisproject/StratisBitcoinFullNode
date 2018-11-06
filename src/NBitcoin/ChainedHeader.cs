@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NBitcoin.BouncyCastle.Math;
 
 namespace NBitcoin
@@ -87,6 +88,14 @@ namespace NBitcoin
 
         /// <inheritdoc cref="ValidationState" />
         public ValidationState BlockValidationState { get; set; }
+
+        /// <summary>
+        /// An indicator that the current instance of <see cref="ChainedHeader"/> has been disconnected from the previous instance.
+        /// </summary>
+        public bool IsReferenceConnected
+        {
+            get { return this.Previous.Next.Any(c => ReferenceEquals(c, this)); }
+        }
 
         /// <summary>
         /// Block represented by this header is assumed to be valid and only subset of validation rules should be applied to it.
@@ -266,7 +275,7 @@ namespace NBitcoin
         /// <inheritdoc />
         public override string ToString()
         {
-            return this.Height + "-" + this.HashBlock;
+            return this.Height + "-" + this.HashBlock + "-" + this.BlockValidationState;
         }
 
         /// <summary>

@@ -13,6 +13,12 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class Wallet
     {
+        /// <summary>Account numbers greater or equal to this number are reserved for special purpose account indexes.</summary>
+        public const int SpecialPurposeAccountIndexesStart = 100_000_000;
+
+        /// <summary>Filter for identifying normal wallet accounts.</summary>
+        public static Func<HdAccount, bool> NormalAccounts = a => a.Index < SpecialPurposeAccountIndexesStart;
+
         /// <summary>
         /// Initializes a new instance of the wallet.
         /// </summary>
@@ -76,10 +82,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the accounts the wallet has for this type of coin.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>The accounts in the wallet corresponding to this type of coin.</returns>
-        public IEnumerable<HdAccount> GetAccountsByCoinType(CoinType coinType)
+        public IEnumerable<HdAccount> GetAccountsByCoinType(CoinType coinType, Func<HdAccount, bool> accountFilter = null)
         {
-            return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts);
+            return this.AccountsRoot.Where(a => a.CoinType == coinType).SelectMany(a => a.Accounts).Where(accountFilter ?? NormalAccounts);
         }
 
         /// <summary>
@@ -153,10 +160,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets all the addresses contained in this wallet.
         /// </summary>
         /// <param name="coinType">Type of the coin.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>A list of all the addresses contained in this wallet.</returns>
-        public IEnumerable<HdAddress> GetAllAddressesByCoinType(CoinType coinType)
+        public IEnumerable<HdAddress> GetAllAddressesByCoinType(CoinType coinType, Func<HdAccount, bool> accountFilter = null)
         {
-            List<HdAccount> accounts = this.GetAccountsByCoinType(coinType).ToList();
+            List<HdAccount> accounts = this.GetAccountsByCoinType(coinType, accountFilter).ToList();
 
             var allAddresses = new List<HdAddress>();
             foreach (HdAccount account in accounts)
@@ -272,10 +280,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="coinType">Type of the coin to get transactions from.</param>
         /// <param name="currentChainHeight">Height of the current chain, used in calculating the number of confirmations.</param>
         /// <param name="confirmations">The number of confirmations required to consider a transaction spendable.</param>
+        /// <param name="accountFilter">An optional filter for filtering the accounts being returned.</param>
         /// <returns>A collection of spendable outputs.</returns>
-        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetAllSpendableTransactions(CoinType coinType, int currentChainHeight, int confirmations = 0, Func<HdAccount, bool> accountFilter = null)
         {
-            IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType);
+            IEnumerable<HdAccount> accounts = this.GetAccountsByCoinType(coinType, accountFilter);
 
             return accounts.SelectMany(x => x.GetSpendableTransactions(currentChainHeight, this.Network, confirmations));
         }
@@ -328,7 +337,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.Accounts == null)
                 return null;
 
-            List<HdAccount> unusedAccounts = this.Accounts.Where(acc => !acc.ExternalAddresses.SelectMany(add => add.Transactions).Any() && !acc.InternalAddresses.SelectMany(add => add.Transactions).Any()).ToList();
+            List<HdAccount> unusedAccounts = this.Accounts.Where(Wallet.NormalAccounts).Where(acc => !acc.ExternalAddresses.SelectMany(add => add.Transactions).Any() && !acc.InternalAddresses.SelectMany(add => add.Transactions).Any()).ToList();
             if (!unusedAccounts.Any())
                 return null;
 
@@ -379,24 +388,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             if (hdAccounts.Any())
             {
-                newAccountIndex = hdAccounts.Max(a => a.Index) + 1;
+                // Hide account indexes used for cold staking from the "Max" calculation.
+                newAccountIndex = hdAccounts.Where(Wallet.NormalAccounts).Max(a => a.Index) + 1;
             }
 
-            // Get the extended pub key used to generate addresses for this account.
-            string accountHdPath = HdOperations.GetAccountHdPath((int) this.CoinType, newAccountIndex);
-            Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
-            ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
-
-            var newAccount = new HdAccount
-            {
-                Index = newAccountIndex,
-                ExtendedPubKey = accountExtPubKey.ToString(network),
-                ExternalAddresses = new List<HdAddress>(),
-                InternalAddresses = new List<HdAddress>(),
-                Name = $"account {newAccountIndex}",
-                HdPath = accountHdPath,
-                CreationTime = accountCreationTime
-            };
+            HdAccount newAccount = this.CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, newAccountIndex);
 
             hdAccounts.Add(newAccount);
             this.Accounts = hdAccounts;
@@ -404,6 +400,37 @@ namespace Stratis.Bitcoin.Features.Wallet
             return newAccount;
         }
 
+        /// <summary>
+        /// Create an account for a specific account index and account name pattern.
+        /// </summary>
+        /// <param name="password">The password used to decrypt the wallet's encrypted seed.</param>
+        /// <param name="encryptedSeed">The encrypted private key for this wallet.</param>
+        /// <param name="chainCode">The chain code for this wallet.</param>
+        /// <param name="network">The network for which this account will be created.</param>
+        /// <param name="accountCreationTime">Creation time of the account to be created.</param>
+        /// <param name="newAccountIndex">The account index to use.</param>
+        /// <param name="newAccountNamePattern">The account name pattern to use.</param>
+        /// <returns>A new HD account.</returns>
+        public HdAccount CreateAccount(string password, string encryptedSeed, byte[] chainCode,
+            Network network, DateTimeOffset accountCreationTime,
+            int newAccountIndex, string newAccountNamePattern = "account {0}")
+        {
+            // Get the extended pub key used to generate addresses for this account.
+            string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, newAccountIndex);
+            Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
+            ExtPubKey accountExtPubKey = HdOperations.GetExtendedPublicKey(privateKey, chainCode, accountHdPath);
+
+            return new HdAccount
+            {
+                Index = newAccountIndex,
+                ExtendedPubKey = accountExtPubKey.ToString(network),
+                ExternalAddresses = new List<HdAddress>(),
+                InternalAddresses = new List<HdAddress>(),
+                Name = string.Format(newAccountNamePattern, newAccountIndex),
+                HdPath = accountHdPath,
+                CreationTime = accountCreationTime
+            };
+        }
 
         /// <inheritdoc cref="AddNewAccount(string, string, byte[], Network, DateTimeOffset)"/>
         /// <summary>

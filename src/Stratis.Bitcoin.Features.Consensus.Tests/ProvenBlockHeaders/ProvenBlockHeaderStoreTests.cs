@@ -10,6 +10,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;

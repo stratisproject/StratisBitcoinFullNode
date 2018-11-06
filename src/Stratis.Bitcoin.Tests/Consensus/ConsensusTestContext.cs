@@ -151,6 +151,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                                     : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
                 header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
                 var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+                previousHeader.Next.Add(newHeader);
                 if (validationState.HasValue)
                     newHeader.BlockValidationState = validationState.Value;
 

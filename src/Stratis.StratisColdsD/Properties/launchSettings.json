@@ -1,0 +1,23 @@
+{
+  "profiles": {
+    "Stratis.StratisColdsD": {
+      "commandName": "Project"
+    },
+    "Stratis.StratisColdsD Test": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet"
+    },
+    "Stratis.StratisColdsD Test with RPC": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -server -rpcpassword=password -rpcuser=user"
+    },
+    "Stratis.StratisColdsD Test Keepalive 60s": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -keepalive=60"
+    },
+    "Stratis.StratisColdsD Test No assumevalid": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -assumevalid=0 -checkpoints=false"
+    }
+  }
+}

@@ -264,9 +264,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainedHeader highestHeader = this.consensusManagerBehavior.BestSentHeader;
-
-                if (highestHeader?.Height < lastAddedChainedHeader.Height)
+                // If we reached the limmit size of inv, we need to tell the downloader to send another 'getblocks' message.
+                if (count == InvPayload.MaxGetBlocksInventorySize && lastAddedChainedHeader != null)
                 {
                     this.logger.LogTrace("Setting peer's last block sent to '{0}'.", lastAddedChainedHeader);
                     this.lastSentHeader = lastAddedChainedHeader;

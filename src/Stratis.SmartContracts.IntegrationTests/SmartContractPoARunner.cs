@@ -43,8 +43,6 @@ namespace Stratis.SmartContracts.IntegrationTests
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
                 .UseReflectionExecutor()
-                .ReplaceTimeProvider(this.dateTimeProvider)
-                .AddFastMiningCapability()
                 .MockIBD()
                 .Build();
         }
