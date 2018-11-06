@@ -88,8 +88,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             List<FlatHistory> flat = addresses.SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToList();
 
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
-            this.walletManager.Setup(w => w.GetHistory(walletName, null)).Returns(accountsHistory);
+            this.walletManager.Setup(w => w.GetHistory(walletName, It.IsAny<string>())).Returns(accountsHistory);
             this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
+            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> {account});
 
             this.addressGenerator.Setup(x => x.GenerateAddress(It.IsAny<uint256>(), It.IsAny<ulong>()))
                 .Returns(new uint160(0));
@@ -105,37 +106,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
                 this.network,
                 this.walletManager.Object);
 
-            IActionResult result = controller.GetHistory(new WalletHistoryRequest
-            {
-                WalletName = walletName
-            });
+            IActionResult result = controller.GetHistory(walletName, address.Address);
 
             var viewResult = Assert.IsType<JsonResult>(result);
-            var model = viewResult.Value as ContractWalletHistoryModel;
+            var model = viewResult.Value as IEnumerable<ContractTransactionItem>;
 
             Assert.NotNull(model);
-            Assert.Single(model.AccountsHistoryModel);
+            Assert.Equal(3, model.Count());
 
-            ContractAccountHistoryModel historyModel = model.AccountsHistoryModel.ElementAt(0);
-            Assert.Equal(3, historyModel.TransactionsHistory.Count);
-            ContractTransactionItemModel resultingTransactionModel = historyModel.TransactionsHistory.ElementAt(2);
+            ContractTransactionItem resultingTransaction = model.ElementAt(2);
 
-            Assert.Equal(ContractTransactionItemType.Received, resultingTransactionModel.Type);
-            Assert.Equal(address.Address, resultingTransactionModel.ToAddress);
-            Assert.Equal(normalTransaction.Id, resultingTransactionModel.Id);
-            Assert.Equal(normalTransaction.Amount, resultingTransactionModel.Amount);
-            Assert.Equal(normalTransaction.CreationTime, resultingTransactionModel.Timestamp);
-            Assert.Equal(1, resultingTransactionModel.ConfirmedInBlock);
+            ContractTransactionItem resultingCreate = model.ElementAt(0);
+            Assert.Equal(ContractTransactionItemType.ContractCreate, resultingCreate.Type);
+            Assert.Equal(createTransaction.SpendingDetails.TransactionId, resultingCreate.Hash);
+            Assert.Equal(createTransaction.SpendingDetails.Payments.First().Amount.ToUnit(MoneyUnit.BTC), resultingCreate.Amount);
+            Assert.Equal(uint160.Zero.ToBase58Address(this.network), resultingCreate.To);
+            Assert.Equal((uint)createTransaction.SpendingDetails.BlockHeight, resultingCreate.BlockHeight);
 
-            // ElementAt(1) is a Receive
-
-            ContractTransactionItemModel resultingCreateModel = historyModel.TransactionsHistory.ElementAt(0);
-            Assert.Equal(ContractTransactionItemType.ContractCreate, resultingCreateModel.Type);
-            Assert.Equal(createTransaction.SpendingDetails.TransactionId, resultingCreateModel.Id);
-            Assert.Equal(createTransaction.SpendingDetails.Payments.First().Amount, resultingCreateModel.Payments.First().Amount);
-            Assert.Equal(uint160.Zero.ToBase58Address(this.network), resultingCreateModel.Payments.First().DestinationAddress);
-            Assert.Equal(createTransaction.SpendingDetails.CreationTime, resultingCreateModel.Timestamp);
-            Assert.Equal(createTransaction.SpendingDetails.BlockHeight, resultingCreateModel.ConfirmedInBlock);
+            Assert.Equal(ContractTransactionItemType.Received, resultingTransaction.Type);
+            Assert.Equal(address.Address, resultingTransaction.To);
+            Assert.Equal(normalTransaction.Id, resultingTransaction.Hash);
+            Assert.Equal(normalTransaction.Amount.ToUnit(MoneyUnit.BTC), resultingTransaction.Amount);
+            Assert.Equal((uint)1, resultingTransaction.BlockHeight);
         }
     }
 }
