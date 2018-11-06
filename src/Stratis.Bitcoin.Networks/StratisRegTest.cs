@@ -99,7 +99,12 @@ namespace Stratis.Bitcoin.Networks
             this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (65 + 128) };
 
-            this.Checkpoints = new Dictionary<int, CheckpointInfo>();
+            this.Checkpoints = new Dictionary<int, CheckpointInfo>()
+            {
+                // Fake checkpoint to prevent PH to be activated.
+                // TODO: Once PH is complete, this should be removed
+                { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
+            };
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
 
