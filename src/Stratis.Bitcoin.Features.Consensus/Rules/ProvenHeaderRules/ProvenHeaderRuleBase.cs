@@ -1,11 +1,12 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 {
     /// <summary>
-    /// Base rule to be used by all proven header validation rules. 
+    /// Base rule to be used by all proven header validation rules.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public abstract class ProvenHeaderRuleBase : HeaderValidationConsensusRule
@@ -13,12 +14,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRuleEngine PosParent;
 
+        protected int ProvenHeadersActivationHeight;
+
         /// <inheritdoc />
         public override void Initialize()
         {
             this.PosParent = this.Parent as PosConsensusRuleEngine;
 
             Guard.NotNull(this.PosParent, nameof(this.PosParent));
+
+            if (this.PosParent.Network.Consensus.Options is PosConsensusOptions options)
+            {
+                this.ProvenHeadersActivationHeight = options.ProvenHeadersActivationHeight;
+            }
         }
 
         /// <summary>
@@ -31,12 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </returns>
         public bool IsProvenHeaderActivated(int height)
         {
-            if (this.PosParent.Network.Consensus.Options is PosConsensusOptions options)
-            {
-                return height >= options.ProvenHeadersActivationHeight;
-            }
-
-            return false;
+            return height >= this.ProvenHeadersActivationHeight;
         }
 
         /// <summary>
@@ -48,5 +51,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             return header is ProvenBlockHeader;
         }
+
+        /// <inheritdoc/>
+        public override void Run(RuleContext context)
+        {
+            Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
+
+            ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
+
+            if (context.SkipValidation || !this.IsProvenHeaderActivated(chainedHeader.Height))
+                return;
+
+            ProcessRule((PosRuleContext)context, chainedHeader, (ProvenBlockHeader)chainedHeader.Header);
+        }
+
+        /// <summary>
+        /// Processes the rule.
+        /// </summary>
+        /// <param name="context">The context.</param>
+        /// <param name="chainedHeader">The chained header to be validated.</param>
+        /// <param name="header">The Proven Header to be validated.</param>
+        protected abstract void ProcessRule(PosRuleContext context, ChainedHeader chainedHeader, ProvenBlockHeader header);
     }
 }

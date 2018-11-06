@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
@@ -58,7 +59,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private Func<ChainedHeaderBlock, bool> builderDisconnectInterceptor;
         private Func<ChainedHeaderBlock, bool> builderConnectInterceptor;
 
-        private bool builderNotInIBD;
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
@@ -144,6 +144,17 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
+        /// Overrides a node service.
+        /// </summary>
+        /// <param name="serviceToOverride">A function that will override a given service in the node.</param>
+        /// <returns>This node.</returns>
+        public CoreNode OverrideService(Action<IServiceCollection> serviceToOverride)
+        {
+            this.runner.ServiceToOverride = serviceToOverride;
+            return this;
+        }
+
+        /// <summary>
         /// This does not create a physical wallet but only sets the miner secret on the node.
         /// </summary>
         /// <returns>This node.</returns>
@@ -173,7 +184,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public RPCClient CreateRPCClient()
         {
-            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), KnownNetworks.RegTest);
+            return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), this.FullNode?.Network ?? KnownNetworks.RegTest);
         }
 
         public INetworkPeer CreateNetworkPeerClient()

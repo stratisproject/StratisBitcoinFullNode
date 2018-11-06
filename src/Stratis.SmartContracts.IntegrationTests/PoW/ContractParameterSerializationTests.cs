@@ -43,7 +43,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.True(compilationResult.Success);
 
             const char testChar = 'c';
-            Address testAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
+            string testAddressBase58 = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.mockChain.Network);
+            Address testAddress = testAddressBase58.ToAddress(this.mockChain.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
@@ -55,7 +56,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             string[] parameters = new string[]
             {
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Char, testChar), 
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, testAddress), 
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, testAddressBase58), 
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, testBool),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Int, testInt),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Long, testLong),
@@ -67,7 +68,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -140,7 +141,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
-            Address testAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
+            string testAddress = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.mockChain.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
@@ -162,7 +163,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(CallWithAllParameters.Call), preResponse.NewContractAddress, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -204,7 +205,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
-            Address testAddress = "0x0000000000000000000000000000000000000001".HexToAddress();
+            string testAddressBase58 = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.mockChain.Network);            
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
@@ -215,20 +216,20 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             string[] parameters = new string[]
             {
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Char, testChar),
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, testAddress),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, testAddressBase58),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, testBool),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Int, testInt),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Long, testLong),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.UInt, testUint),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, testUlong),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.String, testString),
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, preResponse.NewContractAddress.ToAddress(this.mockChain.Network)) // sendTo
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, preResponse.NewContractAddress) // sendTo
             };
             compilationResult = ContractCompiler.CompileFile("SmartContracts/ForwardParameters.cs");
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());
@@ -287,7 +288,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
             this.node2.MineBlocks(1);
-            Block lastBlock = this.node1.GetLastBlock();
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
             Assert.NotEqual(currentHash, lastBlock.GetHash());

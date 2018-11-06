@@ -139,6 +139,10 @@ namespace Stratis.Bitcoin.Consensus
                 case HeadersPayload headers:
                     await this.ProcessHeadersAsync(peer, headers.Headers).ConfigureAwait(false);
                     break;
+
+                case InvPayload inv:
+                    await this.ProcessInvAsync(peer, inv.Inventory).ConfigureAwait(false);
+                    break;
             }
         }
 
@@ -472,6 +476,58 @@ namespace Stratis.Bitcoin.Consensus
                 BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
                 HashStop = null
             };
+        }
+
+        /// <summary>
+        /// Processes "inv" message received from the peer.
+        /// </summary>
+        /// <param name="peer">Peer from which the message was received.</param>
+        /// <param name="inventory">List of inventory vectors to process.</param>
+        /// <remarks>
+        /// The "inv" message is sent unsolicited by legacy nodes to announce new blocks.
+        /// It may contain non-block hashes which should be ignored. We then need to obtain the
+        /// headers of the announced blocks so that the header processing can be performed as
+        /// normal. We do not request the block directly as the peer may be attempting a DoS
+        /// attack by spamming fake inv messages.
+        /// </remarks>
+        protected async Task ProcessInvAsync(INetworkPeer peer, List<InventoryVector> inventory)
+        {
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                this.logger.LogTrace("(-)[IGNORE_DURING_IBD]");
+                return;
+            }
+
+            if (inventory.Count == 0)
+            {
+                this.logger.LogTrace("(-)[NO_INVENTORY]");
+                return;
+            }
+
+            if (inventory.Count > InvPayload.MaxInventorySize)
+            {
+                this.logger.LogDebug("Peer sent oversize inventory message. Peer will be banned and disconnected.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer sent oversize inventory message.");
+                this.logger.LogTrace("(-)[OVERSIZE_INVENTORY]");
+                return;
+            }
+
+            // There is no point sending getheaders for every MSG_BLOCK announced. Just send one if needed.
+            bool blockHashAnnounced = false;
+            foreach (InventoryVector inventoryVector in inventory)
+            {
+                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.chain.GetBlock(inventoryVector.Hash) == null))
+                {
+                    blockHashAnnounced = true;
+                    break;
+                }
+            }
+
+            if (blockHashAnnounced)
+            {
+                this.logger.LogTrace("Block was announced, sending getheaders.");
+                await this.ResyncAsync().ConfigureAwait(false);
+            }
         }
 
         /// <inheritdoc />

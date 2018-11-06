@@ -19,7 +19,6 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
-using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests.MockChain
 {
@@ -76,14 +75,6 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             }
         }
 
-        /// <summary>
-        /// Whether this node is fully synced.
-        /// </summary>
-        public bool IsSynced
-        {
-            get { return TestHelper.IsNodeSynced(this.CoreNode); }
-        }
-
         public MockChainNode(CoreNode coreNode, IMockChain chain)
         {
             this.CoreNode = coreNode;
@@ -95,6 +86,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;
             this.CoreNode.SetMinerSecret(new BitcoinSecret(key, this.CoreNode.FullNode.Network));
+
             // Set up services for later
             this.smartContractWalletController = this.CoreNode.FullNode.NodeService<SmartContractWalletController>();
             this.smartContractsController = this.CoreNode.FullNode.NodeService<SmartContractsController>();
@@ -108,6 +100,13 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         public void MineBlocks(int amountOfBlocks)
         {
             TestHelper.MineBlocks(this.CoreNode, amountOfBlocks);
+            this.chain.WaitForAllNodesToSync();
+        }
+
+        public void WaitForBlocksToBeMined(int amount)
+        {
+            int currentHeight = this.CoreNode.GetTip().Height;
+            TestHelper.WaitLoop(() => this.CoreNode.GetTip().Height >= currentHeight + 1);
             this.chain.WaitForAllNodesToSync();
         }
 
@@ -130,7 +129,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 MinConfirmations = 1,
                 FeeType = FeeType.Medium,
                 WalletPassword = this.Password,
-                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList()
+                Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList(),
+                ChangeAddress = this.MinerAddress // yes this is unconventional, but helps us to keep the balance on the same addresses
             };
 
             Transaction trx = (this.CoreNode.FullNode.NodeService<IWalletTransactionHandler>() as SmartContractWalletTransactionHandler).BuildTransaction(txBuildContext);
@@ -250,7 +250,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// <summary>
         /// Get the last block mined. AKA the current tip.
         /// </summary
-        public Block GetLastBlock()
+        public NBitcoin.Block GetLastBlock()
         {
             return this.blockStore.GetBlockAsync(this.CoreNode.FullNode.Chain.Tip.HashBlock).Result;
         }
