@@ -115,7 +115,7 @@ Also after the handshake is completed *sendprovhdr* message should be sent inste
 
 #### Storing chain of proven headers
 
-Currently on the C# node we have ChainRepository which stores chain of headers. It should be extended to store the full *proven headers* chain for blocks that were created after the `activationHeight`.
+Currently on the C# node we have ChainRepository which stores the chain of headers. It should be extended to store the full *proven headers* chain for blocks that were created after the `activationHeight`.
 
 
 
