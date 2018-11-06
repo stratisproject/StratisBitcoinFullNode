@@ -58,7 +58,7 @@ It's important to mention that other coinstake transaction data may be fake (non
 
 #### Trusted base
 
-We define `trustedBase` as the block up until the node has UTXO set for that it trusts (including that block). In the C# Stratis full node  `trustedBase`  is represented by the consensus tip, and in Stratis C# light wallet node it is currently not represented. More on how trusted base should be represented for the light wallet is in the [trusted base for the light wallet](#trusted-base-for-the-light-wallet) section.
+We define `trustedBase` as the block up until which the node has a UTXO set that it trusts (including that block). In the C# Stratis full node  `trustedBase`  is represented by the consensus tip, and in Stratis C# light wallet node it is currently not represented. More on how trusted base should be represented for the light wallet is in the [trusted base for the light wallet](#trusted-base-for-the-light-wallet) section.
 
 
 
