@@ -20,7 +20,7 @@
 
 ## Problem overview
 
-Syncing with headers is used for quick blockchain download. Node can ask its peers for headers using *getheaders* message and asked peer will send up to 2000 headers per *headers* message. When the headers are received they are used in order to ask peers for blocks that are represented by those headers. This protocol is new and used on bitcoin network because it has some advantages in terms of resources usage over using *inv* messages.
+Syncing with headers is used for quick blockchain downloads. A node can ask its peers for headers using *getheaders* message and the asked peer can send up to 2000 headers per *headers* message. When the headers are received, they are used in order to ask peers for blocks those headers represent. This protocol is new and used on bitcoin network because it has some advantages in terms of resources usage over using *inv* messages.
 
 On PoW chains headers can't be easily faked because creating a valid header requires spending a lot of hashing power to meet the PoW difficulty target.
 
