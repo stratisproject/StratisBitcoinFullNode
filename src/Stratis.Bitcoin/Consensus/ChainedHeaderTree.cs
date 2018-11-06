@@ -264,6 +264,10 @@ namespace Stratis.Bitcoin.Consensus
             if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
             {
                 chainedHeaderBlock = new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
+
+                if (chainedHeaderBlock.Block == null)
+                    this.logger.LogTrace("[BLOCK_NULL]");
+
             }
 
             return chainedHeaderBlock;
@@ -338,6 +342,7 @@ namespace Stratis.Bitcoin.Consensus
             if ((chainedHeader.Previous.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (chainedHeader.Previous.BlockValidationState != ValidationState.FullyValidated))
             {
+                this.logger.LogTrace("Previous block validation state invalid: {0}", chainedHeader.Previous);
                 this.logger.LogTrace("(-)[PREV_BLOCK_NOT_VALIDATED]:null");
                 return null;
             }
@@ -370,6 +375,9 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (header.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
                 {
+                    if (header.Block == null)
+                        this.logger.LogTrace("[BLOCK_NULL]");
+
                     // Block header is not ancestor of the consensus tip so it's block data is guaranteed to be there.
                     chainedHeaderBlocksToValidate.Add(new ChainedHeaderBlock(header.Block, header));
                     this.logger.LogTrace("Chained header '{0}' is selected for partial validation.", header);
@@ -590,6 +598,8 @@ namespace Stratis.Bitcoin.Consensus
 
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
+
+            this.logger.LogTrace("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}:{1}:{2}", nameof(chainedHeader.Previous), chainedHeader.Previous, chainedHeader.Previous.BlockValidationState);
 
             return partialValidationRequired;
         }
