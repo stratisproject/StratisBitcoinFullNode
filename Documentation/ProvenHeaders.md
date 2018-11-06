@@ -32,7 +32,7 @@ With our C# node implementation, if an attacker constructs a fake chain of heade
 
 ## Solution abstract overview
 
-In order to prevent attacks using fake headers we propose construction of proven headers. 
+In order to prevent attacks using fake headers, we propose the use of proven headers. 
 
 New type of network messages needs to be introduced to allow syncing using proven headers -
 
