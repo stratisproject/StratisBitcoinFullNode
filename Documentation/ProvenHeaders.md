@@ -24,7 +24,7 @@ Syncing with headers is used for quick blockchain downloads. A node can ask its 
 
 On PoW chains, headers can't be easily faked because creating a valid header requires spending a lot of hashing power to meet the PoW difficulty target.
 
-On PoS networks like Stratis it is easy to construct a fake chain of headers of any length and almost arbitrary chainwork. 
+On PoS networks like Stratis, it is easy to construct a fake chain of headers of any length and almost arbitrary chainwork. 
 
 With our C# node implementation, if an attacker constructs a fake chain of headers that has more work than the valid chain and sends it to a node that node will switch to a fake chain of headers. After switching the node will ask for blocks that are represented by the fake headers but those blocks will never be received so the node will stay out of sync with the network until the moment network eventually produces a longer chain and the node switches back.
 
