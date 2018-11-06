@@ -129,6 +129,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
+        [Route("address-balance")]
+        [HttpGet]
+        public IActionResult GetAddressBalance(string address)
+        {
+            var balance = this.walletManager.GetAddressBalance(address);
+
+            return this.Json(balance.AmountConfirmed);
+        }
+
         [Route("history")]
         [HttpGet]
         public IActionResult GetHistory([FromQuery] WalletHistoryRequest request)
