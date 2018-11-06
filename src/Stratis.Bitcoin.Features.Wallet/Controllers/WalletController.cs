@@ -497,9 +497,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         }
                     }
 
+                    // Sort and filter the history items.
+                    List<TransactionItemModel> itemsToInclude = transactionItems.OrderByDescending(t => t.Timestamp)
+                        .Skip(request.Skip ?? 0)
+                        .Take(request.Take ?? transactionItems.Count)
+                        .ToList();
+
                     model.AccountsHistoryModel.Add(new AccountHistoryModel
                     {
-                        TransactionsHistory = transactionItems.OrderByDescending(t => t.Timestamp).ToList(),
+                        TransactionsHistory = itemsToInclude,
                         Name = accountHistory.Account.Name,
                         CoinType = this.coinType,
                         HdPath = accountHistory.Account.HdPath
