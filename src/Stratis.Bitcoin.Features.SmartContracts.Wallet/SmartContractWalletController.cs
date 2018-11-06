@@ -43,6 +43,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.walletManager = walletManager;
         }
 
+        [Route("account-address")]
+        [HttpGet]
+        public IActionResult GetAccountAddress(string walletName)
+        {
+            if (string.IsNullOrWhiteSpace(walletName))
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
+
+            List<HdAccount> accounts;
+
+            try
+            {
+                accounts = this.walletManager.GetAccounts(walletName).ToList();
+            }
+            catch (WalletException e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+
+            var firstAddress = accounts.FirstOrDefault()?.ExternalAddresses?.FirstOrDefault();
+
+            if (firstAddress == null)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
+            }
+
+            return this.Json(firstAddress.Address);
+        }
+
         [Route("history")]
         [HttpGet]
         public IActionResult GetHistory([FromQuery] WalletHistoryRequest request)
