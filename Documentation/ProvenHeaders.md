@@ -72,7 +72,7 @@ PoS blockchains similar to Stratis need to have a protection against long reorga
 
 A proven header consists of:
 
-1. Block header (in the C# node is represented by `BlockHeader` class) which contains merkle tree root.
+1. A block header (in the C# node it is represented by the `BlockHeader` class) which contains the merkle tree root.
 
 2. Block header signature (in the C# node it's represented by `BlockSignature` class), which is signed with the private key which corresponds to coinstake's Second output's public key.
 
