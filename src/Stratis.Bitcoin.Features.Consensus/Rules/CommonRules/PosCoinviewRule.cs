@@ -162,7 +162,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 // Compute stake modifier.
                 ChainedHeader prevChainedHeader = chainedHeader.Previous;
                 BlockStake blockStakePrev = prevChainedHeader == null ? null : this.stakeChain.Get(prevChainedHeader.HashBlock);
-                blockStake.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(prevChainedHeader, blockStakePrev, blockStake.IsProofOfWork() ? chainedHeader.HashBlock : blockStake.PrevoutStake.Hash);
+                blockStake.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(prevChainedHeader, blockStakePrev?.StakeModifierV2, blockStake.IsProofOfWork() ? chainedHeader.HashBlock : blockStake.PrevoutStake.Hash);
             }
             else if (chainedHeader.Height == lastCheckpointHeight)
             {

@@ -55,8 +55,9 @@ public class StorageDemo : SmartContract
         Assert(actual == expected);
     }
 
-    public void Increment()
+    public int Increment()
     {
         Counter++;
+        return Counter;
     }
 }

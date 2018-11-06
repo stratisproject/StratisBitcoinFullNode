@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
+namespace Stratis.Bitcoin.Interfaces
 {
     /// <summary>
     /// Cache layer for <see cref="ProvenBlockHeaderStore"/>s.
