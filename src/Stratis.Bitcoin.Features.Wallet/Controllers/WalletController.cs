@@ -656,6 +656,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Id = st.Transaction.Id,
                         Amount = st.Transaction.Amount,
                         Address = st.Address.Address,
+                        Index = st.Transaction.Index,
                         IsChange = st.Address.IsChangeAddress(),
                         CreationTime = st.Transaction.CreationTime,
                         Confirmations = st.Transaction.BlockHeight == null ? 0 : this.chain.Tip.Height - st.Transaction.BlockHeight.Value
