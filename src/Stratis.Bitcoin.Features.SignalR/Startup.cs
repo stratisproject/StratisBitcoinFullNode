@@ -20,7 +20,9 @@ namespace Stratis.Bitcoin.Features.SignalR
                 .AllowAnyOrigin()
                 .AllowCredentials());
 
-            app.UseSignalR(routes => routes.MapHub<SignalRHub>($"/{SignalRHub.Route}"));
+            //todo: this currently always go to DefaultRoute
+            var settings = (SignalRSettings)app.ApplicationServices.GetService(typeof(SignalRSettings));
+            app.UseSignalR(routes => routes.MapHub<SignalRHub>($"/{settings?.HubRoute ?? SignalRSettings.DefaultSignalRHubRoute}"));
         }
     }
 }

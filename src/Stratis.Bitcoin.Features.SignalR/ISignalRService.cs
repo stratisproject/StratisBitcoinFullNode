@@ -8,6 +8,8 @@ namespace Stratis.Bitcoin.Features.SignalR
     /// </summary>
     public interface ISignalRService : IDisposable
     {
+        bool Started { get;  }
+
         /// <summary>
         /// The hosting address of the SignalR server.
         /// </summary>
@@ -46,5 +48,13 @@ namespace Stratis.Bitcoin.Features.SignalR
         /// Task-true if sent successfully, otherwise Task-false.
         /// </returns>
         Task<bool> SendAsync(string topic, string data);
+
+        /// <summary>
+        /// Event fired once the service has started up.
+        /// </summary>
+        /// <returns>
+        /// The absolute URI of the hub that has been started.
+        /// </returns>
+        IObservable<string> StartedStream { get; }
     }
 }

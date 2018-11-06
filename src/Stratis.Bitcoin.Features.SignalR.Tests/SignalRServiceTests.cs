@@ -1,11 +1,10 @@
 ﻿using System;
 using System.Threading;
 using Microsoft.Extensions.Logging;
-using Moq;
-using Stratis.Bitcoin.Features.SignalR;
+using NSubstitute;
 using Xunit;
 
-namespace Stratis.Bitcoin.Tests.SignalR
+namespace Stratis.Bitcoin.Features.SignalR.Tests
 {
     public class SignalRServiceTests : IDisposable
     {
@@ -13,9 +12,9 @@ namespace Stratis.Bitcoin.Tests.SignalR
 
         public SignalRServiceTests()
         {
-            var loggerFactory = new Mock<ILoggerFactory>();
-            loggerFactory.Setup(x => x.CreateLogger(typeof(SignalRService).FullName)).Returns(new Mock<ILogger>().Object);
-            this.signalRService = new SignalRService(loggerFactory.Object);
+            var loggerFactory = Substitute.For<ILoggerFactory>();
+            loggerFactory.CreateLogger(typeof(SignalRService).FullName).Returns(Substitute.For<ILogger>());
+            this.signalRService = new SignalRService(SignalRSettings.Defaults, loggerFactory);
         }
 
         [Fact]
@@ -27,7 +26,7 @@ namespace Stratis.Bitcoin.Tests.SignalR
         [Fact]
         public void Test_SendAsync_returns_false_where_service_has_not_been_started()
         {
-            var result = this.signalRService.SendAsync(It.IsAny<string>(), It.IsAny<string>());
+            var result = this.signalRService.SendAsync(Arg.Any<string>(), Arg.Any<string>());
             Assert.False(result.Result);
         }
 
@@ -38,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.SignalR
             var signal = new ManualResetEvent(false);
             this.signalRService.StartAsync().ContinueWith(_ =>
             {
-                result = this.signalRService.SendAsync(It.IsAny<string>(), It.IsAny<string>()).Result;
+                result = this.signalRService.SendAsync(Arg.Any<string>(), Arg.Any<string>()).Result;
                 signal.Set();
             });
             if (!signal.WaitOne(TimeSpan.FromSeconds(5)))

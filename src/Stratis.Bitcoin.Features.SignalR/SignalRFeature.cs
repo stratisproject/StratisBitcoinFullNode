@@ -11,12 +11,15 @@ namespace Stratis.Bitcoin.Features.SignalR
 {
     public sealed class SignalRFeature : FullNodeFeature
     {
+        private readonly SignalRSettings signalRSettings;
+
         public ISignalRService SignalRService { get; }
 
         private readonly ILogger logger;
 
-        public SignalRFeature(ISignalRService signalRService, ILoggerFactory loggerFactory)
+        public SignalRFeature(ISignalRService signalRService, SignalRSettings signalRSettings, ILoggerFactory loggerFactory)
         {
+            this.signalRSettings = signalRSettings;
             this.SignalRService = signalRService;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -45,6 +48,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                     .FeatureServices(services =>
                         {
                             services.AddSingleton(fullNodeBuilder);
+                            services.AddSingleton<SignalRSettings>();
                             services.AddSingleton<ISignalRService, SignalRService>();
                         });
             });

@@ -9,8 +9,6 @@ namespace Stratis.Bitcoin.Features.SignalR
     /// </summary>
     public class SignalRHub : Hub
     {
-        public const string Route = "hub";
-
         private readonly ISignalRService signalRService;
 
         public SignalRHub(ISignalRService signalRService) => this.signalRService = signalRService;

@@ -14,13 +14,16 @@ namespace Stratis.Bitcoin.Features.SignalR
         private IWebHost webHost;
         private readonly ILogger logger;
         private bool started;
+        private readonly BehaviorSubject<string> startedStream = new BehaviorSubject<string>(string.Empty);
         private readonly object lockObject = new object();
         private AsyncQueue<(string topic, string data)> messageQueue;
         private readonly ReplaySubject<(string topic, string data)> messageStream = new ReplaySubject<(string topic, string data)>(1);
 
-        public SignalRService(ILoggerFactory loggerFactory)
+        public SignalRService(SignalRSettings settings, ILoggerFactory loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.StartedStream = this.startedStream.AsObservable();
 
             this.messageQueue = new AsyncQueue<(string topic, string data)>((message, _) =>
             {
@@ -29,9 +32,8 @@ namespace Stratis.Bitcoin.Features.SignalR
             });
 
             this.MessageStream = this.messageStream.AsObservable();
-
-            this.Address = new Uri($"http://localhost:{IpHelper.NextFreePort}");
-            this.HubRoute = new Uri($"{this.Address.AbsoluteUri}hub");
+            this.Address = new Uri($"http://localhost:{settings.Port}");
+            this.HubRoute = new Uri($"{this.Address.AbsoluteUri}{settings.HubRoute}");
         }
 
         /// <summary><see cref="ISignalRService.Address" /></summary>
@@ -56,10 +58,13 @@ namespace Stratis.Bitcoin.Features.SignalR
             return Task.FromResult(true);
         }
 
+        /// <inheritdoc />
+        public IObservable<string> StartedStream { get; }
+
         /// <summary><see cref="ISignalRService.StartAsync" /></summary>
-        public Task<bool> StartAsync()
+        public async Task<bool> StartAsync()
         {
-            return Task.Run(() =>
+            var started = await Task.Run(() =>
             {
                 var address = this.Address.AbsoluteUri;
                 try
@@ -78,7 +83,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                     this.webHost.Start();
 
                     this.logger.LogInformation("Hosted at {0}", address);
-                    return this.Started = true;
+                    return true;
                 }
                 catch (Exception e)
                 {
@@ -86,6 +91,7 @@ namespace Stratis.Bitcoin.Features.SignalR
                     return false;
                 }
             });
+            return this.Started = started;
         }
 
         public void Dispose()
@@ -96,10 +102,19 @@ namespace Stratis.Bitcoin.Features.SignalR
             this.webHost = null;
         }
 
-        private bool Started
+        public bool Started
         {
             get { lock (this.lockObject) return this.started; }
-            set { lock (this.lockObject) this.started = value; }
+
+            private set {
+                lock (this.lockObject)
+                {
+                    if (this.started == value) return;
+                    this.started = value;
+                }
+
+                if (value) this.startedStream.OnNext(this.HubRoute.AbsoluteUri);
+            }
         }
     }
 }
