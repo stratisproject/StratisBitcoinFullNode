@@ -109,7 +109,7 @@ In this section changes that will be required for the C# node to support syncing
 
 Also after the handshake is completed *sendprovhdr* message should be sent instead of *sendheaders*.
 
-*sendprovhdr* message is a message just as *sendheaders* is and it is just another message type to distinguish between those two. Also it will contain height from which we prefer having proven headers over normal headers.
+*sendprovhdr* message is a message just as *sendheaders* is and it is just another message type to distinguish between those two. It will also contain the height from which we prefer having proven headers over normal headers.
 
 
 
