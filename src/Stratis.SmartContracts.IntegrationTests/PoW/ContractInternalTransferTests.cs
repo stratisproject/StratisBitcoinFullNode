@@ -54,7 +54,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Send amount to contract, which will send to wallet address (address without code)
             uint160 walletUint160 = new uint160(1);
-            string address = walletUint160.ToAddress().ToString();
+            string address = walletUint160.ToBase58Address(this.mockChain.Network);
             string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, address) };
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
                 nameof(BasicTransfer.SendToAddress),
@@ -124,7 +124,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             // Send amount to contract, which will send to contract address
-            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress.ToAddress(this.mockChain.Network)) };
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress) };
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
                 nameof(BasicTransfer.SendToAddress),
                 preResponse.NewContractAddress,
@@ -192,7 +192,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferFromConstructor.cs");
             Assert.True(compilationResult.Success);
             uint160 walletUint160 = new uint160(1);
-            string address = walletUint160.ToAddress().ToString();
+            string address = walletUint160.ToBase58Address(this.mockChain.Network);
             string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, address) };
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
@@ -267,7 +267,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
             string[] parameters = new string[]
             {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress.ToAddress(this.mockChain.Network))
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, receiveResponse.NewContractAddress)
             };
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(NestedCallsStarter.Start), preResponse.NewContractAddress, amount, parameters);
@@ -582,7 +582,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             string[] parameters = new string[]
             {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, response2.NewContractAddress.ToAddress(this.mockChain.Network)),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, response2.NewContractAddress),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, transferredAmount)
             };
 
@@ -622,7 +622,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             string[] parameters = new string[]
             {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, response.NewContractAddress.ToAddress(this.mockChain.Network)),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, response.NewContractAddress),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, transferredAmount)
             };
 
