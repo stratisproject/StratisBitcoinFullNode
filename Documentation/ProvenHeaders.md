@@ -119,7 +119,7 @@ Currently on the C# node we have ChainRepository which stores the chain of heade
 
 
 
-Also it will be reasonable to merge the `StakeChain` with the ChainRepository database. 
+Also, it will be reasonable to merge the `StakeChain` with the ChainRepository database. 
 
 #### C# nodes syncing from StratisX nodes
 
