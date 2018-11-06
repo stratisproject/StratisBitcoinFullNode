@@ -25,9 +25,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         string PublicKey { get; }
 
         /// <summary>
-        /// The API port used to communicate with the source node to receive block and deposit updates.
+        /// The API port used to communicate with node on the counter chain.
         /// </summary>
-        int SourceChainApiPort { get; }
+        int CounterChainApiPort { get; }
 
         /// <summary>
         /// For the M of N multisig, this is the number of signers required to reach a quorum.

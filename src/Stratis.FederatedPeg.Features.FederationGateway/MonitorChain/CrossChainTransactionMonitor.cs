@@ -159,7 +159,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             this.logger.LogInformation("AddCounterChainTransactionId: Found {0} transactions to process in block with height {1}.", monitorSession.CrossChainTransactions.Count, monitorSession.BlockNumber);
             this.monitorChainSessionManager.RegisterMonitorSession(monitorSession);
-            this.monitorChainSessionManager.CreateSessionOnCounterChain(this.federationGatewaySettings.SourceChainApiPort, monitorSession);
+            this.monitorChainSessionManager.CreateSessionOnCounterChain(this.federationGatewaySettings.CounterChainApiPort, monitorSession);
 
         }
 

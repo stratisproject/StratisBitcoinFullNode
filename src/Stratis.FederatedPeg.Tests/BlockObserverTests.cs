@@ -1,13 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using FluentAssertions;
-using Microsoft.IdentityModel.Tokens;
-using NBitcoin;
+﻿using NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -34,6 +27,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly uint minimumDepositConfirmations;
 
+        private IMaturedBlockSender maturedBlockSender;
+
         public BlockObserverTests()
         {
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
@@ -43,6 +38,7 @@ namespace Stratis.FederatedPeg.Tests
             this.depositExtractor = Substitute.For<IDepositExtractor>();
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
             this.fullNode = Substitute.For<IFullNode>();
+            this.maturedBlockSender = Substitute.For<IMaturedBlockSender>();
             this.chain = Substitute.ForPartsOf<ConcurrentChain>();
             this.fullNode.NodeService<ConcurrentChain>().Returns(this.chain);
 
@@ -51,7 +47,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.crossChainTransactionMonitor,
                 this.depositExtractor,
                 this.federationGatewaySettings,
-                this.fullNode);
+                this.fullNode,
+                this.maturedBlockSender);
         }
 
         [Fact]
@@ -67,6 +64,7 @@ namespace Stratis.FederatedPeg.Tests
             this.crossChainTransactionMonitor.Received(1).ProcessBlock(earlyBlock);
             this.federationWalletSyncManager.Received(1).ProcessBlock(earlyBlock);
             this.depositExtractor.ReceivedWithAnyArgs(0).ExtractDepositsFromBlock(null, 0);
+            this.maturedBlockSender.ReceivedWithAnyArgs(0).SendMaturedBlockDepositsAsync(null);
         }
 
         [Fact]
@@ -86,6 +84,7 @@ namespace Stratis.FederatedPeg.Tests
             this.crossChainTransactionMonitor.Received(1).ProcessBlock(maturedBlock);
             this.federationWalletSyncManager.Received(1).ProcessBlock(maturedBlock);
             this.depositExtractor.Received(1).ExtractDepositsFromBlock(null, 0);
+            this.maturedBlockSender.ReceivedWithAnyArgs(1).SendMaturedBlockDepositsAsync(null);
         }
     }
 }
