@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 // Mine longer chain1 using node1
                 TestHelper.MineBlocks(stratisNode1, 15);
-                
+
                 IConnectionManager node1ConnectionManager = stratisNode1.FullNode.NodeService<IConnectionManager>();
                 node1ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 

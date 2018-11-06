@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -36,12 +37,14 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.BlockStake = blockStake;
         }
 
-        public PosRuleContext(ValidationContext validationContext, DateTimeOffset time) 
+        public PosRuleContext(ValidationContext validationContext, DateTimeOffset time)
             : base(validationContext, time)
         {
         }
 
         public BlockStake BlockStake { get; set; }
+
+        public Dictionary<TxIn, TxOut> CoinStakePrevOutputs { get; set; }
 
         public Money TotalCoinStakeValueIn { get; set; }
 
