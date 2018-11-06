@@ -283,6 +283,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup previous chained header.
             PosBlock prevPosBlock = new PosBlockBuilder(this.network).Build();
             ProvenBlockHeader prevProvenBlockHeader = new ProvenBlockHeaderBuilder(prevPosBlock, this.network).Build();
+            prevProvenBlockHeader.StakeModifierV2 = null; // Forcing previous stake modifier to null.
             var previousChainedHeader = new ChainedHeader(prevProvenBlockHeader, prevProvenBlockHeader.GetHash(), null);
             previousChainedHeader.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 1);
 
