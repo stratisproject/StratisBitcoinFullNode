@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                 (var spendable, _) = firstAddress.GetSpendableAmount();
 
-                return this.Json(spendable);
+                return this.Json(spendable.ToUnit(MoneyUnit.BTC));
             }
             catch (WalletException e)
             {
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         {
             var balance = this.walletManager.GetAddressBalance(address);
 
-            return this.Json(balance.AmountConfirmed);
+            return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.BTC));
         }
 
         [Route("history")]
