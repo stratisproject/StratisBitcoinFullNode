@@ -76,7 +76,7 @@ A proven header consists of:
 
 2. A block header signature (in the C# node it is represented by the `BlockSignature` class), which is signed with the private key which corresponds to the coinstake's second output's public key.
 
-3. Its coinstake transaction (in the C# node it is represented by `Transaction` class). 
+3. Its coinstake transaction (in the C# node it is represented by the `Transaction` class). 
 
 4. Merkle proof that proves the coinstake tx is included in a block that is being represented by the provided header. 
 
