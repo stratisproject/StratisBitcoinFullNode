@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -16,13 +17,16 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
     [Route("api/[controller]")]
     public sealed class SmartContractWalletController : Controller
     {
+        private readonly IAddressGenerator addressGenerator;
         private readonly IBroadcasterManager broadcasterManager;
+        private readonly ICallDataSerializer callDataSerializer;
         private readonly CoinType coinType;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
@@ -30,13 +34,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         private readonly IWalletManager walletManager;
 
         public SmartContractWalletController(
+            IAddressGenerator addressGenerator,
             IBroadcasterManager broadcasterManager,
+            ICallDataSerializer callDataSerializer,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
             Network network,
             IWalletManager walletManager)
         {
+            this.addressGenerator = addressGenerator;
             this.broadcasterManager = broadcasterManager;
+            this.callDataSerializer = callDataSerializer;
             this.connectionManager = connectionManager;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -81,8 +89,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         TransactionData transaction = item.Transaction;
                         HdAddress address = item.Address;
 
-                        // TODO: For now we are ignoring staking transactions to make this cleaner - the original method has some extra logic here
-
                         // Create a record for a 'receive' transaction.
                         if (!address.IsChangeAddress())
                         {
@@ -103,12 +109,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         // If this is a normal transaction (not staking) that has been spent, add outgoing fund transaction details.
                         if (transaction.SpendingDetails != null)
                         {
-                            if (transaction.SpendingDetails.Payments.Any(x =>
-                                x.DestinationScriptPubKey.IsSmartContractCall()))
-                            {
-
-                            }
-
                             // Create a record for a 'send' transaction.
                             uint256 spendingTransactionId = transaction.SpendingDetails.TransactionId;
                             var sentItem = new ContractTransactionItemModel
@@ -120,19 +120,50 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                 Amount = Money.Zero
                             };
 
-                            // If this 'send' transaction has made some external payments, i.e the funds were not sent to another address in the wallet.
-                            if (transaction.SpendingDetails.Payments != null)
+                            // Alter it if needed for a smart contract transaction.
+                            PaymentDetails scPayment = transaction.SpendingDetails.Payments?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
+
+                            if (scPayment != null)
                             {
-                                sentItem.Payments = new List<PaymentDetailModel>();
-                                foreach (PaymentDetails payment in transaction.SpendingDetails.Payments)
+                                if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                                 {
+                                    sentItem.Type = ContractTransactionItemType.ContractCreate;
+                                    // Get contract creation address
+                                    var contractAddress = this.addressGenerator.GenerateAddress(sentItem.Id, 0).ToBase58Address(this.network);
                                     sentItem.Payments.Add(new PaymentDetailModel
                                     {
-                                        DestinationAddress = payment.DestinationAddress,
-                                        Amount = payment.Amount
+                                        Amount = scPayment.Amount,
+                                        DestinationAddress = contractAddress
                                     });
+                                }
+                                else
+                                {
+                                    sentItem.Type = ContractTransactionItemType.ContractCall;
+                                    // Get serialized contract address
+                                    Result<ContractTxData> txData =  this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
+                                    sentItem.Payments.Add(new PaymentDetailModel
+                                    {
+                                        Amount = scPayment.Amount,
+                                        DestinationAddress = txData.Value.ContractAddress.ToBase58Address(this.network).ToString()
+                                    });
+                                }
+                            }
+                            else
+                            {
+                                // If this 'send' transaction has made some external payments, i.e the funds were not sent to another address in the wallet.
+                                if (transaction.SpendingDetails.Payments != null)
+                                {
+                                    sentItem.Payments = new List<PaymentDetailModel>();
+                                    foreach (PaymentDetails payment in transaction.SpendingDetails.Payments)
+                                    {
+                                        sentItem.Payments.Add(new PaymentDetailModel
+                                        {
+                                            DestinationAddress = payment.DestinationAddress,
+                                            Amount = payment.Amount
+                                        });
 
-                                    sentItem.Amount += payment.Amount;
+                                        sentItem.Amount += payment.Amount;
+                                    }
                                 }
                             }
 
