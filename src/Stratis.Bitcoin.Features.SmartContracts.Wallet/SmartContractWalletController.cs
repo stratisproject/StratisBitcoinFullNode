@@ -43,6 +43,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.walletManager = walletManager;
         }
 
+        private HdAddress GetFirstAccountAddress(string walletName)
+        {
+            var accounts = this.walletManager.GetAccounts(walletName).ToList();
+
+            return accounts.FirstOrDefault()?.ExternalAddresses?.FirstOrDefault();
+        }
+
         [Route("account-address")]
         [HttpGet]
         public IActionResult GetAccountAddress(string walletName)
@@ -50,25 +57,47 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             if (string.IsNullOrWhiteSpace(walletName))
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
 
-            List<HdAccount> accounts;
+            try
+            {
+                var firstAddress = this.GetFirstAccountAddress(walletName);
+
+                if (firstAddress == null)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
+                }
+
+                return this.Json(firstAddress.Address);
+            }
+            catch (WalletException e)
+            {
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }           
+        }
+
+        [Route("account-balance")]
+        [HttpGet]
+        public IActionResult GetAccountBalance(string walletName)
+        {
+            if (string.IsNullOrWhiteSpace(walletName))
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
 
             try
             {
-                accounts = this.walletManager.GetAccounts(walletName).ToList();
+                var firstAddress = this.GetFirstAccountAddress(walletName);
+
+                if (firstAddress == null)
+                {
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
+                }
+
+                (var spendable, _) = firstAddress.GetSpendableAmount();
+
+                return this.Json(spendable);
             }
             catch (WalletException e)
             {
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-
-            var firstAddress = accounts.FirstOrDefault()?.ExternalAddresses?.FirstOrDefault();
-
-            if (firstAddress == null)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
-            }
-
-            return this.Json(firstAddress.Address);
         }
 
         [Route("history")]
