@@ -64,7 +64,7 @@ We define `trustedBase` as the block up until which the node has a UTXO set that
 
 #### Long reorg protection
 
-PoS blockchains similar to Stratis need to have a protection against long reorganizations. Stratis protocol prevents the node from switching to another chain that would replace more than 500 blocks. We denote this parameter as `maxReorg`.
+PoS blockchains similar to Stratis need to have a protection against long reorganisations. Stratis protocol prevents the node from switching to another chain that would replace more than 500 blocks. We denote this parameter as `maxReorg`.
 
 
 
