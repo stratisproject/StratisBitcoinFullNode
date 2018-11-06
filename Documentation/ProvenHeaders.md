@@ -78,7 +78,7 @@ A proven header consists of:
 
 3. Its coinstake transaction (in the C# node it is represented by the `Transaction` class). 
 
-4. Merkle proof that proves the coinstake tx is included in a block that is being represented by the provided header. 
+4. A Merkle proof that proves the coinstake tx is included in a block that is being represented by the provided header. 
 
    In the C# node the merkle proof can be represented by the `PartialMerkleTree` class.
 
