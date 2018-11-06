@@ -322,7 +322,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             fullValidationRequired = false;
 
-            if (!chainedHeader.Previous.Next.Contains(chainedHeader))
+            if (!chainedHeader.IsConnected)
             {
                 this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:false");
                 return null;
@@ -588,7 +588,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block)
         {
-            if (!chainedHeader.Previous.Next.Contains(chainedHeader))
+            if (!chainedHeader.IsConnected)
             {
                 this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:false");
                 return false;
@@ -611,7 +611,7 @@ namespace Stratis.Bitcoin.Consensus
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
 
-            this.logger.LogTrace("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}:{1}:{2}", nameof(chainedHeader.Previous), chainedHeader.Previous, chainedHeader.Previous.BlockValidationState);
+            this.logger.LogTrace("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}:{1}", nameof(chainedHeader.Previous), chainedHeader.Previous);
 
             return partialValidationRequired;
         }
