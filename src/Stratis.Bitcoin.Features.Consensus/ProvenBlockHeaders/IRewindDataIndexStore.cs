@@ -15,8 +15,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Stores all rewind data index from the cache to a disk and clears cache.
         /// </summary>
-        /// <param name="force">Flag to indicate if flush is to be forced (<c>true</c>) or be done once certain period of time has elapsed (<c>false</c>).</param>
-        Task FlushAsync(bool force = true);
+        Task FlushAsync();
 
         /// <summary>
         /// Saves rewind index data to cache.
