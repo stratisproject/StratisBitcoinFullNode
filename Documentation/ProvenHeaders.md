@@ -70,7 +70,7 @@ PoS blockchains similar to Stratis need to have a protection against long reorga
 
 ## Structure of proven header
 
-Proven header consists of:
+A proven header consists of:
 
 1. Block header (in the C# node is represented by `BlockHeader` class) which contains merkle tree root.
 
