@@ -36,7 +36,7 @@ In order to prevent attacks using fake headers, we propose the use of proven hea
 
 New type of network messages needs to be introduced to allow syncing using proven headers -
 
-1.  *provhdr* - `ProvenHeadersPayload` which contains list of up to 2000 proven headers.
+1.  *provhdr* - `ProvenHeadersPayload` which contains a list of up to 2000 proven headers.
 2. *sendprovhdr* - `SendProvenHeadersPayload` which informs the peer that we are only willing to sync using the proven headers and not the old type of headers.
 3. *getprovhdr* - `GetProvenHeadersPayload`  which requests proven headers using a similar mechanism as the `getheaders` protocol message.
 
