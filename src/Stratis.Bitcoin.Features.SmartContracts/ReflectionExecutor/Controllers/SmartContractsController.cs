@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IReceiptRepository receiptRepository;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
-        private readonly LocalExecutor localExecutor;
+        private readonly ILocalExecutor localExecutor;
 
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             IReceiptRepository receiptRepository,
             ICallDataSerializer callDataSerializer,
             IMethodParameterStringSerializer methodParameterStringSerializer,
-            LocalExecutor localExecutor)
+            ILocalExecutor localExecutor)
         {
             this.stateRoot = stateRoot;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -368,18 +368,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
 
-            ulong gasPrice = ulong.Parse(request.GasPrice);
-            ulong gasLimit = ulong.Parse(request.GasLimit);
-
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
             {
                 var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)gasPrice, (Gas)gasLimit, request.ContractCode.HexToByteArray(), methodParameters);
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
             }
             else
             {
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)gasPrice, (Gas)gasLimit, request.ContractCode.HexToByteArray());
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray());
             }
 
             HdAddress senderAddress = null;
@@ -390,7 +387,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
-            ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
+            ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
             var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
             var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) };
             var context = new TransactionBuildContext(this.network)
@@ -427,19 +424,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
 
-            ulong gasPrice = ulong.Parse(request.GasPrice);
-            ulong gasLimit = ulong.Parse(request.GasLimit);
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
 
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
             {
                 var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)gasPrice, (Gas)gasLimit, addressNumeric, request.MethodName, methodParameters);
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
             }
             else
             {
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)gasPrice, (Gas)gasLimit, addressNumeric, request.MethodName);
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName);
             }
 
             HdAddress senderAddress = null;
@@ -450,7 +445,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
-            ulong totalFee = (gasPrice * gasLimit) + Money.Parse(request.FeeAmount);
+            ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
             var context = new TransactionBuildContext(this.network)
             {
                 AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),

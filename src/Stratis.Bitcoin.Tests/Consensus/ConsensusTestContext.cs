@@ -6,7 +6,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -100,7 +99,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
         {
-            NBitcoin.BouncyCastle.Math.BigInteger newTarget = header.Header.Bits.ToBigInteger();
+            var newTarget = header.Header.Bits.ToBigInteger();
             newTarget = newTarget.Divide(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(difficultyAdjustmentDivisor));
             return new Target(newTarget);
         }
@@ -150,13 +149,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
                                     ? previousHeader.Header.Bits
                                     : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
                 header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
+
                 var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+
                 if (validationState.HasValue)
                     newHeader.BlockValidationState = validationState.Value;
 
                 if (assignBlocks)
                 {
-                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                    Block block = this.Network.CreateBlock();
                     block.GetSerializedSize();
                     newHeader.Block = block;
                 }
@@ -169,7 +170,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public Block CreateBlock()
         {
-            Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+            Block block = this.Network.CreateBlock();
             block.GetSerializedSize();
             return block;
         }

@@ -322,6 +322,12 @@ namespace Stratis.Bitcoin.Consensus
         {
             fullValidationRequired = false;
 
+            if (!chainedHeader.IsReferenceConnected)
+            {
+                this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:null");
+                return null;
+            }
+
             // Can happen in case peer was disconnected during the validation and it was the only peer claiming that header.
             if (!this.chainedHeadersByHash.ContainsKey(chainedHeader.HashBlock))
             {
@@ -582,6 +588,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public bool BlockDataDownloaded(ChainedHeader chainedHeader, Block block)
         {
+            if (!chainedHeader.IsReferenceConnected)
+            {
+                this.logger.LogTrace("(-)[HEADER_DISCONNECTED]:false");
+                return false;
+            }
+
             if (chainedHeader.BlockValidationState == ValidationState.FullyValidated)
             {
                 this.logger.LogTrace("(-)[HEADER_FULLY_VALIDATED]:false");
@@ -599,7 +611,7 @@ namespace Stratis.Bitcoin.Consensus
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
 
-            this.logger.LogTrace("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}:{1}:{2}", nameof(chainedHeader.Previous), chainedHeader.Previous, chainedHeader.Previous.BlockValidationState);
+            this.logger.LogTrace("[BLOCK_DOWNLOAD_PREVIOUS_STATE]{0}.{1}:{2}", nameof(chainedHeader), nameof(chainedHeader.Previous), chainedHeader.Previous);
 
             return partialValidationRequired;
         }
@@ -807,7 +819,7 @@ namespace Stratis.Bitcoin.Consensus
         private bool HeaderWasRequested(ChainedHeader chainedHeader)
         {
             return (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockAvailable)
-                  || (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired);
+                || (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired);
         }
 
         /// <summary>
@@ -816,8 +828,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private bool HeaderWasMarkedAsValidated(ChainedHeader chainedHeader)
         {
-            return chainedHeader.IsAssumedValid || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
-                  || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
+            return chainedHeader.IsAssumedValid
+                   || (chainedHeader.BlockValidationState == ValidationState.PartiallyValidated)
+                   || (chainedHeader.BlockValidationState == ValidationState.FullyValidated);
         }
 
         /// <summary>
