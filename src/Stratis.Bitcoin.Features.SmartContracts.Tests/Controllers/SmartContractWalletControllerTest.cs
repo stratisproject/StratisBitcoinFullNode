@@ -18,6 +18,7 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
@@ -26,22 +27,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
 {
     public class SmartContractWalletControllerTest
     {
-        private readonly Mock<IAddressGenerator> addressGenerator;
         private readonly Mock<IBroadcasterManager> broadcasterManager;
         private readonly Mock<ICallDataSerializer> callDataSerializer;
         private readonly Mock<IConnectionManager> connectionManager;
         private readonly Mock<ILoggerFactory> loggerFactory;
         private readonly Network network;
+        private readonly Mock<IReceiptRepository> receiptRepository;
         private readonly Mock<IWalletManager> walletManager;
 
         public SmartContractWalletControllerTest()
         {
-            this.addressGenerator = new Mock<IAddressGenerator>();
             this.broadcasterManager = new Mock<IBroadcasterManager>();
             this.callDataSerializer = new Mock<ICallDataSerializer>();
             this.connectionManager = new Mock<IConnectionManager>();
             this.loggerFactory = new Mock<ILoggerFactory>();
             this.network = new SmartContractsRegTest();
+            this.receiptRepository = new Mock<IReceiptRepository>();
             this.walletManager = new Mock<IWalletManager>();
         }
 
@@ -92,18 +93,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
             this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> {account});
 
-            this.addressGenerator.Setup(x => x.GenerateAddress(It.IsAny<uint256>(), It.IsAny<ulong>()))
-                .Returns(new uint160(0));
+            this.receiptRepository.Setup(x => x.Retrieve(It.IsAny<uint256>()))
+                .Returns(new Receipt(null, 0, new Log[0], null, null, null, uint160.Zero, true, null));
             this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(new ContractTxData(0, 0, (Gas) 0, new uint160(0), null, null)));
 
             var controller = new SmartContractWalletController(
-                this.addressGenerator.Object,
                 this.broadcasterManager.Object,
                 this.callDataSerializer.Object,
                 this.connectionManager.Object,
                 this.loggerFactory.Object,
                 this.network,
+                this.receiptRepository.Object,
                 this.walletManager.Object);
 
             IActionResult result = controller.GetHistory(walletName, address.Address);

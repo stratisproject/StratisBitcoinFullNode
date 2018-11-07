@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
@@ -24,31 +25,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     [Route("api/[controller]")]
     public sealed class SmartContractWalletController : Controller
     {
-        private readonly IAddressGenerator addressGenerator;
         private readonly IBroadcasterManager broadcasterManager;
         private readonly ICallDataSerializer callDataSerializer;
         private readonly CoinType coinType;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
         private readonly Network network;
+        private readonly IReceiptRepository receiptRepository;
         private readonly IWalletManager walletManager;
 
         public SmartContractWalletController(
-            IAddressGenerator addressGenerator,
             IBroadcasterManager broadcasterManager,
             ICallDataSerializer callDataSerializer,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
             Network network,
+            IReceiptRepository receiptRepository,
             IWalletManager walletManager)
         {
-            this.addressGenerator = addressGenerator;
             this.broadcasterManager = broadcasterManager;
             this.callDataSerializer = callDataSerializer;
             this.connectionManager = connectionManager;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
+            this.receiptRepository = receiptRepository;
             this.walletManager = walletManager;
         }
         private HdAddress GetFirstAccountAddress(string walletName)
@@ -210,15 +211,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                             if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                             {
                                 // Create a record for a Create transaction
-                                var contractAddress = this.addressGenerator.GenerateAddress(transaction.SpendingDetails.TransactionId, 0).ToBase58Address(this.network);
-
+                                Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
                                 transactionItems.Add(new ContractTransactionItem
                                 {
                                     Amount = scPayment.Amount.ToUnit(MoneyUnit.BTC),
                                     BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCreate,
                                     Hash = transaction.SpendingDetails.TransactionId,
-                                    To = contractAddress
+                                    To = receipt.NewContractAddress.ToBase58Address(this.network)
                                 });
                             }
                             else
