@@ -223,8 +223,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = "10000",
-                    GasPrice = "1",
+                    GasLimit = 10_000,
+                    GasPrice = 1,
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "0.001",
                     Password = Password,
@@ -265,8 +265,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = gasLimit.ToString(),
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
+                    GasLimit = gasLimit,
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "0.001",
                     Password = Password,
@@ -316,8 +316,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var callRequest = new BuildCallContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = gasLimit.ToString(),
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
+                    GasLimit = gasLimit,
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     Amount = "0",
                     MethodName = "Increment",
                     ContractAddress = response.NewContractAddress,
@@ -354,8 +354,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var serializationRequest = new BuildCallContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = gasLimit.ToString(),
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
+                    GasLimit = gasLimit,
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     Amount = "0",
                     MethodName = "TestSerializer",
                     ContractAddress = response.NewContractAddress,
@@ -525,8 +525,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = gasLimit.ToString(),
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
+                    GasLimit = gasLimit,
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "0.001",
                     Password = Password,
@@ -554,8 +554,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var callRequest = new BuildCallContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = gasLimit.ToString(),
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
+                    GasLimit = gasLimit,
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     Amount = "0",
                     MethodName = "Increment",
                     ContractAddress = response.NewContractAddress,
@@ -616,8 +616,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = gasLimit.ToString(),
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
+                    GasLimit = gasLimit,
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     ContractCode = compilationResult.Compilation.ToHexString(),
                     FeeAmount = "0.001",
                     Password = Password,
@@ -637,8 +637,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var callRequest = new BuildCallContractTransactionRequest
                 {
                     AccountName = AccountName,
-                    GasLimit = gasLimit.ToString(),
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice.ToString(),
+                    GasLimit = gasLimit,
+                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     Amount = "0",
                     MethodName = "Counter",
                     ContractAddress = response.NewContractAddress,
