@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 {
@@ -28,6 +29,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
         public abstract object Clone();
 
+        [NoTrace]
         public void Attach(INetworkPeer peer)
         {
             Guard.NotNull(peer, nameof(peer));
@@ -58,6 +60,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
                    (peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline);
         }
 
+        [NoTrace]
         public void Detach()
         {
             lock (this.cs)
@@ -75,6 +78,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.AttachedPeer = null;
         }
 
+        [NoTrace]
         INetworkPeerBehavior INetworkPeerBehavior.Clone()
         {
             return (INetworkPeerBehavior)this.Clone();
