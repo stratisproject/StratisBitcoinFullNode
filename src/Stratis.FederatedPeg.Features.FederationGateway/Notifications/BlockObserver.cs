@@ -24,6 +24,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
         private readonly IMaturedBlockSender maturedBlockSender;
 
+        private readonly IBlockTipSender blockTipSender;
+
         private readonly IBlockStore blockStore;
 
         private readonly IFullNode fullNode;
@@ -41,19 +43,22 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <param name="federationGatewaySettings">The settings used to run this federation node.</param>
         /// <param name="fullNode">Full node used to get rewind the chain.</param>
         /// <param name="maturedBlockSender">Service responsible for publishing newly matured blocks.</param>
+        /// /// <param name="blockTipSender">Service responsible for publishing the block tip.</param>
         public BlockObserver(IFederationWalletSyncManager walletSyncManager,
                              ICrossChainTransactionMonitor crossChainTransactionMonitor,
                              IDepositExtractor depositExtractor,
                              IFederationGatewaySettings federationGatewaySettings,
                              IFullNode fullNode,
-                             IMaturedBlockSender maturedBlockSender)
+                             IMaturedBlockSender maturedBlockSender,
+                             IBlockTipSender blockTipSender)
         {
             Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
             Guard.NotNull(crossChainTransactionMonitor, nameof(crossChainTransactionMonitor));
             Guard.NotNull(depositExtractor, nameof(depositExtractor));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
             Guard.NotNull(fullNode, nameof(fullNode));
-            Guard.NotNull(fullNode, nameof(maturedBlockSender));
+            Guard.NotNull(maturedBlockSender, nameof(maturedBlockSender));
+            Guard.NotNull(blockTipSender, nameof(blockTipSender));
 
             this.walletSyncManager = walletSyncManager;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
@@ -61,6 +66,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             this.maturedBlockSender = maturedBlockSender;
             this.minimumDepositConfirmations = federationGatewaySettings.MinimumDepositConfirmations;
             this.chain = fullNode.NodeService<ConcurrentChain>();
+            this.blockTipSender = blockTipSender;
         }
 
         /// <summary>
@@ -77,8 +83,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             var newlyMaturedBlock = GetNewlyMaturedBlock(chainedHeaderBlock);
             if (newlyMaturedBlock == null) return;
 
-            var maturedBlockDeposits = ExtractMaturedBlockDeposits(newlyMaturedBlock);
+            var maturedBlockDeposits = this.ExtractMaturedBlockDeposits(newlyMaturedBlock);
             this.maturedBlockSender.SendMaturedBlockDepositsAsync(maturedBlockDeposits).ConfigureAwait(false);
+
+            this.blockTipSender.SendBlockTipAsync(this.ExtractBlockTip(chainedHeaderBlock.ChainedHeader));
         }
 
         private MaturedBlockDepositsModel ExtractMaturedBlockDeposits(ChainedHeader newlyMaturedBlock)
@@ -99,6 +107,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
             var newMaturedBlock = this.chain.GetBlock(newMaturedHeight);
             return newMaturedBlock;
+        }
+
+        private BlockTipModel ExtractBlockTip(ChainedHeader chainedHeader)
+        {
+            return new BlockTipModel(chainedHeader.HashBlock, chainedHeader.Height);
         }
     }
 }

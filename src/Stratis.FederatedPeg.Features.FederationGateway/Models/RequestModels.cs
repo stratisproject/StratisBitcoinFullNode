@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
 using System.Net.Http;
 using System.Text;
@@ -77,5 +76,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+    }
+
+    /// <summary>
+    /// Block tip Hash and Height request.
+    /// </summary>
+    public class BlockTipModelRequest : RequestModel
+    {
+        [Required(ErrorMessage = "Block Hash is required")]
+        public string Hash { get; set; }
+
+        [Required(ErrorMessage = "Block Height is required")]
+        public int Height { get; set; }
     }
 }

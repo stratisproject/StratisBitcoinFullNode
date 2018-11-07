@@ -12,7 +12,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
-using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
+
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
@@ -24,6 +24,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     {
         public const string ReceiveMaturedBlockRoute = "receive-matured-block";
 
+        public const string ReceiveCurrentBlockTipRoute = "receive-current-block-tip";
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -31,19 +33,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         private readonly IMaturedBlockReceiver maturedBlockReceiver;
 
+        private readonly ILeaderProvider leaderProvider;
+
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
             ICounterChainSessionManager counterChainSessionManager,
-            IMaturedBlockReceiver maturedBlockReceiver)
+            IMaturedBlockReceiver maturedBlockReceiver,
+            ILeaderProvider leaderProvider)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.counterChainSessionManager = counterChainSessionManager;
             this.maturedBlockReceiver = maturedBlockReceiver;
+            this.leaderProvider = leaderProvider;
         }
 
         [Route(ReceiveMaturedBlockRoute)]
         [HttpPost]
-        void ReceiveMaturedBlock([FromBody] MaturedBlockDepositsModel maturedBlockDeposits)
+        public void ReceiveMaturedBlock([FromBody] MaturedBlockDepositsModel maturedBlockDeposits)
         {
             this.maturedBlockReceiver.ReceiveMaturedBlockDeposits(maturedBlockDeposits);
         }
@@ -118,6 +124,35 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             {
                 this.logger.LogError("Exception thrown calling /api/FederationGateway/process-session-oncounterchain: {0}.", e.Message);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not create partial transaction session: {e.Message}", e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Receives the current block tip to be used for updating the federated leader in a round robin fashion.
+        /// </summary>
+        /// <param name="blockTip"><see cref="BlockTipModelRequest"/>Block tip Hash and Height received.</param>
+        /// <returns><see cref="IActionResult"/>OK on success.</returns>
+        [Route(ReceiveCurrentBlockTipRoute)]
+        [HttpPost]
+        public IActionResult ReceiveCurrentBlockTip([FromBody] BlockTipModelRequest blockTip)
+        {
+            Guard.NotNull(blockTip, nameof(blockTip));
+
+            if (!this.ModelState.IsValid)
+            {
+                return BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                this.leaderProvider.Update(new BlockTipModel(uint256.Parse(blockTip.Hash), blockTip.Height));
+
+                return this.Ok();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception thrown calling /api/FederationGateway/{0}: {1}.", ReceiveCurrentBlockTipRoute, e.Message);
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not select the next federated leader: {e.Message}", e.ToString());
             }
         }
 
