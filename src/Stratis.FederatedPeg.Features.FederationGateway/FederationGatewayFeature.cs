@@ -41,9 +41,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IMaturedBlockSender maturedBlockSender;
 
+        private readonly IBlockTipSender blockTipSender;
+
         private readonly Signals signals;
 
         private readonly IDepositExtractor depositExtractor;
+
+        private readonly ILeaderProvider leaderProvider;
 
         private IDisposable blockSubscriberDisposable;
 
@@ -74,8 +78,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             ICrossChainTransactionMonitor crossChainTransactionMonitor,
             IMaturedBlockReceiver maturedBlockReceiver,
             IMaturedBlockSender maturedBlockSender,
+            IBlockTipSender blockTipSender,
             Signals signals,
             IDepositExtractor depositExtractor,
+            ILeaderProvider leaderProvider,
             IConnectionManager connectionManager,
             IFederationGatewaySettings federationGatewaySettings,
             IFullNode fullNode,
@@ -91,6 +97,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
             this.maturedBlockReceiver = maturedBlockReceiver;
             this.maturedBlockSender = maturedBlockSender;
+            this.blockTipSender = blockTipSender;
             this.signals = signals;
             this.depositExtractor = depositExtractor;
             this.connectionManager = connectionManager;
@@ -116,7 +123,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         {
             // Subscribe to receiving blocks and transactions.
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(
-                new BlockObserver(this.walletSyncManager, this.crossChainTransactionMonitor, this.depositExtractor, this.federationGatewaySettings, this.fullNode, this.maturedBlockSender));
+                new BlockObserver(
+                    this.walletSyncManager,
+                    this.crossChainTransactionMonitor,
+                    this.depositExtractor,
+                    this.federationGatewaySettings,
+                    this.fullNode,
+                    this.maturedBlockSender,
+                    this.blockTipSender));
+
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new Notifications.TransactionObserver(this.walletSyncManager));
 
             this.crossChainTransactionMonitor.Initialize(federationGatewaySettings);
@@ -186,6 +201,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     {
                         services.AddSingleton<IMaturedBlockReceiver, MaturedBlockReceiver>();
                         services.AddSingleton<IMaturedBlockSender, RestMaturedBlockSender>();
+                        services.AddSingleton<IBlockTipSender, RestBlockTipSender>();
                         services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
                         services.AddSingleton<IDepositExtractor, DepositExtractor>();
@@ -197,6 +213,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IFederationWalletSyncManager, FederationWalletSyncManager>();
                         services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
+                        services.AddSingleton<ILeaderProvider, LeaderProvider>();
                         services.AddSingleton<FederationWalletController>();
                     });
             });
