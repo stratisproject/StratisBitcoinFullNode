@@ -571,10 +571,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
             Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.mockChain.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
-            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
-
-            // Amount was refunded to wallet, minus fee
-            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee);
 
             // Receipt is correct
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
