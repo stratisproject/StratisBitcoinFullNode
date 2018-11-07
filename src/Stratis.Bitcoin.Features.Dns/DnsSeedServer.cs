@@ -389,6 +389,24 @@ namespace Stratis.Bitcoin.Features.Dns
 
                 // Send response.
                 await this.udpClient.SendAsync(response.ToArray(), response.Size, udpRequest.Item1).WithCancellationTimeout(UdpTimeout);
+
+                StringBuilder sb = new StringBuilder();
+                sb.AppendLine("Request");
+
+                sb.AppendLine(request.ToString());
+
+                foreach (IResourceRecord resourceRecord in response.AdditionalRecords)
+                    sb.AppendLine("AdditionalRecords " + resourceRecord.ToString());
+
+                foreach (IResourceRecord resourceRecord in response.AnswerRecords)
+                    sb.AppendLine("AdditionalRecords " + resourceRecord.ToString());
+
+                foreach (IResourceRecord resourceRecord in response.AuthorityRecords)
+                    sb.AppendLine("AdditionalRecords " + resourceRecord.ToString());
+
+                this.logger.LogInformation("{0}", sb.ToString());
+
+
             }
             catch (SocketException e)
             {
@@ -501,6 +519,9 @@ namespace Stratis.Bitcoin.Features.Dns
 
                 // Output.
                 this.logger.LogInformation(metricOutput.ToString());
+
+                this.logger.LogInformation("{0}", this.masterFile.ToString());
+
             }
             catch (Exception e)
             {

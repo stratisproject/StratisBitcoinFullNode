@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Text.RegularExpressions;
 using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
@@ -141,6 +142,19 @@ namespace Stratis.Bitcoin.Features.Dns
 
             serializer.Serialize(textWriter, this.entries);
             textWriter.Flush();
+        }
+
+        public override string ToString()
+        {
+            StringBuilder sb = new StringBuilder();
+
+            sb.AppendLine("Masterfile");
+            foreach (IResourceRecord resourceRecord in this.entries)
+            {
+                sb.AppendLine(resourceRecord.ToString());
+            }
+
+            return sb.ToString();
         }
     }
 }
