@@ -6,6 +6,7 @@
     <AssemblyName>Stratis.SidechainD</AssemblyName>
     <PackageId>Stratis.SidechainD</PackageId>
     <DebugType>Full</DebugType>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>    
   </PropertyGroup>
 
   <ItemGroup>
