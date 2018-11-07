@@ -111,6 +111,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public int? Skip { get; set; }
 
         public int? Take { get; set; }
+
+        [JsonProperty(PropertyName = "q")]
+        public string SearchQuery { get; set; }
     }
 
     public class WalletBalanceRequest : RequestModel
