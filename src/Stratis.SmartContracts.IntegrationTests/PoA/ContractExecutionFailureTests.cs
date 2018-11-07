@@ -543,9 +543,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
         [Fact]
         public void ContractTransaction_RecursiveContractCall_OutOfGas()
         {
-            // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
-
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/RecursiveLoopCall.cs");
             Assert.True(compilationResult.Success);
