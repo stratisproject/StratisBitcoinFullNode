@@ -19,7 +19,6 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Miner\Stratis.Bitcoin.Features.Miner.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.PoA\Stratis.Bitcoin.Features.PoA.csproj" />
-    <ProjectReference Include="..\Stratis.Bitcoin.Features.SmartContracts.Wallet\Stratis.Bitcoin.Features.SmartContracts.Wallet.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.Executor.Reflection\Stratis.SmartContracts.Executor.Reflection.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />

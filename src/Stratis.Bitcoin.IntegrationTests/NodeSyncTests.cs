@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectAndSync(stratisMiner, stratisReorg);
                 TestHelper.ConnectAndSync(stratisMiner, stratisSyncer);
 
-                // Create a reorg by mining on two different chains                
+                // Create a reorg by mining on two different chains
                 TestHelper.Disconnect(stratisMiner, stratisReorg);
                 TestHelper.Disconnect(stratisMiner, stratisSyncer);
 

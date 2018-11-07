@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Consensus
                 if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
-                this.logger.LogInformation("Block store at height {0} is ahead of consensus, rewinding consensus from height {1}.", this.chainState.BlockStoreTip, pendingTip);
+                this.logger.LogInformation("Consensus at height {0} is ahead of the block store at height {1}, rewinding consensus.", pendingTip, this.chainState.BlockStoreTip);
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
@@ -550,6 +550,9 @@ namespace Stratis.Bitcoin.Consensus
                     // This might cause uncontrolled memory changes but big reorgs are not common and a chain will anyway get disconnected when the fork is more then 500 blocks.
                     foreach (ChainedHeaderBlock disconnectedBlock in disconnectedBlocks)
                     {
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader);
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader.Previous);
+
                         if (disconnectedBlock.ChainedHeader.Block == null)
                             disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
                     }
