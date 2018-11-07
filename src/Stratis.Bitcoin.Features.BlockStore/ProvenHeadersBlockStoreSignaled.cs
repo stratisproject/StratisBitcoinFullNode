@@ -71,12 +71,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         logger.LogTrace("Found a proven header with a different hash, recreating PH. Expected Hash: {0}, found Hash: {1}.", signaledHeaderHash, provenHeaderHash);
 
-                        CreateAndStoreProvenHeader(blockHeight, (PosBlock)blockPair.Block);
+                        CreateAndStoreProvenHeader(blockHeight, blockPair);
                     }
                 }
             }
 
-            // At the end, if no exception happened, control is passed back to base AddBlockToQueue
+            // At the end, if no exception happened, control is passed back to base AddBlockToQueue.
             base.AddBlockToQueue(blockPair);
         }
 
@@ -96,8 +96,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             logger.LogTrace("Created Proven Header at height {0} with hash {1} and adding to the pending batch to be stored.", blockHeight, provenHeaderHash);
 
-            // setters aren't accessible, not sure setting them to public is a nice idea.
-            //chainedHeaderBlock.Block.Header = chainedHeaderBlock.ChainedHeader.Header = createdProvenHeader;
+            // Using explicit interface to protect from misuse.
+            ((IHeaderSetter)chainedHeaderBlock).SetHeader(newProvenHeader);
         }
     }
 }

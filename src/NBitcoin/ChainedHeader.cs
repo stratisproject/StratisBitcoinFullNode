@@ -54,7 +54,7 @@ namespace NBitcoin
     /// <summary>
     /// A BlockHeader chained with all its ancestors.
     /// </summary>
-    public class ChainedHeader
+    public class ChainedHeader : IHeaderSetter
     {
         /// <summary>Value of 2^256.</summary>
         private static BigInteger Pow256 = BigInteger.ValueOf(2).Pow(256);
@@ -652,6 +652,16 @@ namespace NBitcoin
         private int InvertLowestOne(int n)
         {
             return n & (n - 1);
+        }
+
+        /// <summary>
+        /// Replace the <see cref="BlockHeader"/> with a new provided header.
+        /// </summary>
+        /// <param name="newHeader">The new header to set.</param>
+        /// <remarks>Use this method very carefully because it could cause race conditions if used at the wrong moment.</remarks>
+        void IHeaderSetter.SetHeader(BlockHeader newHeader)
+        {
+            this.Header = newHeader;
         }
     }
 }

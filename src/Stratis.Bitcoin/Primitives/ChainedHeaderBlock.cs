@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System;
+using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Primitives
@@ -6,7 +7,7 @@ namespace Stratis.Bitcoin.Primitives
     /// <summary>
     /// Structure made of a block and its chained header.
     /// </summary>
-    public sealed class ChainedHeaderBlock
+    public sealed class ChainedHeaderBlock : IHeaderSetter
     {
         /// <summary>The block.</summary>
         public Block Block { get; private set; }
@@ -31,6 +32,19 @@ namespace Stratis.Bitcoin.Primitives
         public override string ToString()
         {
             return this.ChainedHeader.ToString();
+        }
+
+        /// <summary>
+        /// Update the <see cref="ChainedHeader" /> and the <see cref="Block" /> (if not null) with a new provided header.
+        /// </summary>
+        /// <param name="newHeader">The new header to set.</param>
+        /// <remarks>Use this method very carefully because it could cause race conditions if used at the wrong moment.</remarks>
+        void IHeaderSetter.SetHeader(BlockHeader newHeader)
+        {
+            Guard.NotNull(newHeader, nameof(newHeader));
+
+            ((IHeaderSetter)this.ChainedHeader)?.SetHeader(newHeader);
+            ((IHeaderSetter)this.Block)?.SetHeader(newHeader);
         }
     }
 }

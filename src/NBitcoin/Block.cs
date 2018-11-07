@@ -8,7 +8,7 @@ using Newtonsoft.Json.Linq;
 
 namespace NBitcoin
 {
-    public partial class Block : IBitcoinSerializable
+    public partial class Block : IBitcoinSerializable, IHeaderSetter
     {
         public const uint MaxBlockSize = 1000 * 1000;
 
@@ -193,6 +193,16 @@ namespace NBitcoin
         public MerkleBlock Filter(BloomFilter filter)
         {
             return new MerkleBlock(this, filter);
+        }
+
+        /// <summary>
+        /// Replace the <see cref="BlockHeader"/> with a new provided header.
+        /// </summary>
+        /// <param name="newHeader">The new header to set.</param>
+        /// <remarks>Use this method very carefully because it could cause race conditions if used at the wrong moment.</remarks>
+        void IHeaderSetter.SetHeader(BlockHeader newHeader)
+        {
+            this.header = newHeader;
         }
     }
 }
