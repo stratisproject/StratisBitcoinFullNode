@@ -84,6 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc/>
         public ChainedHeader GetLastPowPosChainedBlock(IStakeChain stakeChain, ChainedHeader startChainedHeader, bool proofOfStake)
         {
+            Guard.NotNull(stakeChain, nameof(stakeChain));
             Guard.Assert(startChainedHeader != null);
 
             BlockStake blockStake = stakeChain.Get(startChainedHeader.HashBlock);
