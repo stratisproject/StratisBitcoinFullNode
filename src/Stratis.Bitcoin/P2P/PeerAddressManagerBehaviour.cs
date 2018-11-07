@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.P2P
                             this.logger.LogTrace("Outbound peer sent {0}. Not replying to avoid fingerprinting attack.", nameof(GetAddrPayload));
                             return;
                         }
-                    
+
                         if (this.sentAddress)
                         {
                             this.logger.LogTrace("Multiple GetAddr requests from peer. Not replying to avoid fingerprinting attack.");

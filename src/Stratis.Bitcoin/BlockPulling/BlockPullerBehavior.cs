@@ -94,19 +94,14 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Time when the last block was delivered.</summary>
         private DateTime? lastDeliveryTime;
 
-        /// <inheritdoc cref="ILoggerFactory"/>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="IBlockPuller"/>
         private readonly IBlockPuller blockPuller;
 
-        /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
-        /// <inheritdoc cref="IDateTimeProvider"/>
         private readonly IDateTimeProvider dateTimeProvider;
 
         public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)

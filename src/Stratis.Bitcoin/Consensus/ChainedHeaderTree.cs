@@ -267,7 +267,6 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (chainedHeaderBlock.Block == null)
                     this.logger.LogTrace("[BLOCK_NULL]");
-
             }
 
             return chainedHeaderBlock;

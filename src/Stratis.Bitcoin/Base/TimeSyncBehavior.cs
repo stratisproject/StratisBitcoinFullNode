@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Base
                         + "=============================================================================" + Environment.NewLine,
                         this.network.MaxTimeOffsetSeconds);
                 }
-                
+
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,

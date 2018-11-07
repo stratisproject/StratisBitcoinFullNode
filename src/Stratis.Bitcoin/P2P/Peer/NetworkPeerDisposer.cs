@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             peer.Dispose();
 
             this.connectedPeers.TryRemove(peer.Connection.Id, out INetworkPeer unused);
-            
+
             return Task.CompletedTask;
         }
 
