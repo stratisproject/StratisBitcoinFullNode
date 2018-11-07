@@ -690,13 +690,22 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+                var recipients = new List<Recipient>();
+                foreach (RecipientModel recipientModel in request.Recipients)
+                {
+                    recipients.Add(new Recipient
+                    {
+                        ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                        Amount = recipientModel.Amount
+                    });
+                }
+
                 var context = new TransactionBuildContext(this.network)
                 {
                     AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList()
+                    Recipients = recipients
                 };
 
                 return this.Json(this.walletTransactionHandler.EstimateFee(context));
@@ -727,7 +736,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
             try
             {
-                Script destination = BitcoinAddress.Create(request.DestinationAddress, this.network).ScriptPubKey;
+                var recipients = new List<Recipient>();
+                foreach (RecipientModel recipientModel in request.Recipients)
+                {
+                    recipients.Add(new Recipient
+                    {
+                        ScriptPubKey = BitcoinAddress.Create(recipientModel.DestinationAddress, this.network).ScriptPubKey,
+                        Amount = recipientModel.Amount
+                    });
+                }
+
                 var context = new TransactionBuildContext(this.network)
                 {
                     AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
@@ -736,7 +754,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Shuffle = request.ShuffleOutputs ?? true, // We shuffle transaction outputs by default as it's better for anonymity.
                     OpReturnData = request.OpReturnData,
                     WalletPassword = request.Password,
-                    Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = destination } }.ToList()
+                    Recipients = recipients
                 };
 
                 if (!string.IsNullOrEmpty(request.FeeType))
@@ -800,7 +818,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
                     model.Outputs.Add(new TransactionOutputModel
                     {
-                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
+                        Address = isUnspendable ? null : output.ScriptPubKey.GetDestinationAddress(this.network)?.ToString(),
                         Amount = output.Value,
                         OpReturnData = isUnspendable ? Encoding.UTF8.GetString(output.ScriptPubKey.ToOps().Last().PushData) : null
                     });
