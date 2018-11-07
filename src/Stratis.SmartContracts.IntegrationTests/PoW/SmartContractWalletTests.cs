@@ -282,16 +282,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 TestHelper.MineBlocks(scReceiver, 2);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
-                // Check wallet history is updating correctly.
-
-                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
-                {
-                    AccountName = AccountName,
-                    WalletName = WalletName
-                });
-                var walletHistoryModel = (WalletHistoryModel)result.Value;
-                Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
-
                 // Check receipt was stored and can be retrieved.
                 var receiptResponse = (ReceiptResponse)((JsonResult)senderSmartContractsController.GetReceipt(response.TransactionId.ToString())).Value;
                 Assert.True(receiptResponse.Success);
@@ -357,15 +347,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Null(receiptResponse.NewContractAddress);
                 Assert.Equal(response.NewContractAddress, receiptResponse.To);
                 Assert.Equal(addr.Address, receiptResponse.From);
-
-                // Check wallet history again
-                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
-                {
-                    AccountName = AccountName,
-                    WalletName = WalletName
-                });
-                walletHistoryModel = (WalletHistoryModel)result.Value;
-                Assert.Equal(2, walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send).Count());
 
                 // Test serialization
                 // TODO: When refactoring integration tests, move this to the one place and test all types, from method param to storage to serialization.
@@ -561,16 +542,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 TestHelper.MineBlocks(scReceiver, 2);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
-                // Check wallet history is updating correctly.
-                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
-                {
-                    AccountName = AccountName,
-                    WalletName = WalletName
-                });
-
-                var walletHistoryModel = (WalletHistoryModel)result.Value;
-                Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
-
                 string counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
                 {
                     ContractAddress = response.NewContractAddress,
@@ -616,16 +587,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 })).Value;
 
                 Assert.Equal("12345", counterRequestResult);
-
-                // Check wallet history again to make sure nothing has changed
-                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
-                {
-                    AccountName = AccountName,
-                    WalletName = WalletName
-                });
-
-                walletHistoryModel = (WalletHistoryModel)result.Value;
-                Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
             }
         }
 
@@ -672,16 +633,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 TestHelper.MineBlocks(scReceiver, 2);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
-                // Check wallet history is updating correctly.
-                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
-                {
-                    AccountName = AccountName,
-                    WalletName = WalletName
-                });
-
-                var walletHistoryModel = (WalletHistoryModel)result.Value;
-                Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
-
                 // Make a call request where the MethodName is the name of a property
                 var callRequest = new BuildCallContractTransactionRequest
                 {
@@ -709,16 +660,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 TestHelper.MineBlocks(scReceiver, 2);
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
-
-                // Check wallet history again to make sure nothing has changed
-                result = (JsonResult)senderWalletController.GetHistory(new WalletHistoryRequest
-                {
-                    AccountName = AccountName,
-                    WalletName = WalletName
-                });
-
-                walletHistoryModel = (WalletHistoryModel)result.Value;
-                Assert.Single(walletHistoryModel.AccountsHistoryModel.First().TransactionsHistory.Where(x => x.Type == TransactionItemType.Send));
             }
         }
 
