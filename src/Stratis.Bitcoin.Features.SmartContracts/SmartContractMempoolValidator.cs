@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -18,6 +19,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     /// </summary>
     public class SmartContractMempoolValidator : MempoolValidator
     {
+        /// <summary>The "functional" minimum gas limit. Not enforced by consensus but miners are only going to pick transactions up if their gas price is higher than this.</summary>
+        public const ulong MinGasPrice = 100;
+
         /// <summary>
         /// These rules can be checked instantly. They don't rely on other parts of the context to be loaded.
         /// </summary>
@@ -32,6 +36,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
+            this.callDataSerializer = callDataSerializer;
+
             var p2pkhRule = new P2PKHNotContractRule();
             p2pkhRule.Parent = (ConsensusRuleEngine) consensusRules;
             p2pkhRule.Initialize();
@@ -75,7 +81,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 rule.CheckTransaction(context);
             }
 
-            // TODO: Check for a minimum gas price on all mining nodes.
+            CheckMinGasLimit(context);
+        }
+
+        private void CheckMinGasLimit(MempoolValidationContext context)
+        {
+            Transaction transaction = context.Transaction;
+
+            if (!transaction.IsSmartContractExecTransaction())
+                return;
+
+            // We know it has passed SmartContractFormatRule so we can deserialize it easily.
+            TxOut scTxOut = transaction.TryGetSmartContractTxOut();
+            Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
+            ContractTxData callData = callDataDeserializationResult.Value;
+            if (callData.GasPrice < MinGasPrice)
+                context.State.Fail(MempoolErrors.InsufficientFee, $"Gas price {callData.GasPrice} is below required price: {MinGasPrice}").Throw();
         }
     }
 }

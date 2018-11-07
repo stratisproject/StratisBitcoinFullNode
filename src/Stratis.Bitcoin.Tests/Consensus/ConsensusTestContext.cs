@@ -12,21 +12,18 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -67,7 +64,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private INetworkPeerFactory networkPeerFactory;
         public Mock<IChainState> ChainState;
         private readonly IConsensusRuleEngine consensusRules;
-        public readonly TestInMemoryCoinView coinView;       
+        public readonly TestInMemoryCoinView coinView;
         private NodeDeployments deployments;
         private ISelfEndpointTracker selfEndpointTracker;
         private INodeLifetime nodeLifetime;
@@ -86,7 +83,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.HeaderValidator = new Mock<IHeaderValidator>();
             this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
 
-            this.nodeLifetime = new NodeLifetime();            
+            this.nodeLifetime = new NodeLifetime();
             this.ibd = new Mock<IInitialBlockDownloadState>();
             this.BlockPuller = new Mock<IBlockPuller>();
 
@@ -111,7 +108,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.ruleRegistration.RegisterRules(this.Network.Consensus);
 
             // Dont check PoW of a header in this test.
-            this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));            
+            this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
 
             this.ChainedHeaderTree = new ChainedHeaderTree(
                   this.Network,
@@ -180,7 +177,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
         {
-            NBitcoin.BouncyCastle.Math.BigInteger newTarget = header.Header.Bits.ToBigInteger();
+            var newTarget = header.Header.Bits.ToBigInteger();
             newTarget = newTarget.Divide(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(difficultyAdjustmentDivisor));
             return new Target(newTarget);
         }
@@ -231,13 +228,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
                                     ? previousHeader.Header.Bits
                                     : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
                 header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
+
                 var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+
                 if (validationState.HasValue)
                     newHeader.BlockValidationState = validationState.Value;
 
                 if (assignBlocks)
                 {
-                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();                    
+                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
                     block.Header.Bits = header.Bits;
                     block.Header.HashPrevBlock = header.HashPrevBlock;
                     block.Header.Nonce = header.Nonce;
@@ -278,7 +277,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public Block CreateBlock()
         {
-            Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+            Block block = this.Network.CreateBlock();
             block.GetSerializedSize();
             return block;
         }

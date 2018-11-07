@@ -55,7 +55,8 @@ namespace Stratis.SmartContracts.Tools.Sct
 
             Assembly smartContract = Assembly.Load(compilation);
 
-            var serializer = new MethodParameterStringSerializer();
+            // Network does not matter here as we are only checking the deserialized Types of the params.
+            var serializer = new MethodParameterStringSerializer(new SmartContractsRegTest());
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {

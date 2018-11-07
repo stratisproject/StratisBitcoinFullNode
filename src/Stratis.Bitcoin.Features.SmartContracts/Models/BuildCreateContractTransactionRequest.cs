@@ -1,6 +1,7 @@
 ﻿using System.ComponentModel.DataAnnotations;
 using System.Text;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.Wallet.Validations;
 using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
@@ -10,8 +11,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public BuildCreateContractTransactionRequest()
         {
             this.AccountName = "account 0";
-            this.GasPrice = "1";
-            this.GasLimit = "10000";
         }
 
         [Required(ErrorMessage = "The name of the wallet is missing.")]
@@ -19,6 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
 
         public string AccountName { get; set; }
 
+        [Required(ErrorMessage = "An amount is required.")]
         public string Amount { get; set; }
 
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
@@ -31,12 +31,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string ContractCode { get; set; }
 
         [Range(SmartContractFormatRule.GasPriceMinimum, SmartContractFormatRule.GasPriceMaximum)]
-        public string GasPrice { get; set; }
+        public ulong GasPrice { get; set; }
 
-        [Range(SmartContractFormatRule.GasLimitMinimum, SmartContractFormatRule.GasLimitMaximum)]
-        public string GasLimit { get; set; }
+        [Range(SmartContractFormatRule.GasLimitCreateMinimum, SmartContractFormatRule.GasLimitMaximum)]
+        public ulong GasLimit { get; set; }
 
         [Required(ErrorMessage = "Sender is required.")]
+        [IsBitcoinAddress]
         public string Sender { get; set; }
 
         public string[] Parameters { get; set; }

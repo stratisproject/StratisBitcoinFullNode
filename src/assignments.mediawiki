@@ -34,4 +34,14 @@ State can be defined, active, failed. Dates are in UTC.
 | TBD
 | TBD
 | [[https://github.com/bitcoin/bips/edit/master/bip-0141.mediawiki|141]], [[https://github.com/bitcoin/bips/edit/master/bip-0143.mediawiki|143]], [[https://github.com/bitcoin/bips/edit/master/bip-0147.mediawiki|147]]
+|-
+| coldstaking
+| 2
+| 2018-12-01 00:00:00
+| 2019-12-01 00:00:00
+| TBD
+| 2018-11-01 00:00:00
+| 2019-02-01 00:00:00
+| TBD
+| [[https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/Documentation/coldstaking.md|ColdStaking]]
 |}

@@ -33,6 +33,8 @@ namespace Stratis.SmartContracts.Executor.Reflection.ResultProcessors
                 {
                     return CreateRefundTransaction(transactionContext);
                 }
+
+                return null;
             }
 
             // If contract received no funds and made no transfers, do nothing.
