@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 hotMiningFeature.StartStaking(WalletName, Password);
 
                 // Wait for new cold wallet transaction.
-                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(4)).Token;
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 }, cancellationToken: cancellationToken);
 
                 // Wait for money from staking.
-                cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
+                cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(4)).Token;
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
