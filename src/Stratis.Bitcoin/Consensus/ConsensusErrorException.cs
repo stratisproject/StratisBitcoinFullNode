@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns><c>true</c> if bother instances are the same.</returns>
         public static bool operator ==(ConsensusError a, ConsensusError b)
         {
-            if (Object.ReferenceEquals(a, b))
+            if (object.ReferenceEquals(a, b))
                 return true;
 
             if (((object)a == null) || ((object)b == null))
