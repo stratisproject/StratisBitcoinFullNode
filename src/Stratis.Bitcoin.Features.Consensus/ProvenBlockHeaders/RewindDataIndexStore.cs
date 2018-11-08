@@ -18,9 +18,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         /// <summary>
         /// Internal cache for rewind data index. Key is a TxId + N (N is an index of output in a transaction)
-        /// and value is a rewind data index
+        /// and value is a rewind data index.
         /// </summary>
         private readonly ConcurrentDictionary<string, int> items;
+
+        /// <summary>
+        /// Number of items to keep in cache after the flush.
+        /// </summary>
+        private const int NumberOfItemsToKeep = 500;
 
         /// <summary>
         /// Performance counter to measure performance of the save and get operations.
@@ -60,6 +65,15 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             IDictionary<string, int> itemsToSave = this.items.ToDictionary(i => i.Key, i => i.Value);
             await this.rewindDataIndexRepository.PutAsync(itemsToSave).ConfigureAwait(false);
+
+            if (this.items.Count <= NumberOfItemsToKeep) return;
+
+            // Order by rewind data index and remove older records.
+            List<KeyValuePair<string, int>> orderedItems = this.items.OrderByDescending(i => i.Value).Skip(NumberOfItemsToKeep).ToList();
+            foreach (KeyValuePair<string, int> item in orderedItems)
+            {
+                this.items.TryRemove(item.Key, out int unused);
+            }
 
             this.items.Clear();
         }

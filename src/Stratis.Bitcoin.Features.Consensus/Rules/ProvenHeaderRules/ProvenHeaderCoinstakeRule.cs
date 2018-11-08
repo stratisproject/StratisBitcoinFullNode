@@ -7,6 +7,7 @@ using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
@@ -277,7 +278,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// Checks if coinstake is spent on another chain.
         /// </summary>
         /// <param name="header">The proven block header.</param>
-        /// <exception cref="ApplicationException">TODO: throw specific exception to be caught later</exception>
+        /// <exception cref="UtxoNotFoundInRewindDataException">
+        /// Throws specific exception so that it can be handled later.
+        /// </exception>
         private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header)
         {
             Transaction coinstake = header.Coinstake;
@@ -292,7 +295,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == intput.PrevOut.Hash);
             if (matchingUnspentUtxo == null)
             {
-                throw new ApplicationException("TODO: throw specific exception to be caught later");
+                throw new UtxoNotFoundInRewindDataException("Could not find matching unspent utxo in rewind data.");
             }
 
             this.CheckHeaderSignatureWithCoinstakeKernel(header, matchingUnspentUtxo);

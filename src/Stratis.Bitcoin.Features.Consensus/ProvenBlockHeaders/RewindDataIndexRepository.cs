@@ -1,10 +1,10 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
@@ -32,17 +32,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Initializes a new instance of the object.
         /// </summary>
-        /// <param name="folder"><see cref="ProvenBlockHeaderRepository"/> folder path to the DBreeze database files.</param>
+        /// <param name="dBreezeCoinView"><see cref="DBreezeCoinView"/>.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        public RewindDataIndexRepository(string folder, ILoggerFactory loggerFactory)
+        public RewindDataIndexRepository(DBreezeCoinView dBreezeCoinView, ILoggerFactory loggerFactory)
         {
-            Guard.NotNull(folder, nameof(folder));
-
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            Directory.CreateDirectory(folder);
-
-            this.dbreeze = new DBreezeEngine(folder);
+            this.dbreeze = dBreezeCoinView.DBreeze;
         }
 
         /// <inheritdoc />
