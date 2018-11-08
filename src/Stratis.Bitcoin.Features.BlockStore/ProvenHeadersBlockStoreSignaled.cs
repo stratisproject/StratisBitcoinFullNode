@@ -40,13 +40,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <remarks>When a block is signaled, we check if its header is a Proven Header, if not, we need to generate and store it.</remarks>
         protected override void AddBlockToQueue(ChainedHeaderBlock blockPair)
         {
+            int blockHeight = blockPair.ChainedHeader.Height;
+
             if (blockPair.ChainedHeader.Header is ProvenBlockHeader phHeader)
             {
                 logger.LogTrace("Current header is already a Proven Header.");
+                // Add to the store, to be sure we actually store it anyway.
+                // It's ProvenBlockHeaderStore responsibility to prevent us to store it twice.
+                this.provenBlockHeaderStore.AddToPendingBatch(phHeader, new HashHeightPair(phHeader.GetHash(), blockHeight));
             }
             else
             {
-                int blockHeight = blockPair.ChainedHeader.Height;
                 // Ensure we doesn't have already the ProvenHeader in the store.
                 ProvenBlockHeader provenHeader = this.provenBlockHeaderStore.GetAsync(blockPair.ChainedHeader.Height).GetAwaiter().GetResult();
 
@@ -71,6 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         logger.LogTrace("Found a proven header with a different hash, recreating PH. Expected Hash: {0}, found Hash: {1}.", signaledHeaderHash, provenHeaderHash);
 
+                        // A reorg happened so we recreate a new Proven Header to replace the wrong one.
                         CreateAndStoreProvenHeader(blockHeight, blockPair);
                     }
                 }
@@ -96,8 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             logger.LogTrace("Created Proven Header at height {0} with hash {1} and adding to the pending batch to be stored.", blockHeight, provenHeaderHash);
 
-            // Using explicit interface to protect from misuse.
-            ((IHeaderSetter)chainedHeaderBlock).SetHeader(newProvenHeader);
+            chainedHeaderBlock.SetHeader(newProvenHeader);
         }
     }
 }
