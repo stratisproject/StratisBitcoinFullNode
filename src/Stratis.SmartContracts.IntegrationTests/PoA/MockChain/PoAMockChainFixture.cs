@@ -11,9 +11,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 
         public PoAMockChainFixture()
         {
-            this.Chain = new PoAMockChain(2);
+            this.Chain = new PoAMockChain(2).Build();
             var node1 = this.Chain.Nodes[0];
-            var node2 = this.Chain.Nodes[1]; 
+            var node2 = this.Chain.Nodes[1];
 
             // node1 gets premine
             TestHelper.WaitLoop(() => node1.CoreNode.GetTip().Height >= node1.CoreNode.FullNode.Network.Consensus.PremineHeight + node1.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity + 1);

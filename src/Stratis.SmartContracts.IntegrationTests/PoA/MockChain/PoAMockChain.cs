@@ -38,7 +38,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
                 {
                     MockChainNode otherNode = this.nodes[j];
                     TestHelper.Connect(node, otherNode.CoreNode);
-                    TestHelper.Connect(otherNode.CoreNode, node);
                 }
 
                 this.nodes[nodeIndex] = new MockChainNode(node, this);
