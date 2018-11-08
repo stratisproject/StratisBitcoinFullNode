@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Text;
+using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -15,6 +16,9 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -22,27 +26,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     public sealed class SmartContractWalletController : Controller
     {
         private readonly IBroadcasterManager broadcasterManager;
+        private readonly ICallDataSerializer callDataSerializer;
         private readonly CoinType coinType;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
         private readonly Network network;
+        private readonly IReceiptRepository receiptRepository;
         private readonly IWalletManager walletManager;
 
         public SmartContractWalletController(
             IBroadcasterManager broadcasterManager,
+            ICallDataSerializer callDataSerializer,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
             Network network,
+            IReceiptRepository receiptRepository,
             IWalletManager walletManager)
         {
             this.broadcasterManager = broadcasterManager;
+            this.callDataSerializer = callDataSerializer;
             this.connectionManager = connectionManager;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
+            this.receiptRepository = receiptRepository;
             this.walletManager = walletManager;
         }
-
         private HdAddress GetFirstAccountAddress(string walletName)
         {
             var accounts = this.walletManager.GetAccounts(walletName).ToList();
@@ -79,9 +88,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                     var nextAddress = this.walletManager.GetUnusedAddress(walletAccountReference);
 
-                    return this.Json(new [] { nextAddress.Address });
+                    return this.Json(new[] { nextAddress.Address });
                 }
-                
+
                 return this.Json(addresses);
             }
             catch (WalletException e)
@@ -111,7 +120,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             catch (WalletException e)
             {
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }           
+            }
         }
 
         [Route("account-balance")]
@@ -151,156 +160,104 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         [Route("history")]
         [HttpGet]
-        public IActionResult GetHistory([FromQuery] WalletHistoryRequest request)
+        public IActionResult GetHistory(string walletName, string address)
         {
-            Guard.NotNull(request, nameof(request));
+            if (string.IsNullOrWhiteSpace(walletName))
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
 
-            if (!this.ModelState.IsValid)
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            if (string.IsNullOrWhiteSpace(address))
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address provided");
 
             try
             {
-                var model = new WalletHistoryModel();
+                var transactionItems = new List<ContractTransactionItem>();
+
+                var account = this.walletManager.GetAccounts(walletName).First();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
-                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(request.WalletName, request.AccountName);
+                IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(walletName, account.Name);
 
-                foreach (AccountHistory accountHistory in accountsHistory)
+                // Wallet manager returns only 1 when an account name is specified.
+                AccountHistory accountHistory = accountsHistory.First();
+
+                List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Where(x=>x.Address.Address == address).ToList();
+
+                // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
+                // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
+                List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
+
+                foreach (FlatHistory item in history)
                 {
-                    var transactionItems = new List<TransactionItemModel>();
+                    TransactionData transaction = item.Transaction;
 
-                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Take(200).ToList();
-
-                    // Represents a sublist containing only the transactions that have already been spent.
-                    List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
-
-                    // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
-                    // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
-                    List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
-
-                    // Represents a sublist of 'change' transactions.
-                    List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
-
-                    foreach (FlatHistory item in history)
+                    // Record a receive transaction
+                    transactionItems.Add(new ContractTransactionItem
                     {
-                        TransactionData transaction = item.Transaction;
-                        HdAddress address = item.Address;
+                        Amount = transaction.Amount.ToUnit(MoneyUnit.BTC),
+                        BlockHeight = (uint) transaction.BlockHeight,
+                        Hash = transaction.Id,
+                        Type = ContractTransactionItemType.Received,
+                        To = address
+                    });
 
-                        // We don't show in history transactions that are outputs of staking transactions.
-                        if (transaction.IsCoinStake != null && transaction.IsCoinStake.Value && transaction.SpendingDetails == null)
-                        {
-                            continue;
-                        }
+                    // Add outgoing transaction details
+                    if (transaction.SpendingDetails != null)
+                    {
+                        // Get if it's an SC transaction
+                        PaymentDetails scPayment = transaction.SpendingDetails.Payments?.FirstOrDefault(x => x.DestinationScriptPubKey.IsSmartContractExec());
 
-                        // First we look for staking transaction as they require special attention.
-                        // A staking transaction spends one of our inputs into 2 outputs, paid to the same address.
-                        if (transaction.SpendingDetails?.IsCoinStake != null && transaction.SpendingDetails.IsCoinStake.Value)
+                        if (scPayment != null)
                         {
-                            // We look for the 2 outputs related to our spending input.
-                            List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
-                            if (relatedOutputs.Any())
+                            if (scPayment.DestinationScriptPubKey.IsSmartContractCreate())
                             {
-                                // Add staking transaction details.
-                                // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
-                                var stakingItem = new TransactionItemModel
+                                // Create a record for a Create transaction
+                                Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
+                                transactionItems.Add(new ContractTransactionItem
                                 {
-                                    Type = TransactionItemType.Staked,
-                                    ToAddress = address.Address,
-                                    Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
-                                    Id = transaction.SpendingDetails.TransactionId,
-                                    Timestamp = transaction.SpendingDetails.CreationTime,
-                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight
-                                };
-
-                                transactionItems.Add(stakingItem);
+                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.BTC),
+                                    BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
+                                    Type = ContractTransactionItemType.ContractCreate,
+                                    Hash = transaction.SpendingDetails.TransactionId,
+                                    To = receipt.NewContractAddress.ToBase58Address(this.network)
+                                });
                             }
-
-                            // No need for further processing if the transaction itself is the output of a staking transaction.
-                            if (transaction.IsCoinStake != null)
+                            else
                             {
-                                continue;
+                                // Create a record for a Call transaction
+                                Result<ContractTxData> txData = this.callDataSerializer.Deserialize(scPayment.DestinationScriptPubKey.ToBytes());
+
+                                transactionItems.Add(new ContractTransactionItem
+                                {
+                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.BTC),
+                                    BlockHeight = (uint)transaction.SpendingDetails.BlockHeight,
+                                    Type = ContractTransactionItemType.ContractCall,
+                                    Hash = transaction.SpendingDetails.TransactionId,
+                                    To = txData.Value.ContractAddress.ToBase58Address(this.network)
+                                });
                             }
                         }
-
-                        // Create a record for a 'receive' transaction.
-                        if (!address.IsChangeAddress())
+                        else
                         {
-                            // Add incoming fund transaction details.
-                            var receivedItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Received,
-                                ToAddress = address.Address,
-                                Amount = transaction.Amount,
-                                Id = transaction.Id,
-                                Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight
-                            };
-
-                            transactionItems.Add(receivedItem);
-                        }
-
-                        // If this is a normal transaction (not staking) that has been spent, add outgoing fund transaction details.
-                        if (transaction.SpendingDetails != null && transaction.SpendingDetails.IsCoinStake == null)
-                        {
-                            // Create a record for a 'send' transaction.
-                            uint256 spendingTransactionId = transaction.SpendingDetails.TransactionId;
-                            var sentItem = new TransactionItemModel
-                            {
-                                Type = TransactionItemType.Send,
-                                Id = spendingTransactionId,
-                                Timestamp = transaction.SpendingDetails.CreationTime,
-                                ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
-                                Amount = Money.Zero
-                            };
-
-                            // If this 'send' transaction has made some external payments, i.e the funds were not sent to another address in the wallet.
+                            // Create a record for every external payment sent
                             if (transaction.SpendingDetails.Payments != null)
                             {
-                                sentItem.Payments = new List<PaymentDetailModel>();
                                 foreach (PaymentDetails payment in transaction.SpendingDetails.Payments)
                                 {
-                                    sentItem.Payments.Add(new PaymentDetailModel
+                                    transactionItems.Add(new ContractTransactionItem
                                     {
-                                        DestinationAddress = payment.DestinationAddress,
-                                        Amount = payment.Amount
+                                        Amount = payment.Amount.ToUnit(MoneyUnit.BTC),
+                                        BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
+                                        Type = ContractTransactionItemType.Send,
+                                        Hash = transaction.SpendingDetails.TransactionId,
+                                        To = payment.DestinationAddress
                                     });
-
-                                    sentItem.Amount += payment.Amount;
                                 }
-                            }
-
-                            // Get the change address for this spending transaction.
-                            FlatHistory changeAddress = allchange.FirstOrDefault(a => a.Transaction.Id == spendingTransactionId);
-
-                            // Find all the spending details containing the spending transaction id and aggregate the sums.
-                            // This is our best shot at finding the total value of inputs for this transaction.
-                            var inputsAmount = new Money(spendingDetails.Where(t => t.Transaction.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Transaction.Amount));
-
-                            // The fee is calculated as follows: funds in utxo - amount spent - amount sent as change.
-                            sentItem.Fee = inputsAmount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transaction.Amount);
-
-                            // Mined/staked coins add more coins to the total out.
-                            // That makes the fee negative. If that's the case ignore the fee.
-                            if (sentItem.Fee < 0)
-                                sentItem.Fee = 0;
-
-                            if (!transactionItems.Contains(sentItem, new SentTransactionItemModelComparer()))
-                            {
-                                transactionItems.Add(sentItem);
                             }
                         }
                     }
-
-                    model.AccountsHistoryModel.Add(new AccountHistoryModel
-                    {
-                        TransactionsHistory = transactionItems.OrderByDescending(t => t.Timestamp).ToList(),
-                        Name = accountHistory.Account.Name,
-                        CoinType = this.coinType,
-                        HdPath = accountHistory.Account.HdPath
-                    });
                 }
 
-                return this.Json(model);
+                return this.Json(transactionItems.OrderByDescending(x=>x.BlockHeight));
             }
             catch (Exception e)
             {

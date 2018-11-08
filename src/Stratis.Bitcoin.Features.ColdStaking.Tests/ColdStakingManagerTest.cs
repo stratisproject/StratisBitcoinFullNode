@@ -189,24 +189,24 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             var walletSettings = new WalletSettings(new NodeSettings(network: this.Network));
 
-            var walletManager1 = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var coldWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
-            walletManager1.Wallets.Add(wallet);
-            walletManager1.Wallets.Add(coldWallet);
-            walletManager1.LoadKeysLookupLock();
+            coldWalletManager.Wallets.Add(wallet);
+            coldWalletManager.Wallets.Add(coldWallet);
+            coldWalletManager.LoadKeysLookupLock();
 
             // Create another instance for the hot wallet as it is not allowed to have both wallets on the same instance.
-            var walletManager2 = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var hotWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
-            walletManager2.Wallets.Add(hotWallet);
-            walletManager2.LoadKeysLookupLock();
+            hotWalletManager.Wallets.Add(hotWallet);
+            hotWalletManager.LoadKeysLookupLock();
 
             // Create a cold staking setup transaction.
             Transaction transaction = this.CreateColdStakingSetupTransaction(wallet, "password", spendingAddress, destinationColdKeys.PubKey, destinationHotKeys.PubKey,
                 changeAddress, new Money(7500), new Money(5000));
 
-            walletManager1.ProcessTransaction(transaction);
-            walletManager2.ProcessTransaction(transaction);
+            coldWalletManager.ProcessTransaction(transaction);
+            hotWalletManager.ProcessTransaction(transaction);
 
             HdAddress spentAddressResult = wallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0);
             Assert.Equal(1, spendingAddress.Transactions.Count);
@@ -268,16 +268,19 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
                 new Money(750), new Money(262));
 
             // Wallet manager for the wallet receiving the funds.
-            var walletManager3 = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
+            var receivingWalletManager = new ColdStakingManager(this.Network, chainInfo.chain, walletSettings, dataFolder, walletFeePolicy.Object,
                 new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), new ScriptAddressReader(), this.LoggerFactory.Object, DateTimeProvider.Default, new Mock<IBroadcasterManager>().Object);
-            walletManager3.Wallets.Add(withdrawalWallet);
-            walletManager3.LoadKeysLookupLock();
+            receivingWalletManager.Wallets.Add(withdrawalWallet);
+            receivingWalletManager.LoadKeysLookupLock();
 
             // Process the transaction in the cold wallet manager.
-            walletManager1.ProcessTransaction(withdrawalTransaction);
+            coldWalletManager.ProcessTransaction(withdrawalTransaction);
+
+            // Process the transaction in the hot wallet manager.
+            hotWalletManager.ProcessTransaction(withdrawalTransaction);
 
             // Process the transaction in the receiving wallet manager.
-            walletManager3.ProcessTransaction(withdrawalTransaction);
+            receivingWalletManager.ProcessTransaction(withdrawalTransaction);
 
             // Verify that the transaction has been recorded in the withdrawal wallet.
             Assert.Equal(1, withdrawalWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
@@ -292,6 +295,21 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
             Assert.Equal(withdrawalTransaction.GetHash(), coldAddressResult.Id);
             Assert.Equal(withdrawalTransaction.Outputs[0].Value, coldAddressResult.Amount);
             Assert.Equal(withdrawalTransaction.Outputs[0].ScriptPubKey, coldAddressResult.ScriptPubKey);
+
+            // Verify that the transaction has been recorded in the hot wallet.
+            Assert.Equal(2, hotWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.Count);
+            TransactionData hotAddressResult = hotWallet.AccountsRoot.ElementAt(0).Accounts.ElementAt(0).ExternalAddresses.ElementAt(0).Transactions.ElementAt(1);
+            Assert.Equal(withdrawalTransaction.GetHash(), hotAddressResult.Id);
+            Assert.Equal(withdrawalTransaction.Outputs[0].Value, hotAddressResult.Amount);
+            Assert.Equal(withdrawalTransaction.Outputs[0].ScriptPubKey, hotAddressResult.ScriptPubKey);
+
+            // Verify the hot amount returned by GetBalances.
+            AccountBalance hotBalance = hotWalletManager.GetBalances("myHotWallet", ColdStakingManager.HotWalletAccountName).FirstOrDefault();
+            Assert.Equal(hotBalance.AmountUnconfirmed, hotAddressResult.Amount);
+
+            // Verify the cold amount returned by GetBalances.
+            AccountBalance coldBalance = coldWalletManager.GetBalances("myColdWallet", ColdStakingManager.ColdWalletAccountName).FirstOrDefault();
+            Assert.Equal(coldBalance.AmountUnconfirmed, coldAddressResult.Amount);
         }
     }
 }
