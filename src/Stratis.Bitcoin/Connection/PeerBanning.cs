@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Connection
         public bool IsBanned(IPEndPoint endpoint)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
-            
+
             PeerAddress peerAddress = this.peerAddressManager.FindPeer(endpoint);
 
             if (peerAddress == null)

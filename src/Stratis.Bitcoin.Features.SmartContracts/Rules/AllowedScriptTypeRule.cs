@@ -62,6 +62,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 return;
 
+            // For cross-chain transfers
+            if (PayToMultiSigTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                return;
+
             new ConsensusError("disallowed-output-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
         }
 
@@ -75,6 +79,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             // Currently necessary to spend premine. Could be stricter.
             if (PayToPubkeyTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
+                return;
+
+            // For cross-chain transfers
+            if (PayToMultiSigTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
                 return;
 
             new ConsensusError("disallowed-input-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
