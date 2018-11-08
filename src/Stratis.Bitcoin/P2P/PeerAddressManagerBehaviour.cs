@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -63,6 +64,7 @@ namespace Stratis.Bitcoin.P2P
             this.PeersToDiscover = 1000;
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
@@ -88,7 +90,7 @@ namespace Stratis.Bitcoin.P2P
                             this.logger.LogTrace("Outbound peer sent {0}. Not replying to avoid fingerprinting attack.", nameof(GetAddrPayload));
                             return;
                         }
-                    
+
                         if (this.sentAddress)
                         {
                             this.logger.LogTrace("Multiple GetAddr requests from peer. Not replying to avoid fingerprinting attack.");
@@ -133,12 +135,14 @@ namespace Stratis.Bitcoin.P2P
             return Task.CompletedTask;
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.loggerFactory)
