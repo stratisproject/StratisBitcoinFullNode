@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// Sets the last time the peer was seen.
         /// </summary>
-        void PeerSeen(IPEndPoint endpoint, DateTime peerSeenAt);
+        PeerAddress PeerSeen(IPEndPoint endpoint, DateTime peerSeenAt);
 
         /// <summary>Peer selector instance, used to select peers to connect to.</summary>
         IPeerSelector PeerSelector { get; }

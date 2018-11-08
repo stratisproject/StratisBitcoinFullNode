@@ -175,13 +175,15 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void PeerSeen(IPEndPoint endpoint, DateTime peerSeenAt)
+        public PeerAddress PeerSeen(IPEndPoint endpoint, DateTime peerSeenAt)
         {
             PeerAddress peer = this.FindPeer(endpoint);
             if (peer == null)
-                return;
+                return null;
 
             peer.SetLastSeen(peerSeenAt);
+
+            return peer;
         }
 
         /// <inheritdoc/>

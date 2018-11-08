@@ -108,8 +108,8 @@ namespace Stratis.Bitcoin.P2P
                     {
                         if (peer.State == NetworkPeerState.HandShaked)
                         {
-                            this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
-                            this.logger.LogInformation("set last seen for peer {0}.", peer.PeerEndPoint);
+                            var peera = this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
+                            this.logger.LogInformation("set last seen for peer {0} peer found {1}.", peer.PeerEndPoint, peera != null);
 
                         }
                     }
