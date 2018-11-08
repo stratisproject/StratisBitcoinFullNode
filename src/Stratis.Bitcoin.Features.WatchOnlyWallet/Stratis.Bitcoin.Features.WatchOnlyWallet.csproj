@@ -26,6 +26,7 @@
     <PackageReference Include="Microsoft.Extensions.Logging.Filter" Version="1.1.2" />
     <PackageReference Include="System.Xml.XmlSerializer" Version="4.3.0" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
+    <PackageReference Include="Tracer.Fody" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -12,6 +12,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 {
@@ -110,6 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new ProvenHeadersConsensusManagerBehavior(
