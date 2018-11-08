@@ -5,19 +5,26 @@ using Stratis.Bitcoin.Utilities.JsonConverters;
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
     /// <summary>
-    /// Represents a deposit made to a sidechain mutlisig, with the aim of triggering
-    /// a cross chain transfer
+    /// Represents a withdrawals made from a sidechain mutlisig, with the aim of realising
+    /// a cross chain transfer.
     /// </summary>
-    public interface IDeposit
+    public interface IWithdrawal
     {
         /// <summary>
         /// The Id (or hash) of the source transaction that originates the fund transfer.
         /// </summary>
         [JsonConverter(typeof(UInt256JsonConverter))]
+        uint256 DepositId { get; }
+
+        /// <summary>
+        /// The Id (or hash) of the source transaction that originated the fund
+        /// transfer causing this withdrawal.
+        /// </summary>
+        [JsonConverter(typeof(UInt256JsonConverter))]
         uint256 Id { get; }
 
         /// <summary>
-        /// The amount of the requested fund transfer.
+        /// The amount of fund transferred (in target currency).
         /// </summary>
         [JsonConverter(typeof(MoneyJsonConverter))]
         Money Amount { get; }
@@ -28,12 +35,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         string TargetAddress { get; }
 
         /// <summary>
-        /// The block number where the source deposit has been persisted.
+        /// The block number where the target deposit has been persisted.
         /// </summary>
         int BlockNumber { get; }
 
         /// <summary>
-        /// The hash of the block where the source deposit has been persisted.
+        /// The hash of the block where the target deposit has been persisted.
         /// </summary>
         [JsonConverter(typeof(UInt256JsonConverter))]
         uint256 BlockHash { get; }

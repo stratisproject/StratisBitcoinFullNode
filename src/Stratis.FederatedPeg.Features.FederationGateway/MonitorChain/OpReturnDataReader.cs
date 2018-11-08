@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
@@ -21,7 +22,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
 
         /// <inheritdoc />
-        public string GetStringFromOpReturn(Transaction transaction, out OpReturnDataType opReturnDataType)
+        public string GetString(Transaction transaction, out OpReturnDataType opReturnDataType)
         {
             if (!TryGetSingleOpReturnOutputContent(transaction, out var content))
             {
@@ -52,6 +53,43 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             opReturnDataType = OpReturnDataType.Unknown;
             return null;
+        }
+
+        ///<inheritdoc />
+        public string TryGetTargetAddress(Transaction transaction)
+        {
+            var opReturnAddresses = SelectBytesContentFromOpReturn(transaction)
+                .Select(this.TryConvertValidOpReturnDataToAddress)
+                .Where(s => s != null)
+                .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
+
+            this.logger.LogDebug("Address(es) found in OP_RETURN(s) of transaction {0}: [{1}]",
+                transaction.GetHash(), string.Join(",", opReturnAddresses));
+
+            return opReturnAddresses.Count != 1 ? null : opReturnAddresses[0];
+        }
+
+        /// <inheritdoc />
+        public string TryGetTransactionId(Transaction transaction)
+        {
+            var transactionId = SelectBytesContentFromOpReturn(transaction)
+                .Select(this.TryConvertValidOpReturnDataToHash)
+                .Where(s => s != null)
+                .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
+
+            this.logger.LogDebug("Transaction Id(s) found in OP_RETURN(s) of transaction {0}: [{1}]",
+                transaction.GetHash(), string.Join(",", transactionId));
+
+            return transactionId.Count != 1 ? null : transactionId[0];
+        }
+
+        private static IEnumerable<byte[]> SelectBytesContentFromOpReturn(Transaction transaction)
+        {
+            return transaction.Outputs
+                .Select(o => o.ScriptPubKey)
+                .Where(s => s.IsUnspendable)
+                .Select(s => s.ToBytes())
+                .Select(RemoveOpReturnOperator);
         }
 
         private bool TryGetSingleOpReturnOutputContent(Transaction transaction, out byte[] content)
@@ -123,24 +161,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private static byte[] RemoveOpReturnOperator(byte[] rawBytes)
         {
             return rawBytes.Skip(2).ToArray();
-        }
-
-        ///<inheritdoc />
-        public string TryGetTargetAddressFromOpReturn(Transaction transaction)
-        {
-            var opReturnAddresses = transaction.Outputs
-                .Select(o => o.ScriptPubKey)
-                .Where(s => s.IsUnspendable)
-                .Select(s => s.ToBytes())
-                .Select(RemoveOpReturnOperator)
-                .Select(this.TryConvertValidOpReturnDataToAddress)
-                .Where(s => s != null)
-                .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
-
-            this.logger.LogDebug("Address(es) found in OP_RETURN(s) of transaction {0}: [{1}]",
-                transaction.GetHash(), string.Join(",", opReturnAddresses));
-
-            return opReturnAddresses.Count != 1 ? null : opReturnAddresses[0];
         }
     }
 }

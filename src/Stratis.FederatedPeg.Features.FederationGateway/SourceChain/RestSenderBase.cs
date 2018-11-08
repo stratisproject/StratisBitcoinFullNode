@@ -9,12 +9,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 {
     public abstract class RestSenderBase
     {
+        private readonly IHttpClientFactory httpClientFactory;
+
         private readonly ILogger logger;
 
         private readonly int targetApiPort;
 
-        public RestSenderBase(ILoggerFactory loggerFactory, IFederationGatewaySettings settings)
+        protected RestSenderBase(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
         {
+            this.httpClientFactory = httpClientFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.targetApiPort = settings.CounterChainApiPort;
         }
@@ -24,7 +27,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
             var publicationUri = new Uri(
                 $"http://localhost:{this.targetApiPort}/api/FederationGateway/{route}");
 
-            using (var client = new HttpClient())
+            using (var client = this.httpClientFactory.CreateClient())
             {
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
@@ -34,8 +37,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
                 try
                 {
+                    this.logger.LogDebug("Sending content {0} to Uri {1}", request, publicationUri);
                     HttpResponseMessage httpResponseMessage = await client.PostAsync(publicationUri, request);
-                    this.logger.LogDebug("Response: {0}", await httpResponseMessage.Content.ReadAsStringAsync());
+                    this.logger.LogDebug("Response: {0}", httpResponseMessage);
                 }
                 catch (Exception ex)
                 {
