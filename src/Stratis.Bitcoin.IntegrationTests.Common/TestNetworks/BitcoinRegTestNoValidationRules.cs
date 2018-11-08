@@ -3,9 +3,9 @@ using Stratis.Bitcoin.Networks;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.TestNetworks
 {
-    public sealed class StratisRegTestNoValidationRules : StratisRegTest
+    public sealed class BitcoinRegTestNoValidationRules : BitcoinRegTest
     {
-        public StratisRegTestNoValidationRules()
+        public BitcoinRegTestNoValidationRules()
         {
             this.Name = Guid.NewGuid().ToString();
         }
