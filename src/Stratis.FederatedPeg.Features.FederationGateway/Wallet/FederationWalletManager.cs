@@ -342,7 +342,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     throw new WalletException("Reorg");
                 }
 
-                // The block coming in to the wallet should never be ahead of the wallet. 
+                // The block coming in to the wallet should never be ahead of the wallet.
                 // If the block is behind, let it pass.
                 if (chainedHeader.Height > current.Height)
                 {
@@ -429,7 +429,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                             return true;
 
                         // Include the keys that are in the wallet but that are for receiving
-                        // addresses (which would mean the user paid itself). 
+                        // addresses (which would mean the user paid itself).
                         // We also exclude the keys involved in a staking transaction.
                         //return !addr.IsChangeAddress() && !transaction.IsCoinStake;
                         return true;
@@ -443,7 +443,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // Figure out what to do when this transaction is found to affect the wallet.
             if (foundSendingTrx || foundReceivingTrx)
             {
-                // Save the wallet when the transaction was not included in a block. 
+                // Save the wallet when the transaction was not included in a block.
                 if (blockHeight == null)
                 {
                     this.SaveWallet();
@@ -718,7 +718,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// </summary>
         /// <returns>The wallet object that was saved into the file system.</returns>
         /// <exception cref="WalletException">Thrown if wallet cannot be created.</exception>
-        private FederationWallet GenerateWallet()
+        public FederationWallet GenerateWallet()
         {
             this.logger.LogTrace("Generating the federation wallet file.");
 

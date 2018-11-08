@@ -83,7 +83,7 @@ It may be that in order to use a multisig UTXO the algorithm will require it to 
 **The algorithm to select UTXOs for a transfer:**
 
 - The oldest UTXO (determined by block height) is selected first.
-- If a block has more than one UTXO, then they are selected in order of appearance in the block transaction list.
+- If a block has more than one UTXO, then they are selected in order of transaction id.
 - If multiple UTXOs appear within a transaction then they are selected in ascending index order.
 - Dusty UTXOs are ignored (below 100 Strats ?).
 - When change is non-null and below dust level (100 Strats ?), the next UTXOs needed to build up a change value above that level are also selected.
@@ -95,8 +95,8 @@ It may be that in order to use a multisig UTXO the algorithm will require it to 
 
 **The structure of the outputs of the transaction:**
 
-- The first output is the one corresponding to the actual transfer of coins. It transfers the amount found on chain A deposits (val<sub>1</sub> or val<sub>2</sub> on the diagrams) to the corresponding chain B address (i.e. the scriptPubKey) found in the OP_RETURN of the chain A deposits made to the multisig (add<sub>1</sub> or add<sub>2</sub> on the diagram) 
-- The second output returns change (if any) back to the multisig, and appears after the value transfer output.
+- The first output returns change (if any) back to the multisig.
+- The second output is the one corresponding to the actual transfer of coins. It transfers the amount found on chain A deposits (val<sub>1</sub> or val<sub>2</sub> on the diagrams) to the corresponding chain B address (i.e. the scriptPubKey) found in the OP_RETURN of the chain A deposits made to the multisig (add<sub>1</sub> or add<sub>2</sub> on the diagram) 
 - An OP_RETURN output containing the transaction id of the deposit to the federation's multisig on the originating chain (id<sub>1</sub> or id<sub>2</sub> on the diagram).
 
 A member that comes back online after a long period will need to sync both chains and also build the database of transfer transactions, they should be able to do this simply by looking at the chains themselves.  
