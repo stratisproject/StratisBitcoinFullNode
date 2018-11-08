@@ -122,7 +122,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 foreach (var txOut in transaction.Outputs)
                 {
                     if (txOut.ScriptPubKey != this.monitoredMultisigScript) continue;
-                    var stringResult = this.opReturnDataReader.GetStringFromOpReturn(transaction, out var opReturnDataType);
+                    var stringResult = this.opReturnDataReader.GetString(transaction, out var opReturnDataType);
 
                     switch (opReturnDataType)
                     {

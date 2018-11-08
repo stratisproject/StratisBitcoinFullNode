@@ -40,7 +40,7 @@ namespace Stratis.FederatedPeg.Tests
             this.addressHelper = new AddressHelper(this.network);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.SourceChainAddress.ScriptPubKey);
-            this.opReturnDataReader.TryGetTargetAddressFromOpReturn(null).ReturnsForAnyArgs((string)null);
+            this.opReturnDataReader.TryGetTargetAddress(null).ReturnsForAnyArgs((string)null);
 
             this.transactionBuilder = new TestTransactionBuilder();
 
@@ -59,7 +59,7 @@ namespace Stratis.FederatedPeg.Tests
                 this.addressHelper.SourceChainAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
 
-            this.opReturnDataReader.TryGetTargetAddressFromOpReturn(depositTransaction)
+            this.opReturnDataReader.TryGetTargetAddress(depositTransaction)
                 .Returns(this.addressHelper.TargetChainSecret.GetAddress().ToString());
 
             var nonDepositTransactionToMultisig = this.transactionBuilder.BuildTransaction(
@@ -101,7 +101,7 @@ namespace Stratis.FederatedPeg.Tests
                 this.addressHelper.SourceChainAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
 
-            this.opReturnDataReader.TryGetTargetAddressFromOpReturn(depositTransaction)
+            this.opReturnDataReader.TryGetTargetAddress(depositTransaction)
                 .Returns(this.addressHelper.TargetChainSecret.GetAddress().ToString());
 
             //add another deposit to the same address
@@ -109,7 +109,7 @@ namespace Stratis.FederatedPeg.Tests
             var secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainAddress, opReturnBytes, secondDepositAmount);
             block.AddTransaction(secondDepositTransaction);
-            this.opReturnDataReader.TryGetTargetAddressFromOpReturn(secondDepositTransaction)
+            this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction)
                 .Returns(this.addressHelper.TargetChainSecret.GetAddress().ToString());
 
             //add another deposit to a different address
@@ -120,7 +120,7 @@ namespace Stratis.FederatedPeg.Tests
                 this.addressHelper.SourceChainAddress, newOpReturnBytes, thirdDepositAmount);
             block.AddTransaction(thirdDepositTransaction);
 
-            this.opReturnDataReader.TryGetTargetAddressFromOpReturn(thirdDepositTransaction)
+            this.opReturnDataReader.TryGetTargetAddress(thirdDepositTransaction)
                 .Returns(newTargetAddress);
 
             int blockHeight = 12345;

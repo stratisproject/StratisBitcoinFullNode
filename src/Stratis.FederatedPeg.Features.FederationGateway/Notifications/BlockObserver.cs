@@ -38,7 +38,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
         /// <param name="walletSyncManager">The wallet sync manager to pass new incoming blocks to.</param>
-        /// <param name="crossChainTransactionMonitor">The crosschain transaction monitor to pass new incoming blocks to.</param>
+        /// <param name="crossChainTransactionMonitor">The cross-chain transaction monitor to pass new incoming blocks to.</param>
         /// <param name="depositExtractor">The component used to extract the deposits from the blocks appearing on chain.</param>
         /// <param name="federationGatewaySettings">The settings used to run this federation node.</param>
         /// <param name="fullNode">Full node used to get rewind the chain.</param>

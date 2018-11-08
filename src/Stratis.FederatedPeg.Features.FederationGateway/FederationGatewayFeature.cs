@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
@@ -20,6 +21,7 @@ using Stratis.FederatedPeg.Features.FederationGateway.Controllers;
 using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
+using Stratis.FederatedPeg.Features.FederationGateway.Notifications;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
@@ -35,6 +37,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 {
     internal class FederationGatewayFeature : FullNodeFeature
     {
+        internal const string JsonHttpClientName = "jsonClient";
+
+        public const string FederationGatewayFeatureNamespace = "federationgateway";
+
         private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
 
         private readonly IMaturedBlockReceiver maturedBlockReceiver;
@@ -132,16 +138,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     this.maturedBlockSender,
                     this.blockTipSender));
 
-            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new Notifications.TransactionObserver(this.walletSyncManager));
+            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
-            this.crossChainTransactionMonitor.Initialize(federationGatewaySettings);
+            this.crossChainTransactionMonitor.Initialize(this.federationGatewaySettings);
             this.monitorChainSessionManager.Initialize();
 
             this.federationWalletManager.Start();
             this.walletSyncManager.Start();
 
             // Connect the node to the other federation members.
-            foreach (var federationMemberIp in federationGatewaySettings.FederationNodeIpEndPoints)
+            foreach (var federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
             {
                 this.connectionManager.AddNodeAddress(federationMemberIp);
             }
@@ -158,10 +164,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.monitorChainSessionManager.Dispose();
         }
 
-        /// <inheritdoc />
         public void AddInlineStats(StringBuilder benchLogs)
         {
-            if (federationWalletManager == null) return;
+            if (this.federationWalletManager == null) return;
             int height = this.federationWalletManager.LastBlockHeight();
             ChainedHeader block = this.chain.GetBlock(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
@@ -169,7 +174,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             var federationWallet = this.federationWalletManager.GetWallet();
             benchLogs.AppendLine("Federation Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                  (federationWallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                 (federationWallet != null ? (" Federation Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
+                                 (federationWallet != null ? (" Federation Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : String.Empty));
         }
 
         public void AddComponentStats(StringBuilder benchLog)
@@ -190,8 +195,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     {
         public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder)
         {
-            LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>("federationgateway");
-
+            LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(FederationGatewayFeature.FederationGatewayFeatureNamespace);
+            
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -199,6 +204,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     .DependOn<BlockNotificationFeature>()
                     .FeatureServices(services =>
                     {
+                        services.AddHttpClient(
+                            FederationGatewayFeature.JsonHttpClientName,
+                            client => {
+                                    client.DefaultRequestHeaders.Accept.Clear();
+                                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+                            });
                         services.AddSingleton<IMaturedBlockReceiver, MaturedBlockReceiver>();
                         services.AddSingleton<IMaturedBlockSender, RestMaturedBlockSender>();
                         services.AddSingleton<IBlockTipSender, RestBlockTipSender>();

@@ -163,7 +163,7 @@ namespace Stratis.FederatedPeg.Tests
 
             // Transaction output value - op_return.
             Assert.Equal(new Money(0m, MoneyUnit.BTC), transaction.Outputs[2].Value);
-            Assert.Equal(opReturnData, new OpReturnDataReader(this.loggerFactory, this.network).GetStringFromOpReturn(transaction, out OpReturnDataType dummy));
+            Assert.Equal(opReturnData, new OpReturnDataReader(this.loggerFactory, this.network).GetString(transaction, out OpReturnDataType dummy));
         }
     }
 }
