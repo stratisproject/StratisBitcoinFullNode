@@ -71,6 +71,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <exception cref="ConsensusException">Thrown if partial or full validation failed or if full validation wasn't required.</exception>
         /// <returns><see cref="ChainedHeader"/> of a block that was mined.</returns>
         Task<ChainedHeader> BlockMinedAsync(Block block);
+
+        ConsensusManagerState State();
     }
 
     /// <summary>

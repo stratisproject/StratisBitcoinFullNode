@@ -150,6 +150,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Gets tip of the best peer.</summary>
         /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
         ChainedHeader GetBestPeerTip();
+
+        ChainedHeaderTreeState State();
     }
 
     /// <inheritdoc />
@@ -225,6 +227,19 @@ namespace Stratis.Bitcoin.Consensus
             this.chainedHeadersByHash = new Dictionary<uint256, ChainedHeader>();
             this.UnconsumedBlocksDataBytes = 0;
             this.UnconsumedBlocksCount = 0;
+        }
+
+        /// <inheritdoc />
+        public ChainedHeaderTreeState State()
+        {
+            var state = new ChainedHeaderTreeState
+            {
+                ChainedHeadersByHash = this.chainedHeadersByHash,
+                PeerIdsByTipHash = this.peerIdsByTipHash,
+                PeerTipsByPeerId = this.peerTipsByPeerId
+            };
+
+            return state;
         }
 
         /// <inheritdoc />

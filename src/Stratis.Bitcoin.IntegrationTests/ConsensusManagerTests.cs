@@ -506,7 +506,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Miner A mines an additional 10 blocks to height 125 that will create the longest chain. 
                 TestHelper.MineBlocks(minerA, 10);
                 TestHelper.WaitForNodeToSync(syncer, minerA);
-                
+
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 120);

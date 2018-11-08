@@ -147,6 +147,22 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        public ConsensusManagerState State()
+        {
+            var state = new ConsensusManagerState
+            {
+                CallbacksByBlocksRequestedHash = this.callbacksByBlocksRequestedHash,
+                ExpectedBlockDataBytes = this.expectedBlockDataBytes,
+                ExpectedBlockSizes = this.expectedBlockSizes,
+                PeersByPeerId = this.peersByPeerId,
+
+                ChainedHeaderTreeState = this.chainedHeaderTree.State()
+            };
+
+            return state;
+        }
+
+        /// <inheritdoc />
         /// <remarks>
         /// If <see cref="blockStore"/> is not <c>null</c> (block store is available) then all block headers in
         /// <see cref="chainedHeaderTree"/> will be marked as their block data is available.
