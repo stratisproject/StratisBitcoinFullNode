@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using NBitcoin;
-using Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
@@ -27,29 +25,24 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
             get { return this.nodes; }
         }
 
-        /// <summary>
-        /// Network the nodes are running on.
-        /// </summary>
-        public Network Network { get; }
-
         public PoAMockChain(int numNodes)
         {
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
             var network = new SmartContractsPoARegTest();
-            this.Network = network;
-            for (int i = 0; i < numNodes; i++)
-            {
-                CoreNode node = this.builder.CreateSmartContractPoANode(network.FederationKeys[i]).Start();
 
-                for (int j = 0; j < i; j++)
+            for (int nodeIndex = 0; nodeIndex < numNodes; nodeIndex++)
+            {
+                CoreNode node = this.builder.CreateSmartContractPoANode(network, nodeIndex).Start();
+
+                for (int j = 0; j < nodeIndex; j++)
                 {
                     MockChainNode otherNode = this.nodes[j];
                     TestHelper.Connect(node, otherNode.CoreNode);
                     TestHelper.Connect(otherNode.CoreNode, node);
                 }
 
-                this.nodes[i] = new MockChainNode(node, this);
+                this.nodes[nodeIndex] = new MockChainNode(node, this);
             }
         }
 

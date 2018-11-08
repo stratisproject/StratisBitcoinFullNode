@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
@@ -26,14 +24,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
             get { return this.nodes; }
         }
 
-        /// <summary>
-        /// Network the nodes are running on.
-        /// </summary>
-        public Network Network { get; }
+        ///// <summary>
+        ///// Network the nodes are running on.
+        ///// </summary>
+        //public Network Network { get; }
 
         public PoWMockChain(int numNodes)
         {
-            this.Network = new SmartContractsRegTest(); // TODO: Make this configurable.
+            //this.Network = new SmartContractsRegTest(); // TODO: Make this configurable.
 
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
