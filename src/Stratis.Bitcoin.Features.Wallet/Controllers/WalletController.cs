@@ -755,6 +755,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Shuffle = request.ShuffleOutputs ?? true, // We shuffle transaction outputs by default as it's better for anonymity.
                     OpReturnData = request.OpReturnData,
                     WalletPassword = request.Password,
+                    SelectedInputs = request.Outpoints?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
+                    AllowOtherInputs = false,
                     Recipients = recipients
                 };
 

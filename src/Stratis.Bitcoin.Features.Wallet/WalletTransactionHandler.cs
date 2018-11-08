@@ -312,7 +312,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
-            if (context.SelectedInputs.Any())
+            if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the
                 // current transaction. At this point we check the given
@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 // If threshold is reached and the total value is above the target
                 // then its safe to stop adding UTXOs to the coin list.
-                // The primery goal is to reduce the time it takes to build a trx
+                // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
                 if (index > SendCountThresholdLimit && sum > totalToSend)
                     break;
