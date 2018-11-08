@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         public ValidationContext ValidateHeader(ChainedHeader chainedHeader)
         {
             ValidationContext result = this.consensusRules.HeaderValidation(chainedHeader);
-            
+
             return result;
         }
     }
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
         {
             ValidationContext result = await this.consensusRules.PartialValidationAsync(header, block).ConfigureAwait(false);
-            
+
             return result;
         }
 
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Consensus.Validators
         public async Task<ValidationContext> ValidateAsync(ChainedHeader header, Block block)
         {
             ValidationContext result = await this.consensusRules.FullValidationAsync(header, block).ConfigureAwait(false);
-            
+
             return result;
         }
     }

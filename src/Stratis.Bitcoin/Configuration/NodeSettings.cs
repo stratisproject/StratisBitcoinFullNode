@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Configuration
             // If the network is not known then derive it from the command line arguments.
             if (this.Network == null)
             {
-                if(networksSelector == null)
+                if (networksSelector == null)
                     throw new ConfigurationException("Network or NetworkSelector not provided.");
 
                 // Find out if we need to run on testnet or regtest from the config file.

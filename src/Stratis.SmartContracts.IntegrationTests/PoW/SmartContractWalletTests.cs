@@ -237,7 +237,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             }
         }
 
-        [Fact]
+        [Retry]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
