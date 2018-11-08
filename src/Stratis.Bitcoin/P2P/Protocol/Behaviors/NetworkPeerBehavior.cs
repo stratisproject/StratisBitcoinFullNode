@@ -48,6 +48,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             }
         }
 
+        [NoTrace]
         protected void AssertNotAttached()
         {
             if (this.AttachedPeer != null)
