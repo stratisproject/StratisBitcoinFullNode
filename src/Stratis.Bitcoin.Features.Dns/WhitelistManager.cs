@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Text;
 using DNS.Protocol;
 using DNS.Protocol.ResourceRecords;
 using Microsoft.Extensions.Logging;
@@ -105,11 +106,24 @@ namespace Stratis.Bitcoin.Features.Dns
 
             DateTimeOffset activePeerLimit = this.dateTimeProvider.GetTimeOffset().AddSeconds(-this.dnsPeerBlacklistThresholdInSeconds);
 
-            this.logger.LogInformation("Peer count before filter {0}.", this.peerAddressManager.Peers.Count);
 
-            IEnumerable<PeerAddress> whitelist = this.peerAddressManager.Peers.Where(p => p.LastSeen > activePeerLimit);
+            var peers = this.peerAddressManager.Peers;
+
+            this.logger.LogInformation("Peer count before filter {0}.", this.peerAddressManager.Peers.Count);
+            StringBuilder sb = new StringBuilder();
+            sb.AppendLine("before");
+            foreach (var peer in peers)
+                sb.AppendLine(peer.Endpoint.ToString() + " LastSeen=" + peer.LastSeen?.ToString());
+            this.logger.LogInformation("{0}", sb.ToString());
+
+            IEnumerable<PeerAddress> whitelist = peers.Where(p => p.LastSeen > activePeerLimit);
 
             this.logger.LogInformation("Peer count after filter {0}.", whitelist.Count());
+            sb = new StringBuilder();
+            sb.AppendLine("after");
+            foreach (var peer in whitelist)
+                sb.AppendLine(peer.Endpoint.ToString() + " LastSeen=" + peer.LastSeen?.ToString());
+            this.logger.LogInformation("{0}", sb.ToString());
 
             if (!this.fullNodeMode)
             {
