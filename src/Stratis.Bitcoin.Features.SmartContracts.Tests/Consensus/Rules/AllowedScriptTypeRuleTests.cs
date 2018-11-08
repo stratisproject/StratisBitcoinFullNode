@@ -117,6 +117,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             Assert.ThrowsAny<Exception>(() => rule.CheckTransaction(new MempoolValidationContext(transaction, null)));
         }
 
+        [Fact]
+        public void MultiSigInput_P2PKHOutput_Passes()
+        {
+            // This occurs when receiving funds federation on our sidechain
+
+            Transaction transaction = this.network.CreateTransaction();
+            Script scriptSig = PayToMultiSigTemplate.Instance.GenerateScriptSig(new TransactionSignature[] {new Key().Sign(new uint256(0), SigHash.All), new Key().Sign(new uint256(0), SigHash.All)});
+            transaction.Inputs.Add(new TxIn(scriptSig));
+            transaction.Outputs.Add(new TxOut(100, PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(new KeyId())));
+
+            // No exception when checking
+            rule.CheckTransaction(new MempoolValidationContext(transaction, null));
+        }
+
+        [Fact]
+        public void P2PKHInput_MultiSigOutput_Passes()
+        {
+            // This occurs when sending funds to the federation on our sidechain
+
+            Transaction transaction = this.network.CreateTransaction();
+            transaction.Inputs.Add(GetP2PKHInput());
+            Script script = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, new PubKey[] {new Key().PubKey, new Key().PubKey, new Key().PubKey});
+            transaction.Outputs.Add(new TxOut(100, script));
+
+            // No exception when checking
+            rule.CheckTransaction(new MempoolValidationContext(transaction, null));
+        }
+
         private static TxIn GetP2PKHInput()
         {
             // Taken from MinerTests
