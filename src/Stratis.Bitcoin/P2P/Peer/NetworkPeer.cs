@@ -12,6 +12,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -116,9 +117,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             /// </summary>
             public bool DisconnectCallbackRequested { get; set; }
         }
-
-        /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
 
         /// <summary>Tracker for endpoints known to be self. </summary>
         private readonly ISelfEndpointTracker selfEndpointTracker;
@@ -278,7 +276,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             Action<INetworkPeer> onDisconnected = null,
             Action<IPEndPoint, Payload> onSendingMessage = null)
         {
-            this.loggerFactory = loggerFactory;
             this.dateTimeProvider = dateTimeProvider;
 
             this.preferredTransactionOptions = parameters.PreferredTransactionOptions;
@@ -855,6 +852,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public T Behavior<T>() where T : INetworkPeerBehavior
         {
             return this.Behaviors.OfType<T>().FirstOrDefault();

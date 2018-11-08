@@ -35,6 +35,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseApi()
                             .MockIBD();
 
+            if (this.InterceptorDisconnect != null)
+                builder = builder.InterceptBlockDisconnected(this.InterceptorDisconnect);
+
             if (this.ServiceToOverride != null)
                 builder.OverrideService<BaseFeature>(this.ServiceToOverride);
 

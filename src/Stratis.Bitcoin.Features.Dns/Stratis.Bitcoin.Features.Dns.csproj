@@ -22,6 +22,7 @@
   <ItemGroup>
     <PackageReference Include="DNS" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Tracer.Fody" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

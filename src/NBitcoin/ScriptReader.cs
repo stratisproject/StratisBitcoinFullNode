@@ -236,6 +236,8 @@ namespace NBitcoin
                     return "OP_CLTV";
                 case OpcodeType.OP_CHECKSEQUENCEVERIFY:
                     return "OP_CSV";
+                case OpcodeType.OP_CHECKCOLDSTAKEVERIFY:
+                    return "OP_CHECKCOLDSTAKEVERIFY";
 
                 // expanson
                 case OpcodeType.OP_NOP1:
@@ -252,8 +254,6 @@ namespace NBitcoin
                     return "OP_NOP8";
                 case OpcodeType.OP_NOP9:
                     return "OP_NOP9";
-                case OpcodeType.OP_NOP10:
-                    return "OP_NOP10";
 
                 default:
                     return Enum.GetName(typeof(OpcodeType), opcode);
@@ -282,6 +282,8 @@ namespace NBitcoin
             _OpcodeByName.AddOrReplace("OP_NOP2", OpcodeType.OP_CHECKLOCKTIMEVERIFY);
             _OpcodeByName.AddOrReplace("OP_CHECKSEQUENCEVERIFY", OpcodeType.OP_CHECKSEQUENCEVERIFY);
             _OpcodeByName.AddOrReplace("OP_NOP3", OpcodeType.OP_CHECKSEQUENCEVERIFY);
+            _OpcodeByName.AddOrReplace("OP_CHECKCOLDSTAKEVERIFY", OpcodeType.OP_CHECKCOLDSTAKEVERIFY);
+            _OpcodeByName.AddOrReplace("OP_NOP10", OpcodeType.OP_CHECKCOLDSTAKEVERIFY);
 
             foreach(object[] op in new[]
             {

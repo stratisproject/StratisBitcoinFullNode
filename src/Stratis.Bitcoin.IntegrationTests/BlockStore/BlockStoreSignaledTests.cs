@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 foreach (IncomingMessage message in testBehavior.receivedMessageTracker["headers"])
                 {
                     if (message.Message.Payload is HeadersPayload)
-                        foreach (BlockHeader header in ((HeadersPayload) message.Message.Payload).Headers)
+                        foreach (BlockHeader header in ((HeadersPayload)message.Message.Payload).Headers)
                             advertised.Add(header.GetHash());
                 }
 
@@ -144,15 +144,15 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 IConnectionManager node2ConnectionManager = stratisNode2.FullNode.NodeService<IConnectionManager>();
                 node2ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 
-                // Make node3 unable to respond to anything, effectively disconnecting it.
-                IConnectionManager node3ConnectionManager = stratisNode3.FullNode.NodeService<IConnectionManager>();
-                node3ConnectionManager.Parameters.TemplateBehaviors.Clear();
-                node3ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
-
                 // Connect other nodes to initial node.
                 TestHelper.Connect(stratisNode1, stratisNodeSync);
                 TestHelper.Connect(stratisNode2, stratisNodeSync);
                 TestHelper.Connect(stratisNode3, stratisNodeSync);
+
+                // Make node3 unable to respond to anything, effectively disconnecting it.
+                IConnectionManager node3ConnectionManager = stratisNode3.FullNode.NodeService<IConnectionManager>();
+                node3ConnectionManager.Parameters.TemplateBehaviors.Clear();
+                node3ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 
                 INetworkPeer connectedPeer1 = node1ConnectionManager.ConnectedPeers.FindByEndpoint(stratisNodeSync.Endpoint);
                 TestBehavior testBehavior1 = connectedPeer1.Behavior<TestBehavior>();
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
                 // Mine longer chain1 using node1
                 TestHelper.MineBlocks(stratisNode1, 15);
-                
+
                 IConnectionManager node1ConnectionManager = stratisNode1.FullNode.NodeService<IConnectionManager>();
                 node1ConnectionManager.Parameters.TemplateBehaviors.Add(new TestBehavior());
 
@@ -293,7 +293,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 {
                     if (message.Message.Payload is HeadersPayload)
                     {
-                        foreach (BlockHeader header in ((HeadersPayload) message.Message.Payload).Headers)
+                        foreach (BlockHeader header in ((HeadersPayload)message.Message.Payload).Headers)
                         {
                             if (header.GetHash() == firstBlock.Header.GetHash())
                             {
