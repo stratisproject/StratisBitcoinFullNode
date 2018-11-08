@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
@@ -83,8 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 {
                     AccountName = this.proofOfStakeSteps.PremineWalletAccount,
                     AllowUnconfirmed = true,
-                    Amount = Money.Coins(OneMillion + 40).ToString(),
-                    DestinationAddress = this.GetReceiverUnusedAddressFromWallet(),
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = this.GetReceiverUnusedAddressFromWallet(), Amount = Money.Coins(OneMillion + 40).ToString() } },
                     FeeType = FeeType.Medium.ToString("D"),
                     Password = this.proofOfStakeSteps.PremineWalletPassword,
                     WalletName = this.proofOfStakeSteps.PremineWallet,

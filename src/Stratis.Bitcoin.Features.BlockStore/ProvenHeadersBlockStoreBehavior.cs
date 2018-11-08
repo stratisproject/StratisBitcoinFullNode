@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -81,6 +82,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
+        [NoTrace]
         public override object Clone()
         {
             var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints)

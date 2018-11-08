@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -38,6 +39,7 @@ namespace Stratis.Bitcoin.Connection
             await peer.SendMessageAsync(sendProvenHeadersPayload).ConfigureAwait(false);
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new ProvenHeadersConnectionManagerBehavior(this.connectionManager, this.loggerFactory, this.checkpoints, this.network)

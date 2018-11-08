@@ -11,10 +11,4 @@
 	<AssemblyVersion>0.5.0.0</AssemblyVersion>
   </PropertyGroup>
 
-  <ItemGroup>
-    <Reference Include="System.Runtime.CompilerServices.Unsafe">
-      <HintPath>..\..\..\..\..\..\.nuget\packages\system.runtime.compilerservices.unsafe\4.5.2\ref\netstandard2.0\System.Runtime.CompilerServices.Unsafe.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
 </Project>
