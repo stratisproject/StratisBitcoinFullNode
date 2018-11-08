@@ -284,15 +284,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header)
         {
             Transaction coinstake = header.Coinstake;
-            TxIn intput = coinstake.Inputs[0];
+            TxIn input = coinstake.Inputs[0];
 
-            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.GetAsync(intput.PrevOut.Hash, (int)intput.PrevOut.N).GetAwaiter().GetResult();
+            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.GetAsync(input.PrevOut.Hash, (int)input.PrevOut.N).GetAwaiter().GetResult();
             if (!rewindDataIndex.HasValue)
                 return;
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
             UnspentOutputs matchingUnspentUtxo = 
-                rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == intput.PrevOut.Hash);
+                rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == input.PrevOut.Hash);
             if (matchingUnspentUtxo == null)
             {
                 throw new UtxoNotFoundInRewindDataException("Could not find matching unspent utxo in rewind data.");
