@@ -9,17 +9,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
     /// <summary>
     /// Facade for NodeBuilder.
     /// </summary>
+    /// <remarks>TODO: This and PoWMockChain could share most logic</remarks>
     public class PoAMockChain : IMockChain
     {
-        // TODO: This and PoWMockChain could share most logic
-
         private readonly SmartContractNodeBuilder builder;
 
         protected readonly MockChainNode[] nodes;
-
-        /// <summary>
-        /// Nodes on this network.
-        /// </summary>
         public IReadOnlyList<MockChainNode> Nodes
         {
             get { return this.nodes; }
@@ -29,9 +24,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
         {
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
+        }
+
+        public PoAMockChain Build()
+        {
             var network = new SmartContractsPoARegTest();
 
-            for (int nodeIndex = 0; nodeIndex < numNodes; nodeIndex++)
+            for (int nodeIndex = 0; nodeIndex < this.nodes.Length; nodeIndex++)
             {
                 CoreNode node = this.builder.CreateSmartContractPoANode(network, nodeIndex).Start();
 
@@ -44,6 +43,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 
                 this.nodes[nodeIndex] = new MockChainNode(node, this);
             }
+
+            return this;
         }
 
         /// <summary>
