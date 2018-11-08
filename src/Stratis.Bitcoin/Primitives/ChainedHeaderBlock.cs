@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Primitives
         {
             Guard.NotNull(newHeader, nameof(newHeader));
 
-            this.ChainedHeader?.SetHeader(newHeader);
+            this.ChainedHeader.SetHeader(newHeader);
         }
     }
 }
