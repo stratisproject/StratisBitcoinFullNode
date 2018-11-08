@@ -158,9 +158,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 case SendHeadersPayload sendHeadersPayload:
                     this.PreferHeaders = true;
                     break;
-
-                    // TODO inherited PH block store behavior should handle SendProvenHeadersPayload and set bool PreferProvenHeaders to true
-                    // for more see https://github.com/stratisproject/StratisBitcoinFullNode/issues/2588
             }
         }
 
