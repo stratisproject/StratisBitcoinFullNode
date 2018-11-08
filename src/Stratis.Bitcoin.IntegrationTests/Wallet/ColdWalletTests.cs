@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
@@ -186,8 +187,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 var hotMiningFeature = stratisHotStake.FullNode.NodeFeature<MiningFeature>();
                 hotMiningFeature.StartStaking(WalletName, Password);
 
+                TestHelper.WaitLoop(() =>
+                {
+                    var stakingInfo = stratisHotStake.FullNode.NodeService<IPosMinting>().GetGetStakingInfoModel();
+                    return stakingInfo.Staking;
+                });
+
                 // Wait for new cold wallet transaction.
-                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(4)).Token;
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
@@ -196,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 }, cancellationToken: cancellationToken);
 
                 // Wait for money from staking.
-                cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(4)).Token;
+                cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
