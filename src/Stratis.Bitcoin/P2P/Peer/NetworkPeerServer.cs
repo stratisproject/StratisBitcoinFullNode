@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.logger.LogTrace("Node '{0}' is not white listed during initial block download.", clientRemoteEndPoint);
-            
+
             return false;
         }
     }
