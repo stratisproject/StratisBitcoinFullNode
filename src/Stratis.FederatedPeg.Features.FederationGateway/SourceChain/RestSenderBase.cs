@@ -13,18 +13,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
         private readonly int targetApiPort;
 
-        private readonly Uri publicationUri;
-
-        public RestSenderBase(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, string route)
+        public RestSenderBase(ILoggerFactory loggerFactory, IFederationGatewaySettings settings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.targetApiPort = settings.CounterChainApiPort;
-            this.publicationUri = new Uri(
-                $"http://localhost:{this.targetApiPort}/api/FederationGateway/{route}");
         }
 
-        protected async Task SendAsync<T>(T model)
+        protected async Task SendAsync<T>(T model, string route)
         {
+            var publicationUri = new Uri(
+                $"http://localhost:{this.targetApiPort}/api/FederationGateway/{route}");
+
             using (var client = new HttpClient())
             {
                 client.DefaultRequestHeaders.Accept.Clear();
@@ -35,7 +34,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
                 try
                 {
-                    HttpResponseMessage httpResponseMessage = await client.PostAsync(this.publicationUri, request);
+                    HttpResponseMessage httpResponseMessage = await client.PostAsync(publicationUri, request);
                     this.logger.LogDebug("Response: {0}", await httpResponseMessage.Content.ReadAsStringAsync());
                 }
                 catch (Exception ex)
