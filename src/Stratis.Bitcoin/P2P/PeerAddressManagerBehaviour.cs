@@ -107,7 +107,11 @@ namespace Stratis.Bitcoin.P2P
                     if (message.Message.Payload is PingPayload ping || message.Message.Payload is PongPayload pong)
                     {
                         if (peer.State == NetworkPeerState.HandShaked)
+                        {
                             this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
+                            this.logger.LogInformation("set last seen for peer {0}.", peer.PeerEndPoint);
+
+                        }
                     }
                 }
 
