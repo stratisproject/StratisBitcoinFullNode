@@ -101,7 +101,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
-         
+
             context.TransactionBuilder = new TransactionBuilder(this.network);
 
             this.AddRecipients(context);
@@ -142,6 +142,45 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             // Add the key used to sign the output.
             context.TransactionBuilder.AddKeys(new[] { privateKey.GetBitcoinSecret(this.network) });
+        }
+
+        /// <summary>
+        /// Compares two unspent outputs to determine the order of inclusion in the transaction.
+        /// </summary>
+        /// <param name="x">First unspent output.</param>
+        /// <param name="y">Second unspent output.</param>
+        /// <returns>Returns <c>0</c> if the outputs are the same and <c>-1<c> or <c>1</c> depending on whether the first or second output takes precedence.</returns>
+        private int CompareUnspentOutputReferences(UnspentOutputReference x, UnspentOutputReference y)
+        {
+            // The oldest UTXO (determined by block height) is selected first.
+            if (x.Transaction.BlockHeight != y.Transaction.BlockHeight)
+            {
+                return (x.Transaction.BlockHeight < y.Transaction.BlockHeight) ? -1 : 1;
+            }
+
+            // If a block has more than one UTXO, then they are selected in order of transaction id.
+            if (x.Transaction.Id != y.Transaction.Id)
+            {
+                return (x.Transaction.Id < y.Transaction.Id) ? -1 : 1;
+            }
+
+            // If multiple UTXOs appear within a transaction then they are selected in ascending index order.
+            if (x.Transaction.Index != y.Transaction.Index)
+            {
+                return (x.Transaction.Index < y.Transaction.Index) ? -1 : 1;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
+        /// Returns the unspent outputs in the preferred order of consumption.
+        /// </summary>
+        /// <param name="context">The context associated with the current transaction being built.</param>
+        /// <returns>The unspent outputs in the preferred order of consumption.</returns>
+        private IOrderedEnumerable<UnspentOutputReference> GetOrderedUnspentOutputs(TransactionBuildContext context)
+        {
+            return context.UnspentOutputs.OrderBy(a => a, Comparer<UnspentOutputReference>.Create((x, y) => this.CompareUnspentOutputReferences(x, y)));
         }
 
         /// <summary>
@@ -195,28 +234,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 }
             }
 
-            Money sum = 0;
+            long sum = 0;
             int index = 0;
             var coins = new List<Coin>();
-            foreach (var item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
+            foreach (UnspentOutputReference item in this.GetOrderedUnspentOutputs(context))
             {
                 coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
                 index++;
 
-                // If threshold is reached and the total value is above the target
-                // then its safe to stop adding UTXOs to the coin list.
-                // The primary goal is to reduce the time it takes to build a trx
-                // when the wallet is bloated with UTXOs.
-                if (index > SendCountThresholdLimit && sum > totalToSend)
+                // Sufficient UTXOs are selected to cover the value of the outputs + fee.
+                if (sum >= (totalToSend + context.TransactionFee))
                     break;
-            }
 
-            // All the UTXOs are added to the builder without filtering.
-            // The builder then has its own coin selection mechanism
-            // to select the best UTXO set for the corresponding amount.
-            // To add a custom implementation of a coin selection override
-            // the builder using builder.SetCoinSelection().
+            }
 
             context.TransactionBuilder.AddCoins(coins);
         }
@@ -294,7 +325,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         public TransactionBuildContext(List<Recipient> recipients, string walletPassword = "", byte[] opReturnData = null)
         {
             Guard.NotNull(recipients, nameof(recipients));
-         
+
             this.Recipients = recipients;
             this.WalletPassword = walletPassword;
             this.FeeType = FeeType.Medium;
@@ -306,7 +337,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.MultiSig = null;
             this.IgnoreVerify = false;
         }
-        
+
         /// <summary>
         /// The recipients to send Bitcoin to.
         /// </summary>

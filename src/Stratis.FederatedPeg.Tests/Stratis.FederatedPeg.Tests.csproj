@@ -19,6 +19,7 @@
   <ItemGroup>
     <PackageReference Include="FluentAssertions" Version="5.4.2" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
+    <PackageReference Include="Moq" Version="4.10.0" />
     <PackageReference Include="NStratis" Version="4.0.0.67" />
     <PackageReference Include="NSubstitute" Version="3.1.0" />
     <PackageReference Include="Stratis.Bitcoin" Version="1.2.3-beta" />
