@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.Utilities;
@@ -9,16 +8,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// <summary>
     /// Interface to insert and retrieve <see cref="RewindData"/> index items from the database repository.
     /// </summary>
-    public interface IRewindDataIndexRepository : IDisposable
+    public interface IRewindDataIndexRepository
     {
-        /// <summary>
-        /// Persists key value pair for the rewind data index item.
-        /// </summary>
-        /// <param name="key">Transaction id + N (N is an index of output in a transaction).</param>
-        /// <param name="rewindDataIndex">Index of the rewind data index.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        Task PutAsync(string key, int rewindDataIndex, CancellationToken cancellationToken = default(CancellationToken));
-
         /// <summary>
         /// Persists key value pair for the rewind data index item.
         /// </summary>

@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
-using DBreeze;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -15,14 +15,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public class RewindDataIndexRepository : IRewindDataIndexRepository
     {
         /// <summary>
+        /// The DBreeze coin view instance for accessing DBreeze transaction factory.
+        /// </summary>
+        private readonly DBreezeCoinView dBreezeCoinView;
+
+        /// <summary>
         /// Instance logger.
         /// </summary>
         private readonly ILogger logger;
-
-        /// <summary>
-        /// Access to DBreeze database.
-        /// </summary>
-        private readonly DBreezeEngine dbreeze;
 
         /// <summary>
         /// DBreeze table names.
@@ -36,9 +36,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
         public RewindDataIndexRepository(DBreezeCoinView dBreezeCoinView, ILoggerFactory loggerFactory)
         {
+            this.dBreezeCoinView = dBreezeCoinView;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
-            this.dbreeze = dBreezeCoinView.DBreeze;
         }
 
         /// <inheritdoc />
@@ -46,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Task<int?> task = Task.Run(() =>
             {
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction transaction = this.dBreezeCoinView.CreateTransaction())
                 {
                     transaction.SynchronizeTables(RewindDataIndexTable);
 
@@ -68,28 +67,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task PutAsync(string key, int rewindDataIndex, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            Guard.NotNull(key, nameof(key));
-
-            Task task = Task.Run(() =>
-            {
-                this.logger.LogTrace("Store item ({key}:{value})", key, rewindDataIndex);
-
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    transaction.SynchronizeTables(RewindDataIndexTable);
-
-                    transaction.Insert<string, int>(RewindDataIndexTable, key, rewindDataIndex);
-
-                    transaction.Commit();
-                }
-            }, cancellationToken);
-
-            return task;
-        }
-
-        /// <inheritdoc />
         public Task PutAsync(IDictionary<string, int> items, CancellationToken cancellationToken = default(CancellationToken))
         {
             Guard.NotNull(items, nameof(items));
@@ -98,11 +75,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("Storing rewind data index ({items}.Count():{count})", nameof(items), items.Count);
 
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                using (DBreeze.Transactions.Transaction transaction = this.dBreezeCoinView.CreateTransaction())
                 {
                     transaction.SynchronizeTables(RewindDataIndexTable);
 
-                    foreach (KeyValuePair<string, int> item in items)
+                    foreach (KeyValuePair<string, int> item in items.OrderBy(i => i.Key))
                     {
                         this.logger.LogTrace("Store item ({key}:{value})", item.Key, item.Value);
 
@@ -114,12 +91,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }, cancellationToken);
 
             return task;
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.dbreeze?.Dispose();
         }
     }
 }
