@@ -284,11 +284,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             TxIn input = coinstake.Inputs[0];
 
             int? rewindDataIndex = this.PosParent.RewindDataIndexStore.GetAsync(input.PrevOut.Hash, (int)input.PrevOut.N).GetAwaiter().GetResult();
-            if (!rewindDataIndex.HasValue)
-                return;
+            if (!rewindDataIndex.HasValue) {
+                // Not sure if we should throw this exception or another.
+                ConsensusErrors.ReadTxPrevFailed.Throw();
+            }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
-            UnspentOutputs matchingUnspentUtxo = 
+            UnspentOutputs matchingUnspentUtxo =
                 rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == input.PrevOut.Hash);
             if (matchingUnspentUtxo == null)
             {
