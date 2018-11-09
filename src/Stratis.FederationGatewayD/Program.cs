@@ -38,8 +38,10 @@ namespace Stratis.FederationGatewayD
                 var isMainchainNode = args.FirstOrDefault(a => a.ToLower() == MainchainArgument) != null;
                 var isSidechainNode = args.FirstOrDefault(a => a.ToLower() == SidechainArgument) != null;
 
-                if (isSidechainNode == isMainchainNode) throw new ArgumentException(
-                    $"Gateway node needs to be started specifiying either a {SidechainArgument} or a {MainchainArgument} argument");
+                if (isSidechainNode == isMainchainNode)
+                {
+                    throw new ArgumentException($"Gateway node needs to be started specifiying either a {SidechainArgument} or a {MainchainArgument} argument");
+                }
 
                 var nodeSettings = new NodeSettings(networksSelector: isMainchainNode ? Networks.Stratis : ApexNetworks.Apex, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
                 Network network = nodeSettings.Network;
