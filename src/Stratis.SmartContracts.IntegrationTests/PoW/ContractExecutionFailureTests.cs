@@ -652,5 +652,53 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.StartsWith("Stratis.SmartContracts.SmartContractAssertException", receipt.Error);
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
+
+        [Fact]
+        public void ContractTransaction_Call_Method_Consumes_All_Gas_Throws_OutOfGasException()
+        {
+            // Ensure fixture is funded.
+            this.node1.MineBlocks(1);
+
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 0;
+
+            ulong gasLimit = SmartContractFormatRule.GasLimitCallMinimum + 1;
+            Money senderBalanceBefore = this.node1.WalletSpendableBalance;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(InfiniteLoop.Loop), preResponse.NewContractAddress, amount, gasLimit: gasLimit, gasPrice: 200);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Block does not contains a refund transaction
+            Assert.Equal(2, lastBlock.Transactions.Count);
+            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
+
+            // Wallet balance less fee is correct
+            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee);
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs);
+            Assert.False(receipt.Success);
+            Assert.Equal(gasLimit, receipt.GasUsed); // All the gas should have been consumed
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.StartsWith("Execution ran out of gas.", receipt.Error);
+            Assert.Equal(preResponse.NewContractAddress, receipt.To);
+        }
     }
 }
