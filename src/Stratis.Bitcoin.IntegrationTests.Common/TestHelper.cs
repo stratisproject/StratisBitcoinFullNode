@@ -110,13 +110,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the node is synced at a given height.</returns>
         public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
         {
-            if (IsNodeSynced(node))
-            {
-                WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
-                return true;
-            }
-
-            return false;
+            WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
+            return true;
         }
 
         public static void TriggerSync(CoreNode node)

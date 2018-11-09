@@ -1462,12 +1462,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .Returns(sentTrx);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+
             IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel{ DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1496,8 +1496,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 FeeAmount = "0.1234",
                 Password = "test",
@@ -1526,9 +1525,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
-
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeAmount = "0.1234",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1556,8 +1553,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = false,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1607,8 +1603,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = false,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -2118,8 +2113,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.GetTransactionFeeEstimate(new TxFeeEstimateRequest
             {
                 AccountName = "Account 1",
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 WalletName = "myWallet"
             });

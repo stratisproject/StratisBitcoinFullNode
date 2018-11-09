@@ -172,6 +172,7 @@ namespace Stratis.Bitcoin
                 this.finalizedBlockInfosToSave.Enqueue(finalizedInfo);
                 this.queueUpdatedEvent.Set();
             }
+
             return true;
         }
 
