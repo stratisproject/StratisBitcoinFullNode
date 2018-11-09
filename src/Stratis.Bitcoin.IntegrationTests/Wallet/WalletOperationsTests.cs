@@ -1233,8 +1233,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = "TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", Amount = "1000" } },
                     Outpoints = new List<OutpointRequest>
                     {
-                      //  new OutpointRequest{ Index = 1, TransactionId = "4f1766c2dca4bb96bb7282b4eef113c0956f1ad50ba1a205bec50c7770cac2d5" }, //150000000000
-                       // new OutpointRequest{ Index = 1, TransactionId = "a40cf5f3c20cf265f5e1a360c7c984688b191993792e7a9cd6227c952b840710" }, //19000000000000
+                        new OutpointRequest{ Index = 1, TransactionId = "4f1766c2dca4bb96bb7282b4eef113c0956f1ad50ba1a205bec50c7770cac2d5" }, //150000000000
+                        new OutpointRequest{ Index = 1, TransactionId = "a40cf5f3c20cf265f5e1a360c7c984688b191993792e7a9cd6227c952b840710" }, //19000000000000
                         new OutpointRequest{ Index = 0, TransactionId = "8b2e57f8959272d357682ede444244d9831cb47e9c936ea9452657a5633a53b5" }, //39999997700
                         new OutpointRequest{ Index = 1, TransactionId = "385ed3fd641f2c33f7c03b9698e69ff03beea90f1e1e0a5943b1a0f4fd29ed97" }, //2500000000000
                     }
