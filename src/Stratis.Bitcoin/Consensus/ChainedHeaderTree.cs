@@ -972,6 +972,8 @@ namespace Stratis.Bitcoin.Consensus
             var newChainedHeaders = new List<ChainedHeader>();
 
             ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
+            if (newChainedHeader == null) return newChainedHeaders;
+
             newChainedHeaders.Add(newChainedHeader);
             newHeaderIndex++;
 
@@ -986,6 +988,8 @@ namespace Stratis.Bitcoin.Consensus
                 for (; newHeaderIndex < headers.Count; newHeaderIndex++)
                 {
                     newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
+                    if (newChainedHeader == null) return newChainedHeaders;
+
                     newChainedHeaders.Add(newChainedHeader);
                     this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
@@ -1023,6 +1027,11 @@ namespace Stratis.Bitcoin.Consensus
 
             if (result.Error != null)
             {
+                if (result.MissingUtxoInformation)
+                {
+                    return null;
+                }
+
                 this.logger.LogTrace("(-)[INVALID_HEADER]");
                 throw new ConsensusRuleException(result.Error);
             }

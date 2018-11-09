@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.CheckHeaderAndCoinstakeTimes(header);
 
-            FetchCoinsResponse coins = this.GetAndValidateCoins(header);
+            FetchCoinsResponse coins = this.GetAndValidateCoins(header, context);
             UnspentOutputs prevUtxo = this.GetAndValidatePreviousUtxo(coins);
 
             this.CheckCoinstakeAgeRequirement(chainedHeader, prevUtxo);
@@ -97,14 +97,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <exception cref="ConsensusException">
         /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails.
         /// </exception>
-        private FetchCoinsResponse GetAndValidateCoins(ProvenBlockHeader header)
+        private FetchCoinsResponse GetAndValidateCoins(ProvenBlockHeader header, PosRuleContext context)
         {
             // First try finding the previous transaction in database.
             TxIn txIn = header.Coinstake.Inputs[0];
             FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
             {
-                this.CheckIfCoinstakeIsSpentOnAnotherChain(header);
+                this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
             }
 
             return coins;
@@ -281,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <exception cref="UtxoNotFoundInRewindDataException">
         /// Throws specific exception so that it can be handled later.
         /// </exception>
-        private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header)
+        private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header, PosRuleContext context)
         {
             Transaction coinstake = header.Coinstake;
             TxIn input = coinstake.Inputs[0];
@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == input.PrevOut.Hash);
             if (matchingUnspentUtxo == null)
             {
-                ConsensusErrors.UtxoNotFoundInRewindData.Throw();
+                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.UtxoNotFoundInRewindData, ct => ct.MissingUtxoInformation = true);
             }
 
             this.CheckHeaderSignatureWithCoinstakeKernel(header, matchingUnspentUtxo);
