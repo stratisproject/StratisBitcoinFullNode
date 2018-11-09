@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>The maximum time in seconds in which peer should deliver an assigned block.</summary>
         /// <remarks>If peer fails to deliver in that time his assignments will be released and the peer penalized.</remarks>
-        private const int MaxSecondsToDeliverBlock = 30; //TODO change to target spacing / 3
+        private const int MaxSecondsToDeliverBlock = 30; // TODO change to target spacing / 3
 
         /// <summary>This affects quality score only. If the peer is too fast don't give him all the assignments in the world when not in IBD.</summary>
         private const int PeerSpeedLimitWhenNotInIbdBytesPerSec = 1024 * 1024;

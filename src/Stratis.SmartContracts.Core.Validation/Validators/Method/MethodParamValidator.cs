@@ -12,22 +12,19 @@ namespace Stratis.SmartContracts.Core.Validation
     /// </summary>
     public class MethodParamValidator : IMethodDefinitionValidator
     {
-        public static readonly string ErrorType = "Invalid Method Param";
-
-        // See SmartContractCarrierDataType
+        // See MethodParameterDataType
         public static readonly IEnumerable<string> AllowedTypes = new[]
         {
             typeof(bool).FullName,
             typeof(byte).FullName,
-            typeof(byte[]).FullName,
             typeof(char).FullName,
-            typeof(sbyte).FullName,
-            typeof(int).FullName,
             typeof(string).FullName,
             typeof(uint).FullName,
+            typeof(int).FullName,
             typeof(ulong).FullName,
             typeof(long).FullName,
-            typeof(Address).FullName
+            typeof(Address).FullName,
+            typeof(byte[]).FullName
         };
 
         public IEnumerable<ValidationResult> Validate(MethodDefinition methodDef)

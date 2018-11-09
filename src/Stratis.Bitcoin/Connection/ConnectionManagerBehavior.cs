@@ -5,6 +5,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -44,6 +45,7 @@ namespace Stratis.Bitcoin.Connection
             this.connectionManager = connectionManager;
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new ConnectionManagerBehavior(this.connectionManager, this.loggerFactory)
@@ -53,6 +55,7 @@ namespace Stratis.Bitcoin.Connection
             };
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
@@ -88,6 +91,7 @@ namespace Stratis.Bitcoin.Connection
             await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);

@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
@@ -340,6 +341,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
         }
 
+        [NoTrace]
         private void AddBenchStats(StringBuilder benchLog)
         {
             if (this.storeTip != null)
@@ -359,6 +361,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.PendingBatch.Sum(p => p.Value.HeaderSize);
         }
 
+        [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
             long totalBytes = this.PendingBatch.Sum(p => p.Value.HeaderSize);

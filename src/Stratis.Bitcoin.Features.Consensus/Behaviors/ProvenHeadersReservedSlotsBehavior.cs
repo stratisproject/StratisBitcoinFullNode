@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 {
@@ -96,17 +97,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                    select peer;
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new ProvenHeadersReservedSlotsBehavior(
