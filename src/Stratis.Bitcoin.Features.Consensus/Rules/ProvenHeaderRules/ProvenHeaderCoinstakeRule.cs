@@ -72,8 +72,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             this.CheckCoinstakeMerkleProof(header);
 
             this.CheckHeaderSignatureWithCoinstakeKernel(header, prevUtxo);
-
-            this.CheckIfCoinstakeIsSpentOnAnotherChain(header);
         }
 
         /// <summary>
@@ -105,7 +103,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             TxIn txIn = header.Coinstake.Inputs[0];
             FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
-                ConsensusErrors.ReadTxPrevFailed.Throw();
+            {
+                this.CheckIfCoinstakeIsSpentOnAnotherChain(header);
+            }
 
             return coins;
         }
@@ -295,7 +295,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == input.PrevOut.Hash);
             if (matchingUnspentUtxo == null)
             {
-                throw new UtxoNotFoundInRewindDataException("Could not find matching unspent utxo in rewind data.");
+                ConsensusErrors.UtxoNotFoundInRewindData.Throw();
             }
 
             this.CheckHeaderSignatureWithCoinstakeKernel(header, matchingUnspentUtxo);
