@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         uint256 HashStateRoot { get; set; }
 
         uint256 ReceiptRoot { get; set; }
-        
+
         Bloom LogsBloom { get; set; }
     }
 }
