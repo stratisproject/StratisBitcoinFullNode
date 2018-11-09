@@ -7,7 +7,7 @@ using Stratis.ModuleValidation.Net;
 namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
-    /// Validate that a <see cref="Mono.Cecil.MethodDefinition"/> only has parameters of types that are currently supported in the
+    /// Validate that a public <see cref="Mono.Cecil.MethodDefinition"/> only has parameters of types that are currently supported in the
     /// <see cref="MethodParameterSerializer"/>
     /// </summary>
     public class MethodParamValidator : IMethodDefinitionValidator
@@ -63,12 +63,24 @@ namespace Stratis.SmartContracts.Core.Validation
                 return (true, null);
             }
 
-            var allowedType = AllowedTypes.Contains(param.ParameterType.FullName);
+            bool allowedType = methodDefinition.IsPublic
+                ? ValidatePublicMethodParam(param)
+                : ValidatePrivateMethodParam(param);
 
             return allowedType
                 ? (true, null)
                 : (false,
                     $"{methodDefinition.FullName} is invalid [{param.Name} is disallowed parameter Type {param.ParameterType.FullName}]");
+        }
+
+        private static bool ValidatePrivateMethodParam(ParameterDefinition param) 
+        {
+            return param.ParameterType.IsValueType || param.ParameterType.IsArray || AllowedTypes.Contains(param.ParameterType.FullName);
+        }
+
+        private static bool ValidatePublicMethodParam(ParameterDefinition param)
+        {
+            return AllowedTypes.Contains(param.ParameterType.FullName);
         }
 
         private static bool ParameterIsSmartContractState(ParameterDefinition param)

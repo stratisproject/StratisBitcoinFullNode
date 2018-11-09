@@ -638,10 +638,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 {
                                                 }
 
-                                                public void SByte(sbyte param)
-                                                {
-                                                }
-
                                                 public void String(string param)
                                                 {
                                                 }                                           
@@ -707,6 +703,55 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(result.Errors.All(e => e is MethodParamValidator.MethodParamValidationResult));
             Assert.Contains(result.Errors, e => e.Message.Contains("System.DateTime"));
             Assert.Contains(result.Errors, e => e.Message.Contains("System.Single"));
+        }
+
+        [Fact]
+        public void Validate_Determinism_MethodParams_Private()
+        {
+            string adjustedSource = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {
+                                                public Test(ISmartContractState state)
+                                                    : base(state) {}         
+
+                                                private void PrivateStruct(TestStruct test)
+                                                {
+                                                }
+
+                                                private void PrivateIntArray(int[] test)
+                                                {
+                                                }
+                                                
+                                                public void PublicIntArray(int[] test)
+                                                {
+                                                }
+
+                                                public void PublicStruct(TestStruct test)
+                                                {
+                                                }
+
+                                                internal void InternalStruct(TestStruct test)
+                                                {
+                                                }
+
+                                                public struct TestStruct
+                                                {
+                                                    public int TestInt;
+                                                }
+                                            }";
+
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource, OptimizationLevel.Debug);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+            Assert.Equal(2, result.Errors.Count());
+            Assert.Contains("PublicIntArray", result.Errors.ElementAt(0).Message);
+            Assert.Contains("PublicStruct", result.Errors.ElementAt(1).Message);
         }
 
         #endregion
