@@ -151,6 +151,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
         ChainedHeader GetBestPeerTip();
 
+        /// <summary>
+        /// Allows readonly access to various private or internal <see cref="ChainedHeaderTree"/> fields.
+        /// </summary>
         ChainedHeaderTreeState State();
     }
 

@@ -72,6 +72,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns><see cref="ChainedHeader"/> of a block that was mined.</returns>
         Task<ChainedHeader> BlockMinedAsync(Block block);
 
+        /// <summary>
+        /// Allows readonly access to various private or internal <see cref="ConsensusManager"/> fields.
+        /// </summary>
         ConsensusManagerState State();
     }
 
