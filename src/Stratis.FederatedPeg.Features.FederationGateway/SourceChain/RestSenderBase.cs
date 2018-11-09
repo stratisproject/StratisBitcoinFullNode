@@ -29,9 +29,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
             using (var client = this.httpClientFactory.CreateClient())
             {
-                client.DefaultRequestHeaders.Accept.Clear();
-                client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-
                 var sendModel = (T)model;
                 var request = new JsonContent(sendModel);
 
