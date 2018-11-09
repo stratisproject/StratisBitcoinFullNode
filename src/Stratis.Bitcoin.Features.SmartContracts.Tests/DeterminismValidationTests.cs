@@ -716,7 +716,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 public Test(ISmartContractState state)
                                                     : base(state) {}         
 
-                                                private void PrivateStruct(DateTime test)
+                                                private void PrivateStruct(TestStruct test)
+                                                {
+                                                }
+
+                                                private void PrivateIntArray(int[] test)
+                                                {
+                                                }
+                                                
+                                                public void PublicIntArray(int[] test)
                                                 {
                                                 }
 
@@ -741,8 +749,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
-            Assert.Single(result.Errors);
-            Assert.Contains("PublicStruct", result.Errors.First().Message);
+            Assert.Equal(2, result.Errors.Count());
+            Assert.Contains("PublicIntArray", result.Errors.ElementAt(0).Message);
+            Assert.Contains("PublicStruct", result.Errors.ElementAt(1).Message);
         }
 
         #endregion

@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Core.Validation
     public class MethodParamValidator : IMethodDefinitionValidator
     {
         // See MethodParameterDataType
-        public static readonly IEnumerable<string> PublicAllowedTypes = new[]
+        public static readonly IEnumerable<string> AllowedTypes = new[]
         {
             typeof(bool).FullName,
             typeof(byte).FullName,
@@ -27,17 +27,8 @@ namespace Stratis.SmartContracts.Core.Validation
             typeof(byte[]).FullName
         };
 
-        public static readonly IEnumerable<string> PrivateAllowedTypes = PublicAllowedTypes.ToList().Concat(new string[]
-        {
-            typeof(Array).FullName
-        });
-
-
         public IEnumerable<ValidationResult> Validate(MethodDefinition methodDef)
         {
-            if (!methodDef.IsPublic)
-                return Enumerable.Empty<MethodDefinitionValidationResult>();
-
             if (!methodDef.HasParameters)
                 return Enumerable.Empty<MethodDefinitionValidationResult>();
 
@@ -84,12 +75,12 @@ namespace Stratis.SmartContracts.Core.Validation
 
         private static bool ValidatePrivateMethodParam(ParameterDefinition param) 
         {
-            return param.ParameterType.IsValueType || PrivateAllowedTypes.Contains(param.ParameterType.FullName);
+            return param.ParameterType.IsValueType || param.ParameterType.IsArray || AllowedTypes.Contains(param.ParameterType.FullName);
         }
 
         private static bool ValidatePublicMethodParam(ParameterDefinition param)
         {
-            return PublicAllowedTypes.Contains(param.ParameterType.FullName);
+            return AllowedTypes.Contains(param.ParameterType.FullName);
         }
 
         private static bool ParameterIsSmartContractState(ParameterDefinition param)
