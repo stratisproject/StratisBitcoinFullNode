@@ -1,13 +1,10 @@
-﻿using System;
-using System.Linq;
-using DBreeze.Utils;
+﻿using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
-using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
@@ -94,6 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// Fetches and validates coins from coins view.
         /// </summary>
         /// <param name="header">The header.</param>
+        /// <param name="context">Rule context.</param>
         /// <exception cref="ConsensusException">
         /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails.
         /// </exception>
@@ -222,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             }
             else
             {
-                ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
+                ProvenBlockHeader previousProvenHeader = (ProvenBlockHeader)chainedHeader.Previous.Header;
                 previousStakeModifier = previousProvenHeader.StakeModifierV2;
             }
 
@@ -278,9 +276,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// Checks if coinstake is spent on another chain.
         /// </summary>
         /// <param name="header">The proven block header.</param>
-        /// <exception cref="UtxoNotFoundInRewindDataException">
-        /// Throws specific exception so that it can be handled later.
-        /// </exception>
+        /// <param name="context">The POS rule context.</param>
+        /// <exception cref="ConsensusException">Throws utxo not found error.</exception>
         private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header, PosRuleContext context)
         {
             Transaction coinstake = header.Coinstake;
