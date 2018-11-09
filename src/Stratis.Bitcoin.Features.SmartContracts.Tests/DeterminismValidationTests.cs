@@ -709,6 +709,36 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.Contains(result.Errors, e => e.Message.Contains("System.Single"));
         }
 
+        [Fact]
+        public void Validate_Determinism_MethodParams_Private()
+        {
+            string adjustedSource = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {
+                                                public Test(ISmartContractState state)
+                                                    : base(state) {}         
+
+                                                private void F(TestStruct test)
+                                                {
+                                                }
+                                                
+                                                public struct TestStruct
+                                                {
+                                                    public int TestInt;
+                                                }
+                                            }";
+
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.True(result.IsValid);
+        }
+
         #endregion
 
         #region Nullable

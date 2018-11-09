@@ -7,7 +7,7 @@ using Stratis.ModuleValidation.Net;
 namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
-    /// Validate that a <see cref="Mono.Cecil.MethodDefinition"/> only has parameters of types that are currently supported in the
+    /// Validate that a public <see cref="Mono.Cecil.MethodDefinition"/> only has parameters of types that are currently supported in the
     /// <see cref="MethodParameterSerializer"/>
     /// </summary>
     public class MethodParamValidator : IMethodDefinitionValidator
@@ -66,7 +66,13 @@ namespace Stratis.SmartContracts.Core.Validation
                 return (true, null);
             }
 
-            var allowedType = AllowedTypes.Contains(param.ParameterType.FullName);
+            // In private methods we allow structs
+            if (!methodDefinition.IsPublic && param.ParameterType.IsValueType)
+            {
+                return (true, null);
+            }
+
+            bool allowedType = AllowedTypes.Contains(param.ParameterType.FullName);
 
             return allowedType
                 ? (true, null)
