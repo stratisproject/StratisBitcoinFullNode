@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             List<ChainedHeader> matches = new List<ChainedHeader>();
             foreach(ChainedHeader chainedHeader in blockHeaders)
             {
-                var scHeader = (SmartContractBlockHeader) chainedHeader.Header;
+                var scHeader = (ISmartContractBlockHeader) chainedHeader.Header;
                 if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
                     matches.Add(chainedHeader);
             }
