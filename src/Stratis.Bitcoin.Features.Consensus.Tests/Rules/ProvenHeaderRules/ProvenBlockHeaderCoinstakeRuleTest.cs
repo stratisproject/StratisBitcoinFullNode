@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Add more than one unspent output to coinstake.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new [] { new UnspentOutputs(10, new Transaction()), new UnspentOutputs(11, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()), new UnspentOutputs(11, new Transaction()) }, posBlock.GetHash()));
 
             // When we run the validation rule, we should hit coinstake read transaction error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -308,11 +308,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Setup(m => m.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(), It.IsAny<int>(), It.IsAny<ScriptVerify>()))
                 .Returns(true);
 
-            // When we run the validation rule, we should hit bad merkle root.
+            // When we run the validation rule, we should hit previous stake null error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.BadMerkleRoot);
+                .Should().Be(ConsensusErrors.PrevStakeNull);
         }
 
         [Fact]
@@ -353,13 +353,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
             this.stakeValidator
                 .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()))
-                .Returns(false);
+                .Throws(new ConsensusErrorException(ConsensusErrors.StakeHashInvalidTarget));
 
-            // When we run the validation rule, we should hit bad merkle root.
+            // When we run the validation rule, we should hit stake hash invalid target error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.BadMerkleRoot);
+                .Should().Be(ConsensusErrors.StakeHashInvalidTarget);
         }
 
         [Fact]
@@ -378,7 +378,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
 
             // Corrupt merkle proof.
-            provenBlockHeader.SetPrivateVariableValue("merkleProof", new PartialMerkleTree(new [] { new uint256(1234) }, new [] { false }));
+            provenBlockHeader.SetPrivateVariableValue("merkleProof", new PartialMerkleTree(new[] { new uint256(1234) }, new[] { false }));
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
@@ -402,7 +402,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake kernel hash validation.
             this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
             this.stakeValidator
-                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()));
+                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>())).Returns(true);
 
             // When we run the validation rule, we should hit bad merkle proof error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -439,9 +439,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             uint unspentOutputsHeight = (uint)this.options.ProvenHeadersActivationHeight + 10;
 
             var unspentOutputs = new UnspentOutputs(unspentOutputsHeight, new Transaction())
-                                 {
-                                    Outputs = new[] { new TxOut(new Money(100), privateKey.PubKey) }
-                                 };
+            {
+                Outputs = new[] { new TxOut(new Money(100), privateKey.PubKey) }
+            };
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { unspentOutputs }, posBlock.GetHash()));
@@ -454,7 +454,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake kernel hash validation.
             this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
             this.stakeValidator
-                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()));
+                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>())).Returns(true);
 
             // Setup stake validator to pass stake age check.
             this.stakeValidator
@@ -502,9 +502,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup coinstake transaction with a valid stake age.
             uint unspentOutputsHeight = (uint)this.options.ProvenHeadersActivationHeight + 10;
             var unspentOutputs = new UnspentOutputs(unspentOutputsHeight, new Transaction())
-                                 {
-                                     Outputs = new[] { new TxOut(new Money(100), privateKey.PubKey) }
-                                 };
+            {
+                Outputs = new[] { new TxOut(new Money(100), privateKey.PubKey) }
+            };
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { unspentOutputs }, posBlock.GetHash()));
@@ -522,7 +522,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake kernel hash validation.
             this.stakeChain.Setup(m => m.Get(It.IsAny<uint256>())).Returns(new BlockStake());
             this.stakeValidator
-                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()));
+                .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>())).Returns(true);
 
             // When we run the validation rule, we should not hit any errors.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
