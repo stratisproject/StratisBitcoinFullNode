@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Core.Validation
     public class MethodParamValidator : IMethodDefinitionValidator
     {
         // See MethodParameterDataType
-        public static readonly IEnumerable<string> AllowedTypes = new[]
+        public static readonly IEnumerable<string> PublicAllowedTypes = new[]
         {
             typeof(bool).FullName,
             typeof(byte).FullName,
@@ -26,6 +26,12 @@ namespace Stratis.SmartContracts.Core.Validation
             typeof(Address).FullName,
             typeof(byte[]).FullName
         };
+
+        public static readonly IEnumerable<string> PrivateAllowedTypes = PublicAllowedTypes.ToList().Concat(new string[]
+        {
+            typeof(Array).FullName
+        });
+
 
         public IEnumerable<ValidationResult> Validate(MethodDefinition methodDef)
         {
@@ -66,18 +72,24 @@ namespace Stratis.SmartContracts.Core.Validation
                 return (true, null);
             }
 
-            // In private methods we allow structs
-            if (!methodDefinition.IsPublic && param.ParameterType.IsValueType)
-            {
-                return (true, null);
-            }
-
-            bool allowedType = AllowedTypes.Contains(param.ParameterType.FullName);
+            bool allowedType = methodDefinition.IsPublic
+                ? ValidatePublicMethodParam(param)
+                : ValidatePrivateMethodParam(param);
 
             return allowedType
                 ? (true, null)
                 : (false,
                     $"{methodDefinition.FullName} is invalid [{param.Name} is disallowed parameter Type {param.ParameterType.FullName}]");
+        }
+
+        private static bool ValidatePrivateMethodParam(ParameterDefinition param) 
+        {
+            return param.ParameterType.IsValueType || PrivateAllowedTypes.Contains(param.ParameterType.FullName);
+        }
+
+        private static bool ValidatePublicMethodParam(ParameterDefinition param)
+        {
+            return PublicAllowedTypes.Contains(param.ParameterType.FullName);
         }
 
         private static bool ParameterIsSmartContractState(ParameterDefinition param)

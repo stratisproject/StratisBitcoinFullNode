@@ -638,10 +638,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 {
                                                 }
 
-                                                public void SByte(sbyte param)
-                                                {
-                                                }
-
                                                 public void String(string param)
                                                 {
                                                 }                                           
