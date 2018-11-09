@@ -720,7 +720,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 public Test(ISmartContractState state)
                                                     : base(state) {}         
 
-                                                private void PrivateStruct(TestStruct test)
+                                                private void PrivateStruct(DateTime test)
                                                 {
                                                 }
 
@@ -738,7 +738,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                                                 }
                                             }";
 
-            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;

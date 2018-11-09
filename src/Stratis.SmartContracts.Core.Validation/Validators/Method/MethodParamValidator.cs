@@ -32,6 +32,9 @@ namespace Stratis.SmartContracts.Core.Validation
 
         public IEnumerable<ValidationResult> Validate(MethodDefinition methodDef)
         {
+            if (!methodDef.IsPublic)
+                return Enumerable.Empty<MethodDefinitionValidationResult>();
+
             if (!methodDef.HasParameters)
                 return Enumerable.Empty<MethodDefinitionValidationResult>();
 
