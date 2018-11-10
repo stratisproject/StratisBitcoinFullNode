@@ -193,7 +193,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             this.receipts.Add(receipt);
 
-            ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
+            // Refund can be null when all gas is consumed
+            if (result.Refund != null)
+                ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
