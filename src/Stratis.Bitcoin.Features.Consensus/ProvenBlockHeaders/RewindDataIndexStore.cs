@@ -91,8 +91,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             int heightToKeepItemsTo = maxStoredHeight - NumberOfItemsToKeep;
 
             if (heightToKeepItemsTo <= 0) return;
-            
-            if (this.items.Count <= NumberOfItemsToKeep) return;
 
             List<KeyValuePair<string, int>> itemsToRemove = this.items.Where(i => i.Value < heightToKeepItemsTo).ToList();
             foreach (KeyValuePair<string, int> item in itemsToRemove)
