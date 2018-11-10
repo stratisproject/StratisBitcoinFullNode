@@ -284,9 +284,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             TxIn input = coinstake.Inputs[0];
 
             int? rewindDataIndex = this.PosParent.RewindDataIndexStore.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
-            if (!rewindDataIndex.HasValue) {
-                // Not sure if we should throw this exception or another.
-                ConsensusErrors.ReadTxPrevFailed.Throw();
+            if (!rewindDataIndex.HasValue)
+            {
+                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.ReadTxPrevFailed, c => c.InsufficientHeaderInformation = true);
             }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
