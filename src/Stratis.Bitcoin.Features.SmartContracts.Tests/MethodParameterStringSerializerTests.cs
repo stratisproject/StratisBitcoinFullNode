@@ -40,6 +40,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void Serialized_Address_Is_Base58()
+        {
+            var address = new Address();
+
+            var serializedAddress = MethodParameterStringSerializer.Serialize(address, Network);
+            
+            // Will throw if address is invalid
+            BitcoinAddress.Create(serializedAddress, Network);        
+        }
+
+        [Fact]
         public void Serialize_Multiple_Params()
         {
             object[] methodParameters =
