@@ -99,56 +99,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
-        [Route("account-address")]
-        [HttpGet]
-        public IActionResult GetAccountAddress(string walletName)
-        {
-            if (string.IsNullOrWhiteSpace(walletName))
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
-
-            try
-            {
-                var firstAddress = this.GetFirstAccountAddress(walletName);
-
-                if (firstAddress == null)
-                {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
-                }
-
-                return this.Json(firstAddress.Address);
-            }
-            catch (WalletException e)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        [Route("account-balance")]
-        [HttpGet]
-        public IActionResult GetAccountBalance(string walletName)
-        {
-            if (string.IsNullOrWhiteSpace(walletName))
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
-
-            try
-            {
-                var firstAddress = this.GetFirstAccountAddress(walletName);
-
-                if (firstAddress == null)
-                {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
-                }
-
-                (var spendable, _) = firstAddress.GetSpendableAmount();
-
-                return this.Json(spendable.ToUnit(MoneyUnit.BTC));
-            }
-            catch (WalletException e)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
         [Route("address-balance")]
         [HttpGet]
         public IActionResult GetAddressBalance(string address)
