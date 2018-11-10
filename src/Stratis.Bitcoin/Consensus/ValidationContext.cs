@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Consensus
         public NetworkPeerServices? MissingServices { get; set; }
 
         /// <summary>Gets or sets flag indicating if we do not have enough information to validate UTOX.</summary>
-        public bool MissingUtxoInformation { get; set; }
+        public bool InsufficientHeaderInformation { get; set; }
 
         /// <summary>
         /// Executes provided action and throws a given consensus error.

@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == input.PrevOut.Hash);
             if (matchingUnspentUtxo == null)
             {
-                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.UtxoNotFoundInRewindData, ct => ct.MissingUtxoInformation = true);
+                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.UtxoNotFoundInRewindData, ct => ct.InsufficientHeaderInformation = true);
             }
 
             this.CheckHeaderSignatureWithCoinstakeKernel(header, matchingUnspentUtxo);
