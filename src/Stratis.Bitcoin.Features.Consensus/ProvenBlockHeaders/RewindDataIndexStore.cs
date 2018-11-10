@@ -97,8 +97,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.items.TryRemove(item.Key, out int unused);
             }
-
-
         }
 
         /// <inheritdoc />
