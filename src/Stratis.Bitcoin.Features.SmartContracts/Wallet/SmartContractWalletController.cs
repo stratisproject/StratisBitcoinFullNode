@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         {
             var balance = this.walletManager.GetAddressBalance(address);
 
-            return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.BTC));
+            return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.Satoshi));
         }
 
         [Route("history")]
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     // Record a receive transaction
                     transactionItems.Add(new ContractTransactionItem
                     {
-                        Amount = transaction.Amount.ToUnit(MoneyUnit.BTC),
+                        Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
                         BlockHeight = (uint) transaction.BlockHeight,
                         Hash = transaction.Id,
                         Type = ContractTransactionItemType.Received,
@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                 Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
                                 transactionItems.Add(new ContractTransactionItem
                                 {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.BTC),
+                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
                                     BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCreate,
                                     Hash = transaction.SpendingDetails.TransactionId,
@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                                 transactionItems.Add(new ContractTransactionItem
                                 {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.BTC),
+                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
                                     BlockHeight = (uint)transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCall,
                                     Hash = transaction.SpendingDetails.TransactionId,
@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                 {
                                     transactionItems.Add(new ContractTransactionItem
                                     {
-                                        Amount = payment.Amount.ToUnit(MoneyUnit.BTC),
+                                        Amount = payment.Amount.ToUnit(MoneyUnit.Satoshi),
                                         BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
                                         Type = ContractTransactionItemType.Send,
                                         Hash = transaction.SpendingDetails.TransactionId,
