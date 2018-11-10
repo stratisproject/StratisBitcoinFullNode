@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             // Before flushing the coinview persist the rewind data index store as well.
             if (this.rewindDataIndexStore != null)
-                await this.rewindDataIndexStore.FlushAsync();
+                this.rewindDataIndexStore.Flush();
 
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 if (this.rewindDataIndexStore != null && indexItems.Any())
                 {
-                    await this.rewindDataIndexStore.SaveAsync(indexItems);
+                    this.rewindDataIndexStore.Save(indexItems);
                 }
 
                 this.cachedRewindDataIndex.Add(height,rewindData);

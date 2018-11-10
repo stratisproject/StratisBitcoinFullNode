@@ -13,15 +13,20 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public interface IRewindDataIndexStore
     {
         /// <summary>
+        /// Initializes the rewind data index store by loading rewind data from the cache or dbreeze for the last 500 blocks.
+        /// </summary>
+        Task InitializeAsync();
+
+        /// <summary>
         /// Stores all rewind data index from the cache to a disk and clears cache.
         /// </summary>
-        Task FlushAsync();
+        void Flush();
 
         /// <summary>
         /// Saves rewind index data to cache.
         /// </summary>
         /// <param name="indexData">The rewind index data, where key is TxId + N and value is a height of the rewind data.</param>
-        Task SaveAsync(Dictionary<string, int> indexData);
+        void Save(Dictionary<string, int> indexData);
 
         /// <summary>
         /// Gets rewind data index from the cache (or if not found from the disk) by tx id and output index.
@@ -29,6 +34,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="transactionId">The transaction id.</param>
         /// <param name="transactionOutputIndex">Index of the transaction output.</param>
         /// <returns>If found, rewind data index, else null.</returns>
-        Task<int?> GetAsync(uint256 transactionId, int transactionOutputIndex);
+        int? Get(uint256 transactionId, int transactionOutputIndex);
     }
 }

@@ -63,7 +63,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<StakeChainStore>().AddSingleton<IStakeChain, StakeChainStore>(provider => provider.GetService<StakeChainStore>());
                         services.AddSingleton<IStakeValidator, StakeValidator>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IRewindDataIndexRepository, RewindDataIndexRepository>();
                         services.AddSingleton<IRewindDataIndexStore, RewindDataIndexStore>();
                         services.AddSingleton<IConsensusRuleEngine, PosConsensusRuleEngine>();
                         services.AddSingleton<IChainState, ChainState>();

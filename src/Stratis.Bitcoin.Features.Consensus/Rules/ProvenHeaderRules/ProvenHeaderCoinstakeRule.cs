@@ -283,7 +283,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             Transaction coinstake = header.Coinstake;
             TxIn input = coinstake.Inputs[0];
 
-            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.GetAsync(input.PrevOut.Hash, (int)input.PrevOut.N).GetAwaiter().GetResult();
+            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
             if (!rewindDataIndex.HasValue) {
                 // Not sure if we should throw this exception or another.
                 ConsensusErrors.ReadTxPrevFailed.Throw();

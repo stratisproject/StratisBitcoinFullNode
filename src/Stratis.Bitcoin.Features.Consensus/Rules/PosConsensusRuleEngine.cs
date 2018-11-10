@@ -54,6 +54,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             await base.InitializeAsync(chainTip).ConfigureAwait(false);
 
             await this.StakeChain.LoadAsync().ConfigureAwait(false);
+
+            await this.RewindDataIndexStore.InitializeAsync().ConfigureAwait(false);
         }
     }
 }
