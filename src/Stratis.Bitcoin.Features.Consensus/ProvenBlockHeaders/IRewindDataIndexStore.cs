@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
@@ -15,7 +16,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Initializes the rewind data index store by loading rewind data from the cache or dbreeze for the last 500 blocks.
         /// </summary>
-        Task InitializeAsync();
+        /// <param name="consensusParameters">The consensus parameters.</param>
+        /// <param name="tip">The chain tip.</param>
+        /// <param name="coinView">The coin view to be used for getting rewind data.</param>
+        Task InitializeAsync(IConsensus consensusParameters, ChainedHeader tip, ICoinView coinView);
 
         /// <summary>
         /// Stores all rewind data index from the cache to a disk and clears cache.

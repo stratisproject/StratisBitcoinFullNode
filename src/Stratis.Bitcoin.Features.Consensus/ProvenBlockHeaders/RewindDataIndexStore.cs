@@ -13,52 +13,42 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     public class RewindDataIndexStore : IRewindDataIndexStore
     {
         /// <summary>
-        /// The coin view to be used for getting rewind data.
-        /// </summary>
-        private readonly ICoinView coinView;
-
-        /// <summary>
-        /// The chained header tree.
-        /// </summary>
-        private readonly IChainedHeaderTree chainedHeaderTree;
-
-        /// <summary>
         /// Internal cache for rewind data index. Key is a TxId + N (N is an index of output in a transaction)
         /// and value is a rewind data index.
         /// </summary>
         private readonly ConcurrentDictionary<string, int> items;
 
         /// <summary>
-        /// Number of items to keep in cache after the flush.
+        /// Number of blocks to keep in cache after the flush.
+        /// The number of items stored in cache is the sum of inputs used in every transaction in each of those blocks.
         /// </summary>
-        private const int NumberOfItemsToKeep = 500;
+        private int numberOfBlocksToKeep;
 
         /// <summary>
         /// Performance counter to measure performance of the save and get operations.
         /// </summary>
         private readonly BackendPerformanceCounter performanceCounter;
 
-        public RewindDataIndexStore(IDateTimeProvider dateTimeProvider, ICoinView coinView, IChainedHeaderTree chainedHeaderTree)
+        public RewindDataIndexStore(IDateTimeProvider dateTimeProvider)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
-            Guard.NotNull(coinView, nameof(coinView));
-            Guard.NotNull(chainedHeaderTree, nameof(chainedHeaderTree));
 
             this.items = new ConcurrentDictionary<string, int>();
-            this.coinView = coinView;
-            this.chainedHeaderTree = chainedHeaderTree;
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
         }
 
-        public async Task InitializeAsync()
+        /// <summary>
+        /// <inheritdoc />
+        public async Task InitializeAsync(IConsensus consensusParameters, ChainedHeader tip, ICoinView coinView)
         {
-            ChainedHeader tip = this.chainedHeaderTree.GetBestPeerTip();
-            int heightToSyncTo = tip.Height > NumberOfItemsToKeep ? tip.Height - NumberOfItemsToKeep : 0;
+            this.numberOfBlocksToKeep = (int)consensusParameters.MaxReorgLength;
+
+            int heightToSyncTo = tip.Height > this.numberOfBlocksToKeep ? tip.Height - this.numberOfBlocksToKeep : 0;
 
             for (int i = tip.Height; i >= heightToSyncTo; i--)
             {
-                RewindData rewindData = await this.coinView.GetRewindData(i).ConfigureAwait(false);
+                RewindData rewindData = await coinView.GetRewindData(i).ConfigureAwait(false);
                 if (rewindData?.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0) continue;
 
                 foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
@@ -88,7 +78,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public void Flush()
         {
             int maxStoredHeight = this.items.Select(i => i.Value).DefaultIfEmpty(0).Max();
-            int heightToKeepItemsTo = maxStoredHeight - NumberOfItemsToKeep;
+            int heightToKeepItemsTo = maxStoredHeight - this.numberOfBlocksToKeep;
 
             if (heightToKeepItemsTo <= 0) return;
 
@@ -103,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public int? Get(uint256 transactionId, int transactionOutputIndex)
         {
             string key = $"{transactionId}-{transactionOutputIndex}";
-            
+
             if (this.items.TryGetValue(key, out int rewindDataIndex))
                 return rewindDataIndex;
 
