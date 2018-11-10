@@ -10,7 +10,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
@@ -52,6 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.receiptRepository = receiptRepository;
             this.walletManager = walletManager;
         }
+
         private HdAddress GetFirstAccountAddress(string walletName)
         {
             var accounts = this.walletManager.GetAccounts(walletName).ToList();
@@ -61,11 +61,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         private IEnumerable<HdAddress> GetAccountAddressesWithBalance(string walletName)
         {
-            return this.walletManager.GetAccounts(walletName)
-                .FirstOrDefault()?
-                .ExternalAddresses
-                .Where(a => a.GetSpendableAmount().confirmedAmount > 0)
-                .ToList();
+            return this.walletManager
+                .GetSpendableTransactionsInWallet(walletName)
+                .GroupBy(x => x.Address)
+                .Where(grouping => grouping.Sum(x => x.Transaction.SpendableAmount(true)) > 0)
+                .Select(grouping => grouping.Key);
         }
 
         [Route("account-addresses")]
