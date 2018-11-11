@@ -13,17 +13,19 @@ using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
-    public class ContractParameterSerializationTests : IClassFixture<PoWMockChainFixture>
+    public class ContractParameterSerializationTests : IDisposable
     {
         private readonly PoWMockChain mockChain;
+        private readonly PoWMockChainFixture mockChainFixture;
         private readonly MockChainNode node1;
         private readonly MockChainNode node2;
 
         private readonly IContractPrimitiveSerializer serializer;
 
-        public ContractParameterSerializationTests(PoWMockChainFixture fixture)
+        public ContractParameterSerializationTests()
         {
-            this.mockChain = fixture.Chain;
+            this.mockChainFixture = new PoWMockChainFixture();
+            this.mockChain = this.mockChainFixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
             this.serializer = new ContractPrimitiveSerializer(this.node1.CoreNode.FullNode.Network);
@@ -322,6 +324,11 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
             Assert.Null(receipt.Error);
+        }
+
+        public void Dispose()
+        {
+            this.mockChainFixture.Dispose();
         }
     }
 }

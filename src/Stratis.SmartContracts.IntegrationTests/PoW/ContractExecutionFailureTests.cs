@@ -18,18 +18,20 @@ using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
-    public class ContractExecutionFailureTests : IClassFixture<PoWMockChainFixture>
+    public class ContractExecutionFailureTests : IDisposable
     {
         private readonly PoWMockChain mockChain;
+        private readonly PoWMockChainFixture mockChainFixture;
         private readonly MockChainNode node1;
         private readonly MockChainNode node2;
 
         private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
-        public ContractExecutionFailureTests(PoWMockChainFixture fixture)
+        public ContractExecutionFailureTests()
         {
-            this.mockChain = fixture.Chain;
+            this.mockChainFixture = new PoWMockChainFixture();
+            this.mockChain = this.mockChainFixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
             this.addressGenerator = new AddressGenerator();
@@ -698,6 +700,11 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.StartsWith("Execution ran out of gas.", receipt.Error);
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
+        }
+
+        public void Dispose()
+        {
+            this.mockChainFixture.Dispose();
         }
     }
 }

@@ -18,18 +18,20 @@ using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoA
 {
-    public class ContractExecutionFailureTests : IClassFixture<PoAMockChainFixture>
+    public class ContractExecutionFailureTests : IDisposable
     {
         private readonly PoAMockChain mockChain;
+        private readonly PoAMockChainFixture mockChainFixture;
         private readonly MockChainNode node1;
         private readonly MockChainNode node2;
 
         private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
-        public ContractExecutionFailureTests(PoAMockChainFixture fixture)
+        public ContractExecutionFailureTests()
         {
-            this.mockChain = fixture.Chain;
+            this.mockChainFixture = new PoAMockChainFixture();
+            this.mockChain = this.mockChainFixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
             this.addressGenerator = new AddressGenerator();
@@ -579,6 +581,11 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.StartsWith("Stratis.SmartContracts.SmartContractAssertException", receipt.Error);
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
+        }
+
+        public void Dispose()
+        {
+            this.mockChainFixture.Dispose();
         }
     }
 }

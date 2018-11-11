@@ -15,18 +15,20 @@ using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
-    public class ContractInternalTransferTests : IClassFixture<PoWMockChainFixture>
+    public class ContractInternalTransferTests : IDisposable
     {
         private readonly PoWMockChain mockChain;
+        private readonly PoWMockChainFixture mockChainFixture;
         private readonly MockChainNode node1;
         private readonly MockChainNode node2;
 
         private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
-        public ContractInternalTransferTests(PoWMockChainFixture fixture)
+        public ContractInternalTransferTests()
         {
-            this.mockChain = fixture.Chain;
+            this.mockChainFixture = new PoWMockChainFixture();
+            this.mockChain = this.mockChainFixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
 
@@ -642,6 +644,11 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Balance should be the same as the initial amount
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
+        }
+
+        public void Dispose()
+        {
+            this.mockChainFixture.Dispose();
         }
     }
 }
