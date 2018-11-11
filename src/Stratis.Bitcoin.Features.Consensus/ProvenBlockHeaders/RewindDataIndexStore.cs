@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
@@ -38,7 +37,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
         }
 
-        /// <summary>
         /// <inheritdoc />
         public async Task InitializeAsync(IConsensus consensusParameters, ChainedHeader tip, ICoinView coinView)
         {
