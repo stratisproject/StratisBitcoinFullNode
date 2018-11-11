@@ -53,6 +53,59 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         }
 
+        public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
+        {
+            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
+            if (addressBalance.AmountConfirmed == 0)
+                return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
+
+            var selectedInputs = new List<OutPoint>();
+            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+
+            uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
+
+            ContractTxData txData;
+            if (request.Parameters != null && request.Parameters.Any())
+            {
+                var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
+            }
+            else
+            {
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName);
+            }
+
+            HdAddress senderAddress = null;
+            if (!string.IsNullOrWhiteSpace(request.Sender))
+            {
+                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
+            }
+
+            ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
+            var context = new TransactionBuildContext(this.network)
+            {
+                AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
+                TransactionFee = totalFee,
+                ChangeAddress = senderAddress,
+                SelectedInputs = selectedInputs,
+                MinConfirmations = MinConfirmationsAllChecks,
+                WalletPassword = request.Password,
+                Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) } }.ToList()
+            };
+
+            try
+            {
+                Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+                return BuildCallContractTransactionResponse.Succeeded(request.MethodName, transaction, context.TransactionFee);
+            }
+            catch (Exception exception)
+            {
+                return BuildCallContractTransactionResponse.Failed(exception.Message);
+            }
+        }
+
         public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
@@ -112,7 +165,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     {
         private readonly IBroadcasterManager broadcasterManager;
         private readonly ICallDataSerializer callDataSerializer;
-        private readonly CoinType coinType;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
         private readonly Network network;
@@ -133,7 +185,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.broadcasterManager = broadcasterManager;
             this.callDataSerializer = callDataSerializer;
             this.connectionManager = connectionManager;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.receiptRepository = receiptRepository;
@@ -303,6 +354,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+
+        [Route("create")]
+        [HttpPost]
+        public IActionResult Create([FromBody] BuildCreateContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
+
+            if (!response.Success)
+                return BadRequest(Json(response));
+
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
+            this.walletManager.ProcessTransaction(transaction, null, null, false);
+            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            return Json(response.TransactionId);
+        }
+
+        [Route("call")]
+        [HttpPost]
+        public IActionResult Call([FromBody] BuildCallContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
+            if (!response.Success)
+                return BadRequest(Json(response));
+
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
+            this.walletManager.ProcessTransaction(transaction, null, null, false);
+            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            return Json(response);
         }
 
         [Route("send-transaction")]

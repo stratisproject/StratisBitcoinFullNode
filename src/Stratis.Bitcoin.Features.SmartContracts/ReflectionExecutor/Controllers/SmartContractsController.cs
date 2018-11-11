@@ -258,6 +258,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
             BuildCreateContractTransactionResponse response = BuildCreateTx(request);
+
             if (!response.Success)
                 return Json(response);
 
