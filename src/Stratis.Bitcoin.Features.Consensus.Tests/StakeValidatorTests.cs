@@ -19,12 +19,14 @@ namespace Stratis.Bitcoin.Tests.Consensus
         private Mock<IStakeChain> stakeChain;
         private ConcurrentChain concurrentChain;
         private Mock<ICoinView> coinView;
+        private Mock<IConsensus> consensus;
 
         public StakeValidatorTests() : base(KnownNetworks.StratisRegTest)
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.concurrentChain = new ConcurrentChain(this.Network);
             this.coinView = new Mock<ICoinView>();
+            this.consensus = new Mock<IConsensus>();
 
             this.stakeValidator = new StakeValidator(this.Network, this.stakeChain.Object, this.concurrentChain, this.coinView.Object, this.LoggerFactory.Object);
         }
@@ -153,7 +155,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void CalculateRetarget_FirstBlockBeforeSecondBlock_UsesLowerTargetSpacing_WithinLimit_CalculatesNewTarget()
         {
-            Assert.True(false);
             var now = DateTime.UtcNow;
             var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
             var firstBlockTarget = Target.Difficulty1;
@@ -168,7 +169,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void CalculateRetarget_FirstBlockBeforeSecondBlock_UsesLowerTargetSpacing_AboveLimit_CalculatesNewTarget()
         {
-            Assert.True(false);
             var now = DateTime.UtcNow;
             var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
             var firstBlockTarget = Target.Difficulty1;
@@ -184,7 +184,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void CalculateRetarget_FirstBlockBeforeSecondBlock_UsesHigherTargetSpacing_WithinLimit_CalculatesNewTarget()
         {
-            Assert.True(false);
             var now = DateTime.UtcNow;
             var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
             var firstBlockTarget = Target.Difficulty1;
@@ -199,7 +198,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void CalculateRetarget_FirstBlockBeforeSecondBlock_UsesHigherTargetSpacing_AboveLimit_CalculatesNewTarget()
         {
-            Assert.True(false);
             var now = DateTime.UtcNow;
             var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
             var firstBlockTarget = Target.Difficulty1;
@@ -213,9 +211,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         [Fact]
-        public void CalculateRetarget_FirstBlockBeforeSecondBlock_UsesHigherTargetSpacing11_WithinLimit_CalculatesNewTarget()
+        public void CalculateRetarget_FirstBlockBeforeSecondBlock_ElevenTimesHigherTargetSpacing_UsesTargetSpacing_WithinLimit_CalculatesNewTarget()
         {
-            Assert.True(false);
             var now = DateTime.UtcNow;
             var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
             var firstBlockTarget = Target.Difficulty1;
@@ -228,9 +225,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         [Fact]
-        public void CalculateRetarget_FirstBlockBeforeSecondBlock_UsesHigherTargetSpacing11_AboveLimit_CalculatesNewTarget()
+        public void CalculateRetarget_FirstBlockBeforeSecondBlock_ElevenTimesHigherTargetSpacing_UsesTargetSpacing_AboveLimit_CalculatesNewTarget()
         {
-            Assert.True(false);
             var now = DateTime.UtcNow;
             var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
             var firstBlockTarget = Target.Difficulty1;
@@ -241,6 +237,223 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
 
             Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockSameTimeAsSecondBlock_UsesTargetSpacing_WithinLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var secondBlockTime = firstBlockTime;
+            var targetLimit = Target.Difficulty1.ToBigInteger().Multiply(BigInteger.ValueOf(2));
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(firstBlockTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockSameTimeAsSecondBlock_UsesTargetSpacing_AboveLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var secondBlockTime = firstBlockTime;
+            var targetLimit = Target.Difficulty1.ToBigInteger().Subtract(BigInteger.ValueOf(1));
+            var expectedTarget = new Target(targetLimit);
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_UsesTargetSpacing_WithinLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Multiply(BigInteger.ValueOf(2));
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(firstBlockTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_UsesTargetSpacing_AboveLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Subtract(BigInteger.ValueOf(1));
+            var expectedTarget = new Target(targetLimit);
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_UsesLowerTargetSpacing_WithinLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds / 2)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Multiply(BigInteger.ValueOf(2));
+            var expectedTarget = new Target(new uint256("00000000efff0000000000000000000000000000000000000000000000000000")); // 1.66667751753
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_UsesLowerTargetSpacing_AboveLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds / 2)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Subtract(BigInteger.ValueOf(1));            
+            var expectedTarget = new Target(new uint256("00000000efff0000000000000000000000000000000000000000000000000000")); // 1.66667751753
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_UsesHigherTargetSpacing_WithinLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds * 2)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Multiply(BigInteger.ValueOf(2));
+            var expectedTarget = new Target(new uint256("000000011ffe0000000000000000000000000000000000000000000000000000")); // 0.888899438461
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_UsesHigherTargetSpacing_AboveLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds * 2)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Subtract(BigInteger.ValueOf(1));
+            var expectedTarget = new Target(targetLimit);
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_ElevenTimesHigherTargetSpacing_LowersActualSpacing_WithinLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds * 11)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Multiply(BigInteger.ValueOf(2));
+            var expectedTarget = new Target(new uint256("00000001fffe0000000000000000000000000000000000000000000000000000")); // 0.5
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+        [Fact]
+        public void CalculateRetarget_FirstBlockAfterSecondBlock_ElevenTimesHigherTargetSpacing_LowersActualSpacing_AboveLimit_CalculatesNewTarget()
+        {
+            var now = DateTime.UtcNow;
+            var secondBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now));
+            var firstBlockTarget = Target.Difficulty1;
+            var firstBlockTime = Utils.DateTimeToUnixTime(new DateTimeOffset(now.AddSeconds(StakeValidator.TargetSpacingSeconds * 11)));
+            var targetLimit = Target.Difficulty1.ToBigInteger().Subtract(BigInteger.ValueOf(1));
+            var expectedTarget = new Target(targetLimit);
+
+            var result = this.stakeValidator.CalculateRetarget(firstBlockTime, firstBlockTarget, secondBlockTime, targetLimit);
+
+            Assert.Equal(expectedTarget, result);
+        }
+
+
+        [Fact]
+        public void GetNextTargetRequired_PoS_NoChainedHeaderProvided_ReturnsConsensusPowLimit()
+        {                        
+            var powLimit = new Target(new uint256("00000000efff0000000000000000000000000000000000000000000000000000"));
+            this.consensus.Setup(c => c.PowLimit)
+                .Returns(powLimit);
+
+            var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, null, this.consensus.Object, true);
+
+            Assert.Equal(powLimit, result);
+        }
+
+        [Fact]
+        public void GetNextTargetRequired_PoW_NoChainedHeaderProvided_ReturnsConsensusPowLimit()
+        {
+            var powLimit = new Target(new uint256("00000000efff0000000000000000000000000000000000000000000000000000"));
+            this.consensus.Setup(c => c.PowLimit)
+                .Returns(powLimit);
+
+            var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, null, this.consensus.Object, false);
+
+            Assert.Equal(powLimit, result);
+        }
+
+        [Fact]
+        public void GetNextTargetRequired_PoW_FirstBlock_NoPreviousPoWBlock_ReturnsPowLimit()
+        {
+            var headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5, includePrevBlock: true, network: this.Network);
+
+            var stakeBlockStake = new BlockStake();
+            stakeBlockStake.Flags ^= BlockFlag.BLOCK_PROOF_OF_STAKE;
+            this.stakeChain.Setup(s => s.Get(It.IsAny<uint256>()))
+                .Returns(stakeBlockStake);
+
+            var powLimit = new Target(new uint256("00000000efff0000000000000000000000000000000000000000000000000000"));
+            this.consensus.Setup(c => c.PowLimit)
+                .Returns(powLimit);
+
+
+            var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, headers.Last(), this.consensus.Object, false);
+
+            Assert.Equal(powLimit, result);
+        }
+
+        [Fact]
+        public void GetNextTargetRequired_PoS_FirstBlock_NoPreviousPoSBlock_ReturnsPosLimitV2()
+        {
+
+            var headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5, includePrevBlock: true, network: this.Network);
+
+            var stakeBlockStake = new BlockStake();            
+            this.stakeChain.Setup(s => s.Get(It.IsAny<uint256>()))
+                .Returns(stakeBlockStake);
+
+            var powLimit = new Target(new uint256("00000000efff0000000000000000000000000000000000000000000000000000"));
+            this.consensus.Setup(c => c.PowLimit)
+                .Returns(powLimit);
+
+            var posV2Limit = new Target(new uint256("00000011efff0000000000000000000000000000000000000000000000000000"));
+            this.consensus.Setup(c => c.ProofOfStakeLimitV2)
+                .Returns(posV2Limit.ToBigInteger());
+
+
+            var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, headers.Last(), this.consensus.Object, true);
+
+            Assert.Equal(posV2Limit, result);
         }
     }
 }

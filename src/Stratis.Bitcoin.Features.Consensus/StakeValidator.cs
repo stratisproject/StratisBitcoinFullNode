@@ -131,6 +131,8 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc/>
         public Target GetNextTargetRequired(IStakeChain stakeChain, ChainedHeader chainedHeader, IConsensus consensus, bool proofOfStake)
         {
+            Guard.NotNull(stakeChain, nameof(stakeChain));
+
             // Genesis block.
             if (chainedHeader == null)
             {
