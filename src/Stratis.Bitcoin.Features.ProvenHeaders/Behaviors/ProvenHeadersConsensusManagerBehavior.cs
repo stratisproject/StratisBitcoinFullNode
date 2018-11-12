@@ -14,7 +14,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
-namespace Stratis.Bitcoin.Features.ProvenHeaders
+namespace Stratis.Bitcoin.Features.ProvenHeaders.Behaviors
 {
     /// <summary>
     /// Behavior that takes care of proven headers protocol. It also keeps the notion of peer's consensus tip.

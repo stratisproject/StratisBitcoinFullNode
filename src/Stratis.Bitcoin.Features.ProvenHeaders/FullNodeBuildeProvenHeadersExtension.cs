@@ -1,14 +1,12 @@
-﻿using System;
-using Microsoft.Extensions.DependencyInjection;
+﻿using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.ProvenHeaders.Behaviors;
 using Stratis.Bitcoin.Features.ProvenHeaders.Rules;
-using Stratis.Bitcoin.Features.ProvenHeaders.Store;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.ProvenHeaders

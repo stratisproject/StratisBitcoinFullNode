@@ -9,7 +9,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
-namespace Stratis.Bitcoin.Features.ProvenHeaders
+namespace Stratis.Bitcoin.Features.ProvenHeaders.Behaviors
 {
     public class ProvenHeadersConnectionManagerBehavior : ConnectionManagerBehavior
     {
