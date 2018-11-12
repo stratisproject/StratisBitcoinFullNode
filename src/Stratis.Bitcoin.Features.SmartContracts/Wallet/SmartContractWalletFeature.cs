@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     services.AddSingleton<IWalletManager, WalletManager>();
                     services.AddSingleton<IWalletFeePolicy, WalletFeePolicy>();
                     services.AddSingleton<SmartContractWalletController>();
-                    services.AddSingleton<SmartContractTransactionService>();
+                    services.AddSingleton<ISmartContractTransactionService, SmartContractTransactionService>();
                     services.AddSingleton<WalletRPCController>();
                     services.AddSingleton<IBroadcasterManager, FullNodeBroadcasterManager>();
                     services.AddSingleton<BroadcasterBehavior>();

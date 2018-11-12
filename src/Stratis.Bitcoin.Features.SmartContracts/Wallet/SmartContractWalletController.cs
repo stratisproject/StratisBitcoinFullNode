@@ -16,150 +16,12 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
-    /// <summary>
-    /// Shared functionality for building SC transactions
-    /// </summary>
-    public class SmartContractTransactionService
-    {
-        private const int MinConfirmationsAllChecks = 1;
-        private readonly Network network;
-        private readonly IWalletManager walletManager;
-        private readonly IWalletTransactionHandler walletTransactionHandler;
-        private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
-        private readonly ICallDataSerializer callDataSerializer;
-        private readonly CoinType coinType;
-
-        public SmartContractTransactionService(
-            Network network,
-            IWalletManager walletManager,
-            IWalletTransactionHandler walletTransactionHandler,
-            IMethodParameterStringSerializer methodParameterStringSerializer,
-            ICallDataSerializer callDataSerializer)
-        {
-            this.network = network;
-            this.walletManager = walletManager;
-            this.walletTransactionHandler = walletTransactionHandler;
-            this.methodParameterStringSerializer = methodParameterStringSerializer;
-            this.callDataSerializer = callDataSerializer;
-            this.coinType = (CoinType)network.Consensus.CoinType;
-
-        }
-
-        public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
-        {
-            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0)
-                return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
-
-            var selectedInputs = new List<OutPoint>();
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
-
-            uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
-
-            ContractTxData txData;
-            if (request.Parameters != null && request.Parameters.Any())
-            {
-                var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
-            }
-            else
-            {
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName);
-            }
-
-            HdAddress senderAddress = null;
-            if (!string.IsNullOrWhiteSpace(request.Sender))
-            {
-                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
-                senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-            }
-
-            ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
-            var context = new TransactionBuildContext(this.network)
-            {
-                AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
-                TransactionFee = totalFee,
-                ChangeAddress = senderAddress,
-                SelectedInputs = selectedInputs,
-                MinConfirmations = MinConfirmationsAllChecks,
-                WalletPassword = request.Password,
-                Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) } }.ToList()
-            };
-
-            try
-            {
-                Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
-                return BuildCallContractTransactionResponse.Succeeded(request.MethodName, transaction, context.TransactionFee);
-            }
-            catch (Exception exception)
-            {
-                return BuildCallContractTransactionResponse.Failed(exception.Message);
-            }
-        }
-
-        public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
-        {
-            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0)
-                return BuildCreateContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
-
-            var selectedInputs = new List<OutPoint>();
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
-
-            ContractTxData txData;
-            if (request.Parameters != null && request.Parameters.Any())
-            {
-                var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
-            }
-            else
-            {
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray());
-            }
-
-            HdAddress senderAddress = null;
-            if (!string.IsNullOrWhiteSpace(request.Sender))
-            {
-                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
-                senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-            }
-
-            ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
-            var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
-            var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) };
-            var context = new TransactionBuildContext(this.network)
-            {
-                AccountReference = walletAccountReference,
-                TransactionFee = totalFee,
-                ChangeAddress = senderAddress,
-                SelectedInputs = selectedInputs,
-                MinConfirmations = MinConfirmationsAllChecks,
-                WalletPassword = request.Password,
-                Recipients = new[] { recipient }.ToList()
-            };
-
-            try
-            {
-                Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
-                return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, "");
-            }
-            catch (Exception exception)
-            {
-                return BuildCreateContractTransactionResponse.Failed(exception.Message);
-            }
-        }
-    }
-
     [Route("api/[controller]")]
     public sealed class SmartContractWalletController : Controller
     {
@@ -170,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         private readonly Network network;
         private readonly IReceiptRepository receiptRepository;
         private readonly IWalletManager walletManager;
-        private readonly SmartContractTransactionService smartContractTransactionService;
+        private readonly ISmartContractTransactionService smartContractTransactionService;
 
         public SmartContractWalletController(
             IBroadcasterManager broadcasterManager,
@@ -180,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             Network network,
             IReceiptRepository receiptRepository,
             IWalletManager walletManager,
-            SmartContractTransactionService smartContractTransactionService)
+            ISmartContractTransactionService smartContractTransactionService)
         {
             this.broadcasterManager = broadcasterManager;
             this.callDataSerializer = callDataSerializer;
@@ -190,13 +52,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.receiptRepository = receiptRepository;
             this.walletManager = walletManager;
             this.smartContractTransactionService = smartContractTransactionService;
-        }
-
-        private HdAddress GetFirstAccountAddress(string walletName)
-        {
-            var accounts = this.walletManager.GetAccounts(walletName).ToList();
-
-            return accounts.FirstOrDefault()?.ExternalAddresses?.FirstOrDefault();
         }
 
         private IEnumerable<HdAddress> GetAccountAddressesWithBalance(string walletName)
