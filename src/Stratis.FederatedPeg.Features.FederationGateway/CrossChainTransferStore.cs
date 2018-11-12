@@ -8,6 +8,7 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -134,7 +135,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private readonly IDateTimeProvider dateTimeProvider;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, FederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
-            ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader)
+            ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader, IFullNode fullNode)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
@@ -142,7 +143,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
-            this.depositExtractor = new DepositExtractor(loggerFactory, settings, opReturnDataReader);
+            this.depositExtractor = new DepositExtractor(loggerFactory, settings, opReturnDataReader, fullNode);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             string folder = Path.Combine(dataFolder.RootPath, settings.IsMainChain ? "mainchaindata" : "sidechaindata");

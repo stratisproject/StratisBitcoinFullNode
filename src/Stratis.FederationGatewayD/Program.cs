@@ -40,7 +40,7 @@ namespace Stratis.FederationGatewayD
 
                 if (isSidechainNode == isMainchainNode)
                 {
-                    throw new ArgumentException($"Gateway node needs to be started specifiying either a {SidechainArgument} or a {MainchainArgument} argument");
+                    throw new ArgumentException($"Gateway node needs to be started specifying either a {SidechainArgument} or a {MainchainArgument} argument");
                 }
 
                 var nodeSettings = new NodeSettings(networksSelector: isMainchainNode ? Networks.Stratis : ApexNetworks.Apex, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);

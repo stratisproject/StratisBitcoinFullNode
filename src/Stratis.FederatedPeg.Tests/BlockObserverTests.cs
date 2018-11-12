@@ -4,8 +4,10 @@ using Stratis.Bitcoin;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
-using BlockObserver = Stratis.FederatedPeg.Features.FederationGateway.Notifications.BlockObserver;
 using Xunit;
+using BlockObserver = Stratis.FederatedPeg.Features.FederationGateway.Notifications.BlockObserver;
+using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
+using Microsoft.Extensions.Logging;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -33,13 +35,16 @@ namespace Stratis.FederatedPeg.Tests
 
         private IBlockTipSender blockTipSender;
 
+        private IOpReturnDataReader opReturnDataReader;
+
+        private ILoggerFactory loggerFactory;
+
         public BlockObserverTests()
         {
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.federationGatewaySettings.MinimumDepositConfirmations.Returns(this.minimumDepositConfirmations);
 
             this.crossChainTransactionMonitor = Substitute.For<ICrossChainTransactionMonitor>();
-            this.depositExtractor = Substitute.For<IDepositExtractor>();
             this.leaderProvider = Substitute.For<ILeaderProvider>();
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
             this.fullNode = Substitute.For<IFullNode>();
@@ -47,13 +52,19 @@ namespace Stratis.FederatedPeg.Tests
             this.blockTipSender = Substitute.For<IBlockTipSender>();
             this.chain = Substitute.ForPartsOf<ConcurrentChain>();
             this.fullNode.NodeService<ConcurrentChain>().Returns(this.chain);
+            this.loggerFactory = Substitute.For<ILoggerFactory>();
+            this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
+
+            this.depositExtractor = new DepositExtractor(
+                this.loggerFactory,
+                this.federationGatewaySettings,
+                this.opReturnDataReader,
+                this.fullNode);
 
             this.blockObserver = new BlockObserver(
                 this.federationWalletSyncManager,
                 this.crossChainTransactionMonitor,
                 this.depositExtractor,
-                this.federationGatewaySettings,
-                this.fullNode,
                 this.maturedBlockSender,
                 this.blockTipSender);
         }
@@ -66,11 +77,10 @@ namespace Stratis.FederatedPeg.Tests
             var earlyBlock = new Block();
             var earlyChainHeaderBlock = new ChainedHeaderBlock(earlyBlock, new ChainedHeader(new BlockHeader(), uint256.Zero, confirmations));
 
-            blockObserver.OnNext(earlyChainHeaderBlock);
+            this.blockObserver.OnNext(earlyChainHeaderBlock);
 
             this.crossChainTransactionMonitor.Received(1).ProcessBlock(earlyBlock);
             this.federationWalletSyncManager.Received(1).ProcessBlock(earlyBlock);
-            this.depositExtractor.ReceivedWithAnyArgs(0).ExtractDepositsFromBlock(null, 0);
             this.maturedBlockSender.ReceivedWithAnyArgs(0).SendMaturedBlockDepositsAsync(null);
         }
 
@@ -83,7 +93,6 @@ namespace Stratis.FederatedPeg.Tests
 
             this.crossChainTransactionMonitor.Received(1).ProcessBlock(blockBuilder.block);
             this.federationWalletSyncManager.Received(1).ProcessBlock(blockBuilder.block);
-            this.depositExtractor.Received(1).ExtractDepositsFromBlock(null, 0);
             this.maturedBlockSender.ReceivedWithAnyArgs(1).SendMaturedBlockDepositsAsync(null);
         }
 
@@ -107,6 +116,8 @@ namespace Stratis.FederatedPeg.Tests
 
             var block = new Block();
             var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
+
+            chainedHeaderBlock.ChainedHeader.Block = chainedHeaderBlock.Block;
 
             return (chainedHeaderBlock, block);
         }

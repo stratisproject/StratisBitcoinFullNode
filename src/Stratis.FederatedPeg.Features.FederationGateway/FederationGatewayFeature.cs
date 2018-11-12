@@ -106,6 +106,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.blockTipSender = blockTipSender;
             this.signals = signals;
             this.depositExtractor = depositExtractor;
+            this.leaderProvider = leaderProvider;
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
             this.fullNode = fullNode;
@@ -133,8 +134,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     this.walletSyncManager,
                     this.crossChainTransactionMonitor,
                     this.depositExtractor,
-                    this.federationGatewaySettings,
-                    this.fullNode,
                     this.maturedBlockSender,
                     this.blockTipSender));
 
