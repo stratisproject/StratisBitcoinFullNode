@@ -3,7 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 
-namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
+namespace Stratis.Bitcoin.Features.Consensus.Interfaces
 {
     /// <summary>
     /// Rewind data index data store, where index structure consists of a key-value storage where key is a TxId + N (N is an index of output in a transaction)

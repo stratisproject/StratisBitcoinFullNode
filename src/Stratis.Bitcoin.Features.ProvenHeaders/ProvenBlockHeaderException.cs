@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
+namespace Stratis.Bitcoin.Features.ProvenHeaders
 {
     public class ProvenBlockHeaderException : Exception
     {

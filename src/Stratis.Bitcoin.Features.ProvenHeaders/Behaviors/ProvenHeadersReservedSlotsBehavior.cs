@@ -11,7 +11,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
-namespace Stratis.Bitcoin.Features.Consensus.Behaviors
+namespace Stratis.Bitcoin.Features.ProvenHeaders
 {
     public class ProvenHeadersReservedSlotsBehavior : NetworkPeerBehavior
     {

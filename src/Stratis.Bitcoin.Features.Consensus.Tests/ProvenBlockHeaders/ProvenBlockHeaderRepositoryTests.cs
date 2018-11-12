@@ -7,8 +7,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Features.ProvenHeaders.Store;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -32,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             string folder = CreateTestDir(this);
 
-            // Initialise the repository - this will set-up the genesis blockHash (blockId).
+            // Initialize the repository - this will set-up the genesis blockHash (blockId).
             using (IProvenBlockHeaderRepository repository = this.SetupRepository(this.Network, folder))
             {
                 // Check the BlockHash (blockId) exists.

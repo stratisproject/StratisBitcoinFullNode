@@ -7,10 +7,9 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
+namespace Stratis.Bitcoin.Features.ProvenHeaders.Store
 {
     /// <summary>
     /// Persistent implementation of the <see cref="ProvenBlockHeader"/> DBreeze repository.
@@ -137,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<ProvenBlockHeader> GetAsync(int blockHeight)
         {
-            IEnumerable<ProvenBlockHeader> headers =  await this.GetAsync(blockHeight, blockHeight).ConfigureAwait(false);
+            IEnumerable<ProvenBlockHeader> headers = await this.GetAsync(blockHeight, blockHeight).ConfigureAwait(false);
 
             return headers.FirstOrDefault();
         }

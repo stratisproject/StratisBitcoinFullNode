@@ -14,7 +14,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
-namespace Stratis.Bitcoin.Features.Consensus.Behaviors
+namespace Stratis.Bitcoin.Features.ProvenHeaders
 {
     /// <summary>
     /// Behavior that takes care of proven headers protocol. It also keeps the notion of peer's consensus tip.
@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
             bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && this.IsPeerWhitelisted(peer));
-         
+
             // Only legacy peers are allowed to handle this message, or any node before PH activation.
             if (isLegacyWhitelistedPeer)
             {

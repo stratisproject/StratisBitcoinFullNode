@@ -4,7 +4,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Interfaces
+namespace Stratis.Bitcoin.Features.ProvenHeaders.Store
 {
     /// <summary>
     /// Interface <see cref="ProvenBlockHeader"/> provider.

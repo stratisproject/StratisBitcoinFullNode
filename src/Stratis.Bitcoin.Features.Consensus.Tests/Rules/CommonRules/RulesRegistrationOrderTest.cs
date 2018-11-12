@@ -3,7 +3,6 @@ using FluentAssertions;
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules;
 using Stratis.Bitcoin.Networks;
 using Xunit;
 
@@ -63,14 +62,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             List<IHeaderValidationConsensusRule> headerValidationRules = network.Consensus.HeaderValidationRules;
 
-            headerValidationRules.Count.Should().Be(7);
+            headerValidationRules.Count.Should().Be(5);
             headerValidationRules[0].Should().BeOfType<HeaderTimeChecksRule>();
             headerValidationRules[1].Should().BeOfType<HeaderTimeChecksPosRule>();
             headerValidationRules[2].Should().BeOfType<StratisBugFixPosFutureDriftRule>();
             headerValidationRules[3].Should().BeOfType<CheckDifficultyPosRule>();
             headerValidationRules[4].Should().BeOfType<StratisHeaderVersionRule>();
-            headerValidationRules[5].Should().BeOfType<ProvenHeaderSizeRule>();
-            headerValidationRules[6].Should().BeOfType<ProvenHeaderCoinstakeRule>();
 
             List<IIntegrityValidationConsensusRule> integrityValidationRules = network.Consensus.IntegrityValidationRules;
 

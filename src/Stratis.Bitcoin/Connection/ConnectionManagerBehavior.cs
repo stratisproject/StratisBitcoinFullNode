@@ -32,9 +32,9 @@ namespace Stratis.Bitcoin.Connection
 
         protected readonly IConnectionManager connectionManager;
 
-        public bool Whitelisted { get; internal set; }
+        public bool Whitelisted { get; internal protected set; }
 
-        public bool OneTry { get; internal set; }
+        public bool OneTry { get; internal protected set; }
 
         public ConnectionManagerBehavior(IConnectionManager connectionManager, ILoggerFactory loggerFactory)
         {
