@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
 
             // Use MethodParamStringSerializer to serialize the interpreted object to a string
-            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue);
+            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue, this.network);
             return Json(serialized);
         }
 

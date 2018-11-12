@@ -438,7 +438,6 @@ public class Test
                                                 public void Byte(byte param){}
                                                 public void ByteArray(byte[] param){}
                                                 public void Char(char param){}
-                                                public void SByte(sbyte param){}
                                                 public void String(string param){}
                                                 public void Int32(int param){}
                                                 public void UInt32(uint param){}

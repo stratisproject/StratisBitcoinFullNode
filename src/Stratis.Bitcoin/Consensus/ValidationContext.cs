@@ -50,5 +50,19 @@ namespace Stratis.Bitcoin.Consensus
         /// to inability to validate the block properly. Set to <c>null</c> otherwise.
         /// </remarks>
         public NetworkPeerServices? MissingServices { get; set; }
+
+        /// <summary>Gets or sets flag indicating if we do not have enough information to validate UTOX.</summary>
+        public bool InsufficientHeaderInformation { get; set; }
+
+        /// <summary>
+        /// Executes provided action and throws a given consensus error.
+        /// </summary>
+        /// <param name="errorToThrow">The error to throw.</param>
+        /// <param name="setFlag">The action to execute beofre error is thrown.</param>
+        public void SetFlagAndThrow(ConsensusError errorToThrow, Action<ValidationContext> setFlag)
+        {
+            setFlag(this);
+            errorToThrow.Throw();
+        }
     }
 }
