@@ -3,13 +3,13 @@
 
 ## Motivation
 
-In order to produce blocks on Stratis network, a miner has to be online with running node and have its wallet open. This is necessary because at each time slot, the minor is supposed to check whether 1 of its UTXOs is eligible to be used as so-called coinstake kernel input and if so, it needs to use the private key associated with this UTXO in order to produce the coinstake transaction.
+In order to produce blocks on the Stratis network, a miner has to be online with a running node and have its wallet open. This is necessary because at each time slot, the minor is supposed to check whether 1 of its UTXOs is eligible to be used as a so-called coinstake kernel input and if so, it needs to use the private key associated with this UTXO in order to produce the coinstake transaction.
 
-The chance of a UTXO to be eligible for producing a coinstake transaction grows linearly with the number of coins that this UTXO presents.
+The chance of a UTXO being eligible for producing a coinstake transaction grows linearly with the number of coins that this UTXO presents.
 
 This implies that the biggest miners on the network are required to keep the coins in a hot wallet. This is dangerous in case the machine where the hot wallet runs is compromised.
 
-We propose cold staking, which is mechanism that eliminates the need to keep the coins in the hot wallet. With cold staking implemented, the minor still needs to be online with running the node and open wallet, but the coins that are used for staking, can be safely stored in cold storage. Therefore the open hot wallet does not need to hold any significant amount of coins, or it can even be completely empty.
+We propose cold staking, which is a mechanism that eliminates the need to keep the coins in a hot wallet. With cold staking implemented, the miner still needs to be online with a running node and an open wallet, but the coins that are used for staking can be safely stored in cold storage. Therefore, the open hot wallet does not need to hold any significant amount of coins, or it can even be completely empty.
 
 
 ## User interface flow
