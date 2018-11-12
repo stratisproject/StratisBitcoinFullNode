@@ -122,13 +122,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             Assert.Equal(createTransaction.SpendingDetails.TransactionId, resultingCreate.Hash);
             Assert.Equal(createTransaction.SpendingDetails.Payments.First().Amount.ToUnit(MoneyUnit.BTC), resultingCreate.Amount);
             Assert.Equal(uint160.Zero.ToBase58Address(this.network), resultingCreate.To);
-            Assert.Equal((uint)createTransaction.SpendingDetails.BlockHeight, resultingCreate.BlockHeight);
+            Assert.Equal(createTransaction.SpendingDetails.BlockHeight, resultingCreate.BlockHeight);
 
             Assert.Equal(ContractTransactionItemType.Received, resultingTransaction.Type);
             Assert.Equal(address.Address, resultingTransaction.To);
             Assert.Equal(normalTransaction.Id, resultingTransaction.Hash);
             Assert.Equal(normalTransaction.Amount.ToUnit(MoneyUnit.BTC), resultingTransaction.Amount);
-            Assert.Equal((uint)1, resultingTransaction.BlockHeight);
+            Assert.Equal(1, resultingTransaction.BlockHeight);
         }
     }
 }

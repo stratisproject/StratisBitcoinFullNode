@@ -284,7 +284,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     transactionItems.Add(new ContractTransactionItem
                     {
                         Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
-                        BlockHeight = (uint) transaction.BlockHeight,
+                        BlockHeight = transaction.BlockHeight,
                         Hash = transaction.Id,
                         Type = ContractTransactionItemType.Received,
                         To = address
@@ -305,10 +305,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                 transactionItems.Add(new ContractTransactionItem
                                 {
                                     Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                    BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
+                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCreate,
                                     Hash = transaction.SpendingDetails.TransactionId,
-                                    To = receipt.NewContractAddress.ToBase58Address(this.network)
+                                    To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? ""
                                 });
                             }
                             else
@@ -319,7 +319,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                 transactionItems.Add(new ContractTransactionItem
                                 {
                                     Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                    BlockHeight = (uint)transaction.SpendingDetails.BlockHeight,
+                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCall,
                                     Hash = transaction.SpendingDetails.TransactionId,
                                     To = txData.Value.ContractAddress.ToBase58Address(this.network)
@@ -336,7 +336,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                     transactionItems.Add(new ContractTransactionItem
                                     {
                                         Amount = payment.Amount.ToUnit(MoneyUnit.Satoshi),
-                                        BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
+                                        BlockHeight = transaction.SpendingDetails.BlockHeight,
                                         Type = ContractTransactionItemType.Send,
                                         Hash = transaction.SpendingDetails.TransactionId,
                                         To = payment.DestinationAddress
