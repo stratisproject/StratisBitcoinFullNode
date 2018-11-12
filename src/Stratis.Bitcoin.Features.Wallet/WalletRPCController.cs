@@ -127,11 +127,22 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// RPC method that gets a new address for receiving payments.
         /// Uses the first wallet and account.
         /// </summary>
+        /// <param name="account">Parameter is deprecated.</param>
+        /// <param name="addressType">Address type, currently only 'legacy' is supported.</param>
         /// <returns>The new address.</returns>
         [ActionName("getnewaddress")]
         [ActionDescription("Returns a new wallet address for receiving payments.")]
-        public NewAddressModel GetNewAddress()
+        public NewAddressModel GetNewAddress(string account, string addressType)
         {
+            if (!string.IsNullOrEmpty(account))
+                throw new RPCServerException(RPCErrorCode.RPC_METHOD_DEPRECATED, "Use of 'account' parameter has been deprecated");
+
+            if (!string.IsNullOrEmpty(addressType))
+            {
+                // Currently segwit and bech32 addresses are not supported.
+                if (!addressType.Equals("legacy", StringComparison.InvariantCultureIgnoreCase))
+                    throw new RPCServerException(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Only address type 'legacy' is currently supported.");
+            }
             HdAddress hdAddress = this.walletManager.GetUnusedAddress(this.GetAccount());
             string base58Address = hdAddress.Address;
             
