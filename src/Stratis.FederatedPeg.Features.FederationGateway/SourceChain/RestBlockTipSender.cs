@@ -16,7 +16,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
         public async Task SendBlockTipAsync(IBlockTip blockTip)
         {
-            await this.SendAsync((BlockTipModel)blockTip, FederationGatewayController.ReceiveCurrentBlockTipRoute).ConfigureAwait(false);
+            await this.SendAsync((BlockTipModel)blockTip, FederationGatewayRouteEndPoint.ReceiveCurrentBlockTip).ConfigureAwait(false);
         }
     }
 }

@@ -17,7 +17,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
         /// <inheritdoc />
         public async Task SendMaturedBlockDepositsAsync(IMaturedBlockDeposits maturedBlockDeposits)
         {
-            await this.SendAsync((MaturedBlockDepositsModel)maturedBlockDeposits, FederationGatewayController.ReceiveMaturedBlockRoute).ConfigureAwait(false);
+            await this.SendAsync((MaturedBlockDepositsModel)maturedBlockDeposits, FederationGatewayRouteEndPoint.ReceiveMaturedBlock).ConfigureAwait(false);
         }
     }
 }

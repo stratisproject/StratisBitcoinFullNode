@@ -4,6 +4,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
@@ -21,6 +22,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private ILoggerFactory loggerFactory;
 
+        private readonly IFullNode fullNode;
+
         private DepositExtractor depositExtractor;
 
         private Network network;
@@ -29,6 +32,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private TestTransactionBuilder transactionBuilder;
 
+        private readonly ConcurrentChain chain;
+
         public DepositExtractorTests()
         {
             this.network = ApexNetwork.RegTest;
@@ -36,6 +41,8 @@ namespace Stratis.FederatedPeg.Tests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.settings = Substitute.For<IFederationGatewaySettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
+            this.fullNode = Substitute.For<IFullNode>();
+            this.fullNode.NodeService<ConcurrentChain>().Returns(this.chain);
 
             this.addressHelper = new AddressHelper(this.network);
 
@@ -45,7 +52,10 @@ namespace Stratis.FederatedPeg.Tests
             this.transactionBuilder = new TestTransactionBuilder();
 
             this.depositExtractor = new DepositExtractor(
-                this.loggerFactory, this.settings, this.opReturnDataReader);
+                this.loggerFactory, 
+                this.settings, 
+                this.opReturnDataReader,
+                this.fullNode);
         }
 
         [Fact]
