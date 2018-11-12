@@ -231,8 +231,25 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         [Fact]
         public void GetNewAddress()
         {
+            // Try creating with default parameters.
             BitcoinAddress address = this.rpcTestFixture.RpcClient.GetNewAddress();
             Assert.NotNull(address);
+
+            // Try creating with optional parameters.
+            address = BitcoinAddress.Create(this.rpcTestFixture.RpcClient.SendCommand(RPCOperations.getnewaddress, new[] { string.Empty, "legacy" }).ResultString, this.rpcTestFixture.RpcClient.Network);
+            Assert.NotNull(address);
+        }
+
+        [Fact]
+        public void TestGetNewAddressWithUnsupportedAddressTypeThrowsRpcException()
+        {
+            Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand(RPCOperations.getnewaddress, new[] { string.Empty, "bech32" }));
+        }
+
+        [Fact]
+        public void TestGetNewAddressWithAccountParameterThrowsRpcException()
+        {
+            Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand(RPCOperations.getnewaddress, new[] { "account1", "legacy" }));
         }
 
         // TODO: implement the RPC methods used below

@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -455,7 +456,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<IStakeValidator>().Object,
                 new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(dateTimeProvider),
-                new NodeStats(dateTimeProvider));
+                new NodeStats(dateTimeProvider),
+                new Mock<IRewindDataIndexStore>().Object);
 
             posConsensusRules.Register();
 
