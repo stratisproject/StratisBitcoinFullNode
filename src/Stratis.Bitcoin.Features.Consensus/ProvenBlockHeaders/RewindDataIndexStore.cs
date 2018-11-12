@@ -77,10 +77,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             int heightToKeepItemsTo = currentHeight - this.numberOfBlocksToKeep;
 
-            List<KeyValuePair<string, int>> itemsToRemove = this.items.Where(i => i.Value < heightToKeepItemsTo || i.Value > currentHeight).ToList();
-            foreach (KeyValuePair<string, int> item in itemsToRemove)
+            List<KeyValuePair<string, int>> listOfItems = this.items.ToList();
+            foreach (KeyValuePair<string, int> item in listOfItems)
             {
-                this.items.TryRemove(item.Key, out int unused);
+                if ((item.Value < heightToKeepItemsTo) || (item.Value > currentHeight))
+                {
+                    this.items.TryRemove(item.Key, out int unused);
+                }
             }
         }
 
