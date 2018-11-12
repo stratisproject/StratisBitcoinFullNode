@@ -26,6 +26,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             var configReader = nodeSettings.ConfigReader;
 
+            this.IsMainChain = configReader.GetOrDefault<bool>("mainchain", false);
+            if (!this.IsMainChain && !configReader.GetOrDefault("sidechain", false))
+                throw new ConfigurationException("Either -mainchain or -sidechain must be specified");
+
             var redeemScriptRaw = configReader.GetOrDefault<string>(RedeemScriptParam, null);
             Console.WriteLine(redeemScriptRaw);
             if (redeemScriptRaw == null)
@@ -50,6 +54,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             this.MinimumDepositConfirmations = nodeSettings.Network.Consensus.MaxReorgLength + 1;
         }
+
+        /// <inheritdoc/>
+        public bool IsMainChain { get; }
 
         /// <inheritdoc/>
         public IEnumerable<IPEndPoint> FederationNodeIpEndPoints { get; }
