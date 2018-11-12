@@ -290,8 +290,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
-            UnspentOutputs matchingUnspentUtxo =
-                rewindData.OutputsToRestore.FirstOrDefault(unspent => unspent.TransactionId == input.PrevOut.Hash);
+            UnspentOutputs matchingUnspentUtxo = 
+                rewindData.OutputsToRestore.Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N)).FirstOrDefault();
+
             if (matchingUnspentUtxo == null)
             {
                 context.ValidationContext.SetFlagAndThrow(ConsensusErrors.UtxoNotFoundInRewindData, ct => ct.InsufficientHeaderInformation = true);
