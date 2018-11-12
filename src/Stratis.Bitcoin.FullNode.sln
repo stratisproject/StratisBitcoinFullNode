@@ -161,6 +161,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Po
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.ProvenHeaders", "Stratis.Bitcoin.Features.ProvenHeaders\Stratis.Bitcoin.Features.ProvenHeaders.csproj", "{0DBBD18C-A5DC-4B3B-B647-2700A9DB6399}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.StratisProvenHeadersD", "Stratis.StratisProvenHeadersD\Stratis.StratisProvenHeadersD.csproj", "{16C3C4A1-DCA5-4BA6-A540-06E90746D3C0}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -419,6 +421,10 @@ Global
 		{0DBBD18C-A5DC-4B3B-B647-2700A9DB6399}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{0DBBD18C-A5DC-4B3B-B647-2700A9DB6399}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{0DBBD18C-A5DC-4B3B-B647-2700A9DB6399}.Release|Any CPU.Build.0 = Release|Any CPU
+		{16C3C4A1-DCA5-4BA6-A540-06E90746D3C0}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{16C3C4A1-DCA5-4BA6-A540-06E90746D3C0}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{16C3C4A1-DCA5-4BA6-A540-06E90746D3C0}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{16C3C4A1-DCA5-4BA6-A540-06E90746D3C0}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE

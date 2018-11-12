@@ -1,0 +1,23 @@
+{
+   "profiles": {
+      "Stratis.StratisProvenHeadersD": {
+         "commandName": "Project"
+      },
+      "Stratis.StratisProvenHeadersD Test": {
+         "commandName": "Project",
+         "commandLineArgs": "-testnet"
+      },
+      "Stratis.StratisProvenHeadersD Test with RPC": {
+         "commandName": "Project",
+         "commandLineArgs": "-testnet -server -rpcpassword=password -rpcuser=user"
+      },
+      "Stratis.StratisProvenHeadersD Test Keepalive 60s": {
+         "commandName": "Project",
+         "commandLineArgs": "-testnet -keepalive=60"
+      },
+      "Stratis.StratisProvenHeadersD Test No assumevalid": {
+         "commandName": "Project",
+         "commandLineArgs": "-testnet -assumevalid=0 -checkpoints=false"
+      }
+   }
+}
