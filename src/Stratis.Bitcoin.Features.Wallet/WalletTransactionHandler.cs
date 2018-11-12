@@ -226,6 +226,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
 
+            // If inputs are selected by the user, we just choose them all.
+            if (context.SelectedInputs != null && context.SelectedInputs.Any())
+            {
+                context.TransactionBuilder.CoinSelector = new CoinControlSelector();
+            }
+
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
             this.AddCoins(context);

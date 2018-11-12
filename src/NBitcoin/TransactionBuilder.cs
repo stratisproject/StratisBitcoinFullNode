@@ -23,6 +23,14 @@ namespace NBitcoin
         IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target);
     }
 
+    public class CoinControlSelector : ICoinSelector
+    {
+        public IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target)
+        {
+            return coins;
+        }
+    }
+
     /// <summary>
     /// Algorithm implemented by bitcoin core https://github.com/bitcoin/bitcoin/blob/master/src/wallet.cpp#L1276
     /// Minimize the change

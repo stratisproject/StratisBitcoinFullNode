@@ -1242,7 +1242,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<WalletBuildTransactionModel>();
 
             // Assert.
-            buildTransactionModel.Fee.Should().Be(new Money(2300));
+            buildTransactionModel.Fee.Should().Be(new Money(6740));
 
             Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
             trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create("TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", this.fixture.Node.FullNode.Network).ScriptPubKey);
