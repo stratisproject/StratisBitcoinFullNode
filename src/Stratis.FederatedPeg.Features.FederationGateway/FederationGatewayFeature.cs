@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
 using System.Text;
@@ -13,7 +14,6 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Notifications;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -195,20 +195,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         public static IFullNodeBuilder AddFederationGateway(this IFullNodeBuilder fullNodeBuilder)
         {
             LoggingConfiguration.RegisterFeatureNamespace<FederationGatewayFeature>(FederationGatewayFeature.FederationGatewayFeatureNamespace);
-            
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
                     .AddFeature<FederationGatewayFeature>()
                     .DependOn<BlockNotificationFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddHttpClient(
-                            FederationGatewayFeature.JsonHttpClientName,
-                            client => {
-                                    client.DefaultRequestHeaders.Accept.Clear();
-                                    client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                            });
+                    .FeatureServices(services => {
+
+                        services.AddSingleton<IHttpClientFactory, HttpClientFactory>();
                         services.AddSingleton<IMaturedBlockReceiver, MaturedBlockReceiver>();
                         services.AddSingleton<IMaturedBlockSender, RestMaturedBlockSender>();
                         services.AddSingleton<IBlockTipSender, RestBlockTipSender>();
@@ -228,6 +223,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     });
             });
             return fullNodeBuilder;
+        }
+    }
+
+    //todo: this should be removed when compatible with full node API, instead, we should use
+    //services.AddHttpClient from Microsoft.Extensions.Http
+    public class HttpClientFactory : IHttpClientFactory
+    {
+        /// <inheritdoc />
+        public HttpClient CreateClient(string name)
+        {
+            var httpClient = new HttpClient();
+            httpClient.DefaultRequestHeaders.Accept.Clear();
+            httpClient.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
+            return httpClient;
         }
     }
 }
