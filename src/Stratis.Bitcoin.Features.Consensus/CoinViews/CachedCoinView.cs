@@ -468,13 +468,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 // we can rewind and there is no need to check underlying storage.
                 if (this.cachedRewindDataIndex.Count > 0)
                 {
-                    RewindData lastRewindData = this.cachedRewindDataIndex.Last().Value;
+                    KeyValuePair<int, RewindData> lastRewindDataItem = this.cachedRewindDataIndex.Last();
+                    RewindData lastRewindData = lastRewindDataItem.Value;
 
                     this.RemoveTransactions(lastRewindData);
                     this.RestoreOutputs(lastRewindData);
 
                     // Change current block hash to the one from the rewind data.
                     this.blockHash = lastRewindData.PreviousBlockHash;
+                    this.blockHeight = lastRewindDataItem.Key;
 
                     this.cachedRewindDataIndex.Remove(this.cachedRewindDataIndex.Keys.Last());
                     this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", this.blockHash);
