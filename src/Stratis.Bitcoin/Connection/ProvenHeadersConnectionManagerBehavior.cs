@@ -31,12 +31,24 @@ namespace Stratis.Bitcoin.Connection
         /// <inheritdoc />
         protected override async Task OnHandshakedAsync(INetworkPeer peer)
         {
-            int requireFromHeight = this.checkpoints.GetLastCheckpointHeight() + 1;
-            this.logger.LogDebug("Proven headers are requested from height {0}.", requireFromHeight);
+            if (this.CanPeerProcessProvenHeaders(peer))
+            {
+                // Require from height is the highest between activation height and last checkpoint height.
+                int lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
+                int activationHeight = (this.network.Consensus.Options as PosConsensusOptions).ProvenHeadersActivationHeight;
 
-            var sendProvenHeadersPayload = new SendProvenHeadersPayload(requireFromHeight);
+                int requireFromHeight = Math.Max(lastCheckpointHeight, activationHeight);
+                this.logger.LogDebug("Proven headers are requested from height {0}.", requireFromHeight);
 
-            await peer.SendMessageAsync(sendProvenHeadersPayload).ConfigureAwait(false);
+                var sendProvenHeadersPayload = new SendProvenHeadersPayload(requireFromHeight);
+
+                await peer.SendMessageAsync(sendProvenHeadersPayload).ConfigureAwait(false);
+            }
+            else
+            {
+                // If the peer doesn't support PH, use legacy headers
+                await base.OnHandshakedAsync(peer);
+            }
         }
 
         [NoTrace]
@@ -47,6 +59,19 @@ namespace Stratis.Bitcoin.Connection
                 OneTry = this.OneTry,
                 Whitelisted = this.Whitelisted,
             };
+        }
+
+
+        /// <summary>
+        /// Determines whether the specified peer supports Proven Headers and PH has been activated.
+        /// </summary>
+        /// <param name="peer">The peer.</param>
+        /// <returns>
+        ///   <c>true</c> if is peer is PH enabled; otherwise, <c>false</c>.
+        /// </returns>
+        private bool CanPeerProcessProvenHeaders(INetworkPeer peer)
+        {
+            return peer.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
         }
     }
 }
