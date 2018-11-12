@@ -10,6 +10,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     public interface IFederationGatewaySettings
     {
         /// <summary>
+        /// Indicates whether this is the main chain. Set if the "-mainchain" switch was used.
+        /// </summary>
+        bool IsMainChain { get; }
+
+        /// <summary>
         /// Ip Endpoints for the other nodes in the federation.
         /// </summary>
         IEnumerable<IPEndPoint> FederationNodeIpEndPoints { get; }
