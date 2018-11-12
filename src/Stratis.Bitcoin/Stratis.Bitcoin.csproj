@@ -53,12 +53,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Reference Include="xunit.assert">
-      <HintPath>..\..\..\..\..\.nuget\packages\xunit.assert\2.4.0\lib\netstandard2.0\xunit.assert.dll</HintPath>
-    </Reference>
-  </ItemGroup>
-
-  <ItemGroup>
     <Compile Update="Properties\Resources.Designer.cs">
       <DesignTime>True</DesignTime>
       <AutoGen>True</AutoGen>

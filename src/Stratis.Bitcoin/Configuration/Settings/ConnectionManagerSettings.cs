@@ -7,7 +7,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
-using Xunit;
 
 namespace Stratis.Bitcoin.Configuration.Settings
 {
@@ -80,21 +79,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                string[] whitebindEndpoints = config.GetAll("whitebind", this.logger);
-
-                foreach (string whiteBindEndpoint in whitebindEndpoints)
-                {
-                    if (this.EndpointIsRoutableToAnotherEndpoint(whiteBindEndpoint, out NodeServerEndpoint localEndpoint))
-                    {
-                        // Whitelist the whitebind whiteBindEndpoint if we are currently listening to it.
-                        localEndpoint.Whitelisted = true;
-                    }
-                    else
-                    {
-                        // Add it to list of network interfaces if we are not.
-                        this.Listen.Add(new NodeServerEndpoint(whiteBindEndpoint.ToIPEndPoint(this.Port), true));
-                    }
-                }
+                this.Listen.AddRange(config.GetAll("whitebind", this.logger)
+                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), true)));
             }
             catch (FormatException)
             {
@@ -170,59 +156,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#bantime=<number>");
             builder.AppendLine($"#Disallow connection to peers in same IP range. Default is 1 for remote hosts.");
             builder.AppendLine($"#iprangefiltering=<0 or 1>");
-        }
-
-        public bool EndpointIsRoutableToAnotherEndpoint(string whiteBindEndpointString, out NodeServerEndpoint localEndpoint)
-        {
-            // refactor this with lib code.
-            string[] ipAndPortSplit = whiteBindEndpointString.Split(new char[]{':'});
-            var whiteBindEndpoint = new IPEndPoint(IPAddress.Parse(ipAndPortSplit[0]), int.Parse(ipAndPortSplit[1]));
-            var nodeServerWhiteBindEndpoint = new NodeServerEndpoint(whiteBindEndpoint, true);
-            NodeServerEndpoint networkInterfaceEndpoint = null;
-
-            // 127.0.0.1:16178 == 0.0.0.0:16178
-            // 127.0.0.1:16178 != 0.0.0.0:44556
-            var localhostIp = IPAddress.Parse("127.0.0.1").MapToIPv6Ex();
-            networkInterfaceEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Address.MapToIPv6().Equals(localhostIp));
-            if (networkInterfaceEndpoint != null)
-            {
-                localEndpoint = networkInterfaceEndpoint;
-                if (nodeServerWhiteBindEndpoint.Endpoint.Address.MapToIPv6()
-                    .Equals(IPAddress.Parse("0.0.0.0").MapToIPv6Ex()))
-                {
-                    if (networkInterfaceEndpoint.Endpoint.Port == whiteBindEndpoint.Port)
-                        return true;
-                }
-
-                return false;
-            }
-
-            // 0.0.0.0:16178 != 127.0.0.1:16178
-            // 0.0.0.0:16178 == 0.0.0.0:44556 (????)
-            var defaultRouteIp = IPAddress.Parse("0.0.0.0").MapToIPv6Ex();
-            networkInterfaceEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Address.MapToIPv6().Equals(defaultRouteIp));
-            if (networkInterfaceEndpoint != null)
-            {
-                localEndpoint = networkInterfaceEndpoint;
-                if (nodeServerWhiteBindEndpoint.Endpoint.Address.MapToIPv6()
-                    .Equals(IPAddress.Parse("127.0.0.1").MapToIPv6Ex()))
-                {
-                    if (networkInterfaceEndpoint.Endpoint.Port == whiteBindEndpoint.Port)
-                        return true;
-                }
-
-                return false;
-            }
-
-            // this.Listen = collection of network I/Fs node should listen on
-            localEndpoint = this.Listen.FirstOrDefault(e => e.Endpoint.Equals(nodeServerWhiteBindEndpoint.Endpoint));
-
-            if (localEndpoint != null)
-            {
-                return true;
-            }
-
-            return false;
         }
 
         /// <summary>
