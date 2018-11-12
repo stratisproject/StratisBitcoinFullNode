@@ -19,15 +19,15 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.TimeProvider = new EditableTimeProvider();
         }
 
-        public CoreNode CreateSmartContractPoANode(Key key)
+        public CoreNode CreateSmartContractPoANode(SmartContractsPoARegTest network, int nodeIndex)
         {
-            Network network = new SmartContractsPoARegTest();
             string dataFolder = this.GetNextDataFolderName();
             CoreNode node = this.CreateNode(new SmartContractPoARunner(dataFolder, network, this.TimeProvider), "poa.conf");
 
             var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
+
             var tool = new KeyTool(settings.DataFolder);
-            tool.SavePrivateKey(key);
+            tool.SavePrivateKey(network.FederationKeys[nodeIndex]);
 
             return node;
         }

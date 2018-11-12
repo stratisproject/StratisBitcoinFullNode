@@ -12,12 +12,12 @@ namespace Stratis.Bitcoin.P2P.Peer
     {
         public bool Added { get; private set; }
 
-        public INetworkPeer peer { get; private set; }
+        public INetworkPeer Peer { get; private set; }
 
         public NetworkPeerEventArgs(INetworkPeer peer, bool added)
         {
             this.Added = added;
-            this.peer = peer;
+            this.Peer = peer;
         }
     }
 

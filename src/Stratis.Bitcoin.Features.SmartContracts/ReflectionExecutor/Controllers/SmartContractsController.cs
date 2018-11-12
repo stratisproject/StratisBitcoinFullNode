@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
 
             // Use MethodParamStringSerializer to serialize the interpreted object to a string
-            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue);
+            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue, this.network);
             return Json(serialized);
         }
 
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             List<ChainedHeader> matches = new List<ChainedHeader>();
             foreach(ChainedHeader chainedHeader in blockHeaders)
             {
-                var scHeader = (SmartContractBlockHeader) chainedHeader.Header;
+                var scHeader = (ISmartContractBlockHeader) chainedHeader.Header;
                 if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
                     matches.Add(chainedHeader);
             }

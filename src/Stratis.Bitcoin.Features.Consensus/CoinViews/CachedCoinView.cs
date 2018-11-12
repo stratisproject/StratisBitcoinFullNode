@@ -9,6 +9,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NLog.Config;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 {
@@ -490,6 +491,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             }
         }
 
+        [NoTrace]
         private void AddBenchStats(StringBuilder log)
         {
             log.AppendLine("======CashedCoinView Bench======");

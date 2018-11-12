@@ -5,6 +5,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonConverters;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -839,7 +840,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// List all spendable transactions in an address.
         /// </summary>
-        /// <returns></returns>
+        /// <returns>List of spendable transactions.</returns>
+        [NoTrace]
         public IEnumerable<TransactionData> UnspentTransactions()
         {
             if (this.Transactions == null)
@@ -960,6 +962,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Determines whether this transaction is confirmed.
         /// </summary>
+        [NoTrace]
         public bool IsConfirmed()
         {
             return this.BlockHeight != null;
@@ -968,11 +971,13 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// Indicates an output is spendable.
         /// </summary>
+        [NoTrace]
         public bool IsSpendable()
         {
             return this.SpendingDetails == null;
         }
 
+        [NoTrace]
         public Money SpendableAmount(bool confirmedOnly)
         {
             // This method only returns a UTXO that has no spending output.
