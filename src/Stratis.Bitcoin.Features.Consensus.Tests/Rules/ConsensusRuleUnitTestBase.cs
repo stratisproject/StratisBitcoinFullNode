@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -91,6 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
         protected Mock<ICoinView> coinView;
+        protected Mock<IRewindDataIndexStore> rewindDataIndexStore;
 
         public PosConsensusRuleUnitTestBase() : base(KnownNetworks.StratisTest)
         {
@@ -98,6 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
             this.coinView = new Mock<ICoinView>();
+            this.rewindDataIndexStore = new Mock<IRewindDataIndexStore>();
         }
 
         protected T CreateRule<T>() where T : ConsensusRuleBase, new()
@@ -107,7 +110,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 Logger = this.logger.Object,
                 Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments,
                     this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object, this.stakeValidator.Object, this.chainState.Object,
-                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object))
+                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object)
             };
         }
     }
@@ -210,6 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
         protected Mock<ICoinView> coinView;
+        protected Mock<IRewindDataIndexStore> rewindDataIndexStore;
 
         public TestPosConsensusRulesUnitTestBase() : base(KnownNetworks.StratisTest)
         {
@@ -217,6 +221,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
             this.coinView = new Mock<ICoinView>();
+            this.rewindDataIndexStore = new Mock<IRewindDataIndexStore>();
             this.consensusRules = InitializeConsensusRules();
         }
 
@@ -224,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain,
                 this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object));
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object);
         }
     }
 
