@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.ProvenHeaders.Store
                     for (int i = fromBlockHeight; i <= toBlockHeight; i++)
                     {
                         Row<byte[], ProvenBlockHeader> row =
-                            transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes(false));
+                            transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes());
 
                         if (row.Exists)
                         {
@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.ProvenHeaders.Store
             sortedHeaders.Sort((pair1, pair2) => pair1.Key.CompareTo(pair2.Key));
 
             foreach (KeyValuePair<int, ProvenBlockHeader> header in sortedHeaders)
-                transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, header.Key.ToBytes(false), header.Value);
+                transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, header.Key.ToBytes(), header.Value);
 
             // Store the latest ProvenBlockHeader in memory.
             this.provenBlockHeaderTip = sortedHeaders.Last().Value;
