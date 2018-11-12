@@ -6,13 +6,13 @@ When contracts are executing we need to have some measure of the resources that 
 
 ## Gas Tracking
 
-To measure and limit run times, the CIL for every method in a contract is rewritten once by the `GasInjectorRewriter` so as to consume gas for every instruction run or method called. Each method is broken up into segments based on the branching instructions (occur at every closure, if, switch, loop etc), and then a set amount of gas is spent based on the amount of computation inside each segment (calculated right now as +1 per instruction and +5 per System method call).
+To measure and limit run times, the CIL for every method in a contract is rewritten once by the `GasInjectorRewriter` so as to consume gas for every instruction run or method called. Each method is broken up into segments based on the branching instructions (occur at every closure, if, switch, loop etc.), and then a set amount of gas is spent based on the amount of computation inside each segment (calculated right now as +1 per instruction and +5 per System method call).
 
 We also spend gas based on storage operations, these happen outside of the contract CIL though, in our own assemblies.
 
 ## Memory Consumption
 
-To measure memory consumption and prevent OutOfMemoryExceptions the `MemoryLimitRewriter` also iterates through every method and checks for certain high-memory-expending calls, maintaining a rough tally of the number of objects created during execution. It monitors this for the following System calls:
+To measure memory consumption and prevent an OutOfMemoryException from occurring the `MemoryLimitRewriter` also iterates through every method and checks for certain high-memory-expending calls, maintaining a rough tally of the number of objects created during execution. It monitors this for the following System calls:
 * Array creation
 * string.ToCharArray
 * string.Split
