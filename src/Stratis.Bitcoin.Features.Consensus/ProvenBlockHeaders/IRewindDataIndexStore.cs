@@ -24,7 +24,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Stores all rewind data index from the cache to a disk and clears cache.
         /// </summary>
-        void Flush();
+        /// <param name="currentHeight">The current block height.</param>
+        void Flush(int currentHeight);
 
         /// <summary>
         /// Saves rewind index data to cache.

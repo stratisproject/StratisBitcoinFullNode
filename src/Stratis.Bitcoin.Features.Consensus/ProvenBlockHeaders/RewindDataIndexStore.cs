@@ -73,14 +73,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public void Flush()
+        public void Flush(int currentHeight)
         {
-            int maxStoredHeight = this.items.Select(i => i.Value).DefaultIfEmpty(0).Max();
-            int heightToKeepItemsTo = maxStoredHeight - this.numberOfBlocksToKeep;
+            int heightToKeepItemsTo = currentHeight - this.numberOfBlocksToKeep;
 
-            if (heightToKeepItemsTo <= 0) return;
-
-            List<KeyValuePair<string, int>> itemsToRemove = this.items.Where(i => i.Value < heightToKeepItemsTo).ToList();
+            List<KeyValuePair<string, int>> itemsToRemove = this.items.Where(i => i.Value < heightToKeepItemsTo || i.Value > currentHeight).ToList();
             foreach (KeyValuePair<string, int> item in itemsToRemove)
             {
                 this.items.TryRemove(item.Key, out int unused);

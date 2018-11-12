@@ -78,6 +78,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 blockHash;
 
+        /// <summary>Height of the block headers of the tip of the coinview.</summary>
+        /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
+        private int blockHeight;
+
         /// <summary>Hash of the block headers of the tip of the underlaying coinview.</summary>
         /// <remarks>All access to this object has to be protected by <see cref="lockobj"/>.</remarks>
         private uint256 innerBlockHash;
@@ -297,7 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             // Before flushing the coinview persist the rewind data index store as well.
             if (this.rewindDataIndexStore != null)
-                this.rewindDataIndexStore.Flush();
+                this.rewindDataIndexStore.Flush(this.blockHeight);
 
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
@@ -367,6 +371,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     throw new InvalidOperationException("Invalid oldBlockHash");
                 }
 
+                this.blockHeight = height;
                 this.blockHash = nextBlockHash;
                 var rewindData = new RewindData(oldBlockHash);
                 var indexItems = new Dictionary<string, int>();
