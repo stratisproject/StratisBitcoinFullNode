@@ -476,7 +476,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     // Change current block hash to the one from the rewind data.
                     this.blockHash = lastRewindData.PreviousBlockHash;
-                    this.blockHeight = lastRewindDataItem.Key;
+                    this.blockHeight = lastRewindDataItem.Key - 1;
 
                     this.cachedRewindDataIndex.Remove(this.cachedRewindDataIndex.Keys.Last());
                     this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", this.blockHash);
