@@ -184,12 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             TxIn txIn = transaction.Inputs[0];
 
-            // First try finding the previous transaction in database.
-            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
-            if ((coins == null) || (coins.UnspentOutputs.Length != 1))
-                ConsensusErrors.ReadTxPrevFailed.Throw();
-
-            UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
+            UnspentOutputs prevUtxo = context.UnspentOutputSet.AccessCoins(txIn.PrevOut.Hash);
             if (prevUtxo == null)
             {
                 this.logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
