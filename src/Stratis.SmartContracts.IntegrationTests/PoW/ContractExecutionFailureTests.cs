@@ -653,6 +653,51 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         }
 
         [Fact]
+        public void ContractTransaction_MemoryLimit()
+        {
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/MemoryConsumingContract.cs");
+            Assert.True(compilationResult.Success);
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 25;
+            uint256 currentHash = this.node1.GetLastBlock().GetHash();
+
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Int, 100001) };
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("UseTooMuchMemory", preResponse.NewContractAddress, amount, parameters);
+            this.node2.WaitMempoolCount(1);
+            this.node2.MineBlocks(1);
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
+
+            // Blocks progressed
+            Assert.NotEqual(currentHash, lastBlock.GetHash());
+
+            // Block contains a refund transaction
+            Assert.Equal(3, lastBlock.Transactions.Count);
+            Transaction refundTransaction = lastBlock.Transactions[2];
+            Assert.Single(refundTransaction.Outputs); // No transfers persisted
+            uint160 refundReceiver = this.senderRetriever.GetAddressFromScript(refundTransaction.Outputs[0].ScriptPubKey).Sender;
+            Assert.Equal(this.node1.MinerAddress.Address, refundReceiver.ToBase58Address(this.node1.CoreNode.FullNode.Network));
+            Assert.Equal(new Money((long)amount, MoneyUnit.BTC), refundTransaction.Outputs[0].Value);
+            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs);
+            Assert.False(receipt.Success);
+            Assert.True(GasPriceList.BaseCost > receipt.GasUsed);
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.StartsWith($"{nameof(RuntimeObserver.MemoryConsumptionException)}", receipt.Error);
+            Assert.Equal(preResponse.NewContractAddress, receipt.To);
+        }
+
+        [Fact]
         public void ContractTransaction_Call_Method_Consumes_All_Gas_Throws_OutOfGasException()
         {
             // Ensure fixture is funded.
