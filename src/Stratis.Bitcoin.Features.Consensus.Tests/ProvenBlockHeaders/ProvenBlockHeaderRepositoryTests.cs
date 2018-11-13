@@ -48,12 +48,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
 
-            var blockHashHieghtPair = new HashHeightPair(provenBlockHeaderIn.GetHash(), 0);
+            var blockHashHeightPair = new HashHeightPair(provenBlockHeaderIn.GetHash(), 0);
             var items = new List<ProvenBlockHeader> { provenBlockHeaderIn };
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.PutAsync(items, blockHashHieghtPair);
+                await repo.PutAsync(items, blockHashHeightPair);
             }
 
             using (var engine = new DBreezeEngine(folder))
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.SynchronizeTables(ProvenBlockHeaderTable);
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var headerOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHashHieghtPair.Height.ToBytes(false)).Value;
+                var headerOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHashHeightPair.Height.ToBytes()).Value;
                 var hashHeightPairOut = txn.Select<byte[], HashHeightPair>(BlockHashTable, new byte[0].ToBytes()).Value;
 
                 headerOut.Should().NotBeNull();
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false), headerIn);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(), headerIn);
                 txn.Commit();
             }
 
@@ -143,8 +143,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(false), header1);
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 2.ToBytes(false), header2);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(), header1);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 2.ToBytes(), header2);
                 txn.Commit();
             }
 
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(false), CreateNewProvenBlockHeaderMock());
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(), CreateNewProvenBlockHeaderMock());
                 txn.Insert<byte[], HashHeightPair>(BlockHashTable, new byte[0], new HashHeightPair(new uint256(), 1));
                 txn.Commit();
             }
