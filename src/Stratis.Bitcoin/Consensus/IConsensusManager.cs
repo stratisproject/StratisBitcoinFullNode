@@ -12,6 +12,12 @@ namespace Stratis.Bitcoin.Consensus
     /// </summary>
     public interface IConsensusManager : IDisposable
     {
+        /// <summary>
+        /// Occurs when a new mined block is going to be attached to the chain.
+        /// This is called before block gets added to the chain, so it's useful to apply changes on block before attaching it.
+        /// </summary>
+        event EventHandler<Block> AttachingMinedBlock;
+
         /// <summary>The current tip of the chain that has been validated.</summary>
         ChainedHeader Tip { get; }
 

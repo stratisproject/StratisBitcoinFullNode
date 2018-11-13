@@ -12,7 +12,7 @@ namespace NBitcoin
     {
         public const uint MaxBlockSize = 1000 * 1000;
 
-        protected BlockHeader header;
+        private BlockHeader header;
 
         /// <summary>The size of the block in bytes, the block must be serialized for this property to be set.</summary>
         public long? BlockSize { get; protected set; }
@@ -193,6 +193,16 @@ namespace NBitcoin
         public MerkleBlock Filter(BloomFilter filter)
         {
             return new MerkleBlock(this, filter);
+        }
+
+        /// <summary>
+        /// Replace the <see cref="BlockHeader"/> with a new provided header.
+        /// </summary>
+        /// <param name="newHeader">The new header to set.</param>
+        /// <remarks>Use this method very carefully because it could cause race conditions if used at the wrong moment.</remarks>
+        public void SetHeader(BlockHeader newHeader)
+        {
+            this.header = newHeader;
         }
     }
 }

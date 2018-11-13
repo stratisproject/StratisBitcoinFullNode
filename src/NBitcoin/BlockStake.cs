@@ -312,11 +312,6 @@ namespace NBitcoin
             set { this.blockSignature = value; }
         }
 
-        public void SetProvenHeader(ProvenBlockHeader provenBlockHeader)
-        {
-            this.header = provenBlockHeader;
-        }
-
         /// <summary>
         /// The additional serialization of the block POS block.
         /// </summary>
@@ -326,6 +321,19 @@ namespace NBitcoin
             stream.ReadWrite(ref this.blockSignature);
 
             this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
+        }
+
+        /// <summary>
+        /// Gets the block coinstake <see cref="Transaction"/>.
+        /// </summary>
+        /// <returns>The coinstake <see cref="Transaction"/>.</returns>
+        /// <remarks>
+        /// <para>In PoS blocks, coinstake transaction is the second transaction in the block.</para>
+        /// <para>In PoW there isn't a coinstake transaction, but the first transaction is taken as coinstake to be able to compute stake modifier for the next eventual PoS block.</para>
+        /// </remarks>
+        public Transaction GetCoinstake()
+        {
+            return (this.Transactions.Count > 1 && this.Transactions[1].IsCoinStake) ? this.Transactions[1] : this.Transactions[0];
         }
     }
 }

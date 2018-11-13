@@ -21,6 +21,10 @@ namespace Stratis.Bitcoin.Consensus
     /// <inheritdoc cref="IConsensusManager"/>
     public class ConsensusManager : IConsensusManager
     {
+        /// <inheritdoc />
+        /// <remarks>Note that this event is called within a peerLock</remarks>
+        public event EventHandler<Block> AttachingMinedBlock;
+
         /// <summary>
         /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
         /// not yet validated or included to the consensus chain.
@@ -248,13 +252,8 @@ namespace Stratis.Bitcoin.Consensus
                         return null;
                     }
 
-                    if (this.network.Consensus.IsProofOfStake)
-                    {
-                        // Ugly temporary hack to be fixed by Fabio
-                        PosBlock posBlock = (PosBlock)block;
-                        ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
-                        posBlock.SetProvenHeader(provenBlockHeader);
-                    }
+                    // Invoke the event before attaching the block, to give a chance to apply changes on it.
+                    this.AttachingMinedBlock?.Invoke(this, block);
 
                     // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
