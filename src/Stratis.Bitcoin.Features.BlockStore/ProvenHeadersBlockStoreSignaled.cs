@@ -102,8 +102,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Created Proven Header at height {0} with hash {1} and adding to the pending batch to be stored.", blockHeight, provenHeaderHash);
 
-            // If our node is in IBD the block will be signaled,
-            // the signaler may expect the block header to be of type PH
+            // If our node is in IBD the block will not be announced to peers.
+            // If not in IBD the signaler may expect the block header to be of type PH.
             // TODO: Memory foot print:
             // This design will cause memory to grow over time (depending on how long the node is running)
             // based on the size of the Proven Headers (a proven header can be up to 1000 bytes).
