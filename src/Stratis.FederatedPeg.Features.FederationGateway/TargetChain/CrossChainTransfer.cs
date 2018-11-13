@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.FederatedPeg.Features.FederationGateway
+namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
     /// <summary>
     /// Cross-chain transfer statuses.

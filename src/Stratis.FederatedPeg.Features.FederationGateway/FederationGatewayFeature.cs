@@ -79,6 +79,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly ICounterChainSessionManager counterChainSessionManager;
 
+        private readonly ICrossChainTransferStore crossChainTransferStore;
+
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
             ICrossChainTransactionMonitor crossChainTransactionMonitor,
@@ -97,7 +99,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             ConcurrentChain chain,
             IMonitorChainSessionManager monitorChainSessionManager,
             ICounterChainSessionManager counterChainSessionManager,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            ICrossChainTransferStore crossChainTransferStore)
         {
             this.loggerFactory = loggerFactory;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
@@ -114,6 +117,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.federationWalletManager = federationWalletManager;
             this.walletSyncManager = walletSyncManager;
             this.network = network;
+            this.crossChainTransferStore = crossChainTransferStore;
 
             this.counterChainSessionManager = counterChainSessionManager;
             this.monitorChainSessionManager = monitorChainSessionManager;
@@ -141,9 +145,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             this.crossChainTransactionMonitor.Initialize(this.federationGatewaySettings);
             this.monitorChainSessionManager.Initialize();
+            this.crossChainTransferStore.Initialize();
 
             this.federationWalletManager.Start();
             this.walletSyncManager.Start();
+            this.crossChainTransferStore.Start();
 
             // Connect the node to the other federation members.
             foreach (var federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
@@ -161,6 +167,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.transactionSubscriberDisposable.Dispose();
             this.crossChainTransactionMonitor.Dispose();
             this.monitorChainSessionManager.Dispose();
+            this.crossChainTransferStore.Dispose();
         }
 
         public void AddInlineStats(StringBuilder benchLogs)
@@ -220,6 +227,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
                         services.AddSingleton<ILeaderProvider, LeaderProvider>();
                         services.AddSingleton<FederationWalletController>();
+                        services.AddSingleton<ICrossChainTransferStore, CrossChainTransferStore>();
                     });
             });
             return fullNodeBuilder;
