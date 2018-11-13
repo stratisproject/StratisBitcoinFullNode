@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         private readonly ILogger logger;
         private readonly IChainState chainState;
         private readonly ICheckpoints checkpoints;
+        private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
         private readonly int lastCheckpointHeight;
 
         public ProvenHeadersConsensusManagerBehavior(
@@ -41,7 +42,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             ILoggerFactory loggerFactory,
             Network network,
             IChainState chainState,
-            ICheckpoints checkpoints) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+            ICheckpoints checkpoints,
+            IProvenBlockHeaderStore provenBlockHeaderStore) : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.chain = chain;
             this.initialBlockDownloadState = initialBlockDownloadState;
@@ -52,6 +54,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
             this.chainState = chainState;
             this.checkpoints = checkpoints;
+            this.provenBlockHeaderStore = provenBlockHeaderStore;
 
             this.lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
         }
@@ -106,10 +109,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             var headers = new ProvenHeadersPayload();
             foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
             {
-                ProvenBlockHeader provenBlockHeader = header.Header as ProvenBlockHeader;
-                if (provenBlockHeader == null)
+                if (!(header.Header is ProvenBlockHeader provenBlockHeader))
                 {
-                    throw new Exception();// fix this.
+                    this.logger.LogTrace("Invalid proven header, try loading it from the store.");
+                    provenBlockHeader = this.provenBlockHeaderStore.GetAsync(header.Height).GetAwaiter().GetResult();
+                    if (provenBlockHeader == null)
+                    {
+                        this.logger.LogTrace("(-)[INVALID_PROVEN_HEADER]:{header}", header);
+                        throw new ConsensusException("Proven header could not be found.");
+                    }
                 }
 
                 lastHeader = header;
@@ -134,7 +142,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 this.loggerFactory,
                 this.network,
                 this.chainState,
-                this.checkpoints);
+                this.checkpoints,
+                this.provenBlockHeaderStore);
         }
 
         /// <summary>
