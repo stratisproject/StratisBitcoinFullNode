@@ -3,6 +3,8 @@ using Microsoft.CodeAnalysis;
 using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Core.Validation.Validators.Method;
+using Stratis.SmartContracts.Core.Validation.Validators.Type;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -493,6 +495,66 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
+        }
+
+        #endregion
+
+        #region Generics
+
+        [Fact]
+        public void Validate_Determinism_GenericMethod()
+        {
+            string adjustedSource = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {
+                                                public Test(ISmartContractState state)
+                                                    : base(state) {}         
+
+                                                public T TestMethod<T>(int param)
+                                                {
+                                                    return default(T);
+                                                }
+                                            }";
+
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+            Assert.Single(result.Errors);
+            Assert.True(result.Errors.First() is GenericMethodValidator.GenericMethodValidationResult);
+        }
+
+        [Fact]
+        public void Validate_Determinism_GenericClass()
+        {
+            string adjustedSource = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test<T> : SmartContract
+                                            {
+                                                public Test(ISmartContractState state)
+                                                    : base(state) {}         
+
+                                                public T TestMethod(int param)
+                                                {
+                                                    return default(T);
+                                                }
+                                            }";
+
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+            SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
+            Assert.False(result.IsValid);
+            Assert.Single(result.Errors);
+            Assert.True(result.Errors.First() is GenericTypeValidator.GenericTypeValidationResult);
         }
 
         #endregion

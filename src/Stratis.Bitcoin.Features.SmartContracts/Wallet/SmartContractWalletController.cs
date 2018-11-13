@@ -8,9 +8,9 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
-using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
@@ -27,12 +27,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     {
         private readonly IBroadcasterManager broadcasterManager;
         private readonly ICallDataSerializer callDataSerializer;
-        private readonly CoinType coinType;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
         private readonly Network network;
         private readonly IReceiptRepository receiptRepository;
         private readonly IWalletManager walletManager;
+        private readonly ISmartContractTransactionService smartContractTransactionService;
 
         public SmartContractWalletController(
             IBroadcasterManager broadcasterManager,
@@ -41,31 +41,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             IReceiptRepository receiptRepository,
-            IWalletManager walletManager)
+            IWalletManager walletManager,
+            ISmartContractTransactionService smartContractTransactionService)
         {
             this.broadcasterManager = broadcasterManager;
             this.callDataSerializer = callDataSerializer;
             this.connectionManager = connectionManager;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.receiptRepository = receiptRepository;
             this.walletManager = walletManager;
-        }
-        private HdAddress GetFirstAccountAddress(string walletName)
-        {
-            var accounts = this.walletManager.GetAccounts(walletName).ToList();
-
-            return accounts.FirstOrDefault()?.ExternalAddresses?.FirstOrDefault();
+            this.smartContractTransactionService = smartContractTransactionService;
         }
 
         private IEnumerable<HdAddress> GetAccountAddressesWithBalance(string walletName)
         {
-            return this.walletManager.GetAccounts(walletName)
-                .FirstOrDefault()?
-                .ExternalAddresses
-                .Where(a => a.GetSpendableAmount().confirmedAmount > 0)
-                .ToList();
+            return this.walletManager
+                .GetSpendableTransactionsInWallet(walletName)
+                .GroupBy(x => x.Address)
+                .Where(grouping => grouping.Sum(x => x.Transaction.SpendableAmount(true)) > 0)
+                .Select(grouping => grouping.Key);
         }
 
         [Route("account-addresses")]
@@ -99,63 +94,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
-        [Route("account-address")]
-        [HttpGet]
-        public IActionResult GetAccountAddress(string walletName)
-        {
-            if (string.IsNullOrWhiteSpace(walletName))
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
-
-            try
-            {
-                var firstAddress = this.GetFirstAccountAddress(walletName);
-
-                if (firstAddress == null)
-                {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
-                }
-
-                return this.Json(firstAddress.Address);
-            }
-            catch (WalletException e)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        [Route("account-balance")]
-        [HttpGet]
-        public IActionResult GetAccountBalance(string walletName)
-        {
-            if (string.IsNullOrWhiteSpace(walletName))
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No wallet name", "No wallet name provided");
-
-            try
-            {
-                var firstAddress = this.GetFirstAccountAddress(walletName);
-
-                if (firstAddress == null)
-                {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "No address", "No address could be obtained");
-                }
-
-                (var spendable, _) = firstAddress.GetSpendableAmount();
-
-                return this.Json(spendable.ToUnit(MoneyUnit.BTC));
-            }
-            catch (WalletException e)
-            {
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
         [Route("address-balance")]
         [HttpGet]
         public IActionResult GetAddressBalance(string address)
         {
             var balance = this.walletManager.GetAddressBalance(address);
 
-            return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.BTC));
+            return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.Satoshi));
         }
 
         [Route("history")]
@@ -193,8 +138,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     // Record a receive transaction
                     transactionItems.Add(new ContractTransactionItem
                     {
-                        Amount = transaction.Amount.ToUnit(MoneyUnit.BTC),
-                        BlockHeight = (uint) transaction.BlockHeight,
+                        Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
+                        BlockHeight = transaction.BlockHeight,
                         Hash = transaction.Id,
                         Type = ContractTransactionItemType.Received,
                         To = address
@@ -214,11 +159,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                 Receipt receipt = this.receiptRepository.Retrieve(transaction.SpendingDetails.TransactionId);
                                 transactionItems.Add(new ContractTransactionItem
                                 {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.BTC),
-                                    BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
+                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
+                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCreate,
                                     Hash = transaction.SpendingDetails.TransactionId,
-                                    To = receipt.NewContractAddress.ToBase58Address(this.network)
+                                    To = receipt?.NewContractAddress?.ToBase58Address(this.network) ?? ""
                                 });
                             }
                             else
@@ -228,8 +173,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
                                 transactionItems.Add(new ContractTransactionItem
                                 {
-                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.BTC),
-                                    BlockHeight = (uint)transaction.SpendingDetails.BlockHeight,
+                                    Amount = scPayment.Amount.ToUnit(MoneyUnit.Satoshi),
+                                    BlockHeight = transaction.SpendingDetails.BlockHeight,
                                     Type = ContractTransactionItemType.ContractCall,
                                     Hash = transaction.SpendingDetails.TransactionId,
                                     To = txData.Value.ContractAddress.ToBase58Address(this.network)
@@ -245,8 +190,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                                 {
                                     transactionItems.Add(new ContractTransactionItem
                                     {
-                                        Amount = payment.Amount.ToUnit(MoneyUnit.BTC),
-                                        BlockHeight = (uint) transaction.SpendingDetails.BlockHeight,
+                                        Amount = payment.Amount.ToUnit(MoneyUnit.Satoshi),
+                                        BlockHeight = transaction.SpendingDetails.BlockHeight,
                                         Type = ContractTransactionItemType.Send,
                                         Hash = transaction.SpendingDetails.TransactionId,
                                         To = payment.DestinationAddress
@@ -264,6 +209,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+
+        [Route("create")]
+        [HttpPost]
+        public IActionResult Create([FromBody] BuildCreateContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
+
+            if (!response.Success)
+                return BadRequest(Json(response));
+
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
+            this.walletManager.ProcessTransaction(transaction, null, null, false);
+            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            return Json(response.TransactionId);
+        }
+
+        [Route("call")]
+        [HttpPost]
+        public IActionResult Call([FromBody] BuildCallContractTransactionRequest request)
+        {
+            if (!this.ModelState.IsValid)
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+
+            BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
+            if (!response.Success)
+                return BadRequest(Json(response));
+
+            Transaction transaction = this.network.CreateTransaction(response.Hex);
+            this.walletManager.ProcessTransaction(transaction, null, null, false);
+            this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
+
+            return Json(response);
         }
 
         [Route("send-transaction")]
