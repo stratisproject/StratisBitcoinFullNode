@@ -81,14 +81,17 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 string[] whitebindEndpoints = config.GetAll("whitebind", this.logger);
 
+                List<IPEndPoint> networkEndpoints = this.Listen.Select(x => x.Endpoint).ToList();
+
                 foreach (string whiteBindEndpointString in whitebindEndpoints)
                 {
-                    var nodeServerWhiteBindEndpoint = new NodeServerEndpoint(whiteBindEndpointString.ToIPEndPoint(this.Port), true);
+                    var nodeServerWhiteBindEndpoint = whiteBindEndpointString.ToIPEndPoint(this.Port);
 
-                    if (nodeServerWhiteBindEndpoint.CanBeMappedTo(this.Listen, out NodeServerEndpoint outEndpoint))
+                    if (nodeServerWhiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
                     {
                         // Whitelist whitebind endpoint if we are currently listening to it.
-                        outEndpoint.Whitelisted = true;
+                        NodeServerEndpoint listenToThisEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
+                        if (listenToThisEndpoint != null) listenToThisEndpoint.Whitelisted = true;
                     }
                     else
                     {
@@ -241,15 +244,16 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>
         /// Endpoint A can be mapped to endpoint B.
         /// </summary>
-        public static bool CanBeMappedTo(this NodeServerEndpoint whiteBindEndpoint, List<NodeServerEndpoint> networkInterfacesTheNodeShouldListenOn, out NodeServerEndpoint localEndpoint)
+        public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkInterfacesTheNodeShouldListenOn, out IPEndPoint localEndpoint)
         {
-            localEndpoint = networkInterfacesTheNodeShouldListenOn.FirstOrDefault(x => x.Endpoint.Address.IsLocal());
-            if (localEndpoint?.Endpoint.Port == whiteBindEndpoint.Endpoint.Port)
+            localEndpoint = networkInterfacesTheNodeShouldListenOn.FirstOrDefault(x => x.Address.IsLocal() && !x.Address.Equals(IPAddress.Any));
+
+            if (localEndpoint?.Port == whiteBindEndpoint.Port)
             {
                 return true;
             }
 
-            localEndpoint = networkInterfacesTheNodeShouldListenOn.FirstOrDefault(e => e.Endpoint.Equals(whiteBindEndpoint.Endpoint));
+            localEndpoint = networkInterfacesTheNodeShouldListenOn.FirstOrDefault(e => e.Equals(whiteBindEndpoint));
             return localEndpoint != null;
         }
     }
