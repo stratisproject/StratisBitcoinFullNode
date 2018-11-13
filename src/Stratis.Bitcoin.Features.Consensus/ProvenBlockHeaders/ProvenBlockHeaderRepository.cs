@@ -7,6 +7,7 @@ using DBreeze.DataTypes;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -50,6 +51,17 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
         /// <inheritdoc />
         public HashHeightPair TipHashHeight { get; private set; }
+
+        /// <summary>
+        /// Initializes a new instance of the object.
+        /// </summary>
+        /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
+        /// <param name="folder"><see cref="ProvenBlockHeaderRepository"/> folder path to the DBreeze database files.</param>
+        /// <param name="loggerFactory">Factory to create a logger for this type.</param>
+        public ProvenBlockHeaderRepository(Network network, DataFolder folder, ILoggerFactory loggerFactory)
+        : this(network, folder.ProvenBlockHeaderPath, loggerFactory)
+        {
+        }
 
         /// <summary>
         /// Initializes a new instance of the object.
@@ -106,15 +118,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    this.logger.LogTrace("Loading ProvenBlockHeaders from block height {0} to {1} from the database.",
-                        fromBlockHeight, toBlockHeight);
+                    this.logger.LogTrace("Loading ProvenBlockHeaders from block height {0} to {1} from the database.", fromBlockHeight, toBlockHeight);
 
                     var headers = new List<ProvenBlockHeader>();
 
                     for (int i = fromBlockHeight; i <= toBlockHeight; i++)
                     {
-                        Row<byte[], ProvenBlockHeader> row =
-                            transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes());
+                        Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes());
 
                         if (row.Exists)
                         {

@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             if (context.SkipValidation || !this.IsProvenHeaderActivated(chainedHeader.Height))
                 return;
 
-            ProcessRule((PosRuleContext)context, chainedHeader, (ProvenBlockHeader)chainedHeader.Header);
+            this.ProcessRule((PosRuleContext)context, chainedHeader, (ProvenBlockHeader)chainedHeader.Header);
         }
 
         /// <summary>

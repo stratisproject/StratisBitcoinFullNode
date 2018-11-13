@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Networks
             {
                 // Fake checkpoint to prevent PH to be activated.
                 // TODO: Once PH is complete, this should be removed
-                { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
+               // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
             };
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();

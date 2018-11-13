@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly AsyncQueue<ChainedHeader> blocksToAnnounce;
 
         /// <summary>Provider of IBD state.</summary>
-        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+        protected readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary>Interval between batches in milliseconds.</summary>
         private const int BatchIntervalMs = 5000;

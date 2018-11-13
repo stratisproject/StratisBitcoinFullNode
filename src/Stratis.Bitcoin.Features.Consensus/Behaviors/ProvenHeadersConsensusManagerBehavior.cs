@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         private readonly ICheckpoints checkpoints;
         private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
         private readonly int lastCheckpointHeight;
+        private readonly CheckpointInfo lastCheckpointInfo;
 
         public ProvenHeadersConsensusManagerBehavior(
             ConcurrentChain chain,
@@ -57,6 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             this.provenBlockHeaderStore = provenBlockHeaderStore;
 
             this.lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
+            this.lastCheckpointInfo = this.checkpoints.GetCheckpoint(this.lastCheckpointHeight);
         }
 
         /// <inheritdoc />
@@ -217,6 +219,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             else
             {
                 // If proven header isn't activated, build a legacy header request
+                // TODO: If the current ExpectedPeerTip is less then MaxItemsPerHeadersMessage from the last checkpoint we can set the GetProvenHeadersPayload.HashStop to be the hash of the last checkpoint (this will prevent sending over regular headers beyond last checkpoint).
                 return base.BuildGetHeadersPayload();
             }
         }
@@ -230,16 +233,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
             bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && this.IsPeerWhitelisted(peer));
-         
-            // Only legacy peers are allowed to handle this message, or any node before PH activation.
-            if (isLegacyWhitelistedPeer)
-            {
-                return base.ProcessHeadersAsync(peer, headers);
-            }
 
-            if (!this.AreProvenHeadersActivated())
+            // Only legacy peers are allowed to handle this message, or any node before PH activation.
+            bool areProvenHeadersActivated = this.AreProvenHeadersActivated();
+            if (isLegacyWhitelistedPeer || !areProvenHeadersActivated)
             {
-                // filter out headers that are above this.ExpectedPeerTip.Height
+                if (!isLegacyWhitelistedPeer)
+                {
+                    // Filter out headers that are above the last checkpoint hash
+                    for (int index = 0; index < headers.Count; index++)
+                    {
+                        if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
+                        {
+                            headers.RemoveRange(index, headers.Count - index);
+                            break;
+                        }
+                    }
+                }
+
+                return base.ProcessHeadersAsync(peer, headers);
             }
 
             return Task.CompletedTask;
