@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
@@ -10,17 +11,28 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 
-namespace Stratis.FederatedPeg.Features.FederationGateway
+namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
     /// <summary>
     /// Interface for interacting with the cross-chain transfer database.
     /// </summary>
     public interface ICrossChainTransferStore : IDisposable
     {
+        /// <summary>
+        /// Initializes the cross-chain-transfer store.
+        /// </summary>
+        void Initialize();
+
+        /// <summary>
+        /// Starts the cross-chain-transfer store.
+        /// </summary>
+        void Start();
+
         /// <summary>
         /// Get the cross-chain transfer information from the database, identified by the deposit transaction ids.
         /// </summary>
@@ -54,11 +66,22 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         Task PutAsync(HashHeightPair newTip, List<Block> blocks);
 
         /// <summary>
-        /// Used in case of a reorg to revert status from <see cref="CrossChainTransferStatus.SeenInBlock"/> to
-        /// <see cref="CrossChainTransferStatus.FullySigned"/>.
+        /// Used to handle reorg (if required) and revert status from <see cref="CrossChainTransferStatus.SeenInBlock"/> to
+        /// <see cref="CrossChainTransferStatus.FullySigned"/>. Also returns a flag to indicate whether we are behind the current tip.
+        /// The caller can use <see cref="PutAsync"/> to supply additional blocks if we are behind the tip.
         /// </summary>
-        /// <param name="chain">The current consensus for our chain.</param>
-        Task DeleteAsync(ConcurrentChain chain);
+        /// <returns>
+        /// Returns <c>true</c> if we match the chain tip and <c>false</c> if we are behind the tip.
+        /// </returns>
+        Task<bool> RewindIfRequiredAsync();
+
+        /// <summary>
+        /// Attempts to synchronizes the store with the chain.
+        /// </summary>
+        /// <returns>
+        /// Returns <c>true</c> if the store is in sync or <c>false</c> otherwise.
+        /// </returns>
+        Task<bool> SynchronizeAsync();
 
         /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.
@@ -100,6 +123,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <summary>This table keeps track of the chain tips so that we know exactly what data our transfer table contains.</summary>
         private const string commonTableName = "Common";
 
+        // <summary>Block batch size for synchronization</summary>
+        private const int synchronizationBatchSize = 100;
+
         /// <summary>This contains deposits ids indexed by block hash of the corresponding transaction.</summary>
         private Dictionary<uint256, HashSet<uint256>> depositIdsByBlockHash = new Dictionary<uint256, HashSet<uint256>>();
 
@@ -129,30 +155,45 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly Network network;
 
+        private readonly ConcurrentChain chain;
+
         private readonly DepositExtractor depositExtractor;
+
+        private readonly IBlockRepository blockRepository;
+
+        private readonly CancellationTokenSource cancellation;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
-        public CrossChainTransferStore(Network network, DataFolder dataFolder, FederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
-            ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader, IFullNode fullNode)
+        public CrossChainTransferStore(Network network, DataFolder dataFolder, ConcurrentChain chain, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
+            ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader, IFullNode fullNode, IBlockRepository blockRepository)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
+            Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(opReturnDataReader, nameof(opReturnDataReader));
+            Guard.NotNull(fullNode, nameof(fullNode));
+            Guard.NotNull(blockRepository, nameof(blockRepository));
 
-            this.depositExtractor = new DepositExtractor(loggerFactory, settings, opReturnDataReader, fullNode);
+            this.network = network;
+            this.chain = chain;
+            this.dateTimeProvider = dateTimeProvider;
+            this.blockRepository = blockRepository;
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             string folder = Path.Combine(dataFolder.RootPath, settings.IsMainChain ? "mainchaindata" : "sidechaindata");
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
-            this.network = network;
-            this.dateTimeProvider = dateTimeProvider;
+
+            this.depositExtractor = new DepositExtractor(loggerFactory, settings, opReturnDataReader, fullNode);
             this.TipHashAndHeight = null;
             this.NextMatureDepositHeight = 0;
+            this.cancellation = new CancellationTokenSource();
 
             // Initialize tracking deposits by status.
             foreach (var status in typeof(CrossChainTransferStatus).GetEnumValues())
@@ -160,173 +201,232 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
 
         /// <summary>Performs any needed initialisation for the database.</summary>
-        public virtual Task InitializeAsync()
+        public void Initialize()
         {
-            Task task = Task.Run(() =>
+            this.logger.LogTrace("()");
+
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
             {
-                this.logger.LogTrace("()");
+                this.LoadTipHashAndHeight(dbreezeTransaction);
+                this.LoadNextMatureHeight(dbreezeTransaction);
 
-                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+                // Initialize the lookups.
+                foreach (Row<byte[], CrossChainTransfer> transferRow in dbreezeTransaction.SelectForward<byte[], CrossChainTransfer>(transferTableName))
                 {
-                    this.LoadTipHashAndHeight(dbreezeTransaction);
-                    this.LoadNextMatureHeight(dbreezeTransaction);
+                    CrossChainTransfer transfer = transferRow.Value;
 
-                    // Initialize the lookups.
-                    foreach (Row<byte[], CrossChainTransfer> transferRow in dbreezeTransaction.SelectForward<byte[], CrossChainTransfer>(transferTableName))
+                    this.depositsIdsByStatus[transfer.Status].Add(transfer.DepositTransactionId);
+
+                    if (transfer.BlockHash != null)
                     {
-                        CrossChainTransfer transfer = transferRow.Value;
-
-                        this.depositsIdsByStatus[transfer.Status].Add(transfer.DepositTransactionId);
-
-                        if (transfer.BlockHash != null)
+                        if (!this.depositIdsByBlockHash.TryGetValue(transfer.BlockHash, out HashSet<uint256> deposits))
                         {
-                            if (!this.depositIdsByBlockHash.TryGetValue(transfer.BlockHash, out HashSet<uint256> deposits))
-                            {
-                                deposits = new HashSet<uint256>();
-                            }
-
-                            deposits.Add(transfer.DepositTransactionId);
-
-                            this.blockHeightsByBlockHash[transfer.BlockHash] = transfer.BlockHeight;
+                            deposits = new HashSet<uint256>();
                         }
+
+                        deposits.Add(transfer.DepositTransactionId);
+
+                        this.blockHeightsByBlockHash[transfer.BlockHash] = transfer.BlockHeight;
                     }
                 }
+            }
 
-                this.logger.LogTrace("(-)");
-            });
+            this.logger.LogTrace("(-)");
+        }
 
-            return task;
+        /// <summary>
+        /// Starts the cross-chain-transfer store.
+        /// </summary>
+        public void Start()
+        {
+            this.SynchronizeAsync().GetAwaiter().GetResult();
         }
 
         /// <inheritdoc />
-        public Task RecordLatestMatureDeposits(IEnumerable<CrossChainTransfer> crossChainTransfers)
+        public async Task RecordLatestMatureDeposits(IEnumerable<CrossChainTransfer> crossChainTransfers)
         {
             Guard.NotNull(crossChainTransfers, nameof(crossChainTransfers));
             Guard.Assert(!crossChainTransfers.Any(t => !t.IsValid()));
             Guard.Assert(!crossChainTransfers.Any(t => t.Status != CrossChainTransferStatus.Partial));
             Guard.Assert(!crossChainTransfers.Any(t => t.DepositBlockHeight != this.NextMatureDepositHeight));
 
-            Task task = Task.Run(() =>
+            this.logger.LogTrace("()");
+
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
             {
-                this.logger.LogTrace("()");
+                dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
 
-                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+                foreach (CrossChainTransfer transfer in crossChainTransfers)
                 {
-                    dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
-
-                    foreach (CrossChainTransfer transfer in crossChainTransfers)
-                    {
-                        this.PutTransferAsync(dbreezeTransaction, transfer).GetAwaiter().GetResult();
-                    }
-
-                    // Commit additions
-                    this.SaveNextMatureHeight(dbreezeTransaction, this.NextMatureDepositHeight + 1);
-                    dbreezeTransaction.Commit();
+                    await this.PutTransferAsync(dbreezeTransaction, transfer);
                 }
 
-                this.logger.LogTrace("(-)");
-            });
+                // Commit additions
+                this.SaveNextMatureHeight(dbreezeTransaction, this.NextMatureDepositHeight + 1);
+                dbreezeTransaction.Commit();
+            }
 
-            return task;
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        public Task MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions)
+        public async Task MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions)
         {
             Guard.NotNull(partialTransactions, nameof(partialTransactions));
 
-            Task task = Task.Run(() =>
+            this.logger.LogTrace("()");
+
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
             {
-                this.logger.LogTrace("()");
+                dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
 
-                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+                CrossChainTransfer transfer = this.Get(dbreezeTransaction, new[] { depositId }).FirstOrDefault();
+
+                if (transfer != null)
                 {
-                    dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
+                    transfer.CombineSignatures(this.network, partialTransactions);
 
-                    CrossChainTransfer transfer = this.GetAsync(new[] { depositId }).GetAwaiter().GetResult().FirstOrDefault();
+                    // TODO: Update status to FullySigned when appropriate.
 
-                    if (transfer != null)
-                    {
-                        transfer.CombineSignatures(this.network, partialTransactions);
-
-                        // TODO: Update status to FullySigned when appropriate.
-
-                        this.PutTransferAsync(dbreezeTransaction, transfer).GetAwaiter().GetResult();
-                    }
-
-                    dbreezeTransaction.Commit();
+                    await this.PutTransferAsync(dbreezeTransaction, transfer);
                 }
 
-                this.logger.LogTrace("(-)");
-            });
+                dbreezeTransaction.Commit();
+            }
 
-            return task;
+            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
-        public Task PutAsync(HashHeightPair newTip, List<Block> blocks)
+        public async Task PutAsync(HashHeightPair newTip, List<Block> blocks)
         {
             Guard.NotNull(newTip, nameof(newTip));
             Guard.NotNull(blocks, nameof(blocks));
             Guard.Assert(blocks.Count == 0 || blocks[0].Header.HashPrevBlock == (this.TipHashAndHeight?.Hash ?? 0));
 
-            Task task = Task.Run(() =>
+            this.logger.LogTrace("()");
+
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
             {
-                this.logger.LogTrace("()");
+                transaction.SynchronizeTables(transferTableName, commonTableName);
+                await this.OnInsertBlocksAsync(transaction, newTip.Height - blocks.Count + 1, blocks);
+
+                // Commit additions
+                this.SaveTipHashAndHeight(transaction, newTip);
+                transaction.Commit();
+            }
+
+            this.logger.LogTrace("(-)");
+        }
+
+        /// <inheritdoc />
+        public async Task<bool> RewindIfRequiredAsync()
+        {
+            this.logger.LogTrace("()");
+
+            if (this.chain.Tip.HashBlock == (this.TipHashAndHeight?.Hash ?? 0))
+            {
+                // Indicate that we are synchronized.
+                this.logger.LogTrace("(-):true");
+                return true;
+            }
+
+            // If the chain does not contain our tip..
+            if (this.TipHashAndHeight != null && this.chain.GetBlock(this.TipHashAndHeight.Hash) == null)
+            {
+                // We are ahead of the current chain.
+                uint256 commonTip = this.network.GenesisHash;
+                int commonHeight = 0;
+
+                ChainedHeader fork = this.chain.FindFork(this.depositIdsByBlockHash.OrderByDescending(d => this.blockHeightsByBlockHash[d.Key]).Select(d => d.Key));
+
+                if (fork != null)
+                {
+                    commonTip = fork.Block.GetHash();
+                    commonHeight = this.blockHeightsByBlockHash[commonTip];
+                }
 
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
                     transaction.SynchronizeTables(transferTableName, commonTableName);
-                    this.OnInsertBlocks(transaction, newTip.Height - blocks.Count + 1, blocks);
-
-                    // Commit additions
-                    this.SaveTipHashAndHeight(transaction, newTip);
+                    transaction.ValuesLazyLoadingIsOn = false;
+                    await this.OnDeleteBlocksAsync(transaction, commonHeight);
+                    this.SaveTipHashAndHeight(transaction, new HashHeightPair(this.chain.Tip.HashBlock, this.chain.Tip.Height));
                     transaction.Commit();
                 }
 
-                this.logger.LogTrace("(-)");
-            });
+                // Indicate that we have rewound to the current chain.
+                this.logger.LogTrace("(-):true");
+                return true;
+            }
 
-            return task;
+            // Indicate that we are behind the current chain.
+            this.logger.LogTrace("(-):false");
+            return false;
         }
 
         /// <inheritdoc />
-        public Task DeleteAsync(ConcurrentChain chain)
+        public async Task<bool> SynchronizeAsync()
         {
-            Guard.NotNull(chain, nameof(chain));
+            this.logger.LogTrace("()");
 
-            Task task = Task.Run(() =>
+            while (!this.cancellation.IsCancellationRequested)
             {
-                this.logger.LogTrace("()");
-
-                // If the chain does not contain our tip..
-                if (chain.GetBlock(this.TipHashAndHeight.Hash) == null)
+                if (await this.RewindIfRequiredAsync())
                 {
-                    uint256 commonTip = this.network.GenesisHash;
-                    int commonHeight = 0;
-
-                    ChainedHeader fork = chain.FindFork(this.depositIdsByBlockHash.OrderByDescending(d => this.blockHeightsByBlockHash[d.Key]).Select(d => d.Key));
-
-                    if (fork != null)
-                    {
-                        commonTip = fork.Block.GetHash();
-                        commonHeight = this.blockHeightsByBlockHash[commonTip];
-                    }
-
-                    using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
-                    {
-                        transaction.SynchronizeTables(transferTableName, commonTableName);
-                        transaction.ValuesLazyLoadingIsOn = false;
-                        this.OnDeleteBlocks(transaction, commonHeight);
-                        this.SaveTipHashAndHeight(transaction, new HashHeightPair(commonTip, commonHeight));
-                        transaction.Commit();
-                    }
+                    this.logger.LogTrace("(-):true");
+                    return true;
                 }
 
-                this.logger.LogTrace("(-)");
-            });
+                if (!await SynchronizeBatchAsync())
+                {
+                    this.logger.LogTrace("(-):false");
+                    return false;
+                }
+            }
 
-            return task;
+            this.logger.LogTrace("(-):false");
+            return false;
+        }
+
+        /// <summary>
+        /// Synchronize with a batch of blocks.
+        /// </summary>
+        /// <returns>Returns <c>true</c> if we match the chain tip and <c>false</c> if we are behind the tip.</returns>
+        private async Task<bool> SynchronizeBatchAsync()
+        {
+            this.logger.LogTrace("()");
+
+            // Get a batch of blocks.
+            var blockHashes = new List<uint256>();
+            int batchSize = 0;
+
+            foreach (ChainedHeader header in this.chain.EnumerateToTip(this.TipHashAndHeight?.Hash ?? this.network.GenesisHash).Skip(this.TipHashAndHeight == null ? 0 : 1))
+            {
+                blockHashes.Add(header.HashBlock);
+                if (++batchSize >= synchronizationBatchSize)
+                    break;
+            }
+
+            List<Block> blocks = await this.blockRepository.GetBlocksAsync(blockHashes);
+            int availableBlocks = blocks.FindIndex(b => (b == null));
+            if (availableBlocks < 0)
+                availableBlocks = blocks.Count;
+
+            if (availableBlocks > 0)
+            {
+                Block lastBlock = blocks[availableBlocks - 1];
+                HashHeightPair newTip = new HashHeightPair(lastBlock.GetHash(), (this.TipHashAndHeight?.Height ?? -1) + availableBlocks);
+
+                await this.PutAsync(newTip, blocks.GetRange(0, availableBlocks));
+            }
+
+            this.logger.LogTrace("Synchronized {0} blocks with cross-chain store.", availableBlocks);
+
+            bool success = availableBlocks == blocks.Count;
+
+            this.logger.LogTrace("(-):{0}", success);
+            return success;
         }
 
         /// <summary>
@@ -340,9 +440,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             {
                 dbreezeTransaction.ValuesLazyLoadingIsOn = false;
 
-                Row<byte[], HashHeightPair> row = dbreezeTransaction.Select<byte[], HashHeightPair>(commonTableName, RepositoryTipKey);
+                Row<byte[], byte[]> row = dbreezeTransaction.Select<byte[], byte[]>(commonTableName, RepositoryTipKey);
                 if (row.Exists)
-                    this.TipHashAndHeight = row.Value;
+                    this.TipHashAndHeight = HashHeightPair.Load(row.Value);
             }
 
             return this.TipHashAndHeight;
@@ -356,7 +456,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private void SaveTipHashAndHeight(DBreeze.Transactions.Transaction dbreezeTransaction, HashHeightPair newTip)
         {
             this.TipHashAndHeight = newTip;
-            dbreezeTransaction.Insert<byte[], HashHeightPair>(commonTableName, RepositoryTipKey, this.TipHashAndHeight);
+            dbreezeTransaction.Insert<byte[], byte[]>(commonTableName, RepositoryTipKey, this.TipHashAndHeight.ToBytes());
         }
 
         /// <summary>
@@ -390,101 +490,90 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         }
 
         /// <inheritdoc />
-        public Task<CrossChainTransfer[]> GetAsync(uint256[] depositId)
+        public async Task<CrossChainTransfer[]> GetAsync(uint256[] depositId)
+        {
+            this.logger.LogTrace("()");
+            using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+            {
+                transaction.ValuesLazyLoadingIsOn = false;
+
+                return Get(transaction, depositId);
+            }
+        }
+
+        private CrossChainTransfer[] Get(DBreeze.Transactions.Transaction transaction, uint256[] depositId)
         {
             Guard.NotNull(depositId, nameof(depositId));
 
-            Task<CrossChainTransfer[]> task = Task.Run(() =>
+            // To boost performance we will access the deposits sorted by deposit id.
+            var depositDict = new Dictionary<uint256, int>();
+            for (int i = 0; i < depositId.Length; i++)
+                depositDict[depositId[i]] = i;
+
+            var byteListComparer = new ByteListComparer();
+            List<KeyValuePair<uint256, int>> depositList = depositDict.ToList();
+            depositList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
+
+            var res = new CrossChainTransfer[depositId.Length];
+
+            foreach (KeyValuePair<uint256, int> kv in depositList)
             {
-                this.logger.LogTrace("()");
+                Row<byte[], CrossChainTransfer> transferRow = transaction.Select<byte[], CrossChainTransfer>(transferTableName, kv.Key.ToBytes());
 
-                // To boost performance we will access the deposits sorted by deposit id.
-                var depositDict = new Dictionary<uint256, int>();
-                for (int i = 0; i < depositId.Length; i++)
-                    depositDict[depositId[i]] = i;
-
-                var byteListComparer = new ByteListComparer();
-                List<KeyValuePair<uint256, int>> depositList = depositDict.ToList();
-                depositList.Sort((pair1, pair2) => byteListComparer.Compare(pair1.Key.ToBytes(), pair2.Key.ToBytes()));
-
-                var res = new CrossChainTransfer[depositId.Length];
-                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                if (transferRow.Exists)
                 {
-                    transaction.ValuesLazyLoadingIsOn = false;
-
-                    foreach (KeyValuePair<uint256, int> kv in depositList)
-                    {
-                        Row<byte[], CrossChainTransfer> transferRow = transaction.Select<byte[], CrossChainTransfer>(transferTableName, kv.Key.ToBytes());
-
-                        if (transferRow.Exists)
-                        {
-                            res[kv.Value] = transferRow.Value;
-                        }
-                    }
+                    res[kv.Value] = transferRow.Value;
                 }
+            }
 
-                this.logger.LogTrace("(-):{0}", res);
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         /// <inheritdoc />
-        public Task<Transaction[]> GetTransactionsToBroadcastAsync()
+        public async Task<Transaction[]> GetTransactionsToBroadcastAsync()
         {
-            Task<Transaction[]> task = Task.Run(() =>
-            {
-                this.logger.LogTrace("()");
+            this.logger.LogTrace("()");
 
-                uint256[] fullySignedTransfers = this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned].ToArray();
+            uint256[] fullySignedTransfers = this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned].ToArray();
 
-                CrossChainTransfer[] transfers = this.GetAsync(fullySignedTransfers).GetAwaiter().GetResult();
+            CrossChainTransfer[] transfers = await this.GetAsync(fullySignedTransfers);
 
-                Transaction[] res = transfers.Select(t => t.PartialTransaction).ToArray();
+            Transaction[] res = transfers.Select(t => t.PartialTransaction).ToArray();
 
-                this.logger.LogTrace("(-){0}", res);
+            this.logger.LogTrace("(-){0}", res);
 
-                return res;
-            });
-
-            return task;
+            return res;
         }
 
         /// <inheritdoc />
-        public Task SetRejectedStatusAsync(Transaction transaction)
+        public async Task SetRejectedStatusAsync(Transaction transaction)
         {
-            Task task = Task.Run(() =>
+            this.logger.LogTrace("()");
+
+            IDeposit deposit = this.depositExtractor.ExtractDepositFromTransaction(transaction, 0, 0);
+            if (deposit == null)
             {
-                this.logger.LogTrace("()");
+                this.logger.LogTrace("(-)[NO_DEPOSIT]");
+                return;
+            }
 
-                IDeposit deposit = this.depositExtractor.ExtractDepositFromTransaction(transaction, 0, 0);
-                if (deposit == null)
-                {
-                    this.logger.LogTrace("(-)[NO_DEPOSIT]");
-                    return;
-                }
+            CrossChainTransfer crossChainTransfer = (await this.GetAsync(new[] { deposit.Id })).FirstOrDefault();
+            if (crossChainTransfer == null)
+            {
+                this.logger.LogTrace("(-)[NO_TRANSFER]");
+                return;
+            }
 
-                CrossChainTransfer crossChainTransfer = this.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().FirstOrDefault();
-                if (crossChainTransfer == null)
-                {
-                    this.logger.LogTrace("(-)[NO_TRANSFER]");
-                    return;
-                }
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+            {
+                dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
+                dbreezeTransaction.ValuesLazyLoadingIsOn = false;
+                crossChainTransfer.SetStatus(CrossChainTransferStatus.Rejected);
+                await this.PutTransferAsync(dbreezeTransaction, crossChainTransfer);
+                dbreezeTransaction.Commit();
+            }
 
-                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
-                {
-                    dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
-                    dbreezeTransaction.ValuesLazyLoadingIsOn = false;
-                    crossChainTransfer.SetStatus(CrossChainTransferStatus.Rejected);
-                    this.PutTransferAsync(dbreezeTransaction, crossChainTransfer).GetAwaiter().GetResult();
-                    dbreezeTransaction.Commit();
-                }
-
-                this.logger.LogTrace("(-)");
-            });
-
-            return task;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -492,20 +581,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         /// <param name="dbreezeTransaction">The DBreeze transaction context to use.</param>
         /// <param name="crossChainTransfer">Cross-chain transfer information to be inserted.</param>
-        private Task PutTransferAsync(DBreeze.Transactions.Transaction dbreezeTransaction, CrossChainTransfer crossChainTransfer)
+        private async Task PutTransferAsync(DBreeze.Transactions.Transaction dbreezeTransaction, CrossChainTransfer crossChainTransfer)
         {
             Guard.NotNull(crossChainTransfer, nameof(crossChainTransfer));
 
-            Task task = Task.Run(() =>
-            {
-                this.logger.LogTrace("()");
+            this.logger.LogTrace("()");
 
-                dbreezeTransaction.Insert<byte[], CrossChainTransfer>(transferTableName, crossChainTransfer.DepositTransactionId.ToBytes(), crossChainTransfer);
+            dbreezeTransaction.Insert<byte[], CrossChainTransfer>(transferTableName, crossChainTransfer.DepositTransactionId.ToBytes(), crossChainTransfer);
 
-                this.logger.LogTrace("(-)");
-            });
-
-            return task;
+            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -514,7 +598,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <param name="dbreezeTransaction">The DBreeze transaction context to use.</param>
         /// <param name="blockHeight">The block height of the first block in the list.</param>
         /// <param name="blocks">The list of blocks to add.</param>
-        private void OnInsertBlocks(DBreeze.Transactions.Transaction dbreezeTransaction, int blockHeight, List<Block> blocks)
+        private async Task OnInsertBlocksAsync(DBreeze.Transactions.Transaction dbreezeTransaction, int blockHeight, List<Block> blocks)
         {
             // Find transfer transactions in blocks
             foreach (Block block in blocks)
@@ -522,7 +606,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 IReadOnlyList<IDeposit> deposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
 
                 // First check the database to see if we already know about these deposits.
-                CrossChainTransfer[] storedDeposits = this.GetAsync(deposits.Select(d => d.Id).ToArray()).GetAwaiter().GetResult();
+                CrossChainTransfer[] storedDeposits = this.Get(dbreezeTransaction, deposits.Select(d => d.Id).ToArray());
 
                 // Update the information about these deposits or record their status.
                 for (int i = 0; i < storedDeposits.Length; i++)
@@ -547,7 +631,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         this.SetTransferStatus(storedDeposits[i], CrossChainTransferStatus.SeenInBlock);
                     }
 
-                    this.PutTransferAsync(dbreezeTransaction, storedDeposits[i]).GetAwaiter().GetResult();
+                    await this.PutTransferAsync(dbreezeTransaction, storedDeposits[i]);
                 }
 
                 // Update lookups.
@@ -560,7 +644,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         /// <param name="dbreezeTransaction">The DBreeze transaction context to use.</param>
         /// <param name="lastBlockHeight">The last block to retain.</param>
-        private void OnDeleteBlocks(DBreeze.Transactions.Transaction dbreezeTransaction, int lastBlockHeight)
+        private async Task OnDeleteBlocksAsync(DBreeze.Transactions.Transaction dbreezeTransaction, int lastBlockHeight)
         {
             // Gather all the deposit ids.
             var depositIds = new HashSet<uint256>();
@@ -581,7 +665,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
 
             // First check the database to see if we already know about these deposits.
-            CrossChainTransfer[] crossChainTransfers = this.GetAsync(depositIds.ToArray()).GetAwaiter().GetResult();
+            CrossChainTransfer[] crossChainTransfers = this.Get(dbreezeTransaction, depositIds.ToArray());
 
             foreach (CrossChainTransfer transfer in crossChainTransfers)
             {
@@ -589,7 +673,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 this.SetTransferStatus(transfer, CrossChainTransferStatus.FullySigned);
 
                 // Write the transfer status to the database.
-                this.PutTransferAsync(dbreezeTransaction, transfer).GetAwaiter().GetResult();
+                await this.PutTransferAsync(dbreezeTransaction, transfer);
 
                 // Update the lookups.
                 this.depositIdsByBlockHash[transfer.BlockHash].Remove(transfer.DepositTransactionId);
@@ -617,6 +701,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <inheritdoc />
         public void Dispose()
         {
+            this.cancellation.Cancel();
             this.DBreeze.Dispose();
         }
     }
