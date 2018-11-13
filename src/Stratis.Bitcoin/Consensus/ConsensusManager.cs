@@ -248,6 +248,14 @@ namespace Stratis.Bitcoin.Consensus
                         return null;
                     }
 
+                    if (this.network.Consensus.IsProofOfStake)
+                    {
+                        // Ugly temporary hack to be fixed by Fabio
+                        PosBlock posBlock = (PosBlock)block;
+                        ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
+                        posBlock.SetProvenHeader(provenBlockHeader);
+                    }
+
                     // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
                     chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
                 }

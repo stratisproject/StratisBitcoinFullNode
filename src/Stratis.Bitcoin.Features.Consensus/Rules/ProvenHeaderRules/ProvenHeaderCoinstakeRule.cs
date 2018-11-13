@@ -53,6 +53,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             this.CheckCoinstakeIsNotNull(header);
 
+            // Temporary hack
+            if(header.Coinstake.IsCoinBase)
+                return;
+
             this.CheckIfCoinstakeIsTrue(header);
 
             this.CheckHeaderAndCoinstakeTimes(header);

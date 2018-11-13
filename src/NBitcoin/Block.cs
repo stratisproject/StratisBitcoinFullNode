@@ -12,7 +12,7 @@ namespace NBitcoin
     {
         public const uint MaxBlockSize = 1000 * 1000;
 
-        private BlockHeader header;
+        protected BlockHeader header;
 
         /// <summary>The size of the block in bytes, the block must be serialized for this property to be set.</summary>
         public long? BlockSize { get; protected set; }

@@ -312,6 +312,11 @@ namespace NBitcoin
             set { this.blockSignature = value; }
         }
 
+        public void SetProvenHeader(ProvenBlockHeader provenBlockHeader)
+        {
+            this.header = provenBlockHeader;
+        }
+
         /// <summary>
         /// The additional serialization of the block POS block.
         /// </summary>
