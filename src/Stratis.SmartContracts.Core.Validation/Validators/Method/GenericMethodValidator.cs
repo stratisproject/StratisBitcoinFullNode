@@ -7,6 +7,9 @@ using Stratis.ModuleValidation.Net;
 
 namespace Stratis.SmartContracts.Core.Validation.Validators.Method
 {
+    /// <summary>
+    /// Ensures that a given method doesn't have any generic parameters.
+    /// </summary>
     public class GenericMethodValidator : IMethodDefinitionValidator
     {
         public IEnumerable<ValidationResult> Validate(MethodDefinition methodDefinition)

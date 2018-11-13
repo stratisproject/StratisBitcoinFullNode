@@ -8,6 +8,9 @@ using Stratis.SmartContracts.Core.Validation.Validators.Method;
 
 namespace Stratis.SmartContracts.Core.Validation.Validators.Type
 {
+    /// <summary>
+    /// Ensures that a given type doesn't have any generic parameters.
+    /// </summary>
     public class GenericTypeValidator : ITypeDefinitionValidator
     {
         public IEnumerable<ValidationResult> Validate(TypeDefinition type)
