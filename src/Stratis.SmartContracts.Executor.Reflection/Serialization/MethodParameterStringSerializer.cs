@@ -28,34 +28,39 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             foreach (var obj in methodParameters)
             {
-                sb.Add(SerializeObject(obj));
+                sb.Add(this.SerializeObject(obj));
             }
 
             return this.EscapeAndJoin(sb.ToArray());
         }
 
-        private static string SerializeObject(object obj)
+        private string SerializeObject(object obj)
         {
             var prefix = Prefix.ForObject(obj);
 
-            string serialized = Serialize(obj);
+            string serialized = Serialize(obj, this.network);
 
             return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
         }
 
-        public static string Serialize(object obj)
+        public static string Serialize(object obj, Network network)
         {
             var primitiveType = GetPrimitiveType(obj);
 
-            // ToString works fine for all of our data types except byte arrays.
+            // ToString works fine for all of our data types except byte arrays and addresses
             string serialized;
-            if (primitiveType == MethodParameterDataType.ByteArray)
+
+            switch (primitiveType)
             {
-                serialized = ((byte[]) obj).ToHexString();
-            }
-            else
-            {
-                serialized = obj.ToString();
+                case MethodParameterDataType.ByteArray:
+                    serialized = ((byte[]) obj).ToHexString();
+                    break;
+                case MethodParameterDataType.Address:
+                    serialized = ((Address) obj).ToUint160().ToBase58Address(network);
+                    break;
+                default:
+                    serialized = obj.ToString();
+                    break;
             }
 
             return serialized;

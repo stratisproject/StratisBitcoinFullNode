@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Consensus
                 if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
-                this.logger.LogInformation("Block store at height {0} is ahead of consensus, rewinding consensus from height {1}.", this.chainState.BlockStoreTip, pendingTip);
+                this.logger.LogInformation("Consensus at height {0} is ahead of the block store at height {1}, rewinding consensus.", pendingTip, this.chainState.BlockStoreTip);
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
@@ -198,6 +198,12 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+
+                if (connectNewHeadersResult == null)
+                {
+                    this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
+                    return null;
+                }
 
                 this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 

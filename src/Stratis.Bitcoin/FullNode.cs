@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin
         private NodeLifetime nodeLifetime;
 
         /// <see cref="INodeStats"/>
-        private INodeStats nodeStats { get; set; }
+        private INodeStats NodeStats { get; set; }
 
         private IAsyncLoop periodicLogLoop;
 
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin
             this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
-            this.nodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
+            this.NodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
             this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin
         {
             this.periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
             {
-                string stats = this.nodeStats.GetStats();
+                string stats = this.NodeStats.GetStats();
 
                 this.logger.LogInformation(stats);
                 this.LastLogOutput = stats;
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin
             {
                 if (this.InitialBlockDownloadState.IsInitialBlockDownload())
                 {
-                    string benchmark = this.nodeStats.GetBenchmark();
+                    string benchmark = this.NodeStats.GetBenchmark();
                     this.logger.LogInformation(benchmark);
                 }
 

@@ -1,12 +1,11 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Interfaces
 {
     /// <summary>
-    /// Cache layer for <see cref="ProvenBlockHeaderStore"/>s.
+    /// Cache layer for <see cref="ProvenBlockHeader"/>s.
     /// </summary>
     public interface IProvenBlockHeaderStore : IProvenBlockHeaderProvider
     {

@@ -123,7 +123,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public Result<WalletSendTransactionModel> SendTransaction(Script scriptPubKey, Money amount)
         {
-            var txBuildContext = new TransactionBuildContext(this.chain.Network)
+            var txBuildContext = new TransactionBuildContext(this.CoreNode.FullNode.Network)
             {
                 AccountReference = new WalletAccountReference(this.WalletName, this.AccountName),
                 MinConfirmations = 1,
@@ -166,8 +166,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 AccountName = this.AccountName,
                 ContractCode = contractCode.ToHexString(),
                 FeeAmount = feeAmount.ToString(),
-                GasLimit = gasLimit.ToString(),
-                GasPrice = gasPrice.ToString(),
+                GasLimit = gasLimit,
+                GasPrice = gasPrice,
                 Parameters = parameters,
                 Password = this.Password,
                 Sender = this.MinerAddress.Address,
@@ -211,8 +211,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 Amount = amount.ToString(),
                 ContractAddress = contractAddress,
                 FeeAmount = feeAmount.ToString(),
-                GasLimit = gasLimit.ToString(),
-                GasPrice = gasPrice.ToString(),
+                GasLimit = gasLimit,
+                GasPrice = gasPrice,
                 MethodName = methodName,
                 Parameters = parameters,
                 Password = this.Password,
