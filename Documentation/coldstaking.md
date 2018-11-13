@@ -4,7 +4,7 @@
 ## Motivation
 
 
-In order to produce blocks on the Stratis network, a miner has to be online with a running node and have its wallet open. This is necessary because at each time slot, the minor is supposed to check whether 1 of its UTXOs is eligible to be used as a so-called coinstake kernel input and if so, it needs to use the private key associated with this UTXO in order to produce the coinstake transaction.
+In order to produce blocks on the Stratis network, a miner has to be online with a running node and have its wallet open. This is necessary because at each time slot, the miner is supposed to check whether 1 of its UTXOs is eligible to be used as a so-called coinstake kernel input and if so, it needs to use the private key associated with this UTXO in order to produce the coinstake transaction.
 
 The chance of a UTXO being eligible for producing a coinstake transaction grows linearly with the number of coins that this UTXO presents.
 
