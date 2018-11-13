@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If inputs are selected by the user, we just choose them all.
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
-                context.TransactionBuilder.CoinSelector = new CoinControlSelector();
+                context.TransactionBuilder.CoinSelector = new AllCoinsSelector();
             }
 
             this.AddRecipients(context);

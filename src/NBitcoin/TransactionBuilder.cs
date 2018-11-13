@@ -23,7 +23,11 @@ namespace NBitcoin
         IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target);
     }
 
-    public class CoinControlSelector : ICoinSelector
+    /// <summary>
+    /// A coin selector that selects all the coins passed by default.
+    /// Useful when a user wants a specific set of coins to be spent.
+    /// </summary>
+    public class AllCoinsSelector : ICoinSelector
     {
         public IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target)
         {
