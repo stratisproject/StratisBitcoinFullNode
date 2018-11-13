@@ -1194,6 +1194,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public async Task BuildTransactionFromWallet()
         {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
             // Act.
             WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/build-transaction")
@@ -1205,7 +1208,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = "123456",
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
-                    Recipients = new List<RecipientModel> { new RecipientModel {DestinationAddress = "TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", Amount = "1000" } }
+                    Recipients = new List<RecipientModel> { new RecipientModel {DestinationAddress = address, Amount = "1000" } }
                 })
                 .ReceiveJson<WalletBuildTransactionModel>();
 
@@ -1213,12 +1216,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             buildTransactionModel.Fee.Should().Be(new Money(3780));
 
             Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
-            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create("TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", this.fixture.Node.FullNode.Network).ScriptPubKey);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address, this.fixture.Node.FullNode.Network).ScriptPubKey);
         }
 
         [Fact]
         public async Task BuildTransactionWithSelectedInputs()
         {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
             // Act.
             WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/build-transaction")
@@ -1230,7 +1236,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = "123456",
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
-                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = "TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", Amount = "1000" } },
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } },
                     Outpoints = new List<OutpointRequest>
                     {
                         new OutpointRequest{ Index = 1, TransactionId = "4f1766c2dca4bb96bb7282b4eef113c0956f1ad50ba1a205bec50c7770cac2d5" }, //150000000000
@@ -1245,7 +1251,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             buildTransactionModel.Fee.Should().Be(new Money(6740));
 
             Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
-            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create("TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", this.fixture.Node.FullNode.Network).ScriptPubKey);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address, this.fixture.Node.FullNode.Network).ScriptPubKey);
             trx.Inputs.Should().HaveCount(4);
             trx.Inputs.Should().Contain(i => i.PrevOut == new OutPoint(uint256.Parse("4f1766c2dca4bb96bb7282b4eef113c0956f1ad50ba1a205bec50c7770cac2d5"), 1));
             trx.Inputs.Should().Contain(i => i.PrevOut == new OutPoint(uint256.Parse("a40cf5f3c20cf265f5e1a360c7c984688b191993792e7a9cd6227c952b840710"), 1));
@@ -1256,6 +1262,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public async Task BuildTransactionWithMultipleRecipients()
         {
+            // Arrange.
+            var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+            var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
             // Act.
             WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/build-transaction")
@@ -1268,8 +1278,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
                     Recipients = new List<RecipientModel> {
-                        new RecipientModel { DestinationAddress = "TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", Amount = "1000" },
-                        new RecipientModel { DestinationAddress = "TXzfduZ53LHyG4SLHJLp6aXj6BQbQMkbTx", Amount = "5000" }
+                        new RecipientModel { DestinationAddress = address1, Amount = "1000" },
+                        new RecipientModel { DestinationAddress = address2, Amount = "5000" }
                     }
                 })
                 .ReceiveJson<WalletBuildTransactionModel>();
@@ -1278,13 +1288,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             buildTransactionModel.Fee.Should().Be(new Money(2640));
 
             Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
-            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create("TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", this.fixture.Node.FullNode.Network).ScriptPubKey);
-            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 5000 && o.ScriptPubKey == BitcoinAddress.Create("TXzfduZ53LHyG4SLHJLp6aXj6BQbQMkbTx", this.fixture.Node.FullNode.Network).ScriptPubKey);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address1, this.fixture.Node.FullNode.Network).ScriptPubKey);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 5000 && o.ScriptPubKey == BitcoinAddress.Create(address2, this.fixture.Node.FullNode.Network).ScriptPubKey);
         }
 
         [Fact]
         public async Task BuildTransactionFailsWhenUsingFeeAmountAndFeeType()
         {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/build-transaction")
@@ -1297,7 +1310,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = "123456",
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
-                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = "TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", Amount = "1000" } }
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } }
                 })
                 .ReceiveJson<WalletBuildTransactionModel>();
 
@@ -1317,6 +1330,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         [Fact]
         public async Task BuildTransactionFailsWhenNoFeeMethodSpecified()
         {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
             // Act.
             Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/build-transaction")
@@ -1327,7 +1343,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = "123456",
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
-                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = "TX725W9ngnnoNuXX6mxvx5iHwS9VEuTa4s", Amount = "1000" } }
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } }
                 })
                 .ReceiveJson<WalletBuildTransactionModel>();
 
