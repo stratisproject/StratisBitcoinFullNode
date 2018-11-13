@@ -693,7 +693,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.True(GasPriceList.BaseCost < receipt.GasUsed);
             Assert.Null(receipt.NewContractAddress);
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
-            Assert.StartsWith($"{nameof(RuntimeObserver.MemoryConsumptionException)}", receipt.Error);
+            Assert.StartsWith($"{typeof(RuntimeObserver.MemoryConsumptionException).FullName}", receipt.Error);
             Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
 
