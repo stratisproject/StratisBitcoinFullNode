@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             });
 
             return nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
         }
 
         /// <summary>

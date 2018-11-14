@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <returns> <c>true</c> if  we need to validate proven headers.</returns>
         private bool AreProvenHeadersActivated()
         {
-            var currentHeight = this.ExpectedPeerTip.Height;
+            var currentHeight = (this.ExpectedPeerTip ?? this.consensusManager.Tip).Height;
 
             return currentHeight >= this.lastCheckpointHeight;
         }

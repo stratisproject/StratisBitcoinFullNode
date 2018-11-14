@@ -183,6 +183,14 @@ namespace NBitcoin
         }
     }
 
+    public class ProvenHeaderConsensusFactory : PosConsensusFactory
+    {
+        public override BlockHeader CreateBlockHeader()
+        {
+            return base.CreateProvenBlockHeader();
+        }
+    }
+
     /// <summary>
     /// The consensus factory for creating POS protocol types.
     /// </summary>
@@ -331,7 +339,7 @@ namespace NBitcoin
         /// <para>In PoS blocks, coinstake transaction is the second transaction in the block.</para>
         /// <para>In PoW there isn't a coinstake transaction, but the first transaction is taken as coinstake to be able to compute stake modifier for the next eventual PoS block.</para>
         /// </remarks>
-        public Transaction GetCoinstake()
+        public Transaction GetCoinstakeOrCoinBase()
         {
             return (this.Transactions.Count > 1 && this.Transactions[1].IsCoinStake) ? this.Transactions[1] : this.Transactions[0];
         }

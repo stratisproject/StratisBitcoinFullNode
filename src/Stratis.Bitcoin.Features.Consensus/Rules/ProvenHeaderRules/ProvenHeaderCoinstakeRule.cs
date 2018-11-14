@@ -53,9 +53,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             this.CheckCoinstakeIsNotNull(header);
 
-            // Temporary hack
-            if(header.Coinstake.IsCoinBase)
+            if (header.Coinstake.IsCoinBase)
+            {
+                // If the header represents a POW block we don't do any validation of stake.
+                // We verify the header is not passed the last pow height.
+
+                if (chainedHeader.Height > this.Parent.Network.Consensus.LastPOWBlock)
+                {
+                    this.Logger.LogTrace("(-)[INVALID_POW_HEIGHT]");
+                    ConsensusErrors.InvalidPowHeight.Throw();
+                }
+
+                this.Logger.LogTrace("(-)[COIN_BASE_SKIP_VALIDATION]");
                 return;
+            }
 
             this.CheckIfCoinstakeIsTrue(header);
 

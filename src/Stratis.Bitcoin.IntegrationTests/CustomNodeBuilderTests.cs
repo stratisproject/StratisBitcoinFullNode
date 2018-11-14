@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 

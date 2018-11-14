@@ -31,7 +31,7 @@ namespace Stratis.StratisDnsD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
+                var nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion:ProtocolVersion.PROVEN_HEADER_VERSION, args:args);
 
                 var dnsSettings = new DnsSettings(nodeSettings);
 
