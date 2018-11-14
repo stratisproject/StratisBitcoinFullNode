@@ -17,6 +17,7 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
@@ -228,6 +229,7 @@ namespace Stratis.Bitcoin.Features.Miner
                         services.AddSingleton<MiningRpcController>();
                         services.AddSingleton<MiningController>();
                         services.AddSingleton<MinerSettings>();
+                        services.AddSingleton<IMinedBlockInterceptor, MinedBlockInterceptor>();
                     });
             });
 

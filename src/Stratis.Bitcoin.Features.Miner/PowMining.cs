@@ -81,6 +81,11 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private CancellationTokenSource miningCancellationTokenSource;
 
+        /// <summary>
+        /// The mined block interceptor. It can be null.
+        /// </summary>
+        private readonly IMinedBlockInterceptor minedBlockInterceptor;
+
         public PowMining(
             IAsyncLoopFactory asyncLoopFactory,
             IBlockProvider blockProvider,
@@ -92,7 +97,8 @@ namespace Stratis.Bitcoin.Features.Miner
             Network network,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState initialBlockDownloadState)
+            IInitialBlockDownloadState initialBlockDownloadState,
+            IMinedBlockInterceptor minedBlockInterceptor)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockProvider = blockProvider;
@@ -107,6 +113,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.network = network;
             this.nodeLifetime = nodeLifetime;
             this.miningCancellationTokenSource = CancellationTokenSource.CreateLinkedTokenSource(new[] { this.nodeLifetime.ApplicationStopping });
+            this.minedBlockInterceptor = minedBlockInterceptor;
         }
 
         /// <inheritdoc/>
@@ -270,6 +277,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// </summary>
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
+            this.minedBlockInterceptor?.OnMinedBlock(context.BlockTemplate.Block);
+
             ChainedHeader chainedHeader = this.consensusManager.BlockMinedAsync(context.BlockTemplate.Block).GetAwaiter().GetResult();
 
             if (chainedHeader == null)

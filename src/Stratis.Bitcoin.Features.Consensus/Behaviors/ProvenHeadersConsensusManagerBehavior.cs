@@ -59,21 +59,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
             this.lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
             this.lastCheckpointInfo = this.checkpoints.GetCheckpoint(this.lastCheckpointHeight);
-            this.consensusManager.AttachingMinedBlock += ConsensusManager_AttachingMinedBlock;
-        }
-
-        /// <summary>
-        /// Apply changes on a new mined block, to be sure that the header is a Proven Header
-        /// </summary>
-        /// <param name="sender">The sender.</param>
-        /// <param name="block">The new mined block that is going to be attached.</param>
-        private void ConsensusManager_AttachingMinedBlock(object sender, Block block)
-        {
-            if (block is PosBlock posBlock)
-            {
-                ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
-                posBlock.SetHeader(provenBlockHeader);
-            }
         }
 
         /// <inheritdoc />

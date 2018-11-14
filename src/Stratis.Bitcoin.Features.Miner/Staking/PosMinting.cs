@@ -216,6 +216,11 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
         /// <summary>
+        /// The mined block interceptor. It can be null.
+        /// </summary>
+        private readonly IMinedBlockInterceptor minedBlockInterceptor;
+
+        /// <summary>
         /// Initializes a new instance of the <see cref="PosMinting"/> class.
         /// </summary>
         /// <param name="consensusManager">Consumes incoming blocks, validates and executes them.</param>
@@ -250,7 +255,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
             ILoggerFactory loggerFactory,
-            MinerSettings minerSettings)
+            MinerSettings minerSettings,
+            IMinedBlockInterceptor minedBlockInterceptor)
         {
             this.blockProvider = blockProvider;
             this.consensusManager = consensusManager;
@@ -269,6 +275,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.minedBlockInterceptor = minedBlockInterceptor;
 
             this.minerSleep = 500; // GetArg("-minersleep", 500);
             this.systemTimeOutOfSyncSleep = 7000;
@@ -503,6 +510,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 this.logger.LogTrace("(-)[NO_PREV_STAKE]");
                 ConsensusErrors.PrevStakeNull.Throw();
             }
+
+            this.minedBlockInterceptor?.OnMinedBlock(block);
 
             // Validate the block.
             ChainedHeader chainedHeader = await this.consensusManager.BlockMinedAsync(block).ConfigureAwait(false);
