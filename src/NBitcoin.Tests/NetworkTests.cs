@@ -481,7 +481,7 @@ namespace NBitcoin.Tests
         {
             Network network = this.stratisRegTest;
 
-            Assert.Single(network.Checkpoints);
+            Assert.Empty(network.Checkpoints);
             Assert.Empty(network.DNSSeeds);
             Assert.Empty(network.SeedNodes);
 
