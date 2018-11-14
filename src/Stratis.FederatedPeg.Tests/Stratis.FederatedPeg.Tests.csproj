@@ -26,7 +26,6 @@
     <PackageReference Include="Stratis.Bitcoin" Version="1.2.3-beta" />
     <PackageReference Include="Stratis.Bitcoin.Api" Version="1.2.3-beta" />
     <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.3-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Tests.Common" Version="1.2.3-beta" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
   </ItemGroup>
