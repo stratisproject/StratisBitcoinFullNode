@@ -313,10 +313,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         internal PosBlockBuilder WithLargeCoinstake(int numberOfTransactions = 100_000)
         {
             var rogueCoinstakeTransaction = new Transaction();
+            var originalCoinstakeTransaction = this.posBlock.Transactions[1];
             for (int i = 0; i < numberOfTransactions; i++)
             {
-                rogueCoinstakeTransaction.Inputs.Add(new TxIn(new Script(RandomUtils.GetBytes(100))));
+                if (i == 0)
+                    rogueCoinstakeTransaction.Inputs.Add(originalCoinstakeTransaction.Inputs[0]);
+                else
+                    rogueCoinstakeTransaction.Inputs.Add(new TxIn(new Script(RandomUtils.GetBytes(100))));
             }
+            rogueCoinstakeTransaction.Outputs.AddRange(originalCoinstakeTransaction.Outputs);
 
             // Replace existing coinstake with a rogue one.
             this.posBlock.Transactions[1] = rogueCoinstakeTransaction;
