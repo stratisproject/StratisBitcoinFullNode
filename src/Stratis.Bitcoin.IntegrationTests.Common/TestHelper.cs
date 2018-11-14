@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
         {
             cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
+                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 3 * 60 * 1000).Token
                 : cancellationToken;
 
             while (!act())
