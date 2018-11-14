@@ -12,6 +12,7 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
@@ -54,7 +55,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// The caller must also ensure the transfers passed to this call all have a
         /// <see cref="CrossChainTransfer.Status"/> of <see cref="CrossChainTransferStatus.Partial"/>.
         /// </remarks>
-        Task RecordLatestMatureDeposits(IEnumerable<CrossChainTransfer> crossChainTransfers);
+        Task RecordLatestMatureDepositsAsync(IEnumerable<CrossChainTransfer> crossChainTransfers);
 
         /// <summary>
         /// Uses the information contained in our chain's blocks to update the store.
@@ -163,11 +164,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private readonly CancellationTokenSource cancellation;
 
+        private readonly IFederationWalletManager federationWalletManager;
+
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, ConcurrentChain chain, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
-            ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader, IFullNode fullNode, IBlockRepository blockRepository)
+            ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader, IFullNode fullNode, IBlockRepository blockRepository,
+            IFederationWalletManager federationWalletManager)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
@@ -178,11 +182,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             Guard.NotNull(opReturnDataReader, nameof(opReturnDataReader));
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(blockRepository, nameof(blockRepository));
+            Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
 
             this.network = network;
             this.chain = chain;
             this.dateTimeProvider = dateTimeProvider;
             this.blockRepository = blockRepository;
+            this.federationWalletManager = federationWalletManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -240,10 +246,41 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         public void Start()
         {
             this.SynchronizeAsync().GetAwaiter().GetResult();
+            this.SanityCheckAsync().GetAwaiter().GetResult();
+        }
+
+        /// <summary>
+        /// Partial or fully signed transfers should have their source UTXO's recorded by the wallet.
+        /// Sets transfers to <see cref="CrossChainTransferStatus.Rejected"/> if their UTXO's are not
+        /// reserved within the wallet.
+        /// </summary>
+        public async Task SanityCheckAsync()
+        {
+            this.logger.LogTrace("()");
+
+            using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+            {
+                dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
+
+                CrossChainTransfer[] partialTransfers = this.Get(dbreezeTransaction,
+                this.depositsIdsByStatus[CrossChainTransferStatus.Partial].Union(
+                    this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned]).ToArray());
+
+                Wallet.FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+                foreach (CrossChainTransfer partialTransfer in partialTransfers)
+                {
+                    if (!SanityCheck(partialTransfer.PartialTransaction, wallet))
+                    {
+                        this.SetTransferStatus(partialTransfer, CrossChainTransferStatus.Rejected);
+                        await this.PutTransferAsync(dbreezeTransaction, partialTransfer);
+                    }
+                }
+            }
         }
 
         /// <inheritdoc />
-        public async Task RecordLatestMatureDeposits(IEnumerable<CrossChainTransfer> crossChainTransfers)
+        public async Task RecordLatestMatureDepositsAsync(IEnumerable<CrossChainTransfer> crossChainTransfers)
         {
             Guard.NotNull(crossChainTransfers, nameof(crossChainTransfers));
             Guard.Assert(!crossChainTransfers.Any(t => !t.IsValid()));
@@ -698,6 +735,28 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.depositsIdsByStatus[transfer.Status].Remove(transfer.DepositTransactionId);
             transfer.SetStatus(status);
             this.depositsIdsByStatus[transfer.Status].Add(transfer.DepositTransactionId);
+        }
+
+        /// <summary>
+        /// Verifies that the transaction's inout UTXO's have been reserved by the wallet.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <param name="wallet">The wallet to check.</param>
+        /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
+        public static bool SanityCheck(Transaction transaction, Wallet.FederationWallet wallet)
+        {
+            // All the input UTXO's should be present in spending details of the multi-sig address.
+            foreach (TxIn input in transaction.Inputs)
+            {
+                Wallet.TransactionData transactionData = wallet.MultiSigAddress.Transactions
+                    .Where(t => t.SpendingDetails != null && t.SpendingDetails.TransactionId == transaction.GetHash()
+                        && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N).FirstOrDefault();
+
+                if (transactionData == null)
+                    return false;
+            }
+
+            return true;
         }
 
         /// <inheritdoc />
