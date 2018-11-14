@@ -22,6 +22,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
         private readonly IDepositExtractor depositExtractor;
 
+        private readonly IWithdrawalExtractor withdrawalExtractor;
+
         private readonly IBlockTipSender blockTipSender;
 
         private readonly ConcurrentChain chain;
@@ -37,6 +39,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         public BlockObserver(IFederationWalletSyncManager walletSyncManager,
                              ICrossChainTransactionMonitor crossChainTransactionMonitor,
                              IDepositExtractor depositExtractor,
+                             IWithdrawalExtractor withdrawalExtractor,
                              IMaturedBlockSender maturedBlockSender,
                              IBlockTipSender blockTipSender)
         {
@@ -45,11 +48,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             Guard.NotNull(maturedBlockSender, nameof(maturedBlockSender));
             Guard.NotNull(blockTipSender, nameof(blockTipSender));
             Guard.NotNull(depositExtractor, nameof(depositExtractor));
+            Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
 
             this.walletSyncManager = walletSyncManager;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
             this.maturedBlockSender = maturedBlockSender;
             this.depositExtractor = depositExtractor;
+            this.withdrawalExtractor = withdrawalExtractor;
             this.blockTipSender = blockTipSender;
         }
 
@@ -66,9 +71,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             this.blockTipSender.SendBlockTipAsync(
                 new BlockTipModel(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock.ChainedHeader.Height));
 
-            // todo: persist the last seen block height in database
-            // todo: save these deposits in local database
+            var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
+                chainedHeaderBlock.Block,
+                chainedHeaderBlock.ChainedHeader.Height);
+            //todo add that to the store or change status of pending transfers to on chain
 
+            // todo: persist the last seen block height in database
             IMaturedBlockDeposits maturedBlockDeposits = 
                 this.depositExtractor.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
 
