@@ -37,10 +37,10 @@ namespace Stratis.FederatedPeg.Tests
         public void GetStringFromOpReturn_CanReadAddress()
         {
 
-            var opReturnAddress = this.addressHelper.TargetChainAddress;
+            var opReturnAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
             var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
 
@@ -52,9 +52,9 @@ namespace Stratis.FederatedPeg.Tests
         public void TryGetTargetAddressFromOpReturn_CanReadAddress()
         {
 
-            var opReturnAddress = this.addressHelper.TargetChainAddress;
+            var opReturnAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
             var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var addressFromOpReturn = this.opReturnDataReader.TryGetTargetAddress(transaction);
 
@@ -64,10 +64,10 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void GetStringFromOpReturn_Can_NOT_ReadAddress_FromOwnNetwork()
         {
-            var opReturnAddress = this.addressHelper.GetNewSourceChainAddress();
+            var opReturnAddress = this.addressHelper.GetNewSourceChainPubKeyAddress();
             var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
 
@@ -78,10 +78,10 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_NOT_ReadAddress_FromOwnNetwork()
         {
-            var opReturnAddress = this.addressHelper.GetNewSourceChainAddress();
+            var opReturnAddress = this.addressHelper.GetNewSourceChainPubKeyAddress();
             var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.TryGetTargetAddress(transaction);
 
@@ -91,10 +91,10 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void GetStringFromOpReturn_CanReadTransactionHash()
         {
-            var opReturnTransactionHash = this.transactionBuilder.BuildTransaction(this.addressHelper.SourceChainAddress).GetHash();
+            var opReturnTransactionHash = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
             var opReturnBytes = opReturnTransactionHash.ToBytes();
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
 
@@ -106,12 +106,12 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void GetStringFromOpReturn_Can_NOT_Read_Transaction_with_two_OpReturns()
         {
-            var opReturnAddress1 = this.addressHelper.TargetChainAddress;
+            var opReturnAddress1 = this.addressHelper.GetNewTargetChainPubKeyAddress();
             var opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes1);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes1);
 
-            var opReturnAddress2 = this.addressHelper.GetNewTargetChainAddress();
+            var opReturnAddress2 = this.addressHelper.GetNewTargetChainPubKeyAddress();
             var opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
 
@@ -124,12 +124,12 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_NOT_Read_Transaction_with_two_valid_OpReturns_addresses()
         {
-            var opReturnAddress1 = this.addressHelper.TargetChainAddress;
+            var opReturnAddress1 = this.addressHelper.GetNewTargetChainPubKeyAddress();
             var opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes1);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes1);
 
-            var opReturnAddress2 = this.addressHelper.GetNewTargetChainAddress();
+            var opReturnAddress2 = this.addressHelper.GetNewTargetChainPubKeyAddress();
             opReturnAddress1.ToString().Should().NotBe(
                 opReturnAddress2.ToString(), "otherwise the transaction is not ambiguous");
             var opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
@@ -142,13 +142,13 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_Read_Transaction_with_many_OpReturns_but_only_a_valid_address_one()
         {
-            var opReturnValidAddress = this.addressHelper.TargetChainAddress;
+            var opReturnValidAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
             var opReturnValidAddressBytes = Encoding.UTF8.GetBytes(opReturnValidAddress.ToString());
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnValidAddressBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnValidAddressBytes);
 
             //address 2 will be ignored as not valid for target chain
-            var opReturnInvalidAddressBytes = Encoding.UTF8.GetBytes(this.addressHelper.GetNewSourceChainAddress().ToString());
+            var opReturnInvalidAddressBytes = Encoding.UTF8.GetBytes(this.addressHelper.GetNewSourceChainPubKeyAddress().ToString());
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnInvalidAddressBytes)));
 
             //add another output with the same target address, this is not ambiguous
@@ -159,14 +159,14 @@ namespace Stratis.FederatedPeg.Tests
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(randomMessageBytes)));
 
             var addressFromOpReturn = this.opReturnDataReader.TryGetTargetAddress(transaction);
-            addressFromOpReturn.Should().Be(this.addressHelper.TargetChainAddress.ToString());
+            addressFromOpReturn.Should().Be(opReturnValidAddress.ToString());
         }
 
         [Fact]
         public void GetStringFromOpReturn_Can_NOT_ReadRandomStrings()
         {
             var opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
 
@@ -178,7 +178,7 @@ namespace Stratis.FederatedPeg.Tests
         public void TryGetTargetAddressFromOpReturn_Can_NOT_ReadRandomStrings()
         {
             var opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.TryGetTargetAddress(transaction);
 
@@ -189,7 +189,7 @@ namespace Stratis.FederatedPeg.Tests
         public void TryGetTransactionIdFromOpReturn_Can_NOT_Read_Random_Strings()
         {
             var opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.TryGetTransactionId(transaction);
 
@@ -199,15 +199,15 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void TryGetTransactionIdFromOpReturn_Can_NOT_Read_Two_Valid_uint256_OpReturns()
         {
-            var opReturnTransactionHash1 = this.transactionBuilder.BuildTransaction(this.addressHelper.SourceChainAddress).GetHash();
+            var opReturnTransactionHash1 = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
             var opReturnBytes1 = opReturnTransactionHash1.ToBytes();
 
-            var opReturnTransactionHash2 = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainAddress()).GetHash();
+            var opReturnTransactionHash2 = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
             var opReturnBytes2 = opReturnTransactionHash2.ToBytes();
 
             opReturnBytes2.Should().NotBeEquivalentTo(opReturnBytes1, "otherwise there is no ambiguity");
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes1);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes1);
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
 
             var opReturnString = this.opReturnDataReader.TryGetTransactionId(transaction);
@@ -218,12 +218,12 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void TryGetTransactionIdFromOpReturn_Can_Read_many_OpReturns_with_only_one_valid_uint256()
         {
-            var opReturnTransactionHash1 = this.transactionBuilder.BuildTransaction(this.addressHelper.SourceChainAddress).GetHash();
+            var opReturnTransactionHash1 = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
             var opReturnBytes1 = opReturnTransactionHash1.ToBytes();
 
             var opReturnBytes2 = Encoding.UTF8.GetBytes("neither hash, nor address");
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes1);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes1);
             transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
 
             var opReturnString = this.opReturnDataReader.TryGetTransactionId(transaction);
@@ -235,10 +235,10 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void TryGetTransactionIdFromOpReturn_Can_Read_single_OpReturn_with_valid_uint256()
         {
-            var opReturnTransactionHash = this.transactionBuilder.BuildTransaction(this.addressHelper.SourceChainAddress).GetHash();
+            var opReturnTransactionHash = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
             var opReturnBytes = opReturnTransactionHash.ToBytes();
 
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.SourceChainAddress, opReturnBytes);
+            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
 
             var opReturnString = this.opReturnDataReader.TryGetTransactionId(transaction);
 

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -15,7 +14,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private readonly ILogger logger;
 
-        private readonly Script withdrawalScript;
+        private readonly BitcoinAddress multisigAddress;
 
         public WithdrawalExtractor(
             ILoggerFactory loggerFactory,
@@ -24,7 +23,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.withdrawalScript = federationGatewaySettings.MultiSigRedeemScript;
+            this.multisigAddress = federationGatewaySettings.MultiSigAddress;
             this.opReturnDataReader = opReturnDataReader;
             this.network = network;
         }
@@ -35,31 +34,47 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             var withdrawals = new List<IWithdrawal>();
             foreach (var transaction in block.Transactions)
             {
-                if (transaction.Outputs.Count(this.IsTargetAddressCandidate) != 1) continue;
-
-                var withdrawalFromMultisig = transaction.Inputs.Where(input =>
-                    input.ScriptSig == this.withdrawalScript).ToList();
-
-                if (!withdrawalFromMultisig.Any()) continue;
-
-                var depositId = this.opReturnDataReader.TryGetTransactionId(transaction);
-                if (string.IsNullOrWhiteSpace(depositId)) continue;
-
-                this.logger.LogInformation("Processing received transaction with source deposit id: {0}. Transaction hash: {1}.",
-                    depositId, transaction.GetHash());
-
-                var targetAddressOutput = transaction.Outputs.Single(this.IsTargetAddressCandidate);
-                var withdrawal = new Withdrawal(uint256.Parse(depositId), transaction.GetHash(), targetAddressOutput.Value,
-                    targetAddressOutput.ScriptPubKey.GetScriptAddress(this.network).ToString(), blockHeight, block.GetHash());
-                withdrawals.Add(withdrawal);
+                var withdrawal = ExtractWithdrawalFromTransaction(transaction, block.GetHash(), blockHeight);
+                if (withdrawal != null) withdrawals.Add(withdrawal);
             }
 
             return withdrawals.AsReadOnly();
         }
 
+        private IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight)
+        {
+            if (transaction.Outputs.Count(this.IsTargetAddressCandidate) != 1) return null;
+            if (!IsOnlyFromMultisig(transaction)) return null;
+
+            var depositId = this.opReturnDataReader.TryGetTransactionId(transaction);
+            if (string.IsNullOrWhiteSpace(depositId)) return null;
+
+            this.logger.LogInformation(
+                "Processing received transaction with source deposit id: {0}. Transaction hash: {1}.",
+                depositId,
+                transaction.GetHash());
+
+            var targetAddressOutput = transaction.Outputs.Single(this.IsTargetAddressCandidate);
+            var withdrawal = new Withdrawal(
+                uint256.Parse(depositId),
+                transaction.GetHash(),
+                targetAddressOutput.Value,
+                targetAddressOutput.ScriptPubKey.GetScriptAddress(this.network).ToString(),
+                blockHeight,
+                blockHash);
+            return withdrawal;
+        }
+
         private bool IsTargetAddressCandidate(TxOut output)
         {
-            return output.ScriptPubKey != this.withdrawalScript && !output.ScriptPubKey.IsUnspendable;
+            return output.ScriptPubKey.Hash.GetAddress(this.network) != this.multisigAddress && !output.ScriptPubKey.IsUnspendable;
+        }
+
+        private bool IsOnlyFromMultisig(Transaction transaction)
+        {
+            if (!transaction.Inputs.Any()) return false;
+            return transaction.Inputs.All(
+                    i => i.ScriptSig?.GetSignerAddress(this.network) == this.multisigAddress);
         }
     }
 }

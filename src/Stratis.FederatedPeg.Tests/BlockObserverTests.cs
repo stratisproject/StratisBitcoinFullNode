@@ -39,8 +39,12 @@ namespace Stratis.FederatedPeg.Tests
 
         private ILoggerFactory loggerFactory;
 
+        private IWithdrawalExtractor withdrawalExtractor;
+
         public BlockObserverTests()
         {
+            this.minimumDepositConfirmations = 10;
+
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.federationGatewaySettings.MinimumDepositConfirmations.Returns(this.minimumDepositConfirmations);
 
@@ -61,10 +65,13 @@ namespace Stratis.FederatedPeg.Tests
                 this.opReturnDataReader,
                 this.fullNode);
 
+            this.withdrawalExtractor = Substitute.For<IWithdrawalExtractor>();
+
             this.blockObserver = new BlockObserver(
                 this.federationWalletSyncManager,
                 this.crossChainTransactionMonitor,
                 this.depositExtractor,
+                this.withdrawalExtractor,
                 this.maturedBlockSender,
                 this.blockTipSender);
         }
@@ -81,6 +88,8 @@ namespace Stratis.FederatedPeg.Tests
 
             this.crossChainTransactionMonitor.Received(1).ProcessBlock(earlyBlock);
             this.federationWalletSyncManager.Received(1).ProcessBlock(earlyBlock);
+            this.withdrawalExtractor.ReceivedWithAnyArgs(1).ExtractWithdrawalsFromBlock(earlyBlock, 0);
+            this.blockTipSender.ReceivedWithAnyArgs(1).SendBlockTipAsync(null);
             this.maturedBlockSender.ReceivedWithAnyArgs(0).SendMaturedBlockDepositsAsync(null);
         }
 
@@ -106,7 +115,17 @@ namespace Stratis.FederatedPeg.Tests
             this.blockTipSender.ReceivedWithAnyArgs(1).SendBlockTipAsync(null);
         }
 
-        private(ChainedHeaderBlock chainedHeaderBlock, Block block) ChainHeaderBlockBuilder()
+        [Fact]
+        public void BlockObserver_Should_Extract_Withdrawals()
+        {
+            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder().chainedHeaderBlock;
+
+            this.blockObserver.OnNext(chainedHeaderBlock);
+
+            this.withdrawalExtractor.ReceivedWithAnyArgs(1).ExtractWithdrawalsFromBlock(null, 0);
+        }
+
+        private (ChainedHeaderBlock chainedHeaderBlock, Block block) ChainHeaderBlockBuilder()
         {
             var confirmations = (int)this.minimumDepositConfirmations;
 

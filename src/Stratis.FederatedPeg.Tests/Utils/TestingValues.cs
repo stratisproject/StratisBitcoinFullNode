@@ -15,14 +15,14 @@ namespace Stratis.FederatedPeg.Tests.Utils
             return new uint256(buffer);
         }
 
-        public static int GetPositiveInt()
+        public static int GetPositiveInt(int minValue = 0)
         {
-            return Random.Next(0, int.MaxValue);
+            return Random.Next(minValue, int.MaxValue);
         }
 
-        public static Money GetMoney()
+        public static Money GetMoney(int minValue = 1, bool wholeCoins = false)
         {
-            return new Money(GetPositiveInt());
+            return wholeCoins ? new Money(GetPositiveInt(minValue)) : new Money(GetPositiveInt(minValue), MoneyUnit.BTC);
         }
 
         public static string GetString(int length = 30)
