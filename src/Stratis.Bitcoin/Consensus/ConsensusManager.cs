@@ -195,27 +195,24 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                using (CurrentPeerContext.Capture(peer))
+                int peerId = peer.Connection.Id;
+
+                connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+
+                if (connectNewHeadersResult == null)
                 {
-                    int peerId = peer.Connection.Id;
+                    this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
+                    return null;
+                }
 
-                    connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+                this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 
-                    if (connectNewHeadersResult == null)
-                    {
-                        this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
-                        return null;
-                    }
+                this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
-                    this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
-
-                    this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
-
-                    if (!this.peersByPeerId.ContainsKey(peerId))
-                    {
-                        this.peersByPeerId.Add(peerId, peer);
-                        this.logger.LogTrace("New peer with ID {0} was added.", peerId);
-                    }
+                if (!this.peersByPeerId.ContainsKey(peerId))
+                {
+                    this.peersByPeerId.Add(peerId, peer);
+                    this.logger.LogTrace("New peer with ID {0} was added.", peerId);
                 }
             }
 
