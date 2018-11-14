@@ -93,7 +93,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
             catch (Exception exception)
             {
-                return BuildCallContractTransactionResponse.Failed(exception.Message);
+                Console.WriteLine("SC Exception");
+                throw exception;
             }
         }
 
@@ -139,15 +140,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 Recipients = new[] { recipient }.ToList()
             };
 
-            try
-            {
+            try { 
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
                 uint160 contractAddress = this.addressGenerator.GenerateAddress(transaction.GetHash(), 0);
                 return BuildCreateContractTransactionResponse.Succeeded(transaction, context.TransactionFee, contractAddress.ToBase58Address(this.network));
             }
             catch (Exception exception)
             {
-                return BuildCreateContractTransactionResponse.Failed(exception.Message);
+                
+                Console.WriteLine("SC Exception");
+                throw exception;
             }
         }
     }
