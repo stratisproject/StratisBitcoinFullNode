@@ -334,7 +334,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             // If the chain does not contain our tip..
             if (this.TipHashAndHeight != null && this.chain.GetBlock(this.TipHashAndHeight.Hash) == null)
             {
-                // We are ahead of the current chain.
+                // We are ahead of the current chain or on the wrong chain.
                 uint256 commonTip = this.network.GenesisHash;
                 int commonHeight = 0;
 
@@ -351,13 +351,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     transaction.SynchronizeTables(transferTableName, commonTableName);
                     transaction.ValuesLazyLoadingIsOn = false;
                     await this.OnDeleteBlocksAsync(transaction, commonHeight);
-                    this.SaveTipHashAndHeight(transaction, new HashHeightPair(this.chain.Tip.HashBlock, this.chain.Tip.Height));
+                    this.SaveTipHashAndHeight(transaction, new HashHeightPair(commonTip, commonHeight));
                     transaction.Commit();
                 }
 
+                bool caughtUp = commonTip == this.chain.Tip.HashBlock;
+
                 // Indicate that we have rewound to the current chain.
-                this.logger.LogTrace("(-):true");
-                return true;
+                this.logger.LogTrace("(-):{0}", caughtUp);
+                return caughtUp;
             }
 
             // Indicate that we are behind the current chain.
