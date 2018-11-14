@@ -116,7 +116,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             ILoggerFactory loggerFactory,
             Network network,
             ConcurrentChain chain,
-            NodeSettings settings, DataFolder dataFolder,
+            DataFolder dataFolder,
             IWalletFeePolicy walletFeePolicy,
             IAsyncLoopFactory asyncLoopFactory,
             INodeLifetime nodeLifetime,
@@ -127,7 +127,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(dataFolder, nameof(dataFolder));
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
