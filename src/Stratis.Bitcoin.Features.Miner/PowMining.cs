@@ -272,12 +272,12 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>
         /// Validate the mined block by passing it to the consensus rule engine.
         /// <para>
-        /// On successfull block validation the block will be connected to the chain.
+        /// On successful block validation the block will be connected to the chain.
         /// </para>
         /// </summary>
         private bool ValidateAndConnectBlock(MineBlockContext context)
         {
-            this.minedBlockInterceptor?.OnMinedBlock(context.BlockTemplate.Block);
+            this.minedBlockInterceptor.OnMinedBlock(context.BlockTemplate.Block);
 
             ChainedHeader chainedHeader = this.consensusManager.BlockMinedAsync(context.BlockTemplate.Block).GetAwaiter().GetResult();
 

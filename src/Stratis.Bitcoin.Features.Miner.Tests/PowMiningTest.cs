@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             this.mempoolLock = new MempoolSchedulerLock();
 
-            this.minedBlockInterceptor = null;
+            this.minedBlockInterceptor = new Mock<IMinedBlockInterceptor>().Object;
         }
 
         [Fact]
