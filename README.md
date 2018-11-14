@@ -1,6 +1,7 @@
 | Windows | MacOs | Ubuntu64
 | :---- | :------ | :---- |
-| [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedWindowsContainer-CI)](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedWindowsContainer-CI?branchName=master) | [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedmacOS-CI)](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedmacOS-CI?branchName=master) | [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedUbuntu1604-CI)](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedUbuntu1604-CI?branchName=master)
+| [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedWindowsContainer-CI?branchName=master)](https://dev.azure.com/StratisProject/FederatedSidechains/_build?definitionId=1) | [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedmacOS-CI?branchName=master)](https://dev.azure.com/StratisProject/FederatedSidechains/_build?definitionId=3) | [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedUbuntu1604-CI?branchName=master)](https://dev.azure.com/StratisProject/FederatedSidechains/_build?definitionId=2)
+
 
 Stratis Federated Sidechains - Testnet Alpha Release
 ============================
