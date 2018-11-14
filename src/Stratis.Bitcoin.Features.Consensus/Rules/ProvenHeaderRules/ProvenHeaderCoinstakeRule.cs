@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Linq;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
@@ -56,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.CheckHeaderAndCoinstakeTimes(header);
 
-            FetchCoinsResponse coins = this.GetAndValidateCoins(header);
+            FetchCoinsResponse coins = this.GetAndValidateCoins(header, context);
             UnspentOutputs prevUtxo = this.GetAndValidatePreviousUtxo(coins);
 
             this.CheckCoinstakeAgeRequirement(chainedHeader, prevUtxo);
@@ -90,16 +91,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// Fetches and validates coins from coins view.
         /// </summary>
         /// <param name="header">The header.</param>
+        /// <param name="context">Rule context.</param>
         /// <exception cref="ConsensusException">
         /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails.
         /// </exception>
-        private FetchCoinsResponse GetAndValidateCoins(ProvenBlockHeader header)
+        private FetchCoinsResponse GetAndValidateCoins(ProvenBlockHeader header, PosRuleContext context)
         {
             // First try finding the previous transaction in database.
             TxIn txIn = header.Coinstake.Inputs[0];
             FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
-                ConsensusErrors.ReadTxPrevFailed.Throw();
+            {
+                this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
+            }
 
             return coins;
         }
@@ -216,7 +220,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             }
             else
             {
-                ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
+                ProvenBlockHeader previousProvenHeader = (ProvenBlockHeader)chainedHeader.Previous.Header;
                 previousStakeModifier = previousProvenHeader.StakeModifierV2;
             }
 
@@ -266,6 +270,35 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
             ConsensusErrors.BadBlockSignature.Throw();
+        }
+
+        /// <summary>
+        /// Checks if coinstake is spent on another chain.
+        /// </summary>
+        /// <param name="header">The proven block header.</param>
+        /// <param name="context">The POS rule context.</param>
+        /// <exception cref="ConsensusException">Throws utxo not found error.</exception>
+        private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header, PosRuleContext context)
+        {
+            Transaction coinstake = header.Coinstake;
+            TxIn input = coinstake.Inputs[0];
+
+            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
+            if (!rewindDataIndex.HasValue)
+            {
+                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.ReadTxPrevFailed, c => c.InsufficientHeaderInformation = true);
+            }
+
+            RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
+            UnspentOutputs matchingUnspentUtxo = 
+                rewindData.OutputsToRestore.Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N)).FirstOrDefault();
+
+            if (matchingUnspentUtxo == null)
+            {
+                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.UtxoNotFoundInRewindData, ct => ct.InsufficientHeaderInformation = true);
+            }
+
+            this.CheckHeaderSignatureWithCoinstakeKernel(header, matchingUnspentUtxo);
         }
 
         private OutPoint GetPreviousOut(ProvenBlockHeader header)
