@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly MinerSettings minerSettings;
         private readonly Network network;
         private readonly Mock<INodeLifetime> nodeLifetime;
+        private readonly IMinedBlockInterceptor minedBlockInterceptor;
 
         public PowMiningTest(PowMiningTestFixture fixture)
         {
@@ -66,6 +67,8 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.initialBlockDownloadState.Setup(s => s.IsInitialBlockDownload()).Returns(false);
 
             this.mempoolLock = new MempoolSchedulerLock();
+
+            this.minedBlockInterceptor = null;
         }
 
         [Fact]
@@ -342,7 +345,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             PowMining miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
 
-            // We instruct pass GenerateBlocks to mine 2 valid blocks i.e. it will stop once it has 
+            // We instruct pass GenerateBlocks to mine 2 valid blocks i.e. it will stop once it has
             // mined 2 blocks that pass consensus.
             List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 2, uint.MaxValue);
 
@@ -368,7 +371,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PowMining CreateProofOfWorkMiner(PowBlockDefinition blockDefinition)
         {
             var blockBuilder = new MockPowBlockProvider(blockDefinition);
-            return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object);
+            return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object, this.minedBlockInterceptor);
         }
 
         private static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)
