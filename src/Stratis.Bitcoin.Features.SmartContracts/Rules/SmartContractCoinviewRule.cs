@@ -66,17 +66,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         }
 
         /// <inheritdoc/>
-        protected override bool CheckInput(Transaction tx, int inputIndexCopy, TxOut txout,PrecomputedTransactionData txData, TxIn input, DeploymentFlags flags)
+        protected override bool CheckInput(Transaction tx, int inputIndexCopy, TxOut txout, PrecomputedTransactionData txData, TxIn input, DeploymentFlags flags)
         {
             if (txout.ScriptPubKey.IsSmartContractExec() || txout.ScriptPubKey.IsSmartContractInternalCall())
             {
                 return input.ScriptSig.IsSmartContractSpend();
             }
 
-            var checker = new TransactionChecker(tx, inputIndexCopy, txout.Value, txData);
-            var ctx = new ScriptEvaluationContext(this.Parent.Network);
-            ctx.ScriptVerify = flags.ScriptFlags;
-            return ctx.VerifyScript(input.ScriptSig, txout.ScriptPubKey, checker);
+            return base.CheckInput(tx, inputIndexCopy, txout, txData, input, flags);
         }
 
         /// <inheritdoc/>
