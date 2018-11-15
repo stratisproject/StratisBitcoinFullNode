@@ -64,7 +64,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private readonly ConcurrentChain chain;
 
-        private readonly DepositExtractor depositExtractor;
+        private readonly IDepositExtractor depositExtractor;
 
         private readonly IBlockRepository blockRepository;
 
@@ -78,7 +78,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private readonly IDateTimeProvider dateTimeProvider;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, ConcurrentChain chain, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
-            ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader, IFullNode fullNode, IBlockRepository blockRepository,
+            ILoggerFactory loggerFactory, IDepositExtractor depositExtractor, IFullNode fullNode, IBlockRepository blockRepository,
             IFederationWalletManager federationWalletManager, IFederationWalletTransactionHandler federationWalletTransactionHandler)
         {
             Guard.NotNull(network, nameof(network));
@@ -87,7 +87,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             Guard.NotNull(settings, nameof(settings));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
-            Guard.NotNull(opReturnDataReader, nameof(opReturnDataReader));
+            Guard.NotNull(depositExtractor, nameof(depositExtractor));
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
@@ -106,7 +106,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
 
-            this.depositExtractor = new DepositExtractor(loggerFactory, settings, opReturnDataReader, fullNode);
+            this.depositExtractor = depositExtractor;
             this.TipHashAndHeight = null;
             this.NextMatureDepositHeight = 0;
             this.cancellation = new CancellationTokenSource();
