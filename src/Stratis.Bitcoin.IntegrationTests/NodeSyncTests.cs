@@ -331,6 +331,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
 
+                Assert.Equal(20, minerB.FullNode.Chain.Height);
             }
         }
 
