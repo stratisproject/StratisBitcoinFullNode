@@ -39,7 +39,7 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public async Task PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_Upon_New_Block_Arrival()
+        public void PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_Upon_New_Block_Arrival()
         {
             int depositCount = 20;
             var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposit(depositCount);
@@ -54,7 +54,7 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public async Task PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_Upon_New_Block_Arrival_And_No_Deposits_In_Block()
+        public void PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_Upon_New_Block_Arrival_And_No_Deposits_In_Block()
         {
             int depositCount = 0;
             var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposit(depositCount);
@@ -68,7 +68,7 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public async Task PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_For_Each_Incomming_Matured_Block()
+        public void PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_For_Each_Incomming_Matured_Block()
         {
             int blocksCount = 10;
             var maturedBlockDepositsEnum = Enumerable.Range(0,blocksCount)
