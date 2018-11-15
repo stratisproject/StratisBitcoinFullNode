@@ -29,7 +29,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
         public ISmartContractCoinviewRule ContractCoinviewRule { get; set; }
 
-   
+        public ConsensusRuleEngine Parent { get; set; }
+
         public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
         {
             this.blockTxsProcessed = new List<Transaction>();

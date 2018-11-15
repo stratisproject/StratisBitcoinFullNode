@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         {
             base.Initialize();
 
+            this.logic.Parent = this.Parent;
             this.logic.ClearGeneratedTransaction();
             this.logic.ResetRefundCounter();
             this.logic.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
