@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
+using System.Runtime.Serialization;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
@@ -13,21 +15,30 @@ using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
+using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 
 namespace Stratis.FederatedPeg.Tests
 {
     public class CrossChainTransferStoreTests
     {
-        private readonly Network network;
-        private readonly ILoggerFactory loggerFactory;
-        private readonly ILogger logger;
-        private readonly IDateTimeProvider dateTimeProvider;
-        private readonly IOpReturnDataReader opReturnDataReader;
-        private readonly IBlockRepository blockRepository;
-        private readonly IFullNode fullNode;
-        private readonly IFederationWalletManager federationWalletManager;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private Network network;
+        private ILoggerFactory loggerFactory;
+        private ILogger logger;
+        private IDateTimeProvider dateTimeProvider;
+        private IOpReturnDataReader opReturnDataReader;
+        private IBlockRepository blockRepository;
+        private IFullNode fullNode;
+        private IFederationWalletManager federationWalletManager;
+        private IFederationWalletTransactionHandler federationWalletTransactionHandler;
+        private IFederationGatewaySettings federationGatewaySettings;
+        private IFederationWalletSyncManager federationWalletSyncManager;
+        private IWalletFeePolicy walletFeePolicy;
+        private IAsyncLoopFactory asyncLoopFactory;
         private Dictionary<uint256, Block> blockDict;
+        private ConcurrentChain chain;
+        private FederationWallet wallet;
 
         /// <summary>
         /// Initializes the cross-chain transfer tests.
@@ -36,14 +47,22 @@ namespace Stratis.FederatedPeg.Tests
         {
             this.network = ApexNetwork.RegTest;
 
+            DBreezeSerializer serializer = new DBreezeSerializer();
+            serializer.Initialize(this.network);
+
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
+            this.asyncLoopFactory = Substitute.For<IAsyncLoopFactory>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
             this.blockRepository = Substitute.For<IBlockRepository>();
             this.fullNode = Substitute.For<IFullNode>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
+            this.federationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
+            this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
+            this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
+            this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             var redeemScript = new Script("2 026ebcbf6bfe7ce1d957adbef8ab2b66c788656f35896a170257d6838bda70b95c 02a97b7d0fad7ea10f456311dcd496ae9293952d4c5f2ebdfc32624195fde14687 02e9d3cd0c2fa501957149ff9d21150f3901e6ece0e3fe3007f2372720c84e3ee1 03c99f997ed71c7f92cf532175cea933f2f11bf08f1521d25eb3cc9b8729af8bf4 034b191e3b3107b71d1373e840c5bf23098b55a355ca959b968993f5dec699fc38 5 OP_CHECKMULTISIG");
             this.federationGatewaySettings.IsMainChain.Returns(false);
@@ -65,22 +84,80 @@ namespace Stratis.FederatedPeg.Tests
             });
         }
 
+        private void CreateWalletManagerAndTransactionHandler(ConcurrentChain chain, DataFolder dataFolder)
+        {
+            // Create the wallet manager.
+            this.federationWalletManager = new FederationWalletManager(
+                this.loggerFactory,
+                this.network,
+                chain,
+                dataFolder,
+                this.walletFeePolicy,
+                this.asyncLoopFactory,
+                new NodeLifetime(),
+                this.dateTimeProvider,
+                this.federationGatewaySettings);
+
+            // Starts and creates the wallet.
+            this.federationWalletManager.Start();
+            this.wallet = this.federationWalletManager.GetWallet();
+
+            this.wallet.MultiSigAddress.Transactions.Add(new TransactionData()
+            {
+                Amount = Money.COIN * 90,
+                Id = new uint256(1),
+                Index = 0,
+                ScriptPubKey = this.wallet.MultiSigAddress.ScriptPubKey,
+                BlockHeight = 2
+            });
+
+            this.wallet.MultiSigAddress.Transactions.Add(new TransactionData()
+            {
+                Amount = Money.COIN * 80,
+                Id = new uint256(1),
+                Index = 1,
+                ScriptPubKey = this.wallet.MultiSigAddress.ScriptPubKey,
+                BlockHeight = 2
+            });
+
+            this.wallet.MultiSigAddress.Transactions.Add(new TransactionData()
+            {
+                Amount = Money.COIN * 70,
+                Id = new uint256(2),
+                Index = 0,
+                ScriptPubKey = this.wallet.MultiSigAddress.ScriptPubKey,
+                BlockHeight = 2
+            });
+
+            (this.federationWalletManager as FederationWalletManager).LoadKeysLookupLock();
+
+            this.federationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
+
+            var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
+
+            this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, chain, this.network,
+                this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());
+
+            this.federationWalletSyncManager.Start();
+        }
 
         /// <summary>
         /// Test that after synchronizing with the chain the store tip equals the chain tip.
         /// </summary>
         [Fact]
-        public void SynchronizeSynchronizesWithChain()
+        public void StartSynchronizesWithChain()
         {
             ConcurrentChain chain = BuildChain(5);
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, chain, this.federationGatewaySettings,
-                this.dateTimeProvider, this.loggerFactory, this.opReturnDataReader, this.fullNode, this.blockRepository, this.federationWalletManager))
+            this.CreateWalletManagerAndTransactionHandler(chain, dataFolder);
+
+            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, chain, this.federationGatewaySettings, this.dateTimeProvider,
+                this.loggerFactory, this.opReturnDataReader, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
             {
                 crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
 
-                Assert.True(crossChainTransferStore.SynchronizeAsync().GetAwaiter().GetResult());
                 Assert.Equal(chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
                 Assert.Equal(chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
             }
@@ -90,17 +167,19 @@ namespace Stratis.FederatedPeg.Tests
         /// Test that after synchronizing with the chain the store tip equals the chain tip.
         /// </summary>
         [Fact]
-        public void SynchronizeSynchronizesWithChainAndSurvivesRestart()
+        public void StartSynchronizesWithChainAndSurvivesRestart()
         {
             ConcurrentChain chain = BuildChain(5);
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, chain, this.federationGatewaySettings,
-                this.dateTimeProvider, this.loggerFactory, this.opReturnDataReader, this.fullNode, this.blockRepository, this.federationWalletManager))
+            this.CreateWalletManagerAndTransactionHandler(chain, dataFolder);
+
+            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, chain, this.federationGatewaySettings, this.dateTimeProvider,
+                this.loggerFactory, this.opReturnDataReader, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
             {
                 crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
 
-                Assert.True(crossChainTransferStore.SynchronizeAsync().GetAwaiter().GetResult());
                 Assert.Equal(chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
                 Assert.Equal(chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
             }
@@ -109,8 +188,8 @@ namespace Stratis.FederatedPeg.Tests
             var newTest = new CrossChainTransferStoreTests();
             ConcurrentChain newChain = newTest.BuildChain(3);
 
-            using (var crossChainTransferStore2 = new CrossChainTransferStore(newTest.network, dataFolder, newChain, this.federationGatewaySettings,
-                newTest.dateTimeProvider, newTest.loggerFactory, newTest.opReturnDataReader, newTest.fullNode, newTest.blockRepository, this.federationWalletManager))
+            using (var crossChainTransferStore2 = new CrossChainTransferStore(newTest.network, dataFolder, newChain, this.federationGatewaySettings, newTest.dateTimeProvider,
+                newTest.loggerFactory, newTest.opReturnDataReader, newTest.fullNode, newTest.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
             {
                 crossChainTransferStore2.Initialize();
 
@@ -119,9 +198,48 @@ namespace Stratis.FederatedPeg.Tests
                 Assert.Equal(chain.Tip.Height, crossChainTransferStore2.TipHashAndHeight.Height);
 
                 // Test that synchronizing the store aligns it with the current chain tip.
-                Assert.True(crossChainTransferStore2.SynchronizeAsync().GetAwaiter().GetResult());
+                crossChainTransferStore2.Start();
+
                 Assert.Equal(newChain.Tip.HashBlock, crossChainTransferStore2.TipHashAndHeight.Hash);
                 Assert.Equal(newChain.Tip.Height, crossChainTransferStore2.TipHashAndHeight.Height);
+            }
+        }
+
+        /// <summary>
+        /// Recording a deposit creates a <see cref="CrossChainTransferStatus.Rejected" /> transfer if the balance is insufficient.
+        /// </summary>
+        [Fact]
+        public void StoringDepositWhenWalletBalanceSufficientSucceeds()
+        {
+            ConcurrentChain chain = BuildChain(5);
+            var dataFolder = new DataFolder(CreateTestDir(this));
+
+            this.CreateWalletManagerAndTransactionHandler(chain, dataFolder);
+
+            List<Block> blocks = this.blockRepository.GetBlocksAsync(chain.EnumerateAfter(this.network.GenesisHash).Select(h => h.HashBlock).ToList()).GetAwaiter().GetResult();
+
+            foreach (Block block in blocks)
+            {
+                this.federationWalletSyncManager.ProcessBlock(block);
+            }
+
+            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, chain, this.federationGatewaySettings, this.dateTimeProvider,
+                this.loggerFactory, this.opReturnDataReader, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                Assert.Equal(chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+
+                BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                Deposit deposit = new Deposit(0, 100, address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit }).GetAwaiter().GetResult();
+
+                // TODO: System.Exception: 'Transaction cannot be created by this consensus factory, please use the appropriate one.'
+                // Transaction[] transaction = crossChainTransferStore.GetPartialTransactionsAsync().GetAwaiter().GetResult();
             }
         }
 
