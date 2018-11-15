@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces

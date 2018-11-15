@@ -74,7 +74,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
                 chainedHeaderBlock.Block,
                 chainedHeaderBlock.ChainedHeader.Height);
-            //todo add that to the store or change status of pending transfers to on chain
 
             // todo: persist the last seen block height in database
             IMaturedBlockDeposits maturedBlockDeposits = 

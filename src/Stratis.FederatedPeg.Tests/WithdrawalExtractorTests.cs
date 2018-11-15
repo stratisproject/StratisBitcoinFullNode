@@ -23,6 +23,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private ILoggerFactory loggerFactory;
 
+        private IWithdrawalReceiver withdrawalReceiver;
+
         private WithdrawalExtractor withdrawalExtractor;
 
         private Network network;
@@ -38,6 +40,7 @@ namespace Stratis.FederatedPeg.Tests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.settings = Substitute.For<IFederationGatewaySettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
+            this.withdrawalReceiver = Substitute.For<IWithdrawalReceiver>();
 
             this.addressHelper = new MultisigAddressHelper(this.network);
 
@@ -50,7 +53,7 @@ namespace Stratis.FederatedPeg.Tests
             this.transactionBuilder = new TestMultisigTransactionBuilder(this.addressHelper);
 
             this.withdrawalExtractor = new WithdrawalExtractor(
-                this.loggerFactory, this.settings, this.opReturnDataReader, this.network);
+                this.loggerFactory, this.settings, this.opReturnDataReader, this.withdrawalReceiver, this.network);
         }
 
         [Fact]
@@ -63,6 +66,8 @@ namespace Stratis.FederatedPeg.Tests
             var blockHeight = 3456;
 
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
+
+            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
 
             withdrawals.Count.Should().Be(1);
             this.VerifyWithdrawalData(
@@ -90,6 +95,8 @@ namespace Stratis.FederatedPeg.Tests
             var blockHeight = 5972176;
 
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
+
+            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
 
             withdrawals.Count.Should().Be(1);
             this.VerifyWithdrawalData(
@@ -144,6 +151,8 @@ namespace Stratis.FederatedPeg.Tests
                 validWithdrawalTransaction,
                 opReturnDepositId,
                 targetScript);
+
+            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
         }
 
         [Fact]
@@ -158,6 +167,8 @@ namespace Stratis.FederatedPeg.Tests
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
 
             withdrawals.Count.Should().Be(2);
+
+            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
 
             this.VerifyWithdrawalData(
                 withdrawals[0],

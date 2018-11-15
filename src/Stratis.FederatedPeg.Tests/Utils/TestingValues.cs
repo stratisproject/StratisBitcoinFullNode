@@ -41,5 +41,11 @@ namespace Stratis.FederatedPeg.Tests.Utils
             var maturedBlockDeposits = MaturedBlockDepositModelTests.PrepareMaturedBlockDeposits(depositCount);
             return maturedBlockDeposits;
         }
+
+        public static IWithdrawal GetWithdrawal()
+        {
+            var withdrawal = WithdrawalTests.PrepareWithdrawal();
+            return withdrawal;
+        }
     }
 }
