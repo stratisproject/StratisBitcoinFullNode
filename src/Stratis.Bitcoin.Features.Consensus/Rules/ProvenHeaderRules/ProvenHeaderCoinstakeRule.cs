@@ -63,8 +63,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                     this.Logger.LogTrace("(-)[INVALID_POW_HEIGHT]");
                     ConsensusErrors.InvalidPowHeight.Throw();
                 }
-
-                this.Logger.LogTrace("(-)[COIN_BASE_SKIP_VALIDATION]");
+                
+                this.Logger.LogTrace("(-)[COIN_BASE_VALIDATION]");
                 return;
             }
 
@@ -226,21 +226,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             uint256 previousStakeModifier;
 
-            if (chainedHeader.Height == this.ProvenHeadersActivationCheckpointHeight)
+            if (chainedHeader.Height == this.LastCheckpointHeight)
             {
                 // If we are validating the first Proven Header means that the previous one was either a Checkpoint, that has the StakeModifier stored in
                 // CheckpointInfo class, or the genesis whose StakeModifier equals zero.
-                previousStakeModifier = this.ProvenHeadersActivationCheckpoint?.StakeModifierV2 ?? uint256.Zero;
+                previousStakeModifier = this.LastCheckpoint?.StakeModifierV2 ?? uint256.Zero;
             }
             else
             {
                 ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
+
                 if (previousProvenHeader == null)
                 {
                     // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
                     this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
                     ConsensusErrors.InvalidPreviousProvenHeader.Throw();
                 }
+
                 previousStakeModifier = previousProvenHeader.StakeModifierV2;
             }
 

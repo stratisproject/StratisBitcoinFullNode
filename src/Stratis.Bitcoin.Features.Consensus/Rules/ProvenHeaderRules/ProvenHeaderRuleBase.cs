@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRuleEngine PosParent;
-        protected int ProvenHeadersActivationCheckpointHeight;
-        protected CheckpointInfo ProvenHeadersActivationCheckpoint;
+        protected int LastCheckpointHeight;
+        protected CheckpointInfo LastCheckpoint;
 
         /// <inheritdoc />
         public override void Initialize()
@@ -24,8 +24,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             Guard.NotNull(this.PosParent, nameof(this.PosParent));
 
-            var checkpoints = new Checkpoints(this.PosParent.Network, this.PosParent.ConsensusSettings);
-            this.ProvenHeadersActivationCheckpoint = checkpoints.GetLastCheckpoint(out this.ProvenHeadersActivationCheckpointHeight);
+            this.LastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
+            this.LastCheckpoint = this.Parent.Checkpoints.GetCheckpoint(this.LastCheckpointHeight);
         }
 
         /// <summary>
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </returns>
         public bool IsProvenHeaderActivated(int height)
         {
-            return height >= this.ProvenHeadersActivationCheckpointHeight;
+            return height >= this.LastCheckpointHeight;
         }
 
         /// <summary>
