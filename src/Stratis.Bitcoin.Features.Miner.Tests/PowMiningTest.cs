@@ -36,8 +36,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly MinerSettings minerSettings;
         private readonly Network network;
         private readonly Mock<INodeLifetime> nodeLifetime;
-        private readonly IMinedBlockInterceptor minedBlockInterceptor;
-
         public PowMiningTest(PowMiningTestFixture fixture)
         {
             this.fixture = fixture;
@@ -67,8 +65,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.initialBlockDownloadState.Setup(s => s.IsInitialBlockDownload()).Returns(false);
 
             this.mempoolLock = new MempoolSchedulerLock();
-
-            this.minedBlockInterceptor = new Mock<IMinedBlockInterceptor>().Object;
         }
 
         [Fact]
@@ -371,7 +367,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private PowMining CreateProofOfWorkMiner(PowBlockDefinition blockDefinition)
         {
             var blockBuilder = new MockPowBlockProvider(blockDefinition);
-            return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object, this.minedBlockInterceptor);
+            return new PowMining(this.asyncLoopFactory.Object, blockBuilder, this.consensusManager.Object, this.chain, DateTimeProvider.Default, this.mempool.Object, this.mempoolLock, this.network, this.nodeLifetime.Object, this.LoggerFactory.Object, this.initialBlockDownloadState.Object);
         }
 
         private static ConcurrentChain GenerateChainWithHeight(int blockAmount, Network network)

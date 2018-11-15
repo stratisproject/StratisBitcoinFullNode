@@ -11,6 +11,9 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static void Main(string[] args)
         {
+            new NodeSyncTests().Pos_NodesCanConnect_AndSync_AndMineBlocks();
+            return;
+
             RunAllTestsOf<WalletTests>();
             RunAllTestsOf<NodeSyncTests>();
         }

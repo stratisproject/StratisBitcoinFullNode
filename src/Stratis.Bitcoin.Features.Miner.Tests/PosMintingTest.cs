@@ -49,7 +49,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
         private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
         private readonly CancellationTokenSource cancellationTokenSource;
-        private readonly IMinedBlockInterceptor minedBlockInterceptor;
 
         public PosMintingTest()
         {
@@ -76,7 +75,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.nodeLifetime.Setup(n => n.ApplicationStopping).Returns(this.cancellationTokenSource.Token);
 
             this.posMinting = this.InitializePosMinting();
-            this.minedBlockInterceptor = null;
         }
 
         [Fact]
@@ -626,8 +624,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.asyncLoopFactory.Object,
                 this.timeSyncBehaviorState.Object,
                 this.LoggerFactory.Object,
-                this.minerSettings,
-                this.minedBlockInterceptor);
+                this.minerSettings);
         }
 
         private static ChainedHeader CreateChainedBlockWithNBits(Network network, uint bits)

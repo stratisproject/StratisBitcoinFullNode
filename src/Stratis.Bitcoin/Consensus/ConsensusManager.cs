@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
-                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
+                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderOfMinedBlock(block);
                 }
 
                 validationContext = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
