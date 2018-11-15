@@ -12,6 +12,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Consensus.Behaviors
@@ -161,18 +162,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         }
 
         /// <summary>
-        /// Determines whether the specified peer is Whitelisted.
-        /// </summary>
-        /// <param name="peer">The peer.</param>
-        /// <returns>
-        ///   <c>true</c> if the specified peer is Whitelisted; otherwise, <c>false</c>.
-        /// </returns>
-        private bool IsPeerWhitelisted(INetworkPeer peer)
-        {
-            return peer.Behavior<IConnectionManagerBehavior>()?.Whitelisted == true;
-        }
-
-        /// <summary>
         /// If the last checkpoint is bellow consensus tip we do not need proven headers.
         /// </summary>
         /// <returns> <c>true</c> if  we need to validate proven headers.</returns>
@@ -205,7 +194,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                         HashStop = null
                     };
                 }
-                else if (this.IsPeerWhitelisted(peer))
+                else if (peer.IsWhitelisted())
                 {
                     // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
                     return base.BuildGetHeadersPayload();
@@ -232,7 +221,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <param name="headers">The headers.</param>
         protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
-            bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && this.IsPeerWhitelisted(peer));
+            bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && peer.IsWhitelisted());
 
             // Only legacy peers are allowed to handle this message, or any node before PH activation.
             bool areProvenHeadersActivated = this.AreProvenHeadersActivated();
