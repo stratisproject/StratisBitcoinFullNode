@@ -16,8 +16,9 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
             var node2 = this.Chain.Nodes[1];
 
             // node1 gets premine
-            TestHelper.WaitLoop(() => node1.CoreNode.GetTip().Height >= node1.CoreNode.FullNode.Network.Consensus.PremineHeight + node1.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity + 1);
-            this.Chain.WaitForAllNodesToSync();
+            this.Chain.MineBlocks(10);
+            //TestHelper.WaitLoop(() => node1.CoreNode.GetTip().Height >= node1.CoreNode.FullNode.Network.Consensus.PremineHeight + node1.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity + 1);
+            //this.Chain.WaitForAllNodesToSync();
 
             // Send half to other from whoever received premine
             if ((long)node1.WalletSpendableBalance == node1.CoreNode.FullNode.Network.Consensus.PremineReward.Satoshi)
