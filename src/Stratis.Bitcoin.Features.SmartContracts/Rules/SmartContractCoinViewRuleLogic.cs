@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// Validates that any condensing transaction matches the transaction generated during execution
         /// </summary>
         /// <param name="transaction"></param>
-        private void ValidateGeneratedTransaction(Transaction transaction)
+        public void ValidateGeneratedTransaction(Transaction transaction)
         {
             if (this.generatedTransaction.GetHash() != transaction.GetHash())
                 SmartContractConsensusErrors.UnequalCondensingTx.Throw();
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// Validates that a submitted transacction doesn't contain illegal operations
         /// </summary>
         /// <param name="transaction"></param>
-        protected void ValidateSubmittedTransaction(Transaction transaction)
+        public void ValidateSubmittedTransaction(Transaction transaction)
         {
             if (transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend()))
                 SmartContractConsensusErrors.UserOpSpend.Throw();
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// <summary>
         /// Executes the smart contract part of a transaction
         /// </summary>
-        protected void ExecuteContractTransaction(RuleContext context, Transaction transaction)
+        public void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
             IContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
             IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.mutableStateRepository, txContext);
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// <summary>
         /// Retrieves the context object to be given to the contract executor.
         /// </summary>
-        private IContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
+        public IContractTransactionContext GetSmartContractTransactionContext(RuleContext context, Transaction transaction)
         {
             ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeaderToValidate.Height);
 
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// <summary>
         /// Throws a consensus exception if the receipt roots don't match.
         /// </summary>
-        private void ValidateAndStoreReceipts(uint256 receiptRoot)
+        public void ValidateAndStoreReceipts(uint256 receiptRoot)
         {
             List<uint256> leaves = this.receipts.Select(x => x.GetHash()).ToList();
             bool mutated = false; // TODO: Do we need this?
