@@ -9,23 +9,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
 {
     public class SmartContractPoACoinviewRule : PoACoinviewRule
     {
-        private readonly SmartContractCoinViewRuleLogic logic;
-
-        public SmartContractPoACoinviewRule()
-        {
-            this.logic = new SmartContractCoinViewRuleLogic();
-        }
+        private SmartContractCoinViewRuleLogic logic;
 
         /// <inheritdoc />
         public override void Initialize()
         {
             base.Initialize();
 
-            this.logic.Parent = this.Parent;
-            this.logic.ClearGeneratedTransaction();
-            this.logic.ResetRefundCounter();
-            this.logic.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
-
+            this.logic = new SmartContractCoinViewRuleLogic(this.Parent);
         }
 
         /// <inheritdoc />

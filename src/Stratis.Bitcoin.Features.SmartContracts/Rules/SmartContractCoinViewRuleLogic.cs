@@ -21,22 +21,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public sealed class SmartContractCoinViewRuleLogic
     {
-        protected List<Transaction> blockTxsProcessed;
-        protected Transaction generatedTransaction;
-        protected IList<Receipt> receipts;
-        protected uint refundCounter;
-        protected IStateRepositoryRoot mutableStateRepository;
+        private readonly List<Transaction> blockTxsProcessed;
+        private Transaction generatedTransaction;
+        private readonly IList<Receipt> receipts;
+        private uint refundCounter;
+        private IStateRepositoryRoot mutableStateRepository;
 
-        public ISmartContractCoinviewRule ContractCoinviewRule { get; set; }
+        public SmartContractCoinViewRuleLogic(ConsensusRuleEngine parent)
+        {
+            this.refundCounter = 1;
+            this.Parent = parent;
+            this.blockTxsProcessed = new List<Transaction>();
+            this.receipts = new List<Receipt>();
+            this.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
 
-        public ConsensusRuleEngine Parent { get; set; }
+        }
+
+        public ISmartContractCoinviewRule ContractCoinviewRule { get; }
+
+        public ConsensusRuleEngine Parent { get; }
 
         public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
         {
-            this.blockTxsProcessed = new List<Transaction>();
-            this.receipts = new List<Receipt>();
+            this.blockTxsProcessed.Clear();
+            this.receipts.Clear();
             this.refundCounter = 1;
-            NBitcoin.Block block = context.ValidationContext.BlockToValidate;
+            Block block = context.ValidationContext.BlockToValidate;
 
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
             byte[] blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
@@ -157,7 +167,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             this.receipts.Add(receipt);
 
-            ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
+            if (result.Refund != null)
+            {
+                ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
+            }
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;
@@ -217,6 +230,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         public bool IsProtocolTransaction(Transaction transaction)
         {
             return transaction.IsCoinBase || transaction.IsCoinStake;
+        }
+
+        public void Reset()
+        {
+            this.ResetRefundCounter();
+            this.ClearGeneratedTransaction();
         }
 
         public void ResetRefundCounter()
