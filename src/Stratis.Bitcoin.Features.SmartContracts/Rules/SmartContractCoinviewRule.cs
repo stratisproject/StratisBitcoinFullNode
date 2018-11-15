@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
@@ -84,6 +85,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 this.Logger.LogTrace("(-)[BAD_COINBASE_AMOUNT]");
                 ConsensusErrors.BadCoinbaseAmount.Throw();
             }
+        }
+
+        /// <inheritdoc/>
+        public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
+        {
+            base.CheckCoinbaseMaturity(coins, spendHeight);
         }
 
         /// <inheritdoc />
