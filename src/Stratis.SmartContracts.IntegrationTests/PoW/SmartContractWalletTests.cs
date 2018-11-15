@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -434,6 +435,50 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 NBitcoin.Block block = sender.GetLastBlock();
                 Assert.Equal(3, block.Transactions.Count);
+            }
+        }
+
+        [Fact]
+        public void MockChain_NonFungibleToken()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode node1 = chain.Nodes[0];
+                MockChainNode node2 = chain.Nodes[1];
+
+                node1.MineBlocks(1);
+
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NonFungibleToken.cs");
+                Assert.True(compilationResult.Success);
+
+                // Create contract and ensure code exists
+                BuildCreateContractTransactionResponse response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                Assert.NotNull(node2.GetCode(response.NewContractAddress));
+                Assert.NotNull(node1.GetCode(response.NewContractAddress));
+                ILocalExecutionResult result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, new string[] {"7#1"});
+                uint160 senderAddressUint160 = node1.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network);
+                uint160 returnedAddressUint160 = ((Address) result.Return).ToUint160();
+                Assert.Equal(senderAddressUint160, returnedAddressUint160);
+
+                // Send tokenId 1 to a new owner
+                string[] parameters = new string[]
+                {
+                    "9#" + node1.MinerAddress.Address,
+                    "9#" + node2.MinerAddress.Address,
+                    "7#1"
+                };
+                BuildCallContractTransactionResponse callResponse = node1.SendCallContractTransaction("TransferFrom", response.NewContractAddress, 0, parameters);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, new string[] { "7#1" });
+                uint160 receiverAddressUint160 = node2.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network);
+                returnedAddressUint160 = ((Address)result.Return).ToUint160();
+                Assert.Equal(receiverAddressUint160, returnedAddressUint160);
+
+                IList<ReceiptResponse> receipts = node1.GetReceipts(response.NewContractAddress, "Transfer");
+                Assert.Single(receipts);
             }
         }
 
