@@ -23,54 +23,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         void Start();
 
         /// <summary>
-        /// Get the cross-chain transfer information from the database, identified by the deposit transaction ids.
-        /// </summary>
-        /// <param name="depositIds">The deposit transaction ids.</param>
-        /// <returns>The cross-chain transfer information.</returns>
-        Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds);
-
-        /// <summary>
         /// Records the mature deposits from <see cref="NextMatureDepositHeight"/> on the counter-chain.
         /// The value of <see cref="NextMatureDepositHeight"/> is incremented at the end of this call.
-        /// The caller should check that <see cref="NextMatureDepositHeight"/> is a height on the
-        /// counter-chain which would contain mature deposits.
         /// </summary>
-        /// <param name="crossChainTransfers">The deposit transactions.</param>
+        /// <param name="deposits">The deposits.</param>
         /// <remarks>
-        /// When building the list of transfers the caller should first use <see cref="GetAsync"/>
-        /// to check whether the transfer already exists without the deposit information and
-        /// then provide the updated object in this call.
-        /// The caller must also ensure the transfers passed to this call all have a
-        /// <see cref="ICrossChainTransfer.Status"/> of <see cref="CrossChainTransferStatus.Partial"/>.
+        /// The transfers are set to <see cref="CrossChainTransfer.Status"/> of <see cref="CrossChainTransferStatus.Partial"/>
+        /// or <see cref="CrossChainTransferStatus.Rejected"/> depending on whether enough funds are available in the federation wallet.
         /// </remarks>
-        Task RecordLatestMatureDepositsAsync(IEnumerable<ICrossChainTransfer> crossChainTransfers);
+        Task RecordLatestMatureDepositsAsync(IDeposit[] deposits);
 
         /// <summary>
-        /// Uses the information contained in our chain's blocks to update the store.
-        /// Sets the <see cref="CrossChainTransferStatus.SeenInBlock"/> status for transfers
-        /// identified in the blocks.
+        /// Returns all partial transactions still in need of signatures.
         /// </summary>
-        /// <param name="newTip">The new <see cref="ChainTip"/>.</param>
-        /// <param name="blocks">The blocks used to update the store. Must be sorted by ascending height leading up to the new tip.</param>
-        Task PutAsync(HashHeightPair newTip, List<Block> blocks);
-
-        /// <summary>
-        /// Used to handle reorg (if required) and revert status from <see cref="CrossChainTransferStatus.SeenInBlock"/> to
-        /// <see cref="CrossChainTransferStatus.FullySigned"/>. Also returns a flag to indicate whether we are behind the current tip.
-        /// The caller can use <see cref="PutAsync"/> to supply additional blocks if we are behind the tip.
-        /// </summary>
-        /// <returns>
-        /// Returns <c>true</c> if we match the chain tip and <c>false</c> if we are behind the tip.
-        /// </returns>
-        Task<bool> RewindIfRequiredAsync();
-
-        /// <summary>
-        /// Attempts to synchronizes the store with the chain.
-        /// </summary>
-        /// <returns>
-        /// Returns <c>true</c> if the store is in sync or <c>false</c> otherwise.
-        /// </returns>
-        Task<bool> SynchronizeAsync();
+        /// <returns>An array of fully signed transactions.</returns>
+        Task<Transaction[]> GetPartialTransactionsAsync();
 
         /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.
@@ -81,17 +48,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         Task MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions);
 
         /// <summary>
-        /// Sets the cross-chaintransfer status associated with the rejected transaction to to <see cref="CrossChainTransferStatus.Rejected"/>.
-        /// </summary>
-        /// <param name="transaction">The transaction that was rejected.</param>
-        Task SetRejectedStatusAsync(Transaction transaction);
-
-        /// <summary>
-        /// Returns all fully signed transactions. The caller is responsible for checking the memory pool and
+        /// Returns all fully signed transactions ready to broadcast. The caller is responsible for checking the memory pool and
         /// not re-broadcasting transactions unneccessarily.
         /// </summary>
         /// <returns>An array of fully signed transactions.</returns>
-        Task<Transaction[]> GetTransactionsToBroadcastAsync();
+        Task<Transaction[]> GetSignedTransactionsAsync();
+
+        /// <summary>
+        /// Get the cross-chain transfer information from the database, identified by the deposit transaction ids.
+        /// </summary>
+        /// <param name="depositIds">The deposit transaction ids.</param>
+        /// <returns>The cross-chain transfer information.</returns>
+        Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds);
 
         /// <summary>
         /// The tip of our chain when we last updated the store.

@@ -1,6 +1,8 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using DBreeze;
@@ -11,13 +13,15 @@ using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
+using Recipient = Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
+
+
     public class CrossChainTransferStore : ICrossChainTransferStore
     {
         /// <summary>This table contains the cross-chain transfer information.</summary>
@@ -68,12 +72,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private readonly IFederationWalletManager federationWalletManager;
 
+        private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
+
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, ConcurrentChain chain, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, IOpReturnDataReader opReturnDataReader, IFullNode fullNode, IBlockRepository blockRepository,
-            IFederationWalletManager federationWalletManager)
+            IFederationWalletManager federationWalletManager, IFederationWalletTransactionHandler federationWalletTransactionHandler)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
@@ -85,12 +91,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
+            Guard.NotNull(federationWalletTransactionHandler, nameof(federationWalletTransactionHandler));
 
             this.network = network;
             this.chain = chain;
             this.dateTimeProvider = dateTimeProvider;
             this.blockRepository = blockRepository;
             this.federationWalletManager = federationWalletManager;
+            this.federationWalletTransactionHandler = federationWalletTransactionHandler;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -152,13 +160,22 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <summary>
-        /// Partial or fully signed transfers should have their source UTXO's recorded by the wallet.
-        /// Sets transfers to <see cref="CrossChainTransferStatus.Rejected"/> if their UTXO's are not
-        /// reserved within the wallet.
+        /// Partial or fully signed transfers should have their source UTXO's recorded by an up-to-date wallet.
+        /// Sets transfers to <see cref="CrossChainTransferStatus.Rejected"/> if their UTXO's are not reserved
+        /// within the wallet.
         /// </summary>
         public async Task SanityCheckAsync()
         {
             this.logger.LogTrace("()");
+
+            Recipient.FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+            // Can only do a sanity check on an up-to-date wallet.
+            if (this.chain.Tip.HashBlock != wallet.LastBlockSyncedHash)
+                return;
+
+            // Ensure that the store is up-to-date as well.
+            await this.SynchronizeAsync();
 
             using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
             {
@@ -168,8 +185,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 this.depositsIdsByStatus[CrossChainTransferStatus.Partial].Union(
                     this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned]).ToArray());
 
-                Wallet.FederationWallet wallet = this.federationWalletManager.GetWallet();
-
                 foreach (CrossChainTransfer partialTransfer in partialTransfers)
                 {
                     if (!SanityCheck(partialTransfer.PartialTransaction, wallet))
@@ -178,16 +193,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                         await this.PutTransferAsync(dbreezeTransaction, partialTransfer);
                     }
                 }
+
+                dbreezeTransaction.Commit();
             }
         }
 
         /// <inheritdoc />
-        public async Task RecordLatestMatureDepositsAsync(IEnumerable<ICrossChainTransfer> crossChainTransfers)
+        public async Task RecordLatestMatureDepositsAsync(IDeposit[] deposits)
         {
-            Guard.NotNull(crossChainTransfers, nameof(crossChainTransfers));
-            Guard.Assert(!crossChainTransfers.Any(t => !t.IsValid()));
-            Guard.Assert(!crossChainTransfers.Any(t => t.Status != CrossChainTransferStatus.Partial));
-            Guard.Assert(!crossChainTransfers.Any(t => t.DepositBlockHeight != this.NextMatureDepositHeight));
+            Guard.NotNull(deposits, nameof(deposits));
+            Guard.Assert(!deposits.Any(d => d.BlockNumber != this.NextMatureDepositHeight));
+
+            Recipient.FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+            Guard.Assert(wallet.LastBlockSyncedHash == this.chain.Tip.HashBlock);
 
             this.logger.LogTrace("()");
 
@@ -195,9 +214,70 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             {
                 dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
 
-                foreach (CrossChainTransfer transfer in crossChainTransfers)
+                // Check if the deposits already exist which could happen if it was found on the chain.
+                CrossChainTransfer[] transfers = this.Get(dbreezeTransaction, deposits.Select(d => d.Id).ToArray());
+
+                for (int i = 0; i < deposits.Length; i++)
                 {
+                    IDeposit deposit = deposits[i];
+                    CrossChainTransfer transfer = transfers[i];
+
+                    Script scriptPubKey = BitcoinAddress.Create(deposit.TargetAddress, this.network).ScriptPubKey;
+
+                    var recipient = new List<Recipient.Recipient>()
+                    {
+                        new Recipient.Recipient
+                        {
+                            Amount = deposit.Amount,
+                            ScriptPubKey = scriptPubKey
+                        }
+                    };
+
+                    Transaction transaction = null;
+
+                    try
+                    {
+                        string opReturnData = deposit.BlockNumber.ToString();
+
+                        // Build the multisig transaction template.
+                        var multiSigContext = new Wallet.TransactionBuildContext(recipient, opReturnData: Encoding.UTF8.GetBytes(opReturnData))
+                        {
+                            TransactionFee = Money.Coins(0.01m), // TODO
+                            MinConfirmations = 0,                // TODO
+                            Shuffle = false,
+                            MultiSig = wallet.MultiSigAddress,
+                            IgnoreVerify = true,
+                            Sign = false
+                        };
+
+                        // Build the transaction.
+                        transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
+
+                        // TODO: Include my signature?
+                    }
+                    catch (Exception)
+                    {
+                    }
+
+                    if (transfer == null)
+                    {
+                        transfer = new CrossChainTransfer((transaction != null) ? CrossChainTransferStatus.Partial : CrossChainTransferStatus.Rejected,
+                            deposit.Id, deposit.BlockNumber, scriptPubKey, deposit.Amount, transaction, 0, -1 /* Unknown */);
+
+                        this.depositsIdsByStatus[transfer.Status].Add(transfer.DepositTransactionId);
+                    }
+                    else
+                    {
+                        transfer = new CrossChainTransfer(transfer.Status, deposit.Id, deposit.BlockNumber, scriptPubKey, deposit.Amount, transfer.PartialTransaction,
+                            transfer.BlockHash, transfer.BlockHeight);
+                    }
+
                     await this.PutTransferAsync(dbreezeTransaction, transfer);
+
+                    if (transaction != null)
+                    {
+                        this.federationWalletManager.ProcessTransaction(transaction);
+                    }
                 }
 
                 // Commit additions
@@ -236,8 +316,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        public async Task PutAsync(HashHeightPair newTip, List<Block> blocks)
+        /// <summary>
+        /// Uses the information contained in our chain's blocks to update the store.
+        /// Sets the <see cref="CrossChainTransferStatus.SeenInBlock"/> status for transfers
+        /// identified in the blocks.
+        /// </summary>
+        /// <param name="newTip">The new <see cref="ChainTip"/>.</param>
+        /// <param name="blocks">The blocks used to update the store. Must be sorted by ascending height leading up to the new tip.</param>
+        private async Task PutAsync(HashHeightPair newTip, List<Block> blocks)
         {
             Guard.NotNull(newTip, nameof(newTip));
             Guard.NotNull(blocks, nameof(blocks));
@@ -258,8 +344,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.logger.LogTrace("(-)");
         }
 
-        /// <inheritdoc />
-        public async Task<bool> RewindIfRequiredAsync()
+        /// <summary>
+        /// Used to handle reorg (if required) and revert status from <see cref="CrossChainTransferStatus.SeenInBlock"/> to
+        /// <see cref="CrossChainTransferStatus.FullySigned"/>. Also returns a flag to indicate whether we are behind the current tip.
+        /// The caller can use <see cref="PutAsync"/> to supply additional blocks if we are behind the tip.
+        /// </summary>
+        /// <returns>
+        /// Returns <c>true</c> if we match the chain tip and <c>false</c> if we are behind the tip.
+        /// </returns>
+        private async Task<bool> RewindIfRequiredAsync()
         {
             this.logger.LogTrace("()");
 
@@ -306,8 +399,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             return false;
         }
 
-        /// <inheritdoc />
-        public async Task<bool> SynchronizeAsync()
+        /// <summary>
+        /// Attempts to synchronizes the store with the chain.
+        /// </summary>
+        /// <returns>
+        /// Returns <c>true</c> if the store is in sync or <c>false</c> otherwise.
+        /// </returns>
+        private async Task<bool> SynchronizeAsync()
         {
             this.logger.LogTrace("()");
 
@@ -471,15 +569,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <inheritdoc />
-        public async Task<Transaction[]> GetTransactionsToBroadcastAsync()
+        public async Task<Transaction[]> GetSignedTransactionsAsync()
         {
             this.logger.LogTrace("()");
 
-            uint256[] fullySignedTransfers = this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned].ToArray();
+            await this.SynchronizeAsync();
+            await this.SanityCheckAsync();
 
-            ICrossChainTransfer[] transfers = await this.GetAsync(fullySignedTransfers);
+            uint256[] signedTransferHashes = this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned].ToArray();
 
-            Transaction[] res = transfers.Select(t => t.PartialTransaction).ToArray();
+            ICrossChainTransfer[] signedTransfers = await this.GetAsync(signedTransferHashes);
+
+            Transaction[] res = signedTransfers.Select(t => t.PartialTransaction).ToArray();
 
             this.logger.LogTrace("(-){0}", res);
 
@@ -487,6 +588,28 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <inheritdoc />
+        public async Task<Transaction[]> GetPartialTransactionsAsync()
+        {
+            this.logger.LogTrace("()");
+
+            await this.SynchronizeAsync();
+            await this.SanityCheckAsync();
+
+            uint256[] partialTransferHashes = this.depositsIdsByStatus[CrossChainTransferStatus.Partial].ToArray();
+
+            ICrossChainTransfer[] partialTransfers = await this.GetAsync(partialTransferHashes);
+
+            Transaction[] res = partialTransfers.Select(t => t.PartialTransaction).ToArray();
+
+            this.logger.LogTrace("(-){0}", res);
+
+            return res;
+        }
+
+        /// <summary>
+        /// Sets the cross-chaintransfer status associated with the rejected transaction to <see cref="CrossChainTransferStatus.Rejected"/>.
+        /// </summary>
+        /// <param name="transaction">The transaction that was rejected.</param>
         public async Task SetRejectedStatusAsync(Transaction transaction)
         {
             this.logger.LogTrace("()");
@@ -587,7 +710,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <param name="lastBlockHeight">The last block to retain.</param>
         private async Task OnDeleteBlocksAsync(DBreeze.Transactions.Transaction dbreezeTransaction, int lastBlockHeight)
         {
-            // Gather all the deposit ids.
+            // Gather all the deposit ids that may have had transactions in the blocks being deleted.
             var depositIds = new HashSet<uint256>();
             uint256[] blocksToRemove = this.blockHeightsByBlockHash.Where(a => a.Value > lastBlockHeight).Select(a => a.Key).ToArray();
 
@@ -596,16 +719,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 depositIds.UnionWith(deposits);
             }
 
-            foreach (KeyValuePair<uint256, HashSet<uint256>> kv in this.depositIdsByBlockHash)
-            {
-                int blockHeight = this.blockHeightsByBlockHash[kv.Key];
-                if (blockHeight > lastBlockHeight)
-                {
-                    depositIds.UnionWith(kv.Value);
-                }
-            }
-
-            // First check the database to see if we already know about these deposits.
+            // Find the transfers related to these deposit ids in the database.
             CrossChainTransfer[] crossChainTransfers = this.Get(dbreezeTransaction, depositIds.ToArray());
 
             foreach (CrossChainTransfer transfer in crossChainTransfers)
@@ -640,7 +754,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <summary>
-        /// Verifies that the transaction's inout UTXO's have been reserved by the wallet.
+        /// Verifies that the transaction's input UTXO's have been reserved by the wallet.
         /// </summary>
         /// <param name="transaction">The transaction to check.</param>
         /// <param name="wallet">The wallet to check.</param>
@@ -650,6 +764,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             // All the input UTXO's should be present in spending details of the multi-sig address.
             foreach (TxIn input in transaction.Inputs)
             {
+                // Only check inputs that the wallet could have seen...
                 Wallet.TransactionData transactionData = wallet.MultiSigAddress.Transactions
                     .Where(t => t.SpendingDetails != null && t.SpendingDetails.TransactionId == transaction.GetHash()
                         && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N).FirstOrDefault();
