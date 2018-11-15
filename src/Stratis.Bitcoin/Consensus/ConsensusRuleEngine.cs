@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.PerformanceCounters.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -164,11 +165,11 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public virtual ValidationContext HeaderValidation(ChainedHeader header)
+        public virtual ValidationContext HeaderValidation(ChainedHeader header, INetworkPeer networkPeer)
         {
             Guard.NotNull(header, nameof(header));
 
-            var validationContext = new ValidationContext { ChainedHeaderToValidate = header };
+            var validationContext = new ValidationContext { ChainedHeaderToValidate = header, NetworkPeer = networkPeer };
             RuleContext ruleContext = this.CreateRuleContext(validationContext);
 
             this.ExecuteRules(this.headerValidationRules, ruleContext);

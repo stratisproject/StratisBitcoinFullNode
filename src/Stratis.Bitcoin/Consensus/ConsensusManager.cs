@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 int peerId = peer.Connection.Id;
 
-                connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+                connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peer, headers);
 
                 if (connectNewHeadersResult == null)
                 {

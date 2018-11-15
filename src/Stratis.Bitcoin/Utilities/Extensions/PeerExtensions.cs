@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Utilities.Extensions
     {
         public static bool IsWhitelisted(this INetworkPeer peer)
         {
-            return peer.Behavior<IConnectionManagerBehavior>()?.Whitelisted == true;
+            return peer?.Behavior<IConnectionManagerBehavior>()?.Whitelisted == true;
         }
     }
 }

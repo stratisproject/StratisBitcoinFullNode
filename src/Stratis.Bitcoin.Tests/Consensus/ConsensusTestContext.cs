@@ -1,11 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Net;
+using System.Net.Sockets;
 using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using Microsoft.Extensions.Logging.Abstractions;
 using Moq;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -15,7 +22,12 @@ using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
+using Stratis.Bitcoin.Tests.BlockPulling;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -60,7 +72,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.FullValidation = new FullValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.HeaderValidator = new Mock<IHeaderValidator>();
-            this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
+            this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>(), It.IsAny<INetworkPeer>())).Returns(new ValidationContext());
 
             this.ChainedHeaderTree = new ChainedHeaderTree(
                 this.Network,
@@ -229,10 +241,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             List<BlockHeader> peerCBlockHeaders = this.ChainedHeaderToList(chainCTip, chainCTip.Height);
             List<BlockHeader> peerDBlockHeaders = this.ChainedHeaderToList(chainDTip, chainDTip.Height);
 
-            cht.ConnectNewHeaders(0, peerABlockHeaders);
-            cht.ConnectNewHeaders(1, peerBBlockHeaders);
-            cht.ConnectNewHeaders(2, peerCBlockHeaders);
-            cht.ConnectNewHeaders(3, peerDBlockHeaders);
+            cht.ConnectNewHeaders(CreatePeerMock(0).Object, peerABlockHeaders);
+            cht.ConnectNewHeaders(CreatePeerMock(1).Object, peerBBlockHeaders);
+            cht.ConnectNewHeaders(CreatePeerMock(2).Object, peerCBlockHeaders);
+            cht.ConnectNewHeaders(CreatePeerMock(3).Object, peerDBlockHeaders);
         }
 
         internal void SwitchToChain(ChainedHeaderTree cht, ChainedHeader chainTip, ChainedHeader consumedHeader, int extensionSize)
@@ -247,5 +259,28 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 cht.ConsensusTipChanged(currentConsumedCh);
             }
         }
+
+        public static Mock<INetworkPeer> CreatePeerMock(int id)
+        {
+            var peer = new Mock<INetworkPeer>();
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var connection = new NetworkPeerConnection(KnownNetworks.StratisMain, peer.Object, new TcpClient(), id, (message, token) => Task.CompletedTask,
+                new DateTimeProvider(), loggerFactory, new PayloadProvider());
+
+            peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
+
+            var connectionParameters = new NetworkPeerConnectionParameters();
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), new IPEndPoint(1, 1), KnownNetworks.StratisMain, new DateTimeProvider().GetTimeOffset());
+            version.Services = NetworkPeerServices.Network;
+
+            peer.SetupGet(x => x.PeerVersion).Returns(version);
+            peer.SetupGet(x => x.State).Returns(NetworkPeerState.HandShaked);
+            peer.SetupGet(x => x.MessageReceived).Returns(new AsyncExecutionEvent<INetworkPeer, IncomingMessage>());
+
+            return peer;
+        }
     }
 }
+

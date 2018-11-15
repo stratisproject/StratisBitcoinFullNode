@@ -2,7 +2,9 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 {
@@ -42,13 +44,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         }
 
         /// <summary>
-        /// Determines whether header is a proven header.
+        /// Determines whether header validation should be skipped. This is true when header was
+        /// presented by a whitelisted node and is not of type <see cref="ProvenBlockHeader" />.
         /// </summary>
         /// <param name="header">The block header.</param>
-        /// <returns><c>true</c> if header is a <see cref="ProvenBlockHeader"/>.</returns>
-        public bool IsProvenHeader(BlockHeader header)
+        /// <param name="networkPeer">The network peer.</param>
+        /// <returns>
+        ///   <c>true</c> if header is a <see cref="ProvenBlockHeader" />.
+        /// </returns>
+        public bool SkipValidation(BlockHeader header, INetworkPeer networkPeer)
         {
-            return header is ProvenBlockHeader;
+            return !(header is ProvenBlockHeader) && (networkPeer?.IsWhitelisted() == true);
         }
 
         /// <inheritdoc/>
@@ -58,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
 
-            if (context.SkipValidation || !this.IsProvenHeaderActivated(chainedHeader.Height))
+            if (context.SkipValidation || !this.IsProvenHeaderActivated(chainedHeader.Height) || this.SkipValidation(chainedHeader.Header, context.ValidationContext.NetworkPeer))
                 return;
 
             this.ProcessRule((PosRuleContext)context, chainedHeader, (ProvenBlockHeader)chainedHeader.Header);
