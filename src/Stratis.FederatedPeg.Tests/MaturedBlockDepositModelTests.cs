@@ -1,5 +1,6 @@
-﻿using System.Collections.Generic;
+﻿using System.Linq;
 using FluentAssertions;
+using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
@@ -9,19 +10,29 @@ using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
 {
+    
     public class MaturedBlockDepositModelTests
     {
-        public static IMaturedBlockDeposits PrepareMaturedBlockDeposits()
+        public static IDeposit PrepareDeposit(uint256 blockHash = null, int blockHeight = -1)
         {
-            var blockHash = TestingValues.GetUint256();
-            var blockHeight = TestingValues.GetPositiveInt();
+            blockHash = blockHash ?? TestingValues.GetUint256();
+            if (blockHeight == -1) blockHeight = TestingValues.GetPositiveInt();
             var depositId = TestingValues.GetUint256();
             var depositAmount = TestingValues.GetMoney();
             var targetAddress = TestingValues.GetString();
 
+            return new Deposit(depositId, depositAmount, targetAddress, blockHeight, blockHash);
+        }
+
+        public static IMaturedBlockDeposits PrepareMaturedBlockDeposits(int depositCount = 0)
+        {
+            var blockHash = TestingValues.GetUint256();
+            var blockHeight = TestingValues.GetPositiveInt();
+            var deposits = Enumerable.Range(0, depositCount).Select(_ => PrepareDeposit(blockHash, blockHeight));
+
             var maturedBlockDeposits = new MaturedBlockDepositsModel(
                 new MaturedBlockModel() { BlockHash = blockHash, BlockHeight = blockHeight },
-                new List<IDeposit>() { new Deposit(depositId, depositAmount, targetAddress, blockHeight, blockHash) });
+                deposits.ToList());
             return maturedBlockDeposits;
         }
 

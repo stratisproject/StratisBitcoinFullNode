@@ -4,6 +4,8 @@ using NBitcoin;
 
 namespace Stratis.FederatedPeg.Tests.Utils
 {
+    using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+
     public static class TestingValues
     {
         private static readonly Random Random = new Random(DateTime.Now.Millisecond);
@@ -32,6 +34,12 @@ namespace Stratis.FederatedPeg.Tests.Utils
                 .Select(_ => allowed[Random.Next(0, allowed.Length)])
                 .ToArray());
             return result;
+        }
+
+        public static IMaturedBlockDeposits GetMaturedBlockDeposit(int depositCount)
+        {
+            var maturedBlockDeposits = MaturedBlockDepositModelTests.PrepareMaturedBlockDeposits(depositCount);
+            return maturedBlockDeposits;
         }
     }
 }
