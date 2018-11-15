@@ -301,6 +301,7 @@ namespace Stratis.Bitcoin.Consensus
                         this.lastForcedResync = DateTime.UtcNow;
                         this.logger.LogTrace("Header {0} could not be connected try to trigger a resync.", headers[0].GetHash());
                         await this.ResyncAsync().ConfigureAwait(false);
+                        return;
                     }
                 }
 
