@@ -6,7 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
@@ -114,7 +113,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// The headers are assumed to be in consecutive order.
         /// </remarks>
-        /// <param name="networkPeer">Peer that presented the headers.</param>
+        /// <param name="networkPeerId">Id of a peer that presented the headers.</param>
         /// <param name="headers">The list of headers to connect to the tree.</param>
         /// <returns>
         /// Information about which blocks need to be downloaded together with information about which input headers were processed.
@@ -124,7 +123,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <exception cref="CheckpointMismatchException">Thrown if checkpointed header doesn't match the checkpoint hash.</exception>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
-        ConnectNewHeadersResult ConnectNewHeaders(INetworkPeer networkPeer, List<BlockHeader> headers);
+        ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers);
 
         /// <summary>
         /// Creates the chained header for a new block.
@@ -617,7 +616,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public ConnectNewHeadersResult ConnectNewHeaders(INetworkPeer networkPeer, List<BlockHeader> headers)
+        public ConnectNewHeadersResult ConnectNewHeaders(int networkPeerId, List<BlockHeader> headers)
         {
             Guard.NotNull(headers, nameof(headers));
 
@@ -627,7 +626,6 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConnectHeaderException();
             }
 
-            var networkPeerId = networkPeer.Connection.Id;
             uint256 lastHash = headers.Last().GetHash();
             if (this.chainedHeadersByHash.ContainsKey(lastHash))
             {
@@ -637,7 +635,7 @@ namespace Stratis.Bitcoin.Consensus
                 return new ConnectNewHeadersResult() { Consumed = this.chainedHeadersByHash[lastHash] };
             }
 
-            List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers, networkPeer);
+            List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers);
 
             if (newChainedHeaders == null)
             {
@@ -946,20 +944,17 @@ namespace Stratis.Bitcoin.Consensus
         /// Find the headers that are not part of the tree and try to connect them to an existing chain
         /// by creating new chained headers and linking them to their previous headers.
         /// </summary>
-        /// <param name="headers">The new headers that should be connected to a chain.</param>
-        /// <param name="networkPeer">The optional network peer.</param>
-        /// <returns>
-        /// A list of newly created chained headers or <c>null</c> if no new headers were found.
-        /// </returns>
-        /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
-        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
-        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
         /// <remarks>
         /// Header validation is performed on each header.
         /// It will check if the first header violates maximum reorganization rule.
         /// <para>When headers are connected the next pointers of their previous headers are updated.</para>
         /// </remarks>
-        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers, INetworkPeer networkPeer = null)
+        /// <param name="headers">The new headers that should be connected to a chain.</param>
+        /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
+        /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
+        /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
+        /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
+        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
         {
             if (!this.TryFindNewHeaderIndex(headers, out int newHeaderIndex))
             {
@@ -970,14 +965,14 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader previousChainedHeader;
             if (!this.chainedHeadersByHash.TryGetValue(headers[newHeaderIndex].HashPrevBlock, out previousChainedHeader))
             {
-                this.logger.LogTrace("Previous hash '{0}' of block hash '{1}' was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock, networkPeer);
+                this.logger.LogTrace("Previous hash '{0}' of block hash '{1}' was not found.", headers[newHeaderIndex].GetHash(), headers[newHeaderIndex].HashPrevBlock);
                 this.logger.LogTrace("(-)[PREVIOUS_HEADER_NOT_FOUND]");
                 throw new ConnectHeaderException();
             }
 
             List<ChainedHeader> newChainedHeaders = null;
 
-            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, networkPeer);
+            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
 
             if (newChainedHeader != null)
             {
@@ -995,7 +990,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     for (; newHeaderIndex < headers.Count; newHeaderIndex++)
                     {
-                        newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, networkPeer);
+                        newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
 
                         if (newChainedHeader == null)
                             break;
@@ -1022,7 +1017,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader, INetworkPeer networkPeer = null)
+        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
         {
             uint256 newHeaderHash = currentBlockHeader.GetHash();
 
@@ -1034,7 +1029,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var newChainedHeader = new ChainedHeader(currentBlockHeader, newHeaderHash, previousChainedHeader);
 
-            ValidationContext result = this.headerValidator.ValidateHeader(newChainedHeader, networkPeer);
+            ValidationContext result = this.headerValidator.ValidateHeader(newChainedHeader);
 
             if (result.Error != null)
             {

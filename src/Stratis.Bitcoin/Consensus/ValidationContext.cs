@@ -3,7 +3,6 @@ using System.Net;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 
 namespace Stratis.Bitcoin.Consensus
@@ -28,11 +27,6 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>If the block validation failed this will be set with the reason of failure.</summary>
         public ConsensusError Error { get; set; }
-
-        /// <summary>
-        /// Gets or sets the optional network peer.
-        /// </summary>
-        public INetworkPeer NetworkPeer { get; set; }
 
         /// <summary>
         /// If the block validation failed with <see cref="ConsensusErrors.BlockTimestampTooFar"/>

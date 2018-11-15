@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
@@ -21,9 +20,8 @@ namespace Stratis.Bitcoin.Consensus.Validators
         /// Validates a block header.
         /// </summary>
         /// <param name="chainedHeader">The chained header to be validated.</param>
-        /// <param name="networkPeer">The network peer that presented headers.</param>
         /// <returns>Context that contains validation result related information.</returns>
-        ValidationContext ValidateHeader(ChainedHeader chainedHeader, INetworkPeer networkPeer = null);
+        ValidationContext ValidateHeader(ChainedHeader chainedHeader);
     }
 
     public interface IPartialValidator : IDisposable
@@ -93,9 +91,9 @@ namespace Stratis.Bitcoin.Consensus.Validators
         }
 
         /// <inheritdoc />
-        public ValidationContext ValidateHeader(ChainedHeader chainedHeader, INetworkPeer networkPeer = null)
+        public ValidationContext ValidateHeader(ChainedHeader chainedHeader)
         {
-            ValidationContext result = this.consensusRules.HeaderValidation(chainedHeader, networkPeer);
+            ValidationContext result = this.consensusRules.HeaderValidation(chainedHeader);
 
             return result;
         }

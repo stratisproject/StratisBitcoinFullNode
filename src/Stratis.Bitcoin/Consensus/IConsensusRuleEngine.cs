@@ -1,8 +1,9 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -18,7 +19,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Initialize the rules engine.
         /// </summary>
-        /// <param name="chainTip">Last common header between chain repository and block store if it's available.</param>
+        /// <param name="chainTip">Last common header between chain repository and block store if it's available.
         Task InitializeAsync(ChainedHeader chainTip);
 
         /// <summary>
@@ -55,15 +56,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
         Task<RewindState> RewindAsync();
 
-        /// <summary>
-        /// Execute header validation rules.
-        /// </summary>
+        /// <summary>Execute header validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
-        /// <param name="networkPeer">The network peer.</param>
-        /// <returns>
-        /// Context that contains validation result related information.
-        /// </returns>
-        ValidationContext HeaderValidation(ChainedHeader header, INetworkPeer networkPeer);
+        /// <returns>Context that contains validation result related information.</returns>
+        ValidationContext HeaderValidation(ChainedHeader header);
 
         /// <summary>Execute integrity validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
