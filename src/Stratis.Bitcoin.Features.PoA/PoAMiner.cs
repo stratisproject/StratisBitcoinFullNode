@@ -146,10 +146,16 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTimeInSeconds );
 
-                    if (waitingTimeInSeconds > 0)
+                    // This is a loop to account for different IDateTimeProvider implementations.
+                    // The standard implementation will of course allow us to progress immediately, but for other cases where we are 
+                    // emulating time, this may loop more than once. An example is in integration tests.
+                    while (waitingTimeInSeconds > 0)
                     {
                         // Wait until we can mine.
                         await this.WaitBeforeCanMineAsync(waitingTimeInSeconds * 1000, this.cancellation.Token).ConfigureAwait(false);
+
+                        timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+                        waitingTimeInSeconds = (int)(myTimestamp - timeNow) - 1;
                     }
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
