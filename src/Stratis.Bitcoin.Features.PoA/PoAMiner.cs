@@ -136,27 +136,13 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     if (timeNow <= this.consensusManager.Tip.Header.Time)
                     {
-                        await this.WaitBeforeCanMineAsync(500).ConfigureAwait(false);
+                        await this.TaskDelayAsync(500).ConfigureAwait(false);
                         continue;
                     }
 
                     uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
-                    int waitingTimeInSeconds = (int)(myTimestamp - timeNow) - 1;
-
-                    this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTimeInSeconds );
-
-                    // This is a loop to account for different IDateTimeProvider implementations.
-                    // The standard implementation will of course allow us to progress immediately, but for other cases where we are 
-                    // emulating time, this may loop more than once. An example is in integration tests.
-                    while (waitingTimeInSeconds > 0)
-                    {
-                        // Wait until we can mine.
-                        await this.WaitBeforeCanMineAsync(waitingTimeInSeconds * 1000, this.cancellation.Token).ConfigureAwait(false);
-
-                        timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
-                        waitingTimeInSeconds = (int)(myTimestamp - timeNow) - 1;
-                    }
+                    await this.WaitUntilWeCanMineAsync(myTimestamp).ConfigureAwait(false);
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
 
@@ -172,7 +158,7 @@ namespace Stratis.Bitcoin.Features.PoA
                     this.logger.LogInformation(builder.ToString());
 
                     int halfTargetSpacingMs = (int)this.network.ConsensusOptions.TargetSpacingSeconds * 1000 / 2;
-                    await this.WaitBeforeCanMineAsync(halfTargetSpacingMs, this.cancellation.Token).ConfigureAwait(false);
+                    await this.TaskDelayAsync(halfTargetSpacingMs, this.cancellation.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
@@ -185,7 +171,41 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        protected virtual async Task WaitBeforeCanMineAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
+        /// <summary>
+        /// Doesn't let the node progress until the given time slot.
+        /// </summary>
+        /// <param name="myTimestamp">The next time slot this node should mine at.</param>
+        protected virtual async Task WaitUntilWeCanMineAsync(uint myTimestamp)
+        {
+            int waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
+
+            // Accounts for different IDateTimeProvider implementations. The standard implementation would progress
+            // after one iteration, but for other cases where we are emulating time, this may loop more than once.
+            while (waitingTime > 0)
+            {
+                this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
+
+                await this.TaskDelayAsync(waitingTime * 1000, this.cancellation.Token).ConfigureAwait(false);
+
+                waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
+            }
+        }
+
+        /// <summary>
+        /// Retrieve the amount of seconds the node should wait until its turn to mine.
+        /// </summary>
+        /// <param name="myTimestamp">The next time slot this node should mine at.</param>
+        private int GetWaitingTimeInSeconds(uint myTimestamp)
+        {
+            uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+            return (int)(myTimestamp - timeNow) - 1;
+        }
+
+        /// <summary>
+        /// Pauses execution for the given time. A wrapper for <see cref="Task.Delay(int)"/>.
+        /// </summary>
+        /// <param name="delayMs">Milliseconds to sleep for.</param>
+        protected virtual async Task TaskDelayAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
         {
             await Task.Delay(delayMs, cancellation).ConfigureAwait(false);
         }
