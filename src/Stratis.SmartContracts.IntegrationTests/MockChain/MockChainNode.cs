@@ -123,7 +123,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
         /// </summary>
         public Result<WalletSendTransactionModel> SendTransaction(Script scriptPubKey, Money amount)
         {
-            var txBuildContext = new TransactionBuildContext(this.chain.Network)
+            var txBuildContext = new TransactionBuildContext(this.CoreNode.FullNode.Network)
             {
                 AccountReference = new WalletAccountReference(this.WalletName, this.AccountName),
                 MinConfirmations = 1,

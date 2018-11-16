@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.IntegrationTests.MockChain;
@@ -10,47 +8,33 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
     /// <summary>
     /// Facade for NodeBuilder.
     /// </summary>
+    /// <remarks>TODO: This and PoAMockChain could share most logic.</remarks>
     public class PoWMockChain : IMockChain
     {
-        // TODO: This and PoAMockChain could share most logic
-
         private readonly SmartContractNodeBuilder builder;
 
         protected readonly MockChainNode[] nodes;
-
-        /// <summary>
-        /// Nodes on this network.
-        /// </summary>
         public IReadOnlyList<MockChainNode> Nodes
         {
             get { return this.nodes; }
         }
 
-        /// <summary>
-        /// Network the nodes are running on.
-        /// </summary>
-        public Network Network { get; }
-
-        public PoWMockChain(int numNodes)
+        public PoWMockChain(int numberOfNodes)
         {
-            this.Network = new SmartContractsRegTest(); // TODO: Make this configurable.
-
             this.builder = SmartContractNodeBuilder.Create(this);
-            this.nodes = new MockChainNode[numNodes];
+            this.nodes = new MockChainNode[numberOfNodes];
 
-            for (int i = 0; i < numNodes; i++)
+            for (int nodeIndex = 0; nodeIndex < numberOfNodes; nodeIndex++)
             {
                 CoreNode node = this.builder.CreateSmartContractPowNode().Start();
 
-                // Add other nodes
-                for (int j = 0; j < i; j++)
+                for (int j = 0; j < nodeIndex; j++)
                 {
                     MockChainNode otherNode = this.nodes[j];
                     TestHelper.Connect(node, otherNode.CoreNode);
-                    TestHelper.Connect(otherNode.CoreNode, node);
                 }
 
-                this.nodes[i] = new MockChainNode(node, this);
+                this.nodes[nodeIndex] = new MockChainNode(node, this);
             }
         }
 

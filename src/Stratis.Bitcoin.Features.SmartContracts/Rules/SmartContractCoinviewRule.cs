@@ -48,15 +48,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             NBitcoin.Block block = context.ValidationContext.BlockToValidate;
             
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
-            byte[] blockRoot = ((SmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
+            byte[] blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
             this.mutableStateRepository = this.ContractCoinviewRule.OriginalStateRoot.GetSnapshotTo(blockRoot);
 
             await base.RunAsync(context);
 
-            if (new uint256(this.mutableStateRepository.Root) != ((SmartContractBlockHeader)block.Header).HashStateRoot)
+            if (new uint256(this.mutableStateRepository.Root) != ((ISmartContractBlockHeader)block.Header).HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
-            ValidateAndStoreReceipts(((SmartContractBlockHeader)block.Header).ReceiptRoot);
+            ValidateAndStoreReceipts(((ISmartContractBlockHeader)block.Header).ReceiptRoot);
 
             // Push to underlying database
             this.mutableStateRepository.Commit();
@@ -193,7 +193,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             this.receipts.Add(receipt);
 
-            ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
+            // Refund can be null when all gas is consumed
+            if (result.Refund != null)
+                ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
 
             if (result.InternalTransaction != null)
                 this.generatedTransaction = result.InternalTransaction;

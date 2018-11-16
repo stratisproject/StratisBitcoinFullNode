@@ -49,14 +49,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Block genesis = ctx.Network.GetGenesis();
                 var genesisChainedHeader = new ChainedHeader(genesis.Header, ctx.Network.GenesisHash, 0);
                 ChainedHeader chained = this.MakeNext(genesisChainedHeader, ctx.Network);
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
+                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock, chained.Height).Wait();
                 Assert.NotNull(ctx.PersistentCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(ctx.PersistentCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
 
                 ChainedHeader previous = chained;
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
                 chained = this.MakeNext(this.MakeNext(genesisChainedHeader, ctx.Network), ctx.Network);
-                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock).Wait();
+                ctx.PersistentCoinView.SaveChangesAsync(new UnspentOutputs[0], null, previous.HashBlock, chained.HashBlock, chained.Height).Wait();
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().GetAwaiter().GetResult());
                 ctx.ReloadPersistentCoinView();
                 Assert.Equal(chained.HashBlock, ctx.PersistentCoinView.GetTipHashAsync().GetAwaiter().GetResult());
@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var cacheCoinView = new CachedCoinView(ctx.PersistentCoinView, dateTimeProvider, this.loggerFactory, new NodeStats(dateTimeProvider));
 
-                cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock).Wait();
+                cacheCoinView.SaveChangesAsync(new UnspentOutputs[] { new UnspentOutputs(genesis.Transactions[0].GetHash(), new Coins(genesis.Transactions[0], 0)) }, null, genesisChainedHeader.HashBlock, chained.HashBlock, chained.Height).Wait();
                 Assert.NotNull(cacheCoinView.FetchCoinsAsync(new[] { genesis.Transactions[0].GetHash() }).Result.UnspentOutputs[0]);
                 Assert.Null(cacheCoinView.FetchCoinsAsync(new[] { new uint256() }).Result.UnspentOutputs[0]);
                 Assert.Equal(chained.HashBlock, cacheCoinView.GetTipHashAsync().Result);

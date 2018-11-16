@@ -24,15 +24,15 @@ Syncing with headers is used for quick blockchain downloads. A node can ask its 
 
 On PoW chains, headers can't be easily faked because creating a valid header requires spending a lot of hashing power to meet the PoW difficulty target.
 
-On PoS networks like Stratis, it is easy to construct a fake chain of headers of any length and almost arbitrary chainwork. 
+On PoS networks like Stratis, it is easy to construct a fake chain of headers of any length and almost arbitrary chainwork.
 
 With our C# node implementation, if an attacker constructs a fake chain of headers that has more work than the valid chain and sends it to a node, that node will switch to the fake chain of headers. After switching, the node will ask for blocks that are represented by the fake headers but those blocks will never be received. As a result, the node will stay out of sync with the network until the moment the network eventually produces a longer chain and the node switches back.
 
-*Therefore it is possible to perform an attack on any node that uses getheaders and keep it out of sync for a long period of time.* 
+*Therefore it is possible to perform an attack on any node that uses getheaders and keep it out of sync for a long period of time.*
 
 ## Solution abstract overview
 
-In order to prevent attacks using fake headers, we propose the use of proven headers. 
+In order to prevent attacks using fake headers, we propose the use of proven headers.
 
 New type of network messages needs to be introduced to allow syncing using proven headers -
 
@@ -48,11 +48,11 @@ New type of network messages needs to be introduced to allow syncing using prove
 
 #### Coinstake age
 
- `coinstakeAge` is a consensus constant that specifies how old (confirmation-wise) a UTXO has to be in order to be allowed to be used as a coinstake's kernel. 
+ `coinstakeAge` is a consensus constant that specifies how old (confirmation-wise) a UTXO has to be in order to be allowed to be used as a coinstake's kernel.
 
-This means that if we are synced up to the block of height `x` and we receive a proven header that represents a block within the range from `x + 1` to `x + coinstakeAge` then we have enough data to validate the coinstake's kernel because a valid kernel couldn't have been originated in a block with height greater than `coinstakeAge`. 
+This means that if we are synced up to the block of height `x` and we receive a proven header that represents a block within the range from `x + 1` to `x + coinstakeAge` then we have enough data to validate the coinstake's kernel because a valid kernel couldn't have been originated in a block with height greater than `coinstakeAge`.
 
-It's important to mention that other coinstake transaction data may be fake (non-kernel inputs, fees claimed) but we don't care about this since this data is not related to the chain work. 
+It's important to mention that other coinstake transaction data may be fake (non-kernel inputs, fees claimed) but we don't care about this since this data is not related to the chain work.
 
 
 
@@ -74,11 +74,11 @@ A proven header consists of:
 
 1. A block header (in the C# node it is represented by the `BlockHeader` class) which contains the merkle tree root.
 
-2. A block header signature (in the C# node it is represented by the `BlockSignature` class), which is signed with the private key which corresponds to the coinstake's second output's public key.
+2. A block header signature (in the C# node it is represented by the `BlockSignature` class), which is signed with the private key which corresponds to the coinstake's second output public key.
 
-3. Its coinstake transaction (in the C# node it is represented by the `Transaction` class). 
+3. Its coinstake transaction (in the C# node it is represented by the `Transaction` class).
 
-4. A Merkle proof that proves the coinstake tx is included in a block that is being represented by the provided header. 
+4. A merkle proof that proves the coinstake tx is included in a block that is being represented by the provided header.
 
    In the C# node the merkle proof can be represented by the `PartialMerkleTree` class.
 
@@ -86,24 +86,24 @@ A proven header consists of:
 
 ## Assumptions
 
-This document is written under the assumption that a softfork that changes `coinstakeAge` consensus parameter from 50 to 500 is activated for Stratis.
+This document is written under the assumption that a soft fork that changes `coinstakeAge` consensus parameter from 50 to 500 is activated for Stratis.
 
-The solution proposed in this document should be implemented for the C# nodes only when miners that control at least 51% of all stake adopt the softfork. 
+The solution proposed in this document should be implemented for the C# nodes only when miners that control at least 51% of all stake adopt the soft fork.
 
 
 
 #### Reasons behind changing coinstakeAge
 
-If the `coinstakeAge < maxReorg` then it is possible to create a valid coinstake kernel which will use UTXO originated in a block within the bounds of long reorg protection. Such coinstake can't always be validated with a small proof.
+If the `coinstakeAge < maxReorg` then it is possible to create a valid coinstake kernel which will use UTXO originated in a block within the bounds of long reorg protection. Such a coinstake can't always be validated with a small proof.
 
 Alternative solutions with longer proofs have been explored as well but they always introduce new attack vectors and additional complexity to the code which makes those solutions inferior to just implementing syncing with the *inv* messages.
 
- 
+
 
 
 ## Changes required for the C# node
 
-In this section changes that will be required for the C# node to support syncing with *proven headers* are covered. 
+In this section changes that will be required for the C# node to support syncing with *proven headers* are covered.
 
 #### Handshake
 
@@ -119,11 +119,11 @@ Currently on the C# node we have ChainRepository which stores the chain of heade
 
 
 
-Also, it will be reasonable to merge the `StakeChain` with the ChainRepository database. 
+Also, it will be reasonable to merge the `StakeChain` with the ChainRepository database.
 
 #### C# nodes syncing from StratisX nodes
 
-Syncing from StratisX nodes is currently done using *headers* message and StratisX nodes won't be updated to be able to understand *provenHeaders* messages. 
+Syncing from StratisX nodes is currently done using *headers* message and StratisX nodes won't be updated to be able to understand *provenHeaders* messages.
 
 However if issue [1156](https://github.com/stratisproject/StratisBitcoinFullNode/issues/1156) is resolved then we can allow using old headers messages for synchronization up to the last checkpoint. But we still need C# nodes to be able to sync from the StratisX nodes after the last checkpoint.
 
@@ -131,10 +131,10 @@ However if issue [1156](https://github.com/stratisproject/StratisBitcoinFullNode
 
 Before the soft fork is activated syncing after the last checkpoint from the StratisX can be done using one of the following options:
 
-1. Allow syncing only from C# nodes or whitelisted StratisX nodes (list of those nodes can be requested from the seed nodes)- we suggest this option to be implemented. 
+1. Allow syncing only from C# nodes or whitelisted StratisX nodes (list of those nodes can be requested from the seed nodes)- we suggest this option to be implemented.
 2. Partially implement syncing using *Inv* messages without using *headers* protocol at all (this would emulate the behavior of early bitcoin nodes version).
 
-If the maximum outbound connections limit is reached and there are less than 1 outbound connection to the C# node that supports syncing with the *proven headers*, one random connection should be dropped to allow the node to continue making connection attempts in order to find a C# node that supports *proven headers*. 
+If the maximum outbound connections limit is reached and there are less than 1 outbound connection to the C# node that supports syncing with the *proven headers*, one random connection should be dropped to allow the node to continue making connection attempts in order to find a C# node that supports *proven headers*.
 
 
 
@@ -159,12 +159,12 @@ If the maximum outbound connections limit is reached and there are less than 1 o
    1. Check that coinstake tx has `IsCoinStake` property equal to `true`
    2. Header time is equal to the timestamp of the coinstake tx
    3. Check if coinstake tx timestamp is divisible by 16 (using timestamp mask)
-   4. *Verify the coinstake age requirement 
-   5. *Verify all coinstake transaction inputs 
+   4. *Verify the coinstake age requirement
+   5. *Verify all coinstake transaction inputs
       1. Input comes from a UTXO
       2. Verify the `ScriptSig`
-   6. *Check if the coinstake kernel hash satisfies the difficulty requirement 
-   7. Check that coinstake tx is in the merkle tree using the merkle proof 
+   6. *Check if the coinstake kernel hash satisfies the difficulty requirement
+   7. Check that coinstake tx is in the merkle tree using the merkle proof
    8. *Verify header signature with the key from coinstake kernel
 
 
@@ -172,27 +172,27 @@ If the maximum outbound connections limit is reached and there are less than 1 o
 
 If the header is not following any of those rules it is considered to be invalid.
 
-It's important to note that proven headers that are `coinstakeAge` blocks ahead of the `trustedBase` can't always be validated (some data might be missing) so this algorithm should not be used to validate such headers until `trustedBase` advances enough. 
+It's important to note that proven headers that are `coinstakeAge` blocks ahead of the `trustedBase` can't always be validated (some data might be missing) so this algorithm should not be used to validate such headers until `trustedBase` advances enough.
 
-\* means that those rules are expensive to execute. 
-
-
-
-It might happen that when new chain of proven headers is received some of the proven headers will be referring to UTXOs that are spent on `trustedChain`. In order to validate such headers a coinview rewind till the forkpoint will be required. Since this is a very expensive operation doing so will introduce a new attack vector: attacker can send us fake headers which node can validate only after a rewind. 
+\* means that those rules are expensive to execute.
 
 
 
-In order to reduce expenses of validation rules execution we propose following solution: 
+It might happen that when new chain of proven headers is received some of the proven headers will be referring to UTXOs that are spent on `trustedChain`. In order to validate such headers a coinview rewind is performed until the forkpoint will be required. Since this is a very expensive operation doing so will introduce a new attack vector: attacker can send us fake headers which node can validate only after a rewind.
 
-First run the algorithm using current coinview. In case in step 8.4 or 8.5 or 8.6 or 8.8 header is being marked as invalid because the UTXO used in coinstake transaction is not found in the coinview we are rerunning those steps using coins fetched from the rewind data. 
+
+
+In order to reduce expenses of validation rules execution we propose following solution:
+
+First run the algorithm using current coinview. In case in step 8.4 or 8.5 or 8.6 or 8.8 header is being marked as invalid because the UTXO used in coinstake transaction is not found in the coinview we are rerunning those steps using coins fetched from the rewind data.
 
 In order to achieve efficient fetching from the rewind data a new data structure should be introduced:
 
 forkPoints data structure is a key-value storage where key is a TxId + N (N is an index of output in a transaction) and value is a rewind data index. This data structure will always contain as many entries as there are rewind data instances in the database (currently we do not delete old rewind data that is no longer needed but after the [issue #5](https://github.com/stratisproject/StratisBitcoinFullNode/issues/5) is fixed we should also make sure that old fork point data is deleted as well).
 
-When we need to fetch a UTXO first we check if it was spent in a rewind data with index that is associated with a block created after the fork point.  If the coin was spent before the fork point then the coinstake where this coin is being used as an input is invalid. Otherwise we use rewind data id to fetch the rewind data instance and get a UTXO from it.
+When we need to fetch a UTXO first we check if it was spent in a rewind data with index that is associated with a block created after the fork point.  If the coin was spent before the fork point then the coinstake where this coin is being used as an input is invalid. Otherwise we use the rewind data id to fetch the rewind data instance and get a UTXO from it.
 
-forkPoints data structure should be updated every time new rewind data instance is created or deleted. Since this data structure will be very lightweighted it should be kept in the RAM and persisted to the disk every time it is updated (this includes altering the fork point data starting from the fork point in case a reorg happens). 
+forkPoints data structure should be updated every time new rewind data instance is created or deleted. Since this data structure will be very lightweight it should be kept in the RAM and persisted to the disk every time it is updated (this includes altering the fork point data starting from the fork point in case a reorg happens).
 
 
 #### Trusted base for the light wallet
@@ -214,7 +214,7 @@ When the new block is downloaded it should be validated using the set of rules t
    3. Check that inputs list doesn't contain any duplicated UTXOs
    4. Check if the transaction is finalized
    5. If tx is coinbase it's outputs are zero
-   6. If tx's input was originated in coinstake or coinbase- check maturity
+   6. If tx's input was originated in coinstake or coinbase then check the maturity
    7. Check if input tx's timestamp is older than tx timestamp
    8. Sum of all inputs has to be greater than the sum of all outputs (the difference between them is the total amount of fees that can be claimed in this block)
    9. Check if transaction fee >= minimal fee
