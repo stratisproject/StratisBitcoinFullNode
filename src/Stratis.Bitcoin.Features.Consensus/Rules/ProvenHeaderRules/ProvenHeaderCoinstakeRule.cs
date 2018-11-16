@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.CheckCoinstakeMerkleProof(header);
 
-            this.CheckHeaderSignatureWithCoinstakeKernel(header, prevUtxo);
+            this.CheckHeaderSignatureWithCoinstakeKernel(header);
         }
 
         /// <summary>
@@ -307,16 +307,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// Verifies header signature with the key from coinstake kernel.
         /// </summary>
         /// <param name="header">The header.</param>
-        /// <param name="stakingCoins">The staking coins.</param>
         /// <exception cref="ConsensusException">
         /// Throws exception with error <see cref="ConsensusErrors.BadBlockSignature" /> if check fails.
         /// </exception>
-        private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header, UnspentOutputs stakingCoins)
+        private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header)
         {
-            OutPoint prevOut = this.GetPreviousOut(header);
-
-            Script scriptPubKey = stakingCoins.Outputs[prevOut.N].ScriptPubKey;
-            PubKey pubKey = scriptPubKey.GetDestinationPublicKeys(this.PosParent.Network)[0];
+            Script script = header.Coinstake.Outputs[1].ScriptPubKey;
+            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
 
             var signature = new ECDSASignature(header.Signature.Signature);
             uint256 headerHash = header.GetHash();
@@ -354,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 context.ValidationContext.SetFlagAndThrow(ConsensusErrors.UtxoNotFoundInRewindData, ct => ct.InsufficientHeaderInformation = true);
             }
 
-            this.CheckHeaderSignatureWithCoinstakeKernel(header, matchingUnspentUtxo);
+            this.CheckHeaderSignatureWithCoinstakeKernel(header);
         }
 
         private OutPoint GetPreviousOut(ProvenBlockHeader header)
