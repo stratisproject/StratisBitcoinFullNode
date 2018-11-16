@@ -24,6 +24,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
         private readonly IWithdrawalExtractor withdrawalExtractor;
 
+        private readonly IWithdrawalReceiver withdrawalReceiver;
+
         private readonly IBlockTipSender blockTipSender;
 
         private readonly ConcurrentChain chain;
@@ -40,6 +42,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
                              ICrossChainTransactionMonitor crossChainTransactionMonitor,
                              IDepositExtractor depositExtractor,
                              IWithdrawalExtractor withdrawalExtractor,
+                             IWithdrawalReceiver withdrawalReceiver,
                              IMaturedBlockSender maturedBlockSender,
                              IBlockTipSender blockTipSender)
         {
@@ -49,12 +52,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             Guard.NotNull(blockTipSender, nameof(blockTipSender));
             Guard.NotNull(depositExtractor, nameof(depositExtractor));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
+            Guard.NotNull(withdrawalReceiver, nameof(withdrawalReceiver));
 
             this.walletSyncManager = walletSyncManager;
             this.crossChainTransactionMonitor = crossChainTransactionMonitor;
             this.maturedBlockSender = maturedBlockSender;
             this.depositExtractor = depositExtractor;
             this.withdrawalExtractor = withdrawalExtractor;
+            this.withdrawalReceiver = withdrawalReceiver;
             this.blockTipSender = blockTipSender;
         }
 
@@ -74,6 +79,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
                 chainedHeaderBlock.Block,
                 chainedHeaderBlock.ChainedHeader.Height);
+
+            this.withdrawalReceiver.ReceiveWithdrawals(withdrawals);
 
             // todo: persist the last seen block height in database
             IMaturedBlockDeposits maturedBlockDeposits = 

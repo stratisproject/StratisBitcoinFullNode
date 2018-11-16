@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Collections.ObjectModel;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reactive.Subjects;
 
@@ -19,22 +17,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private readonly ILogger logger;
 
         private readonly BitcoinAddress multisigAddress;
-
-        private readonly IWithdrawalReceiver withdrawalReceiver;
-
+        
         public WithdrawalExtractor(
             ILoggerFactory loggerFactory,
             IFederationGatewaySettings federationGatewaySettings,
             IOpReturnDataReader opReturnDataReader,
-            IWithdrawalReceiver withdrawalReceiver,
             Network network)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.multisigAddress = federationGatewaySettings.MultiSigAddress;
             this.opReturnDataReader = opReturnDataReader;
             this.network = network;
-
-            this.withdrawalReceiver = withdrawalReceiver;
         }
 
         /// <inheritdoc />
@@ -49,12 +42,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
             var withdrawalsFromBlock = withdrawals.AsReadOnly();
 
-            this.withdrawalReceiver.ReceiveWithdrawals(withdrawalsFromBlock);
-
             return withdrawalsFromBlock;
         }
 
-        public IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight)
+        private IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight)
         {
             if (transaction.Outputs.Count(this.IsTargetAddressCandidate) != 1) return null;
             if (!IsOnlyFromMultisig(transaction)) return null;
@@ -88,12 +79,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             if (!transaction.Inputs.Any()) return false;
             return transaction.Inputs.All(
                     i => i.ScriptSig?.GetSignerAddress(this.network) == this.multisigAddress);
-        }
-
-        /// <inheritdoc />
-        public void Dispose()
-        {
-            this.withdrawalReceiver?.Dispose();
         }
     }
 }

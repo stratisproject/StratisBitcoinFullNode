@@ -1,5 +1,8 @@
 ﻿using FluentAssertions;
+using NBitcoin;
 using Newtonsoft.Json;
+
+using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Tests.Utils;
@@ -9,22 +12,10 @@ namespace Stratis.FederatedPeg.Tests
 {
     public class WithdrawalTests
     {
-        public static IWithdrawal PrepareWithdrawal()
-        {
-            var depositId = TestingValues.GetUint256();
-            var id = TestingValues.GetUint256();
-            var amount = TestingValues.GetMoney();
-            var targetAddress = TestingValues.GetString();
-            var blockNumber = TestingValues.GetPositiveInt();
-            var blockHash = TestingValues.GetUint256();
-
-            return new Withdrawal(depositId, id, amount, targetAddress, blockNumber, blockHash);
-        }
-
         [Fact]
         public void ShouldSerialiseAsJson()
         {
-            var withdrawal = PrepareWithdrawal();
+            var withdrawal = TestingValues.GetWithdrawal();
 
             var asJson = withdrawal.ToString();
             var reconverted = JsonConvert.DeserializeObject<Withdrawal>(asJson);

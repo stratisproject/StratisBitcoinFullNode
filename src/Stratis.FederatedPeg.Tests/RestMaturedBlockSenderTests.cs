@@ -37,7 +37,7 @@ namespace Stratis.FederatedPeg.Tests
         {
             TestingHttpClient.PrepareWorkingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
 
-            var maturedBlockDeposits = MaturedBlockDepositModelTests.PrepareMaturedBlockDeposits();
+            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
 
             var restSender = new RestMaturedBlockSender(this.loggerFactory, this.federationSettings, this.httpClientFactory);
 
@@ -51,7 +51,7 @@ namespace Stratis.FederatedPeg.Tests
         {
             TestingHttpClient.PrepareFailingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
 
-            var maturedBlockDeposits = MaturedBlockDepositModelTests.PrepareMaturedBlockDeposits();
+            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
 
             var restSender = new RestMaturedBlockSender(this.loggerFactory, this.federationSettings, this.httpClientFactory);
 

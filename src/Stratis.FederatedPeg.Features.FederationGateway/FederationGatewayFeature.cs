@@ -55,6 +55,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IWithdrawalExtractor withdrawalExtractor;
 
+        private readonly IWithdrawalReceiver withdrawalReceiver;
+
         private readonly ILeaderProvider leaderProvider;
 
         private IDisposable blockSubscriberDisposable;
@@ -92,6 +94,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Signals signals,
             IDepositExtractor depositExtractor,
             IWithdrawalExtractor withdrawalExtractor,
+            IWithdrawalReceiver withdrawalReceiver,
             ILeaderProvider leaderProvider,
             IConnectionManager connectionManager,
             IFederationGatewaySettings federationGatewaySettings,
@@ -113,6 +116,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.signals = signals;
             this.depositExtractor = depositExtractor;
             this.withdrawalExtractor = withdrawalExtractor;
+            this.withdrawalReceiver = withdrawalReceiver;
             this.leaderProvider = leaderProvider;
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
@@ -143,6 +147,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     this.crossChainTransactionMonitor,
                     this.depositExtractor,
                     this.withdrawalExtractor,
+                    this.withdrawalReceiver,
                     this.maturedBlockSender,
                     this.blockTipSender));
 
@@ -223,6 +228,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
                         services.AddSingleton<IDepositExtractor, DepositExtractor>();
                         services.AddSingleton<IWithdrawalExtractor, WithdrawalExtractor>();
+                        services.AddSingleton<IWithdrawalReceiver, WithdrawalReceiver>();
+                        services.AddSingleton<IEventPersister, EventsPersister>();
                         services.AddSingleton<FederationGatewayController>();
                         services.AddSingleton<ICrossChainTransactionMonitor, CrossChainTransactionMonitor>();
                         services.AddSingleton<ICrossChainTransactionAuditor, JsonCrossChainTransactionAuditor>();
