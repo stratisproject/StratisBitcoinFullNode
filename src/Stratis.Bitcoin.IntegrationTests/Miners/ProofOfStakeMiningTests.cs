@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 // Mine another block after LastPOWBlock height (Error).
                 node.FullNode.Network.Consensus.LastPOWBlock = 2;
                 var error = Assert.Throws<ConsensusRuleException>(() => TestHelper.MineBlocks(node, 1));
-                Assert.True(error.ConsensusError.Message == ConsensusErrors.InvalidPowHeight.Message);
+                Assert.True(error.ConsensusError.Message == ConsensusErrors.ProofOfWorkTooHigh.Message);
             }
         }
     }
