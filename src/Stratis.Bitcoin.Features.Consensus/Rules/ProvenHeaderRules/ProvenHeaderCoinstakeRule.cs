@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             var options = (PosConsensusOptions)this.PosParent.Network.Consensus.Options;
             int targetDepth = options.GetStakeMinConfirmations(chainedHeader.Height, this.PosParent.Network) - 1;
 
-            if (this.stakeValidator.IsConfirmedInNPrevBlocks(unspentOutputs, prevChainedHeader, targetDepth))
+            if (!this.stakeValidator.IsConfirmedInNPrevBlocks(unspentOutputs, prevChainedHeader, targetDepth))
                 return;
 
             this.Logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
