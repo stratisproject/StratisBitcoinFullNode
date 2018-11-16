@@ -60,10 +60,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
                 if (chainedHeader.Height > this.Parent.Network.Consensus.LastPOWBlock)
                 {
-                    this.Logger.LogTrace("(-)[INVALID_POW_HEIGHT]");
-                    ConsensusErrors.InvalidPowHeight.Throw();
+                    this.Logger.LogTrace("(-)[POW_TOO_HIGH]");
+                    ConsensusErrors.ProofOfWorkTooHigh.Throw();
                 }
-                
+
                 this.ComputeNextStakeModifier(header, chainedHeader);
 
                 this.Logger.LogTrace("(-)[COIN_BASE_VALIDATION]");

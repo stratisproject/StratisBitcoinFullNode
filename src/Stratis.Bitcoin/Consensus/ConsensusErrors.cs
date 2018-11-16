@@ -8,7 +8,6 @@
         public static readonly ConsensusError InvalidPrevTip = new ConsensusError("invalid-prev-tip", "invalid previous tip");
         public static readonly ConsensusError HighHash = new ConsensusError("high-hash", "proof of work failed");
         public static readonly ConsensusError BadCoinbaseHeight = new ConsensusError("bad-cb-height", "block height mismatch in coinbase");
-        public static readonly ConsensusError InvalidPowHeight = new ConsensusError("invalid-pow-height", "a pow block was generated passed the pow height");
         public static readonly ConsensusError BadTransactionNonFinal = new ConsensusError("bad-txns-nonfinal", "non-final transaction");
         public static readonly ConsensusError BadWitnessNonceSize = new ConsensusError("bad-witness-nonce-size", "invalid witness nonce size");
         public static readonly ConsensusError BadWitnessMerkleMatch = new ConsensusError("bad-witness-merkle-match", "witness merkle commitment mismatch");

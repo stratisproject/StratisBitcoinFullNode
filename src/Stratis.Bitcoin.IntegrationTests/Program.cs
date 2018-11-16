@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using Stratis.Bitcoin.IntegrationTests.Miners;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Xunit;
 
@@ -11,9 +12,6 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static void Main(string[] args)
         {
-            new NodeSyncTests().Pos_NodesCanConnect_AndSync_AndMineBlocks();
-            return;
-
             RunAllTestsOf<WalletTests>();
             RunAllTestsOf<NodeSyncTests>();
         }
