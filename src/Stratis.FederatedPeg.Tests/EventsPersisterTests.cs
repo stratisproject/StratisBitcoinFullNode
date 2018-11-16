@@ -42,7 +42,7 @@ namespace Stratis.FederatedPeg.Tests
         public void PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_Upon_New_Block_Arrival()
         {
             int depositCount = 20;
-            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposit(depositCount);
+            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits(depositCount);
             IObservable<IMaturedBlockDeposits> maturedBlockStream = new[] { maturedBlockDeposits }.ToObservable();
             this.maturedBlockReceiver.MaturedBlockDepositStream.Returns(maturedBlockStream);
 
@@ -57,7 +57,7 @@ namespace Stratis.FederatedPeg.Tests
         public void PersistNewMaturedBlockDeposits_Should_Call_Store_And_Pass_Deposits_Upon_New_Block_Arrival_And_No_Deposits_In_Block()
         {
             int depositCount = 0;
-            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposit(depositCount);
+            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits(depositCount);
             IObservable<IMaturedBlockDeposits> maturedBlockStream = new[] { maturedBlockDeposits }.ToObservable();
             this.maturedBlockReceiver.MaturedBlockDepositStream.Returns(maturedBlockStream);
 
@@ -72,7 +72,7 @@ namespace Stratis.FederatedPeg.Tests
         {
             int blocksCount = 10;
             var maturedBlockDepositsEnum = Enumerable.Range(0,blocksCount)
-                .Select(TestingValues.GetMaturedBlockDeposit)
+                .Select(TestingValues.GetMaturedBlockDeposits)
                 .ToList();
 
             IObservable<IMaturedBlockDeposits> maturedBlockStream = maturedBlockDepositsEnum.ToObservable();

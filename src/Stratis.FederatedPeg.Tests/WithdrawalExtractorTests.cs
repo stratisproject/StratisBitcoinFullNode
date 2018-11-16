@@ -53,7 +53,7 @@ namespace Stratis.FederatedPeg.Tests
             this.transactionBuilder = new TestMultisigTransactionBuilder(this.addressHelper);
 
             this.withdrawalExtractor = new WithdrawalExtractor(
-                this.loggerFactory, this.settings, this.opReturnDataReader, this.withdrawalReceiver, this.network);
+                this.loggerFactory, this.settings, this.opReturnDataReader, this.network);
         }
 
         [Fact]
@@ -66,8 +66,6 @@ namespace Stratis.FederatedPeg.Tests
             var blockHeight = 3456;
 
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
-
-            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
 
             withdrawals.Count.Should().Be(1);
             this.VerifyWithdrawalData(
@@ -95,9 +93,7 @@ namespace Stratis.FederatedPeg.Tests
             var blockHeight = 5972176;
 
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
-
-            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
-
+            
             withdrawals.Count.Should().Be(1);
             this.VerifyWithdrawalData(
                 withdrawals[0],
@@ -151,8 +147,6 @@ namespace Stratis.FederatedPeg.Tests
                 validWithdrawalTransaction,
                 opReturnDepositId,
                 targetScript);
-
-            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
         }
 
         [Fact]
@@ -167,8 +161,6 @@ namespace Stratis.FederatedPeg.Tests
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
 
             withdrawals.Count.Should().Be(2);
-
-            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(withdrawals));
 
             this.VerifyWithdrawalData(
                 withdrawals[0],
@@ -200,6 +192,7 @@ namespace Stratis.FederatedPeg.Tests
                 opReturnDepositId.ToBytes(),
                 amount,
                 true);
+
             block.AddTransaction(validWithdrawalTransaction);
             this.opReturnDataReader.TryGetTransactionId(validWithdrawalTransaction).Returns(opReturnDepositId.ToString());
             return (targetScript, opReturnDepositId, amount, validWithdrawalTransaction);

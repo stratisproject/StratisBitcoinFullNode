@@ -1,4 +1,6 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+
+using NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Primitives;
@@ -8,6 +10,8 @@ using Xunit;
 using BlockObserver = Stratis.FederatedPeg.Features.FederationGateway.Notifications.BlockObserver;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Microsoft.Extensions.Logging;
+
+using Stratis.FederatedPeg.Tests.Utils;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -31,15 +35,19 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly uint minimumDepositConfirmations;
 
-        private IMaturedBlockSender maturedBlockSender;
+        private readonly IMaturedBlockSender maturedBlockSender;
 
-        private IBlockTipSender blockTipSender;
+        private readonly IBlockTipSender blockTipSender;
 
-        private IOpReturnDataReader opReturnDataReader;
+        private readonly IOpReturnDataReader opReturnDataReader;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
-        private IWithdrawalExtractor withdrawalExtractor;
+        private readonly IWithdrawalExtractor withdrawalExtractor;
+
+        private readonly IWithdrawalReceiver withdrawalReceiver;
+
+        private readonly IReadOnlyList<IWithdrawal> extractedWithdrawals;
 
         public BlockObserverTests()
         {
@@ -59,19 +67,25 @@ namespace Stratis.FederatedPeg.Tests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
 
+            this.withdrawalExtractor = Substitute.For<IWithdrawalExtractor>();
+            this.extractedWithdrawals = TestingValues.GetWithdrawals(2);
+            this.withdrawalExtractor.ExtractWithdrawalsFromBlock(null, 0)
+                .ReturnsForAnyArgs(this.extractedWithdrawals);
+
+            this.withdrawalReceiver = Substitute.For<IWithdrawalReceiver>();
+
             this.depositExtractor = new DepositExtractor(
                 this.loggerFactory,
                 this.federationGatewaySettings,
                 this.opReturnDataReader,
                 this.fullNode);
 
-            this.withdrawalExtractor = Substitute.For<IWithdrawalExtractor>();
-
             this.blockObserver = new BlockObserver(
                 this.federationWalletSyncManager,
                 this.crossChainTransactionMonitor,
                 this.depositExtractor,
                 this.withdrawalExtractor,
+                this.withdrawalReceiver,
                 this.maturedBlockSender,
                 this.blockTipSender);
         }
@@ -89,6 +103,7 @@ namespace Stratis.FederatedPeg.Tests
             this.crossChainTransactionMonitor.Received(1).ProcessBlock(earlyBlock);
             this.federationWalletSyncManager.Received(1).ProcessBlock(earlyBlock);
             this.withdrawalExtractor.ReceivedWithAnyArgs(1).ExtractWithdrawalsFromBlock(earlyBlock, 0);
+            this.withdrawalReceiver.Received(1).ReceiveWithdrawals(Arg.Is(this.extractedWithdrawals));
             this.blockTipSender.ReceivedWithAnyArgs(1).SendBlockTipAsync(null);
             this.maturedBlockSender.ReceivedWithAnyArgs(0).SendMaturedBlockDepositsAsync(null);
         }
@@ -123,6 +138,16 @@ namespace Stratis.FederatedPeg.Tests
             this.blockObserver.OnNext(chainedHeaderBlock);
 
             this.withdrawalExtractor.ReceivedWithAnyArgs(1).ExtractWithdrawalsFromBlock(null, 0);
+        }
+
+        [Fact]
+        public void BlockObserver_Should_Send_Extracted_Withdrawals_To_WithdrawalReceiver()
+        {
+            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder().chainedHeaderBlock;
+
+            this.blockObserver.OnNext(chainedHeaderBlock);
+
+            this.withdrawalReceiver.ReceivedWithAnyArgs(1).ReceiveWithdrawals(Arg.Is(this.extractedWithdrawals));
         }
 
         private (ChainedHeaderBlock chainedHeaderBlock, Block block) ChainHeaderBlockBuilder()

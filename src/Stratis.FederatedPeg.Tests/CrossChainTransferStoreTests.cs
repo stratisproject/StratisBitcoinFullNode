@@ -73,7 +73,7 @@ namespace Stratis.FederatedPeg.Tests
             this.federationGatewaySettings.MultiSigRedeemScript.Returns(redeemScript);
             this.federationGatewaySettings.MultiSigAddress.Returns(redeemScript.Hash.GetAddress(this.network));
             this.federationGatewaySettings.PublicKey.Returns("026ebcbf6bfe7ce1d957adbef8ab2b66c788656f35896a170257d6838bda70b95c");
-            this.withdrawalExtractor = new WithdrawalExtractor(this.loggerFactory, this.federationGatewaySettings, this.opReturnDataReader, Substitute.For<IWithdrawalReceiver>(), this.network);
+            this.withdrawalExtractor = new WithdrawalExtractor(this.loggerFactory, this.federationGatewaySettings, this.opReturnDataReader, this.network);
 
             this.blockDict = new Dictionary<uint256, Block>();
 

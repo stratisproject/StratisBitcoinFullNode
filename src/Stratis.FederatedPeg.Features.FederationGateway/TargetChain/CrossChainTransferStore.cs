@@ -655,17 +655,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             // Find transfer transactions in blocks
             foreach (Block block in blocks)
             {
-                uint256 blockHash = block.GetHash();
-                var withdrawals = new List<IWithdrawal>();
-
-                foreach (Transaction transaction in block.Transactions)
-                {
-                    IWithdrawal withdrawal = (this.withdrawalExtractor as WithdrawalExtractor).ExtractWithdrawalFromTransaction(transaction, blockHash, blockHeight);
-                    if (withdrawal != null)
-                    {
-                        withdrawals.Add(withdrawal);
-                    }
-                };
+                var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
 
                 // First check the database to see if we already know about these deposits.
                 CrossChainTransfer[] storedDeposits = this.Get(dbreezeTransaction, withdrawals.Select(d => d.DepositId).ToArray());
