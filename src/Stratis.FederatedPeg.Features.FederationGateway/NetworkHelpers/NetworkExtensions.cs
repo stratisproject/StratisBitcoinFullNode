@@ -6,6 +6,12 @@ using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers
 {
+    public enum Chain
+    {
+        Mainchain,
+        Sidechain
+    }
+
     /// <summary>
     /// Network helper extensions for identifying a sidechain or mainchain network.
     /// </summary>

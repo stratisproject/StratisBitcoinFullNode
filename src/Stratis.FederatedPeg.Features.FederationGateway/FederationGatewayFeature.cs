@@ -18,9 +18,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Controllers;
-using Stratis.FederatedPeg.Features.FederationGateway.CounterChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
-using Stratis.FederatedPeg.Features.FederationGateway.MonitorChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Notifications;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
@@ -40,8 +38,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         internal const string JsonHttpClientName = "jsonClient";
 
         public const string FederationGatewayFeatureNamespace = "federationgateway";
-
-        private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
 
         private readonly IMaturedBlockReceiver maturedBlockReceiver;
 
@@ -79,15 +75,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly Network network;
 
-        private readonly IMonitorChainSessionManager monitorChainSessionManager;
-
-        private readonly ICounterChainSessionManager counterChainSessionManager;
-
         private readonly ICrossChainTransferStore crossChainTransferStore;
 
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
-            ICrossChainTransactionMonitor crossChainTransactionMonitor,
             IMaturedBlockReceiver maturedBlockReceiver,
             IMaturedBlockSender maturedBlockSender,
             IBlockTipSender blockTipSender,
@@ -103,13 +94,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             IFederationWalletSyncManager walletSyncManager,
             Network network,
             ConcurrentChain chain,
-            IMonitorChainSessionManager monitorChainSessionManager,
-            ICounterChainSessionManager counterChainSessionManager,
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore)
         {
             this.loggerFactory = loggerFactory;
-            this.crossChainTransactionMonitor = crossChainTransactionMonitor;
             this.maturedBlockReceiver = maturedBlockReceiver;
             this.maturedBlockSender = maturedBlockSender;
             this.blockTipSender = blockTipSender;
@@ -127,9 +115,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.network = network;
             this.crossChainTransferStore = crossChainTransferStore;
 
-            this.counterChainSessionManager = counterChainSessionManager;
-            this.monitorChainSessionManager = monitorChainSessionManager;
-
             // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
@@ -144,7 +129,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(
                 new BlockObserver(
                     this.walletSyncManager,
-                    this.crossChainTransactionMonitor,
                     this.depositExtractor,
                     this.withdrawalExtractor,
                     this.withdrawalReceiver,
@@ -153,8 +137,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
-            this.crossChainTransactionMonitor.Initialize(this.federationGatewaySettings);
-            this.monitorChainSessionManager.Initialize();
             this.crossChainTransferStore.Initialize();
 
             this.federationWalletManager.Start();
@@ -168,15 +150,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
 
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
-            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.crossChainTransactionMonitor, this.federationWalletManager, this.counterChainSessionManager, this.network, this.federationGatewaySettings));
+            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network, this.federationGatewaySettings));
         }
 
         public override void Dispose()
         {
             this.blockSubscriberDisposable.Dispose();
             this.transactionSubscriberDisposable.Dispose();
-            this.crossChainTransactionMonitor.Dispose();
-            this.monitorChainSessionManager.Dispose();
             this.crossChainTransferStore.Dispose();
         }
 
@@ -231,10 +211,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IWithdrawalReceiver, WithdrawalReceiver>();
                         services.AddSingleton<IEventPersister, EventsPersister>();
                         services.AddSingleton<FederationGatewayController>();
-                        services.AddSingleton<ICrossChainTransactionMonitor, CrossChainTransactionMonitor>();
-                        services.AddSingleton<ICrossChainTransactionAuditor, JsonCrossChainTransactionAuditor>();
-                        services.AddSingleton<IMonitorChainSessionManager, MonitorChainSessionManager>();
-                        services.AddSingleton<ICounterChainSessionManager, CounterChainSessionManager>();
                         services.AddSingleton<IFederationWalletSyncManager, FederationWalletSyncManager>();
                         services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
