@@ -339,16 +339,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             int? rewindDataIndex = this.PosParent.RewindDataIndexStore.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
             if (!rewindDataIndex.HasValue)
             {
-                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.ReadTxPrevFailed, c => c.InsufficientHeaderInformation = true);
+                context.ValidationContext.InsufficientHeaderInformation = true;
+                ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
-            UnspentOutputs matchingUnspentUtxo = 
+            UnspentOutputs matchingUnspentUtxo =
                 rewindData.OutputsToRestore.Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N)).FirstOrDefault();
 
             if (matchingUnspentUtxo == null)
             {
-                context.ValidationContext.SetFlagAndThrow(ConsensusErrors.UtxoNotFoundInRewindData, ct => ct.InsufficientHeaderInformation = true);
+                context.ValidationContext.InsufficientHeaderInformation = true;
+                ConsensusErrors.UtxoNotFoundInRewindData.Throw();
             }
 
             this.CheckHeaderSignatureWithCoinstakeKernel(header);
