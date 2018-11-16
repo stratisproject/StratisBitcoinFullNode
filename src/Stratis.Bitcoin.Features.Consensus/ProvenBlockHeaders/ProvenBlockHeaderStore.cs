@@ -198,7 +198,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     // Check the repository.
                     header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
 
-                    this.Cache.AddOrUpdate(blockHeight, header, header.HeaderSize);
+                    if (header != null)
+                    {
+                        this.Cache.AddOrUpdate(blockHeight, header, header.HeaderSize);
+                    }
                 }
             }
 

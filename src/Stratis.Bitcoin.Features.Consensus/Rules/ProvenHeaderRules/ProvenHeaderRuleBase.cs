@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </returns>
         public bool IsProvenHeaderActivated(int height)
         {
-            return height >= this.LastCheckpointHeight;
+            return height > this.LastCheckpointHeight;
         }
 
         /// <summary>

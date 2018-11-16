@@ -165,11 +165,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// If the last checkpoint is bellow consensus tip we do not need proven headers.
         /// </summary>
         /// <returns> <c>true</c> if  we need to validate proven headers.</returns>
-        private bool AreProvenHeadersActivated()
+        private int GetCurrentHeight()
         {
             var currentHeight = (this.ExpectedPeerTip ?? this.consensusManager.Tip).Height;
 
-            return currentHeight >= this.lastCheckpointHeight;
+            return currentHeight;
         }
 
         /// <summary>
@@ -184,7 +184,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             INetworkPeer peer = this.AttachedPeer;
 
-            if (this.AreProvenHeadersActivated())
+            bool aboveLastCheckpoint = this.GetCurrentHeight() >= this.lastCheckpointHeight;
+            if (aboveLastCheckpoint)
             {
                 if (this.CanPeerProcessProvenHeaders(peer))
                 {
@@ -224,8 +225,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && peer.IsWhitelisted());
 
             // Only legacy peers are allowed to handle this message, or any node before PH activation.
-            bool areProvenHeadersActivated = this.AreProvenHeadersActivated();
-            if (isLegacyWhitelistedPeer || !areProvenHeadersActivated)
+            bool bellowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
+            if (isLegacyWhitelistedPeer || bellowLastCheckpoint)
             {
                 if (!isLegacyWhitelistedPeer)
                 {
@@ -234,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                     {
                         if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
                         {
-                            headers.RemoveRange(index, headers.Count - index);
+                            headers.RemoveRange(index + 1, headers.Count - index - 1);
                             break;
                         }
                     }

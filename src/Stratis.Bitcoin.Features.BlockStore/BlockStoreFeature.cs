@@ -102,7 +102,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // Signal to peers that this node can serve blocks.
-            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
+            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
+
+            // Temporary measure to support asking witness data on BTC.
+            // At some point NetworkPeerServices will move to the Network class,
+            // Then this values should be taken from there.
+            //if (!this.network.Consensus.IsProofOfStake)
+            //    this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
 
