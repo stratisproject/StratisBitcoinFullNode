@@ -64,6 +64,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                     ConsensusErrors.InvalidPowHeight.Throw();
                 }
                 
+                this.ComputeNextStakeModifier(header, chainedHeader);
+
                 this.Logger.LogTrace("(-)[COIN_BASE_VALIDATION]");
                 return;
             }
@@ -214,6 +216,56 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
         }
 
+        private void ComputeNextStakeModifier(ProvenBlockHeader header, ChainedHeader chainedHeader, uint256 previousStakeModifier = null)
+        {
+            if (previousStakeModifier == null)
+                previousStakeModifier = this.GetPreviousStakeModifier(chainedHeader);
+
+            // Computes the stake modifier and sets the value to the current validating proven header,
+            // to retain it for next header validation as previousStakeModifier.
+            uint256 kernal = header.Coinstake.IsCoinBase ? chainedHeader.HashBlock : header.Coinstake.Inputs[0].PrevOut.Hash;
+            header.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(chainedHeader.Previous, previousStakeModifier, kernal);
+        }
+
+        private uint256 GetPreviousStakeModifier(ChainedHeader chainedHeader)
+        {
+            uint256 previousStakeModifier = null;
+
+            ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
+
+            if (previousProvenHeader == null)
+            {
+                if (chainedHeader.Previous.Height == 0)
+                {
+                    previousStakeModifier = uint256.Zero;
+                    this.Logger.LogTrace("Genesis header.");
+                }
+                else if (chainedHeader.Previous.Height == this.LastCheckpointHeight)
+                {
+                    previousStakeModifier = this.LastCheckpoint.StakeModifierV2;
+                    this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", previousStakeModifier);
+                }
+                else
+                {
+                    // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
+                    this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
+                    ConsensusErrors.InvalidPreviousProvenHeader.Throw();
+                }
+            }
+            else
+            {
+                previousStakeModifier = previousProvenHeader.StakeModifierV2;
+            }
+
+            if (previousStakeModifier == null)
+            {
+                this.Logger.LogTrace("(-)[PROVEN_HEADER_BAD_PREV_STAKE_MODIFIER]");
+                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
+            }
+
+            return previousStakeModifier;
+        }
+
         /// <see cref="IStakeValidator.CheckStakeKernelHash"/>
         /// <exception cref="ConsensusException">
         /// Throws exception with error <see cref="ConsensusErrors.PrevStakeNull" /> if check fails.
@@ -224,39 +276,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             uint transactionTime = header.Coinstake.Time;
             uint headerBits = chainedHeader.Header.Bits.ToCompact();
 
-            uint256 previousStakeModifier;
+            uint256 previousStakeModifier = this.GetPreviousStakeModifier(chainedHeader);
 
-            if (chainedHeader.Height == this.LastCheckpointHeight)
+            if (header.Coinstake.IsCoinStake)
             {
-                // If we are validating the first Proven Header means that the previous one was either a Checkpoint, that has the StakeModifier stored in
-                // CheckpointInfo class, or the genesis whose StakeModifier equals zero.
-                previousStakeModifier = this.LastCheckpoint?.StakeModifierV2 ?? uint256.Zero;
-            }
-            else
-            {
-                ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
-
-                if (previousProvenHeader == null)
-                {
-                    // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
-                    this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
-                    ConsensusErrors.InvalidPreviousProvenHeader.Throw();
-                }
-
-                previousStakeModifier = previousProvenHeader.StakeModifierV2;
+                this.Logger.LogTrace("Found coinstake checking kernal hash.");
+                this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
             }
 
-            if (previousStakeModifier == null)
-            {
-                this.Logger.LogTrace("(-)[PROVEN_HEADER_BAD_PREV_STAKE_MODIFIER]");
-                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
-            }
-
-            this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
-
-            // Computes the stake modifier and sets the value to the current validating proven header, to retain it for next header validation as previousStakeModifier.
-            uint256 currentStakeModifier = this.stakeValidator.ComputeStakeModifierV2(chainedHeader.Previous, previousStakeModifier, header.Coinstake.Inputs[0].PrevOut.Hash);
-            header.StakeModifierV2 = currentStakeModifier;
+            this.ComputeNextStakeModifier(header, chainedHeader, previousStakeModifier);
         }
 
         /// <summary>
