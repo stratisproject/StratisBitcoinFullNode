@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Linq;
+using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
@@ -9,12 +10,14 @@ using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -25,16 +28,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
     /// </summary>
     public class ColdWalletTests
     {
-        private const string Password = "123456";
+        private const string Password = "password";
         private const string WalletName = "mywallet";
-        private const string Passphrase = "passphrase";
         private const string Account = "account 0";
-        private readonly Network network;
-
-        public ColdWalletTests()
-        {
-            this.network = KnownNetworks.StratisRegTest;
-        }
 
         /// <summary>
         /// Creates the transaction build context.
@@ -94,8 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                  .MockIBD();
             });
 
-            return nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+            return nodeBuilder.CreateCustomNode(buildAction, network, ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
         }
 
         /// <summary>
@@ -111,13 +106,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: false);
-                CoreNode stratisHotStake = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: true);
-                CoreNode stratisColdStake = CreatePowPosMiningNode(builder, this.network, TestBase.CreateTestDir(this), coldStakeNode: true);
+                var network = new StratisRegTest();
 
-                stratisSender.WithWallet(Password, WalletName, Passphrase).Start();
-                stratisHotStake.WithWallet(Password, WalletName, Passphrase).Start();
-                stratisColdStake.WithWallet(Password, WalletName, Passphrase).Start();
+                CoreNode stratisSender = CreatePowPosMiningNode(builder, network, TestBase.CreateTestDir(this), coldStakeNode: false);
+                CoreNode stratisHotStake = CreatePowPosMiningNode(builder, network, TestBase.CreateTestDir(this), coldStakeNode: true);
+                CoreNode stratisColdStake = CreatePowPosMiningNode(builder, network, TestBase.CreateTestDir(this), coldStakeNode: true);
+
+                stratisSender.WithWallet().Start();
+                stratisHotStake.WithWallet().Start();
+                stratisColdStake.WithWallet().Start();
 
                 var senderWalletManager = stratisSender.FullNode.WalletManager() as ColdStakingManager;
                 var coldWalletManager = stratisColdStake.FullNode.WalletManager() as ColdStakingManager;
@@ -134,34 +131,27 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 hotWalletManager.UpdateKeysLookupLocked(new[] { hotWalletAddress });
 
                 int maturity = (int)stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-                TestHelper.MineBlocks(stratisSender, maturity + 16, true, WalletName, Password, Account);
-
-                int currentBestHeight = maturity + 16;
-
-                // Wait for block repo for block sync to work
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(stratisSender));
+                TestHelper.MineBlocks(stratisSender, maturity + 16, true);
 
                 // The mining should add coins to the wallet
                 long total = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 98000060, total);
 
-                int nConfirmations = 10;
+                int confirmations = 10;
 
-                var walletAccountReference = new WalletAccountReference(WalletName, "account 0");
-                long total2 = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInAccount(walletAccountReference, nConfirmations).Sum(s => s.Transaction.Amount);
+                var walletAccountReference = new WalletAccountReference(WalletName, Account);
+                long total2 = stratisSender.FullNode.WalletManager().GetSpendableTransactionsInAccount(walletAccountReference, confirmations).Sum(s => s.Transaction.Amount);
 
                 // Sync all nodes
-                stratisHotStake.CreateRPCClient().AddNode(stratisSender.Endpoint, true);
-                stratisHotStake.CreateRPCClient().AddNode(stratisColdStake.Endpoint, true);
-                stratisSender.CreateRPCClient().AddNode(stratisColdStake.Endpoint, true);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisHotStake, stratisSender));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(stratisHotStake, stratisColdStake));
+                TestHelper.ConnectAndSync(stratisHotStake, stratisSender);
+                TestHelper.ConnectAndSync(stratisHotStake, stratisColdStake);
+                TestHelper.Connect(stratisSender, stratisColdStake);
 
                 // Send coins to hot wallet.
                 Money amountToSend = Money.COIN * 98000059;
                 HdAddress sendto = hotWalletManager.GetUnusedAddress(new WalletAccountReference(WalletName, Account));
 
-                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, amountToSend, FeeType.Medium, nConfirmations));
+                Transaction transaction1 = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(CreateContext(stratisSender.FullNode.Network, new WalletAccountReference(WalletName, Account), Password, sendto.ScriptPubKey, amountToSend, FeeType.Medium, confirmations));
 
                 // Broadcast to the other node
                 stratisSender.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction1.ToHex()));
@@ -181,7 +171,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     coldWalletAddress.Address, hotWalletAddress.Address, WalletName, Account, Password, amountToSend2, new Money(0.02m, MoneyUnit.BTC));
 
                 // Broadcast to the other node
-                long mempoolSize = stratisColdStake.CreateRPCClient().GetRawMempool().Length;
                 stratisHotStake.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction2.ToHex()));
 
                 // Wait for the transaction to arrive
@@ -192,27 +181,35 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Assert.Null(coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).First().Transaction.BlockHeight);
 
                 // Allow coins to reach maturity
-                TestHelper.MineBlocks(stratisSender, maturity, true, WalletName, Password, Account);
+                TestHelper.MineBlocks(stratisSender, maturity, true);
 
                 // Start staking.
                 var hotMiningFeature = stratisHotStake.FullNode.NodeFeature<MiningFeature>();
                 hotMiningFeature.StartStaking(WalletName, Password);
 
-                // Wait for new cold wallet transaction.
                 TestHelper.WaitLoop(() =>
                 {
-                    // Keep mining to ensure that staking outputs reach maturity.
-                    TestHelper.MineBlocks(stratisSender, 1, true, WalletName, Password, Account);
-                    return coldWalletAddress.Transactions.Count > 1;
+                    var stakingInfo = stratisHotStake.FullNode.NodeService<IPosMinting>().GetGetStakingInfoModel();
+                    return stakingInfo.Staking;
                 });
 
-                // Wait for money from staking.
+                // Wait for new cold wallet transaction.
+                var cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
                 TestHelper.WaitLoop(() =>
                 {
                     // Keep mining to ensure that staking outputs reach maturity.
-                    TestHelper.MineBlocks(stratisSender, 1, true, WalletName, Password, Account);
+                    TestHelper.MineBlocks(stratisSender, 1, true);
+                    return coldWalletAddress.Transactions.Count > 1;
+                }, cancellationToken: cancellationToken);
+
+                // Wait for money from staking.
+                cancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(3)).Token;
+                TestHelper.WaitLoop(() =>
+                {
+                    // Keep mining to ensure that staking outputs reach maturity.
+                    TestHelper.MineBlocks(stratisSender, 1, true);
                     return coldWalletManager.GetSpendableTransactionsInColdWallet(WalletName, true).Sum(s => s.Transaction.Amount) > receivetotal2;
-                });
+                }, cancellationToken: cancellationToken);
             }
         }
     }
