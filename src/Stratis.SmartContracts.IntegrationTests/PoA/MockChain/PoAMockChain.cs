@@ -79,8 +79,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
                 this.builder.PoATimeProvider.NextSpacing();
                 TestHelper.WaitLoop(() => this.nodes[0].CoreNode.GetTip().Height == currentHeight + 1);
                 currentHeight++;
+                WaitForAllNodesToSync();
             }
-            WaitForAllNodesToSync();
         }
     }
 }

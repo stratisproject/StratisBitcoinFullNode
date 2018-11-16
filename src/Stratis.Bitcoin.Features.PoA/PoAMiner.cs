@@ -156,9 +156,6 @@ namespace Stratis.Bitcoin.Features.PoA
                     builder.AppendLine($"Block was mined {chainedHeader}.");
                     builder.AppendLine("<<==============================================================>>");
                     this.logger.LogInformation(builder.ToString());
-
-                    int halfTargetSpacingMs = (int)this.network.ConsensusOptions.TargetSpacingSeconds * 1000 / 2;
-                    await this.TaskDelayAsync(halfTargetSpacingMs, this.cancellation.Token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
