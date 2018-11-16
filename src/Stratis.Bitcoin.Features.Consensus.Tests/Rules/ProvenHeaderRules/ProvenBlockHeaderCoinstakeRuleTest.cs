@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height below proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
+            this.checkpoints.Setup(c => c.GetLastCheckpointHeight()).Returns(100);
 
             // When we run the validation rule, we should not hit any exceptions as rule will be skipped.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -227,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to fail stake age check.
             this.stakeValidator
                 .Setup(m => m.IsConfirmedInNPrevBlocks(It.IsAny<UnspentOutputs>(), It.IsAny<ChainedHeader>(), It.IsAny<long>()))
-                .Returns(false);
+                .Returns(true);
 
             // When we run the validation rule, we should hit coinstake depth error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -268,7 +269,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake age check.
             this.stakeValidator
                 .Setup(m => m.IsConfirmedInNPrevBlocks(It.IsAny<UnspentOutputs>(), It.IsAny<ChainedHeader>(), It.IsAny<long>()))
-                .Returns(true);
+                .Returns(false);
 
             // When we run the validation rule, we should hit coinstake signature verification error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -305,7 +306,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake age check.
             this.stakeValidator
                 .Setup(m => m.IsConfirmedInNPrevBlocks(It.IsAny<UnspentOutputs>(), It.IsAny<ChainedHeader>(), It.IsAny<long>()))
-                .Returns(true);
+                .Returns(false);
 
             // Setup stake validator to pass signature validation.
             this.stakeValidator
@@ -346,7 +347,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake age check.
             this.stakeValidator
                 .Setup(m => m.IsConfirmedInNPrevBlocks(It.IsAny<UnspentOutputs>(), It.IsAny<ChainedHeader>(), It.IsAny<long>()))
-                .Returns(true);
+                .Returns(false);
 
             // Setup stake validator to pass signature validation.
             this.stakeValidator
@@ -396,7 +397,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake age check.
             this.stakeValidator
                 .Setup(m => m.IsConfirmedInNPrevBlocks(It.IsAny<UnspentOutputs>(), It.IsAny<ChainedHeader>(), It.IsAny<long>()))
-                .Returns(true);
+                .Returns(false);
 
             // Setup stake validator to pass signature validation.
             this.stakeValidator
@@ -463,7 +464,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake age check.
             this.stakeValidator
                 .Setup(m => m.IsConfirmedInNPrevBlocks(It.IsAny<UnspentOutputs>(), It.IsAny<ChainedHeader>(), It.IsAny<long>()))
-                .Returns(true);
+                .Returns(false);
 
             // When we run the validation rule, we should hit bad merkle proof error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -516,7 +517,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup stake validator to pass stake age check.
             this.stakeValidator
                 .Setup(m => m.IsConfirmedInNPrevBlocks(It.IsAny<UnspentOutputs>(), It.IsAny<ChainedHeader>(), It.IsAny<long>()))
-                .Returns(true);
+                .Returns(false);
 
             // Setup stake validator to pass signature validation.
             this.stakeValidator
