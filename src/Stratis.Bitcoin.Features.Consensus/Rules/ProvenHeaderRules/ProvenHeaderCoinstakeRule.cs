@@ -346,8 +346,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 ConsensusErrors.UtxoNotFoundInRewindData.Throw();
             }
 
-            this.CheckHeaderSignatureWithCoinstakeKernel(header);// why here if we call this at the end
-
             return matchingUnspentUtxo;
         }
 
