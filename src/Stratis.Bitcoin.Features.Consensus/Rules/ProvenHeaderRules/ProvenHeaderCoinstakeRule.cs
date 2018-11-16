@@ -74,8 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             this.CheckHeaderAndCoinstakeTimes(header);
 
-            FetchCoinsResponse coins = this.GetAndValidateCoins(header, context);
-            UnspentOutputs prevUtxo = this.GetAndValidatePreviousUtxo(coins);
+            UnspentOutputs prevUtxo = this.GetAndValidatePreviousUtxo(header, context);
 
             this.CheckCoinstakeAgeRequirement(chainedHeader, prevUtxo);
 
@@ -97,44 +96,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckCoinstakeIsNotNull(ProvenBlockHeader header)
         {
-            if (header.Coinstake != null)
-                return;
-
-            this.Logger.LogTrace("(-)[COINSTAKE_IS_NULL]");
-            ConsensusErrors.EmptyCoinstake.Throw();
-        }
-
-        /// <summary>
-        /// Fetches and validates coins from coins view.
-        /// </summary>
-        /// <param name="header">The header.</param>
-        /// <param name="context">Rule context.</param>
-        /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails.
-        /// </exception>
-        private FetchCoinsResponse GetAndValidateCoins(ProvenBlockHeader header, PosRuleContext context)
-        {
-            // First try finding the previous transaction in database.
-            TxIn txIn = header.Coinstake.Inputs[0];
-            FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
-            if ((coins == null) || (coins.UnspentOutputs.Length != 1))
+            if (header.Coinstake == null)
             {
-                this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
+                this.Logger.LogTrace("(-)[COINSTAKE_IS_NULL]");
+                ConsensusErrors.EmptyCoinstake.Throw();
             }
-
-            return coins;
         }
 
         /// <summary>
         /// Gets and validates unspent outputs based of coins fetched from coin view.
         /// </summary>
-        /// <param name="coins">The coins.</param>
-        /// <exception cref="ConsensusException">
-        /// Throws exception with error <see cref="ConsensusErrors.ReadTxPrevFailed" /> if check fails.
-        /// </exception>
-        private UnspentOutputs GetAndValidatePreviousUtxo(FetchCoinsResponse coins)
+        /// <param name="header">The header.</param>
+        /// <param name="context">Rule context.</param>
+        /// <returns>The validated previous <see cref="UnspentOutputs"/></returns>
+        private UnspentOutputs GetAndValidatePreviousUtxo(ProvenBlockHeader header, PosRuleContext context)
         {
-            UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
+            // First try finding the previous transaction in database.
+            TxIn txIn = header.Coinstake.Inputs[0];
+
+            UnspentOutputs prevUtxo = null;
+
+            FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
+            if ((coins == null) || (coins.UnspentOutputs.Length != 1))
+            {
+                prevUtxo = this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
+            }
+            else
+            {
+                prevUtxo = coins.UnspentOutputs[0];
+            }
+
             if (prevUtxo == null)
             {
                 this.Logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
@@ -153,11 +144,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckIfCoinstakeIsTrue(ProvenBlockHeader header)
         {
-            if (header.Coinstake.IsCoinStake)
-                return;
-
-            this.Logger.LogTrace("(-)[COIN_STAKE_NOT_FOUND]");
-            ConsensusErrors.NonCoinstake.Throw();
+            if (!header.Coinstake.IsCoinStake)
+            {
+                this.Logger.LogTrace("(-)[COIN_STAKE_NOT_FOUND]");
+                ConsensusErrors.NonCoinstake.Throw();
+            }
         }
 
         /// <summary>
@@ -173,12 +164,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             uint coinstakeTime = header.Coinstake.Time;
             uint headerTime = header.Time;
 
-            // Check if times are equal and coinstake tx time is divisible by 16.
-            if ((headerTime == coinstakeTime) && ((coinstakeTime & PosConsensusOptions.StakeTimestampMask) == 0))
-                return;
-
-            this.Logger.LogTrace("(-)[BAD_TIME]");
-            ConsensusErrors.StakeTimeViolation.Throw();
+            if ((headerTime != coinstakeTime) || ((coinstakeTime & PosConsensusOptions.StakeTimestampMask) != 0))
+            {
+                this.Logger.LogTrace("(-)[BAD_TIME]");
+                ConsensusErrors.StakeTimeViolation.Throw();
+            }
         }
 
         /// <summary>
@@ -196,11 +186,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             var options = (PosConsensusOptions)this.PosParent.Network.Consensus.Options;
             int targetDepth = options.GetStakeMinConfirmations(chainedHeader.Height, this.PosParent.Network) - 1;
 
-            if (!this.stakeValidator.IsConfirmedInNPrevBlocks(unspentOutputs, prevChainedHeader, targetDepth))
-                return;
-
-            this.Logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
-            ConsensusErrors.InvalidStakeDepth.Throw();
+            if (this.stakeValidator.IsConfirmedInNPrevBlocks(unspentOutputs, prevChainedHeader, targetDepth))
+            {
+                this.Logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
+                ConsensusErrors.InvalidStakeDepth.Throw();
+            }
         }
 
         /// <see cref="IStakeValidator.VerifySignature"/>
@@ -209,11 +199,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckSignature(ProvenBlockHeader header, UnspentOutputs unspentOutputs)
         {
-            if (this.stakeValidator.VerifySignature(unspentOutputs, header.Coinstake, 0, ScriptVerify.None))
-                return;
-
-            this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
-            ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
+            if (!this.stakeValidator.VerifySignature(unspentOutputs, header.Coinstake, 0, ScriptVerify.None))
+            {
+                this.Logger.LogTrace("(-)[BAD_SIGNATURE]");
+                ConsensusErrors.CoinstakeVerifySignatureFailed.Throw();
+            }
         }
 
         private void ComputeNextStakeModifier(ProvenBlockHeader header, ChainedHeader chainedHeader, uint256 previousStakeModifier = null)
@@ -296,11 +286,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckCoinstakeMerkleProof(ProvenBlockHeader header)
         {
-            if (header.MerkleProof.Check(header.HashMerkleRoot))
-                return;
-
-            this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
-            ConsensusErrors.BadMerkleRoot.Throw();
+            if (!header.MerkleProof.Check(header.HashMerkleRoot))
+            {
+                this.Logger.LogTrace("(-)[BAD_MERKLE_ROOT]");
+                ConsensusErrors.BadMerkleRoot.Throw();
+            }
         }
 
         /// <summary>
@@ -318,11 +308,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             var signature = new ECDSASignature(header.Signature.Signature);
             uint256 headerHash = header.GetHash();
 
-            if (pubKey.Verify(headerHash, signature))
-                return;
-
-            this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
-            ConsensusErrors.BadBlockSignature.Throw();
+            if (!pubKey.Verify(headerHash, signature))
+            {
+                this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
+                ConsensusErrors.BadBlockSignature.Throw();
+            }
         }
 
         /// <summary>
@@ -330,8 +320,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </summary>
         /// <param name="header">The proven block header.</param>
         /// <param name="context">The POS rule context.</param>
-        /// <exception cref="ConsensusException">Throws utxo not found error.</exception>
-        private void CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header, PosRuleContext context)
+        /// <returns>The <see cref="UnspentOutputs"> found in a RewindData</returns>
+        private UnspentOutputs CheckIfCoinstakeIsSpentOnAnotherChain(ProvenBlockHeader header, PosRuleContext context)
         {
             Transaction coinstake = header.Coinstake;
             TxIn input = coinstake.Inputs[0];
@@ -339,21 +329,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             int? rewindDataIndex = this.PosParent.RewindDataIndexStore.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
             if (!rewindDataIndex.HasValue)
             {
+                this.Logger.LogTrace("(-)[NO_REWIND_DATA_INDEX_FOR_INPUT_PREVOUT]");
                 context.ValidationContext.InsufficientHeaderInformation = true;
                 ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
-            UnspentOutputs matchingUnspentUtxo =
-                rewindData.OutputsToRestore.Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N)).FirstOrDefault();
+            UnspentOutputs matchingUnspentUtxo = rewindData.OutputsToRestore
+                .Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N))
+                .FirstOrDefault();
 
             if (matchingUnspentUtxo == null)
             {
+                this.Logger.LogTrace("(-)[UTXO_NOT_FOUND_IN_REWIND_DATA]");
                 context.ValidationContext.InsufficientHeaderInformation = true;
                 ConsensusErrors.UtxoNotFoundInRewindData.Throw();
             }
 
-            this.CheckHeaderSignatureWithCoinstakeKernel(header);
+            this.CheckHeaderSignatureWithCoinstakeKernel(header);// why here if we call this at the end
+
+            return matchingUnspentUtxo;
         }
 
         private OutPoint GetPreviousOut(ProvenBlockHeader header)
