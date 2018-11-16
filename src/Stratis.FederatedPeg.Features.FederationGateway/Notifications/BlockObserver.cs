@@ -14,8 +14,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
     public class BlockObserver : SignalObserver<ChainedHeaderBlock>
     {
         // The monitor we pass the new blocks onto.
-        private readonly ICrossChainTransactionMonitor crossChainTransactionMonitor;
-
         private readonly IFederationWalletSyncManager walletSyncManager;
 
         private readonly IMaturedBlockSender maturedBlockSender;
@@ -39,7 +37,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <param name="maturedBlockSender">Service responsible for publishing newly matured blocks.</param>
         /// <param name="blockTipSender">Service responsible for publishing the block tip.</param>
         public BlockObserver(IFederationWalletSyncManager walletSyncManager,
-                             ICrossChainTransactionMonitor crossChainTransactionMonitor,
                              IDepositExtractor depositExtractor,
                              IWithdrawalExtractor withdrawalExtractor,
                              IWithdrawalReceiver withdrawalReceiver,
@@ -47,7 +44,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
                              IBlockTipSender blockTipSender)
         {
             Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
-            Guard.NotNull(crossChainTransactionMonitor, nameof(crossChainTransactionMonitor));
             Guard.NotNull(maturedBlockSender, nameof(maturedBlockSender));
             Guard.NotNull(blockTipSender, nameof(blockTipSender));
             Guard.NotNull(depositExtractor, nameof(depositExtractor));
@@ -55,7 +51,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             Guard.NotNull(withdrawalReceiver, nameof(withdrawalReceiver));
 
             this.walletSyncManager = walletSyncManager;
-            this.crossChainTransactionMonitor = crossChainTransactionMonitor;
             this.maturedBlockSender = maturedBlockSender;
             this.depositExtractor = depositExtractor;
             this.withdrawalExtractor = withdrawalExtractor;
@@ -69,8 +64,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <param name="chainedHeaderBlock">The new block.</param>
         protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
         {
-            this.crossChainTransactionMonitor.ProcessBlock(chainedHeaderBlock.Block);
-
             this.walletSyncManager.ProcessBlock(chainedHeaderBlock.Block);
 
             this.blockTipSender.SendBlockTipAsync(
@@ -81,8 +74,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
                 chainedHeaderBlock.ChainedHeader.Height);
 
             this.withdrawalReceiver.ReceiveWithdrawals(withdrawals);
-
-            // todo: persist the last seen block height in database
+            
             IMaturedBlockDeposits maturedBlockDeposits = 
                 this.depositExtractor.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
 

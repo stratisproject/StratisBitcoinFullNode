@@ -52,18 +52,18 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
         public static IDeposit GetDeposit(HashHeightPair hashHeightPair = null)
         {
-            hashHeightPair = hashHeightPair ?? TestingValues.GetHashHeightPair();
-            var depositId = TestingValues.GetUint256();
-            var depositAmount = TestingValues.GetMoney();
-            var targetAddress = TestingValues.GetString();
+            hashHeightPair = hashHeightPair ?? GetHashHeightPair();
+            var depositId = GetUint256();
+            var depositAmount = GetMoney();
+            var targetAddress = GetString();
 
             return new Deposit(depositId, depositAmount, targetAddress, hashHeightPair.Height, hashHeightPair.Hash);
         }
 
         public static IMaturedBlockDeposits GetMaturedBlockDeposits(int depositCount = 0)
         {
-            var hashHeightPair = TestingValues.GetHashHeightPair();
-            var deposits = Enumerable.Range(0, depositCount).Select(_ => TestingValues.GetDeposit(hashHeightPair));
+            var hashHeightPair = GetHashHeightPair();
+            var deposits = Enumerable.Range(0, depositCount).Select(_ => GetDeposit(hashHeightPair));
 
             var maturedBlockDeposits = new MaturedBlockDepositsModel(
                 new MaturedBlockModel() { BlockHash = hashHeightPair.Hash, BlockHeight = hashHeightPair.Height },
@@ -73,11 +73,11 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
         public static IWithdrawal GetWithdrawal(HashHeightPair hashHeightPair = null)
         {
-            hashHeightPair = hashHeightPair ?? TestingValues.GetHashHeightPair();
-            var depositId = TestingValues.GetUint256();
-            var id = TestingValues.GetUint256();
-            var amount = TestingValues.GetMoney();
-            var targetAddress = TestingValues.GetString();
+            hashHeightPair = hashHeightPair ?? GetHashHeightPair();
+            var depositId = GetUint256();
+            var id = GetUint256();
+            var amount = GetMoney();
+            var targetAddress = GetString();
 
             return new Withdrawal(depositId, id, amount, targetAddress, hashHeightPair.Height, hashHeightPair.Hash);
         }
