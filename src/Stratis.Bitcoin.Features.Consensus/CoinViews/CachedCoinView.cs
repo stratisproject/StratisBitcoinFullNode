@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.rewindDataIndexStore.Save(indexItems);
                 }
 
-                this.cachedRewindDataIndex.Add(height,rewindData);
+                this.cachedRewindDataIndex[height] = rewindData;
             }
         }
 
