@@ -34,7 +34,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.blockTxsProcessed = new List<Transaction>();
             this.receipts = new List<Receipt>();
             this.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
-
         }
 
         public ISmartContractCoinviewRule ContractCoinviewRule { get; }
