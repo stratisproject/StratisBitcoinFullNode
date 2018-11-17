@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Abstraction for shared SC coinview rule logic.
     /// </summary>
-    public sealed class SmartContractCoinViewRuleLogic
+    internal sealed class SmartContractCoinViewRuleLogic
     {
         private readonly List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
