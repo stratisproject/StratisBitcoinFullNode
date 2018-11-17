@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             FetchCoinsResponse fetchedCoins = null;
 
             if (missedTxIds.Count > 0 || this.blockHash == null)
-            { 
+            {
                 this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
                 fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
             }
@@ -378,7 +378,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 var indexItems = new Dictionary<string, int>();
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
-                {   
+                {
                     if (!this.cachedUtxoItems.TryGetValue(unspent.TransactionId, out CacheItem cacheItem))
                     {
                         // This can happen very rarely in the case where we fetch items from
@@ -386,7 +386,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         this.logger.LogTrace("Outputs of transaction ID '{0}' are not found in cache, creating them.", unspent.TransactionId);
 
-                        FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] {unspent.TransactionId}).ConfigureAwait(false);
+                        FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] { unspent.TransactionId }).ConfigureAwait(false);
 
                         UnspentOutputs unspentOutput = result.UnspentOutputs[0];
 
@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.rewindDataIndexStore.Save(indexItems);
                 }
 
-                this.cachedRewindDataIndex[height] = rewindData;
+                this.cachedRewindDataIndex.Add(height, rewindData);
             }
         }
 
