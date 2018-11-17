@@ -360,14 +360,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 this.latestPerformanceSnapShot = snapShot;
             }
-
-            this.PendingBatch.Sum(p => p.Value.HeaderSize);
         }
 
         [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
-            long totalBytes = this.PendingBatch.Sum(p => p.Value.HeaderSize);
+            long totalBytes = 0;
+            int count = 0;
+
+            lock (this.lockObject)
+            {
+                totalBytes = this.PendingBatch.Sum(p => p.Value.HeaderSize);
+                count = this.PendingBatch.Count;
+            }
 
             if (totalBytes == 0) return;
 
@@ -377,7 +382,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 log.AppendLine();
                 log.AppendLine("======ProvenBlockHeaderStore======");
-                log.AppendLine($"Batch Size: {Math.Round(totalInMB, 2)} Mb ({this.PendingBatch.Count} headers)");
+                log.AppendLine($"Batch Size: {Math.Round(totalInMB, 2)} Mb ({count} headers)");
             }
         }
 
