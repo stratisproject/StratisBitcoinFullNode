@@ -172,7 +172,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             }
 
             if (result.InternalTransaction != null)
+            {
                 this.generatedTransaction = result.InternalTransaction;
+            }
         }
 
         /// <summary>
