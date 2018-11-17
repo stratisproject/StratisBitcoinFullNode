@@ -238,12 +238,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.ClearGeneratedTransaction();
         }
 
-        public void ResetRefundCounter()
+        private void ResetRefundCounter()
         {
             this.refundCounter = 1;
         }
 
-        public void ClearGeneratedTransaction()
+        private void ClearGeneratedTransaction()
         {
             this.generatedTransaction = null;
         }
