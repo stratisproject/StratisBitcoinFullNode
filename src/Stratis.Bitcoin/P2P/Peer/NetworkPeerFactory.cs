@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            this.logger.LogTrace("[TCP_CLIENT_ENDPOINT] {0}:{1}", nameof(client.Client.RemoteEndPoint), client.Client.RemoteEndPoint);
+            this.logger.LogTrace("[TCP_CLIENT_ENDPOINT] {0}:{1}", nameof(client.Client.RemoteEndPoint), client?.Client?.RemoteEndPoint);
 
             var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, onDisconnected, this.onSendingMessage);
 
