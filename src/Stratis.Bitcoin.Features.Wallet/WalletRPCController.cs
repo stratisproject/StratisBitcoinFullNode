@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
+using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -36,12 +37,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet transaction handler.</summary>
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
-        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
+        private readonly ConcurrentChain chain;
+
+        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ConcurrentChain chain, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.fullNode = fullNode;
             this.broadcasterManager = broadcasterManager;
+            this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -219,6 +223,46 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return model;
+        }
+
+        [ActionName("listunspent")]
+        [ActionDescription("Returns an array of unspent transaction outputs belonging to this wallet.")]
+        public UnspentCoinModel[] ListUnspent(int minConfirmations = 1, int maxConfirmations = 9999999, string addressesJson = null)
+        {
+            List<BitcoinAddress> addresses = new List<BitcoinAddress>();
+            if (!string.IsNullOrEmpty(addressesJson))
+            {
+                JsonConvert.DeserializeObject<List<string>>(addressesJson).ForEach(i => addresses.Add(BitcoinAddress.Create(i, this.fullNode.Network)));
+            }
+            var accountReference = this.GetAccount();
+            IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(accountReference, minConfirmations);
+
+            var unspentCoins = new List<UnspentCoinModel>();
+            foreach (var spendableTx in spendableTransactions)
+            {
+                int confirmations = spendableTx.Transaction.BlockHeight == null ? 0 : this.chain.Tip.Height - spendableTx.Transaction.BlockHeight.Value;
+                if (confirmations <= maxConfirmations)
+                {
+                    if (!addresses.Any() || addresses.Contains(BitcoinAddress.Create(spendableTx.Address.Address, this.fullNode.Network)))
+                    {
+                        unspentCoins.Add(new UnspentCoinModel()
+                        {
+                            Account = accountReference.AccountName,
+                            Address = spendableTx.Address.Address,
+                            Id = spendableTx.Transaction.Id,
+                            Index = spendableTx.Transaction.Index,
+                            Amount = spendableTx.Transaction.Amount,
+                            ScriptPubKeyHex = spendableTx.Transaction.ScriptPubKey.ToHex(),
+                            RedeemScriptHex = spendableTx.Transaction.ScriptPubKey.PaymentScript?.ToHex(), // Is this right?
+                            Confirmations = confirmations,
+                            IsSpendable = spendableTx.Transaction.IsSpendable(),
+                            IsSolvable = spendableTx.Transaction.IsSpendable() // Is it's spendable we assume it's solvable.
+                            });
+                    }
+                }
+            }
+
+            return unspentCoins.ToArray();
         }
 
         private WalletAccountReference GetAccount()
