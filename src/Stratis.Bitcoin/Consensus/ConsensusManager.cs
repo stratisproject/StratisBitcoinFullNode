@@ -215,6 +215,12 @@ namespace Stratis.Bitcoin.Consensus
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
 
+                if (connectNewHeadersResult == null)
+                {
+                    this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
+                    return null;
+                }
+
                 this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
