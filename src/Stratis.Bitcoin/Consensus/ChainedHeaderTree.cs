@@ -237,9 +237,9 @@ namespace Stratis.Bitcoin.Consensus
         {
             var state = new ChainedHeaderTreeState
             {
-                ChainedHeadersByHash = this.chainedHeadersByHash,
-                PeerIdsByTipHash = this.peerIdsByTipHash,
-                PeerTipsByPeerId = this.peerTipsByPeerId
+                ChainedHeadersByHash = new Dictionary<uint256, ChainedHeader>(this.chainedHeadersByHash),
+                PeerIdsByTipHash = new Dictionary<uint256, HashSet<int>>(this.peerIdsByTipHash),
+                PeerTipsByPeerId = new Dictionary<int, uint256>(this.peerTipsByPeerId)
             };
 
             return state;

@@ -151,10 +151,10 @@ namespace Stratis.Bitcoin.Consensus
         {
             var state = new ConsensusManagerState
             {
-                CallbacksByBlocksRequestedHash = this.callbacksByBlocksRequestedHash,
+                CallbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>(this.callbacksByBlocksRequestedHash),
                 ExpectedBlockDataBytes = this.expectedBlockDataBytes,
-                ExpectedBlockSizes = this.expectedBlockSizes,
-                PeersByPeerId = this.peersByPeerId,
+                ExpectedBlockSizes = new Dictionary<uint256, long>(this.expectedBlockSizes),
+                PeersByPeerId = new Dictionary<int, INetworkPeer>(this.peersByPeerId),
 
                 ChainedHeaderTreeState = this.chainedHeaderTree.State()
             };
