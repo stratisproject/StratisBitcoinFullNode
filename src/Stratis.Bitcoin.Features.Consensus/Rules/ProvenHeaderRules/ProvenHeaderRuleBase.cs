@@ -54,12 +54,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <inheritdoc/>
         public override void Run(RuleContext context)
         {
-            Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
+            if (context.SkipValidation)
+                return;
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
 
-            if (context.SkipValidation || !this.IsProvenHeaderActivated(chainedHeader.Height))
+            if (!this.IsProvenHeaderActivated(chainedHeader.Height))
                 return;
+
+            if (!this.IsProvenHeader(chainedHeader.Header))
+            {
+                // We skip validation if the header is a regular header
+                // This is to allow white-listed peers to sync using regular headers.
+                return;
+            }
 
             this.ProcessRule((PosRuleContext)context, chainedHeader, (ProvenBlockHeader)chainedHeader.Header);
         }

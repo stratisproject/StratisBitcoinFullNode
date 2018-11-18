@@ -230,13 +230,32 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             {
                 if (!isLegacyWhitelistedPeer)
                 {
-                    // Filter out headers that are above the last checkpoint hash
-                    for (int index = 0; index < headers.Count; index++)
+                    var distanceFromCheckPoint = this.lastCheckpointHeight - this.GetCurrentHeight();
+
+                    if (distanceFromCheckPoint < MaxItemsPerHeadersMessage)
                     {
-                        if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
+                        bool checkpointFound = false;
+                       
+                        // Filter out headers that are above the last checkpoint hash
+                        for (int index = 0; index < headers.Count; index++)
                         {
-                            headers.RemoveRange(index + 1, headers.Count - index - 1);
-                            break;
+                            if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
+                            {
+                                if (index != headers.Count - 1)
+                                {
+                                    headers.RemoveRange(index + 1, headers.Count - index - 1);
+                                }
+
+                                checkpointFound = true;
+                                break;
+                            }
+                        }
+
+                        if (!checkpointFound)
+                        {
+                            // Checkpoint was not found in presented headers so we discard this batch
+                            this.logger.LogTrace("(-)[CHECKPOINT_HEADER_NOT_FOUND]");
+                            return Task.CompletedTask;
                         }
                     }
                 }
