@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.P2P
                 (this.Mode == PeerAddressManagerBehaviourMode.Advertise || this.Mode == PeerAddressManagerBehaviourMode.AdvertiseDiscover))
             {
                 this.logger.LogTrace("[INBOUND]{0}:{1}, {2}:{3}, {4}:{5}", nameof(peer.RemoteSocketAddress), peer.RemoteSocketAddress, nameof(peer.RemoteSocketEndpoint), peer.RemoteSocketEndpoint, nameof(peer.RemoteSocketPort), peer.RemoteSocketPort);
-                this.logger.LogTrace("[INBOUND]{0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion.AddressReceiver);
+                this.logger.LogTrace("[INBOUND]{0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion?.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion?.AddressReceiver);
                 this.logger.LogTrace("[INBOUND]{0}:{1}", nameof(peer.PeerEndPoint), peer.PeerEndPoint);
 
                 this.peerAddressManager.AddPeer(peer.PeerEndPoint, IPAddress.Loopback);

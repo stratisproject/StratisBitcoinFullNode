@@ -297,7 +297,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.ConnectionParameters = parameters ?? new NetworkPeerConnectionParameters();
             this.MyVersion = this.ConnectionParameters.CreateVersion(this.selfEndpointTracker.MyExternalAddress, this.PeerEndPoint, network, this.dateTimeProvider.GetTimeOffset());
 
-            this.logger.LogTrace("[MYVERSION_CTOR] {0}:{1}, {2}:{3}", nameof(this.MyVersion.AddressFrom), this.MyVersion.AddressFrom, nameof(this.MyVersion.AddressReceiver), this.MyVersion.AddressReceiver);
+            this.logger.LogTrace("[MYVERSION_CTOR] {0}:{1}, {2}:{3}", nameof(this.MyVersion.AddressFrom), this.MyVersion?.AddressFrom, nameof(this.MyVersion.AddressReceiver), this.MyVersion?.AddressReceiver);
 
             this.MessageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
