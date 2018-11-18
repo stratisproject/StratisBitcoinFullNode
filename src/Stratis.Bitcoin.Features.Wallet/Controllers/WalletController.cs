@@ -375,7 +375,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     var transactionItems = new List<TransactionItemModel>();
 
-                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Take(200).ToList();
+                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).ToList();
+                    items = string.IsNullOrEmpty(request.SearchQuery) ? items.Take(200).ToList() : items;
 
                     // Represents a sublist containing only the transactions that have already been spent.
                     List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
@@ -497,9 +498,16 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         }
                     }
 
+                    // Sort and filter the history items.
+                    List<TransactionItemModel> itemsToInclude = transactionItems.OrderByDescending(t => t.Timestamp)
+                        .Where(x => string.IsNullOrEmpty(request.SearchQuery) || (x.Id.ToString() == request.SearchQuery || x.ToAddress == request.SearchQuery || x.Payments.Any(p => p.DestinationAddress == request.SearchQuery)))
+                        .Skip(request.Skip ?? 0)
+                        .Take(request.Take ?? transactionItems.Count)
+                        .ToList();
+
                     model.AccountsHistoryModel.Add(new AccountHistoryModel
                     {
-                        TransactionsHistory = transactionItems.OrderByDescending(t => t.Timestamp).ToList(),
+                        TransactionsHistory = itemsToInclude,
                         Name = accountHistory.Account.Name,
                         CoinType = this.coinType,
                         HdPath = accountHistory.Account.HdPath
@@ -656,6 +664,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Id = st.Transaction.Id,
                         Amount = st.Transaction.Amount,
                         Address = st.Address.Address,
+                        Index = st.Transaction.Index,
                         IsChange = st.Address.IsChangeAddress(),
                         CreationTime = st.Transaction.CreationTime,
                         Confirmations = st.Transaction.BlockHeight == null ? 0 : this.chain.Tip.Height - st.Transaction.BlockHeight.Value
@@ -754,6 +763,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     Shuffle = request.ShuffleOutputs ?? true, // We shuffle transaction outputs by default as it's better for anonymity.
                     OpReturnData = request.OpReturnData,
                     WalletPassword = request.Password,
+                    SelectedInputs = request.Outpoints?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
+                    AllowOtherInputs = false,
                     Recipients = recipients
                 };
 

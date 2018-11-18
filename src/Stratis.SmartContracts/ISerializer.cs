@@ -82,7 +82,7 @@ namespace Stratis.SmartContracts
         uint ToUInt32(byte[] val);
 
         /// <summary>
-        /// Deserializes the first 8 bytes of a  byte array into a long. If the given bytes are null, empty, or deserialization fails, returns default(long).
+        /// Deserializes the first 8 bytes of a byte array into a long. If the given bytes are null, empty, or deserialization fails, returns default(long).
         /// </summary>
         long ToInt64(byte[] val);
 
