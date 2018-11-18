@@ -333,8 +333,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.Connection.Id}-{peerEndPoint}] ");
-
-            this.logger.LogTrace("[MYVERSION_CTOR] {0}:{1}, {2}:{3}", nameof(this.MyVersion.AddressFrom), this.MyVersion?.AddressFrom, nameof(this.MyVersion.AddressReceiver), this.MyVersion?.AddressReceiver);
         }
 
         /// <summary>
@@ -566,8 +564,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <exception cref="OperationCanceledException">Thrown if the response to our "version" message is not received on time.</exception>
         private async Task ProcessInitialVersionPayloadAsync(VersionPayload version, CancellationToken cancellation)
         {
-            this.logger.LogTrace("{0}:{1}, {2}:{3}", nameof(version.AddressFrom), version.AddressFrom, nameof(version.AddressReceiver), version.AddressReceiver);
-
             this.PeerVersion = version;
             bool connectedToSelf = version.Nonce == this.ConnectionParameters.Nonce;
 
