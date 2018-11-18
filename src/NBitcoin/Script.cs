@@ -935,6 +935,9 @@ namespace NBitcoin
         /// <returns></returns>
         public TxDestination GetDestination(Network network)
         {
+            PubKey pubKeyParams = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(this);
+            if (pubKeyParams != null)
+                return pubKeyParams.Hash;
             KeyId pubKeyHashParams = PayToPubkeyHashTemplate.Instance.ExtractScriptPubKeyParameters(this);
             if(pubKeyHashParams != null)
                 return pubKeyHashParams;
