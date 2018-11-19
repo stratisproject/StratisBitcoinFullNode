@@ -224,11 +224,9 @@ namespace Stratis.Bitcoin.BlockPulling
             this.assignedLock = new object();
             this.nextJobId = 0;
 
-            ProtocolVersion protocolVersion = nodeSettings.ProtocolVersion;
-
             this.networkPeerRequirement = new NetworkPeerRequirement
             {
-                MinVersion = protocolVersion,
+                MinVersion = nodeSettings.MinProtocolVersion ?? nodeSettings.ProtocolVersion,
                 RequiredServices = NetworkPeerServices.Network
             };
 
