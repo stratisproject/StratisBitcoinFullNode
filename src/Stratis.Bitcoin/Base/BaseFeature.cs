@@ -327,7 +327,7 @@ namespace Stratis.Bitcoin.Base
             if (this.provenBlockHeaderStore != null)
             {
                 this.logger.LogInformation("Disposing proven header store.");
-                this.provenBlockHeaderStore?.Dispose();
+                this.provenBlockHeaderStore.Dispose();
             }
         }
     }

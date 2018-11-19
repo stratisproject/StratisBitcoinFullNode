@@ -449,6 +449,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 if (this.rewindDataIndexStore != null && indexItems.Any())
                 {
                     this.rewindDataIndexStore.Save(indexItems);
+                    this.rewindDataIndexStore.Flush(this.blockHeight);
                 }
 
                 this.cachedRewindDataIndex.Add(height, rewindData);
