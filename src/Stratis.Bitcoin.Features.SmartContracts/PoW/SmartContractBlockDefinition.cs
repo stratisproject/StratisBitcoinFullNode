@@ -86,7 +86,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             {
                 this.logger.LogTrace("Transaction contains smart contract information.");
 
-                if (this.blockGasConsumed >= GasPerBlockLimit) return;
+                if (this.blockGasConsumed >= GasPerBlockLimit) 
+                    return;
 
                 // We HAVE to firstly execute the smart contract contained in the transaction
                 // to ensure its validity before we can add it to the block.
