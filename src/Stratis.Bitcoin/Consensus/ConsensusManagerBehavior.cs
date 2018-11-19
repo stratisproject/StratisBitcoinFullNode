@@ -72,6 +72,16 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
+        /// <summary>
+        /// The last time we forced a resync
+        /// </summary>
+        private DateTime lastForcedResync = DateTime.MinValue;
+
+        /// <summary>
+        /// The minimum time it has to pass, between two forced resync.
+        /// </summary>
+        private TimeSpan forceResyncThreshold = TimeSpan.FromMinutes(1);
+
         public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
@@ -284,8 +294,18 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result == null)
                 {
+                    // If a peer has a new block and our current peer is not exactly at the tip,
+                    // we try to trigger a resync, this will bring us to the tip of the peer.
+                    if (headers.Count == 1 && (DateTime.UtcNow - this.lastForcedResync) >= this.forceResyncThreshold)
+                    {
+                        this.lastForcedResync = DateTime.UtcNow;
+                        this.logger.LogTrace("Header {0} could not be connected try to trigger a resync.", headers[0].GetHash());
+                        await this.ResyncAsync().ConfigureAwait(false);
+                    }
+
                     this.logger.LogTrace("Processing of {0} headers failed.", headers.Count);
                     this.logger.LogTrace("(-)[PROCESSING_FAILED]");
+
                     return;
                 }
 
