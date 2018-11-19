@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
+using Castle.Components.DictionaryAdapter;
 using CSharpFunctionalExtensions;
 using Mono.Cecil;
 using NBitcoin;
@@ -748,75 +750,36 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void ContractTransaction_Call_Method_Reach_Limit_Of_GasPerBlock_Transaction_NotIncluded_To_Block()
         {
+            const ulong txGasPrice = 12009;
+            const ulong txGasPerBlockLimit = SmartContractFormatRule.GasLimitMaximum * 10;
+            const int txCount = 100;
+
             // Ensure fixture is funded.
-            this.node1.MineBlocks(3);
+            this.node1.MineBlocks(100);
 
             // Deploy contract.
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
             Assert.True(compilationResult.Success);
-            BuildCreateContractTransactionResponse preResponse1 = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice: 10000);
-            BuildCreateContractTransactionResponse preResponse2 = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice: 10000);
-            BuildCreateContractTransactionResponse preResponse3= this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice: 10000);
-            this.node1.WaitMempoolCount(3);
+
+            var preResponseList = new List<BuildCreateContractTransactionResponse>();
+
+            for (int i = 0; i < txCount; i++)
+            {
+                preResponseList.Add(this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice:10000));
+            }
+            this.node1.WaitMempoolCount(txCount);
             this.node1.MineBlocks(1);
-          //  Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-                double amount = 0;
+            NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
-                //ulong gasLimit = SmartContractFormatRule.GasLimitCallMinimum;
-                Money senderBalanceBefore = this.node1.WalletSpendableBalance;
-                NBitcoin.Block lastBlock = this.node1.GetLastBlock();
-                uint256 currentHash = this.node1.GetLastBlock().GetHash();
-              //  BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(InfiniteLoop.Loop), preResponse.NewContractAddress, amount, gasPrice: 200);
+            int expectedTxQty = Convert.ToInt32(txGasPerBlockLimit / txGasPrice) + 2;
+            Assert.Equal(expectedTxQty, lastBlock.Transactions.Count);
 
-
-            this.node1.WaitMempoolCount(1);
             this.node1.MineBlocks(1);
+
+            int restOfTx = txCount - Convert.ToInt32(txGasPerBlockLimit / txGasPrice);
             lastBlock = this.node1.GetLastBlock();
-
-            //// Blocks progressed
-            //Assert.NotEqual(currentHash, lastBlock.GetHash());
-
-            //// Block does not contains a refund transaction
-            //Assert.Equal(2, lastBlock.Transactions.Count);
-            //Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
-
-            //ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
-            //Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
-            //Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
-            //Assert.Empty(receipt.Logs);
-            //Assert.False(receipt.Success);
-            //Assert.Equal(gasLimit, receipt.GasUsed); // All the gas should have been consumed
-            //Assert.Null(receipt.NewContractAddress);
-            //Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
-            //Assert.StartsWith("Execution ran out of gas.", receipt.Error);
-            //Assert.Equal(preResponse.NewContractAddress, receipt.To);
+            Assert.Equal(restOfTx, lastBlock.Transactions.Count);
         }
-
-
-
-           
-
-            // Deploy contract
-            //this.node1.WaitMempoolCount(1);
-            //this.node1.MineBlocks(1);
-            //Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
-
-            //double amount = 0;
-
-            //ulong gasLimit = SmartContractFormatRule.GasLimitCallMinimum + 1;
-            //Money senderBalanceBefore = this.node1.WalletSpendableBalance;
-            //uint256 currentHash = this.node1.GetLastBlock().GetHash();
-
-           
-
-          
-
-            // Wallet balance less fee is correct
-           // Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee);
-
-            // Receipt is correct
-            
-        
     }
 }
