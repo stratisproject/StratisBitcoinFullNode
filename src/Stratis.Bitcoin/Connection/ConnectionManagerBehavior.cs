@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Connection
@@ -67,6 +70,11 @@ namespace Stratis.Bitcoin.Connection
             {
                 if (peer.State == NetworkPeerState.HandShaked)
                 {
+                    if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.Match(peer.PeerEndPoint)))
+                    {
+                        this.Whitelisted = true;
+                    }
+
                     this.connectionManager.AddConnectedPeer(peer);
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
 
