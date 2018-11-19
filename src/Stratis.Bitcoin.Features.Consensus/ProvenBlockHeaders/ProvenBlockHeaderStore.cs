@@ -332,7 +332,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
                 // Save the items to disk.
-                await this.provenBlockHeaderRepository.PutAsync(pendingBatch.Values.ToList(), hashHeight).ConfigureAwait(false);
+                await this.provenBlockHeaderRepository.PutAsync(pendingBatch, hashHeight).ConfigureAwait(false);
 
                 this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
             }
