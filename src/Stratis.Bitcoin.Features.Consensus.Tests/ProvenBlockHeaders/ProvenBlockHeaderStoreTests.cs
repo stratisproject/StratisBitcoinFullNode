@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             var inHeaders = chainWithHeaders.provenBlockHeaders;
 
-            await this.provenBlockHeaderRepository.PutAsync(inHeaders, new HashHeightPair(inHeaders.Last().GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
+            await this.provenBlockHeaderRepository.PutAsync(inHeaders, new HashHeightPair(inHeaders.Last().Value.GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
 
             // Then load them.
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 outHeaders.Count.Should().Be(inHeaders.Count);
 
                 // inHeaders should exist in outHeaders (from the repository).
-                inHeaders.All(inHeader => outHeaders.Any(outHeader => inHeader.GetHash() == outHeader.GetHash())).Should().BeTrue();
+                inHeaders.All(inHeader => outHeaders.Any(outHeader => inHeader.Value.GetHash() == outHeader.GetHash())).Should().BeTrue();
             }
         }
 
@@ -205,11 +205,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Initialise store.
             await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1, this.network).chainedHeader).ConfigureAwait(false);
 
-            var inHeaders = new List<ProvenBlockHeader>();
+            var inHeaders = new Dictionary<int, ProvenBlockHeader>();
 
             // Add maximum cache count items headers.
             for (int i = 0; i < 10; i++)
-                inHeaders.Add(CreateNewProvenBlockHeaderMock());
+                inHeaders.Add(i, CreateNewProvenBlockHeaderMock());
 
             long maxSize = 500;
 
@@ -219,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             // Add items to the repository.
             await this.provenBlockHeaderRepository.PutAsync(inHeaders,
-                new HashHeightPair(inHeaders.LastOrDefault().GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
+                new HashHeightPair(inHeaders.LastOrDefault().Value.GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
 
             // Asking for headers will check the cache store.  If the header is not in the cache store, then it will check the repository and add the cache store.
             var outHeaders = await this.provenBlockHeaderStore.GetAsync(0, inHeaders.Count - 1).ConfigureAwait(false);
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             await this.provenBlockHeaderRepository.PutAsync(
                 provenBlockheaders,
-                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+                new HashHeightPair(provenBlockheaders.Last().Value.GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
@@ -315,7 +315,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Persist current chain.
             await this.provenBlockHeaderRepository.PutAsync(
                 provenBlockheaders,
-                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+                new HashHeightPair(provenBlockheaders.Last().Value.GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
@@ -334,8 +334,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
 
             await this.provenBlockHeaderRepository.PutAsync(
-                provenBlockheaders.Take(5).ToList(),
-                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+                provenBlockheaders.Take(5).ToDictionary(a => a.Key, b => b.Value),
+                new HashHeightPair(provenBlockheaders.Last().Value.GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
             // Create a new chain which a different hash block.
             chainWithHeaders = BuildChainWithProvenHeaders(2, this.network, true);
@@ -376,7 +376,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Persist current chain.
             await this.provenBlockHeaderRepository.PutAsync(
                 provenBlockheaders,
-                new HashHeightPair(provenBlockheaders.Last().GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+                new HashHeightPair(provenBlockheaders.Last().Value.GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {

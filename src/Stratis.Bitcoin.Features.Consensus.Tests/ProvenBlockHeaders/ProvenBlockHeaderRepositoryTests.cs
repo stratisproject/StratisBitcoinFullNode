@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
 
             var blockHashHeightPair = new HashHeightPair(provenBlockHeaderIn.GetHash(), 0);
-            var items = new List<ProvenBlockHeader> { provenBlockHeaderIn };
+            var items = new Dictionary<int, ProvenBlockHeader>() { {0, provenBlockHeaderIn} };
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             ProvenBlockHeader header1 = CreateNewProvenBlockHeaderMock(posBlock);
             ProvenBlockHeader header2 = CreateNewProvenBlockHeaderMock(posBlock);
 
-            var items = new List<ProvenBlockHeader> { header1, header2 };
+            var items = new Dictionary<int, ProvenBlockHeader>(){ {0, header1}, {1, header2} };
 
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
@@ -190,22 +190,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             string folder = CreateTestDir(this);
 
             PosBlock posBlock = CreatePosBlockMock();
-            var headers = new List<ProvenBlockHeader>();
+            var headers = new Dictionary<int, ProvenBlockHeader>();
 
             for (int i = 0; i < 10; i++)
             {
-                headers.Add(CreateNewProvenBlockHeaderMock(posBlock));
+                headers.Add(i, CreateNewProvenBlockHeaderMock(posBlock));
             }
 
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.PutAsync(headers, new HashHeightPair(headers.Last().GetHash(), headers.Count - 1));
+                await repo.PutAsync(headers, new HashHeightPair(headers.Last().Value.GetHash(), headers.Count - 1));
             }
 
             using (IProvenBlockHeaderRepository newRepo = this.SetupRepository(this.Network, folder))
             {
-                newRepo.TipHashHeight.Hash.Should().Be(headers.Last().GetHash());
+                newRepo.TipHashHeight.Hash.Should().Be(headers.Last().Value.GetHash());
                 newRepo.TipHashHeight.Height.Should().Be(headers.Count - 1);
             }
         }
