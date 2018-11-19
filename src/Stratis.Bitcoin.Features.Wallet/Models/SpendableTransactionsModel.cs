@@ -27,6 +27,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public uint256 Id { get; set; }
 
         /// <summary>
+        /// The index of the output in the transaction.
+        /// </summary>
+        [JsonProperty(PropertyName = "index")]
+        public int Index { get; set; }
+
+        /// <summary>
         /// The Base58 representation of this address.
         /// </summary>
         [JsonProperty(PropertyName = "address")]
