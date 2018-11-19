@@ -1192,6 +1192,175 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
+        public async Task BuildTransactionFromWallet()
+        {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
+            // Act.
+            WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/build-transaction")
+                .PostJsonAsync(new BuildTransactionRequest
+                {
+                    WalletName = this.fixture.walletWithFundsName,
+                    AccountName = "account 0",
+                    FeeType = "low",
+                    Password = "123456",
+                    ShuffleOutputs = true,
+                    AllowUnconfirmed = true,
+                    Recipients = new List<RecipientModel> { new RecipientModel {DestinationAddress = address, Amount = "1000" } }
+                })
+                .ReceiveJson<WalletBuildTransactionModel>();
+
+            // Assert.
+            buildTransactionModel.Fee.Should().Be(new Money(3780));
+
+            Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address, this.fixture.Node.FullNode.Network).ScriptPubKey);
+        }
+
+        [Fact]
+        public async Task BuildTransactionWithSelectedInputs()
+        {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
+            // Act.
+            WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/build-transaction")
+                .PostJsonAsync(new BuildTransactionRequest
+                {
+                    WalletName = this.fixture.walletWithFundsName,
+                    AccountName = "account 0",
+                    FeeType = "low",
+                    Password = "123456",
+                    ShuffleOutputs = true,
+                    AllowUnconfirmed = true,
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } },
+                    Outpoints = new List<OutpointRequest>
+                    {
+                        new OutpointRequest{ Index = 1, TransactionId = "4f1766c2dca4bb96bb7282b4eef113c0956f1ad50ba1a205bec50c7770cac2d5" }, //150000000000
+                        new OutpointRequest{ Index = 1, TransactionId = "a40cf5f3c20cf265f5e1a360c7c984688b191993792e7a9cd6227c952b840710" }, //19000000000000
+                        new OutpointRequest{ Index = 0, TransactionId = "8b2e57f8959272d357682ede444244d9831cb47e9c936ea9452657a5633a53b5" }, //39999997700
+                        new OutpointRequest{ Index = 1, TransactionId = "385ed3fd641f2c33f7c03b9698e69ff03beea90f1e1e0a5943b1a0f4fd29ed97" }, //2500000000000
+                    }
+                })
+                .ReceiveJson<WalletBuildTransactionModel>();
+
+            // Assert.
+            buildTransactionModel.Fee.Should().Be(new Money(6740));
+
+            Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address, this.fixture.Node.FullNode.Network).ScriptPubKey);
+            trx.Inputs.Should().HaveCount(4);
+            trx.Inputs.Should().Contain(i => i.PrevOut == new OutPoint(uint256.Parse("4f1766c2dca4bb96bb7282b4eef113c0956f1ad50ba1a205bec50c7770cac2d5"), 1));
+            trx.Inputs.Should().Contain(i => i.PrevOut == new OutPoint(uint256.Parse("a40cf5f3c20cf265f5e1a360c7c984688b191993792e7a9cd6227c952b840710"), 1));
+            trx.Inputs.Should().Contain(i => i.PrevOut == new OutPoint(uint256.Parse("8b2e57f8959272d357682ede444244d9831cb47e9c936ea9452657a5633a53b5"), 0));
+            trx.Inputs.Should().Contain(i => i.PrevOut == new OutPoint(uint256.Parse("385ed3fd641f2c33f7c03b9698e69ff03beea90f1e1e0a5943b1a0f4fd29ed97"), 1));
+        }
+
+        [Fact]
+        public async Task BuildTransactionWithMultipleRecipients()
+        {
+            // Arrange.
+            var address1 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+            var address2 = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
+            // Act.
+            WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/build-transaction")
+                .PostJsonAsync(new BuildTransactionRequest
+                {
+                    WalletName = this.fixture.walletWithFundsName,
+                    AccountName = "account 0",
+                    FeeType = "low",
+                    Password = "123456",
+                    ShuffleOutputs = true,
+                    AllowUnconfirmed = true,
+                    Recipients = new List<RecipientModel> {
+                        new RecipientModel { DestinationAddress = address1, Amount = "1000" },
+                        new RecipientModel { DestinationAddress = address2, Amount = "5000" }
+                    }
+                })
+                .ReceiveJson<WalletBuildTransactionModel>();
+
+            // Assert.
+            buildTransactionModel.Fee.Should().Be(new Money(2640));
+
+            Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address1, this.fixture.Node.FullNode.Network).ScriptPubKey);
+            trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 5000 && o.ScriptPubKey == BitcoinAddress.Create(address2, this.fixture.Node.FullNode.Network).ScriptPubKey);
+        }
+
+        [Fact]
+        public async Task BuildTransactionFailsWhenUsingFeeAmountAndFeeType()
+        {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/build-transaction")
+                .PostJsonAsync(new BuildTransactionRequest
+                {
+                    WalletName = this.fixture.walletWithFundsName,
+                    AccountName = "account 0",
+                    FeeAmount = "1200",
+                    FeeType = "low",
+                    Password = "123456",
+                    ShuffleOutputs = true,
+                    AllowUnconfirmed = true,
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } }
+                })
+                .ReceiveJson<WalletBuildTransactionModel>();
+
+            // Assert.
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be($"The query parameters '{nameof(BuildTransactionRequest.FeeAmount)}' and '{nameof(BuildTransactionRequest.FeeType)}' cannot be set at the same time. " +
+                    $"Please use '{nameof(BuildTransactionRequest.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(BuildTransactionRequest.FeeType)}' if you want the wallet to calculate it for you.");
+        }
+
+        [Fact]
+        public async Task BuildTransactionFailsWhenNoFeeMethodSpecified()
+        {
+            // Arrange.
+            var address = new Key().PubKey.GetAddress(this.fixture.Node.FullNode.Network).ToString();
+
+            // Act.
+            Func<Task> act = async () => await $"http://localhost:{this.fixture.Node.ApiPort}/api"
+                .AppendPathSegment("wallet/build-transaction")
+                .PostJsonAsync(new BuildTransactionRequest
+                {
+                    WalletName = this.fixture.walletWithFundsName,
+                    AccountName = "account 0",
+                    Password = "123456",
+                    ShuffleOutputs = true,
+                    AllowUnconfirmed = true,
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } }
+                })
+                .ReceiveJson<WalletBuildTransactionModel>();
+
+            // Assert.
+            var exception = act.Should().Throw<FlurlHttpException>().Which;
+            var response = exception.Call.Response;
+
+            ErrorResponse errorResponse = JsonConvert.DeserializeObject<ErrorResponse>(await response.Content.ReadAsStringAsync());
+            List<ErrorModel> errors = errorResponse.Errors;
+
+            response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+            errors.Should().ContainSingle();
+            errors.First().Message.Should().Be($"One of parameters '{nameof(BuildTransactionRequest.FeeAmount)}' and '{nameof(BuildTransactionRequest.FeeType)}' is required. " +
+                    $"Please use '{nameof(BuildTransactionRequest.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(BuildTransactionRequest.FeeType)}' if you want the wallet to calculate it for you.");
+        }
+
+        [Fact]
         public async Task GetWalletGeneralInfoWhenNoWalletWithThisNameExists()
         {
             // Arrange.
