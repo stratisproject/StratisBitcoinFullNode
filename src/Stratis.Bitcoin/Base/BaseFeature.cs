@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Base
 
             if (this.provenBlockHeaderStore != null)
             {
-                // If we find at this point that store is behind chain we can rewind chain (this will cause a ripple effect and rewind store and consensus)
+                // If we find at this point that proven header store is behind chain we can rewind chain (this will cause a ripple effect and rewind block store and consensus)
                 // This problem should go away once we implement a component to keep all tips up to date
                 // https://github.com/stratisproject/StratisBitcoinFullNode/issues/2503
                 await this.provenBlockHeaderStore.InitializeAsync(this.chain.Tip, this.chain);
@@ -324,8 +324,11 @@ namespace Stratis.Bitcoin.Base
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
 
-            this.logger.LogInformation("Disposing proven header store.");
-            this.provenBlockHeaderStore?.Dispose();
+            if (this.provenBlockHeaderStore != null)
+            {
+                this.logger.LogInformation("Disposing proven header store.");
+                this.provenBlockHeaderStore?.Dispose();
+            }
         }
     }
 
