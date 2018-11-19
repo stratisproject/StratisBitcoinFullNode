@@ -176,12 +176,12 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             int waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
 
+            this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
+
             // Accounts for different IDateTimeProvider implementations. The standard implementation would progress
             // after one iteration, but for other cases where we are emulating time, this may loop more than once.
             while (waitingTime > 0)
             {
-                this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
-
                 await this.TaskDelayAsync(waitingTime * 1000, this.cancellation.Token).ConfigureAwait(false);
 
                 waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
