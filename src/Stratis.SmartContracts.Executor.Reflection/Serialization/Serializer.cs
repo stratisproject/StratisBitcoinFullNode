@@ -128,7 +128,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return default(int);
 
-            if (val.Length != 4)
+            if (val.Length < 4)
                 return default(int);
 
             (bool success, int result) = this.TryDeserializeValue<int>(val);
@@ -141,7 +141,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return default(uint);
 
-            if (val.Length != 4)
+            if (val.Length < 4)
                 return default(uint);
 
             (bool success, uint result) = this.TryDeserializeValue<uint>(val);
@@ -154,7 +154,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return default(long);
 
-            if (val.Length != 8)
+            if (val.Length < 8)
                 return default(long);
 
             (bool success, long result) = this.TryDeserializeValue<long>(val);
@@ -167,7 +167,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             if (val == null)
                 return default(ulong);
 
-            if (val.Length != 8)
+            if (val.Length < 8)
                 return default(ulong);
 
             (bool success, ulong result) = this.TryDeserializeValue<ulong>(val);

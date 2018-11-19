@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.IntegrationTests.PoA.MockChain;
 
 namespace Stratis.SmartContracts.IntegrationTests
 {
@@ -22,7 +23,7 @@ namespace Stratis.SmartContracts.IntegrationTests
     {
         private readonly IDateTimeProvider dateTimeProvider;
 
-        public SmartContractPoARunner(string dataDir, Network network, EditableTimeProvider timeProvider)
+        public SmartContractPoARunner(string dataDir, Network network, TargetSpacingDateTimeProvider timeProvider)
             : base(dataDir)
         {
             this.Network = network;
@@ -43,6 +44,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
                 .UseReflectionExecutor()
+                .ReplaceTimeProvider(this.dateTimeProvider)
                 .MockIBD()
                 .Build();
         }

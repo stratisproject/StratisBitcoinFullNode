@@ -87,7 +87,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             random.NextBytes(bytes);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(bytes, amount);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -129,7 +129,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
 
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -169,7 +169,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
 
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -214,7 +214,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
             this.node1.WaitMempoolCount(1);
-            this.node1.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -223,7 +223,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Method", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -270,7 +270,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("Method", nonExistentAddress, amount);
 
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -306,7 +306,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
             this.node1.WaitMempoolCount(1);
-            this.node1.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -315,7 +315,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("MethodThatDoesntExist", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -351,7 +351,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
             this.node1.WaitMempoolCount(1);
-            this.node1.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -360,7 +360,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("CallMe", preResponse.NewContractAddress, amount);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -406,7 +406,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.ULong, UInt64.MaxValue) };
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -467,7 +467,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
 
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(emptyModule, amount);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -507,7 +507,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, gasLimit: gasLimit);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -544,7 +544,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
             this.node1.WaitMempoolCount(1);
-            this.node1.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -554,7 +554,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(RecursiveLoopCall.Call), preResponse.NewContractAddress, amount, gasLimit: gasLimit);
             this.node2.WaitMempoolCount(1);
-            this.node2.WaitForBlocksToBeMined(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed

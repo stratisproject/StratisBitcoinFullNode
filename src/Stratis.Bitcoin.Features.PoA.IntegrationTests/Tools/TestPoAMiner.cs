@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
             this.cancellationSource = new CancellationTokenSource();
         }
 
-        protected override async Task WaitBeforeCanMineAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
+        protected override async Task TaskDelayAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
         {
             if (this.FastMiningEnabled)
             {
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
                 {
                     CancellationToken token = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationSource.Token, cancellation).Token;
 
-                    await base.WaitBeforeCanMineAsync(delayMs, token).ConfigureAwait(false);
+                    await base.TaskDelayAsync(delayMs, token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException exception)
                 {

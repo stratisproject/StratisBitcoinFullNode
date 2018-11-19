@@ -107,6 +107,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string WalletName { get; set; }
 
         public string AccountName { get; set; }
+
+        public int? Skip { get; set; }
+
+        public int? Take { get; set; }
+
+        [JsonProperty(PropertyName = "q")]
+        public string SearchQuery { get; set; }
     }
 
     public class WalletBalanceRequest : RequestModel
@@ -163,6 +170,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
+        public List<OutpointRequest> Outpoints { get; set; }
+
         [Required(ErrorMessage = "A list of recipients is required.")]
         [MinLength(1)]
         public List<RecipientModel> Recipients { get; set; }
@@ -172,6 +181,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public bool AllowUnconfirmed { get; set; }
 
         public bool? ShuffleOutputs { get; set; }
+    }
+
+    public class OutpointRequest : RequestModel
+    {
+        /// <summary>
+        /// The transaction id.
+        /// </summary>
+        [Required(ErrorMessage = "The transaction id is missing.")]
+        public string TransactionId { get; set; }
+
+        /// <summary>
+        /// The index of the output in the transaction.
+        /// </summary>
+        [Required(ErrorMessage = "The index of the output in the transaction is missing.")]
+        public int Index { get; set; }
     }
 
     public class RecipientModel
