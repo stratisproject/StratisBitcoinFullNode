@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
@@ -139,7 +140,21 @@ namespace Stratis.Bitcoin.P2P
                 this.logger.LogTrace("[INBOUND] {0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion?.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion?.AddressReceiver);
                 this.logger.LogTrace("[INBOUND] {0}:{1}", nameof(peer.PeerEndPoint), peer.PeerEndPoint);
 
-                this.peerAddressManager.AddPeer(peer.PeerEndPoint, IPAddress.Loopback);
+                IPEndPoint inboundPeerEndPoint = null;
+
+                // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
+                if (!peer.PeerVersion.AddressFrom.Match(new IPEndPoint(IPAddress.Loopback, this.AttachedPeer.Network.DefaultPort)))
+                {
+                    inboundPeerEndPoint = peer.PeerVersion.AddressFrom;
+                }
+                else
+                {
+                    // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
+                    // other node's listening port.
+                    inboundPeerEndPoint = new IPEndPoint(peer.PeerEndPoint.Address, peer.PeerVersion.AddressFrom.Port);
+                }
+
+                this.peerAddressManager.AddPeer(inboundPeerEndPoint, IPAddress.Loopback);
             }
 
             return Task.CompletedTask;
