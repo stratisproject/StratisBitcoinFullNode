@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Interfaces
         /// </para>
         /// </summary>
         /// <param name="chainedHeader"><see cref="ChainedHeader"/> consensus tip after <see cref="Bitcoin.Consensus.IConsensusManager"/> initialization.</param>
+        /// <param name="chain">TEMPORARY: passed temporary so we can rewind ConcurrentChain and all other components.</param>
         /// <exception cref="ProvenBlockHeaderException">
         /// Thrown when :
         /// <list type="bullet">
@@ -35,7 +36,7 @@ namespace Stratis.Bitcoin.Interfaces
         /// </item>
         /// </list>
         /// </exception>
-        Task InitializeAsync(ChainedHeader chainedHeader);
+        Task InitializeAsync(ChainedHeader chainedHeader, ConcurrentChain chain = null);
 
         /// <summary>
         /// Adds <see cref="ProvenBlockHeader"/> items to the pending batch. Ready for saving to disk.

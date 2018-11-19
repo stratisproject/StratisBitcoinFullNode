@@ -117,17 +117,33 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             UnspentOutputs prevUtxo = null;
 
             FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
-            if ((coins == null) || (coins.UnspentOutputs.Length != 1))
+            if (coins.UnspentOutputs[0] == null)
             {
+                // We did not find the previous trx in coin db, look in rewind data.
                 prevUtxo = this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
             }
             else
             {
+                // The trx was found now check if the UTXO is spent.
                 prevUtxo = coins.UnspentOutputs[0];
+                if (txIn.PrevOut.N >= prevUtxo.Outputs.Length)
+                {
+                    // This should never happen, if it did an incorrect number of UTXO where created for a trx
+                    this.Logger.LogTrace("(-)[PREV_UTXO_COUNT_MISMATCH]");
+                    ConsensusErrors.PrevStakeNull.Throw();
+                }
+
+                TxOut utxo = prevUtxo.Outputs[txIn.PrevOut.N];
+                if (utxo == null)
+                {
+                    // UTXO is spent so find it in the rewind data
+                    prevUtxo = this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
+                }
             }
 
             if (prevUtxo == null)
             {
+                // This should never happen, the result from CheckIfCoinstakeIsSpentOnAnotherChain should not return null
                 this.Logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
                 ConsensusErrors.ReadTxPrevFailed.Throw();
             }

@@ -153,20 +153,28 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task InitializeAsync(ChainedHeader chainedHeader)
+        public async Task InitializeAsync(ChainedHeader chainedHeader, ConcurrentChain chain = null)
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
             if (chainedHeader.Height > 0)
             {
-                ProvenBlockHeader repoHeader =
-                    await this.provenBlockHeaderRepository.GetAsync(chainedHeader.Height);
+                HashHeightPair hashHeightPair = this.provenBlockHeaderRepository.TipHashHeight;
 
-                if (repoHeader == null)
-                    throw new ProvenBlockHeaderException("Unable to find proven block header in the repository.");
+                if (hashHeightPair.Hash != chainedHeader.HashBlock)
+                {
+                    if (hashHeightPair.Height < chainedHeader.Height)
+                    {
+                        if (chain == null)
+                            throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
 
-                if (repoHeader.GetHash() != chainedHeader.HashBlock)
-                    throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
+                        chainedHeader = chain.GetBlock(hashHeightPair.Hash);
+                        if (chainedHeader == null)
+                            throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
+
+                        chain.SetTip(chainedHeader);
+                    }
+                }
             }
 
             this.storeTip = chainedHeader;
@@ -390,6 +398,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public void Dispose()
         {
             this.asyncLoop?.Dispose();
+            this.SaveAsync().GetAwaiter().GetResult();
         }
     }
 }
