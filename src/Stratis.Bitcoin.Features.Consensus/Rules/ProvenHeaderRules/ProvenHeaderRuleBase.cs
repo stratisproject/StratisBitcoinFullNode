@@ -1,6 +1,4 @@
-﻿using System;
-using NBitcoin;
-using Stratis.Bitcoin.Consensus;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
@@ -56,6 +54,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             if (context.SkipValidation)
                 return;
+
+            Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
 
