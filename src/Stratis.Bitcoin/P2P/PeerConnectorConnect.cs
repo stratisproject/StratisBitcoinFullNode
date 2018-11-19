@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -50,6 +51,9 @@ namespace Stratis.Bitcoin.P2P
             {
                 this.peerAddressManager.AddPeer(ipEndpoint.MapToIpv6(), IPAddress.Loopback);
             }
+
+            // Mark all peers as white listed
+            this.CurrentParameters.TemplateBehaviors.OfType<ConnectionManagerBehavior>().Single().Whitelisted = true;
         }
 
         /// <summary>This connector is only started if there are peers in the -connect args.</summary>
