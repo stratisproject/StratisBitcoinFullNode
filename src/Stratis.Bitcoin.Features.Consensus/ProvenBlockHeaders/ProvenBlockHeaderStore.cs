@@ -163,16 +163,25 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 if (hashHeightPair.Hash != chainedHeader.HashBlock)
                 {
-                    if (hashHeightPair.Height < chainedHeader.Height)
+                    if (chain == null)
+                        throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
+
+                    // If the hashes don't match we need to find the fork on the main chain.
+                    int currentHeight = hashHeightPair.Height;
+
+                    while (true)
                     {
-                        if (chain == null)
-                            throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
+                        currentHeight--;
 
-                        chainedHeader = chain.GetBlock(hashHeightPair.Hash);
-                        if (chainedHeader == null)
-                            throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
+                        ProvenBlockHeader provenBlockHeader = this.provenBlockHeaderRepository.GetAsync(currentHeight).GetAwaiter().GetResult();
 
-                        chain.SetTip(chainedHeader);
+                        chainedHeader = chain.GetBlock(provenBlockHeader.GetHash());
+
+                        if (chainedHeader != null)
+                        {
+                            chain.SetTip(chainedHeader);
+                            break;
+                        }
                     }
                 }
             }
