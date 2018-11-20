@@ -99,7 +99,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <param name="broadcasterBehavior">The broadcaster behavior.</param>
         /// <param name="nodeSettings">The settings for the node.</param>
         /// <param name="walletSettings">The settings for the wallet.</param>
-        /// <param name="walletManager">The cold staking manager.</param>
         /// <param name="loggerFactory">The factory used to create instance loggers.</param>
         /// <param name="nodeStats">The node stats object used to register node stats.</param>
         public ColdStakingFeature(
@@ -163,12 +162,11 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             if (walletManager != null)
             {
                 int height = walletManager.LastBlockHeight();
-                ChainedHeader block = this.chain.GetBlock(height);
-                uint256 hashBlock = block == null ? 0 : block.HashBlock;
+                uint256 hash = walletManager.LastReceivedBlockHash();
 
                 benchLogs.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                                        (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
+                               (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
+                               (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hash) : string.Empty));
             }
         }
 
@@ -183,10 +181,33 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
                 foreach (string walletName in walletNames)
                 {
-                    IEnumerable<UnspentOutputReference> normalTransactions = this.coldStakingManager.GetSpendableTransactionsInWallet(walletName, 1);
-                    IEnumerable<UnspentOutputReference> hotWalletTransactions = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, false, 1);
-                    IEnumerable<UnspentOutputReference> coldWalletTransactons = this.coldStakingManager.GetSpendableTransactionsInColdWallet(walletName, true, 1);
-                    benchLog.AppendLine("Wallet     : " + (walletName + ",").PadRight(LoggingConfiguration.ColumnLength) + " Confirmed balance: " + new Money(normalTransactions.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake hot balance: " + new Money(hotWalletTransactions.Sum(s => s.Transaction.Amount)).ToString() + " Cold stake cold balance: " + new Money(coldWalletTransactons.Sum(s => s.Transaction.Amount)).ToString());
+                    // Get all the accounts, including the ones used for cold staking.
+                    // TODO: change GetAccounts to accept a filter.
+                    foreach (HdAccount account in this.coldStakingManager.GetAccounts(walletName))
+                    {
+                        AccountBalance accountBalance = this.coldStakingManager.GetBalances(walletName, account.Name).Single();
+                        benchLog.AppendLine(($"{walletName}/{account.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 20)
+                                       + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
+                                       + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                    }
+
+                    HdAccount coldStakingAccount = this.coldStakingManager.GetColdStakingAccount(this.coldStakingManager.GetWallet(walletName), true);
+                    if (coldStakingAccount != null)
+                    {
+                        AccountBalance accountBalance = this.coldStakingManager.GetBalances(walletName, coldStakingAccount.Name).Single();
+                        benchLog.AppendLine(($"{walletName}/{coldStakingAccount.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 20)
+                                            + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
+                                            + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                    }
+
+                    HdAccount hotStakingAccount = this.coldStakingManager.GetColdStakingAccount(this.coldStakingManager.GetWallet(walletName), false);
+                    if (hotStakingAccount != null)
+                    {
+                        AccountBalance accountBalance = this.coldStakingManager.GetBalances(walletName, hotStakingAccount.Name).Single();
+                        benchLog.AppendLine(($"{walletName}/{hotStakingAccount.Name}" + ",").PadRight(LoggingConfiguration.ColumnLength + 20)
+                                            + (" Confirmed balance: " + accountBalance.AmountConfirmed.ToString()).PadRight(LoggingConfiguration.ColumnLength + 20)
+                                            + " Unconfirmed balance: " + accountBalance.AmountUnconfirmed.ToString());
+                    }
                 }
             }
         }
@@ -194,8 +215,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             // subscribe to receiving blocks and transactions
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
@@ -206,7 +225,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
