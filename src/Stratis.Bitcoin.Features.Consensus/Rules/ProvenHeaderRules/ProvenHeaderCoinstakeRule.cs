@@ -130,22 +130,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 {
                     // This should never happen, if it did, an incorrect number of UTXOs were created for a trx.
                     this.Logger.LogTrace("(-)[PREV_UTXO_COUNT_MISMATCH]");
-                    ConsensusErrors.PrevStakeNull.Throw();
+                    ConsensusErrors.ReadTxPrevFailed.Throw();
                 }
 
                 TxOut utxo = prevUtxo.Outputs[txIn.PrevOut.N];
                 if (utxo == null)
                 {
-                    // UTXO is spent so find it in the rewind data
+                    // UTXO is spent so find it in rewind data.
                     prevUtxo = this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
                 }
-            }
-
-            if (prevUtxo == null)
-            {
-                // This should never happen, the result from CheckIfCoinstakeIsSpentOnAnotherChain should not return null
-                this.Logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
-                ConsensusErrors.ReadTxPrevFailed.Throw();
             }
 
             return prevUtxo;
