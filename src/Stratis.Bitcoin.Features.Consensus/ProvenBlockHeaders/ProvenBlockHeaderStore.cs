@@ -295,7 +295,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             lock (this.lockObject)
             {
-                this.PendingBatch.Add(newTip.Height, provenBlockHeader);
+                // If an item is already there this means a reorg happened.
+                // We always assume the latest header belongs to the longest chain so just overwrite the previous values.
+                this.PendingBatch.AddOrReplace(newTip.Height, provenBlockHeader);
 
                 this.pendingTipHashHeight = newTip;
             }
