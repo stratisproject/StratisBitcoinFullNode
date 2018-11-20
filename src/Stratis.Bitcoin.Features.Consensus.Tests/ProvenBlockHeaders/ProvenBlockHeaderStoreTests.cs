@@ -101,7 +101,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        [Trait("Unstable", "True")]
         public async Task AddToPending_Adds_To_Cache_Then_Save_To_DiskAsync()
         {
             // Initialise store.
@@ -122,16 +121,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Call the internal save method to save cached item to disk.
             this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
 
-            // when pendingTipHashHeight is null we can safely say the items were saved to the repository, based on the above SaveAsync.
             WaitLoop(() =>
             {
-                var pendingTipHashHeight = this.provenBlockHeaderStore.GetMemberValue("pendingTipHashHeight");
-                return pendingTipHashHeight == null;
+                // Check if it has been saved to disk.
+                var outHeaderRepo = this.provenBlockHeaderRepository.GetAsync(0).GetAwaiter().GetResult();
+                if (outHeaderRepo == null)
+                    return false;
+                return outHeaderRepo.GetHash() == outHeader.GetHash();
             });
-
-            // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
-            var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(0).ConfigureAwait(false);
-            outHeaderRepo.GetHash().Should().Be(outHeader.GetHash());
         }
 
         [Fact]

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -59,7 +58,6 @@ namespace Stratis.Bitcoin.Connection
                 Whitelisted = this.Whitelisted,
             };
         }
-
 
         /// <summary>
         /// Determines whether the specified peer supports Proven Headers and PH has been activated.
