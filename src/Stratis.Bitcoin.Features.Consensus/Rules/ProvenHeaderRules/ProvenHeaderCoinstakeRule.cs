@@ -253,9 +253,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 }
                 else
                 {
-                    // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
-                    this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
-                    ConsensusErrors.InvalidPreviousProvenHeader.Throw();
+                    // This means we are one block after the tip.
+                    // TODO: Should we check at this point that we are once block after the tip?
+                    previousStakeModifier = this.PosParent.StakeChain.Get(chainedHeader.Previous.HashBlock)?.StakeModifierV2;
+
+                    if (previousStakeModifier == null)
+                    {
+                        // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
+                        this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
+                        ConsensusErrors.InvalidPreviousProvenHeader.Throw();
+                    }
                 }
             }
             else

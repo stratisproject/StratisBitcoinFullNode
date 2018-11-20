@@ -108,23 +108,48 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.cachedHeaders.Count != 0)
                 {
-                    result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
+                    BlockHeader header = this.cachedHeaders[0];
 
-                    if (result == null)
+                    if (header.HashPrevBlock == this.ExpectedPeerTip.HashBlock)
                     {
-                        this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
-                        return null;
+                        var headers = new List<BlockHeader>() {header};
+                        for (int i = 1; i < this.cachedHeaders.Count; i++)
+                        {
+                            if (this.cachedHeaders[i].HashPrevBlock != this.cachedHeaders[i - 1].GetHash())
+                            {
+                                // Break when we find a header that is not consecutive.
+                                break;
+                            }
+
+                            headers.Add(this.cachedHeaders[i]);
+                        }
+
+                        result = await this.PresentHeadersLockedAsync(headers, false).ConfigureAwait(false);
+
+                        if (result == null)
+                        {
+                            this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
+                            return null;
+                        }
+
+                        this.ExpectedPeerTip = result.Consumed;
+                        this.UpdateBestSentHeader(this.ExpectedPeerTip);
+
+                        int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+                        this.cachedHeaders.RemoveRange(0, consumedCount);
+                        int cacheSize = this.cachedHeaders.Count;
+
+                        this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
+                        syncRequired = cacheSize == 0;
                     }
+                    else
+                    {
+                        // If the first item in the list is not consecutive
+                        // then invalidate the entire list and resync.
 
-                    this.ExpectedPeerTip = result.Consumed;
-                    this.UpdateBestSentHeader(this.ExpectedPeerTip);
-
-                    int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
-                    this.cachedHeaders.RemoveRange(0, consumedCount);
-                    int cacheSize = this.cachedHeaders.Count;
-
-                    this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
-                    syncRequired = cacheSize == 0;
+                        this.cachedHeaders.Clear();
+                        syncRequired = true;
+                    }
                 }
             }
 
