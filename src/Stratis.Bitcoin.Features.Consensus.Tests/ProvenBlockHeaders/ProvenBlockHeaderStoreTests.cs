@@ -324,18 +324,41 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task InitializeAsync_When_Behind_Reorg_Occurs_Throws_Exception_When_New_ChainHeader_Tip_Doesnt_ExistAsync()
+        public void InitializeAsync_When_Behind_Reorg_Occurred_SetTipTo_New_ChainHeader()
         {
             // Chain - Chain - 1 - 2 - 3
             var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network, true);
             var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
 
-            await this.provenBlockHeaderRepository.PutAsync(
-                provenBlockheaders.Take(5).ToDictionary(a => a.Key, b => b.Value),
-                new HashHeightPair(provenBlockheaders.Last().Value.GetHash(), provenBlockheaders.Count - 1)).ConfigureAwait(false);
+            var provenBlockHeadersToPush = provenBlockheaders.ToDictionary(a => a.Key, b => b.Value);
+            var hashHeightPair = new HashHeightPair(provenBlockheaders.Last().Value.GetHash(), provenBlockheaders.Count - 1);
+            this.provenBlockHeaderRepository.PutAsync(provenBlockHeadersToPush, hashHeightPair).GetAwaiter().GetResult();
 
             // Create a new chain which a different hash block.
             chainWithHeaders = BuildChainWithProvenHeaders(2, this.network, true);
+
+            using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
+            {
+                store.InitializeAsync(chainWithHeaders.chainedHeader).GetAwaiter().GetResult();
+
+                store.TipHashHeight.Hash.Should().Be(chainWithHeaders.chainedHeader.HashBlock);
+                store.TipHashHeight.Height.Should().Be(chainWithHeaders.chainedHeader.Height);
+            }
+        }
+
+        [Fact]
+        public async Task InitializeAsync_When_Behind_Reorg_Occurs_Throws_Exception_When_New_ChainHeader_Tip_Is_HigherAsync()
+        {
+            // Chain - Chain - 1 - 2 - 3
+            var chainWithHeaders = BuildChainWithProvenHeaders(3, this.network, true);
+            var provenBlockheaders = chainWithHeaders.provenBlockHeaders;
+
+            var provenBlockHeadersToPush = provenBlockheaders.ToDictionary(a => a.Key, b => b.Value);
+            var hashHeightPair = new HashHeightPair(provenBlockheaders.Last().Value.GetHash(), provenBlockheaders.Count - 1);
+            await this.provenBlockHeaderRepository.PutAsync(provenBlockHeadersToPush, hashHeightPair).ConfigureAwait(false);
+
+            // Create a new chain which a different hash block.
+            chainWithHeaders = BuildChainWithProvenHeaders(4, this.network, true);
 
             using (IProvenBlockHeaderStore store = this.SetupStore(this.Folder))
             {
