@@ -443,6 +443,62 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Equal(3, block.Transactions.Count);
             }
         }
+        [Fact]
+        public void MockChain_Lottery()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode node1 = chain.Nodes[0];
+                MockChainNode node2 = chain.Nodes[1];
+
+                node1.MineBlocks(1);
+
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Lottery.cs");
+                Assert.True(compilationResult.Success);
+
+                // Create contract and ensure code exists
+                BuildCreateContractTransactionResponse response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                Assert.NotNull(node2.GetCode(response.NewContractAddress));
+                Assert.NotNull(node1.GetCode(response.NewContractAddress));
+
+                // Both users join
+                BuildCallContractTransactionResponse callResponse = node1.SendCallContractTransaction("Join", response.NewContractAddress, 1);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                Assert.Equal(node1.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network).ToBytes(), node1.GetStorageValue(response.NewContractAddress, "Player0"));
+
+                callResponse = node2.SendCallContractTransaction("Join", response.NewContractAddress, 1);
+                node1.WaitMempoolCount(1);
+                node1.MineBlocks(1);
+                Assert.Equal(node2.MinerAddress.Address.ToUint160(node2.CoreNode.FullNode.Network).ToBytes(), node2.GetStorageValue(response.NewContractAddress, "Player1"));
+
+                // Select a winner
+                callResponse = node1.SendCallContractTransaction("SelectWinner", response.NewContractAddress, 1);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                uint winner = BitConverter.ToUInt32(node1.GetStorageValue(response.NewContractAddress, "WinningNumber"));
+
+                MockChainNode winningNode = winner == 0 ? node1 : node2;
+                MockChainNode losingNode = winner == 1 ? node1 : node2;
+
+                // Ensure loser can't claim
+                callResponse = losingNode.SendCallContractTransaction("Claim", response.NewContractAddress, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                ReceiptResponse receipt = node2.GetReceipt(callResponse.TransactionId.ToString());
+                Assert.False(receipt.Success);
+
+                // Ensure winner can claim
+                callResponse = winningNode.SendCallContractTransaction("Claim", response.NewContractAddress, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                receipt = node2.GetReceipt(callResponse.TransactionId.ToString());
+                Assert.True(receipt.Success);
+                Assert.Equal(0uL, node2.GetContractBalance(response.NewContractAddress));
+            }
+        }
 
         [Fact]
         public void MockChain_NonFungibleToken()
@@ -471,7 +527,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 ILocalExecutionResult result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, parameters);
                 uint160 senderAddressUint160 = node1.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network);
-                uint160 returnedAddressUint160 = ((Address) result.Return).ToUint160();
+                uint160 returnedAddressUint160 = ((Address)result.Return).ToUint160();
                 Assert.Equal(senderAddressUint160, returnedAddressUint160);
 
                 // Send tokenId 1 to a new owner
