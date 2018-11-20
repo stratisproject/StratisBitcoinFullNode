@@ -67,6 +67,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
 
+        private readonly IAddressBookManager addressBookManager;
+
         /// <summary>The broadcaster behavior.</summary>
         private readonly BroadcasterBehavior broadcasterBehavior;
 
@@ -90,6 +92,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// </summary>
         /// <param name="walletSyncManager">The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</param>
         /// <param name="walletManager">The wallet manager.</param>
+        /// <param name="addressBookManager">The address book manager.</param>
         /// <param name="signals">The signals responsible for receiving blocks and transactions from the network.</param>
         /// <param name="chain">The chain of blocks.</param>
         /// <param name="connectionManager">The connection manager.</param>
@@ -102,6 +105,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         public ColdStakingFeature(
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
+            IAddressBookManager addressBookManager,
             Signals.Signals signals,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
@@ -121,6 +125,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.loggerFactory = loggerFactory;
 
             this.walletSyncManager = walletSyncManager;
+            this.addressBookManager = addressBookManager;
             this.signals = signals;
             this.chain = chain;
             this.connectionManager = connectionManager;
@@ -197,6 +202,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             this.coldStakingManager.Start();
             this.walletSyncManager.Start();
+            this.addressBookManager.Initialize();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
 
@@ -253,6 +259,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                     services.AddSingleton<WalletSettings>();
                     services.AddSingleton<IScriptAddressReader>(new ScriptAddressReader());
                     services.AddSingleton<StandardTransactionPolicy>();
+                    services.AddSingleton<IAddressBookManager, AddressBookManager>();
                 });
             });
 
