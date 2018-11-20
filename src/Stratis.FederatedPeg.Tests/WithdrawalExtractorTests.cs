@@ -56,6 +56,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.loggerFactory, this.settings, this.opReturnDataReader, this.network);
         }
 
+        // TODO: Will depend on decision made on backlog issue https://github.com/stratisproject/FederatedSidechains/issues/124
+        /*
         [Fact]
         public void ExtractWithdrawalsFromBlock_Should_Find_Withdrawals_From_Multisig()
         {
@@ -93,7 +95,7 @@ namespace Stratis.FederatedPeg.Tests
             var blockHeight = 5972176;
 
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(block, blockHeight);
-            
+
             withdrawals.Count.Should().Be(1);
             this.VerifyWithdrawalData(
                 withdrawals[0],
@@ -180,6 +182,7 @@ namespace Stratis.FederatedPeg.Tests
                 opReturnDepositId2,
                 targetScript2);
         }
+        */
 
         private (Script targetScript, uint256 opReturnDepositId, long amount, Transaction validWithdrawalTransaction)
             AddWithdrawalToBlock(Block block)

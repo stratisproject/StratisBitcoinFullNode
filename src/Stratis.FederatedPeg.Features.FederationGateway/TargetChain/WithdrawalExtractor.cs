@@ -17,7 +17,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private readonly ILogger logger;
 
         private readonly BitcoinAddress multisigAddress;
-        
+
         public WithdrawalExtractor(
             ILoggerFactory loggerFactory,
             IFederationGatewaySettings federationGatewaySettings,
@@ -71,7 +71,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private bool IsTargetAddressCandidate(TxOut output)
         {
-            return output.ScriptPubKey.Hash.GetAddress(this.network) != this.multisigAddress && !output.ScriptPubKey.IsUnspendable;
+            return output.ScriptPubKey != this.multisigAddress.ScriptPubKey && !output.ScriptPubKey.IsUnspendable;
         }
 
         private bool IsOnlyFromMultisig(Transaction transaction)
