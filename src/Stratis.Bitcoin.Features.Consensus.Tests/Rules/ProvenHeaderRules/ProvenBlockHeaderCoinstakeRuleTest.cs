@@ -81,9 +81,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
 
             // Setup chained header and move it to the height higher than proven header activation height.
-            // By default no utxo are setup in coinview so fetch we return nothing.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
+
+            // By default no utxo are setup in coinview so fetch we return nothing.
+            this.coinView
+                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[] { null }, posBlock.GetHash()));
 
             // When we run the validation rule, we should hit coinstake read transaction error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -109,11 +113,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()), new UnspentOutputs(11, new Transaction()) }, posBlock.GetHash()));
 
-            // When we run the validation rule, we should hit coinstake read transaction error.
+            // When we run the validation rule, ConsensusErrors.ReadTxPrevFailed should be thrown.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
-            ruleValidation.Should().Throw<ConsensusErrorException>()
-                .And.ConsensusError
-                .Should().Be(ConsensusErrors.ReadTxPrevFailed);
+            ruleValidation.Should().Throw<ConsensusErrorException>().And.ConsensusError.Should().Be(ConsensusErrors.ReadTxPrevFailed);
         }
 
         [Fact]

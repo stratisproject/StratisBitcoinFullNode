@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <returns>The validated previous <see cref="UnspentOutputs"/></returns>
         private UnspentOutputs GetAndValidatePreviousUtxo(ProvenBlockHeader header, PosRuleContext context)
         {
-            // First try finding the previous transaction in database.
+            // First try and find the previous trx in the database.
             TxIn txIn = header.Coinstake.Inputs[0];
 
             UnspentOutputs prevUtxo = null;
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
             if (coins.UnspentOutputs[0] == null)
             {
-                // We did not find the previous trx in coin db, look in rewind data.
+                // We did not find the previous trx in the database, look in rewind data.
                 prevUtxo = this.CheckIfCoinstakeIsSpentOnAnotherChain(header, context);
             }
             else
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 prevUtxo = coins.UnspentOutputs[0];
                 if (txIn.PrevOut.N >= prevUtxo.Outputs.Length)
                 {
-                    // This should never happen, if it did an incorrect number of UTXO where created for a trx
+                    // This should never happen, if it did, an incorrect number of UTXOs were created for a trx.
                     this.Logger.LogTrace("(-)[PREV_UTXO_COUNT_MISMATCH]");
                     ConsensusErrors.PrevStakeNull.Throw();
                 }
