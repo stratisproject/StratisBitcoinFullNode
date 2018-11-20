@@ -33,6 +33,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         private const string WalletName = "mywallet";
         private const string Password = "password";
         private const string AccountName = "account 0";
+        private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
+
+        public SmartContractWalletTests()
+        {
+            this.methodParameterStringSerializer = new MethodParameterStringSerializer(new SmartContractsRegTest());
+        }
 
         /// <summary>
         /// These are the same tests as in WalletTests.cs, just using the smart contract classes instead.
@@ -457,22 +463,33 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 node2.MineBlocks(1);
                 Assert.NotNull(node2.GetCode(response.NewContractAddress));
                 Assert.NotNull(node1.GetCode(response.NewContractAddress));
-                ILocalExecutionResult result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, new string[] {"7#1"});
+
+                string[] parameters = new string[]
+                {
+                    this.methodParameterStringSerializer.Serialize(1uL)
+                };
+
+                ILocalExecutionResult result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, parameters);
                 uint160 senderAddressUint160 = node1.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network);
                 uint160 returnedAddressUint160 = ((Address) result.Return).ToUint160();
                 Assert.Equal(senderAddressUint160, returnedAddressUint160);
 
                 // Send tokenId 1 to a new owner
-                string[] parameters = new string[]
+                parameters = new string[]
                 {
-                    "9#" + node1.MinerAddress.Address,
-                    "9#" + node2.MinerAddress.Address,
-                    "7#1"
+                    this.methodParameterStringSerializer.Serialize(node1.MinerAddress.Address.ToAddress(node1.CoreNode.FullNode.Network)),
+                    this.methodParameterStringSerializer.Serialize(node2.MinerAddress.Address.ToAddress(node1.CoreNode.FullNode.Network)),
+                    this.methodParameterStringSerializer.Serialize(1uL)
                 };
                 BuildCallContractTransactionResponse callResponse = node1.SendCallContractTransaction("TransferFrom", response.NewContractAddress, 0, parameters);
                 node2.WaitMempoolCount(1);
                 node2.MineBlocks(1);
-                result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, new string[] { "7#1" });
+
+                parameters = new string[]
+                {
+                    this.methodParameterStringSerializer.Serialize(1uL)
+                };
+                result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, parameters);
                 uint160 receiverAddressUint160 = node2.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network);
                 returnedAddressUint160 = ((Address)result.Return).ToUint160();
                 Assert.Equal(receiverAddressUint160, returnedAddressUint160);
