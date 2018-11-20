@@ -19,6 +19,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             get { return this.nodes; }
         }
 
+        protected int chainHeight;
+
         public PoAMockChain(int numNodes)
         {
             this.builder = SmartContractNodeBuilder.Create(this);
@@ -65,6 +67,19 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         public void Dispose()
         {
             this.builder.Dispose();
+        }
+
+        public void MineBlocks(int num)
+        {
+            int currentHeight = this.nodes[0].CoreNode.GetTip().Height;
+
+            for (int i = 0; i < num; i++)
+            {
+                this.builder.PoATimeProvider.NextSpacing();
+                TestHelper.WaitLoop(() => this.nodes[0].CoreNode.GetTip().Height == currentHeight + 1);
+                currentHeight++;
+                WaitForAllNodesToSync();
+            }
         }
     }
 }

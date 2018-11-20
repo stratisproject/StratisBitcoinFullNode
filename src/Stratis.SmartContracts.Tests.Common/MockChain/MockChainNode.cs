@@ -19,6 +19,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Local;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
@@ -221,6 +222,33 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
             return (BuildCallContractTransactionResponse)response.Value;
+        }
+
+        public ILocalExecutionResult CallContractMethodLocally(
+            string methodName,
+            string contractAddress,
+            double amount,
+            string[] parameters = null,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
+            double feeAmount = 0.01)
+        {
+            var request = new BuildCallContractTransactionRequest
+            {
+                AccountName = this.AccountName,
+                Amount = amount.ToString(),
+                ContractAddress = contractAddress,
+                FeeAmount = feeAmount.ToString(),
+                GasLimit = gasLimit,
+                GasPrice = gasPrice,
+                MethodName = methodName,
+                Parameters = parameters,
+                Password = this.Password,
+                Sender = this.MinerAddress.Address,
+                WalletName = this.WalletName
+            };
+            JsonResult response = (JsonResult)this.smartContractsController.LocalCallSmartContractTransaction(request);
+            return (ILocalExecutionResult) response.Value;
         }
 
         /// <summary>
