@@ -323,9 +323,11 @@ namespace Stratis.Bitcoin.Consensus
                     else
                     {
                         this.logger.LogTrace("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), lastCachedHeaderHash);
+                        this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
                         this.lastForcedResync = DateTime.UtcNow;
                         this.cachedHeaders.Clear();
                         await this.ResyncAsync().ConfigureAwait(false);
+                        return;
                     }
                 }
 
