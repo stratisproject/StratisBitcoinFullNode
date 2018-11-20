@@ -62,6 +62,15 @@ namespace Stratis.Bitcoin.Connection
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
+
+            INetworkPeer peer = this.AttachedPeer;
+            if (peer != null)
+            {
+                if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.Match(peer.PeerEndPoint)))
+                {
+                    this.Whitelisted = true;
+                }
+            }
         }
 
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
@@ -70,11 +79,6 @@ namespace Stratis.Bitcoin.Connection
             {
                 if (peer.State == NetworkPeerState.HandShaked)
                 {
-                    if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.Match(peer.PeerEndPoint)))
-                    {
-                        this.Whitelisted = true;
-                    }
-
                     this.connectionManager.AddConnectedPeer(peer);
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
 
