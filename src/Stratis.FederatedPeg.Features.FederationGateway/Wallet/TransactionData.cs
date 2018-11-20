@@ -69,7 +69,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
         public Transaction GetFullTransaction(Network network)
         {
-            return Transaction.Parse(this.Hex, RawFormat.BlockExplorer, network);
+            return network.CreateTransaction(this.Hex);
         }
 
         public bool IsSpendable()

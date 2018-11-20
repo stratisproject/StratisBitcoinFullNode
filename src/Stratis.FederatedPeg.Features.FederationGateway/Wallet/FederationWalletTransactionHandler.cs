@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Security;
-using System.Text;
-using DBreeze.Utils;
 using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -145,6 +143,35 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <summary>
+        /// Compares transaction data to determine the order of inclusion in the transaction.
+        /// </summary>
+        /// <param name="x">First transaction data.</param>
+        /// <param name="y">Second transaction data.</param>
+        /// <returns>Returns <c>0</c> if the outputs are the same and <c>-1<c> or <c>1</c> depending on whether the first or second output takes precedence.</returns>
+        public static int CompareTransactionData(TransactionData x, TransactionData y)
+        {
+            // The oldest UTXO (determined by block height) is selected first.
+            if ((x.BlockHeight ?? int.MaxValue) != (y.BlockHeight ?? int.MaxValue))
+            {
+                return ((x.BlockHeight ?? int.MaxValue) < (y.BlockHeight ?? int.MaxValue)) ? -1 : 1;
+            }
+
+            // If a block has more than one UTXO, then they are selected in order of transaction id.
+            if (x.Id != y.Id)
+            {
+                return (x.Id < y.Id) ? -1 : 1;
+            }
+
+            // If multiple UTXOs appear within a transaction then they are selected in ascending index order.
+            if (x.Index != y.Index)
+            {
+                return (x.Index < y.Index) ? -1 : 1;
+            }
+
+            return 0;
+        }
+
+        /// <summary>
         /// Compares two unspent outputs to determine the order of inclusion in the transaction.
         /// </summary>
         /// <param name="x">First unspent output.</param>
@@ -152,25 +179,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <returns>Returns <c>0</c> if the outputs are the same and <c>-1<c> or <c>1</c> depending on whether the first or second output takes precedence.</returns>
         private int CompareUnspentOutputReferences(UnspentOutputReference x, UnspentOutputReference y)
         {
-            // The oldest UTXO (determined by block height) is selected first.
-            if (x.Transaction.BlockHeight != y.Transaction.BlockHeight)
-            {
-                return (x.Transaction.BlockHeight < y.Transaction.BlockHeight) ? -1 : 1;
-            }
-
-            // If a block has more than one UTXO, then they are selected in order of transaction id.
-            if (x.Transaction.Id != y.Transaction.Id)
-            {
-                return (x.Transaction.Id < y.Transaction.Id) ? -1 : 1;
-            }
-
-            // If multiple UTXOs appear within a transaction then they are selected in ascending index order.
-            if (x.Transaction.Index != y.Transaction.Index)
-            {
-                return (x.Transaction.Index < y.Transaction.Index) ? -1 : 1;
-            }
-
-            return 0;
+            return CompareTransactionData(x.Transaction, y.Transaction);
         }
 
         /// <summary>
@@ -237,7 +246,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             long sum = 0;
             int index = 0;
             var coins = new List<Coin>();
-            foreach (UnspentOutputReference item in this.GetOrderedUnspentOutputs(context))
+
+            foreach (UnspentOutputReference item in context.OrderCoinsDeterministic ?
+                this.GetOrderedUnspentOutputs(context) : context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
             {
                 coins.Add(ScriptCoin.Create(this.network, item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey, this.walletManager.GetWallet().MultiSigAddress.RedeemScript));
                 sum += item.Transaction.Amount;
@@ -408,6 +419,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// If false, allows unselected inputs, but requires all selected inputs be used
         /// </summary>
         public bool AllowOtherInputs { get; set; }
+
+        /// <summary>
+        /// If <c>true</c> coins will be ordered using (block height + transaction id + output index) ordering.
+        /// </summary>
+        public bool OrderCoinsDeterministic { get; set; }
 
         /// <summary>
         /// Specify whether to sign the transaction.

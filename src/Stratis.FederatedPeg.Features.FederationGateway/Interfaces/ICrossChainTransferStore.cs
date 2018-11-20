@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
     /// <summary>
@@ -30,14 +29,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <remarks>
         /// The transfers are set to <see cref="CrossChainTransfer.Status"/> of <see cref="CrossChainTransferStatus.Partial"/>
         /// or <see cref="CrossChainTransferStatus.Rejected"/> depending on whether enough funds are available in the federation wallet.
+        /// New partial transactions are recorded in the wallet to ensure that future transactions will not
+        /// attempt to re-use UTXO's.
         /// </remarks>
         Task RecordLatestMatureDepositsAsync(IDeposit[] deposits);
 
         /// <summary>
-        /// Returns all partial transactions still in need of signatures.
+        /// Returns transactions by status. Orders the results by UTXO selection order.
         /// </summary>
-        /// <returns>An array of fully signed transactions.</returns>
-        Task<Transaction[]> GetPartialTransactionsAsync();
+        /// <param name="status">The status to get the transactions for.</param>
+        /// <returns>An array of transactions.</returns>
+        Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status);
 
         /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.
@@ -45,14 +47,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </summary>
         /// <param name="depositId">The deposit transaction to update.</param>
         /// <param name="partialTransactions">Partial transactions received from other federation members.</param>
-        Task MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions);
+        /// <remarks>
+        /// Changes to the transaction id caused by this operation will also be synchronised with the partial
+        /// transaction that has been recorded in the wallet.
+        /// </remarks>
 
-        /// <summary>
-        /// Returns all fully signed transactions ready to broadcast. The caller is responsible for checking the memory pool and
-        /// not re-broadcasting transactions unneccessarily.
-        /// </summary>
-        /// <returns>An array of fully signed transactions.</returns>
-        Task<Transaction[]> GetSignedTransactionsAsync();
+        Task MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions);
 
         /// <summary>
         /// Get the cross-chain transfer information from the database, identified by the deposit transaction ids.

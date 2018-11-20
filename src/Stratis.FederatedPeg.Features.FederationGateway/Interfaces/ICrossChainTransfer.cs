@@ -21,16 +21,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         uint256 DepositTransactionId { get; }
 
         /// <summary>
-        /// Indicated whether the deposit fields contain information.
-        /// </summary>
-        bool DepositPresent { get; }
-
-        /// <summary>
-        /// The block height of the deposit transaction.
-        /// </summary>
-        long DepositBlockHeight { get; }
-
-        /// <summary>
         /// The target address of the deposit transaction.
         /// </summary>
         Script DepositTargetAddress { get; }
@@ -67,13 +57,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// Sets the status and verifies that the status is valid given the available fields.
         /// </summary>
         /// <param name="status">The new status.</param>
-        void SetStatus(CrossChainTransferStatus status);
+        /// <param name="blockHash">The block hash of the partialTranction.</param>
+        /// <param name="blockHeight">The block height of the partialTransaction.</param>
+        void SetStatus(CrossChainTransferStatus status, uint256 blockHash = null, int blockHeight = 0);
 
         /// <summary>
         /// Combines signatures from partial transactions received from other federation members.
         /// </summary>
-        /// <param name="network">The network targeted by the transactions.</param>
-        /// <param name="partials">Partial transactions received from other federation members.</param>
-        void CombineSignatures(Network network, Transaction[] partials);
+        /// <param name="builder">The transaction builder to use.</param>
+        /// <param name="partialTransactions">Partial transactions received from other federation members.</param>
+        void CombineSignatures(TransactionBuilder builder, Transaction[] partialTransactions);
+
+        /// <summary>
+        /// Sets the partial transaction.
+        /// </summary>
+        /// <param name="partialTransaction">Partial transaction.</param>
+        void SetPartialTransaction(Transaction partialTransaction);
     }
 }
