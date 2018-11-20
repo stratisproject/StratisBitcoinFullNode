@@ -3,6 +3,11 @@
     public interface IMethodParameterStringSerializer
     {
         /// <summary>
+        /// Serializes a single object to its string representation.
+        /// </summary>
+        string Serialize(object methodParameters);
+
+        /// <summary>
         /// Serializes an array of method parameter objects to their string representation.
         /// </summary>
         string Serialize(object[] methodParameters);
