@@ -101,6 +101,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
         {
             // Setup proven header.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
+
+            // Ensure that the coinstake transaction's input's PrevOut index is higher than the amount of 
+            // outputs from the previous UTXO.
+            posBlock.Transactions[1].Inputs[0].PrevOut.N = 2;
+
             ProvenBlockHeader provenBlockHeader = new ProvenBlockHeaderBuilder(posBlock, this.network).Build();
             provenBlockHeader.Coinstake.Time = provenBlockHeader.Time;
 
@@ -108,10 +113,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
-            // Add more than one unspent output to coinstake.
+            // Ensure that coinview returns a UTXO with valid outputs.
+            var utxoOneTransaction = new Transaction();
+            utxoOneTransaction.AddOutput(new TxOut());
+            var utxoOne = new UnspentOutputs(10, utxoOneTransaction);
+            var utxoTwo = new UnspentOutputs(11, new Transaction());
+
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()), new UnspentOutputs(11, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne, utxoTwo }, posBlock.GetHash()));
 
             // When we run the validation rule, ConsensusErrors.ReadTxPrevFailed should be thrown.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
@@ -222,10 +232,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
+            // Ensure that coinview returns a UTXO with valid outputs.
+            var utxoOneTransaction = new Transaction();
+            utxoOneTransaction.AddOutput(new TxOut());
+            var utxoOne = new UnspentOutputs(10, utxoOneTransaction);
+
             // Setup coinstake transaction with an invalid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to fail stake age check.
             this.stakeValidator
@@ -258,10 +273,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
+            // Ensure that coinview returns UTXO with valid outputs.
+            var utxoOneTransaction = new Transaction();
+            utxoOneTransaction.AddOutput(new TxOut());
+            var utxoOne = new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, utxoOneTransaction);
+
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to fail signature validation.
             this.stakeValidator
@@ -275,9 +295,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // When we run the validation rule, we should hit coinstake signature verification error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
-            ruleValidation.Should().Throw<ConsensusErrorException>()
-                .And.ConsensusError
-                .Should().Be(ConsensusErrors.CoinstakeVerifySignatureFailed);
+            ruleValidation.Should().Throw<ConsensusErrorException>().And.ConsensusError.Should().Be(ConsensusErrors.CoinstakeVerifySignatureFailed);
         }
 
         [Fact]
@@ -300,10 +318,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
+            // Ensure that coinview returns a UTXO with valid outputs.
+            var utxoOneTransaction = new Transaction();
+            utxoOneTransaction.AddOutput(new TxOut());
+            var utxoOne = new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, utxoOneTransaction);
+
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
             this.stakeValidator
@@ -341,10 +364,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
+            // Ensure that coinview returns a UTXO with valid outputs.
+            var utxoOneTransaction = new Transaction();
+            utxoOneTransaction.AddOutput(new TxOut());
+            var utxoOne = new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, utxoOneTransaction);
+
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
             this.stakeValidator
@@ -391,10 +419,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), previousChainedHeader);
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 2);
 
+            // Ensure that coinview returns a UTXO with valid outputs.
+            var utxoOneTransaction = new Transaction();
+            utxoOneTransaction.AddOutput(new TxOut());
+            var utxoOne = new UnspentOutputs(10, utxoOneTransaction);
+
             // Setup coinstake transaction with a valid stake age.
             this.coinView
                 .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs((uint)this.provenHeadersActivationHeight + 10, new Transaction()) }, posBlock.GetHash()));
+                .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
             this.stakeValidator
