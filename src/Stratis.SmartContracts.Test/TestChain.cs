@@ -15,14 +15,17 @@ namespace Stratis.SmartContracts.Test
         private const int AddressesToGenerate = 5;
         private const int AmountToPreload = 100_000;
         private static readonly Mnemonic SharedWalletMnemonic = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom");
+
         private readonly PoAMockChain chain;
+
+        private MockChainNode FirstNode => this.chain.Nodes[0];
+
+        public IReadOnlyList<Base58Address> PreloadedAddresses { get; private set; }
 
         public TestChain()
         {
             this.chain = new PoAMockChain(2, SharedWalletMnemonic);
         }
-
-        public IReadOnlyList<Base58Address> PreloadedAddresses { get; private set; }
 
         public TestChain Initialize()
         {
@@ -36,8 +39,8 @@ namespace Stratis.SmartContracts.Test
             for (int i = 0; i < AddressesToGenerate; i++)
             {
                 HdAddress address = this.chain.Nodes[1].GetUnusedAddress();
-                this.chain.Nodes[0].SendTransaction(address.ScriptPubKey, new Money(AmountToPreload, MoneyUnit.BTC));
-                this.chain.Nodes[0].WaitMempoolCount(1);
+                this.FirstNode.SendTransaction(address.ScriptPubKey, new Money(AmountToPreload, MoneyUnit.BTC));
+                this.FirstNode.WaitMempoolCount(1);
                 this.chain.MineBlocks(1);
                 preloadedAddresses.Add(new Base58Address(address.Address));
             }
@@ -49,7 +52,14 @@ namespace Stratis.SmartContracts.Test
 
         public ulong GetBalanceInStratoshis(Base58Address address)
         {
-            throw new NotImplementedException();
+            // In case it's a contract address
+            ulong contractBalance = this.FirstNode.GetContractBalance(address.Value);
+            if (contractBalance > 0)
+            {
+                return contractBalance;
+            }
+
+            return this.FirstNode.GetWalletAddressBalance(address.Value);
         }
 
         public void MineBlocks(int num)

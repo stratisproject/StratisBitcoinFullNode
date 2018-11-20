@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
@@ -109,6 +110,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             int currentHeight = this.CoreNode.GetTip().Height;
             TestHelper.WaitLoop(() => this.CoreNode.GetTip().Height >= currentHeight + 1);
             this.chain.WaitForAllNodesToSync();
+        }
+
+        public ulong GetWalletAddressBalance(string walletAddress)
+        {
+            throw new NotImplementedException();
         }
 
         /// <summary>
