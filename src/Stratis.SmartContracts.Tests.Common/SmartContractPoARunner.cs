@@ -23,6 +23,7 @@ namespace Stratis.SmartContracts.Tests.Common
             : base(dataDir)
         {
             this.Network = network;
+            this.dateTimeProvider = timeProvider;
         }
 
         public override void BuildNode()

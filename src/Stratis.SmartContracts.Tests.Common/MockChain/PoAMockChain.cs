@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.Networks;
@@ -12,7 +13,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
     public class PoAMockChain : IMockChain
     {
         private readonly SmartContractNodeBuilder builder;
-
+        private readonly Mnemonic initMnemonic;
         protected readonly MockChainNode[] nodes;
         public IReadOnlyList<MockChainNode> Nodes
         {
@@ -21,10 +22,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         protected int chainHeight;
 
-        public PoAMockChain(int numNodes)
+        public PoAMockChain(int numNodes, Mnemonic mnemonic = null)
         {
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numNodes];
+            this.initMnemonic = mnemonic;
         }
 
         public PoAMockChain Build()
@@ -41,7 +43,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                     TestHelper.Connect(node, otherNode.CoreNode);
                 }
 
-                this.nodes[nodeIndex] = new MockChainNode(node, this);
+                this.nodes[nodeIndex] = new MockChainNode(node, this, this.initMnemonic);
             }
 
             return this;

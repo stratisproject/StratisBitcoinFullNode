@@ -76,13 +76,13 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             }
         }
 
-        public MockChainNode(CoreNode coreNode, IMockChain chain)
+        public MockChainNode(CoreNode coreNode, IMockChain chain, Mnemonic mnemonic = null)
         {
             this.CoreNode = coreNode;
             this.chain = chain;
 
             // Set up address and mining
-            this.CoreNode.FullNode.WalletManager().CreateWallet(this.Password, this.WalletName, this.Passphrase);
+            this.CoreNode.FullNode.WalletManager().CreateWallet(this.Password, this.WalletName, this.Passphrase, mnemonic);
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.WalletName, this.AccountName));
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;

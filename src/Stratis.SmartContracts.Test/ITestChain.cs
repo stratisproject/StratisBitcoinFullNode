@@ -1,6 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -14,23 +16,24 @@ using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.Test
 {
-    public interface ITestChain
+    public interface ITestChain : IDisposable
     {
         /// <summary>
         /// 10 addresses that come preloaded with funds.
         /// </summary>
-        IReadOnlyList<string> PreloadedAddresses { get; }
+        IReadOnlyList<Base58Address> PreloadedAddresses { get; }
 
         /// <summary>
         /// Get the balance in stratoshis for an address.
         /// </summary>
         /// <param name="address">Address to get the balance for.</param>
         /// <returns>Balance for this address.</returns>
-        ulong GetBalanceInStratoshis(string address);
+        ulong GetBalanceInStratoshis(Base58Address address);
 
         /// <summary>
         /// Performs all required setup for network.
@@ -43,8 +46,28 @@ namespace Stratis.SmartContracts.Test
         /// <param name="num">Number of blocks to mine.</param>
         void MineBlocks(int num);
 
-        BuildCreateContractTransactionResponse SendCreateContractTransaction(
-            string from,
+        /// <summary>
+        /// Get the bytecode stored at a particular contract address.
+        /// </summary>
+        /// <param name="contractAddress">Address of the contract to get code for.</param>
+        /// <returns>Code at this address.</returns>
+        byte[] GetCode(Base58Address contractAddress);
+
+        /// <summary>
+        /// Get the receipt details for a transaction.
+        /// </summary>
+        /// <param name="txHash">Hash of the transaction to get the receipt for.</param>
+        /// <returns>Receipt details for this transaction hash.</returns>
+        ReceiptResponse GetReceipt(uint256 txHash);
+
+        /// <summary>
+        /// Get the newest block mined on the network.
+        /// </summary>
+        /// <returns>Newest block mined on the network.</returns>
+        Block GetLastBlock();
+
+        SendCreateContractResult SendCreateContractTransaction(
+            Base58Address from,
             byte[] contractCode,
             double amount,
             string[] parameters = null,
@@ -52,34 +75,24 @@ namespace Stratis.SmartContracts.Test
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01);
 
-        BuildCallContractTransactionResponse SendCallContractTransaction(
-            string from,
+        SendCallContractResult SendCallContractTransaction(
+            Base58Address from,
             string methodName,
-            string contractAddress,
+            Base58Address contractAddress,
             double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01);
 
-        /// <summary>
-        /// Get the bytecode stored at a particular contract address.
-        /// </summary>
-        /// <param name="contractAddress">Address of the contract to get code for.</param>
-        /// <returns>Code at this address.</returns>
-        byte[] GetCode(string contractAddress);
-
-        /// <summary>
-        /// Get the receipt details for a transaction.
-        /// </summary>
-        /// <param name="txHash">Hash of the transaction to get the receipt for.</param>
-        /// <returns>Receipt details for this transaction hash.</returns>
-        ReceiptResponse GetReceipt(string txHash);
-
-        /// <summary>
-        /// Get the newest block mined on the network.
-        /// </summary>
-        /// <returns>Newest block mined on the network.</returns>
-        Block GetLastBlock();
+        ILocalExecutionResult CallContractMethodLocally(
+            Base58Address from,
+            string methodName,
+            Base58Address contractAddress,
+            double amount,
+            string[] parameters = null,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
+            double feeAmount = 0.01);
     }
 }
