@@ -70,6 +70,13 @@ namespace Stratis.SmartContracts.Test
         byte[] GetCode(string contractAddress);
 
         /// <summary>
+        /// Get the receipt details for a transaction.
+        /// </summary>
+        /// <param name="txHash">Hash of the transaction to get the receipt for.</param>
+        /// <returns>Receipt details for this transaction hash.</returns>
+        ReceiptResponse GetReceipt(string txHash);
+
+        /// <summary>
         /// Get the newest block mined on the network.
         /// </summary>
         /// <returns>Newest block mined on the network.</returns>
