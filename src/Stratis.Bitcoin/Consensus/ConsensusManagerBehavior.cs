@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     if (header.HashPrevBlock == this.ExpectedPeerTip.HashBlock)
                     {
-                        var headers = new List<BlockHeader>() {header};
+                        var headers = new List<BlockHeader>() { header };
                         for (int i = 1; i < this.cachedHeaders.Count; i++)
                         {
                             if (this.cachedHeaders[i].HashPrevBlock != this.cachedHeaders[i - 1].GetHash())
@@ -309,11 +309,24 @@ namespace Stratis.Bitcoin.Consensus
                 // If queue is not empty, add to queue instead of calling CM.
                 if (this.cachedHeaders.Count != 0)
                 {
-                    this.cachedHeaders.AddRange(headers);
+                    uint256 lastCachedHeaderHash = this.cachedHeaders.Last().GetHash();
+                    uint256 prevHashOfFirstHeaderToConnect = headers.First().HashPrevBlock;
+                    // ensure headers can connect to cached headers.
+                    if (lastCachedHeaderHash == prevHashOfFirstHeaderToConnect)
+                    {
+                        this.cachedHeaders.AddRange(headers);
 
-                    this.logger.LogTrace("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
-                    this.logger.LogTrace("(-)[CACHED]");
-                    return;
+                        this.logger.LogTrace("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
+                        this.logger.LogTrace("(-)[CACHED]");
+                        return;
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), lastCachedHeaderHash);
+                        this.lastForcedResync = DateTime.UtcNow;
+                        this.cachedHeaders.Clear();
+                        await this.ResyncAsync().ConfigureAwait(false);
+                    }
                 }
 
                 ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
