@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     public class PoWMockChainFixture : IDisposable
     {

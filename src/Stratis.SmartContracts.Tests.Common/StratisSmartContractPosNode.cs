@@ -4,18 +4,19 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
-using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.Tests.Common
 {
-    public sealed class StratisSmartContractNode : NodeRunner
+    public sealed class StratisSmartContractPosNode : NodeRunner
     {
-        public StratisSmartContractNode(string dataDir, Network network)
+        public StratisSmartContractPosNode(string dataDir, Network network)
             : base(dataDir)
         {
             this.Network = network;
@@ -31,12 +32,14 @@ namespace Stratis.SmartContracts.IntegrationTests
                 .UseMempool()
                 .AddRPC()
                 .AddSmartContracts()
-                .UseSmartContractPowConsensus()
+                .UseSmartContractPosConsensus()
                 .UseSmartContractWallet()
-                .UseSmartContractPowMining()
+                .UseSmartContractPosPowMining()
                 .UseReflectionExecutor()
                 .MockIBD()
+                .OverrideDateTimeProviderFor<MiningFeature>()
                 .Build();
         }
+
     }
 }

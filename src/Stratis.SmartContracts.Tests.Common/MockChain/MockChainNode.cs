@@ -20,7 +20,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 
-namespace Stratis.SmartContracts.IntegrationTests.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     /// <summary>
     /// Facade for CoreNode.

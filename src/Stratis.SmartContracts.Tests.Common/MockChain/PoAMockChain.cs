@@ -1,15 +1,15 @@
 ﻿using System.Collections.Generic;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
+using Stratis.SmartContracts.Networks;
 
-namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     /// <summary>
     /// Facade for NodeBuilder.
     /// </summary>
-    /// <remarks>TODO: This and PoAMockChain could share most logic.</remarks>
-    public class PoWMockChain : IMockChain
+    /// <remarks>TODO: This and PoWMockChain could share most logic</remarks>
+    public class PoAMockChain : IMockChain
     {
         private readonly SmartContractNodeBuilder builder;
 
@@ -19,14 +19,19 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
             get { return this.nodes; }
         }
 
-        public PoWMockChain(int numberOfNodes)
+        public PoAMockChain(int numNodes)
         {
             this.builder = SmartContractNodeBuilder.Create(this);
-            this.nodes = new MockChainNode[numberOfNodes];
+            this.nodes = new MockChainNode[numNodes];
+        }
 
-            for (int nodeIndex = 0; nodeIndex < numberOfNodes; nodeIndex++)
+        public PoAMockChain Build()
+        {
+            var network = new SmartContractsPoARegTest();
+
+            for (int nodeIndex = 0; nodeIndex < this.nodes.Length; nodeIndex++)
             {
-                CoreNode node = this.builder.CreateSmartContractPowNode().Start();
+                CoreNode node = this.builder.CreateSmartContractPoANode(network, nodeIndex).Start();
 
                 for (int j = 0; j < nodeIndex; j++)
                 {
@@ -36,6 +41,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW.MockChain
 
                 this.nodes[nodeIndex] = new MockChainNode(node, this);
             }
+
+            return this;
         }
 
         /// <summary>
