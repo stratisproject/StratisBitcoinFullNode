@@ -7,7 +7,7 @@
 
   <ItemGroup>
     <PackageReference Include="NStratis" Version="4.0.0.67" />
-    <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.4-beta" />
   </ItemGroup>
 
 </Project>

@@ -15,9 +15,9 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.2.3-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.2.3-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.2.4-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.2.4-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.4-beta" />
   </ItemGroup>
 
   <ItemGroup>
