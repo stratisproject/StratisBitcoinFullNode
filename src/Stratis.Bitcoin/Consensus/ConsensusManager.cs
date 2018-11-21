@@ -490,7 +490,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (peerId == null)
                     continue;
 
-                if (connectNewHeadersResult == null)
+                if (connectNewHeadersResult?.DownloadTo == null)
                 {
                     this.logger.LogTrace("No new blocks to download were presented by peer ID {0}.", peerId);
                     continue;
