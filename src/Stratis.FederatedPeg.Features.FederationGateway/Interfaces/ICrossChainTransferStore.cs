@@ -25,7 +25,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// Records the mature deposits from <see cref="NextMatureDepositHeight"/> on the counter-chain.
         /// The value of <see cref="NextMatureDepositHeight"/> is incremented at the end of this call.
         /// </summary>
-        /// <param name="deposits">The deposits.</param>
+        /// <param name="deposits">The deposits in order of occurrence on the source chain.</param>
         /// <remarks>
         /// The transfers are set to <see cref="CrossChainTransfer.Status"/> of <see cref="CrossChainTransferStatus.Partial"/>
         /// or <see cref="CrossChainTransferStatus.Rejected"/> depending on whether enough funds are available in the federation wallet.
