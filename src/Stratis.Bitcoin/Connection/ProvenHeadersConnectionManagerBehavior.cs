@@ -32,13 +32,7 @@ namespace Stratis.Bitcoin.Connection
         {
             if (this.CanPeerProcessProvenHeaders(peer))
             {
-                // Require from height is the highest between activation height and last checkpoint height.
-                int requireFromHeight = this.checkpoints.GetLastCheckpointHeight();
-                if (requireFromHeight > 0) requireFromHeight++;
-
-                this.logger.LogDebug("Proven headers are requested from height {0}.", requireFromHeight);
-
-                var sendProvenHeadersPayload = new SendProvenHeadersPayload(requireFromHeight);
+                var sendProvenHeadersPayload = new SendProvenHeadersPayload();
 
                 await peer.SendMessageAsync(sendProvenHeadersPayload).ConfigureAwait(false);
             }

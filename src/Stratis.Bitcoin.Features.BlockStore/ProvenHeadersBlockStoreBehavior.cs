@@ -19,11 +19,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Network network;
         private readonly ICheckpoints checkpoints;
 
-        /// <summary>
-        /// Gets or sets the height from which start serving Proven Headers, if > 0.
-        /// </summary>
-        public int AnnounceProvenHeadersFromHeight { get; set; }
-
         public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints)
             : base(chain, chainState, loggerFactory, consensusManager)
         {
@@ -49,7 +44,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private Task ProcessSendProvenHeadersPayload(SendProvenHeadersPayload sendProvenHeadersPayload)
         {
             this.PreferHeaders = true;
-            this.AnnounceProvenHeadersFromHeight = sendProvenHeadersPayload.RequireFromHeight;
             return Task.CompletedTask;
         }
 
@@ -57,30 +51,23 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <returns>The <see cref="HeadersPayload"/> instance to announce to the peer, or <see cref="ProvenHeadersPayload"/> if the peers requires it.</returns>
         protected override Payload BuildAnnouncedHeaderPayload(int blockstoreTipHeight, params BlockHeader[] headers)
         {
-            if (blockstoreTipHeight >= this.AnnounceProvenHeadersFromHeight)
+            var provenHeadersPayload = new ProvenHeadersPayload();
+
+            foreach (var header in headers)
             {
-                var provenHeadersPayload = new ProvenHeadersPayload();
+                // When announcing proven headers we will always announce headers that we received form peers,
+                // this means the BlockHeader must already be of type ProvenBlockHeader.
+                ProvenBlockHeader provenBlockHeader = header as ProvenBlockHeader;
 
-                foreach (var header in headers)
+                if (provenBlockHeader == null)
                 {
-                    // When announcing proven headers we will always announce headers that we received form peers,
-                    // this means the BlockHeader must already be of type ProvenBlockHeader.
-                    ProvenBlockHeader provenBlockHeader = header as ProvenBlockHeader;
-
-                    if (provenBlockHeader == null)
-                    {
-                        throw new BlockStoreException("BlockHeader is expected to be a ProvenBlockHeader");
-                    }
-
-                    provenHeadersPayload.Headers.Add(provenBlockHeader);
+                    throw new BlockStoreException("BlockHeader is expected to be a ProvenBlockHeader");
                 }
 
-                return provenHeadersPayload;
+                provenHeadersPayload.Headers.Add(provenBlockHeader);
             }
-            else
-            {
-                return base.BuildAnnouncedHeaderPayload(blockstoreTipHeight, headers);
-            }
+
+            return provenHeadersPayload;
         }
 
         [NoTrace]
