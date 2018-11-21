@@ -7,6 +7,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// <summary>
     /// Base rule to be used by all proven header validation rules.
     /// </summary>
+    /// <remarks>
+    /// We assume that in case normal headers are provided instead of proven headers we should ignore validation.
+    /// This should be allowed by the behaviors only for whitelisted nodes.</remarks>
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public abstract class ProvenHeaderRuleBase : HeaderValidationConsensusRule
     {

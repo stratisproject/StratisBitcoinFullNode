@@ -224,39 +224,39 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && peer.IsWhitelisted());
 
-            // Only legacy peers are allowed to handle this message, or any node before PH activation.
             bool bellowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
             if (isLegacyWhitelistedPeer || bellowLastCheckpoint)
             {
-                if (!isLegacyWhitelistedPeer)
+                // Allow legacy headers that came from whitelisted peer.
+                if (isLegacyWhitelistedPeer)
+                    return base.ProcessHeadersAsync(peer, headers);
+
+                var distanceFromCheckPoint = this.lastCheckpointHeight - this.GetCurrentHeight();
+
+                if (distanceFromCheckPoint < MaxItemsPerHeadersMessage)
                 {
-                    var distanceFromCheckPoint = this.lastCheckpointHeight - this.GetCurrentHeight();
+                    bool checkpointFound = false;
 
-                    if (distanceFromCheckPoint < MaxItemsPerHeadersMessage)
+                    // Filter out headers that are above the last checkpoint hash
+                    for (int index = 0; index < headers.Count; index++)
                     {
-                        bool checkpointFound = false;
-                       
-                        // Filter out headers that are above the last checkpoint hash
-                        for (int index = 0; index < headers.Count; index++)
+                        if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
                         {
-                            if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
+                            if (index != headers.Count - 1)
                             {
-                                if (index != headers.Count - 1)
-                                {
-                                    headers.RemoveRange(index + 1, headers.Count - index - 1);
-                                }
-
-                                checkpointFound = true;
-                                break;
+                                headers.RemoveRange(index + 1, headers.Count - index - 1);
                             }
-                        }
 
-                        if (!checkpointFound)
-                        {
-                            // Checkpoint was not found in presented headers so we discard this batch
-                            this.logger.LogTrace("(-)[CHECKPOINT_HEADER_NOT_FOUND]");
-                            return Task.CompletedTask;
+                            checkpointFound = true;
+                            break;
                         }
+                    }
+
+                    if (!checkpointFound)
+                    {
+                        // Checkpoint was not found in presented headers so we discard this batch
+                        this.logger.LogTrace("(-)[CHECKPOINT_HEADER_NOT_FOUND]");
+                        return Task.CompletedTask;
                     }
                 }
 
