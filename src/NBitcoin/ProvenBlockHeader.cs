@@ -1,5 +1,4 @@
 ﻿using System;
-using NBitcoin.Crypto;
 
 namespace NBitcoin
 {

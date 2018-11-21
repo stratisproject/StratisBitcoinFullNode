@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System.Collections.Generic;
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
@@ -23,7 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <inheritdoc />
         /// <returns>The <see cref="HeadersPayload"/> instance to announce to the peer, or <see cref="ProvenHeadersPayload"/> if the peers requires it.</returns>
-        protected override Payload BuildAnnouncedHeaderPayload(int blockstoreTipHeight, params BlockHeader[] headers)
+        protected override Payload BuildAnnouncedHeaderPayload(IEnumerable<BlockHeader> headers)
         {
             var provenHeadersPayload = new ProvenHeadersPayload();
 
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 // When announcing proven headers we will always announce headers that we received form peers,
                 // this means the BlockHeader must already be of type ProvenBlockHeader.
-                ProvenBlockHeader provenBlockHeader = header as ProvenBlockHeader;
+                var provenBlockHeader = header as ProvenBlockHeader;
 
                 if (provenBlockHeader == null)
                 {
