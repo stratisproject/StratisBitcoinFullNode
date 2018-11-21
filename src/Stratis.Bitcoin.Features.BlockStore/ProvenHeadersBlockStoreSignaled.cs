@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <inheritdoc />
         /// <remarks>When a block is signaled, we check if its header is a Proven Header, if not, we need to generate and store it.</remarks>
-        protected override void AddBlockToQueue(ChainedHeaderBlock blockPair)
+        protected override void AddBlockToQueue(ChainedHeaderBlock blockPair, bool isIBD)
         {
             int blockHeight = blockPair.ChainedHeader.Height;
 
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     this.logger.LogTrace("Proven Header at height {0} NOT found.", blockHeight);
 
-                    this.CreateAndStoreProvenHeader(blockHeight, blockPair);
+                    this.CreateAndStoreProvenHeader(blockHeight, blockPair, isIBD);
                 }
                 else
                 {
@@ -77,13 +77,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.logger.LogTrace("Found a proven header with a different hash, recreating PH. Expected Hash: {0}, found Hash: {1}.", signaledHeaderHash, provenHeaderHash);
 
                         // A reorg happened so we recreate a new Proven Header to replace the wrong one.
-                        this.CreateAndStoreProvenHeader(blockHeight, blockPair);
+                        this.CreateAndStoreProvenHeader(blockHeight, blockPair, isIBD);
                     }
                 }
             }
 
             // At the end, if no exception happened, control is passed back to base AddBlockToQueue.
-            base.AddBlockToQueue(blockPair);
+            base.AddBlockToQueue(blockPair, isIBD);
         }
 
         /// <summary>
@@ -91,7 +91,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="blockHeight">Height of the block used to generate its Proven Header.</param>
         /// <param name="chainedHeaderBlock">Block used to generate its Proven Header.</param>
-        private void CreateAndStoreProvenHeader(int blockHeight, ChainedHeaderBlock chainedHeaderBlock)
+        /// <param name="isIBD">Is node in IBD.</param>
+        private void CreateAndStoreProvenHeader(int blockHeight, ChainedHeaderBlock chainedHeaderBlock, bool isIBD)
         {
             PosBlock block = (PosBlock)chainedHeaderBlock.Block;
 
@@ -110,10 +111,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // This is also correct for regular header (which are 80 bytes in size).
             // If we want to be able to control the size of PH we will need to change the logic
             // in ProvenHeadersBlockStoreBehavior and load the PH from the PH store instead
-            if (!this.initialBlockDownloadState.IsInitialBlockDownload())
-            {
+            if (!isIBD)
                 chainedHeaderBlock.SetHeader(newProvenHeader);
-            }
         }
     }
 }
