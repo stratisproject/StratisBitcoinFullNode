@@ -1,16 +1,14 @@
 ﻿using System.Collections.Generic;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
-using Stratis.SmartContracts.Networks;
 
-namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     /// <summary>
     /// Facade for NodeBuilder.
     /// </summary>
-    /// <remarks>TODO: This and PoWMockChain could share most logic</remarks>
-    public class PoAMockChain : IMockChain
+    /// <remarks>TODO: This and PoAMockChain could share most logic.</remarks>
+    public class PoWMockChain : IMockChain
     {
         private readonly SmartContractNodeBuilder builder;
 
@@ -20,21 +18,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
             get { return this.nodes; }
         }
 
-        protected int chainHeight;
-
-        public PoAMockChain(int numNodes)
+        public PoWMockChain(int numberOfNodes)
         {
             this.builder = SmartContractNodeBuilder.Create(this);
-            this.nodes = new MockChainNode[numNodes];
-        }
+            this.nodes = new MockChainNode[numberOfNodes];
 
-        public PoAMockChain Build()
-        {
-            var network = new SmartContractsPoARegTest();
-
-            for (int nodeIndex = 0; nodeIndex < this.nodes.Length; nodeIndex++)
+            for (int nodeIndex = 0; nodeIndex < numberOfNodes; nodeIndex++)
             {
-                CoreNode node = this.builder.CreateSmartContractPoANode(network, nodeIndex).Start();
+                CoreNode node = this.builder.CreateSmartContractPowNode().Start();
 
                 for (int j = 0; j < nodeIndex; j++)
                 {
@@ -44,8 +35,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
 
                 this.nodes[nodeIndex] = new MockChainNode(node, this);
             }
-
-            return this;
         }
 
         /// <summary>
@@ -68,19 +57,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
         public void Dispose()
         {
             this.builder.Dispose();
-        }
-
-        public void MineBlocks(int num)
-        {
-            int currentHeight = this.nodes[0].CoreNode.GetTip().Height;
-
-            for (int i = 0; i < num; i++)
-            {
-                this.builder.PoATimeProvider.NextSpacing();
-                TestHelper.WaitLoop(() => this.nodes[0].CoreNode.GetTip().Height == currentHeight + 1);
-                currentHeight++;
-                WaitForAllNodesToSync();
-            }
         }
     }
 }
