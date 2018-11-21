@@ -92,6 +92,11 @@ namespace Stratis.SmartContracts.Test
             object[] parameters = null, ulong gasLimit = 50000, ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
+            if (parameters == null)
+            {
+                parameters = new object[0];
+            }
+
             string[] stringParameters = parameters.Select(this.GetSerializedStringForObject).ToArray();
             BuildCreateContractTransactionResponse response = this.FirstNode.SendCreateContractTransaction(contractCode, amount, stringParameters, gasLimit, gasPrice, feeAmount, from);
 
@@ -115,6 +120,11 @@ namespace Stratis.SmartContracts.Test
             Base58Address contractAddress, double amount, object[] parameters = null, ulong gasLimit = 50000,
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice, double feeAmount = 0.01)
         {
+            if (parameters == null)
+            {
+                parameters = new object[0];
+            }
+
             string[] stringParameters = parameters.Select(this.GetSerializedStringForObject).ToArray();
             BuildCallContractTransactionResponse response = this.FirstNode.SendCallContractTransaction(methodName, contractAddress, amount, stringParameters, gasLimit, gasPrice, feeAmount, from);
 
@@ -137,6 +147,11 @@ namespace Stratis.SmartContracts.Test
             double amount, object[] parameters = null, ulong gasLimit = 50000,
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice, double feeAmount = 0.01)
         {
+            if (parameters == null)
+            {
+                parameters = new object[0];
+            }
+
             string[] stringParameters = parameters.Select(this.GetSerializedStringForObject).ToArray();
             return this.FirstNode.CallContractMethodLocally(methodName, contractAddress, amount, stringParameters, gasLimit, gasPrice, feeAmount, from);
         }
