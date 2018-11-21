@@ -53,20 +53,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         {
             this.CheckCoinstakeIsNotNull(header);
 
-            if (header.Coinstake.IsCoinBase)
+            // In case we are in PoW era there might be no coinstake tx.
+            // We have no way of telling if the block was supposed to be PoW or PoS so attacker can trick us into thinking that all of them are PoW so no PH is required.
+            // Therefore we get no benefit from checking proven headers while we are in PoW era.
+            if (chainedHeader.Height < this.Parent.Network.Consensus.LastPOWBlock)
             {
-                // If the header represents a POW block we don't do any validation of stake.
-                // We verify the header is not passed the last pow height.
-
-                if (chainedHeader.Height > this.Parent.Network.Consensus.LastPOWBlock)
-                {
-                    this.Logger.LogTrace("(-)[POW_TOO_HIGH]");
-                    ConsensusErrors.ProofOfWorkTooHigh.Throw();
-                }
-
                 this.ComputeNextStakeModifier(header, chainedHeader);
 
-                this.Logger.LogTrace("(-)[COIN_BASE_VALIDATION]");
+                this.Logger.LogTrace("(-)[POW_ERA]");
                 return;
             }
 
@@ -222,8 +216,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             // Computes the stake modifier and sets the value to the current validating proven header,
             // to retain it for next header validation as previousStakeModifier.
-            uint256 kernal = header.Coinstake.IsCoinBase ? chainedHeader.HashBlock : header.Coinstake.Inputs[0].PrevOut.Hash;
-            header.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(chainedHeader.Previous, previousStakeModifier, kernal);
+            uint256 hash = !header.Coinstake.IsCoinStake ? chainedHeader.HashBlock : header.Coinstake.Inputs[0].PrevOut.Hash;
+            header.StakeModifierV2 = this.stakeValidator.ComputeStakeModifierV2(chainedHeader.Previous, previousStakeModifier, hash);
         }
 
         private uint256 GetPreviousStakeModifier(ChainedHeader chainedHeader)
