@@ -1,11 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Local;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 
 namespace Stratis.SmartContracts.Test
@@ -17,6 +21,7 @@ namespace Stratis.SmartContracts.Test
         private static readonly Mnemonic SharedWalletMnemonic = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom");
 
         private readonly PoAMockChain chain;
+        private readonly IMethodParameterStringSerializer paramSerializer;
 
         private MockChainNode FirstNode => this.chain.Nodes[0];
 
@@ -25,6 +30,7 @@ namespace Stratis.SmartContracts.Test
         public TestChain()
         {
             this.chain = new PoAMockChain(2, SharedWalletMnemonic);
+            this.paramSerializer = new MethodParameterStringSerializer(new SmartContractsPoARegTest()); // TODO: Inject
         }
 
         public TestChain Initialize()
@@ -40,7 +46,7 @@ namespace Stratis.SmartContracts.Test
             {
                 HdAddress address = this.chain.Nodes[1].GetUnusedAddress();
                 this.FirstNode.SendTransaction(address.ScriptPubKey, new Money(AmountToPreload, MoneyUnit.BTC));
-                this.FirstNode.WaitMempoolCount(1);
+                this.WaitForMempoolCountOnAllNodes(1);
                 this.chain.MineBlocks(1);
                 preloadedAddresses.Add(new Base58Address(address.Address));
             }
@@ -53,54 +59,105 @@ namespace Stratis.SmartContracts.Test
         public ulong GetBalanceInStratoshis(Base58Address address)
         {
             // In case it's a contract address
-            ulong contractBalance = this.FirstNode.GetContractBalance(address.Value);
+            ulong contractBalance = this.FirstNode.GetContractBalance(address);
             if (contractBalance > 0)
             {
                 return contractBalance;
             }
 
-            return this.FirstNode.GetWalletAddressBalance(address.Value);
+            return this.FirstNode.GetWalletAddressBalance(address);
         }
 
         public void MineBlocks(int num)
         {
-            throw new NotImplementedException();
+            this.chain.MineBlocks(1);
         }
 
         public byte[] GetCode(Base58Address contractAddress)
         {
-            throw new NotImplementedException();
+            return this.FirstNode.GetCode(contractAddress.Value);
         }
 
         public ReceiptResponse GetReceipt(uint256 txHash)
         {
-            throw new NotImplementedException();
+            return this.FirstNode.GetReceipt(txHash.ToString());
         }
 
-        public Block GetLastBlock()
+        public NBitcoin.Block GetLastBlock()
         {
-            throw new NotImplementedException();
+            return this.FirstNode.GetLastBlock();
         }
 
-        public SendCreateContractResult SendCreateContractTransaction(Base58Address @from, byte[] contractCode, double amount,
-            string[] parameters = null, ulong gasLimit = 50000, ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
+        public SendCreateContractResult SendCreateContractTransaction(Base58Address from, byte[] contractCode, double amount,
+            object[] parameters = null, ulong gasLimit = 50000, ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
-            throw new NotImplementedException();
+            string[] stringParameters = parameters.Select(this.GetSerializedStringForObject).ToArray();
+            BuildCreateContractTransactionResponse response = this.FirstNode.SendCreateContractTransaction(contractCode, amount, stringParameters, gasLimit, gasPrice, feeAmount, from);
+
+            if (response.Success)
+            {
+                WaitForMempoolCountOnAllNodes(1);
+            }
+
+            return new SendCreateContractResult
+            {
+                Fee = response.Fee,
+                Hex = response.Hex,
+                Message = response.Message,
+                NewContractAddress = new Base58Address(response.NewContractAddress),
+                Success = response.Success,
+                TransactionId = response.TransactionId
+            };
         }
 
-        public SendCallContractResult SendCallContractTransaction(Base58Address @from, string methodName,
-            Base58Address contractAddress, double amount, string[] parameters = null, ulong gasLimit = 50000,
+        public SendCallContractResult SendCallContractTransaction(Base58Address from, string methodName,
+            Base58Address contractAddress, double amount, object[] parameters = null, ulong gasLimit = 50000,
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice, double feeAmount = 0.01)
         {
-            throw new NotImplementedException();
+            string[] stringParameters = parameters.Select(this.GetSerializedStringForObject).ToArray();
+            BuildCallContractTransactionResponse response = this.FirstNode.SendCallContractTransaction(methodName, contractAddress, amount, stringParameters, gasLimit, gasPrice, feeAmount, from);
+
+            if (response.Success)
+            {
+                this.WaitForMempoolCountOnAllNodes(1);
+            }
+
+            return new SendCallContractResult
+            {
+                Fee = response.Fee,
+                Hex = response.Hex,
+                Message = response.Message,
+                Success = response.Success,
+                TransactionId = response.TransactionId
+            };
         }
 
-        public ILocalExecutionResult CallContractMethodLocally(Base58Address @from, string methodName, Base58Address contractAddress,
-            double amount, string[] parameters = null, ulong gasLimit = 50000,
+        public ILocalExecutionResult CallContractMethodLocally(Base58Address from, string methodName, Base58Address contractAddress,
+            double amount, object[] parameters = null, ulong gasLimit = 50000,
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice, double feeAmount = 0.01)
         {
-            throw new NotImplementedException();
+            string[] stringParameters = parameters.Select(this.GetSerializedStringForObject).ToArray();
+            return this.FirstNode.CallContractMethodLocally(methodName, contractAddress, amount, stringParameters, gasLimit, gasPrice, feeAmount, from);
+        }
+
+        private string GetSerializedStringForObject(object toSerialize)
+        {
+            // Convert to address before sending this
+            if (toSerialize is Base58Address b)
+            {
+                return this.paramSerializer.Serialize(b.Value.ToAddress(this.FirstNode.CoreNode.FullNode.Network));
+            }
+
+            return this.paramSerializer.Serialize(toSerialize);
+        }
+
+        private void WaitForMempoolCountOnAllNodes(int num)
+        {
+            foreach (MockChainNode node in this.chain.Nodes)
+            {
+                node.WaitMempoolCount(num);
+            }
         }
 
         public void Dispose()

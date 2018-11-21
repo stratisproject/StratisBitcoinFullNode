@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+            selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
 
             uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
 
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return BuildCreateContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
 
             var selectedInputs = new List<OutPoint>();
-            selectedInputs = this.walletManager.GetSpendableTransactionsInWallet(request.WalletName, MinConfirmationsAllChecks).Where(x => x.Address.Address == request.Sender).Select(x => x.ToOutPoint()).ToList();
+            selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
 
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
