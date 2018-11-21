@@ -35,17 +35,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IWalletManager walletManager;
 
         /// <summary>Wallet transaction handler.</summary>
-        private readonly IWalletTransactionHandler walletTransactionHandler;
+        private readonly IWalletTransactionHandler walletTransactionHandler;      
 
-        private readonly ConcurrentChain chain;
-
-        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ConcurrentChain chain, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
+        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.fullNode = fullNode;
-            this.broadcasterManager = broadcasterManager;
-            this.chain = chain;
+            this.broadcasterManager = broadcasterManager;     
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -239,9 +236,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             var unspentCoins = new List<UnspentCoinModel>();
             foreach (var spendableTx in spendableTransactions)
-            {
-                int confirmations = spendableTx.Transaction.BlockHeight == null ? 0 : this.chain.Tip.Height - spendableTx.Transaction.BlockHeight.Value;
-                if (confirmations <= maxConfirmations)
+            {               
+                if (spendableTx.Confirmations <= maxConfirmations)
                 {
                     if (!addresses.Any() || addresses.Contains(BitcoinAddress.Create(spendableTx.Address.Address, this.fullNode.Network)))
                     {
@@ -253,10 +249,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                             Index = spendableTx.Transaction.Index,
                             Amount = spendableTx.Transaction.Amount,
                             ScriptPubKeyHex = spendableTx.Transaction.ScriptPubKey.ToHex(),
-                            RedeemScriptHex = spendableTx.Transaction.ScriptPubKey.PaymentScript?.ToHex(), // Is this right?
-                            Confirmations = confirmations,
+                            RedeemScriptHex = null, // TODO: Currently don't support P2SH wallet addresses, review if we do.
+                            Confirmations = spendableTx.Confirmations,
                             IsSpendable = spendableTx.Transaction.IsSpendable(),
-                            IsSolvable = spendableTx.Transaction.IsSpendable() // Is it's spendable we assume it's solvable.
+                            IsSolvable = spendableTx.Transaction.IsSpendable() // If it's spendable we assume it's solvable.
                             });
                     }
                 }
