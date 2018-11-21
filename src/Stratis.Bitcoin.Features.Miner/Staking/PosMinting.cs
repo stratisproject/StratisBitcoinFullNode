@@ -441,7 +441,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             List<UnspentOutputReference> spendableTransactions = this.walletManager
                 .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1).ToList();
 
-            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
 
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
