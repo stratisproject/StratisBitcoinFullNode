@@ -73,16 +73,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
-        /// <summary>
-        /// The last time we forced a resync
-        /// </summary>
-        private DateTime lastForcedResync = DateTime.MinValue;
-
-        /// <summary>
-        /// The minimum time it has to pass, between two forced resync.
-        /// </summary>
-        private TimeSpan forceResyncThreshold = TimeSpan.FromMinutes(1);
-
         public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
@@ -108,48 +98,23 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.cachedHeaders.Count != 0)
                 {
-                    BlockHeader header = this.cachedHeaders[0];
+                    result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
 
-                    if (header.HashPrevBlock == this.ExpectedPeerTip.HashBlock)
+                    if (result == null)
                     {
-                        var headers = new List<BlockHeader>() { header };
-                        for (int i = 1; i < this.cachedHeaders.Count; i++)
-                        {
-                            if (this.cachedHeaders[i].HashPrevBlock != this.cachedHeaders[i - 1].GetHash())
-                            {
-                                // Break when we find a header that is not consecutive.
-                                break;
-                            }
-
-                            headers.Add(this.cachedHeaders[i]);
-                        }
-
-                        result = await this.PresentHeadersLockedAsync(headers, false).ConfigureAwait(false);
-
-                        if (result == null)
-                        {
-                            this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
-                            return null;
-                        }
-
-                        this.ExpectedPeerTip = result.Consumed;
-                        this.UpdateBestSentHeader(this.ExpectedPeerTip);
-
-                        int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
-                        this.cachedHeaders.RemoveRange(0, consumedCount);
-                        int cacheSize = this.cachedHeaders.Count;
-
-                        this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
-                        syncRequired = cacheSize == 0;
+                        this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
+                        return null;
                     }
-                    else
-                    {
-                        // If the first item in the list is not consecutive
-                        // then invalidate the entire list and resync.
 
-                        this.cachedHeaders.Clear();
-                        syncRequired = true;
-                    }
+                    this.ExpectedPeerTip = result.Consumed;
+                    this.UpdateBestSentHeader(this.ExpectedPeerTip);
+
+                    int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+                    this.cachedHeaders.RemoveRange(0, consumedCount);
+                    int cacheSize = this.cachedHeaders.Count;
+
+                    this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
+                    syncRequired = cacheSize == 0;
                 }
             }
 
@@ -324,7 +289,6 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.logger.LogTrace("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), lastCachedHeaderHash);
                         this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
-                        this.lastForcedResync = DateTime.UtcNow;
                         this.cachedHeaders.Clear();
                         await this.ResyncAsync().ConfigureAwait(false);
                         return;
@@ -335,15 +299,6 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result == null)
                 {
-                    // If a peer has a new block and our current peer is not exactly at the tip,
-                    // we try to trigger a resync, this will bring us to the tip of the peer.
-                    if (headers.Count == 1 && (DateTime.UtcNow - this.lastForcedResync) >= this.forceResyncThreshold)
-                    {
-                        this.lastForcedResync = DateTime.UtcNow;
-                        this.logger.LogTrace("Header {0} could not be connected try to trigger a resync.", headers[0].GetHash());
-                        await this.ResyncAsync().ConfigureAwait(false);
-                    }
-
                     this.logger.LogTrace("Processing of {0} headers failed.", headers.Count);
                     this.logger.LogTrace("(-)[PROCESSING_FAILED]");
 
