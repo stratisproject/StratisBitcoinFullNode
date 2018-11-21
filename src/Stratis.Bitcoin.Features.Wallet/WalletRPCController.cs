@@ -35,14 +35,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         private readonly IWalletManager walletManager;
 
         /// <summary>Wallet transaction handler.</summary>
-        private readonly IWalletTransactionHandler walletTransactionHandler;      
+        private readonly IWalletTransactionHandler walletTransactionHandler;
 
         public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.fullNode = fullNode;
-            this.broadcasterManager = broadcasterManager;     
+            this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 

@@ -122,8 +122,6 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             }
         }
 
-
-
         [Fact]
         public void TestRpcSendToAddressIsSuccessful()
         {
