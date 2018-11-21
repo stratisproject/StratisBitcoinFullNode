@@ -108,19 +108,18 @@ namespace NBitcoin
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
-            long prev = 0;
+            long prev = stream.ProcessedBytes;
 
-            prev = stream.ProcessedBytes;
             stream.ReadWrite(ref this.merkleProof);
             this.MerkleProofSize = stream.ProcessedBytes - prev;
 
             prev = stream.ProcessedBytes;
             stream.ReadWrite(ref this.signature);
-            this.SignatureSize = stream.ProcessedBytes - prev ;
+            this.SignatureSize = stream.ProcessedBytes - prev;
 
             prev = stream.ProcessedBytes;
             stream.ReadWrite(ref this.coinstake);
-            this.CoinstakeSize = stream.ProcessedBytes - prev ;
+            this.CoinstakeSize = stream.ProcessedBytes - prev;
         }
 
         /// <inheritdoc />

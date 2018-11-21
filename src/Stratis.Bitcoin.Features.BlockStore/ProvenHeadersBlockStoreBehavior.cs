@@ -59,7 +59,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             if (blockstoreTipHeight >= this.AnnounceProvenHeadersFromHeight)
             {
-                ProvenHeadersPayload provenHeadersPayload = new ProvenHeadersPayload();
+                var provenHeadersPayload = new ProvenHeadersPayload();
+
                 foreach (var header in headers)
                 {
                     // When announcing proven headers we will always announce headers that we received form peers,
