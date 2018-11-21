@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Setup proven header.
             PosBlock posBlock = new PosBlockBuilder(this.network).Build();
 
-            // Ensure that the coinstake transaction's input's PrevOut index is higher than the amount of 
+            // Ensure that the coinstake transaction's input's PrevOut index is higher than the amount of
             // outputs from the previous UTXO.
             posBlock.Transactions[1].Inputs[0].PrevOut.N = 2;
 
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10 + this.network.Consensus.LastPOWBlock);
 
             // Setup coinstake transaction.
             this.coinView
@@ -171,11 +171,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Change coinstake outputs to make it invalid.
             ((ProvenBlockHeader)this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header).Coinstake.Outputs.RemoveAt(0);
 
-            // When we run the validation rule, we should hit non coinstake error.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.NonCoinstake);
+                .Should().Be(ConsensusErrors.ProofOfWorkTooHigh);
         }
 
         [Fact]
