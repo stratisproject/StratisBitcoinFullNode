@@ -7,6 +7,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
     /// </summary>
     public enum CrossChainTransferStatus
     {
+        Suspended = 'U',
         Partial = 'P',
         FullySigned = 'F',
         SeenInBlock = 'S',

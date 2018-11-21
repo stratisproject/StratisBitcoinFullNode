@@ -42,7 +42,7 @@ namespace Stratis.FederatedPeg.Tests
         private IWalletFeePolicy walletFeePolicy;
         private IAsyncLoopFactory asyncLoopFactory;
         private Dictionary<uint256, Block> blockDict;
-        private Transaction[] fundingTransactions;
+        private List<Transaction> fundingTransactions;
         private FederationWallet wallet;
         private ExtKey[] federationKeys;
         private ExtKey extendedKey;
@@ -96,6 +96,8 @@ namespace Stratis.FederatedPeg.Tests
 
             SetExtendedKey(0);
 
+            this.fundingTransactions = new List<Transaction>();
+
             this.blockDict = new Dictionary<uint256, Block>();
             this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
 
@@ -126,22 +128,27 @@ namespace Stratis.FederatedPeg.Tests
             this.withdrawalExtractor = new WithdrawalExtractor(this.loggerFactory, this.federationGatewaySettings, this.opReturnDataReader, this.network);
         }
 
+        private Transaction AddFundingTransaction(Money[] amounts)
+        {
+            Transaction transaction = this.network.CreateTransaction();
+
+            foreach (Money amount in amounts)
+            {
+                transaction.Outputs.Add(new TxOut(amount, this.wallet.MultiSigAddress.ScriptPubKey));
+            }
+
+            transaction.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
+
+            this.AppendBlock(transaction);
+            this.fundingTransactions.Add(transaction);
+
+            return transaction;
+        }
+
         private void AddFunding()
         {
-            Transaction tran1 = this.network.CreateTransaction();
-            Transaction tran2 = this.network.CreateTransaction();
-
-            tran1.Outputs.Add(new TxOut(Money.COIN * 90, this.wallet.MultiSigAddress.ScriptPubKey));
-            tran1.Outputs.Add(new TxOut(Money.COIN * 80, this.wallet.MultiSigAddress.ScriptPubKey));
-            tran2.Outputs.Add(new TxOut(Money.COIN * 70, this.wallet.MultiSigAddress.ScriptPubKey));
-
-            tran1.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
-            tran2.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
-
-            this.fundingTransactions = new[] { tran1, tran2 };
-
-            this.AppendBlock(tran1);
-            this.AppendBlock(tran2);
+            AddFundingTransaction(new Money[] { Money.COIN * 90, Money.COIN * 80 });
+            AddFundingTransaction(new Money[] { Money.COIN * 70 });
         }
 
         /// <summary>
@@ -336,6 +343,111 @@ namespace Stratis.FederatedPeg.Tests
                 Assert.Equal(CrossChainTransferStatus.Partial, transfers[1].Status);
                 Assert.Equal(deposit2.Amount, new Money(transfers[1].DepositAmount));
                 Assert.Equal(address2.ScriptPubKey, transfers[1].DepositTargetAddress);
+            }
+        }
+
+
+        /// <summary>
+        /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
+        /// </summary>
+        [Fact]
+        public void StoringDepositsWhenWalletBalanceInSufficientSucceedsWithSuspendStatus()
+        {
+            var dataFolder = new DataFolder(CreateTestDir(this));
+
+            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(5);
+
+            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
+
+            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
+                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+
+                BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                Deposit deposit2 = new Deposit(1, new Money(100m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit1, deposit2 }).GetAwaiter().GetResult();
+
+                ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
+
+                Transaction[] transactions = transfers.Select(t => t.PartialTransaction).ToArray();
+
+                Assert.Equal(2, transactions.Length);
+
+                // Transactions[0] inputs.
+                Assert.Equal(2, transactions[0].Inputs.Count);
+                Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[0].PrevOut.Hash);
+                Assert.Equal((uint)0, transactions[0].Inputs[0].PrevOut.N);
+                Assert.Equal(this.fundingTransactions[0].GetHash(), transactions[0].Inputs[1].PrevOut.Hash);
+                Assert.Equal((uint)1, transactions[0].Inputs[1].PrevOut.N);
+
+                // Transaction[0] outputs.
+                Assert.Equal(3, transactions[0].Outputs.Count);
+
+                // Transaction[0] output value - change.
+                Assert.Equal(new Money(9.99m, MoneyUnit.BTC), transactions[0].Outputs[0].Value);
+                Assert.Equal(multiSigAddress.ScriptPubKey, transactions[0].Outputs[0].ScriptPubKey);
+
+                // Transaction[0] output value - recipient 1.
+                Assert.Equal(new Money(160m, MoneyUnit.BTC), transactions[0].Outputs[1].Value);
+                Assert.Equal(address1.ScriptPubKey, transactions[0].Outputs[1].ScriptPubKey);
+
+                // Transaction[0] output value - op_return.
+                Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[0].Outputs[2].Value);
+                Assert.Equal(deposit1.Id.ToString(), new OpReturnDataReader(this.loggerFactory, this.network).TryGetTransactionId(transactions[0]));
+
+                Assert.Null(transactions[1]);
+
+                Assert.Equal(2, transfers.Length);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[0].Status);
+                Assert.Equal(deposit1.Amount, new Money(transfers[0].DepositAmount));
+                Assert.Equal(address1.ScriptPubKey, transfers[0].DepositTargetAddress);
+                Assert.Equal(CrossChainTransferStatus.Suspended, transfers[1].Status);
+
+                // Add more funds and resubmit the deposits.
+                AddFundingTransaction(new Money[] { Money.COIN * 1000 });
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit1, deposit2 }).GetAwaiter().GetResult();
+                transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
+                transactions = transfers.Select(t => t.PartialTransaction).ToArray();
+
+                // Transactions[1] inputs.
+                Assert.Equal(2, transactions[1].Inputs.Count);
+                Assert.Equal(this.fundingTransactions[1].GetHash(), transactions[1].Inputs[0].PrevOut.Hash);
+                Assert.Equal((uint)0, transactions[1].Inputs[0].PrevOut.N);
+
+                // Transaction[1] outputs.
+                Assert.Equal(3, transactions[1].Outputs.Count);
+
+                // Transaction[1] output value - change.
+                Assert.Equal(new Money(969.99m, MoneyUnit.BTC), transactions[1].Outputs[0].Value);
+                Assert.Equal(multiSigAddress.ScriptPubKey, transactions[1].Outputs[0].ScriptPubKey);
+
+                // Transaction[1] output value - recipient 2.
+                Assert.Equal(new Money(100m, MoneyUnit.BTC), transactions[1].Outputs[1].Value);
+                Assert.Equal(address2.ScriptPubKey, transactions[1].Outputs[1].ScriptPubKey);
+
+                // Transaction[1] output value - op_return.
+                Assert.Equal(new Money(0m, MoneyUnit.BTC), transactions[1].Outputs[2].Value);
+                Assert.Equal(deposit2.Id.ToString(), new OpReturnDataReader(this.loggerFactory, this.network).TryGetTransactionId(transactions[1]));
+
+                Assert.Equal(2, transfers.Length);
+                Assert.Equal(CrossChainTransferStatus.Partial, transfers[1].Status);
+                Assert.Equal(deposit2.Amount, new Money(transfers[1].DepositAmount));
+                Assert.Equal(address2.ScriptPubKey, transfers[1].DepositTargetAddress);
+
+                (Money confirmed, Money unconfirmed) spendable = this.wallet.GetSpendableAmount();
+
+                Assert.Equal(new Money(979.98m, MoneyUnit.BTC), spendable.unconfirmed);
             }
         }
 

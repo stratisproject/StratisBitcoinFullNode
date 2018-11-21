@@ -88,6 +88,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             stream.ReadWrite(ref this.depositAmount);
             stream.ReadWrite(ref this.partialTransaction);
 
+            if (!stream.Serializing && this.partialTransaction.Inputs.Count == 0 && this.partialTransaction.Outputs.Count == 0)
+                this.partialTransaction = null;
+
             if (this.status == CrossChainTransferStatus.SeenInBlock)
             {
                 stream.ReadWrite(ref this.blockHash);
@@ -98,7 +101,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <inheritdoc />
         public bool IsValid()
         {
-            if (this.depositTransactionId == null || this.PartialTransaction == null || this.depositTargetAddress == null || this.depositAmount == 0)
+            if (this.depositTransactionId == null || this.depositTargetAddress == null || this.depositAmount == 0)
+                return false;
+
+            if (this.status == CrossChainTransferStatus.Suspended)
+                return true;
+
+            if (this.PartialTransaction == null)
                 return false;
 
             if (this.status == CrossChainTransferStatus.SeenInBlock && this.blockHash == null)
