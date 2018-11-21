@@ -76,11 +76,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private HashHeightPair pendingTipHashHeight;
 
         /// <summary>
-        /// The async loop we wait upon.
-        /// </summary>
-        private IAsyncLoop asyncLoop;
-
-        /// <summary>
         /// A lock object that protects access to the <see cref="PendingBatch"/> and <see cref="pendingTipHashHeight"/>.
         /// </summary>
         private readonly object lockObject;
@@ -153,54 +148,25 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task InitializeAsync(ChainedHeader chainedHeader, ConcurrentChain chain = null)
+        public async Task<ChainedHeader> InitializeAsync(ChainedHeader highestHeader)
         {
             await this.provenBlockHeaderRepository.InitializeAsync().ConfigureAwait(false);
 
-            if (chainedHeader.Height > 0)
+            ChainedHeader tip = highestHeader;
+            HashHeightPair repoTip = this.provenBlockHeaderRepository.TipHashHeight;
+
+            if (repoTip.Hash != tip.HashBlock)
             {
-                HashHeightPair hashHeightPair = this.provenBlockHeaderRepository.TipHashHeight;
-
-                if (hashHeightPair.Hash != chainedHeader.HashBlock)
-                {
-                    if (chain == null)
-                        throw new ProvenBlockHeaderException("Chain header tip hash does not match the latest proven block header hash saved to disk.");
-
-                    // If the hashes don't match we need to find the fork on the main chain.
-                    int currentHeight = hashHeightPair.Height;
-
-                    while (true)
-                    {
-                        currentHeight--;
-
-                        ProvenBlockHeader provenBlockHeader = this.provenBlockHeaderRepository.GetAsync(currentHeight).GetAwaiter().GetResult();
-
-                        chainedHeader = chain.GetBlock(provenBlockHeader.GetHash());
-
-                        if (chainedHeader != null)
-                        {
-                            chain.SetTip(chainedHeader);
-                            break;
-                        }
-                    }
-                }
+                // Repository is behind chain of headers.
+                tip = tip.FindAncestorOrSelf(repoTip.Hash, repoTip.Height);
             }
 
-            this.storeTip = chainedHeader;
+            this.storeTip = tip;
+            this.TipHashHeight = new HashHeightPair(tip.HashBlock, tip.Height);
 
-            this.TipHashHeight = new HashHeightPair(chainedHeader.HashBlock, chainedHeader.Height);
+            this.logger.LogDebug("Proven block header store initialized at '{0}'.", this.TipHashHeight);
 
-            this.logger.LogDebug("Proven block header store tip at block '{0}'.", this.TipHashHeight);
-
-            this.asyncLoop = this.asyncLoopFactory.Run("ProvenBlockHeaders job", async token =>
-            {
-                await this.SaveAsync().ConfigureAwait(false);
-
-                this.logger.LogTrace("(-)[IN_ASYNC_LOOP]");
-            },
-            this.nodeLifetime.ApplicationStopping,
-            repeatEvery: TimeSpan.FromMinutes(1),
-            startAfter: TimeSpan.FromMinutes(1));
+            return this.storeTip;
         }
 
         /// <inheritdoc />
@@ -314,10 +280,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.Cache.AddOrUpdate(newTip.Height, provenBlockHeader, provenBlockHeader.HeaderSize);
         }
 
-        /// <summary>
-        /// Saves pending <see cref="ProvenBlockHeader"/> items to the <see cref="IProvenBlockHeaderRepository"/>, then removes the items from the pending batch.
-        /// </summary>
-        private async Task SaveAsync()
+        /// <inheritdoc />
+        public async Task SaveAsync()
         {
             if (this.pendingTipHashHeight == null)
                 return;
@@ -408,8 +372,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void Dispose()
         {
-            this.asyncLoop?.Dispose();
-            this.SaveAsync().GetAwaiter().GetResult();
         }
     }
 }
