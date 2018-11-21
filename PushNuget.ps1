@@ -37,6 +37,10 @@ rm "src\Stratis.Bitcoin.Features.Miner\bin\debug\" -Recurse -Force
 dotnet pack src\Stratis.Bitcoin.Features.Miner --configuration Debug --include-source --include-symbols  
 dotnet nuget push "src\Stratis.Bitcoin.Features.Miner\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
+rm "src\Stratis.Bitcoin.Features.PoA\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.PoA --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.PoA\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
+
 rm "src\Stratis.Bitcoin.Features.Notifications\bin\debug\" -Recurse -Force
 dotnet pack src\Stratis.Bitcoin.Features.Notifications --configuration Debug --include-source --include-symbols  
 dotnet nuget push "src\Stratis.Bitcoin.Features.Notifications\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"

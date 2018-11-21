@@ -4,27 +4,31 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
-using Stratis.Bitcoin.Features.SmartContracts.PoS;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Tests.Common.MockChain;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.Tests.Common
 {
-    public sealed class StratisSmartContractPosNode : NodeRunner
+    public sealed class SmartContractPoARunner : NodeRunner
     {
-        public StratisSmartContractPosNode(string dataDir, Network network)
+        private readonly IDateTimeProvider dateTimeProvider;
+
+        public SmartContractPoARunner(string dataDir, Network network, TargetSpacingDateTimeProvider timeProvider)
             : base(dataDir)
         {
             this.Network = network;
+            this.dateTimeProvider = timeProvider;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
@@ -32,14 +36,13 @@ namespace Stratis.SmartContracts.IntegrationTests
                 .UseMempool()
                 .AddRPC()
                 .AddSmartContracts()
-                .UseSmartContractPosConsensus()
+                .UseSmartContractPoAConsensus()
+                .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
-                .UseSmartContractPosPowMining()
                 .UseReflectionExecutor()
+                .ReplaceTimeProvider(this.dateTimeProvider)
                 .MockIBD()
-                .OverrideDateTimeProviderFor<MiningFeature>()
                 .Build();
         }
-
     }
 }

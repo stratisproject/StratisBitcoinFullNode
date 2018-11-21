@@ -13,6 +13,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
@@ -159,6 +160,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 result.To,
                 result.NewContractAddress,
                 !result.Revert,
+                result.Return?.ToString(),
                 result.ErrorMessage
             )
             {

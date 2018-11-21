@@ -10,6 +10,7 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.Tests.Common;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW

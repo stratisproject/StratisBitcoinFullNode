@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
@@ -19,8 +20,9 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Executor.Reflection.Local;
 
-namespace Stratis.SmartContracts.IntegrationTests.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     /// <summary>
     /// Facade for CoreNode.
@@ -75,13 +77,13 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             }
         }
 
-        public MockChainNode(CoreNode coreNode, IMockChain chain)
+        public MockChainNode(CoreNode coreNode, IMockChain chain, Mnemonic mnemonic = null)
         {
             this.CoreNode = coreNode;
             this.chain = chain;
 
             // Set up address and mining
-            this.CoreNode.FullNode.WalletManager().CreateWallet(this.Password, this.WalletName, this.Passphrase);
+            this.CoreNode.FullNode.WalletManager().CreateWallet(this.Password, this.WalletName, this.Passphrase, mnemonic);
             this.MinerAddress = this.CoreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(this.WalletName, this.AccountName));
             Wallet wallet = this.CoreNode.FullNode.WalletManager().GetWalletByName(this.WalletName);
             Key key = wallet.GetExtendedPrivateKeyForAddress(this.Password, this.MinerAddress).PrivateKey;
@@ -103,11 +105,10 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             this.chain.WaitForAllNodesToSync();
         }
 
-        public void WaitForBlocksToBeMined(int amount)
+        public ulong GetWalletAddressBalance(string walletAddress)
         {
-            int currentHeight = this.CoreNode.GetTip().Height;
-            TestHelper.WaitLoop(() => this.CoreNode.GetTip().Height >= currentHeight + 1);
-            this.chain.WaitForAllNodesToSync();
+            var jsonResult = (JsonResult) this.smartContractWalletController.GetAddressBalance(walletAddress);
+            return (ulong) (decimal) jsonResult.Value;
         }
 
         /// <summary>
@@ -130,6 +131,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 FeeType = FeeType.Medium,
                 WalletPassword = this.Password,
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = scriptPubKey } }.ToList(),
+                SelectedInputs = this.CoreNode.FullNode.WalletManager().GetSpendableInputsForAddress(this.WalletName, this.MinerAddress.Address), // Always send from the MinerAddress. Simplifies things.
                 ChangeAddress = this.MinerAddress // yes this is unconventional, but helps us to keep the balance on the same addresses
             };
 
@@ -158,7 +160,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            double feeAmount = 0.01)
+            double feeAmount = 0.01,
+            string sender = null)
         {
             var request = new BuildCreateContractTransactionRequest
             {
@@ -170,7 +173,7 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 GasPrice = gasPrice,
                 Parameters = parameters,
                 Password = this.Password,
-                Sender = this.MinerAddress.Address,
+                Sender = sender ?? this.MinerAddress.Address,
                 WalletName = this.WalletName
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCreateSmartContractTransaction(request);
@@ -203,7 +206,8 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            double feeAmount = 0.01)
+            double feeAmount = 0.01, 
+            string sender = null)
         {
             var request = new BuildCallContractTransactionRequest
             {
@@ -216,11 +220,39 @@ namespace Stratis.SmartContracts.IntegrationTests.MockChain
                 MethodName = methodName,
                 Parameters = parameters,
                 Password = this.Password,
-                Sender = this.MinerAddress.Address,
+                Sender = sender ?? this.MinerAddress.Address,
                 WalletName = this.WalletName
             };
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
             return (BuildCallContractTransactionResponse)response.Value;
+        }
+
+        public ILocalExecutionResult CallContractMethodLocally(
+            string methodName,
+            string contractAddress,
+            double amount,
+            string[] parameters = null,
+            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
+            double feeAmount = 0.01,
+            string sender = null)
+        {
+            var request = new BuildCallContractTransactionRequest
+            {
+                AccountName = this.AccountName,
+                Amount = amount.ToString(),
+                ContractAddress = contractAddress,
+                FeeAmount = feeAmount.ToString(),
+                GasLimit = gasLimit,
+                GasPrice = gasPrice,
+                MethodName = methodName,
+                Parameters = parameters,
+                Password = this.Password,
+                Sender = sender ?? this.MinerAddress.Address,
+                WalletName = this.WalletName
+            };
+            JsonResult response = (JsonResult)this.smartContractsController.LocalCallSmartContractTransaction(request);
+            return (ILocalExecutionResult) response.Value;
         }
 
         /// <summary>
