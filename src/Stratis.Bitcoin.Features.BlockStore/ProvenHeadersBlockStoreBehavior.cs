@@ -1,12 +1,7 @@
-﻿using System;
-using System.Linq;
-using System.Threading.Tasks;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -24,27 +19,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.network = Guard.NotNull(network, nameof(network));
             this.checkpoints = Guard.NotNull(checkpoints, nameof(checkpoints));
-        }
-
-        /// <inheritdoc />
-        protected override async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            switch (message.Message.Payload)
-            {
-                case SendProvenHeadersPayload sendProvenHeadersPayload:
-                    await this.ProcessSendProvenHeadersPayload(sendProvenHeadersPayload);
-                    break;
-
-                default:
-                    await base.ProcessMessageAsync(peer, message).ConfigureAwait(false); ;
-                    break;
-            }
-        }
-
-        private Task ProcessSendProvenHeadersPayload(SendProvenHeadersPayload sendProvenHeadersPayload)
-        {
-            this.PreferHeaders = true;
-            return Task.CompletedTask;
         }
 
         /// <inheritdoc />
@@ -81,6 +55,5 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             return res;
         }
-
     }
 }

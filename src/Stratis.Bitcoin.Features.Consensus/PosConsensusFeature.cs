@@ -70,12 +70,6 @@ namespace Stratis.Bitcoin.Features.Consensus
             Guard.Assert(oldCMBRemoved);
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore));
 
-            // Replace connection manager behavior.
-            bool oldConnectionManagerRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConnectionManagerBehavior));
-            Guard.Assert(oldConnectionManagerRemoved);
-
-            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConnectionManagerBehavior(this.connectionManager, this.loggerFactory, this.checkpoints, this.network));
-
             return Task.CompletedTask;
         }
 

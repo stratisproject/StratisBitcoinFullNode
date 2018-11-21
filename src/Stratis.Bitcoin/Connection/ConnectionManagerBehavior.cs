@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Connection
                     this.connectionManager.AddConnectedPeer(peer);
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
 
-                    await this.OnHandshakedAsync(peer).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
                 }
 
                 if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
@@ -95,12 +95,6 @@ namespace Stratis.Bitcoin.Connection
             catch (OperationCanceledException)
             {
             }
-        }
-
-        /// <summary>Called when peer's state becomes <see cref="NetworkPeerState.HandShaked"/>.</summary>
-        protected virtual async Task OnHandshakedAsync(INetworkPeer peer)
-        {
-            await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
         }
 
         [NoTrace]
