@@ -770,7 +770,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                         {
                             Account = this,
                             Address = address,
-                            Transaction = transactionData
+                            Transaction = transactionData,
+                            Confirmations = confirmationCount.Value
                         };
                     }
                 }
@@ -1099,6 +1100,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// The transaction representing the UTXO.
         /// </summary>
         public TransactionData Transaction { get; set; }
+
+        /// <summary>
+        /// Number of confirmations for this UTXO.
+        /// </summary>
+        public int Confirmations { get; set; }
 
         /// <summary>
         /// Convert the <see cref="TransactionData"/> to an <see cref="OutPoint"/>
