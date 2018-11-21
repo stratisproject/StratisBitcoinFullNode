@@ -274,23 +274,32 @@ namespace Stratis.Bitcoin.Consensus
                 // If queue is not empty, add to queue instead of calling CM.
                 if (this.cachedHeaders.Count != 0)
                 {
-                    uint256 lastCachedHeaderHash = this.cachedHeaders.Last().GetHash();
-                    uint256 prevHashOfFirstHeaderToConnect = headers.First().HashPrevBlock;
+                    uint256 cachedHeader = this.cachedHeaders.Last().GetHash();
+                    uint256 prevNewHeader = headers.First().HashPrevBlock;
+
                     // ensure headers can connect to cached headers.
-                    if (lastCachedHeaderHash == prevHashOfFirstHeaderToConnect)
+                    if (cachedHeader == prevNewHeader)
                     {
                         this.cachedHeaders.AddRange(headers);
 
                         this.logger.LogTrace("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
-                        this.logger.LogTrace("(-)[CACHED]");
+                        this.logger.LogTrace("(-)[HEADERS_ADDED_TO_CACHE]");
                         return;
                     }
                     else
                     {
-                        this.logger.LogTrace("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), lastCachedHeaderHash);
-                        this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
+                        if (headers.Count == 1)
+                        {
+                            // TODO: we should consider to ignore single headers when in cache mode,
+                            // a single header that is not connected to last header is likely an
+                            // uncollected header that is a result of the peer tip being extended
+                        }
+
                         this.cachedHeaders.Clear();
                         await this.ResyncAsync().ConfigureAwait(false);
+
+                        this.logger.LogTrace("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), cachedHeader);
+                        this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
                         return;
                     }
                 }
