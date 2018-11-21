@@ -750,34 +750,52 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void ContractTransaction_Call_Method_Reach_Limit_Of_GasPerBlock_Transaction_NotIncluded_To_Block()
         {
-            const ulong txGasPrice = 12009;
+            const ulong gasPrice = 2000;
+            var gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+
+
             const ulong txGasPerBlockLimit = SmartContractFormatRule.GasLimitMaximum * 10;
-            const int txCount = 100;
-
-            // Ensure fixture is funded.
-            this.node1.MineBlocks(100);
-
-            // Deploy contract.
+            const int txCount = 25;
+            double amount = 0;
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
             Assert.True(compilationResult.Success);
 
-            var preResponseList = new List<BuildCreateContractTransactionResponse>();
+            this.node1.MineBlocks(100);
+
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice: gasPrice);
+            this.node1.WaitMempoolCount(1);
+            this.node1.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            var contractTransactionIds = new List<uint256>();
 
             for (int i = 0; i < txCount; i++)
             {
-                preResponseList.Add(this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice:10000));
+                BuildCallContractTransactionResponse response =
+                    this.node1.SendCallContractTransaction("Loop", preResponse.NewContractAddress, amount,
+                        gasPrice: gasPrice);
+                if (!response.Success) Assert.True(response.Success);
+                contractTransactionIds.Add(response.TransactionId);
             }
+
             this.node1.WaitMempoolCount(txCount);
             this.node1.MineBlocks(1);
 
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
-            int expectedTxQty = Convert.ToInt32(txGasPerBlockLimit / txGasPrice) + 2;
+            int expectedTxQty = Convert.ToInt32(txGasPerBlockLimit / gasLimit) + 1; // +1 is Coinbase Tx.
             Assert.Equal(expectedTxQty, lastBlock.Transactions.Count);
+
+            foreach (Transaction transaction in lastBlock.Transactions)
+            {
+                if(transaction.IsCoinBase) continue;
+
+                Assert.Contains(transaction.GetHash(), contractTransactionIds);
+            }
 
             this.node1.MineBlocks(1);
 
-            int restOfTx = txCount - Convert.ToInt32(txGasPerBlockLimit / txGasPrice);
+            int restOfTx = txCount - Convert.ToInt32(txGasPerBlockLimit / gasLimit) +1;
             lastBlock = this.node1.GetLastBlock();
             Assert.Equal(restOfTx, lastBlock.Transactions.Count);
         }
