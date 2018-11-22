@@ -38,11 +38,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private readonly ILogger logger;
 
         /// <summary>
-        /// Allows consumers to perform clean-up during a graceful shutdown.
-        /// </summary>
-        private readonly INodeLifetime nodeLifetime;
-
-        /// <summary>
         /// Database repository storing <see cref="ProvenBlockHeader"/> items.
         /// </summary>
         private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
@@ -81,11 +76,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private readonly object lockObject;
 
         /// <summary>
-        /// Factory for creating background async loop tasks.
-        /// </summary>
-        private readonly IAsyncLoopFactory asyncLoopFactory;
-
-        /// <summary>
         /// Limit <see cref="Cache"/> size to 100MB.
         /// </summary>
         private readonly long MemoryCacheSizeLimitInBytes = 100 * 1024 * 1024;
@@ -115,32 +105,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
         /// <param name="provenBlockHeaderRepository">Persistent interface of the <see cref="ProvenBlockHeader"/> DBreeze repository.</param>
-        /// <param name="nodeLifetime">Allows consumers to perform clean-up during a graceful shutdown.</param>
         /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
-        /// <param name="asyncLoopFactory">Factory for creating and also possibly starting application defined tasks inside async loop.</param>
         public ProvenBlockHeaderStore(
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             IProvenBlockHeaderRepository provenBlockHeaderRepository,
-            INodeLifetime nodeLifetime,
-            INodeStats nodeStats,
-            IAsyncLoopFactory asyncLoopFactory)
+            INodeStats nodeStats)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(provenBlockHeaderRepository, nameof(provenBlockHeaderRepository));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(nodeStats, nameof(nodeStats));
-            Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.provenBlockHeaderRepository = provenBlockHeaderRepository;
-            this.nodeLifetime = nodeLifetime;
 
             this.lockObject = new object();
             this.PendingBatch = new Dictionary<int, ProvenBlockHeader>();
             this.Cache = new MemorySizeCache<int, ProvenBlockHeader>(this.MemoryCacheSizeLimitInBytes);
-
-            this.asyncLoopFactory = asyncLoopFactory;
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
             nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark);

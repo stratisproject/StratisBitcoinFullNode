@@ -41,8 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.provenBlockHeaderRepository = new ProvenBlockHeaderRepository(this.network, this.Folder, this.LoggerFactory.Object);
 
             this.provenBlockHeaderStore = new ProvenBlockHeaderStore(
-                DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository,
-                this.nodeLifetime.Object, this.nodeStats, this.asyncLoopFactoryLoop.Object);
+                DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, this.nodeStats);
         }
 
         [Fact]
@@ -420,9 +419,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
         private ProvenBlockHeaderStore SetupStore(string folder)
         {
-            return new ProvenBlockHeaderStore(
-                DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository,
-                this.nodeLifetime.Object, new NodeStats(DateTimeProvider.Default), this.asyncLoopFactoryLoop.Object);
+            return new ProvenBlockHeaderStore(DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, new NodeStats(DateTimeProvider.Default));
         }
 
         private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))

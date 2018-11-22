@@ -231,9 +231,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 return;
             }
 
-            bool bellowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
+            bool belowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
 
-            if (!bellowLastCheckpoint)
+            if (!belowLastCheckpoint)
                 return;
 
             int distanceFromCheckPoint = this.lastCheckpointHeight - this.GetCurrentHeight();
