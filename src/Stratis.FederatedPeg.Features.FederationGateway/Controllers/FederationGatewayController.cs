@@ -43,13 +43,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         private readonly IDepositExtractor depositExtractor;
 
+        private readonly ILeaderReceiver leaderReceiver;
+
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
             IMaturedBlockReceiver maturedBlockReceiver,
             ILeaderProvider leaderProvider,
             ConcurrentChain chain,
             IMaturedBlockSender maturedBlockSender,
-            IDepositExtractor depositExtractor)
+            IDepositExtractor depositExtractor,
+            ILeaderReceiver leaderReceiver)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.maturedBlockReceiver = maturedBlockReceiver;
@@ -57,6 +60,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             this.chain = chain;
             this.maturedBlockSender = maturedBlockSender;
             this.depositExtractor = depositExtractor;
+            this.leaderReceiver = leaderReceiver;
         }
 
         [Route(FederationGatewayRouteEndPoint.ReceiveMaturedBlock)]
@@ -86,6 +90,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             {
                 this.leaderProvider.Update(new BlockTipModel(uint256.Parse(blockTip.Hash), blockTip.Height));
 
+                this.leaderReceiver.ReceiveLeader(this.leaderProvider);
+
                 return this.Ok();
             }
             catch (Exception e)
@@ -113,7 +119,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
 
             try
-            {             
+            {
                 ChainedHeader chainedHeader = this.chain.GetBlock(blockHashHeight.BlockHash);
 
                 if (chainedHeader == null)
@@ -126,7 +132,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
                 if (currentHeight > matureHeight)
                 {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, 
+                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
                         $"Block height {blockHashHeight.BlockHeight} submitted is not mature enough. Blocks less than a height of {matureHeight} can be processed.", string.Empty);
                 }
 

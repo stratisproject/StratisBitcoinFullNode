@@ -33,6 +33,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly IDepositExtractor depositExtractor;
 
+        private readonly ILeaderReceiver leaderReceiver;
+
         public FederationGatewayControllerTests()
         {
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
@@ -44,6 +46,7 @@ namespace Stratis.FederatedPeg.Tests
             this.leaderProvider = Substitute.For<ILeaderProvider>();
             this.maturedBlockSender = Substitute.For<IMaturedBlockSender>();
             this.depositExtractor = Substitute.For<IDepositExtractor>();
+            this.leaderReceiver = Substitute.For<ILeaderReceiver>();
         }
 
         [Fact]
@@ -57,7 +60,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.leaderProvider,
                 this.chain,
                 this.maturedBlockSender,
-                this.depositExtractor);
+                this.depositExtractor,
+                this.leaderReceiver);
 
             MaturedBlockModel model = new MaturedBlockModel()
             {
@@ -86,7 +90,7 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void ResyncMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations()
         {
-            // Chain header height : 4 
+            // Chain header height : 4
             // 0 - 1 - 2 - 3 - 4
             this.chain = this.BuildChain(5);
 
@@ -96,7 +100,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.leaderProvider,
                 this.chain,
                 this.maturedBlockSender,
-                this.depositExtractor);
+                this.depositExtractor,
+                this.leaderReceiver);
 
             // Back online at block height : 3
             // 0 - 1 - 2 - 3
@@ -114,7 +119,7 @@ namespace Stratis.FederatedPeg.Tests
             // Mature height = 2 (Chain header height (4) - Minimum deposit confirmations (2))
             IActionResult result = controller.ResyncMaturedBlockDeposits(model);
 
-            // Block height (3) > Mature height (2) - returns error message          
+            // Block height (3) > Mature height (2) - returns error message
             result.Should().BeOfType<ErrorResult>();
 
             var error = result as ErrorResult;
@@ -142,7 +147,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.leaderProvider,
                 this.chain,
                 this.maturedBlockSender,
-                this.depositExtractor);
+                this.depositExtractor,
+                this.leaderReceiver);
 
             ChainedHeader earlierBlock = this.chain.GetBlock(2);
 
@@ -186,7 +192,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.leaderProvider,
                 this.chain,
                 this.maturedBlockSender,
-                this.depositExtractor);
+                this.depositExtractor,
+                this.leaderReceiver);
 
             var model = new BlockTipModelRequest()
             {

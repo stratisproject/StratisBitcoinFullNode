@@ -224,6 +224,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<ILeaderProvider, LeaderProvider>();
                         services.AddSingleton<FederationWalletController>();
                         services.AddSingleton<ICrossChainTransferStore, CrossChainTransferStore>();
+                        services.AddSingleton<ILeaderReceiver, LeaderReceiver>();
+                        services.AddSingleton<ISignedMultisigTransactionBroadcaster, SignedMultisigTransactionBroadcaster>();
                         services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
                     });
             });
