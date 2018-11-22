@@ -953,6 +953,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             ChainedHeader chainedHeader = null;
 
             lock (this.peerLock)

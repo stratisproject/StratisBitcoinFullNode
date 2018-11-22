@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object,
                 this.ChainState.Object, hashStore, new NodeStats(dateTimeProvider));
 
-            this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory, new NodeLifetime());
+            this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.FullValidation = new FullValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.HeaderValidator = new Mock<IHeaderValidator>();
             this.HeaderValidator.Setup(hv => hv.ValidateHeader(It.IsAny<ChainedHeader>())).Returns(new ValidationContext());
