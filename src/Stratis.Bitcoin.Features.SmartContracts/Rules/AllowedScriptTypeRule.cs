@@ -13,8 +13,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public class AllowedScriptTypeRule : PartialValidationConsensusRule, ISmartContractMempoolRule
     {
-        // TODO: Sidechains will need to allow their script type in here.
-
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;

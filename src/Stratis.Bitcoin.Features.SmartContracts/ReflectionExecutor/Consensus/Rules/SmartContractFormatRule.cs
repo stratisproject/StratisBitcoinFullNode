@@ -90,9 +90,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 this.ThrowGasPriceMoreThanMaximum();
             }
 
-            // TODO: When checking gas limit, if checking for a CREATE, do BaseFee + CreationAndValidationFee
-
-
             if (callData.IsCreateContract && callData.GasLimit < GasLimitCreateMinimum)
             {
                 this.ThrowGasLessThenCreateFee();

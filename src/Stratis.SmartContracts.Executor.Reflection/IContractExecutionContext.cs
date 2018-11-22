@@ -8,22 +8,23 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public interface IContractExecutionContext
     {
         /// <summary>
-        /// TODO: Add documentation.
+        /// Information about the block the contract being executed is part of.
         /// </summary>
         IBlock Block { get; }
 
-        IMessage Message { get; }
-
         /// <summary>
-        /// TODO: Add documentation.
+        /// Information about the transaction that was sent to trigger this execution.
         /// </summary>
-        ulong GasPrice { get; }
+        IMessage Message { get; }
 
         /// <summary>
         /// These are the method parameters to be injected into the method call by the <see cref="SmartContractExecutor"/>.
         /// </summary>
         object[] Parameters { get; }
 
+        /// <summary>
+        /// The 20-byte address of the contract being executed.
+        /// </summary>
         uint160 ContractAddress { get; set; }
     }
 }
