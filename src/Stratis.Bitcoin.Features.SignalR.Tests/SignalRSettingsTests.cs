@@ -1,17 +1,15 @@
 ﻿using FluentAssertions;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Features.SignalR;
 using Stratis.Bitcoin.Networks;
 using Xunit;
 
-namespace Stratis.FederatedPeg.Tests
+namespace Stratis.Bitcoin.Features.SignalR.Tests
 {
     public class SignalRSettingsTests
     {
         [Fact]
         public void SignalRSettings_Should_Have_Default_Values_When_Not_Specified_In_NodeSettings()
         {
-
             var signalRSettings = new SignalRSettings(NodeSettings.Default(new StratisRegTest()));
             signalRSettings.HubRoute.Should().Be(SignalRSettings.DefaultSignalRHubRoute);
             signalRSettings.Port.Should().Be(SignalRSettings.DefaultSignalRPort);

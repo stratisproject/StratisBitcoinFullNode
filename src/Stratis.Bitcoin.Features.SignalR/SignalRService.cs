@@ -91,11 +91,18 @@ namespace Stratis.Bitcoin.Features.SignalR
                     return false;
                 }
             });
+
             return this.Started = started;
         }
 
         public void Dispose()
         {
+            this.messageStream.OnCompleted();
+            this.startedStream.OnCompleted();
+
+            this.messageStream.Dispose();
+            this.startedStream.Dispose();
+
             this.messageQueue?.Dispose();
             this.messageQueue = null;
             this.webHost?.Dispose();
@@ -106,7 +113,8 @@ namespace Stratis.Bitcoin.Features.SignalR
         {
             get { lock (this.lockObject) return this.started; }
 
-            private set {
+            private set
+            {
                 lock (this.lockObject)
                 {
                     if (this.started == value) return;

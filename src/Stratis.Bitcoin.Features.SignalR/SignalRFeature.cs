@@ -9,6 +9,10 @@ using Stratis.Bitcoin.Builder.Feature;
 
 namespace Stratis.Bitcoin.Features.SignalR
 {
+    /// <summary>
+    /// Use this feature if you need a publish only SignalR hub for realtime messaging.
+    /// Messages can have a topic to filter the Json content of the messages on the client side.
+    /// </summary>
     public sealed class SignalRFeature : FullNodeFeature
     {
         private readonly SignalRSettings signalRSettings;

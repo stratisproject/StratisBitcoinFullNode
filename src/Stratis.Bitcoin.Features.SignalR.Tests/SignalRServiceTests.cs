@@ -40,8 +40,10 @@ namespace Stratis.Bitcoin.Features.SignalR.Tests
                 result = this.signalRService.SendAsync(Arg.Any<string>(), Arg.Any<string>()).Result;
                 signal.Set();
             });
+
             if (!signal.WaitOne(TimeSpan.FromSeconds(5)))
                 result = false;
+
             Assert.True(result);
         }
 
@@ -51,12 +53,13 @@ namespace Stratis.Bitcoin.Features.SignalR.Tests
             var signal = new ManualResetEvent(false);
             const string topic = "thetopic";
             const string data = "thedata";
-            (string topic, string data) message = ("", "");
+            (string topic, string data) message = (string.Empty, string.Empty);
             this.signalRService.MessageStream.Subscribe(x =>
             {
                 message = x;
                 signal.Set();
             });
+
             this.signalRService.StartAsync().ContinueWith(_ => this.signalRService.SendAsync(topic, data));
             signal.WaitOne(TimeSpan.FromSeconds(5));
             Assert.Equal(message, (topic, data));
