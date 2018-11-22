@@ -2,27 +2,28 @@
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.Tests.Common.MockChain;
 
-namespace Stratis.SmartContracts.IntegrationTests
+namespace Stratis.SmartContracts.Tests.Common
 {
     public class SmartContractNodeBuilder : NodeBuilder
     {
-        public EditableTimeProvider TimeProvider { get; }
+        public TargetSpacingDateTimeProvider PoATimeProvider { get; }
 
         public SmartContractNodeBuilder(string rootFolder) : base(rootFolder)
         {
-            this.TimeProvider = new EditableTimeProvider();
+            this.PoATimeProvider = new TargetSpacingDateTimeProvider(new SmartContractsPoARegTest()); // TODO: Inject
         }
 
         public CoreNode CreateSmartContractPoANode(SmartContractsPoARegTest network, int nodeIndex)
         {
             string dataFolder = this.GetNextDataFolderName();
-            CoreNode node = this.CreateNode(new SmartContractPoARunner(dataFolder, network, this.TimeProvider), "poa.conf");
+
+            CoreNode node = this.CreateNode(new SmartContractPoARunner(dataFolder, network, this.PoATimeProvider), "poa.conf");
 
             var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
 

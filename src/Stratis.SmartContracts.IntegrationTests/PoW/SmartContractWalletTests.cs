@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -21,8 +22,8 @@ using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
-using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
+using Stratis.SmartContracts.Tests.Common;
+using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
@@ -32,6 +33,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         private const string WalletName = "mywallet";
         private const string Password = "password";
         private const string AccountName = "account 0";
+        private readonly IMethodParameterStringSerializer methodParameterStringSerializer;
+
+        public SmartContractWalletTests()
+        {
+            this.methodParameterStringSerializer = new MethodParameterStringSerializer(new SmartContractsRegTest());
+        }
 
         /// <summary>
         /// These are the same tests as in WalletTests.cs, just using the smart contract classes instead.
@@ -434,6 +441,117 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 NBitcoin.Block block = sender.GetLastBlock();
                 Assert.Equal(3, block.Transactions.Count);
+            }
+        }
+        [Fact]
+        public void MockChain_Lottery()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode node1 = chain.Nodes[0];
+                MockChainNode node2 = chain.Nodes[1];
+
+                node1.MineBlocks(1);
+
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Lottery.cs");
+                Assert.True(compilationResult.Success);
+
+                // Create contract and ensure code exists
+                BuildCreateContractTransactionResponse response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                Assert.NotNull(node2.GetCode(response.NewContractAddress));
+                Assert.NotNull(node1.GetCode(response.NewContractAddress));
+
+                // Both users join
+                BuildCallContractTransactionResponse callResponse = node1.SendCallContractTransaction("Join", response.NewContractAddress, 1);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                Assert.Equal(node1.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network).ToBytes(), node1.GetStorageValue(response.NewContractAddress, "Player0"));
+
+                callResponse = node2.SendCallContractTransaction("Join", response.NewContractAddress, 1);
+                node1.WaitMempoolCount(1);
+                node1.MineBlocks(1);
+                Assert.Equal(node2.MinerAddress.Address.ToUint160(node2.CoreNode.FullNode.Network).ToBytes(), node2.GetStorageValue(response.NewContractAddress, "Player1"));
+
+                // Select a winner
+                callResponse = node1.SendCallContractTransaction("SelectWinner", response.NewContractAddress, 1);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                uint winner = BitConverter.ToUInt32(node1.GetStorageValue(response.NewContractAddress, "WinningNumber"));
+
+                MockChainNode winningNode = winner == 0 ? node1 : node2;
+                MockChainNode losingNode = winner == 1 ? node1 : node2;
+
+                // Ensure loser can't claim
+                callResponse = losingNode.SendCallContractTransaction("Claim", response.NewContractAddress, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                ReceiptResponse receipt = node2.GetReceipt(callResponse.TransactionId.ToString());
+                Assert.False(receipt.Success);
+
+                // Ensure winner can claim
+                callResponse = winningNode.SendCallContractTransaction("Claim", response.NewContractAddress, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                receipt = node2.GetReceipt(callResponse.TransactionId.ToString());
+                Assert.True(receipt.Success);
+                Assert.Equal(0uL, node2.GetContractBalance(response.NewContractAddress));
+            }
+        }
+
+        [Fact]
+        public void MockChain_NonFungibleToken()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode node1 = chain.Nodes[0];
+                MockChainNode node2 = chain.Nodes[1];
+
+                node1.MineBlocks(1);
+
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NonFungibleToken.cs");
+                Assert.True(compilationResult.Success);
+
+                // Create contract and ensure code exists
+                BuildCreateContractTransactionResponse response = node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+                Assert.NotNull(node2.GetCode(response.NewContractAddress));
+                Assert.NotNull(node1.GetCode(response.NewContractAddress));
+
+                string[] parameters = new string[]
+                {
+                    this.methodParameterStringSerializer.Serialize(1uL)
+                };
+
+                ILocalExecutionResult result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, parameters);
+                uint160 senderAddressUint160 = node1.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network);
+                uint160 returnedAddressUint160 = ((Address)result.Return).ToUint160();
+                Assert.Equal(senderAddressUint160, returnedAddressUint160);
+
+                // Send tokenId 1 to a new owner
+                parameters = new string[]
+                {
+                    this.methodParameterStringSerializer.Serialize(node1.MinerAddress.Address.ToAddress(node1.CoreNode.FullNode.Network)),
+                    this.methodParameterStringSerializer.Serialize(node2.MinerAddress.Address.ToAddress(node1.CoreNode.FullNode.Network)),
+                    this.methodParameterStringSerializer.Serialize(1uL)
+                };
+                BuildCallContractTransactionResponse callResponse = node1.SendCallContractTransaction("TransferFrom", response.NewContractAddress, 0, parameters);
+                node2.WaitMempoolCount(1);
+                node2.MineBlocks(1);
+
+                parameters = new string[]
+                {
+                    this.methodParameterStringSerializer.Serialize(1uL)
+                };
+                result = node1.CallContractMethodLocally("OwnerOf", response.NewContractAddress, 0, parameters);
+                uint160 receiverAddressUint160 = node2.MinerAddress.Address.ToUint160(node1.CoreNode.FullNode.Network);
+                returnedAddressUint160 = ((Address)result.Return).ToUint160();
+                Assert.Equal(receiverAddressUint160, returnedAddressUint160);
+
+                IList<ReceiptResponse> receipts = node1.GetReceipts(response.NewContractAddress, "Transfer");
+                Assert.Single(receipts);
             }
         }
 

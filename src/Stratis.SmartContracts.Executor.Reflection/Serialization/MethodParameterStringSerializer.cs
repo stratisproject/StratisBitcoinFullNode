@@ -19,6 +19,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             this.network = network;
         }
 
+        /// <inheritdoc />
+        public string Serialize(object methodParameter)
+        {
+            return this.SerializeObject(methodParameter);
+        }
+
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>
