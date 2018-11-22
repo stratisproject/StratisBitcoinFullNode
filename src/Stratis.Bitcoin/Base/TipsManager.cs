@@ -1,21 +1,34 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Threading;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
 // TODO create common storage for the data
 // TODO add logs
+// TODO save tip in BG
 
 namespace Stratis.Bitcoin.Base
 {
     public class TipsManager : IDisposable
     {
+        /// <summary>Highest commited tips mapped by their providers.</summary>
         private readonly Dictionary<object, ChainedHeader> tipsByProvider;
 
-        /// <summary>Protects access to <see cref="tipsByProvider"/>.</summary>
+        /// <summary>Highest tip commited between all registered components.</summary>
+        private ChainedHeader lastCommonTip;
+
+        /// <summary>Protects all access to <see cref="tipsByProvider"/> and write access to <see cref="lastCommonTip"/>.</summary>
         private readonly object lockObject;
+
+        /// <summary>Triggered when <see cref="lastCommonTip"/> is updated.</summary>
+        private readonly AsyncManualResetEvent newCommonTipSetEvent;
+
+        private Task commonTipPersistingTask;
+
+        private readonly CancellationTokenSource cancellation;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -24,7 +37,36 @@ namespace Stratis.Bitcoin.Base
         {
             this.tipsByProvider = new Dictionary<object, ChainedHeader>();
             this.lockObject = new object();
+            this.newCommonTipSetEvent = new AsyncManualResetEvent(false);
+            this.cancellation = new CancellationTokenSource();
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+        }
+
+        public void Initialize()
+        {
+            // TODO load lastCommonTip
+
+            this.commonTipPersistingTask = this.PersistCommonTipContinously();
+        }
+
+        private async Task PersistCommonTipContinously()
+        {
+            while (!this.cancellation.IsCancellationRequested)
+            {
+                try
+                {
+                    await this.newCommonTipSetEvent.WaitAsync(this.cancellation.Token).ConfigureAwait(false);
+                }
+                catch (OperationCanceledException)
+                {
+                    return;
+                }
+
+                ChainedHeader tipToSave = this.lastCommonTip;
+
+                // TODO save to db
+            }
         }
 
         // Type is the type of component that requires syncing the tips.
@@ -34,6 +76,12 @@ namespace Stratis.Bitcoin.Base
             {
                 this.tipsByProvider.Add(provider, null);
             }
+        }
+
+        /// <summary>Provides highest tip commited between all registered components.</summary>
+        public ChainedHeader GetLastCommonTip()
+        {
+            return this.lastCommonTip;
         }
 
         // throws if provider was not registered
@@ -56,7 +104,7 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 // Last common tip can't be changed because lowest tip is equal to it already.
-                if (this.GetLastCommonTip() == lowestTip)
+                if (this.lastCommonTip == lowestTip)
                     return;
 
                 // Make sure all tips are on the same chain.
@@ -69,22 +117,17 @@ namespace Stratis.Bitcoin.Base
                     }
                 }
 
-                // TODO save in background
+                this.lastCommonTip = lowestTip;
+                this.newCommonTipSetEvent.Set();
             }
-
-            // TODO check if common tip acheived and if it was- push it to queue for saving
-        }
-
-        // Returns highest tip commited by all components.
-        public ChainedHeader GetLastCommonTip()
-        {
-            // TODO get cached or load from db
-            return null;
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
+            this.cancellation.Cancel();
+
+            this.commonTipPersistingTask?.GetAwaiter().GetResult();
         }
     }
 }
