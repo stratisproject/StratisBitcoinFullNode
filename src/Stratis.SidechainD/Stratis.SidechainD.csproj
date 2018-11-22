@@ -16,6 +16,7 @@
     <PackageReference Include="Stratis.Bitcoin.Features.Consensus" Version="1.2.4-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="1.2.4-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="1.2.4-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="1.2.4-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.4-beta" />
   </ItemGroup>
 

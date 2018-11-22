@@ -29,12 +29,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers
 
         public static Network ToCounterChainNetwork(this Network network)
         {
-            if (network.Name.ToLower() == MainChainNames[0]) return ApexNetwork.Main;
-            if (network.Name.ToLower() == MainChainNames[1]) return ApexNetwork.Test;
-            if (network.Name.ToLower() == MainChainNames[2]) return ApexNetwork.RegTest;
-            if (network.Name.ToLower() == ApexNetwork.Main.Name.ToLower()) return new StratisMain();
-            if (network.Name.ToLower() == ApexNetwork.Test.Name.ToLower()) return new StratisTest();
-            if (network.Name.ToLower() == ApexNetwork.RegTest.Name.ToLower()) return new StratisRegTest();
+            if (network.Name.ToLower() == MainChainNames[0]) return FederatedPegNetwork.NetworksSelector.Mainnet();
+            if (network.Name.ToLower() == MainChainNames[1]) return FederatedPegNetwork.NetworksSelector.Testnet();
+            if (network.Name.ToLower() == MainChainNames[2]) return FederatedPegNetwork.NetworksSelector.Regtest();
+            if (network.Name.ToLower() == FederatedPegNetwork.MainNetworkName.ToLower()) return new StratisMain();
+            if (network.Name.ToLower() == FederatedPegNetwork.TestNetworkName.ToLower()) return new StratisTest();
+            if (network.Name.ToLower() == FederatedPegNetwork.RegTestNetworkName.ToLower()) return new StratisRegTest();
             throw new System.ArgumentException("Unknown network.");
         }
     }

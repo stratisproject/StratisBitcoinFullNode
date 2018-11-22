@@ -13,7 +13,9 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -225,6 +227,25 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
                     });
             });
+            return fullNodeBuilder;
+        }
+
+        public static IFullNodeBuilder UsePoAMining(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+                {
+                    features
+                        .AddFeature<PoAFeature>()
+                        .FeatureServices(services =>
+                            {
+                                services.AddSingleton<FederationManager>();
+                                services.AddSingleton<PoABlockHeaderValidator>();
+                                services.AddSingleton<IPoAMiner, PoAMiner>();
+                                services.AddSingleton<SlotsManager>();
+                                services.AddSingleton<BlockDefinition, PoABlockDefinition>();
+                            });
+                });
+
             return fullNodeBuilder;
         }
     }

@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
+using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
@@ -43,7 +44,7 @@ namespace Stratis.FederationGatewayD
                     throw new ArgumentException($"Gateway node needs to be started specifying either a {SidechainArgument} or a {MainchainArgument} argument");
                 }
 
-                var nodeSettings = new NodeSettings(networksSelector: isMainchainNode ? Networks.Stratis : ApexNetworks.Apex, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                var nodeSettings = new NodeSettings(networksSelector: isMainchainNode ? Networks.Stratis : FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
                 Network network = nodeSettings.Network;
 
                 IFullNode node = isMainchainNode
@@ -60,19 +61,7 @@ namespace Stratis.FederationGatewayD
                         .UseApi()
                         .AddRPC()
                         .Build()
-                    : new FullNodeBuilder()
-                        .UseNodeSettings(nodeSettings)
-                        .UseBlockStore()
-                        .UsePowConsensus()
-                        .UseMempool()
-                        .UseWallet()
-                        .UseTransactionNotification()
-                        .UseBlockNotification()
-                        .AddMining()
-                        .AddFederationGateway()
-                        .UseApi()
-                        .AddRPC()
-                        .Build();
+                    : GetFederatedPegFullNode(nodeSettings);
 
                 if (node != null)
                     await node.RunAsync();
@@ -81,6 +70,24 @@ namespace Stratis.FederationGatewayD
             {
                 Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
             }
+        }
+
+        private static IFullNode GetFederatedPegFullNode(NodeSettings nodeSettings)
+        {
+            IFullNode node = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .UsePoAConsensus()
+                .UseMempool()
+                .UseWallet()
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UsePoAMining()
+                .UseApi()
+                //.UseApps()
+                .AddRPC()
+                .Build();
+            return node;
         }
     }
 }

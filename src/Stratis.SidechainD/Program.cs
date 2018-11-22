@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Utilities;
@@ -38,28 +39,23 @@ namespace Stratis.SidechainD
                     args = args.Concat(new[] { "apiport=38225" }).ToArray();
                 }
 
-                NodeSettings nodeSettings = new NodeSettings(networksSelector: ApexNetworks.Apex, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+                NodeSettings nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
                 Network network = nodeSettings.Network;
                 string[] seedNodes = { };
                 switch (network.Name)
                 {
-                    case "ApexTest":
-                    seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
+                    case ApexNetwork.TestNetworkName:
+                        seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
+                        break;
+                    case FederatedPegNetwork.TestNetworkName:
+                        seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149" };
                         break;
                 }
 
                 network.SeedNodes.AddRange(ConvertToNetworkAddresses(seedNodes, network.DefaultPort).ToList());
 
-                IFullNode node = new FullNodeBuilder()
-                    .UseNodeSettings(nodeSettings)
-                    .UseBlockStore()
-                    .UsePowConsensus()
-                    .UseMempool()
-                    .UseWallet()
-                    .UseApi()
-                    .AddRPC()
-                    .Build();
+                IFullNode node = GetFederatedPegFullNode(nodeSettings);
 
                 if (node != null)
                     await node.RunAsync();
@@ -68,6 +64,35 @@ namespace Stratis.SidechainD
             {
                 Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
             }
+        }
+
+        private static IFullNode GetApexFullNode(NodeSettings nodeSettings)
+        {
+            IFullNode node = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .UsePowConsensus()
+                .UseMempool()
+                .UseWallet()
+                .UseApi()
+                .AddRPC()
+                .Build();
+            return node;
+        }
+
+        private static IFullNode GetFederatedPegFullNode(NodeSettings nodeSettings)
+        {
+            IFullNode node = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .UsePoAConsensus()
+                .UseMempool()
+                .UseWallet()
+                .UseApi()
+                //.UseApps()
+                .AddRPC()
+                .Build();
+            return node;
         }
 
         protected static IEnumerable<NetworkAddress> ConvertToNetworkAddresses(string[] seeds, int defaultPort)
