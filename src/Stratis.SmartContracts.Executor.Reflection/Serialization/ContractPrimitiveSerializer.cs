@@ -240,11 +240,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return Encoding.UTF8.GetString(val);
         }
 
-        private T[] ToArray<T>(byte[] val)
-        {
-            return (T[]) DeserializeArray(typeof(T), val);
-        } 
-
         #endregion
 
         private object DeserializeStruct(Type type, byte[] bytes)
