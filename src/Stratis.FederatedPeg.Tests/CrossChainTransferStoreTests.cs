@@ -20,6 +20,10 @@ using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 using Stratis.Sidechains.Networks;
 using Xunit;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Connection;
+using System.Threading;
+using System.Diagnostics;
+using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -41,6 +45,8 @@ namespace Stratis.FederatedPeg.Tests
         private IFederationWalletSyncManager federationWalletSyncManager;
         private IWalletFeePolicy walletFeePolicy;
         private IAsyncLoopFactory asyncLoopFactory;
+        private INodeLifetime nodeLifetime;
+        private IConnectionManager connectionManager;
         private Dictionary<uint256, Block> blockDict;
         private List<Transaction> fundingTransactions;
         private FederationWallet wallet;
@@ -67,7 +73,7 @@ namespace Stratis.FederatedPeg.Tests
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
-            this.asyncLoopFactory = Substitute.For<IAsyncLoopFactory>();
+            this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.dateTimeProvider = DateTimeProvider.Default;
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
@@ -77,6 +83,9 @@ namespace Stratis.FederatedPeg.Tests
             this.federationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
+            this.nodeLifetime = new NodeLifetime();
+            this.connectionManager = Substitute.For<IConnectionManager>();
+
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.chain = new ConcurrentChain(this.network);
@@ -590,6 +599,68 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         /// <summary>
+        /// Check that partial transactions present in the store cause partial transaction requests made to peers.
+        /// </summary>
+        [Fact]
+        public void StoredPartialTransactionsTriggerSignatureRequests()
+        {
+            var dataFolder = new DataFolder(CreateTestDir(this));
+
+            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.AddFunding();
+            this.AppendBlocks(5);
+
+            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
+
+            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
+                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            {
+                crossChainTransferStore.Initialize();
+                crossChainTransferStore.Start();
+
+                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
+
+                BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
+                BitcoinAddress address2 = (new Key()).PubKey.Hash.GetAddress(this.network);
+
+                Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+                Deposit deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit1, deposit2 }).GetAwaiter().GetResult();
+
+                Dictionary<uint256, Transaction> transactions = crossChainTransferStore.GetTransactionsByStatusAsync(
+                    CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
+
+                PartialTransactionRequester requester = new PartialTransactionRequester(this.loggerFactory, crossChainTransferStore, this.asyncLoopFactory,
+                    this.nodeLifetime, this.connectionManager, this.federationGatewaySettings);
+
+                System.Net.IPEndPoint peerEndPoint = new System.Net.IPEndPoint(System.Net.IPAddress.Parse("1.2.3.4"), 5);
+                INetworkPeer peer = Substitute.For<INetworkPeer>();
+                peer.RemoteSocketAddress.Returns(peerEndPoint.Address);
+                peer.RemoteSocketPort.Returns(peerEndPoint.Port);
+                peer.PeerEndPoint.Returns(peerEndPoint);
+
+                var peers = new NetworkPeerCollection();
+                peers.Add(peer);
+
+                this.federationGatewaySettings.FederationNodeIpEndPoints.Returns(new[] { peerEndPoint });
+
+                this.connectionManager.ConnectedPeers.Returns(peers);
+
+                requester.Start();
+
+                Thread.Sleep(100);
+
+                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                    o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].GetHash())).GetAwaiter().GetResult();
+
+                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                    o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
+            }
+        }
+
+        /// <summary>
         /// Builds a chain with the requested number of blocks.
         /// </summary>
         /// <param name="blocks">The number of blocks.</param>
@@ -632,6 +703,33 @@ namespace Stratis.FederatedPeg.Tests
             this.federationWalletSyncManager.ProcessBlock(block);
 
             return last;
+        }
+
+        /// <summary>
+        /// Waits for a function to return true.
+        /// </summary>
+        /// <param name="act">The function returning <c>true</c> or <c>false</c>.</param>
+        /// <param name="failureReason">The failure reason if any.</param>
+        /// <param name="retryDelayInMiliseconds">How often to retry in milliseconds.</param>
+        /// <param name="cancellationToken">Cancellation token.</param>
+        private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
+        {
+            cancellationToken = cancellationToken == default(CancellationToken)
+                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
+                : cancellationToken;
+
+            while (!act())
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(retryDelayInMiliseconds);
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
+                }
+            }
         }
 
         /// <summary>

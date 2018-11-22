@@ -51,8 +51,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// Changes to the transaction id caused by this operation will also be synchronised with the partial
         /// transaction that has been recorded in the wallet.
         /// </remarks>
-
-        Task MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions);
+        /// <returns>The updated transaction.</returns>
+        Task<Transaction> MergeTransactionSignaturesAsync(uint256 depositId, Transaction[] partialTransactions);
 
         /// <summary>
         /// Get the cross-chain transfer information from the database, identified by the deposit transaction ids.

@@ -77,6 +77,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly ICrossChainTransferStore crossChainTransferStore;
 
+        private readonly IPartialTransactionRequester partialTransactionRequester;
+
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
             IMaturedBlockReceiver maturedBlockReceiver,
@@ -95,7 +97,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Network network,
             ConcurrentChain chain,
             INodeStats nodeStats,
-            ICrossChainTransferStore crossChainTransferStore)
+            ICrossChainTransferStore crossChainTransferStore,
+            IPartialTransactionRequester partialTransactionRequester)
         {
             this.loggerFactory = loggerFactory;
             this.maturedBlockReceiver = maturedBlockReceiver;
@@ -114,6 +117,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.walletSyncManager = walletSyncManager;
             this.network = network;
             this.crossChainTransferStore = crossChainTransferStore;
+            this.partialTransactionRequester = partialTransactionRequester;
 
             // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
@@ -142,6 +146,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.federationWalletManager.Start();
             this.walletSyncManager.Start();
             this.crossChainTransferStore.Start();
+            this.partialTransactionRequester.Start();
 
             // Connect the node to the other federation members.
             foreach (var federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
@@ -150,7 +155,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
 
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
-            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network, this.federationGatewaySettings));
+            networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
+                this.network, this.federationGatewaySettings, this.crossChainTransferStore));
         }
 
         public override void Dispose()
@@ -199,7 +205,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     .AddFeature<FederationGatewayFeature>()
                     .DependOn<BlockNotificationFeature>()
                     .FeatureServices(services => {
-
                         services.AddSingleton<IHttpClientFactory, HttpClientFactory>();
                         services.AddSingleton<IMaturedBlockReceiver, MaturedBlockReceiver>();
                         services.AddSingleton<IMaturedBlockSender, RestMaturedBlockSender>();
@@ -217,6 +222,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<ILeaderProvider, LeaderProvider>();
                         services.AddSingleton<FederationWalletController>();
                         services.AddSingleton<ICrossChainTransferStore, CrossChainTransferStore>();
+                        services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
                     });
             });
             return fullNodeBuilder;
