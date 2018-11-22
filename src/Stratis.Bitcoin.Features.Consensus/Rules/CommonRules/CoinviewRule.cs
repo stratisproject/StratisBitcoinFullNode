@@ -109,7 +109,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>Checks if transaction if final.</summary>
-        protected abstract bool IsTxFinal(Transaction transaction, RuleContext context);
+        protected virtual bool IsTxFinal(Transaction transaction, RuleContext context)
+        {
+            return transaction.IsFinal(context.ValidationContext.ChainedHeaderToValidate);
+        }
 
         /// <summary>
         /// Verify that an input may be validly spent as part of the given transaction in the given block.

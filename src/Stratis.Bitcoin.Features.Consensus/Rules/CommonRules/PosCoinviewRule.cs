@@ -81,12 +81,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <inheritdoc />
-        protected override bool IsTxFinal(Transaction transaction, RuleContext context)
-        {
-            return transaction.IsFinal(context.ValidationContext.ChainedHeaderToValidate);
-        }
-
-        /// <inheritdoc />
         public override void UpdateCoinView(RuleContext context, Transaction transaction)
         {
             var posRuleContext = context as PosRuleContext;
