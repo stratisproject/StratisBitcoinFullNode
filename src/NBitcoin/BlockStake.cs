@@ -332,16 +332,16 @@ namespace NBitcoin
         }
 
         /// <summary>
-        /// Gets the block's coinstake transaction or creates an empty transaction if there is no coinstake.
+        /// Gets the block's coinstake transaction or returns the coinbase transaction if there is no coinstake.
         /// </summary>
-        /// <returns>Coinstake transaction or empty transaction.</returns>
+        /// <returns>Coinstake transaction or coinbase transaction.</returns>
         /// <remarks>
         /// <para>In PoS blocks, coinstake transaction is the second transaction in the block.</para>
-        /// <para>In PoW there isn't a coinstake transaction.</para>
+        /// <para>In PoW there isn't a coinstake transaction, return coinbase instead to be able to compute stake modifier for the next eventual PoS block.</para>
         /// </remarks>
-        public Transaction GetCoinstakeOrNewTransaction()
+        public Transaction GetProtocolTransaction()
         {
-            return (this.Transactions.Count > 1 && this.Transactions[1].IsCoinStake) ? this.Transactions[1] : new Transaction();
+            return (this.Transactions.Count > 1 && this.Transactions[1].IsCoinStake) ? this.Transactions[1] : this.Transactions[0];
         }
     }
 }
