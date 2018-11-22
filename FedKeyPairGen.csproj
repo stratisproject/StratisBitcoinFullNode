@@ -13,6 +13,7 @@
     <StartupObject>FedKeyPairGen.Program</StartupObject>
     <RuntimeIdentifiers>win10-x64;</RuntimeIdentifiers>
     <DebugType>Full</DebugType>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>

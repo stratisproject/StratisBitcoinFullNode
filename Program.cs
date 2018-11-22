@@ -37,7 +37,6 @@ namespace FedKeyPairGen
                 if (help)
                 {
                     FedKeyPairGenManager.OutputUsage();
-                   
                 }
 
                 Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
@@ -64,13 +63,13 @@ namespace FedKeyPairGen
             }
         }
 
-        public void MineGenesisBlocks()
+        public void MineGenesisBlocks(ConsensusFactory consensusFactory)
         {
             string coinbaseText = "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/";
 
             Console.WriteLine("Looking for genesis blocks  for the 3 networks, this might take a while.");
 
-            Block genesisMain = Network.MineGenesisBlock(new PosConsensusFactory(), coinbaseText, new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
+            Block genesisMain = Network.MineGenesisBlock(consensusFactory, coinbaseText, new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
             BlockHeader headerMain = genesisMain.Header;
 
             Console.WriteLine("-- MainNet network --");
@@ -81,7 +80,7 @@ namespace FedKeyPairGen
             Console.WriteLine("hash: " + headerMain.GetHash());
             Console.WriteLine("merkleroot: " + headerMain.HashMerkleRoot);
 
-            Block genesisTest = Network.MineGenesisBlock(new PosConsensusFactory(), coinbaseText, new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000")), Money.Coins(50m));
+            Block genesisTest = Network.MineGenesisBlock(consensusFactory, coinbaseText, new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000")), Money.Coins(50m));
             BlockHeader headerTest = genesisTest.Header;
             Console.WriteLine("-- TestNet network --");
             Console.WriteLine("bits: " + headerTest.Bits);
@@ -91,7 +90,7 @@ namespace FedKeyPairGen
             Console.WriteLine("hash: " + headerTest.GetHash());
             Console.WriteLine("merkleroot: " + headerTest.HashMerkleRoot);
 
-            Block genesisReg = Network.MineGenesisBlock(new PosConsensusFactory(), coinbaseText, new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
+            Block genesisReg = Network.MineGenesisBlock(consensusFactory, coinbaseText, new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
             BlockHeader headerReg = genesisReg.Header;
             Console.WriteLine("-- RegTest network --");
             Console.WriteLine("bits: " + headerReg.Bits);
@@ -103,7 +102,7 @@ namespace FedKeyPairGen
 
         }
 
-        public void CreateMultisigAddresses()
+        public void CreateMultisigAddresses(Network mainchainNetwork, Network sidechainNetwork)
         {
             // The following creates 2 members and creates 2-of-5 multisig addresses for both StratisTest and ApexTest.
             int pubKeysCount = 5;
@@ -128,11 +127,11 @@ namespace FedKeyPairGen
             Script payToMultiSig = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(mComponent, pubKeys);
             Console.WriteLine("Redeem script: " + payToMultiSig.ToString());
 
-            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(ApexNetwork.Test);
+            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(sidechainNetwork);
             Console.WriteLine("Sidechan P2SH: " + sidechainMultisigAddress.ScriptPubKey);
             Console.WriteLine("Sidechain Multisig address: " + sidechainMultisigAddress);
 
-            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(new StratisTest());
+            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(mainchainNetwork);
             Console.WriteLine("Mainchain P2SH: " + mainchainMultisigAddress.ScriptPubKey);
             Console.WriteLine("Mainchain Multisig address: " + mainchainMultisigAddress);
         }
