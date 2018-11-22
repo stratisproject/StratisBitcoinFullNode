@@ -10,6 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         Send,
         Staked,
         ContractCall,
-        ContractCreate
+        ContractCreate,
+        GasRefund
     }
 }
