@@ -354,6 +354,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private async Task OnPartialValidationCompletedCallbackAsync(ValidationContext validationContext)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             if (validationContext.Error == null)
             {
                 await this.OnPartialValidationSucceededAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);

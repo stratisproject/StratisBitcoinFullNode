@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Tests.Common
             IRuleRegistration ruleRegistration = null,
             ConsensusRuleEngine consensusRules = null)
         {
-            string[] param = dataDir == null ? new string[]{} : new string[] { $"-datadir={dataDir}" };
+            string[] param = dataDir == null ? new string[] { } : new string[] { $"-datadir={dataDir}" };
 
             var nodeSettings = new NodeSettings(network, args: param);
 
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Tests.Common
                 new ChainState(), new Mock<IFinalizedBlockInfoRepository>().Object, consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));
 
             var consensus = new ConsensusManager(tree, network, loggerFactory, chainState, new IntegrityValidator(consensusRules, loggerFactory),
-                new PartialValidator(consensusRules, loggerFactory), new FullValidator(consensusRules, loggerFactory), consensusRules,
+                new PartialValidator(consensusRules, loggerFactory, new NodeLifetime()), new FullValidator(consensusRules, loggerFactory), consensusRules,
                 new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(), peerBanning, new Mock<IInitialBlockDownloadState>().Object, chain,
                 new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object, new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new NodeLifetime());
 

@@ -133,7 +133,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             testChainContext.HeaderValidator = new HeaderValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
             testChainContext.IntegrityValidator = new IntegrityValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
-            testChainContext.PartialValidator = new PartialValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
+            testChainContext.PartialValidator = new PartialValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory, new NodeLifetime());
             testChainContext.FullValidator = new FullValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
             var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);

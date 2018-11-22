@@ -3,7 +3,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus.Validators
@@ -127,11 +126,13 @@ namespace Stratis.Bitcoin.Consensus.Validators
         private readonly IConsensusRuleEngine consensusRules;
         private readonly AsyncQueue<PartialValidationItem> asyncQueue;
         private readonly ILogger logger;
+        private readonly INodeLifetime nodeLifetime;
 
-        public PartialValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory)
+        public PartialValidator(IConsensusRuleEngine consensusRules, ILoggerFactory loggerFactory, INodeLifetime nodeLifetime)
         {
             this.consensusRules = consensusRules;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.nodeLifetime = nodeLifetime;
 
             this.asyncQueue = new AsyncQueue<PartialValidationItem>(this.OnEnqueueAsync);
         }
@@ -144,6 +145,12 @@ namespace Stratis.Bitcoin.Consensus.Validators
 
         private async Task OnEnqueueAsync(PartialValidationItem item, CancellationToken cancellationtoken)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             ValidationContext result = await this.consensusRules.PartialValidationAsync(item.ChainedHeader, item.Block).ConfigureAwait(false);
 
             try
