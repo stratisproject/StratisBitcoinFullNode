@@ -9,11 +9,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
-//todo: this is pre-refactoring code
-//todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
-
-//todo: wire up to transaction broadcaster being written by Ferdeen :)
-
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
     class PartialTransactionsBehavior : NetworkPeerBehavior
@@ -30,35 +25,41 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IPAddressComparer ipAddressComparer;
 
+        private readonly ICrossChainTransferStore crossChainTransferStore;
+
         public PartialTransactionsBehavior(
             ILoggerFactory loggerFactory,
             IFederationWalletManager federationWalletManager,
             Network network,
-            IFederationGatewaySettings federationGatewaySettings)
+            IFederationGatewaySettings federationGatewaySettings,
+            ICrossChainTransferStore crossChainTransferStore)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
+            Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.federationWalletManager = federationWalletManager;
             this.network = network;
             this.federationGatewaySettings = federationGatewaySettings;
+            this.crossChainTransferStore = crossChainTransferStore;
             this.ipAddressComparer = new IPAddressComparer();
         }
 
         public override object Clone()
         {
-            return new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network, this.federationGatewaySettings);
+            return new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager, this.network,
+                this.federationGatewaySettings, this.crossChainTransferStore);
         }
 
         protected override void AttachCore()
         {
             this.logger.LogTrace("()");
 
-            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, AttachedPeer.PeerEndPoint.Address)))
+            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
             {
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
             }
@@ -70,7 +71,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         {
             this.logger.LogTrace("()");
 
-            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, AttachedPeer.PeerEndPoint.Address)))
+            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
             {
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             }
@@ -78,11 +79,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.logger.LogTrace("(-)");
         }
 
-        async Task Broadcast(RequestPartialTransactionPayload payload)
+        /// <summary>
+        /// Broadcast the partial transaction request to federation members.
+        /// </summary>
+        /// <param name="payload">The payload to broadcast.</param>
+        async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:'{5}')", nameof(payload.BossCard), payload.BossCard, nameof(payload.Command), payload.Command, nameof(payload.BlockHeight), payload.BlockHeight);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(payload.Command), payload.Command, nameof(payload.DepositId), payload.DepositId);
 
-            if (federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, AttachedPeer.PeerEndPoint.Address)))
+            if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
             {
                 await this.AttachedPeer.SendMessageAsync(payload);
             }
@@ -90,42 +95,49 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.logger.LogTrace("(-)");
         }
 
+        private Transaction GetTemplateTransaction(Transaction partialTransaction)
+        {
+            Transaction templateTransaction = this.network.CreateTransaction(partialTransaction.ToBytes(this.network.Consensus.ConsensusFactory));
+
+            foreach (TxIn input in templateTransaction.Inputs)
+            {
+                input.ScriptSig = new Script();
+            }
+
+            return templateTransaction;
+        }
+
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             var payload = message.Message.Payload as RequestPartialTransactionPayload;
             if (payload == null) return;
 
+            // Get the template from the payload.
+            Transaction template = this.GetTemplateTransaction(payload.PartialTransaction);
+
             this.logger.LogInformation("RequestPartialTransactionPayload received.");
             this.logger.LogInformation("OnMessageReceivedAsync: {0}", this.network.ToChain());
-            this.logger.LogInformation("RequestPartialTransactionPayload: BossCard            - {0}.", payload.BossCard);
-            this.logger.LogInformation("RequestPartialTransactionPayload: BlockHeight         - {0}.", payload.BlockHeight);
+            this.logger.LogInformation("RequestPartialTransactionPayload: DepositID           - {0}.", payload.DepositId);
             this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction  - {0}.", payload.PartialTransaction);
-            this.logger.LogInformation("RequestPartialTransactionPayload: TemplateTransaction - {0}.", payload.TemplateTransaction);
+            this.logger.LogInformation("RequestPartialTransactionPayload: TemplateTransaction - {0}.", template);
 
-            if (payload.BossCard == uint256.Zero)
+            uint256 oldHash = payload.PartialTransaction.GetHash();
+
+            payload.AddPartial(await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }));
+
+            if (payload.PartialTransaction.GetHash() == oldHash)
             {
-                //get the template from the payload
-                this.logger.LogInformation("OnMessageReceivedAsync: Payload has no bossCard -> signing partial.");
-
-                var template = payload.TemplateTransaction;
-
-                var wallet = this.federationWalletManager.GetWallet();
-
-                var signedTransaction = wallet.SignPartialTransaction(template, this.federationWalletManager.Secret.WalletPassword);
-
-                this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction signed.");
-                this.logger.LogInformation("RequestPartialTransactionPayload: BossCard            - {0}.", payload.BossCard);
-                this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction  - {0}.", payload.PartialTransaction);
-                this.logger.LogInformation("Broadcasting Payload....");
-
-                await this.Broadcast(payload);
-
-                this.logger.LogInformation("Broadcasted.");
+                this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction already signed.");
             }
             else
             {
-                //we got a partial back
-                this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction received.");
+                this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction signed.");
+                this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction  - {0}.", payload.PartialTransaction);
+                this.logger.LogInformation("Broadcasting Payload....");
+
+                await BroadcastAsync(payload);
+
+                this.logger.LogInformation("Broadcasted.");
             }
         }
     }
