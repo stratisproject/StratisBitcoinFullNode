@@ -58,11 +58,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public HashHeightPair TipHashHeight { get; private set; }
 
         /// <summary>
-        /// The highest stored <see cref= "ChainedHeader"/> tip in the store.
-        /// </summary>
-        private ChainedHeader storeTip;
-
-        /// <summary>
         /// Pending - not yet saved to disk - <see cref="IProvenBlockHeaderStore"/> tip hash and height that the <see cref= "ProvenBlockHeader"/> belongs to.
         /// <para>
         /// All access to these items have to be protected by <see cref="lockObject" />
@@ -142,12 +137,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 tip = tip.FindAncestorOrSelf(repoTip.Hash, repoTip.Height);
             }
 
-            this.storeTip = tip;
             this.TipHashHeight = new HashHeightPair(tip.HashBlock, tip.Height);
 
             this.logger.LogDebug("Proven block header store initialized at '{0}'.", this.TipHashHeight);
 
-            return this.storeTip;
+            return tip;
         }
 
         /// <inheritdoc />
@@ -311,7 +305,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         [NoTrace]
         private void AddBenchStats(StringBuilder benchLog)
         {
-            if (this.storeTip != null)
+            if (this.TipHashHeight != null)
             {
                 benchLog.AppendLine("======ProvenBlockHeaderStore Bench======");
 
@@ -342,7 +336,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             decimal totalInMB = Convert.ToDecimal(totalBytes / Math.Pow(2, 20));
 
-            if ((this.storeTip != null) && (totalBytes > 0))
+            if ((this.TipHashHeight != null) && (totalBytes > 0))
             {
                 log.AppendLine();
                 log.AppendLine("======ProvenBlockHeaderStore======");
