@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <inheritdoc />
         /// <returns>The <see cref="HeadersPayload"/> instance to announce to the peer, or <see cref="ProvenHeadersPayload"/> if the peers requires it.</returns>
-        protected override Payload BuildAnnouncedHeaderPayload(IEnumerable<BlockHeader> headers)
+        protected override Payload BuildHeadersAnnouncePayload(IEnumerable<BlockHeader> headers)
         {
             var provenHeadersPayload = new ProvenHeadersPayload();
 
@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 if (provenBlockHeader == null)
                 {
+                    // Sanity check. That should never happen.
                     throw new BlockStoreException("BlockHeader is expected to be a ProvenBlockHeader");
                 }
 

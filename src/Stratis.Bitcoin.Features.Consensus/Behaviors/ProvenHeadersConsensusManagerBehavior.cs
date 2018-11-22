@@ -220,50 +220,52 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// </summary>
         /// <param name="peer">The peer.</param>
         /// <param name="headers">The headers.</param>
-        protected Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
+        protected async Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
             bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && peer.IsWhitelisted());
 
-            bool bellowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
-            if (isLegacyWhitelistedPeer || bellowLastCheckpoint)
+            // Allow legacy headers that came from whitelisted peer.
+            if (isLegacyWhitelistedPeer)
             {
-                // Allow legacy headers that came from whitelisted peer.
-                if (isLegacyWhitelistedPeer)
-                    return base.ProcessHeadersAsync(peer, headers);
+                await base.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                return;
+            }
 
-                var distanceFromCheckPoint = this.lastCheckpointHeight - this.GetCurrentHeight();
+            bool bellowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
 
-                if (distanceFromCheckPoint < MaxItemsPerHeadersMessage)
+            if (!bellowLastCheckpoint)
+                return;
+
+            int distanceFromCheckPoint = this.lastCheckpointHeight - this.GetCurrentHeight();
+
+            if (distanceFromCheckPoint < MaxItemsPerHeadersMessage)
+            {
+                bool checkpointFound = false;
+
+                // Filter out headers that are above the last checkpoint hash
+                for (int index = 0; index < headers.Count; index++)
                 {
-                    bool checkpointFound = false;
-
-                    // Filter out headers that are above the last checkpoint hash
-                    for (int index = 0; index < headers.Count; index++)
+                    if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
                     {
-                        if (headers[index].GetHash() == this.lastCheckpointInfo.Hash)
+                        if (index != headers.Count - 1)
                         {
-                            if (index != headers.Count - 1)
-                            {
-                                headers.RemoveRange(index + 1, headers.Count - index - 1);
-                            }
-
-                            checkpointFound = true;
-                            break;
+                            headers.RemoveRange(index + 1, headers.Count - index - 1);
                         }
-                    }
 
-                    if (!checkpointFound)
-                    {
-                        // Checkpoint was not found in presented headers so we discard this batch
-                        this.logger.LogTrace("(-)[CHECKPOINT_HEADER_NOT_FOUND]");
-                        return Task.CompletedTask;
+                        checkpointFound = true;
+                        break;
                     }
                 }
 
-                return base.ProcessHeadersAsync(peer, headers);
+                if (!checkpointFound)
+                {
+                    // Checkpoint was not found in presented headers so we discard this batch
+                    this.logger.LogTrace("(-)[CHECKPOINT_HEADER_NOT_FOUND]");
+                    return;
+                }
             }
 
-            return Task.CompletedTask;
+            await base.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
         }
     }
 }
