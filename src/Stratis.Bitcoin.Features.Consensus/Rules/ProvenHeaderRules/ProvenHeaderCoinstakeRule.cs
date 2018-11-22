@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                     ConsensusErrors.ProofOfWorkTooHigh.Throw();
                 }
 
-                if (!context.ValidationContext.BlockToValidate.Header.CheckProofOfWork())
+                if (!header.CheckProofOfWork())
                 {
                     this.Logger.LogTrace("(-)[HIGH_HASH]");
                     ConsensusErrors.HighHash.Throw();

@@ -158,8 +158,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             Guard.NotNull(headers, nameof(headers));
             Guard.NotNull(newTip, nameof(newTip));
 
-            Guard.Assert(newTip.Hash == headers.Values.Last().GetHash());
-
             if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.GetHash()))
             {
                 this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
