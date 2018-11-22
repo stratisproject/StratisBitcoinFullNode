@@ -2,6 +2,7 @@
 using System.Runtime.CompilerServices;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators.Instruction;
+using Stratis.SmartContracts.Core.Validation.Validators.Type;
 
 namespace Stratis.SmartContracts.Core.Validation
 {

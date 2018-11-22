@@ -2,7 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.SmartContracts.Core.Validation
+namespace Stratis.SmartContracts.Core.Validation.Validators.Type
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.TypeDefinition"/> does not have top-level nested reference Types

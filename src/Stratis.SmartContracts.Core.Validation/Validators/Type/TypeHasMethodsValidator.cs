@@ -2,7 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.SmartContracts.Core.Validation
+namespace Stratis.SmartContracts.Core.Validation.Validators.Type
 {
     /// <summary>
     /// Validates that a <see cref="TypeDefinition"/> does not have any methods

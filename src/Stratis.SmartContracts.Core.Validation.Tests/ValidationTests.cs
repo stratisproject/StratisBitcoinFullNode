@@ -8,6 +8,7 @@ using Microsoft.CodeAnalysis.Emit;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Core.Validation.Validators.Type;
 using Xunit;
 
 namespace Stratis.SmartContracts.Core.Validation.Tests

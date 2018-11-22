@@ -2,6 +2,7 @@
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Core.Validation.Validators.Type;
 
 namespace Stratis.SmartContracts.Core.Validation
 {

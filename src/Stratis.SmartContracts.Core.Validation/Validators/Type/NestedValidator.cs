@@ -2,7 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.SmartContracts.Core.Validation
+namespace Stratis.SmartContracts.Core.Validation.Validators.Type
 {
     /// <summary>
     /// Checks that a typedef is nested before validating
