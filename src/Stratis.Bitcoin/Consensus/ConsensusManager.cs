@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
-                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
+                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderOfMinedBlock(block);
                 }
 
                 validationContext = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
@@ -496,7 +496,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (peerId == null)
                     continue;
 
-                if (connectNewHeadersResult == null)
+                if (connectNewHeadersResult?.DownloadTo == null)
                 {
                     this.logger.LogTrace("No new blocks to download were presented by peer ID {0}.", peerId);
                     continue;

@@ -80,6 +80,8 @@
         public static readonly ConsensusError BadProvenHeaderSignatureSize = new ConsensusError("proven-header-signature-size", "proven header's signature size must be less than 80 bytes");
         public static readonly ConsensusError BadTransactionCoinstakeSpending = new ConsensusError("bad-txns-spend-of-coinstake", "coinstake is already spent");
         public static readonly ConsensusError UtxoNotFoundInRewindData = new ConsensusError("utxo-not-found-in-rewind-data", "utxo not found in rewind data");
+        public static readonly ConsensusError InvalidPreviousProvenHeader = new ConsensusError("proven-header-invalid-previous-header", "previous header in chain is expected to be of proven header type");
+        public static readonly ConsensusError InvalidPreviousProvenHeaderStakeModifier = new ConsensusError("proven-header-invalid-previous-header-stack-modifier", "previous proven header's StackModifier is null");
 
         public static readonly ConsensusError BadColdstakeAmount = new ConsensusError("bad-coldstake-amount", "coldstake is negative");
         public static readonly ConsensusError BadColdstakeInputs = new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");

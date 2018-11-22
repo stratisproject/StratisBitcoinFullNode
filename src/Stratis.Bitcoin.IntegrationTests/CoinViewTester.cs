@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         private ICoinView coinView;
         private List<UnspentOutputs> pendingCoins = new List<UnspentOutputs>();
         private uint256 hash;
+        private int blockHeight;
 
         public CoinViewTester(ICoinView coinView)
         {
@@ -64,8 +65,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         public uint256 NewBlock()
         {
+            this.blockHeight++;
             var newHash = new uint256(RandomUtils.GetBytes(32));
-            this.coinView.SaveChangesAsync(this.pendingCoins, null, this.hash, newHash, 0).Wait();
+            this.coinView.SaveChangesAsync(this.pendingCoins, null, this.hash, newHash, this.blockHeight).Wait();
             this.pendingCoins.Clear();
             this.hash = newHash;
             return newHash;
@@ -74,6 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         public uint256 Rewind()
         {
             this.hash = this.coinView.RewindAsync().Result;
+            this.blockHeight--;
             return this.hash;
         }
     }

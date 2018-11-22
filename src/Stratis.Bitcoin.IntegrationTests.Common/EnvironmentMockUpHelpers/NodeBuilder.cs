@@ -112,9 +112,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth);
         }
 
-        public CoreNode CreateStratisPowNode(Network network)
+        public CoreNode CreateStratisPowNode(Network network, string agent = null)
         {
-            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network));
+            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network, agent));
         }
 
         public CoreNode CreateStratisCustomPowNode(Network network, NodeConfigParameters configParameters)
@@ -131,14 +131,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateCustomNode(callback, network, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
-        public CoreNode CreateStratisPosNode(Network network)
+        public CoreNode CreateStratisPosNode(Network network, string agent = "StratisBitcoin")
         {
-            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network), "stratis.conf");
+            return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network, agent), "stratis.conf");
         }
 
-        public CoreNode CloneStratisNode(CoreNode cloneNode)
+        public CoreNode CloneStratisNode(CoreNode cloneNode, string agent = "StratisBitcoin")
         {
-            var node = new CoreNode(new StratisBitcoinPowRunner(cloneNode.FullNode.Settings.DataFolder.RootPath, cloneNode.FullNode.Network), this.ConfigParameters, "bitcoin.conf");
+            var node = new CoreNode(new StratisBitcoinPowRunner(cloneNode.FullNode.Settings.DataFolder.RootPath, cloneNode.FullNode.Network, agent), this.ConfigParameters, "bitcoin.conf");
             this.Nodes.Add(node);
             this.Nodes.Remove(cloneNode);
             return node;
