@@ -353,6 +353,8 @@ namespace Stratis.Bitcoin.Consensus
             // Check headers for consecutiveness.
             for (int i = 1; i < headers.Count; i++)
             {
+                headers[i - 1].PrecomputeHash(true, true);
+
                 if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
                 {
                     this.logger.LogDebug("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
@@ -364,6 +366,8 @@ namespace Stratis.Bitcoin.Consensus
                     return false;
                 }
             }
+
+            headers[headers.Count - 1].PrecomputeHash(true, true); // cache the last hash as well
 
             return true;
         }
