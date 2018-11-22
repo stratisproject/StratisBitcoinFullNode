@@ -274,6 +274,50 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         }
 
         [Fact]
+        public void PeerBanning_Add_WhiteListed_Peer_Does_Not_Get_Banned()
+        {
+            var dataFolder = CreateDataFolder(this);
+
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
+            peerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
+
+            var nodeSettings = new NodeSettings(new StratisRegTest());
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            var connectionManagerBehaviour = new Mock<IConnectionManagerBehavior>();
+            connectionManagerBehaviour.Setup(c => c.Whitelisted).Returns(true);
+
+            var networkPeer = new Mock<INetworkPeer>();
+            networkPeer.Setup(n => n.PeerEndPoint).Returns(endpoint);
+            networkPeer.Setup(n => n.Behavior<IConnectionManagerBehavior>()).Returns(connectionManagerBehaviour.Object);
+
+            var networkPeerFactory = new Mock<INetworkPeerFactory>();
+            networkPeerFactory.Setup(n => n.CreateConnectedNetworkPeerAsync(endpoint, null, null)).ReturnsAsync(networkPeer.Object);
+
+            var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>() { networkPeer.Object });
+
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
+            connectionManager.Setup(c => c.ConnectedPeers).Returns(peerCollection.Object);
+
+            var peerBanning = new PeerBanning(connectionManager.Object, loggerFactory, DateTimeProvider.Default, peerAddressManager);
+            peerBanning.BanAndDisconnectPeer(endpoint, connectionManagerSettings.BanTimeSeconds, nameof(PeerBanningTest));
+
+            // Peer is whitelised and will not be banned.
+            PeerAddress peer = peerAddressManager.FindPeer(endpoint);
+            Assert.False(peer.BanUntil.HasValue);
+            Assert.Null(peer.BanUntil);
+            Assert.Null(peer.BanReason);
+        }
+
+        [Fact]
         public void PeerBanning_Add_Peers_To_Address_Manager_And_Ban_IP_Range()
         {
             var dataFolder = CreateDataFolder(this);

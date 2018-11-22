@@ -75,21 +75,16 @@ namespace Stratis.Bitcoin.Connection
 
             // Find all connected peers from the same IP and disconnect them.
             List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.FindByIp(endpoint.Address);
-            if (peers.Count > 0)
+            foreach (var peer in peers)
             {
-                foreach (var peer in peers)
+                var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
+                if (peerBehavior.Whitelisted)
                 {
-                    var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
-                    if (!peerBehavior.Whitelisted)
-                    {
-                        peer.Disconnect($"The peer was banned, reason: {reason}");
-                    }
-                    else
-                    {
-                        this.logger.LogTrace("(-)[WHITELISTED]");
-                        return;
-                    }
+                    this.logger.LogTrace("(-)[WHITELISTED]");
+                    return;
                 }
+
+                peer.Disconnect($"The peer was banned, reason: {reason}");
             }
 
             // Find all peers from the same IP and ban them.
