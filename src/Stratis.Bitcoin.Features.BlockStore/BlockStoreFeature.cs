@@ -107,8 +107,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Temporary measure to support asking witness data on BTC.
             // At some point NetworkPeerServices will move to the Network class,
             // Then this values should be taken from there.
-            //if (!this.network.Consensus.IsProofOfStake)
-            //    this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
+            if (!this.network.Consensus.IsProofOfStake)
+                this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
 
