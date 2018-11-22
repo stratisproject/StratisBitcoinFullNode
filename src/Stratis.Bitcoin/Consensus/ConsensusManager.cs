@@ -354,6 +354,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private async Task OnPartialValidationCompletedCallbackAsync(ValidationContext validationContext)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             if (validationContext.Error == null)
             {
                 await this.OnPartialValidationSucceededAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
@@ -947,6 +953,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             ChainedHeader chainedHeader = null;
 
             lock (this.peerLock)
