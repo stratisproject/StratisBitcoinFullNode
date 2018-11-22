@@ -138,7 +138,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
 
             this.TipHashHeight = new HashHeightPair(tip.HashBlock, tip.Height);
-
             this.logger.LogDebug("Proven block header store initialized at '{0}'.", this.TipHashHeight);
 
             return tip;
@@ -147,29 +146,26 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task<ProvenBlockHeader> GetAsync(int blockHeight)
         {
-            ProvenBlockHeader header = null;
-
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
             {
-                if (!this.Cache.TryGetValue(blockHeight, out header))
-                {
-                    // Check the repository.
-                    header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
+                if (this.Cache.TryGetValue(blockHeight, out ProvenBlockHeader header))
+                    return header;
 
-                    if (header != null)
-                    {
-                        this.Cache.AddOrUpdate(blockHeight, header, header.HeaderSize);
-                    }
-                }
+                // Check the repository.
+                header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
+
+                if (header != null)
+                    this.Cache.AddOrUpdate(blockHeight, header, header.HeaderSize);
+
+                return header;
             }
-
-            return header;
         }
 
         /// <inheritdoc />
         public async Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
         {
-            Guard.Assert(toBlockHeight >= fromBlockHeight);
+            if (fromBlockHeight >= toBlockHeight)
+                throw new ArgumentException($"{nameof(fromBlockHeight)} can't be equal or greater than {nameof(toBlockHeight)}");
 
             var provenHeadersOutput = new SortedDictionary<int, ProvenBlockHeader>();
 
@@ -177,13 +173,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 int index = fromBlockHeight;
 
-                ProvenBlockHeader header = null;
-
                 var blockHeightsNotInCache = new List<int>();
 
                 do
                 {
-                    if (this.Cache.TryGetValue(index, out header))
+                    if (this.Cache.TryGetValue(index, out ProvenBlockHeader header))
                     {
                         provenHeadersOutput.Add(index, header);
                     }
@@ -262,8 +256,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 return;
 
             Dictionary<int, ProvenBlockHeader> pendingBatch;
-
-            HashHeightPair hashHeight = null;
+            HashHeightPair hashHeight;
 
             lock (this.lockObject)
             {
@@ -294,7 +287,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="keys">List of block height keys to check.</param>
         private void CheckItemsAreInConsecutiveSequence(List<int> keys)
         {
-            if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count())))
+            if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count)))
             {
                 this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_CONSECUTIVE_SEQEUNCE]");
 
