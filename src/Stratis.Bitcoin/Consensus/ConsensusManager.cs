@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
-                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
+                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderOfMinedBlock(block);
                 }
 
                 validationContext = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
@@ -370,6 +370,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private async Task OnPartialValidationCompletedCallbackAsync(ValidationContext validationContext)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             if (validationContext.Error == null)
             {
                 await this.OnPartialValidationSucceededAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
@@ -506,7 +512,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (peerId == null)
                     continue;
 
-                if (connectNewHeadersResult == null)
+                if (connectNewHeadersResult?.DownloadTo == null)
                 {
                     this.logger.LogTrace("No new blocks to download were presented by peer ID {0}.", peerId);
                     continue;
@@ -963,6 +969,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             ChainedHeader chainedHeader = null;
 
             lock (this.peerLock)

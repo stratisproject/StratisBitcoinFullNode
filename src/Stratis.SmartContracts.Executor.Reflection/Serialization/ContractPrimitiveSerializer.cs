@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Text;
 using NBitcoin;
 using Nethereum.RLP;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
@@ -239,11 +238,6 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
         {
             return Encoding.UTF8.GetString(val);
         }
-
-        private T[] ToArray<T>(byte[] val)
-        {
-            return (T[]) DeserializeArray(typeof(T), val);
-        } 
 
         #endregion
 

@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void RemovePeer(IPEndPoint endPoint)
         {
-           this.peers.TryRemove(endPoint.MapToIpv6(), out PeerAddress address);
+            this.peers.TryRemove(endPoint.MapToIpv6(), out PeerAddress address);
         }
 
         /// <inheritdoc/>
@@ -191,6 +191,13 @@ namespace Stratis.Bitcoin.P2P
             if (peer.Value != null)
                 return peer.Value;
             return null;
+        }
+
+        /// <inheritdoc/>
+        public List<PeerAddress> FindPeersByIp(IPEndPoint endPoint)
+        {
+            IEnumerable<KeyValuePair<IPEndPoint, PeerAddress>> peers = this.peers.Skip(0).Where(p => p.Key.MatchIpOnly(endPoint));
+            return peers.Select(p => p.Value).ToList();
         }
 
         /// <inheritdoc />

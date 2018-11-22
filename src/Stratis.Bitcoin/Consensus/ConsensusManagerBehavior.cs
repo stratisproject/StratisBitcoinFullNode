@@ -13,6 +13,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -71,16 +72,6 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
-
-        /// <summary>
-        /// The last time we forced a resync
-        /// </summary>
-        private DateTime lastForcedResync = DateTime.MinValue;
-
-        /// <summary>
-        /// The minimum time it has to pass, between two forced resync.
-        /// </summary>
-        private TimeSpan forceResyncThreshold = TimeSpan.FromMinutes(1);
 
         public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
@@ -185,7 +176,7 @@ namespace Stratis.Bitcoin.Consensus
             // Ignoring "getheaders" from peers because node is in initial block download unless the peer is whitelisted.
             // We don't want to reveal our position in IBD which can be used by attacker. Also we don't won't to deliver peers any blocks
             // because that will slow down our own syncing process.
-            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.Behavior<IConnectionManagerBehavior>().Whitelisted)
+            if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
             {
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;
@@ -283,26 +274,48 @@ namespace Stratis.Bitcoin.Consensus
                 // If queue is not empty, add to queue instead of calling CM.
                 if (this.cachedHeaders.Count != 0)
                 {
-                    this.cachedHeaders.AddRange(headers);
+                    uint256 cachedHeader = this.cachedHeaders.Last().GetHash();
+                    uint256 prevNewHeader = headers.First().HashPrevBlock;
 
-                    this.logger.LogTrace("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
-                    this.logger.LogTrace("(-)[CACHED]");
-                    return;
+                    // ensure headers can connect to cached headers.
+                    if (cachedHeader == prevNewHeader)
+                    {
+                        this.cachedHeaders.AddRange(headers);
+
+                        this.logger.LogTrace("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
+                        this.logger.LogTrace("(-)[HEADERS_ADDED_TO_CACHE]");
+                        return;
+                    }
+                    else
+                    {
+                        if (headers.Count == 1)
+                        {
+                            // Distance of header from the peer expected tip.
+                            var distanceSeconds = (headers[0].BlockTime - this.ExpectedPeerTip.Header.BlockTime).TotalSeconds;
+
+                            if (this.chain.Network.MaxTipAge < distanceSeconds)
+                            {
+                                // a single header that is not connected to last header is likely an
+                                // unsolicited header that is a result of the peer tip being extended.
+                                // If the header time is far in the future we ignore it.
+                                this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                                return;
+                            }
+                        }
+
+                        this.cachedHeaders.Clear();
+                        await this.ResyncAsync().ConfigureAwait(false);
+
+                        this.logger.LogTrace("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), cachedHeader);
+                        this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
+                        return;
+                    }
                 }
 
                 ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
 
                 if (result == null)
                 {
-                    // If a peer has a new block and our current peer is not exactly at the tip,
-                    // we try to trigger a resync, this will bring us to the tip of the peer.
-                    if (headers.Count == 1 && (DateTime.UtcNow - this.lastForcedResync) >= this.forceResyncThreshold)
-                    {
-                        this.lastForcedResync = DateTime.UtcNow;
-                        this.logger.LogTrace("Header {0} could not be connected try to trigger a resync.", headers[0].GetHash());
-                        await this.ResyncAsync().ConfigureAwait(false);
-                    }
-
                     this.logger.LogTrace("Processing of {0} headers failed.", headers.Count);
                     this.logger.LogTrace("(-)[PROCESSING_FAILED]");
 
@@ -348,6 +361,8 @@ namespace Stratis.Bitcoin.Consensus
             // Check headers for consecutiveness.
             for (int i = 1; i < headers.Count; i++)
             {
+                headers[i - 1].PrecomputeHash(true, true);
+
                 if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
                 {
                     this.logger.LogDebug("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
@@ -359,6 +374,8 @@ namespace Stratis.Bitcoin.Consensus
                     return false;
                 }
             }
+
+            headers[headers.Count - 1].PrecomputeHash(true, true); // cache the last hash as well
 
             return true;
         }

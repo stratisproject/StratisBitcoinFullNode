@@ -183,6 +183,14 @@ namespace NBitcoin
         }
     }
 
+    public class ProvenHeaderConsensusFactory : PosConsensusFactory
+    {
+        public override BlockHeader CreateBlockHeader()
+        {
+            return base.CreateProvenBlockHeader();
+        }
+    }
+
     /// <summary>
     /// The consensus factory for creating POS protocol types.
     /// </summary>
@@ -321,6 +329,19 @@ namespace NBitcoin
             stream.ReadWrite(ref this.blockSignature);
 
             this.BlockSize = stream.Serializing ? stream.Counter.WrittenBytes : stream.Counter.ReadBytes;
+        }
+
+        /// <summary>
+        /// Gets the block's coinstake transaction or creates an empty transaction if there is no coinstake.
+        /// </summary>
+        /// <returns>Coinstake transaction or empty transaction.</returns>
+        /// <remarks>
+        /// <para>In PoS blocks, coinstake transaction is the second transaction in the block.</para>
+        /// <para>In PoW there isn't a coinstake transaction.</para>
+        /// </remarks>
+        public Transaction GetCoinstakeOrNewTransaction()
+        {
+            return (this.Transactions.Count > 1 && this.Transactions[1].IsCoinStake) ? this.Transactions[1] : new Transaction();
         }
     }
 }

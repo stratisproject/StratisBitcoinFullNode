@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Connection
 
         public INetworkPeer FindNodeByIp(IPAddress ipAddress)
         {
-            return this.connectedPeers.FindByIp(ipAddress);
+            return this.connectedPeers.FindByIp(ipAddress).FirstOrDefault();
         }
 
         public INetworkPeer FindLocalNode()
