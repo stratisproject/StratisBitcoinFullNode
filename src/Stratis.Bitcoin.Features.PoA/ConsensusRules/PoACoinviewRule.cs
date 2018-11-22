@@ -49,6 +49,12 @@ namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
             return 0;
         }
 
+        /// <inheritdoc />
+        protected override bool IsTxFinal(Transaction transaction, RuleContext context)
+        {
+            return transaction.IsFinal(context.ValidationContext.ChainedHeaderToValidate);
+        }
+
         /// <inheritdoc/>
         public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {
