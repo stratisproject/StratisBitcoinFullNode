@@ -107,6 +107,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string WalletName { get; set; }
 
         public string AccountName { get; set; }
+
+        public int? Skip { get; set; }
+
+        public int? Take { get; set; }
+
+        [JsonProperty(PropertyName = "q")]
+        public string SearchQuery { get; set; }
     }
 
     public class WalletBalanceRequest : RequestModel
@@ -163,13 +170,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "The name of the account is missing.")]
         public string AccountName { get; set; }
 
-        [Required(ErrorMessage = "A destination address is required.")]
-        [IsBitcoinAddress()]
-        public string DestinationAddress { get; set; }
+        public List<OutpointRequest> Outpoints { get; set; }
 
-        [Required(ErrorMessage = "An amount is required.")]
-        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
-        public string Amount { get; set; }
+        [Required(ErrorMessage = "A list of recipients is required.")]
+        [MinLength(1)]
+        public List<RecipientModel> Recipients { get; set; }
 
         public string FeeType { get; set; }
 
@@ -178,7 +183,39 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public bool? ShuffleOutputs { get; set; }
     }
 
-    public class BuildTransactionRequest : TxFeeEstimateRequest
+    public class OutpointRequest : RequestModel
+    {
+        /// <summary>
+        /// The transaction id.
+        /// </summary>
+        [Required(ErrorMessage = "The transaction id is missing.")]
+        public string TransactionId { get; set; }
+
+        /// <summary>
+        /// The index of the output in the transaction.
+        /// </summary>
+        [Required(ErrorMessage = "The index of the output in the transaction is missing.")]
+        public int Index { get; set; }
+    }
+
+    public class RecipientModel
+    {
+        /// <summary>
+        /// The destination address.
+        /// </summary>
+        [Required(ErrorMessage = "A destination address is required.")]
+        [IsBitcoinAddress()]
+        public string DestinationAddress { get; set; }
+
+        /// <summary>
+        /// The amount that will be sent.
+        /// </summary>
+        [Required(ErrorMessage = "An amount is required.")]
+        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
+        public string Amount { get; set; }
+    }
+
+    public class BuildTransactionRequest : TxFeeEstimateRequest, IValidatableObject
     {
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
@@ -187,6 +224,26 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Password { get; set; }
 
         public string OpReturnData { get; set; }
+
+        /// <inheritdoc />
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            if (!string.IsNullOrEmpty(this.FeeAmount) && !string.IsNullOrEmpty(this.FeeType))
+            {
+                yield return new ValidationResult(
+                    $"The query parameters '{nameof(this.FeeAmount)}' and '{nameof(this.FeeType)}' cannot be set at the same time. " +
+                    $"Please use '{nameof(this.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(this.FeeType)}' if you want the wallet to calculate it for you.",
+                    new[] { $"{nameof(this.FeeType)}" });
+            }
+
+            if (string.IsNullOrEmpty(this.FeeAmount) && string.IsNullOrEmpty(this.FeeType))
+            {
+                yield return new ValidationResult(
+                    $"One of parameters '{nameof(this.FeeAmount)}' and '{nameof(this.FeeType)}' is required. " +
+                    $"Please use '{nameof(this.FeeAmount)}' if you'd like to set the fee manually, or '{nameof(this.FeeType)}' if you want the wallet to calculate it for you.",
+                    new[] { $"{nameof(this.FeeType)}" });
+            }
+        }
     }
 
     public class SendTransactionRequest : RequestModel
@@ -222,6 +279,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [JsonProperty(PropertyName = "reSync")]
         public bool ReSync { get; set; }
     }
+
     public class ListAccountsModel : RequestModel
     {
         /// <summary>
@@ -230,6 +288,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [Required(ErrorMessage = "The name of the wallet is required.")]
         public string WalletName { get; set; }
     }
+
     public class GetUnusedAddressModel : RequestModel
     {
         /// <summary>

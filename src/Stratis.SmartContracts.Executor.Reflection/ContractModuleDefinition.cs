@@ -73,6 +73,15 @@ namespace Stratis.SmartContracts.Executor.Reflection
             return validator.Validate(this.ModuleDefinition);
         }
 
+        public string GetPropertyGetterMethodName(string typeName, string propertyName)
+        {
+            return this.DevelopedTypes
+                       .FirstOrDefault(t => t.Name == typeName)
+                       ?.Properties
+                       .FirstOrDefault(p => p.Name == propertyName)
+                       ?.GetMethod.Name;
+        }
+
         public void Dispose()
         {
             this.stream?.Dispose();

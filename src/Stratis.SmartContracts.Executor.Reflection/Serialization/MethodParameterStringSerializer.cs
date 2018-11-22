@@ -12,6 +12,19 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     /// </summary>
     public sealed class MethodParameterStringSerializer : IMethodParameterStringSerializer
     {
+        private readonly Network network;
+
+        public MethodParameterStringSerializer(Network network)
+        {
+            this.network = network;
+        }
+
+        /// <inheritdoc />
+        public string Serialize(object methodParameter)
+        {
+            return this.SerializeObject(methodParameter);
+        }
+
         /// <summary>
         /// Serializes an array of method parameter objects to the bytes of their string-encoded representation.
         /// </summary>
@@ -21,30 +34,42 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             foreach (var obj in methodParameters)
             {
-                sb.Add(SerializeObject(obj));
+                sb.Add(this.SerializeObject(obj));
             }
 
             return this.EscapeAndJoin(sb.ToArray());
         }
 
-        private static string SerializeObject(object obj)
+        private string SerializeObject(object obj)
         {
             var prefix = Prefix.ForObject(obj);
 
-            var primitiveType = GetPrimitiveType(obj);
-
-            // ToString works fine for all of our data types except byte arrays.
-            string serialized;
-            if (primitiveType == MethodParameterDataType.ByteArray)
-            {
-                serialized = ((byte[]) obj).ToHexString();
-            }
-            else
-            {
-                serialized = obj.ToString();
-            }
+            string serialized = Serialize(obj, this.network);
 
             return string.Format("{0}#{1}", (int) prefix.DataType, serialized);
+        }
+
+        public static string Serialize(object obj, Network network)
+        {
+            var primitiveType = GetPrimitiveType(obj);
+
+            // ToString works fine for all of our data types except byte arrays and addresses
+            string serialized;
+
+            switch (primitiveType)
+            {
+                case MethodParameterDataType.ByteArray:
+                    serialized = ((byte[]) obj).ToHexString();
+                    break;
+                case MethodParameterDataType.Address:
+                    serialized = ((Address) obj).ToUint160().ToBase58Address(network);
+                    break;
+                default:
+                    serialized = obj.ToString();
+                    break;
+            }
+
+            return serialized;
         }
 
         private static MethodParameterDataType GetPrimitiveType(object o)
@@ -129,7 +154,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                     processedParameters.Add(long.Parse(parameterSignature[1]));
                 
                else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
-                    processedParameters.Add(parameterSignature[1].HexToAddress());
+                    processedParameters.Add(parameterSignature[1].ToAddress(this.network));
 
                 else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
                     processedParameters.Add(parameterSignature[1].HexToByteArray());

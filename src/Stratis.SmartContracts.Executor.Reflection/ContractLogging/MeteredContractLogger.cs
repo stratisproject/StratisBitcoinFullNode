@@ -1,6 +1,4 @@
-﻿using NBitcoin;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
+﻿using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging

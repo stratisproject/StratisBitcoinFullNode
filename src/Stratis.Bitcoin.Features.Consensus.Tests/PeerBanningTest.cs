@@ -6,11 +6,16 @@ using System.Threading;
 using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests
@@ -235,74 +240,199 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             return block;
         }
 
-        [Fact(Skip = "Revisit with ConsensusManager tests")]
-        public async Task PeerBanning_AddingBannedPeerToAddressManagerStoreAsync()
+        [Fact]
+        public void PeerBanning_Add_Peer_To_Address_Manager_And_Ban()
         {
-            // Arrange
-            string dataDir = GetTestDirectoryPath(this);
+            var dataFolder = CreateDataFolder(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
-            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
-            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
-            // Act
-            context.PeerBanning.BanAndDisconnectPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
+            peerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
-            // Assert
-            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            var nodeSettings = new NodeSettings(new StratisRegTest());
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
+            connectionManager.Setup(c => c.ConnectedPeers).Returns(peerCollection.Object);
+
+            var peerBanning = new PeerBanning(connectionManager.Object, loggerFactory, DateTimeProvider.Default, peerAddressManager);
+            peerBanning.BanAndDisconnectPeer(endpoint, connectionManagerSettings.BanTimeSeconds, nameof(PeerBanningTest));
+
+            PeerAddress peer = peerAddressManager.FindPeer(endpoint);
             Assert.True(peer.BanUntil.HasValue);
             Assert.NotNull(peer.BanUntil);
             Assert.NotEmpty(peer.BanReason);
         }
 
-        [Fact(Skip = "Revisit with ConsensusManager tests")]
-        public async Task PeerBanning_SavingAndLoadingBannedPeerToAddressManagerStoreAsync()
+        [Fact]
+        public void PeerBanning_Add_WhiteListed_Peer_Does_Not_Get_Banned()
         {
-            // Arrange
-            string dataDir = GetTestDirectoryPath(this);
+            var dataFolder = CreateDataFolder(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
-            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
-            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
-            // Act - Ban Peer, save store, clear current Peers, load store
-            context.PeerBanning.BanAndDisconnectPeer(endpoint, context.ConnectionManager.ConnectionSettings.BanTimeSeconds, nameof(PeerBanningTest));
-            context.PeerAddressManager.SavePeers();
-            context.PeerAddressManager.Peers.Clear();
-            context.PeerAddressManager.LoadPeers();
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
+            peerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
-            // Assert
-            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            var nodeSettings = new NodeSettings(new StratisRegTest());
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            var connectionManagerBehaviour = new Mock<IConnectionManagerBehavior>();
+            connectionManagerBehaviour.Setup(c => c.Whitelisted).Returns(true);
+
+            var networkPeer = new Mock<INetworkPeer>();
+            networkPeer.Setup(n => n.PeerEndPoint).Returns(endpoint);
+            networkPeer.Setup(n => n.Behavior<IConnectionManagerBehavior>()).Returns(connectionManagerBehaviour.Object);
+
+            var networkPeerFactory = new Mock<INetworkPeerFactory>();
+            networkPeerFactory.Setup(n => n.CreateConnectedNetworkPeerAsync(endpoint, null, null)).ReturnsAsync(networkPeer.Object);
+
+            var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>() { networkPeer.Object });
+
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
+            connectionManager.Setup(c => c.ConnectedPeers).Returns(peerCollection.Object);
+
+            var peerBanning = new PeerBanning(connectionManager.Object, loggerFactory, DateTimeProvider.Default, peerAddressManager);
+            peerBanning.BanAndDisconnectPeer(endpoint, connectionManagerSettings.BanTimeSeconds, nameof(PeerBanningTest));
+
+            // Peer is whitelised and will not be banned.
+            PeerAddress peer = peerAddressManager.FindPeer(endpoint);
+            Assert.False(peer.BanUntil.HasValue);
+            Assert.Null(peer.BanUntil);
+            Assert.Null(peer.BanReason);
+        }
+
+        [Fact]
+        public void PeerBanning_Add_Peers_To_Address_Manager_And_Ban_IP_Range()
+        {
+            var dataFolder = CreateDataFolder(this);
+
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var ipAddress80 = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint80 = new IPEndPoint(ipAddress80, 80);
+
+            var ipAddress81 = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint81 = new IPEndPoint(ipAddress81, 81);
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
+            peerAddressManager.AddPeer(endpoint80, IPAddress.Loopback);
+            peerAddressManager.AddPeer(endpoint81, IPAddress.Loopback);
+
+            var nodeSettings = new NodeSettings(new StratisRegTest());
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
+            connectionManager.Setup(c => c.ConnectedPeers).Returns(peerCollection.Object);
+
+            var peerBanning = new PeerBanning(connectionManager.Object, loggerFactory, DateTimeProvider.Default, peerAddressManager);
+            peerBanning.BanAndDisconnectPeer(endpoint80, connectionManagerSettings.BanTimeSeconds, nameof(PeerBanningTest));
+
+            // Both endpoints should be banned.
+            PeerAddress peer = peerAddressManager.FindPeer(endpoint80);
+            Assert.True(peer.BanUntil.HasValue);
+            Assert.NotNull(peer.BanUntil);
+            Assert.NotEmpty(peer.BanReason);
+
+            peer = peerAddressManager.FindPeer(endpoint81);
+            Assert.True(peer.BanUntil.HasValue);
+            Assert.NotNull(peer.BanUntil);
+            Assert.NotEmpty(peer.BanReason);
+        }
+
+        [Fact]
+        public void PeerBanning_SavingAndLoading_BannedPeerToAddressManager()
+        {
+            var dataFolder = CreateDataFolder(this);
+
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var endpoint = new IPEndPoint(ipAddress, 80);
+
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
+            peerAddressManager.AddPeer(endpoint, IPAddress.Loopback);
+
+            var nodeSettings = new NodeSettings(new StratisRegTest());
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
+            connectionManager.Setup(c => c.ConnectedPeers).Returns(peerCollection.Object);
+
+            var peerBanning = new PeerBanning(connectionManager.Object, loggerFactory, DateTimeProvider.Default, peerAddressManager);
+            peerBanning.BanAndDisconnectPeer(endpoint, connectionManagerSettings.BanTimeSeconds, nameof(PeerBanningTest));
+
+            peerAddressManager.SavePeers();
+            peerAddressManager.Peers.Clear();
+            peerAddressManager.LoadPeers();
+
+            PeerAddress peer = peerAddressManager.FindPeer(endpoint);
             Assert.NotNull(peer.BanTimeStamp);
             Assert.NotNull(peer.BanUntil);
             Assert.NotEmpty(peer.BanReason);
         }
 
-        [Fact(Skip = "Revisit with ConsensusManager tests")]
-        public async Task PeerBanning_ResettingExpiredBannedPeerAsync()
+        [Fact]
+        public void PeerBanning_Resetting_Expired_BannedPeer()
         {
-            // Arrange
-            string dataDir = GetTestDirectoryPath(this);
+            var dataFolder = CreateDataFolder(this);
 
-            TestChainContext context = await TestChainFactory.CreateAsync(KnownNetworks.RegTest, dataDir);
-            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            var loggerFactory = new ExtendedLoggerFactory();
+            loggerFactory.AddConsoleWithFilters();
+
+            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
-            context.PeerAddressManager.AddPeer(endpoint, endpoint.Address.MapToIPv6());
 
-            // Act
-            context.PeerBanning.BanAndDisconnectPeer(endpoint, 1, nameof(PeerBanningTest));
-            context.PeerAddressManager.SavePeers();
+            var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
+            peerAddressManager.AddPeer(endpoint, IPAddress.Loopback);
+
+            var nodeSettings = new NodeSettings(new StratisRegTest());
+            var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings);
+
+            var peerCollection = new Mock<IReadOnlyNetworkPeerCollection>();
+            peerCollection.Setup(p => p.FindByIp(It.IsAny<IPAddress>())).Returns(new List<INetworkPeer>());
+
+            var connectionManager = new Mock<IConnectionManager>();
+            connectionManager.Setup(c => c.ConnectionSettings).Returns(connectionManagerSettings);
+            connectionManager.Setup(c => c.ConnectedPeers).Returns(peerCollection.Object);
+
+            var peerBanning = new PeerBanning(connectionManager.Object, loggerFactory, DateTimeProvider.Default, peerAddressManager);
+            peerBanning.BanAndDisconnectPeer(endpoint, 1, nameof(PeerBanningTest));
+
+            peerAddressManager.SavePeers();
 
             // Wait one second for ban to expire.
             Thread.Sleep(1000);
 
-            context.PeerAddressManager.Peers.Clear();
-            context.PeerAddressManager.LoadPeers();
+            peerAddressManager.Peers.Clear();
+            peerAddressManager.LoadPeers();
 
-            // Assert
-            PeerAddress peer = context.PeerAddressManager.FindPeer(endpoint);
+            PeerAddress peer = peerAddressManager.FindPeer(endpoint);
             Assert.Null(peer.BanTimeStamp);
             Assert.Null(peer.BanUntil);
             Assert.Empty(peer.BanReason);

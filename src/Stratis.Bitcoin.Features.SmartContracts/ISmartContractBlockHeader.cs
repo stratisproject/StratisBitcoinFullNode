@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -11,7 +8,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         uint256 HashStateRoot { get; set; }
 
         uint256 ReceiptRoot { get; set; }
-        
+
         Bloom LogsBloom { get; set; }
     }
 }

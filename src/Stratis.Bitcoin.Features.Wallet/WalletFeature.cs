@@ -25,10 +25,17 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Wallet
 {
     /// <summary>
+    /// Common base class for any feature replacing the <see cref="WalletFeature" />.
+    /// </summary>
+    public abstract class BaseWalletFeature : FullNodeFeature
+    {
+    }
+
+    /// <summary>
     /// Wallet feature for the full node.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Builder.Feature.FullNodeFeature" />
-    public class WalletFeature : FullNodeFeature
+    public class WalletFeature : BaseWalletFeature
     {
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -116,12 +123,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (walletManager != null)
             {
                 int height = walletManager.LastBlockHeight();
-                ChainedHeader block = this.chain.GetBlock(height);
-                uint256 hashBlock = block == null ? 0 : block.HashBlock;
+                uint256 hash = walletManager.LastReceivedBlockHash();
 
                 log.AppendLine("Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                         (walletManager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
+                                        (walletManager.ContainsWallets ? (" Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hash) : string.Empty));
             }
         }
 

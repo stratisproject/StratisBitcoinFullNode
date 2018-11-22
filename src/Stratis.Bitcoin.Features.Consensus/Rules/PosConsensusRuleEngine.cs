@@ -8,7 +8,9 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules
 {
@@ -26,19 +28,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         public IStakeValidator StakeValidator { get; }
 
+        public IRewindDataIndexStore RewindDataIndexStore { get; }
+
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         public PosConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexStore rewindDataIndexStore)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
             this.StakeChain = stakeChain;
             this.StakeValidator = stakeValidator;
+            this.RewindDataIndexStore = rewindDataIndexStore;
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
             return new PosRuleContext(validationContext, this.DateTimeProvider.GetTimeOffset());
@@ -50,6 +56,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             await base.InitializeAsync(chainTip).ConfigureAwait(false);
 
             await this.StakeChain.LoadAsync().ConfigureAwait(false);
+
+            await this.RewindDataIndexStore.InitializeAsync(this.Network.Consensus, chainTip, this.UtxoSet).ConfigureAwait(false);
         }
     }
 }

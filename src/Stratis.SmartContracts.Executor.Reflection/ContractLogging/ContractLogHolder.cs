@@ -1,6 +1,4 @@
 ﻿using System.Collections.Generic;
-using NBitcoin;
-using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Executor.Reflection.ContractLogging
 {

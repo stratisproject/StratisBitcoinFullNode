@@ -1,8 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 {
@@ -13,30 +11,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// <seealso cref="ProvenHeaderRuleBase" />
     public class ProvenHeaderSizeRule : ProvenHeaderRuleBase
     {
-        public override void Run(RuleContext context)
+        /// <inheritdoc />
+        protected override void ProcessRule(PosRuleContext context, ChainedHeader chainedHeader, ProvenBlockHeader header)
         {
-            Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
-
-            int height = context.ValidationContext.ChainedHeaderToValidate.Height;
-
-            if (context.SkipValidation || !this.IsProvenHeaderActivated(height))
-                return;
-
-            var header = (ProvenBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Header;
-
-            if ((header.MerkleProofSize == null) || (header.MerkleProofSize > PosConsensusOptions.MaxMerkleProofSerializedSize))
+            if (header.MerkleProofSize > PosConsensusOptions.MaxMerkleProofSerializedSize)
             {
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_MERKLE_PROOF_SIZE]");
                 ConsensusErrors.BadProvenHeaderMerkleProofSize.Throw();
             }
 
-            if ((header.CoinstakeSize == null) || (header.CoinstakeSize > PosConsensusOptions.MaxCoinstakeSerializedSize))
+            if (header.CoinstakeSize > PosConsensusOptions.MaxCoinstakeSerializedSize)
             {
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_COINSTAKE_SIZE]");
                 ConsensusErrors.BadProvenHeaderCoinstakeSize.Throw();
             }
 
-            if ((header.SignatureSize == null) || (header.SignatureSize > PosConsensusOptions.MaxBlockSignatureSerializedSize))
+            if (header.SignatureSize > PosConsensusOptions.MaxBlockSignatureSerializedSize)
             {
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_SIGNATURE_SIZE]");
                 ConsensusErrors.BadProvenHeaderSignatureSize.Throw();

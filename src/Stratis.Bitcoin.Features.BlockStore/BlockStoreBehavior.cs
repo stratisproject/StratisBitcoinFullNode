@@ -14,6 +14,7 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -94,12 +95,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.preferHeaderAndIDs = false;
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.consensusManagerBehavior = this.AttachedPeer.Behavior<ConsensusManagerBehavior>();
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
@@ -158,9 +161,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 case SendHeadersPayload sendHeadersPayload:
                     this.PreferHeaders = true;
                     break;
-
-                    // TODO inherited PH block store behavior should handle SendProvenHeadersPayload and set bool PreferProvenHeaders to true
-                    // for more see https://github.com/stratisproject/StratisBitcoinFullNode/issues/2588
             }
         }
 
@@ -264,9 +264,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainedHeader highestHeader = this.consensusManagerBehavior.BestSentHeader;
-
-                if (highestHeader?.Height < lastAddedChainedHeader.Height)
+                // If we reached the limmit size of inv, we need to tell the downloader to send another 'getblocks' message.
+                if (count == InvPayload.MaxGetBlocksInventorySize && lastAddedChainedHeader != null)
                 {
                     this.logger.LogTrace("Setting peer's last block sent to '{0}'.", lastAddedChainedHeader);
                     this.lastSentHeader = lastAddedChainedHeader;
@@ -495,6 +494,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             return new HeadersPayload(headers);
         }
 
+        [NoTrace]
         public override object Clone()
         {
             var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager)

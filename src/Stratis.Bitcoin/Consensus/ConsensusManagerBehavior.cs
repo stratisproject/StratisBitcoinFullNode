@@ -72,6 +72,16 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Protects write access to the <see cref="BestSentHeader"/>.</summary>
         private readonly object bestSentHeaderLock;
 
+        /// <summary>
+        /// The last time we forced a resync
+        /// </summary>
+        private DateTime lastForcedResync = DateTime.MinValue;
+
+        /// <summary>
+        /// The minimum time it has to pass, between two forced resync.
+        /// </summary>
+        private TimeSpan forceResyncThreshold = TimeSpan.FromMinutes(1);
+
         public ConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
         {
             this.loggerFactory = loggerFactory;
@@ -138,6 +148,10 @@ namespace Stratis.Bitcoin.Consensus
 
                 case HeadersPayload headers:
                     await this.ProcessHeadersAsync(peer, headers.Headers).ConfigureAwait(false);
+                    break;
+
+                case InvPayload inv:
+                    await this.ProcessInvAsync(peer, inv.Inventory).ConfigureAwait(false);
                     break;
             }
         }
@@ -280,8 +294,18 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result == null)
                 {
+                    // If a peer has a new block and our current peer is not exactly at the tip,
+                    // we try to trigger a resync, this will bring us to the tip of the peer.
+                    if (headers.Count == 1 && (DateTime.UtcNow - this.lastForcedResync) >= this.forceResyncThreshold)
+                    {
+                        this.lastForcedResync = DateTime.UtcNow;
+                        this.logger.LogTrace("Header {0} could not be connected try to trigger a resync.", headers[0].GetHash());
+                        await this.ResyncAsync().ConfigureAwait(false);
+                    }
+
                     this.logger.LogTrace("Processing of {0} headers failed.", headers.Count);
                     this.logger.LogTrace("(-)[PROCESSING_FAILED]");
+
                     return;
                 }
 
@@ -472,6 +496,58 @@ namespace Stratis.Bitcoin.Consensus
                 BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
                 HashStop = null
             };
+        }
+
+        /// <summary>
+        /// Processes "inv" message received from the peer.
+        /// </summary>
+        /// <param name="peer">Peer from which the message was received.</param>
+        /// <param name="inventory">List of inventory vectors to process.</param>
+        /// <remarks>
+        /// The "inv" message is sent unsolicited by legacy nodes to announce new blocks.
+        /// It may contain non-block hashes which should be ignored. We then need to obtain the
+        /// headers of the announced blocks so that the header processing can be performed as
+        /// normal. We do not request the block directly as the peer may be attempting a DoS
+        /// attack by spamming fake inv messages.
+        /// </remarks>
+        protected async Task ProcessInvAsync(INetworkPeer peer, List<InventoryVector> inventory)
+        {
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                this.logger.LogTrace("(-)[IGNORE_DURING_IBD]");
+                return;
+            }
+
+            if (inventory.Count == 0)
+            {
+                this.logger.LogTrace("(-)[NO_INVENTORY]");
+                return;
+            }
+
+            if (inventory.Count > InvPayload.MaxInventorySize)
+            {
+                this.logger.LogDebug("Peer sent oversize inventory message. Peer will be banned and disconnected.");
+                this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Peer sent oversize inventory message.");
+                this.logger.LogTrace("(-)[OVERSIZE_INVENTORY]");
+                return;
+            }
+
+            // There is no point sending getheaders for every MSG_BLOCK announced. Just send one if needed.
+            bool blockHashAnnounced = false;
+            foreach (InventoryVector inventoryVector in inventory)
+            {
+                if ((inventoryVector.Type == InventoryType.MSG_BLOCK) && (this.chain.GetBlock(inventoryVector.Hash) == null))
+                {
+                    blockHashAnnounced = true;
+                    break;
+                }
+            }
+
+            if (blockHashAnnounced)
+            {
+                this.logger.LogTrace("Block was announced, sending getheaders.");
+                await this.ResyncAsync().ConfigureAwait(false);
+            }
         }
 
         /// <inheritdoc />

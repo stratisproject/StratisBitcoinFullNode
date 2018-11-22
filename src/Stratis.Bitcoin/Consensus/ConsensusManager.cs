@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Consensus
                 if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
                     break;
 
-                this.logger.LogInformation("Block store at height {0} is ahead of consensus, rewinding consensus from height {1}.", this.chainState.BlockStoreTip, pendingTip);
+                this.logger.LogInformation("Consensus at height {0} is ahead of the block store at height {1}, rewinding consensus.", pendingTip, this.chainState.BlockStoreTip);
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
@@ -198,6 +198,12 @@ namespace Stratis.Bitcoin.Consensus
                 int peerId = peer.Connection.Id;
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
+
+                if (connectNewHeadersResult == null)
+                {
+                    this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
+                    return null;
+                }
 
                 this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 
@@ -316,7 +322,6 @@ namespace Stratis.Bitcoin.Consensus
                 }
                 else
                     this.logger.LogDebug("Node is shutting down therefore underlying components won't be updated.");
-
             }
             else
                 this.logger.LogTrace("Peer {0} was already removed.", peerId);
@@ -349,6 +354,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private async Task OnPartialValidationCompletedCallbackAsync(ValidationContext validationContext)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             if (validationContext.Error == null)
             {
                 await this.OnPartialValidationSucceededAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
@@ -543,6 +554,22 @@ namespace Stratis.Bitcoin.Consensus
 
             if (connectBlockResult.Succeeded)
             {
+                if (!isExtension)
+                {
+                    // A block might have been set to null for blocks more then 100 block behind the tip.
+                    // As this chain is not the longest chain anymore we need to put the blocks back to the header (they will not be available in store),
+                    // this is in case a reorg longer then 100 may happen later and we will need the blocks to connect on top of CT.
+                    // This might cause uncontrolled memory changes but big reorgs are not common and a chain will anyway get disconnected when the fork is more then 500 blocks.
+                    foreach (ChainedHeaderBlock disconnectedBlock in disconnectedBlocks)
+                    {
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader);
+                        this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader.Previous);
+
+                        if (disconnectedBlock.ChainedHeader.Block == null)
+                            disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+                    }
+                }
+
                 this.logger.LogTrace("(-)[SUCCEEDED]:'{0}'", connectBlockResult);
                 return connectBlockResult;
             }
@@ -926,6 +953,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             ChainedHeader chainedHeader = null;
 
             lock (this.peerLock)
