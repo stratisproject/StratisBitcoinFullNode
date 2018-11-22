@@ -99,7 +99,7 @@ namespace NBitcoin
             this.Version = block.Header.Version;
 
             this.signature = block.BlockSignature;
-            this.coinstake = block.GetCoinstakeOrNewTransaction();
+            this.coinstake = block.GetCoinstakeOrCoinBase();
             this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
         }
 
