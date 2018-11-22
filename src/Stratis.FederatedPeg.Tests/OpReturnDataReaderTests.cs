@@ -15,7 +15,7 @@ namespace Stratis.FederatedPeg.Tests
     {
         private ILoggerFactory loggerFactory;
 
-        private ApexRegTest network;
+        private Network network;
 
         private OpReturnDataReader opReturnDataReader;
 
@@ -26,7 +26,7 @@ namespace Stratis.FederatedPeg.Tests
         public OpReturnDataReaderTests()
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.network = new ApexRegTest();
+            this.network = FederatedPegNetwork.NetworksSelector.Regtest();
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
 
             this.transactionBuilder = new TestTransactionBuilder();
