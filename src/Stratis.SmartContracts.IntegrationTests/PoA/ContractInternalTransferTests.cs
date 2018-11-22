@@ -5,8 +5,7 @@ using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
-using Stratis.SmartContracts.IntegrationTests.PoA.MockChain;
+using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoA

@@ -1,5 +1,6 @@
 ﻿using System.Linq;
 using System.Threading;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
@@ -64,6 +65,60 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 uint256 blockId = rpcClient.GetBestBlockHash();
                 Block block = rpcClient.GetBlock(blockId);
                 Assert.True(block.CheckMerkleRoot());
+            }
+        }
+
+        [Fact]
+        public void TestRpcListUnspentWithDefaultsIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                const int numCoins = 5;
+                int blocksToMine = (int)network.Consensus.CoinbaseMaturity + numCoins;
+                TestHelper.MineBlocks(node, blocksToMine);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
+
+                var coins = rpcClient.ListUnspent();
+                coins.Should().NotBeNull();
+                coins.Length.Should().Be(numCoins);
+            }
+        }
+
+        [Fact]
+        public void TestRpcListUnspentWithParametersIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                const int numCoins = 5;
+                int blocksToMine = (int)network.Consensus.CoinbaseMaturity + numCoins;
+                TestHelper.MineBlocks(node, blocksToMine);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
+
+                var minerAddress = BitcoinAddress.Create(node.MinerHDAddress.Address, network);
+
+                // validate existing address and minconf
+                var coins = rpcClient.ListUnspent((int)network.Consensus.CoinbaseMaturity+2, 99999, minerAddress);
+                coins.Should().NotBeNull();
+                coins.Length.Should().Be(numCoins - 1);
+
+                // validate unknown address
+                var unknownAddress = new Key().GetBitcoinSecret(network).GetAddress();                
+                coins = rpcClient.ListUnspent(1, 99999, unknownAddress);
+                coins.Should().NotBeNull();
+                coins.Should().BeEmpty();
+
+                // test just min conf
+                var response = rpcClient.SendCommand(RPCOperations.listunspent, (int)network.Consensus.CoinbaseMaturity + 2);
+                var result = response.ResultString;
+                result.Should().NotBeNullOrEmpty();
             }
         }
 

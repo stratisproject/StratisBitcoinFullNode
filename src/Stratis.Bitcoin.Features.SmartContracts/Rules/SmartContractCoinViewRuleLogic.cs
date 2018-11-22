@@ -159,6 +159,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 result.To,
                 result.NewContractAddress,
                 !result.Revert,
+                result.Return?.ToString(),
                 result.ErrorMessage
             )
             {

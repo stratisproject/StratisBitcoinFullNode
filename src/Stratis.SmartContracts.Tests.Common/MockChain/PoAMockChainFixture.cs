@@ -1,9 +1,8 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
 
-namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     public class PoAMockChainFixture : IDisposable
     {

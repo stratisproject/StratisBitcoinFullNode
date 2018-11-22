@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace Stratis.SmartContracts.IntegrationTests.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     public interface IMockChain : IDisposable
     {

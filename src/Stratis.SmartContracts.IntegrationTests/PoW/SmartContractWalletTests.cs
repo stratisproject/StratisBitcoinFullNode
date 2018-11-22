@@ -22,8 +22,8 @@ using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
-using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
+using Stratis.SmartContracts.Tests.Common;
+using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW

@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.SmartContracts.Tests.Common;
 using Xunit;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW

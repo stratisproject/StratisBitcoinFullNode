@@ -23,9 +23,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public bool Revert { get; set; }
 
         /// <inheritdoc/>
-        public ulong FutureRefund { get; set; }
-
-        /// <inheritdoc/>
         public ulong GasConsumed { get; set; }
         
         /// <inheritdoc/>

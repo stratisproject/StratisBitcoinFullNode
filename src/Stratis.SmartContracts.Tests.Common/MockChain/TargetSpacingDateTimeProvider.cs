@@ -1,16 +1,10 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
-namespace Stratis.SmartContracts.IntegrationTests.PoA.MockChain
+namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
     public class TargetSpacingDateTimeProvider : IDateTimeProvider
     {

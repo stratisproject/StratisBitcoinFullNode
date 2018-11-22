@@ -1,5 +1,4 @@
 ﻿using NBitcoin;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
