@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     /// </summary>
     public class SmartContractTransactionService : ISmartContractTransactionService
     {
-        private const int MinConfirmationsAllChecks = 1;
+        private const int MinConfirmationsAllChecks = 0;
         private readonly Network network;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
