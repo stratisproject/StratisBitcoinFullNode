@@ -4,7 +4,6 @@ using System.Reflection;
 using System.Text;
 using NBitcoin;
 using Nethereum.RLP;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization

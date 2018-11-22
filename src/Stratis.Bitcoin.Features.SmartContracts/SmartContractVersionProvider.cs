@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Interfaces;
+﻿using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
