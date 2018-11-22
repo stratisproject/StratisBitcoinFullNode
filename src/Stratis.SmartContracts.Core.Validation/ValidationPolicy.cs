@@ -1,7 +1,5 @@
 ﻿using System.Collections.Generic;
 using Mono.Cecil;
-using Stratis.ModuleValidation.Net;
-using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
 using Stratis.SmartContracts.Core.Validation.Validators;
 

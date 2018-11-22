@@ -1,8 +1,6 @@
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Stratis.ModuleValidation.Net;
-using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Validators;
 using Stratis.SmartContracts.Core.Validation.Validators.Module;
 using Stratis.SmartContracts.Executor.Reflection;
