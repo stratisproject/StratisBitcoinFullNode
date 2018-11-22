@@ -19,7 +19,7 @@ namespace Stratis.SmartContracts.Core.Validation.Validators
             this.whitelistPolicyFilter = whitelistPolicyFilter;
         }
 
-        public IEnumerable<ValidationResult> Validate(Instruction instruction, MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(Mono.Cecil.Cil.Instruction instruction, MethodDefinition method)
         {
             if (!(instruction.Operand is MemberReference reference))
                 return Enumerable.Empty<ValidationResult>();
