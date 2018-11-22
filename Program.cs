@@ -2,8 +2,6 @@
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using Stratis.Bitcoin.Networks;
-using Stratis.Sidechains.Networks;
 
 namespace FedKeyPairGen
 {
@@ -14,7 +12,7 @@ namespace FedKeyPairGen
         usage:  fedkeypairgen [-name=<name>] [-folder=<output_folder>] [-pass=<password>] [-h]
          -h        This help message.
 
-        Example:  fedkeypairgen 
+        Example:  fedkeypairgen
     */
 
     // The Stratis Federation KeyPair Generator is a console app that can be sent to Federation Members
@@ -37,7 +35,7 @@ namespace FedKeyPairGen
                 if (help)
                 {
                     FedKeyPairGenManager.OutputUsage();
-                }
+                                  }
 
                 Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
                 var pubKey = mnemonic.DeriveExtKey().PrivateKey.PubKey;
@@ -61,79 +59,6 @@ namespace FedKeyPairGen
                 Console.WriteLine();
                 FedKeyPairGenManager.OutputUsage();
             }
-        }
-
-        public void MineGenesisBlocks(ConsensusFactory consensusFactory)
-        {
-            string coinbaseText = "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/";
-
-            Console.WriteLine("Looking for genesis blocks  for the 3 networks, this might take a while.");
-
-            Block genesisMain = Network.MineGenesisBlock(consensusFactory, coinbaseText, new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
-            BlockHeader headerMain = genesisMain.Header;
-
-            Console.WriteLine("-- MainNet network --");
-            Console.WriteLine("bits: " + headerMain.Bits);
-            Console.WriteLine("nonce: " + headerMain.Nonce);
-            Console.WriteLine("time: " + headerMain.Time);
-            Console.WriteLine("version: " + headerMain.Version);
-            Console.WriteLine("hash: " + headerMain.GetHash());
-            Console.WriteLine("merkleroot: " + headerMain.HashMerkleRoot);
-
-            Block genesisTest = Network.MineGenesisBlock(consensusFactory, coinbaseText, new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000")), Money.Coins(50m));
-            BlockHeader headerTest = genesisTest.Header;
-            Console.WriteLine("-- TestNet network --");
-            Console.WriteLine("bits: " + headerTest.Bits);
-            Console.WriteLine("nonce: " + headerTest.Nonce);
-            Console.WriteLine("time: " + headerTest.Time);
-            Console.WriteLine("version: " + headerTest.Version);
-            Console.WriteLine("hash: " + headerTest.GetHash());
-            Console.WriteLine("merkleroot: " + headerTest.HashMerkleRoot);
-
-            Block genesisReg = Network.MineGenesisBlock(consensusFactory, coinbaseText, new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), Money.Coins(50m));
-            BlockHeader headerReg = genesisReg.Header;
-            Console.WriteLine("-- RegTest network --");
-            Console.WriteLine("bits: " + headerReg.Bits);
-            Console.WriteLine("nonce: " + headerReg.Nonce);
-            Console.WriteLine("time: " + headerReg.Time);
-            Console.WriteLine("version: " + headerReg.Version);
-            Console.WriteLine("hash: " + headerReg.GetHash());
-            Console.WriteLine("merkleroot: " + headerReg.HashMerkleRoot);
-
-        }
-
-        public void CreateMultisigAddresses(Network mainchainNetwork, Network sidechainNetwork)
-        {
-            // The following creates 2 members and creates 2-of-5 multisig addresses for both StratisTest and ApexTest.
-            int pubKeysCount = 5;
-            int mComponent = 2;
-
-            PubKey[] pubKeys = new PubKey[pubKeysCount];
-
-            for (int i = 0; i < pubKeysCount; i++)
-            {
-                string password = "mypassword";
-
-                // Create a mnemonic and get the corresponding pubKey.
-                Mnemonic mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-                var pubKey = mnemonic.DeriveExtKey().PrivateKey.PubKey;
-                pubKeys[i] = pubKey;
-                
-                Console.WriteLine($"Mnemonic - Please note the following 12 words down in a secure place: {string.Join(" ", mnemonic.Words)}");
-                Console.WriteLine($"PubKey   - Please share the following public key with the person responsible for the sidechain generation: {Encoders.Hex.EncodeData((pubKey).ToBytes(false))}");
-                Console.WriteLine(Environment.NewLine);
-            }
-
-            Script payToMultiSig = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(mComponent, pubKeys);
-            Console.WriteLine("Redeem script: " + payToMultiSig.ToString());
-
-            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(sidechainNetwork);
-            Console.WriteLine("Sidechan P2SH: " + sidechainMultisigAddress.ScriptPubKey);
-            Console.WriteLine("Sidechain Multisig address: " + sidechainMultisigAddress);
-
-            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(mainchainNetwork);
-            Console.WriteLine("Mainchain P2SH: " + mainchainMultisigAddress.ScriptPubKey);
-            Console.WriteLine("Mainchain Multisig address: " + mainchainMultisigAddress);
         }
     }
 }
