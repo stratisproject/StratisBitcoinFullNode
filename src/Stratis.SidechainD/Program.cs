@@ -45,10 +45,8 @@ namespace Stratis.SidechainD
                 string[] seedNodes = { };
                 switch (network.Name)
                 {
-                    case ApexNetwork.TestNetworkName:
-                        seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
-                        break;
                     case FederatedPegNetwork.TestNetworkName:
+                        //seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
                         seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149" };
                         break;
                 }
@@ -64,20 +62,6 @@ namespace Stratis.SidechainD
             {
                 Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.Message);
             }
-        }
-
-        private static IFullNode GetApexFullNode(NodeSettings nodeSettings)
-        {
-            IFullNode node = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseBlockStore()
-                .UsePowConsensus()
-                .UseMempool()
-                .UseWallet()
-                .UseApi()
-                .AddRPC()
-                .Build();
-            return node;
         }
 
         private static IFullNode GetFederatedPegFullNode(NodeSettings nodeSettings)
