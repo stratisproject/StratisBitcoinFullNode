@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities;
 // TODO create common storage for the data
 // TODO add logs
 // TODO save tip in BG
+// TODO add tests
 
 namespace Stratis.Bitcoin.Base
 {
@@ -47,10 +48,11 @@ namespace Stratis.Bitcoin.Base
         {
             // TODO load lastCommonTip
 
-            this.commonTipPersistingTask = this.PersistCommonTipContinously();
+            this.commonTipPersistingTask = this.PersistCommonTipContinuously();
         }
 
-        private async Task PersistCommonTipContinously()
+        /// <summary>Continuously persists <see cref="lastCommonTip"/> to hard drive.</summary>
+        private async Task PersistCommonTipContinuously()
         {
             while (!this.cancellation.IsCancellationRequested)
             {
@@ -113,6 +115,7 @@ namespace Stratis.Bitcoin.Base
                     if (chainedHeader.GetAncestor(lowestTip.Height) != lowestTip)
                     {
                         // Not all tips are on the same chain.
+                        // Wait till all components finish reorging.
                         return;
                     }
                 }
