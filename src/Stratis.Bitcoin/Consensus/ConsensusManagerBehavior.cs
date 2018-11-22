@@ -290,9 +290,17 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         if (headers.Count == 1)
                         {
-                            // TODO: we should consider to ignore single headers when in cache mode,
-                            // a single header that is not connected to last header is likely an
-                            // uncollected header that is a result of the peer tip being extended
+                            // Distance of header from the peer expected tip.
+                            var distanceSeconds = (headers[0].BlockTime - this.ExpectedPeerTip.Header.BlockTime).TotalSeconds;
+
+                            if (this.chain.Network.MaxTipAge < distanceSeconds)
+                            {
+                                // a single header that is not connected to last header is likely an
+                                // unsolicited header that is a result of the peer tip being extended.
+                                // If the header time is far in the future we ignore it.
+                                this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                                return;
+                            }
                         }
 
                         this.cachedHeaders.Clear();
