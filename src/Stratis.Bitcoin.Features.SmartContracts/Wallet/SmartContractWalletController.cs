@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     }
                 }
 
-                return this.Json(transactionItems.OrderByDescending(x => x.BlockHeight ?? Int32.MaxValue));
+                return this.Json(transactionItems.OrderByDescending(x => x.BlockHeight ?? Int32.MaxValue).ThenBy(x => x.Hash.ToString()));
             }
             catch (Exception e)
             {
