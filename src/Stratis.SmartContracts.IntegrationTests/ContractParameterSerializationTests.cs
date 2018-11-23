@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Equal(testBytes, this.node1.GetStorageValue(response.NewContractAddress, "bytes"));
 
             // Test that the contract address, event name, and logging values are available in the bloom.
-            var scBlockHeader = lastBlock.Header as SmartContractBlockHeader;
+            var scBlockHeader = lastBlock.Header as ISmartContractBlockHeader;
             Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToUint160(this.node1.CoreNode.FullNode.Network).ToBytes()));
             Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Log")));
             Assert.True(scBlockHeader.LogsBloom.Test(this.serializer.Serialize(testChar)));
@@ -326,14 +326,14 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
     }
 
-    public class PoAContractParameterSerializationTests : ContractInternalTransferTests<PoAMockChainFixture>
+    public class PoAContractParameterSerializationTests : ContractParameterSerializationTests<PoAMockChainFixture>
     {
         public PoAContractParameterSerializationTests(PoAMockChainFixture fixture) : base(fixture)
         {
         }
     }
 
-    public class PoWContractParameterSerializationTests : ContractInternalTransferTests<PoWMockChainFixture>
+    public class PoWContractParameterSerializationTests : ContractParameterSerializationTests<PoWMockChainFixture>
     {
         public PoWContractParameterSerializationTests(PoWMockChainFixture fixture) : base(fixture)
         {

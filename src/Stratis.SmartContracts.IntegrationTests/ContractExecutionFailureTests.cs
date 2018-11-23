@@ -748,16 +748,16 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
     }
 
-    public class PoAContractExecutionFailureTests : ContractExecutionFailureTests<PoWMockChainFixture>
+    public class PoAContractExecutionFailureTests : ContractExecutionFailureTests<PoAMockChainFixture>
     {
-        public PoAContractExecutionFailureTests(PoWMockChainFixture fixture) : base(fixture)
+        public PoAContractExecutionFailureTests(PoAMockChainFixture fixture) : base(fixture)
         {
         }
     }
 
-    public class PoWContractExecutionFailureTests : ContractExecutionFailureTests<PoAMockChainFixture>
+    public class PoWContractExecutionFailureTests : ContractExecutionFailureTests<PoWMockChainFixture>
     {
-        public PoWContractExecutionFailureTests(PoAMockChainFixture fixture) : base(fixture)
+        public PoWContractExecutionFailureTests(PoWMockChainFixture fixture) : base(fixture)
         {
         }
     }
