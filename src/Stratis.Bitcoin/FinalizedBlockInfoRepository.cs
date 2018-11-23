@@ -118,7 +118,12 @@ namespace Stratis.Bitcoin
         {
             Task task = Task.Run(() =>
             {
-                this.finalizedBlockInfo = this.keyValueRepo.LoadValue<HashHeightPair>(finalizedBlockKey);
+                var finalizedInfo = this.keyValueRepo.LoadValue<HashHeightPair>(finalizedBlockKey);
+
+                if (finalizedInfo == null)
+                    finalizedInfo = new HashHeightPair(network.GenesisHash, 0);
+
+                this.finalizedBlockInfo = finalizedInfo;
             });
             return task;
         }
