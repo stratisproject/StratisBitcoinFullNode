@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
@@ -44,10 +45,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             int heightToSyncTo = tip.Height > this.numberOfBlocksToKeep ? tip.Height - this.numberOfBlocksToKeep : 0;
 
-            for (int i = tip.Height; i >= heightToSyncTo; i--)
+            for (int i = tip.Height - 1; i >= heightToSyncTo; i--)
             {
                 RewindData rewindData = await coinView.GetRewindData(i).ConfigureAwait(false);
-                if (rewindData?.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0) continue;
+
+                if (rewindData == null)
+                {
+                    throw new ConsensusException($"Rewind data of height '{i}' was not found!");
+                }
+
+                if (rewindData.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0)
+                {
+                   continue;
+                }
 
                 foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
                 {

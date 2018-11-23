@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             var tip = this.BuildChainWithProvenHeaders(3);
 
-            Dictionary<int, ProvenBlockHeader> headers = this.ConvertToDictionaryOfProvenHeaders(tip);
+            SortedDictionary<int, ProvenBlockHeader> headers = this.ConvertToDictionaryOfProvenHeaders(tip);
             await this.provenBlockHeaderRepository.PutAsync(headers, new HashHeightPair(tip.HashBlock, tip.Height)).ConfigureAwait(false);
 
             // Load saved headers.
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Initialise store.
             await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1)).ConfigureAwait(false);
 
-            var inHeaders = new Dictionary<int, ProvenBlockHeader>();
+            var inHeaders = new SortedDictionary<int, ProvenBlockHeader>();
 
             // Add maximum cache count items headers.
             for (int i = 0; i < 10; i++)
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         */
 
         [Fact]
-        public void AddToPending_Then_Save_Incorrect_Sequence_Throws_Exception()
+        public void AddToPending_Then_Save_Incorrect_Sequence_Push_To_Store()
         {
             var inHeader = CreateNewProvenBlockHeaderMock();
 
@@ -366,18 +366,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             }
 
             var taskResult = this.provenBlockHeaderStore.InvokeMethod("SaveAsync") as Task;
+            taskResult.Wait();
 
-            taskResult.IsFaulted.Should().BeTrue();
-            taskResult.Exception.InnerExceptions.Count.Should().Be(1);
-            taskResult.Exception.InnerExceptions[0].Should().BeOfType<ProvenBlockHeaderException>();
-            taskResult.Exception.InnerExceptions[0].Message.Should().Be("Proven block headers are not in the correct consecutive sequence.");
+            taskResult.IsCompletedSuccessfully.Should().BeTrue();
         }
 
         [Fact]
         public async Task AddToPending_Store_TipHash_Is_The_Same_As_ChainHeaderTipAsync()
         {
             var chainWithHeaders = BuildChainWithProvenHeaders(3);
-            Dictionary<int, ProvenBlockHeader> provenBlockheaders = this.ConvertToDictionaryOfProvenHeaders(chainWithHeaders);
+            SortedDictionary<int, ProvenBlockHeader> provenBlockheaders = this.ConvertToDictionaryOfProvenHeaders(chainWithHeaders);
 
             // Persist current chain.
             await this.provenBlockHeaderRepository.PutAsync(
