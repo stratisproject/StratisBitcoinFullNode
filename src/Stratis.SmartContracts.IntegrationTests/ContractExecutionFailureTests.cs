@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
-        public ContractExecutionFailureTests(T fixture)
+        protected ContractExecutionFailureTests(T fixture)
         {
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
