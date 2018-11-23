@@ -42,6 +42,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
         }
 
+        public static void WaitLoopMessage(Func<(bool success, string message)> act)
+        {
+            var cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token;
+
+            var (success, message) = act();
+
+            while (!success)
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(1000);
+
+                    (success, message) = act();
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message}");
+                }
+            }
+        }
+
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
             if (node1.runner is BitcoinCoreRunner || node2.runner is BitcoinCoreRunner)
