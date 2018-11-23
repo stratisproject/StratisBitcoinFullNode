@@ -236,5 +236,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>List of white listed IP endpoint. The node will flags peers that connects to the node, or that the node connects to, as whitelisted.</summary>
         public List<IPEndPoint> Whitelist { get; set; }
+
+        [Obsolete("Internal use only")]
+        /// <summary><c>true</c> if this instance is gateway; otherwise, <c>false</c>. Internal use only.</summary>
+        public bool IsGateway { get; set; }
     }
 }
