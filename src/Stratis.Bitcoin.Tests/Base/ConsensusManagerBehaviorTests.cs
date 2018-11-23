@@ -331,7 +331,7 @@ namespace Stratis.Bitcoin.Tests.Base
             List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(5);
             headersToPresent.AddRange(ChainedHeadersHelper.CreateConsecutiveHeaders(10));
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header)));
 
             Assert.True(this.helper.PeerWasBanned);
         }
@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[5], cachedHeaders.Select(x => x.Header).ToList());
 
             List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(10, cachedHeaders.Last());
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header)));
 
             Assert.Equal(0, this.helper.HeadersPresentedCalledTimes);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
@@ -365,7 +365,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             ConsensusManagerBehavior behavior = this.helper.CreateAndAttachBehavior(this.headers[5], new List<BlockHeader>() { this.headers[1].Header });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(2).Take(10).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(2).Take(10).Select(x => x.Header)));
 
             List<BlockHeader> cached = this.helper.GetCachedHeaders(behavior);
             Assert.Equal(11, cached.Count);
@@ -385,7 +385,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) => { throw new ConnectHeaderException(); });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(13).Take(8).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(13).Take(8).Select(x => x.Header)));
 
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
@@ -400,7 +400,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) => { throw new CheckpointMismatchException(); });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Take(50).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Take(50).Select(x => x.Header)));
 
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.True(this.helper.PeerWasBanned);
@@ -416,7 +416,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) => { throw new HeaderInvalidException(); });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header)));
 
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.True(this.helper.PeerWasBanned);
@@ -432,7 +432,7 @@ namespace Stratis.Bitcoin.Tests.Base
             this.helper.CreateAndAttachBehavior(this.headers[10], null, null, NetworkPeerState.HandShaked,
                 (presentedHeaders, triggerDownload) => { throw new ConsensusRuleException(ConsensusErrors.BadVersion); });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header)));
 
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.True(this.helper.PeerWasBanned);
@@ -451,7 +451,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     return new ConnectNewHeadersResult() { Consumed = this.headers.Single(x => x.HashBlock == presentedHeaders.Last().GetHash()) };
                 });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header)));
 
             Assert.Equal(this.headers[15], behavior.ExpectedPeerTip);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
@@ -471,7 +471,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     return new ConnectNewHeadersResult() { Consumed = this.headers[40] };
                 });
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(40).Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(40).Select(x => x.Header)));
 
             Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
@@ -495,7 +495,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             List<ChainedHeader> headersToPresent = ChainedHeadersHelper.CreateConsecutiveHeaders(maxHeaders + 500, null, true);
 
-            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header).ToArray()));
+            await this.helper.ReceivePayloadAsync(new HeadersPayload(headersToPresent.Select(x => x.Header)));
 
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.True(this.helper.PeerWasBanned);

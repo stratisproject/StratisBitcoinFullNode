@@ -14,15 +14,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class StratisBitcoinPosRunner : NodeRunner
     {
-        public StratisBitcoinPosRunner(string dataDir, Network network)
-            : base(dataDir)
+        public StratisBitcoinPosRunner(string dataDir, Network network, string agent = "StratisBitcoin")
+            : base(dataDir, agent)
         {
             this.Network = network;
         }
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.Network, ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, ProtocolVersion.PROVEN_HEADER_VERSION, this.Agent, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             var builder = new FullNodeBuilder()
                 .UseNodeSettings(settings)
@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         /// but all the features required for it are enabled.</remarks>
         public static IFullNode BuildStakingNode(string dataDir, bool staking = true)
         {
-            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Stratis, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: new string[] { $"-datadir={dataDir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
+            var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: new string[] { $"-datadir={dataDir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                                 .UseBlockStore()

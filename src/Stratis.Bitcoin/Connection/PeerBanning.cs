@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System.Collections.Generic;
+using System.Net;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P;
@@ -72,35 +73,36 @@ namespace Stratis.Bitcoin.Connection
 
             reason = reason ?? "unknown";
 
-            INetworkPeer peer = this.connectionManager.ConnectedPeers.FindByEndpoint(endpoint);
-
-            if (peer != null)
+            // Find all connected peers from the same IP and disconnect them.
+            List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.FindByIp(endpoint.Address);
+            foreach (var peer in peers)
             {
                 var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
-                if (!peerBehavior.Whitelisted)
-                {
-                    peer.Disconnect($"The peer was banned, reason: {reason}");
-                }
-                else
+                if (peerBehavior.Whitelisted)
                 {
                     this.logger.LogTrace("(-)[WHITELISTED]");
                     return;
                 }
+
+                peer.Disconnect($"The peer was banned, reason: {reason}");
             }
 
-            PeerAddress peerAddress = this.peerAddressManager.FindPeer(endpoint);
-
-            if (peerAddress == null)
+            // Find all peers from the same IP and ban them.
+            List<PeerAddress> peerAddresses = this.peerAddressManager.FindPeersByIp(endpoint);
+            if (peerAddresses.Count == 0)
             {
-                this.logger.LogTrace("(-)[PEERNOTFOUND]");
+                this.logger.LogTrace("(-)[NO_PEERS_TO_BAN]");
                 return;
             }
 
-            peerAddress.BanTimeStamp = this.dateTimeProvider.GetUtcNow();
-            peerAddress.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds);
-            peerAddress.BanReason = reason;
+            foreach (var peerAddress in peerAddresses)
+            {
+                peerAddress.BanTimeStamp = this.dateTimeProvider.GetUtcNow();
+                peerAddress.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds);
+                peerAddress.BanReason = reason;
 
-            this.logger.LogDebug("Peer '{0}' banned for reason '{1}', until {2}.", endpoint, reason, peerAddress.BanUntil.ToString());
+                this.logger.LogDebug("Peer '{0}' banned for reason '{1}', until {2}.", endpoint, reason, peerAddress.BanUntil.ToString());
+            }
         }
 
         /// <inheritdoc />

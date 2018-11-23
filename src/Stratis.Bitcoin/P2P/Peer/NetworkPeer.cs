@@ -63,34 +63,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of network services that the peer must provide.</summary>
         public NetworkPeerServices RequiredServices { get; set; }
 
-        /// <summary><c>true</c> to require the peer to support SPV, <c>false</c> otherwise.</summary>
-        public bool SupportSPV { get; set; }
-
         /// <summary>
         /// Checks a version payload from a peer against the requirements.
         /// </summary>
         /// <param name="version">Version payload to check.</param>
+        /// <param name="reason">The reason the check failed.</param>
         /// <returns><c>true</c> if the version payload satisfies the protocol requirements, <c>false</c> otherwise.</returns>
-        public virtual bool Check(VersionPayload version)
+        public virtual bool Check(VersionPayload version, out string reason)
         {
+            reason = string.Empty;
             if (this.MinVersion != null)
             {
                 if (version.Version < this.MinVersion.Value)
+                {
+                    reason = "peer version is too low";
                     return false;
+                }
             }
 
             if ((this.RequiredServices & version.Services) != this.RequiredServices)
             {
+                reason = "network service not supported";
                 return false;
-            }
-
-            if (this.SupportSPV)
-            {
-                if (version.Version < ProtocolVersion.MEMPOOL_GD_VERSION)
-                    return false;
-
-                if ((ProtocolVersion.NO_BLOOM_VERSION <= version.Version) && ((version.Services & NetworkPeerServices.NODE_BLOOM) == 0))
-                    return false;
             }
 
             return true;
@@ -534,7 +528,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             switch (this.State)
             {
                 case NetworkPeerState.Connected:
-                    if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
+                    if (this.Inbound)
+                        await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
+
                     break;
 
                 case NetworkPeerState.HandShaked:
@@ -692,10 +688,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 return;
                             }
 
-                            if (!requirements.Check(versionPayload))
+                            if (!requirements.Check(versionPayload, out string reason))
                             {
                                 this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
-                                this.Disconnect("The peer does not support the required services requirement");
+                                this.Disconnect("The peer does not support the required services requirement, reason: " + reason);
                                 return;
                             }
 

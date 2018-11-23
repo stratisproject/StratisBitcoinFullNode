@@ -1,5 +1,4 @@
 ﻿using System;
-using NBitcoin;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 {

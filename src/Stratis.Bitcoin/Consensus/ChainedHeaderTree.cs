@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
@@ -131,7 +132,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block.</param>
         /// <returns>Newly created and connected chained header for the specified block.</returns>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        ChainedHeader CreateChainedHeaderWithBlock(Block block);
+        ChainedHeader CreateChainedHeaderOfMinedBlock(Block block);
 
         /// <summary>
         /// Get the block and its chained header if it exists.
@@ -928,9 +929,15 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public ChainedHeader CreateChainedHeaderWithBlock(Block block)
+        public ChainedHeader CreateChainedHeaderOfMinedBlock(Block block)
         {
-            this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
+            BlockHeader headerToBeCreated = block.Header;
+            if (block is PosBlock posBlock)
+            {
+                headerToBeCreated = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
+            }
+
+            this.CreateNewHeaders(new List<BlockHeader>() { headerToBeCreated });
 
             ChainedHeader chainedHeader = this.GetChainedHeader(block.GetHash());
 

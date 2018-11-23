@@ -5,9 +5,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Smart contract state that gets injected into the smart contract by the <see cref="ReflectionVirtualMachine"/>.
     /// </summary>
-    /// <remarks>
-    /// TODO: SmartContractState is basically the same thing as <see cref="SmartContractExecutionContext"/> so merge them eventually.
-    /// </remarks>
     public sealed class SmartContractState : ISmartContractState
     {
         public SmartContractState(

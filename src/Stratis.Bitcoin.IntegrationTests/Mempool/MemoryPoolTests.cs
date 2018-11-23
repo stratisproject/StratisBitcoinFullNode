@@ -160,20 +160,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 // Test 1: block with both of those transactions should be rejected.
                 var tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
-                Assert.Throws<ConsensusException>(() => { Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends); });
+                Assert.Throws<ConsensusException>(() => { Task.Delay(2).Wait(); Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends); });
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
 
                 // Test 2: ... and should be rejected if spend1 is in the memory pool
                 tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
-                Assert.Throws<ConsensusException>(() => { Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000); });
+                Assert.Throws<ConsensusException>(() => { Task.Delay(2).Wait(); Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000); });
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 
                 // Test 3: ... and should be rejected if spend2 is in the memory pool
                 tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
                 Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                Assert.Throws<ConsensusException>(() => { Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000_000); });
+                Assert.Throws<ConsensusException>(() => { Task.Delay(2).Wait(); Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000_000); });
                 Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
                 stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
 

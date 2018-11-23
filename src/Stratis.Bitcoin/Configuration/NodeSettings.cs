@@ -60,6 +60,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Supported protocol version.</summary>
         public ProtocolVersion ProtocolVersion { get; private set; }
 
+        /// <summary>Lowest supported protocol version.</summary>
+        public ProtocolVersion? MinProtocolVersion { get; set; }
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
 
