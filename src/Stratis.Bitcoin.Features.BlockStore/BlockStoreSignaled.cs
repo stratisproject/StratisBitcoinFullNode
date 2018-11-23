@@ -84,10 +84,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
-            // Ensure the block is written to disk before relaying.
-            this.AddBlockToQueue(blockPair);
+            bool isIBD = this.initialBlockDownloadState.IsInitialBlockDownload();
 
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            // Ensure the block is written to disk before relaying.
+            this.AddBlockToQueue(blockPair, isIBD);
+
+            if (isIBD)
             {
                 this.logger.LogTrace("(-)[IBD]");
                 return;
@@ -102,7 +104,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Ensures the block is written to disk before relaying to peers.
         /// </summary>
         /// <param name="blockPair">The block pair.</param>
-        protected virtual void AddBlockToQueue(ChainedHeaderBlock blockPair)
+        /// <param name="isIBD">Is node in IBD.</param>
+        protected virtual void AddBlockToQueue(ChainedHeaderBlock blockPair, bool isIBD)
         {
             this.blockStoreQueue.AddToPending(blockPair);
         }

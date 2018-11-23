@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Stratis.SmartContracts.Executor.Reflection
+﻿namespace Stratis.SmartContracts.Executor.Reflection
 {
     /// <summary>
     /// Returned when making a transfer from a smart contract.

@@ -224,11 +224,9 @@ namespace Stratis.Bitcoin.BlockPulling
             this.assignedLock = new object();
             this.nextJobId = 0;
 
-            ProtocolVersion protocolVersion = nodeSettings.ProtocolVersion;
-
             this.networkPeerRequirement = new NetworkPeerRequirement
             {
-                MinVersion = protocolVersion,
+                MinVersion = nodeSettings.MinProtocolVersion ?? nodeSettings.ProtocolVersion,
                 RequiredServices = NetworkPeerServices.Network
             };
 
@@ -265,10 +263,11 @@ namespace Stratis.Bitcoin.BlockPulling
                 foreach (KeyValuePair<int, IBlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
                 {
                     INetworkPeer peer = peerIdToBehavior.Value.AttachedPeer;
+                    string reason = string.Empty;
 
-                    if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion))
+                    if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion, out reason))
                     {
-                        this.logger.LogDebug("Peer Id {0} does not meet requirements.", peerIdToBehavior.Key);
+                        this.logger.LogDebug("Peer Id {0} does not meet requirements, reason: {1}", peerIdToBehavior.Key, reason);
                         peerIdsToRemove.Add(peerIdToBehavior.Key);
                     }
                 }
@@ -318,7 +317,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
                 else
                 {
-                    bool supportsRequirments = this.networkPeerRequirement.Check(peer.PeerVersion);
+                    bool supportsRequirments = this.networkPeerRequirement.Check(peer.PeerVersion, out string reason);
 
                     if (supportsRequirments)
                     {
@@ -329,7 +328,7 @@ namespace Stratis.Bitcoin.BlockPulling
                         this.logger.LogTrace("New peer with ID {0} and tip '{1}' was added.", peerId, newTip);
                     }
                     else
-                        this.logger.LogTrace("Peer ID {0} was discarded since he doesn't support the requirements.", peerId);
+                        this.logger.LogTrace("Peer ID {0} was discarded since he doesn't support the requirements, reason: {1}", peerId, reason);
                 }
             }
         }
