@@ -43,9 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 if (!transaction.IsSmartContractExecTransaction())
                     return Task.CompletedTask;
 
-                // Money transactionFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
-
-                CheckTransaction(transaction, null);
+                this.CheckTransaction(transaction, null);
             }
 
             return Task.CompletedTask;
