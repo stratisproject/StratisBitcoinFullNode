@@ -112,6 +112,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
         private readonly ITipsManager tipsManager;
+        private readonly IKeyValueRepository keyValueRepo;
 
         /// <inheritdoc cref="IFinalizedBlockInfoRepository"/>
         private readonly IFinalizedBlockInfoRepository finalizedBlockInfoRepository;
@@ -143,6 +144,7 @@ namespace Stratis.Bitcoin.Base
             IBlockStore blockStore,
             Network network,
             ITipsManager tipsManager,
+            IKeyValueRepository keyValueRepo,
             IProvenBlockHeaderStore provenBlockHeaderStore = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -162,6 +164,7 @@ namespace Stratis.Bitcoin.Base
             this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
             this.tipsManager = Guard.NotNull(tipsManager, nameof(tipsManager));
+            this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             this.peerAddressManager.PeerFilePath = this.dataFolder;
@@ -337,6 +340,8 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
+
+            this.keyValueRepo.Dispose();
         }
     }
 
