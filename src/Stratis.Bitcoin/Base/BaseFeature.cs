@@ -111,6 +111,7 @@ namespace Stratis.Bitcoin.Base
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
+        private readonly ITipsManager tipsManager;
 
         /// <inheritdoc cref="IFinalizedBlockInfoRepository"/>
         private readonly IFinalizedBlockInfoRepository finalizedBlockInfoRepository;
@@ -141,6 +142,7 @@ namespace Stratis.Bitcoin.Base
             IBlockPuller blockPuller,
             IBlockStore blockStore,
             Network network,
+            ITipsManager tipsManager,
             IProvenBlockHeaderStore provenBlockHeaderStore = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -159,6 +161,7 @@ namespace Stratis.Bitcoin.Base
             this.provenBlockHeaderStore = provenBlockHeaderStore;
             this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
+            this.tipsManager = Guard.NotNull(tipsManager, nameof(tipsManager));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             this.peerAddressManager.PeerFilePath = this.dataFolder;
@@ -176,6 +179,8 @@ namespace Stratis.Bitcoin.Base
         public override async Task InitializeAsync()
         {
             this.dbreezeSerializer.Initialize(this.chain.Network);
+
+            // TODO rewrite chain starting logic. Tips manager should be used.
 
             await this.StartChainAsync().ConfigureAwait(false);
 
@@ -371,6 +376,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
+                    services.AddSingleton<IKeyValueRepository, KeyValueRepository>();
+                    services.AddSingleton<ITipsManager, TipsManager>();
 
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();
