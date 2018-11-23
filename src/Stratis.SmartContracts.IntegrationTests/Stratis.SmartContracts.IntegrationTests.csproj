@@ -27,6 +27,13 @@
 
 
   <ItemGroup>
+    <Compile Remove="PoA\**" />
+    <EmbeddedResource Remove="PoA\**" />
+    <None Remove="PoA\**" />
+  </ItemGroup>
+
+
+  <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
   </ItemGroup>
 
