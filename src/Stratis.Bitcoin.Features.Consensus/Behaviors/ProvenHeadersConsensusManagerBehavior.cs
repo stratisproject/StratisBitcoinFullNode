@@ -36,6 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
         private readonly int lastCheckpointHeight;
         private readonly CheckpointInfo lastCheckpointInfo;
+        private readonly ConnectionManagerSettings connectionManagerSettings;
 
         /// <summary>
         /// Specify if the node is a gateway or not.
@@ -70,7 +71,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             this.lastCheckpointHeight = this.checkpoints.GetLastCheckpointHeight();
             this.lastCheckpointInfo = this.checkpoints.GetCheckpoint(this.lastCheckpointHeight);
 
-            this.isGateway = connectionManagerSettings.IsGateway;
+            this.connectionManagerSettings = connectionManagerSettings;
+
+            this.isGateway = this.connectionManagerSettings.IsGateway;
         }
 
         /// <inheritdoc />
@@ -157,7 +160,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 this.network,
                 this.chainState,
                 this.checkpoints,
-                this.provenBlockHeaderStore);
+                this.provenBlockHeaderStore,
+                this.connectionManagerSettings);
         }
 
         /// <summary>
