@@ -124,6 +124,14 @@ namespace City.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
                 { 0, new CheckpointInfo(new uint256("0x00000b0517068e602ed5279c20168cfa1e69884ee4e784909652da34c361bff2"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) },
+                { 2, new CheckpointInfo(new uint256("0x072227af2fda8ef6a5f7a19ec3a1c6de54ddc537dd407da938766ed460e77982"), new uint256("0xe93eb6c21c65024ca06ac2f89481bdc832cab1607ed2adfeafb6c679b6a4a1f6")) },
+                { 50, new CheckpointInfo(new uint256("0xce58ab37dd5965c3474c5917fcbb59aa342c6754a452e5faf87050bb6015d511"), new uint256("0xb877b17b3d7324ac1a3615a6c245c702282e5be74fd50cf25bb02bc5f2ea7944")) },
+                { 100, new CheckpointInfo(new uint256("0x5edbf09aadfbdb0d74d428b002fcda197debb775955a161f2890ed844a5159da"), new uint256("0x354210eecb7ed3f8df3d384b8d615f789fdffdf3f3d4945c23e5966827010b73")) },
+                { 200, new CheckpointInfo(new uint256("0x180745aeb0754cde04dac52dbb056dac5b1c665de86ee23806c1c7675dac3ac9"), new uint256("0x7f5dfec171542e5d2b56e874eb4f1e26c949e8a33a64e3fe0b06f1b5783fbd54")) },
+                { 1000, new CheckpointInfo(new uint256("0xc848602fe0f33511766b66c6d5a28e11cd54e7c61d69c0898f868f46b5c9d6f7"), new uint256("0x13fad5f4e1dc5120f88e48e3f8d08bbc57b78fa960df8b600819c631f1038327")) },
+                { 2000, new CheckpointInfo(new uint256("0xe73ec56e8c4159594bea6e8d73f1a5e0c980246861064451e2f0d2f609ed7d0b"), new uint256("0x569ab17ece910f954d26f3ab8a83ec5ae8952957b3f1c1868fb7b04abd52dd19")) },
+                { 10000, new CheckpointInfo(new uint256("0x5fba1895ca1134f3c6fefdd45996039d45aab0177a10e86cac4990226f62ad95"), new uint256("0x47c6db50a945d8d4b17676e65a74ccd64e3b73f696082c3cdb7a9c0b9658e9cb")) },
+                { 20000, new CheckpointInfo(new uint256("0xa0f81a7734e621ae2e2cecea7a3b851dee3b5a85ba4732e0867cbf5c496f04ed"), new uint256("0xf044e402b75b4314231e1498fefc8b11da8cc9cb7797e2e59b2acdbcea1b02b3")) }
             };
 
             var encoder = new Bech32Encoder("bc");

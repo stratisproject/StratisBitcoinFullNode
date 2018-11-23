@@ -13,13 +13,13 @@ phases:
   parameters:
     name: macOS
     platform: osx
-    queue: Hosted macOS Preview
+    queue: Hosted macOS
 
 - template: build.yml
   parameters:
     name: Linux
     platform: linux
-    queue: Hosted Linux Preview
+    queue: Hosted Ubuntu 1604
 
 - template: build.yml
   parameters:
