@@ -25,10 +25,12 @@ namespace Stratis.Bitcoin.Utilities
 
         private const string TableName = "common";
 
-        public KeyValueRepository(DataFolder dataFolder)
+        public KeyValueRepository(DataFolder dataFolder) : this (dataFolder.KeyValueRepositoryPath)
         {
-            string folder = dataFolder.AddressManagerFilePath; // TODO change to actual path
+        }
 
+        public KeyValueRepository(string folder)
+        {
             Directory.CreateDirectory(folder);
             this.dbreeze = new DBreezeEngine(folder);
         }
