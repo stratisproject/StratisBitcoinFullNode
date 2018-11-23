@@ -134,6 +134,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.Agent = string.IsNullOrEmpty(agentPrefix) ? nodeSettings.Agent : $"{agentPrefix}-{nodeSettings.Agent}";
             this.logger.LogDebug("Agent set to '{0}'.", this.Agent);
+
+            this.IsGateway = config.GetOrDefault<bool>("isgateway", false, this.logger);
         }
 
         /// <summary>
