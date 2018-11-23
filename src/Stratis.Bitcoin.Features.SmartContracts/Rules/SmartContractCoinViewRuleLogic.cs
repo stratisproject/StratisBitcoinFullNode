@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
@@ -13,6 +14,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
@@ -147,6 +149,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         public void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
             IContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
+            this.CheckFeeAccountsForGas(txContext.Data, txContext.MempoolFee);
             IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.mutableStateRepository, txContext);
 
             IContractExecutionResult result = executor.Execute(txContext);
@@ -177,6 +180,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (result.InternalTransaction != null)
             {
                 this.generatedTransaction = result.InternalTransaction;
+            }
+        }
+
+        /// <summary>
+        /// Check that the fee is large enough to account for the potential contract gas usage.
+        /// </summary>
+        private void CheckFeeAccountsForGas(byte[] callData, Money totalFee)
+        {
+            // We can trust that deserialisation is successful thanks to SmartContractFormatRule coming before
+            Result<ContractTxData> result = this.ContractCoinviewRule.CallDataSerializer.Deserialize(callData);
+
+            if (totalFee < new Money(result.Value.GasCostBudget))
+            {
+                // Supplied satoshis are less than the budget we said we had for the contract execution
+                SmartContractConsensusErrors.FeeTooSmallForGas.Throw();
             }
         }
 

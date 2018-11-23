@@ -44,9 +44,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 if (!transaction.IsSmartContractExecTransaction())
                     return Task.CompletedTask;
 
-                Money transactionFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
+                // Money transactionFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
 
-                CheckTransaction(transaction, transactionFee);
+                CheckTransaction(transaction, null);
             }
 
             return Task.CompletedTask;
@@ -107,11 +107,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 this.ThrowGasGreaterThanHardLimit();
             }
 
-            // Note carrier.GasCostBudget cannot overflow given values are within constraints above.
-            if (suppliedBudget < new Money(callData.GasCostBudget))
+            // Only measure budget when coming from mempool - this happens inside SmartContractCoinviewRule instead as part of the block.
+            if (suppliedBudget != null)
             {
-                // Supplied satoshis are less than the budget we said we had for the contract execution
-                this.ThrowGasGreaterThanFee();
+                // Note carrier.GasCostBudget cannot overflow given values are within constraints above.
+                if (suppliedBudget < new Money(callData.GasCostBudget))
+                {
+                    // Supplied satoshis are less than the budget we said we had for the contract execution
+                    SmartContractConsensusErrors.FeeTooSmallForGas.Throw();
+                }
             }
         }
 
@@ -142,12 +146,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
         {
             // TODO make nicer
             new ConsensusError("total-gas-value-greater-than-hard-limit", "total supplied gas value was greater than our hard limit of " + GasLimitMaximum).Throw();
-        }
-
-        private void ThrowGasGreaterThanFee()
-        {
-            // TODO make nicer
-            new ConsensusError("total-gas-value-greater-than-total-fee", "total supplied gas value was greater than total supplied fee value").Throw();
         }
     }
 }
