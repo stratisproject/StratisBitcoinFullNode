@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
         }
 
-        public IList<UnspentOutputs> GetCoins()
+        public IList<UnspentOutputs> GetCoins(ICoinView utxo)
         {
             return this.unspents.Select(u => u.Value).ToList();
         }
