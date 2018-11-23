@@ -6,6 +6,8 @@ using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration;
 
+// TODO add tests
+
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>Allows saving and loading single values to and from key-value storage.</summary>
@@ -23,7 +25,7 @@ namespace Stratis.Bitcoin.Utilities
 
         private const string TableName = "common";
 
-        public KeyValueRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
+        public KeyValueRepository(DataFolder dataFolder)
         {
             string folder = dataFolder.AddressManagerFilePath; // TODO change to actual path
 

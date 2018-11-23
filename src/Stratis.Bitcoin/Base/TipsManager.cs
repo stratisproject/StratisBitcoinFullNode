@@ -7,22 +7,28 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-// TODO add logs
-// TODO save tip in BG
 // TODO add tests
-// initialize on DI
 
 namespace Stratis.Bitcoin.Base
 {
     public interface ITipsManager : IDisposable
     {
-        void Initialize();
+        /// <summary>Initializes <see cref="ITipsManager"/>.</summary>
+        /// <param name="highestHeader">Tip of chain of headers.</param>
+        void Initialize(ChainedHeader highestHeader);
 
         void RegisterTipProvider(object provider);
 
         /// <summary>Provides highest tip commited between all registered components.</summary>
         ChainedHeader GetLastCommonTip();
 
+        /// <summary>
+        /// Commits persisted tip of a component.
+        /// </summary>
+        /// <remarks>
+        /// Commiting a particular tip would mean that in case node is killed immediately component that
+        /// commited such a tip would be able to recover on startup to it or any tip that is ancestor to tip commited.
+        /// </remarks>
         void CommitTipPersisted(object provider, ChainedHeader tip);
     }
 
@@ -63,11 +69,12 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public void Initialize()
+        public void Initialize(ChainedHeader highestHeader)
         {
             HashHeightPair commonTipHashHeight = this.keyValueRepo.LoadValue<HashHeightPair>(commonTipKey);
+            this.lastCommonTip = highestHeader.FindAncestorOrSelf(commonTipHashHeight.Hash, commonTipHashHeight.Height);
 
-            // TODO load lastCommonTip
+            this.logger.LogDebug("Tips manager initialized at '{0}'.", this.lastCommonTip);
 
             this.commonTipPersistingTask = this.PersistCommonTipContinuouslyAsync();
         }
@@ -90,6 +97,8 @@ namespace Stratis.Bitcoin.Base
 
                 var hashHeight = new HashHeightPair(tipToSave);
                 this.keyValueRepo.SaveValue(commonTipKey, hashHeight);
+
+                this.logger.LogDebug("Saved common tip '{0}'.", tipToSave);
             }
         }
 
@@ -121,7 +130,10 @@ namespace Stratis.Bitcoin.Base
                 {
                     // Do nothing if there is at least 1 component that didn't commit it's tip yet.
                     if (chainedHeader == null)
+                    {
+                        this.logger.LogTrace("(-)[NOT_ALL_TIPS_COMMITED]");
                         return;
+                    }
 
                     if ((lowestTip == null) || (chainedHeader.Height < lowestTip.Height))
                         lowestTip = chainedHeader;
@@ -129,7 +141,10 @@ namespace Stratis.Bitcoin.Base
 
                 // Last common tip can't be changed because lowest tip is equal to it already.
                 if (this.lastCommonTip == lowestTip)
+                {
+                    this.logger.LogTrace("(-)[ALREADY_PERSISTED]");
                     return;
+                }
 
                 // Make sure all tips are on the same chain.
                 bool tipsOnSameChain = true;
@@ -143,7 +158,10 @@ namespace Stratis.Bitcoin.Base
                 }
 
                 if (!tipsOnSameChain)
+                {
+                    this.logger.LogDebug("Tips are not on the same chain, finding last common fork between them.");
                     lowestTip = this.FindCommonFork(this.tipsByProvider.Values.ToList());
+                }
 
                 this.lastCommonTip = lowestTip;
                 this.newCommonTipSetEvent.Set();

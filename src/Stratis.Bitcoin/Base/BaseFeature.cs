@@ -233,10 +233,10 @@ namespace Stratis.Bitcoin.Base
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
 
-            if (!Directory.Exists(this.dataFolder.FinalizedBlockInfoPath))
+            if (!Directory.Exists(this.dataFolder.KeyValueRepositoryPath))
             {
-                this.logger.LogInformation("Creating {0}.", this.dataFolder.FinalizedBlockInfoPath);
-                Directory.CreateDirectory(this.dataFolder.FinalizedBlockInfoPath);
+                this.logger.LogInformation("Creating {0}.", this.dataFolder.KeyValueRepositoryPath);
+                Directory.CreateDirectory(this.dataFolder.KeyValueRepositoryPath);
             }
 
             this.logger.LogInformation("Loading finalized block height.");
