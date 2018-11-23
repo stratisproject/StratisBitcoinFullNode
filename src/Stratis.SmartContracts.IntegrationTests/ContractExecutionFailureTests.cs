@@ -706,8 +706,6 @@ namespace Stratis.SmartContracts.IntegrationTests
             const int txCount = 25;
             double amount = 0;
 
-            this.mockChain.MineBlocks(2 * txCount); // Enough for every node to have enough txs
-
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
             Assert.True(compilationResult.Success);
 
