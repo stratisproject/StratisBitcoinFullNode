@@ -9,12 +9,15 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
 {
+    /// <summary>Component that keeps track of highest common tip between components that can have a tip.</summary>
     public interface ITipsManager : IDisposable
     {
         /// <summary>Initializes <see cref="ITipsManager"/>.</summary>
         /// <param name="highestHeader">Tip of chain of headers.</param>
         void Initialize(ChainedHeader highestHeader);
 
+        /// <summary>Registers provider of a tip.</summary>
+        /// <remarks>Common tip is selected by finding fork point between tips provided by all registered providers.</remarks>
         void RegisterTipProvider(object provider);
 
         /// <summary>Provides highest tip commited between all registered components.</summary>
@@ -72,11 +75,12 @@ namespace Stratis.Bitcoin.Base
             if (this.commonTipPersistingTask != null)
                 throw new Exception("Already initialized.");
 
-            HashHeightPair commonTipHashHeight = this.keyValueRepo.LoadValue<HashHeightPair>(commonTipKey);
+            var commonTipHashHeight = this.keyValueRepo.LoadValue<HashHeightPair>(commonTipKey);
 
             if (commonTipHashHeight != null)
                 this.lastCommonTip = highestHeader.FindAncestorOrSelf(commonTipHashHeight.Hash, commonTipHashHeight.Height);
             else
+                // Genesis.
                 this.lastCommonTip = highestHeader.GetAncestor(0);
 
             this.logger.LogDebug("Tips manager initialized at '{0}'.", this.lastCommonTip);
@@ -92,6 +96,7 @@ namespace Stratis.Bitcoin.Base
                 try
                 {
                     await this.newCommonTipSetEvent.WaitAsync(this.cancellation.Token).ConfigureAwait(false);
+                    this.newCommonTipSetEvent.Reset();
                 }
                 catch (OperationCanceledException)
                 {
