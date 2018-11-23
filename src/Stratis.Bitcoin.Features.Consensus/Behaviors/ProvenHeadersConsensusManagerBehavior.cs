@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
         /// <summary>
         /// Specify if the node is a gateway or not.
-        /// Gateway are used internally by Stratis to prevent network split during the transaction from Headers to ProvenHeaders protocol.
+        /// Gateway are used internally by Stratis to prevent network split during the transition from Headers to ProvenHeaders protocol.
         /// Gateways can only receive headers and blocks from whitelisted nodes.
         /// </summary>
         private readonly bool isGateway;
@@ -236,6 +236,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             }
         }
 
+        /// <inheritdoc />
+        protected override Task ProcessHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
+        {
+            if (this.isGateway)
+            {
+                this.logger.LogTrace("Node is a gateway, cannot sync from Proven Headers. Ignoring received headers.");
+                return Task.CompletedTask;
+            }
+
+            return base.ProcessHeadersAsync(peer, headers);
+        }
+
         /// <summary>
         /// Processes the legacy GetHeaders message.
         /// Only whitelisted legacy peers are allowed to handle this message.
@@ -246,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             if (this.isGateway && !peer.IsWhitelisted())
             {
-                this.logger.LogTrace("Node is a gateway, cannot sync from non whitelisted peer. Ignoring sent headers.");
+                this.logger.LogTrace("Node is a gateway, cannot sync from non whitelisted peer. Ignoring received headers.");
                 return;
             }
 
