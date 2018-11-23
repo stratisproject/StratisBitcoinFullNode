@@ -1,5 +1,4 @@
-﻿using System;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
@@ -8,13 +7,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
     /// <summary>
     /// Base rule to be used by all proven header validation rules.
     /// </summary>
+    /// <remarks>
+    /// We assume that in case normal headers are provided instead of proven headers we should ignore validation.
+    /// This should be allowed by the behaviors only for whitelisted nodes.</remarks>
     /// <seealso cref="Stratis.Bitcoin.Consensus.Rules.HeaderValidationConsensusRule" />
     public abstract class ProvenHeaderRuleBase : HeaderValidationConsensusRule
     {
         /// <summary>Allow access to the POS parent.</summary>
         protected PosConsensusRuleEngine PosParent;
-
-        protected int ProvenHeadersActivationHeight;
+        protected int LastCheckpointHeight;
+        protected CheckpointInfo LastCheckpoint;
 
         /// <inheritdoc />
         public override void Initialize()
@@ -23,10 +25,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             Guard.NotNull(this.PosParent, nameof(this.PosParent));
 
-            if (this.PosParent.Network.Consensus.Options is PosConsensusOptions options)
-            {
-                this.ProvenHeadersActivationHeight = options.ProvenHeadersActivationHeight;
-            }
+            this.LastCheckpointHeight = this.Parent.Checkpoints.GetLastCheckpointHeight();
+            this.LastCheckpoint = this.Parent.Checkpoints.GetCheckpoint(this.LastCheckpointHeight);
         }
 
         /// <summary>
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </returns>
         public bool IsProvenHeaderActivated(int height)
         {
-            return height >= this.ProvenHeadersActivationHeight;
+            return height > this.LastCheckpointHeight;
         }
 
         /// <summary>
@@ -55,14 +55,24 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <inheritdoc/>
         public override void Run(RuleContext context)
         {
+            if (context.SkipValidation)
+                return;
+
             Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
 
-            if (context.SkipValidation || !this.IsProvenHeaderActivated(chainedHeader.Height))
+            if (!this.IsProvenHeaderActivated(chainedHeader.Height))
                 return;
 
-            ProcessRule((PosRuleContext)context, chainedHeader, (ProvenBlockHeader)chainedHeader.Header);
+            if (!this.IsProvenHeader(chainedHeader.Header))
+            {
+                // We skip validation if the header is a regular header
+                // This is to allow white-listed peers to sync using regular headers.
+                return;
+            }
+
+            this.ProcessRule((PosRuleContext)context, chainedHeader, (ProvenBlockHeader)chainedHeader.Header);
         }
 
         /// <summary>

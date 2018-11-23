@@ -112,7 +112,22 @@ namespace Stratis.Bitcoin.Base
                     IOrderedEnumerable<ChainedHeader> orderedChainedHeaders = headers.OrderBy(b => b.Height);
                     foreach (ChainedHeader block in orderedChainedHeaders)
                     {
-                        transaction.Insert("Chain", block.Height, block.Header);
+                        BlockHeader header = block.Header;
+                        if (header is ProvenBlockHeader)
+                        {
+                            // copy the header parameters, untill we dont make PH a normal header we store it in its own repo.
+                            BlockHeader newHeader = chain.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                            newHeader.Bits = header.Bits;
+                            newHeader.Time = header.Time;
+                            newHeader.Nonce = header.Nonce;
+                            newHeader.Version = header.Version;
+                            newHeader.HashMerkleRoot = header.HashMerkleRoot;
+                            newHeader.HashPrevBlock = header.HashPrevBlock;
+
+                            header = newHeader;
+                        }
+
+                        transaction.Insert("Chain", block.Height, header);
                     }
 
                     this.locator = tip.GetLocator();

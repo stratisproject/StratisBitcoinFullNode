@@ -43,6 +43,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.Connect = new List<IPEndPoint>();
             this.AddNode = new List<IPEndPoint>();
             this.Listen = new List<NodeServerEndpoint>();
+            this.Whitelist = new List<IPEndPoint>();
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -84,12 +85,22 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
             catch (FormatException)
             {
-                throw new ConfigurationException("Invalid 'listen' parameter");
+                throw new ConfigurationException("Invalid 'whitebind' parameter");
             }
 
             if (this.Listen.Count == 0)
             {
                 this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
+            }
+
+            try
+            {
+                this.Whitelist.AddRange(config.GetAll("whitelist", this.logger)
+                    .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'whitelist' parameter.");
             }
 
             string externalIp = config.GetOrDefault<string>("externalip", null, this.logger);
@@ -142,6 +153,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"#whitebind=<ip:port>");
             builder.AppendLine($"#Specify your own public address.");
+            builder.AppendLine($"#whitelist=<ip:port>");
+            builder.AppendLine($"#Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"#externalip=<ip>");
             builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"#bantime=<number>");
@@ -173,6 +186,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
+            builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
@@ -219,5 +233,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>Filter peers that are within the same IP range to prevent sybil attacks.</summary>
         public bool IpRangeFiltering { get; internal set; }
+
+        /// <summary>List of white listed IP endpoint. The node will flags peers that connects to the node, or that the node connects to, as whitelisted.</summary>
+        public List<IPEndPoint> Whitelist { get; set; }
     }
 }

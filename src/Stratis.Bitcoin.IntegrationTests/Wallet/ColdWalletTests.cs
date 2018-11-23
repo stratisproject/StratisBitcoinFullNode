@@ -90,7 +90,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                  .MockIBD();
             });
 
-            return nodeBuilder.CreateCustomNode(buildAction, network, ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+            return nodeBuilder.CreateCustomNode(buildAction, network,
+                ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
         }
 
         /// <summary>

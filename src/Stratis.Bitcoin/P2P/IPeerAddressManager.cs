@@ -35,8 +35,11 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         void RemovePeer(IPEndPoint endPoint);
 
-        /// <summary> Find a peer by endpoint.</summary>
+        /// <summary>Find a peer by endpoint.</summary>
         PeerAddress FindPeer(IPEndPoint endPoint);
+
+        /// <summary>Find peers by IP (the port is irrelevant).</summary>
+        List<PeerAddress> FindPeersByIp(IPEndPoint endPoint);
 
         /// <summary>Loads peers from a json formatted file on disk.</summary>
         void LoadPeers();

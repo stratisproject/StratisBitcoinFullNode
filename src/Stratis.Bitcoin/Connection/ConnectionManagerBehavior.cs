@@ -1,10 +1,13 @@
 using System;
+using System.Linq;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Connection
@@ -59,6 +62,15 @@ namespace Stratis.Bitcoin.Connection
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
+
+            INetworkPeer peer = this.AttachedPeer;
+            if (peer != null)
+            {
+                if (this.connectionManager.ConnectionSettings.Whitelist.Exists(e => e.Match(peer.PeerEndPoint)))
+                {
+                    this.Whitelisted = true;
+                }
+            }
         }
 
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
@@ -70,7 +82,7 @@ namespace Stratis.Bitcoin.Connection
                     this.connectionManager.AddConnectedPeer(peer);
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
 
-                    await this.OnHandshakedAsync(peer).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
                 }
 
                 if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
@@ -83,12 +95,6 @@ namespace Stratis.Bitcoin.Connection
             catch (OperationCanceledException)
             {
             }
-        }
-
-        /// <summary>Called when peer's state becomes <see cref="NetworkPeerState.HandShaked"/>.</summary>
-        protected virtual async Task OnHandshakedAsync(INetworkPeer peer)
-        {
-            await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
         }
 
         [NoTrace]

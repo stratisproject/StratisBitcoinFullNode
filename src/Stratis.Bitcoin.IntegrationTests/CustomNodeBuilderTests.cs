@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 
@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 
@@ -110,8 +110,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                    ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 
@@ -141,8 +141,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.StratisRegTest,
-                    ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: extraParams);
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                    ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
 
