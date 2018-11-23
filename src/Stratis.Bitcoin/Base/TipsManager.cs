@@ -7,8 +7,6 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-// TODO add tests
-
 namespace Stratis.Bitcoin.Base
 {
     public interface ITipsManager : IDisposable
@@ -71,8 +69,15 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public void Initialize(ChainedHeader highestHeader)
         {
+            if (this.commonTipPersistingTask != null)
+                throw new Exception("Already initialized.");
+
             HashHeightPair commonTipHashHeight = this.keyValueRepo.LoadValue<HashHeightPair>(commonTipKey);
-            this.lastCommonTip = highestHeader.FindAncestorOrSelf(commonTipHashHeight.Hash, commonTipHashHeight.Height);
+
+            if (commonTipHashHeight != null)
+                this.lastCommonTip = highestHeader.FindAncestorOrSelf(commonTipHashHeight.Hash, commonTipHashHeight.Height);
+            else
+                this.lastCommonTip = highestHeader.GetAncestor(0);
 
             this.logger.LogDebug("Tips manager initialized at '{0}'.", this.lastCommonTip);
 

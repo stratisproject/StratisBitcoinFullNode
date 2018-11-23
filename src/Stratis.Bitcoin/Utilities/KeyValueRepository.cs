@@ -3,10 +3,7 @@ using System.IO;
 using System.Text;
 using DBreeze;
 using DBreeze.DataTypes;
-using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration;
-
-// TODO add tests
 
 namespace Stratis.Bitcoin.Utilities
 {
