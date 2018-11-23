@@ -1,3 +1,4 @@
 server=1
-rpcbind=127.0.0.1
-rpcallowip=127.0.0.1
+rpcbind=0.0.0.0
+rpcallowip=0.0.0.0
+apiuri=http://0.0.0.0

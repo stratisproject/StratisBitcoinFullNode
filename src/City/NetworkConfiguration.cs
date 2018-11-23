@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections;
-using System.Collections.Generic;
-using System.Linq;
+﻿using System.Linq;
 
 namespace City
 {
@@ -25,11 +22,11 @@ namespace City
 
     public class NetworkConfigurations
     {
-        private NetworkConfiguration[] networks;
+        private readonly NetworkConfiguration[] networks;
 
         public NetworkConfigurations()
         {
-            networks = new NetworkConfiguration[] {
+            this.networks = new NetworkConfiguration[] {
 
                 new NetworkConfiguration() {
                     Identifier = "main",
@@ -62,9 +59,28 @@ namespace City
                     WsPort = 24336
                 },
 
+                 new NetworkConfiguration() {
+                    Identifier = "main",
+                    Chain = "stratis",
+                    Name = "Stratis Main",
+                    Port = 16178,
+                    RpcPort = 16174,
+                    ApiPort = 37221,
+                    WsPort = 4336
+                },
+
+                 new NetworkConfiguration() {
+                    Identifier = "testnet",
+                    Chain = "stratis",
+                    Name = "Stratis Test",
+                    Port = 26178,
+                    RpcPort = 26174,
+                    ApiPort = 38221,
+                    WsPort = 4336
+                },
 
             };
-            
+
         }
 
         public NetworkConfiguration[] GetNetworks()

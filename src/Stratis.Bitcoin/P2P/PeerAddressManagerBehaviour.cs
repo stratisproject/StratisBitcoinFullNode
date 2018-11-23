@@ -130,6 +130,12 @@ namespace Stratis.Bitcoin.P2P
                     this.peerAddressManager.PeerHandshaked(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
 
+            if ((peer.Inbound) && (peer.State == NetworkPeerState.HandShaked) &&
+            (this.Mode == PeerAddressManagerBehaviourMode.Advertise || this.Mode == PeerAddressManagerBehaviourMode.AdvertiseDiscover))
+            {
+                this.peerAddressManager.AddPeer(peer.PeerEndPoint, IPAddress.Loopback);
+            }
+
             return Task.CompletedTask;
         }
 

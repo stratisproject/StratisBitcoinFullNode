@@ -45,7 +45,7 @@ docker build . -t citychain
 
 ```
 docker volume create citychain
-docker run -it -p 4333:4333 -p 4334:4334 -p 4335:4335 -p 2336:4336 --mount source=citychain,target=/root/.citychain citychain
+docker run -it -p 4333:4333 -p 4334:4334 -p 4335:4335 -p 4336:4336 --mount source=citychain,target=/root/.citychain citychain
 ```
 
 # Extras
@@ -65,6 +65,10 @@ docker run -d -p 24333:24333 -p 24334:24334 -p 24335:24335 -p 24336:24336 IMAGE
 docker run -d -p 25333:24333 -p 25334:24334 -p 25335:24335 -p 25336:24336 IMAGE
 docker run -d -p 26333:24333 -p 26334:24334 -p 26335:24335 -p 26336:24336 IMAGE
 docker run -d -p 27333:24333 -p 27334:24334 -p 27335:24335 -p 27336:24336 IMAGE
+
+# Stop and remove an instance
+
+Run `docker ps` to get the CONTAINER ID. Then run `docker stop id` and `docker rm id`.
 
 ## Clean (prune) all docker data
 

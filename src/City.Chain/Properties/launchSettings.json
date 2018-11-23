@@ -11,6 +11,10 @@
       "commandName": "Project",
       "commandLineArgs": "-datadir=citynode"
     },
+    "Stratis (Local Data Dir)": {
+      "commandName": "Project",
+      "commandLineArgs": "-chain=stratis -datadir=stratisnode"
+    },
     "City.Chain (Test) (Local Data Dir)": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -datadir=citynode"
