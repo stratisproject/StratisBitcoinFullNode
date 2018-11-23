@@ -82,7 +82,7 @@ namespace Stratis.FederationGatewayD
                 .UseWallet()
                 .UseTransactionNotification()
                 .UseBlockNotification()
-                .UsePoAMining()
+                .AddFederationGateway()
                 .UseApi()
                 //.UseApps()
                 .AddRPC()
