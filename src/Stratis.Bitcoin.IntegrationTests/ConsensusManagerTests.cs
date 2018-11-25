@@ -141,7 +141,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        [Trait("Unstable", "True")]
         public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_InvalidStakeDepth()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -149,9 +148,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var network = new StratisConsensusOptionsOverrideTest();
 
                 // MinerA requires an physical wallet to stake with.
-                var minerA = builder.CreateStratisPosNode(network).OverrideDateTimeProvider().WithWallet().Start();
-                var minerB = builder.CreateStratisPosNode(network).OverrideDateTimeProvider().Start();
-                var syncer = builder.CreateStratisPosNode(network).OverrideDateTimeProvider().Start();
+                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().Start();
+                var syncer = builder.CreateStratisPosNode(network, "syncer").OverrideDateTimeProvider().Start();
 
                 // MinerA mines to height 55.
                 TestHelper.MineBlocks(minerA, 55);
@@ -163,11 +162,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
 
                 // Disconnect Miner A and B.
-                TestHelper.Disconnect(syncer, minerA);
-                TestHelper.Disconnect(syncer, minerB);
-
-                // Ensure syncer does not have any connections.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(syncer));
+                TestHelper.DisconnectAll(syncer, minerA, minerB);
 
                 // Miner A stakes a coin that increases the network height to 56.
                 var minter = minerA.FullNode.NodeService<IPosMinting>();
@@ -191,14 +186,31 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Connect(syncer, minerA);
                 TestHelper.Connect(syncer, minerB);
 
+                // Wait until syncer has disconnected either minerA or minerB due to a InvalidStakeDepth exception.
+                TestHelper.WaitLoop(() => syncer.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 1);
+
+                // Determine which node was disconnected.
+                CoreNode survived = null;
+                CoreNode notSurvived = null;
+                if (TestHelper.IsNodeConnectedTo(syncer, minerA))
+                {
+                    survived = minerA;
+                    notSurvived = minerB;
+                }
+                else
+                {
+                    survived = minerB;
+                    notSurvived = minerA;
+                }
+
                 // Ensure that Syncer is synced with MinerB.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, survived));
 
                 // Ensure that Syncer is not connected to MinerA.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerA));
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, notSurvived));
 
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 55);
-                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 55);
+                Assert.True(survived.FullNode.ConsensusManager().Tip.Height == 55);
             }
         }
 

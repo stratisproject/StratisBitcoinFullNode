@@ -145,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeConnected(CoreNode node)
         {
-            return node.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.IsConnected);
+            return node.FullNode.ConnectionManager.ConnectedPeers.Any();
         }
 
         public static void WaitForNodeToSync(params CoreNode[] nodes)
@@ -295,6 +295,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
 
+        /// <summary>
+        /// Disconnects a node from all connections and waits until the operation completes.
+        /// </summary>
+        /// <param name="nodes">The nodes that will be disconnected.</param>
+        public static void DisconnectAll(params CoreNode[] nodes)
+        {
+            foreach (var node in nodes)
+            {
+                foreach (var peer in node.FullNode.ConnectionManager.ConnectedPeers.ToList())
+                {
+                    node.CreateRPCClient().RemoveNode(peer.PeerEndPoint);
+                }
+
+                WaitLoop(() => node.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 0);
+            }
+
+            foreach (var node in nodes)
+            {
+                WaitLoop(() => !IsNodeConnected(node));
+            }
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -377,7 +399,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
             }
             else
-                return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint));
+            {
+                if (thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint)))
+                    return true;
+
+                // The peer might be connected via an inbound connection
+                return isConnectedToNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(thisNode.Endpoint));
+            }
         }
 
         /// <summary>

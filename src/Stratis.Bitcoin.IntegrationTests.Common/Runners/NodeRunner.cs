@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             }
         }
 
+        public bool EnablePeerDiscovery { get; internal set; }
         public FullNode FullNode { get; set; }
         public Func<ChainedHeaderBlock, bool> InterceptorDisconnect { get; internal set; }
         public Func<ChainedHeaderBlock, bool> InterceptorConnect { get; internal set; }
