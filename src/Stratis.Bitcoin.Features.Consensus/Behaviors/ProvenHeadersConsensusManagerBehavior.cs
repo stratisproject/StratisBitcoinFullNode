@@ -200,10 +200,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             INetworkPeer peer = this.AttachedPeer;
 
-            if (this.isGateway && !peer.IsWhitelisted())
+            if (this.isGateway && peer.IsWhitelisted())
             {
-                this.logger.LogTrace("Node is a gateway, cannot sync from non whitelisted peer.");
-                return null;
+                // A gateway node can only sync using regular headers and from whitelisted peers
+                this.logger.LogTrace("Node is a gateway, sync regular headers from whitelisted peer.");
+                return base.BuildGetHeadersPayload(); ;
             }
 
             bool aboveLastCheckpoint = this.GetCurrentHeight() >= this.lastCheckpointHeight;
@@ -217,14 +218,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                         HashStop = null
                     };
                 }
-                else if (peer.IsWhitelisted())
-                {
-                    // If the peer doesn't supports PH but it's whitelisted, issue a standard GetHeadersPayload
-                    return base.BuildGetHeadersPayload();
-                }
                 else
                 {
-                    // If the peer doesn't support PH and isn't whitelisted, return null (stop synch attempt with legacy StratisX nodes).
+                    // If the peer doesn't support PH and we are above last checkpoint
+                    // return null (stop synch).
                     return null;
                 }
             }
@@ -256,28 +253,23 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <param name="headers">The headers.</param>
         protected async Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
-            if (this.isGateway && !peer.IsWhitelisted())
+            if (this.isGateway && peer.IsWhitelisted())
             {
-                this.logger.LogTrace("Node is a gateway, cannot sync from non whitelisted peer. Ignoring received headers.");
-                return;
-            }
+                this.logger.LogTrace("Node is a gateway, can only sync regular headers from whitelisted peer.");
+                await base.ProcessHeadersAsync(peer, headers);
 
-            bool isLegacyWhitelistedPeer = (!this.CanPeerProcessProvenHeaders(peer) && peer.IsWhitelisted());
-
-            // Allow legacy headers that came from whitelisted peer.
-            if (isLegacyWhitelistedPeer)
-            {
-                await base.ProcessHeadersAsync(peer, headers).ConfigureAwait(false);
+                this.logger.LogTrace("(-)[GATEWAY_AND_WHITELISTED]");
                 return;
             }
 
             bool belowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
-
             if (!belowLastCheckpoint)
+            {
+                this.logger.LogTrace("(-)[ABOVE_LAST_CHECKPOINT]");
                 return;
+            }
 
             int distanceFromCheckPoint = this.lastCheckpointHeight - this.GetCurrentHeight();
-
             if (distanceFromCheckPoint < MaxItemsPerHeadersMessage)
             {
                 bool checkpointFound = false;
