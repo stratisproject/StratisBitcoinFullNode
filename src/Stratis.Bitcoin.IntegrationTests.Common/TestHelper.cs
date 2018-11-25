@@ -395,17 +395,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             if (thisNode.runner is BitcoinCoreRunner)
             {
-                var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
-                return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
+                return IsBitcoinCoreConnectedTo(thisNode, isConnectedToNode);
             }
             else
             {
                 if (thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint)))
                     return true;
 
-                // The peer might be connected via an inbound connection
-                return isConnectedToNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(thisNode.Endpoint));
+                // The peer might be connected via an inbound connection.
+                if (isConnectedToNode.runner is BitcoinCoreRunner)
+                    return IsBitcoinCoreConnectedTo(isConnectedToNode, thisNode);
+                else
+                    return isConnectedToNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(thisNode.Endpoint));
             }
+        }
+
+        private static bool IsBitcoinCoreConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            if (!(thisNode.runner is BitcoinCoreRunner))
+                throw new ArgumentException($"{0} is not a bitcoin core node.");
+
+            var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
+            return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
         }
 
         /// <summary>
