@@ -2,7 +2,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Stratis.ModuleValidation.Net
+namespace Stratis.SmartContracts.Core.Validation
 {
     public interface IInstructionValidator
     {
