@@ -18,6 +18,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     public class SmartContractTransactionService : ISmartContractTransactionService
     {
         private const int MinConfirmationsAllChecks = 0;
+
+        private const string SenderNoBalanceError = "The 'Sender' address you're trying to spend from doesn't have a balance available to spend. Please check the address and try again.";
         private readonly Network network;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
@@ -47,8 +49,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0)
-                return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
+            if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
+                return BuildCallContractTransactionResponse.Failed(SenderNoBalanceError);
 
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
@@ -100,8 +102,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0)
-                return BuildCreateContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
+            if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
+                return BuildCreateContractTransactionResponse.Failed(SenderNoBalanceError);
 
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
