@@ -62,6 +62,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// correctly synced to an SBFN node.
         /// </summary>
         [Fact]
+        [Trait("Unstable", "True")]
         public void XMinesBlocks_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
