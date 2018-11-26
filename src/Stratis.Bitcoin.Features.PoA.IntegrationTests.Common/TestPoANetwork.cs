@@ -1,7 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
+namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public class TestPoANetwork : PoANetwork
     {
