@@ -241,6 +241,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
             account.CreateAddresses(wallet.Network, 1, false);
 
+            // Save the changes to the file.
+            this.SaveWallet(wallet);
+
             this.logger.LogTrace("(-):'{0}'", account.Name);
             return account;
         }
