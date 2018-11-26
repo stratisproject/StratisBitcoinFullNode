@@ -583,6 +583,42 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         }
 
         [Fact]
+        public void Many_LinkedTransactions_In_One_Block()
+        {
+            const int txsToLink = 10;
+
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode node1 = chain.Nodes[0];
+
+                // Mine only to maturity + 1 AKA only one transaction can be spent
+                node1.MineBlocks((int)node1.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity + 1);
+
+                // Send a bunch of transactions to be mined in the next block - wallet will arrange them so they each use the previous change output as their input
+                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
+                Assert.True(compilationResult.Success);
+                
+                for (int i = 0; i < txsToLink; i++)
+                {
+                    BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(compilationResult.Compilation, 1);
+                    Assert.True(sendResponse.Success);
+                }
+
+                node1.WaitMempoolCount(txsToLink);
+                node1.MineBlocks(1);
+
+                NBitcoin.Block lastBlock = node1.GetLastBlock();
+                Assert.Equal(txsToLink + 1, lastBlock.Transactions.Count);
+
+                // Each transaction is indeed spending the output of the transaction before
+                for (int i = 2; i < txsToLink; i++)
+                {
+                    Assert.Equal(lastBlock.Transactions[i - 1].GetHash(), lastBlock.Transactions[i].Inputs[0].PrevOut.Hash);
+                }
+            }
+        }
+
+        [Fact]
         public void Cant_Send_Create_With_OnlyBaseFee()
         {
             using (PoWMockChain chain = new PoWMockChain(2))

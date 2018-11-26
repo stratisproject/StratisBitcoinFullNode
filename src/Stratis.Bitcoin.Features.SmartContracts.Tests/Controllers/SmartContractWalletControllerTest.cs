@@ -129,5 +129,49 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             Assert.Equal(normalTransaction.Amount.ToUnit(MoneyUnit.Satoshi), resultingTransaction.Amount);
             Assert.Equal(1, resultingTransaction.BlockHeight);
         }
+
+        [Fact]
+        public void ReceivedType_Is_Receive()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = false;
+            transactionData.Index = 1;
+
+            Assert.Equal(ContractTransactionItemType.Received, SmartContractWalletController.ReceivedTransactionType(transactionData));
+        }
+
+        [Fact]
+        public void ReceivedType_Is_Receive_Null_Coinbase()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = null;
+
+            // Should be true for all indexes
+            for (var i = 0; i < 10; i++)
+            {
+                transactionData.Index = i;
+                Assert.Equal(ContractTransactionItemType.Received, SmartContractWalletController.ReceivedTransactionType(transactionData));
+            }
+        }
+
+        [Fact]
+        public void ReceivedType_Is_GasRefund()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = true;
+            transactionData.Index = 1;
+
+            Assert.Equal(ContractTransactionItemType.GasRefund, SmartContractWalletController.ReceivedTransactionType(transactionData));
+        }
+
+        [Fact]
+        public void ReceivedType_Is_MiningReward()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = true;
+            transactionData.Index = 0;
+
+            Assert.Equal(ContractTransactionItemType.Staked, SmartContractWalletController.ReceivedTransactionType(transactionData));
+        }
     }
 }

@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Utilities;
 
@@ -40,14 +41,28 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task InitializeAsync(IConsensus consensusParameters, ChainedHeader tip, ICoinView coinView)
         {
+            // A temporary hack until tip manage will be introduced.
+            var breezeCoinView = (DBreezeCoinView)((CachedCoinView)coinView).Inner;
+            uint256 hash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            tip = tip.FindAncestorOrSelf(hash);
+
             this.numberOfBlocksToKeep = (int)consensusParameters.MaxReorgLength;
 
             int heightToSyncTo = tip.Height > this.numberOfBlocksToKeep ? tip.Height - this.numberOfBlocksToKeep : 0;
 
-            for (int i = tip.Height; i >= heightToSyncTo; i--)
+            for (int i = tip.Height - 1; i >= heightToSyncTo; i--)
             {
                 RewindData rewindData = await coinView.GetRewindData(i).ConfigureAwait(false);
-                if (rewindData?.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0) continue;
+
+                if (rewindData == null)
+                {
+                    throw new ConsensusException($"Rewind data of height '{i}' was not found!");
+                }
+
+                if (rewindData.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0)
+                {
+                   continue;
+                }
 
                 foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
                 {

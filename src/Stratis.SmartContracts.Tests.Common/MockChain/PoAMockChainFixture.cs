@@ -4,18 +4,19 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
-    public class PoAMockChainFixture : IDisposable
+    public class PoAMockChainFixture : IMockChainFixture, IDisposable
     {
-        public PoAMockChain Chain { get; }
+        public IMockChain Chain { get; }
 
         public PoAMockChainFixture()
         {
-            this.Chain = new PoAMockChain(2).Build();
+            PoAMockChain mockChain = new PoAMockChain(2).Build();
+            this.Chain = mockChain;
             var node1 = this.Chain.Nodes[0];
             var node2 = this.Chain.Nodes[1];
 
             // Get premine
-            this.Chain.MineBlocks(10);
+            mockChain.MineBlocks(10);
 
             // Send half to other from whoever received premine
             if ((long)node1.WalletSpendableBalance == node1.CoreNode.FullNode.Network.Consensus.PremineReward.Satoshi)

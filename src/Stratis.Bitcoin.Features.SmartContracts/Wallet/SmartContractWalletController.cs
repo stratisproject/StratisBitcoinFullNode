@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
                         BlockHeight = transaction.BlockHeight,
                         Hash = transaction.Id,
-                        Type = ContractTransactionItemType.Received,
+                        Type = ReceivedTransactionType(transaction),
                         To = address
                     });
 
@@ -299,6 +299,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+
+        public static ContractTransactionItemType ReceivedTransactionType(TransactionData transaction)
+        {
+            bool isCoinBase = transaction.IsCoinBase.HasValue && transaction.IsCoinBase.Value;
+
+            bool isMiningReward = isCoinBase && transaction.Index == 0;
+
+            bool isGasRefund = isCoinBase && transaction.Index != 0;
+
+            if (isGasRefund)
+                return ContractTransactionItemType.GasRefund;
+
+            if (isMiningReward)
+                return ContractTransactionItemType.Staked;
+
+            return ContractTransactionItemType.Received;
         }
 
         /// <summary>

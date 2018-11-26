@@ -1,8 +1,8 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Stratis.ModuleValidation.Net.Determinism;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Core.Validation.Validators.Instruction;
 using Stratis.SmartContracts.Core.Validation.Validators.Method;
 using Stratis.SmartContracts.Core.Validation.Validators.Type;
 using Stratis.SmartContracts.Executor.Reflection;

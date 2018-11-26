@@ -6,6 +6,7 @@
         Send,
         Staked,
         ContractCall,
-        ContractCreate
+        ContractCreate,
+        GasRefund
     }
 }
