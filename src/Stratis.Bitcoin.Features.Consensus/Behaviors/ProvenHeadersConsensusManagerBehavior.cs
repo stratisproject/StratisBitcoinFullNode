@@ -200,11 +200,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             INetworkPeer peer = this.AttachedPeer;
 
-            if (this.isGateway && peer.IsWhitelisted())
+            if (this.isGateway )
             {
-                // A gateway node can only sync using regular headers and from whitelisted peers
-                this.logger.LogTrace("Node is a gateway, sync regular headers from whitelisted peer.");
-                return base.BuildGetHeadersPayload(); ;
+                if (peer.IsWhitelisted())
+                {
+                    // A gateway node can only sync using regular headers and from whitelisted peers
+                    this.logger.LogTrace("Node is a gateway, sync regular headers from whitelisted peer.");
+                    this.logger.LogTrace("(-)[GATEWAY_WHITELISTED]:null");
+                    return base.BuildGetHeadersPayload();
+                }
+
+                this.logger.LogTrace("(-)[GATEWAY_NOT_WHITELISTED]:null");
+                return null;
             }
 
             bool aboveLastCheckpoint = this.GetCurrentHeight() >= this.lastCheckpointHeight;
