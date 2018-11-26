@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
                         BlockHeight = transaction.BlockHeight,
                         Hash = transaction.Id,
-                        Type = this.ReceivedTransactionType(transaction),
+                        Type = ReceivedTransactionType(transaction),
                         To = address
                     });
 
@@ -301,7 +301,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
-        public ContractTransactionItemType ReceivedTransactionType(TransactionData transaction)
+        public static ContractTransactionItemType ReceivedTransactionType(TransactionData transaction)
         {
             bool isCoinBase = transaction.IsCoinBase.HasValue && transaction.IsCoinBase.Value;
 
