@@ -9,6 +9,11 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base
 {
+    /// <summary>Interface that every tip provider that uses <see cref="ITipsManager"/> should implement.</summary>
+    public interface ITipProvider
+    {
+    }
+
     /// <summary>Component that keeps track of highest common tip between components that can have a tip.</summary>
     public interface ITipsManager : IDisposable
     {
@@ -18,7 +23,7 @@ namespace Stratis.Bitcoin.Base
 
         /// <summary>Registers provider of a tip.</summary>
         /// <remarks>Common tip is selected by finding fork point between tips provided by all registered providers.</remarks>
-        void RegisterTipProvider(object provider);
+        void RegisterTipProvider(ITipProvider provider);
 
         /// <summary>Provides highest tip commited between all registered components.</summary>
         ChainedHeader GetLastCommonTip();
@@ -30,7 +35,7 @@ namespace Stratis.Bitcoin.Base
         /// Commiting a particular tip would mean that in case node is killed immediately component that
         /// commited such a tip would be able to recover on startup to it or any tip that is ancestor to tip commited.
         /// </remarks>
-        void CommitTipPersisted(object provider, ChainedHeader tip);
+        void CommitTipPersisted(ITipProvider provider, ChainedHeader tip);
     }
 
     public class TipsManager : ITipsManager
@@ -40,7 +45,7 @@ namespace Stratis.Bitcoin.Base
         private const string commonTipKey = "lastcommontip";
 
         /// <summary>Highest commited tips mapped by their providers.</summary>
-        private readonly Dictionary<object, ChainedHeader> tipsByProvider;
+        private readonly Dictionary<ITipProvider, ChainedHeader> tipsByProvider;
 
         /// <summary>Highest tip commited between all registered components.</summary>
         private ChainedHeader lastCommonTip;
@@ -61,7 +66,7 @@ namespace Stratis.Bitcoin.Base
         public TipsManager(IKeyValueRepository keyValueRepo, ILoggerFactory loggerFactory)
         {
             this.keyValueRepo = keyValueRepo;
-            this.tipsByProvider = new Dictionary<object, ChainedHeader>();
+            this.tipsByProvider = new Dictionary<ITipProvider, ChainedHeader>();
             this.lockObject = new object();
             this.newCommonTipSetEvent = new AsyncManualResetEvent(false);
             this.cancellation = new CancellationTokenSource();
@@ -113,7 +118,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public void RegisterTipProvider(object provider)
+        public void RegisterTipProvider(ITipProvider provider)
         {
             lock (this.lockObject)
             {
@@ -128,7 +133,7 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
-        public void CommitTipPersisted(object provider, ChainedHeader tip)
+        public void CommitTipPersisted(ITipProvider provider, ChainedHeader tip)
         {
             lock (this.lockObject)
             {

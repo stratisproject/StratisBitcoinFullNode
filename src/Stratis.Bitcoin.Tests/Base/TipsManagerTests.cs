@@ -44,8 +44,9 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             this.tipsManager.Initialize(this.mainChainHeaders.Last());
 
-            this.tipsManager.RegisterTipProvider(this);
-            this.tipsManager.CommitTipPersisted(this, this.mainChainHeaders[10]);
+            var tipProvider = new testTipProvider();
+            this.tipsManager.RegisterTipProvider(tipProvider);
+            this.tipsManager.CommitTipPersisted(tipProvider, this.mainChainHeaders[10]);
             Assert.Equal(this.mainChainHeaders[10], this.tipsManager.GetLastCommonTip());
 
             // Give it some time to save tip in bg.
@@ -64,9 +65,9 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             this.tipsManager.Initialize(this.mainChainHeaders.Last());
 
-            var provider1 = new object();
-            var provider2 = new object();
-            var provider3 = new object();
+            var provider1 = new testTipProvider();
+            var provider2 = new testTipProvider();
+            var provider3 = new testTipProvider();
 
             this.tipsManager.RegisterTipProvider(provider1);
             this.tipsManager.RegisterTipProvider(provider2);
@@ -107,9 +108,9 @@ namespace Stratis.Bitcoin.Tests.Base
 
             this.tipsManager.Initialize(this.mainChainHeaders.Last());
 
-            var provider1 = new object();
-            var provider2 = new object();
-            var provider3 = new object();
+            var provider1 = new testTipProvider();
+            var provider2 = new testTipProvider();
+            var provider3 = new testTipProvider();
             this.tipsManager.RegisterTipProvider(provider1);
             this.tipsManager.RegisterTipProvider(provider2);
             this.tipsManager.RegisterTipProvider(provider3);
@@ -128,6 +129,10 @@ namespace Stratis.Bitcoin.Tests.Base
             this.tipsManager.CommitTipPersisted(provider3, altChainHeaders[4]);
 
             Assert.Equal(altChainHeaders[2], this.tipsManager.GetLastCommonTip());
+        }
+
+        private class testTipProvider : ITipProvider
+        {
         }
     }
 }
