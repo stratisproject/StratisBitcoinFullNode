@@ -206,11 +206,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 {
                     // A gateway node can only sync using regular headers and from whitelisted peers
                     this.logger.LogTrace("Node is a gateway, sync regular headers from whitelisted peer.");
-                    this.logger.LogTrace("(-)[GATEWAY_WHITELISTED]");
+                    this.logger.LogTrace("(-)[PEER_WHITELISTED_BY_GATEWAY]");
                     return base.BuildGetHeadersPayload();
                 }
 
-                this.logger.LogTrace("(-)[GATEWAY_NOT_WHITELISTED]:null");
+                this.logger.LogTrace("(-)[PEER_NOT_WHITELISTED_BY_GATEWAY]:null");
                 return null;
             }
 
