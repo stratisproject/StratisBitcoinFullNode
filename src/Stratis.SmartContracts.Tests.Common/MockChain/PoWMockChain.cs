@@ -63,7 +63,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             {
                 int nodeToMineWith = this.height % this.Nodes.Count;
 
-                this.Nodes[nodeToMineWith].MineBlocks(num);
+                this.Nodes[nodeToMineWith].MineBlocks(1);
 
                 this.height++;
             }
