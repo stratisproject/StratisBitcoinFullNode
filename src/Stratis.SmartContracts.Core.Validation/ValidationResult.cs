@@ -1,6 +1,6 @@
 ﻿using Mono.Cecil;
 
-namespace Stratis.ModuleValidation.Net
+namespace Stratis.SmartContracts.Core.Validation
 {
     public class MethodDefinitionValidationResult : ValidationResult 
     {

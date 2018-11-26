@@ -49,28 +49,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 if (!context.SkipValidation)
                 {
-                    if (!this.IsProtocolTransaction(tx))
+                    if (!tx.IsCoinBase && !view.HaveInputs(tx))
                     {
-                        if (!view.HaveInputs(tx))
-                        {
-                            this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
-                            ConsensusErrors.BadTransactionMissingInput.Throw();
-                        }
+                        this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
+                        ConsensusErrors.BadTransactionMissingInput.Throw();
+                    }
 
-                        var prevheights = new int[tx.Inputs.Count];
-                        // Check that transaction is BIP68 final.
-                        // BIP68 lock checks (as opposed to nLockTime checks) must
-                        // be in ConnectBlock because they require the UTXO set.
-                        for (int j = 0; j < tx.Inputs.Count; j++)
-                        {
-                            prevheights[j] = (int)view.AccessCoins(tx.Inputs[j].PrevOut.Hash).Height;
-                        }
-
-                        if (!tx.CheckSequenceLocks(prevheights, index, flags.LockTimeFlags))
-                        {
-                            this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
-                            ConsensusErrors.BadTransactionNonFinal.Throw();
-                        }
+                    if (!this.IsTxFinal(tx, context))
+                    {
+                        this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
+                        ConsensusErrors.BadTransactionNonFinal.Throw();
                     }
 
                     // GetTransactionSignatureOperationCost counts 3 types of sigops:
@@ -118,6 +106,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 }
             }
             else this.Logger.LogTrace("BIP68, SigOp cost, and block reward validation skipped for block at height {0}.", index.Height);
+        }
+
+        /// <summary>Checks if transaction if final.</summary>
+        protected virtual bool IsTxFinal(Transaction transaction, RuleContext context)
+        {
+            return transaction.IsFinal(context.ValidationContext.ChainedHeaderToValidate);
         }
 
         /// <summary>

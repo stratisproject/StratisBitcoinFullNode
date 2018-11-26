@@ -153,10 +153,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task PutAsync(Dictionary<int, ProvenBlockHeader> headers, HashHeightPair newTip)
+        public Task PutAsync(SortedDictionary<int, ProvenBlockHeader> headers, HashHeightPair newTip)
         {
             Guard.NotNull(headers, nameof(headers));
             Guard.NotNull(newTip, nameof(newTip));
+
+            Guard.Assert(newTip.Hash == headers.Values.Last().GetHash());
 
             if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.GetHash()))
             {
@@ -203,17 +205,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         /// <param name="transaction"> Open DBreeze transaction.</param>
         /// <param name="headers"> List of <see cref="ProvenBlockHeader"/> items to save.</param>
-        private void InsertHeaders(DBreeze.Transactions.Transaction transaction, Dictionary<int, ProvenBlockHeader> headers)
+        private void InsertHeaders(DBreeze.Transactions.Transaction transaction, SortedDictionary<int, ProvenBlockHeader> headers)
         {
-            List<KeyValuePair<int, ProvenBlockHeader>> sortedHeaders = headers.ToList();
-
-            sortedHeaders.Sort((pair1, pair2) => pair1.Key.CompareTo(pair2.Key));
-
-            foreach (KeyValuePair<int, ProvenBlockHeader> header in sortedHeaders)
+            foreach (KeyValuePair<int, ProvenBlockHeader> header in headers)
                 transaction.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, header.Key.ToBytes(), header.Value);
 
             // Store the latest ProvenBlockHeader in memory.
-            this.provenBlockHeaderTip = sortedHeaders.Last().Value;
+            this.provenBlockHeaderTip = headers.Last().Value;
         }
 
         /// <summary>

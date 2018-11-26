@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Behaviors;
@@ -30,6 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly ILoggerFactory loggerFactory;
         private readonly ICheckpoints checkpoints;
         private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
+        private readonly ConnectionManagerSettings connectionManagerSettings;
 
         public PosConsensusFeature(
             Network network,
@@ -43,7 +45,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             Signals.Signals signals,
             ILoggerFactory loggerFactory,
             ICheckpoints checkpoints,
-            IProvenBlockHeaderStore provenBlockHeaderStore) : base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
+            IProvenBlockHeaderStore provenBlockHeaderStore,
+            ConnectionManagerSettings connectionManagerSettings) : base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
         {
             this.network = network;
             this.chainState = chainState;
@@ -56,6 +59,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.loggerFactory = loggerFactory;
             this.checkpoints = checkpoints;
             this.provenBlockHeaderStore = provenBlockHeaderStore;
+            this.connectionManagerSettings = connectionManagerSettings;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
@@ -68,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Replace CMB.
             bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
             Guard.Assert(oldCMBRemoved);
-            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore));
+            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings));
 
             return Task.CompletedTask;
         }
