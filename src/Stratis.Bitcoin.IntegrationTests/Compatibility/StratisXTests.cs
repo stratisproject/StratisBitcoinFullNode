@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 return;
             }
 
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
             {
                 var network = new StratisRegTest();
 
@@ -89,6 +89,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var config = new NodeConfigParameters();
                 config.Add("whitelist", stratisXNode.Endpoint.ToString());
+                config.Add("gateway", "1");
 
                 CoreNode stratisNode = builder
                     .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
@@ -209,6 +210,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var config = new NodeConfigParameters();
                 config.Add("whitelist", stratisXNode.Endpoint.ToString());
+                config.Add("gateway", "1");
 
                 CoreNode stratisNode = builder
                     .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
@@ -283,6 +285,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var config = new NodeConfigParameters();
                 config.Add("whitelist", xNode1.Endpoint.ToString());
+                config.Add("gateway", "1");
 
                 CoreNode sbfnNode2 = builder
                     .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
@@ -352,6 +355,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 var config = new NodeConfigParameters();
                 config.Add("whitelist", xNode1.Endpoint.ToString());
+                config.Add("gateway", "1");
 
                 CoreNode sbfnNode2 = builder
                     .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
