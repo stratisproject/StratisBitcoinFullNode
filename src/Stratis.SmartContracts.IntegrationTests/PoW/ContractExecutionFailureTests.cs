@@ -752,14 +752,11 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             const ulong gasPrice = 2000;
             var gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
 
-
             const ulong txGasPerBlockLimit = SmartContractFormatRule.GasLimitMaximum * 10;
             const int txCount = 25;
             double amount = 0;
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
             Assert.True(compilationResult.Success);
-
-            this.node1.MineBlocks(100);
 
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, gasPrice: gasPrice);
             this.node1.WaitMempoolCount(1);
