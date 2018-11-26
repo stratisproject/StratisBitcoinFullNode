@@ -1089,6 +1089,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
                 }
             }
+
+            // If the transaction is spent and confirmed, we remove the UTXO from the lookup dictionary.
+            if (spentTransaction.BlockHeight != null)
+            {
+                this.RemoveInputKeysLookupLock(spentTransaction);
+            }
         }
 
         public virtual void TransactionFoundInternal(Script script, Func<HdAccount, bool> accountFilter = null)
@@ -1305,7 +1311,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (address.Pubkey != null)
                             this.scriptToAddressLookup[address.Pubkey] = address;
 
-                        foreach (TransactionData transaction in address.Transactions)
+                        // Get the UTXOs that are unspent or spent but not confirmed.
+                        // We only exclude from the list the confirmed spent UTXOs.
+                        foreach (TransactionData transaction in address.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
                         {
                             this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
                         }
@@ -1345,6 +1353,20 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
+            }
+        }
+
+        /// <summary>
+        /// Remove from the list of unspent outputs kept in memory.
+        /// </summary>
+        private void RemoveInputKeysLookupLock(TransactionData transactionData)
+        {
+            Guard.NotNull(transactionData, nameof(transactionData));
+            Guard.NotNull(transactionData.SpendingDetails, nameof(transactionData.SpendingDetails));
+
+            lock (this.lockObject)
+            {
+                this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
             }
         }
 
