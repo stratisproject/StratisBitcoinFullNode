@@ -394,6 +394,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
+            await SaveBlocksInBatchAndAsyncQueueAsync();
+        }
+
+        /// <summary>
+        /// Ensures that any blocks queued in <see cref="blocksQueue"/> gets added to <see cref="batch"/>
+        /// so that it can be persisted on dispose.
+        /// </summary>
+        private async Task SaveBlocksInBatchAndAsyncQueueAsync()
+        {
+            while (this.blocksQueue.ItemCount > 0)
+            {
+                this.batch.Add(await this.blocksQueue.DequeueAsync());
+            }
+
             if (this.batch.Count != 0)
                 await this.SaveBatchAsync().ConfigureAwait(false);
         }

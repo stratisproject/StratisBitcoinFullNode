@@ -47,6 +47,18 @@ namespace Stratis.Bitcoin.Utilities
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
         private readonly Queue<T> items;
 
+        /// <summary>The amount of items in the queue.</summary>
+        public int ItemCount
+        {
+            get
+            {
+                lock (this.lockObject)
+                {
+                    return this.items.Count;
+                }
+            }
+        }
+
         /// <summary>Event that is triggered when at least one new item is waiting in the queue.</summary>
         private readonly AsyncManualResetEvent signal;
 
