@@ -136,6 +136,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         // Set the dequeue task to null so it can be assigned on the next iteration.
                         dequeueTask = null;
                         batch.Add(item);
+
+                        if (this.chainState.IsAtBestChainTip)
+                            sendBatch = true;
                     }
                     else sendBatch = true;
 
