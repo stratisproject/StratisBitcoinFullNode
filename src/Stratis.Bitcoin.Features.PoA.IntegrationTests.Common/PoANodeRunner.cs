@@ -9,7 +9,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
+namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public class PoANodeRunner : NodeRunner
     {
@@ -26,17 +26,16 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
 
-            this.FullNode = (FullNode)new FullNodeBuilder()
-                .UseNodeSettings(settings)
-                .UseBlockStore()
-                .UsePoAConsensus()
-                .UseMempool()
-                .UseWallet()
-                .UseApi()
-                .AddRPC()
-                .MockIBD()
-                .ReplaceTimeProvider(this.timeProvider)
-                .AddFastMiningCapability()
+            this.FullNode = (FullNode)FullNodePoATestBuilderExtension.AddFastMiningCapability(new FullNodeBuilder()
+                    .UseNodeSettings(settings)
+                    .UseBlockStore()
+                    .UsePoAConsensus()
+                    .UseMempool()
+                    .UseWallet()
+                    .UseApi()
+                    .AddRPC()
+                    .MockIBD()
+                    .ReplaceTimeProvider(this.timeProvider))
                 .Build();
         }
     }
