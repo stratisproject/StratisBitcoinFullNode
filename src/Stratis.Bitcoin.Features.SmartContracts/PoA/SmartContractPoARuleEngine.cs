@@ -11,17 +11,20 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
     public class SmartContractPoARuleEngine: PoAConsensusRuleEngine, ISmartContractCoinviewRule
     {
+        public ICallDataSerializer CallDataSerializer { get; private set; }
         public IContractExecutorFactory ExecutorFactory { get; private set; }
         public IStateRepositoryRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
         public ISenderRetriever SenderRetriever { get; private set; }
 
         public SmartContractPoARuleEngine(
+            ICallDataSerializer callDataSerializer,
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
@@ -41,6 +44,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             PoABlockHeaderValidator poaHeaderValidator)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, slotsManager, poaHeaderValidator)
         {
+            this.CallDataSerializer = callDataSerializer;
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
             this.ReceiptRepository = receiptRepository;

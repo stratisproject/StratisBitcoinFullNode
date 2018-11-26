@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Patricia;
+﻿using Stratis.Patricia;
 
 namespace Stratis.SmartContracts.Core.State
 {

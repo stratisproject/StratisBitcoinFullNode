@@ -6,7 +6,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.ModuleValidation.Net\Stratis.ModuleValidation.Net.csproj" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.1" />
+  </ItemGroup>
+
+  <ItemGroup>
     <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
   </ItemGroup>
 

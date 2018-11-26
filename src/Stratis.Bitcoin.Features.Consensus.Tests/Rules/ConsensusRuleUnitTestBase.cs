@@ -242,9 +242,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.provenBlockHeader = ((PosConsensusFactory)network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
         }
 
-        internal ProvenBlockHeader Build()
+        internal ProvenBlockHeader Build(ProvenBlockHeader previousProvenBlockHeader = null)
         {
+            this.SetStakeModifier(previousProvenBlockHeader);
             return this.provenBlockHeader;
+        }
+
+        private void SetStakeModifier(ProvenBlockHeader previousProvenBlockHeader)
+        {
+            if (previousProvenBlockHeader == null)
+            {
+                this.provenBlockHeader.StakeModifierV2 = 1; // a random value is fine.
+            }
+            else
+            {
+                this.provenBlockHeader.StakeModifierV2 = 2; // To compute the real one we need the StackValidator
+            }
         }
     }
 
@@ -300,10 +313,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         internal PosBlockBuilder WithLargeCoinstake(int numberOfTransactions = 100_000)
         {
             var rogueCoinstakeTransaction = new Transaction();
+            var originalCoinstakeTransaction = this.posBlock.Transactions[1];
             for (int i = 0; i < numberOfTransactions; i++)
             {
-                rogueCoinstakeTransaction.Inputs.Add(new TxIn(new Script(RandomUtils.GetBytes(100))));
+                if (i == 0)
+                    rogueCoinstakeTransaction.Inputs.Add(originalCoinstakeTransaction.Inputs[0]);
+                else
+                    rogueCoinstakeTransaction.Inputs.Add(new TxIn(new Script(RandomUtils.GetBytes(100))));
             }
+            rogueCoinstakeTransaction.Outputs.AddRange(originalCoinstakeTransaction.Outputs);
 
             // Replace existing coinstake with a rogue one.
             this.posBlock.Transactions[1] = rogueCoinstakeTransaction;

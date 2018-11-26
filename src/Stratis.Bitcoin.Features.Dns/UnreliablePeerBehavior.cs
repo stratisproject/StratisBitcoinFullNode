@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
@@ -35,22 +36,29 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <summary>The node settings.</summary>
         private readonly NodeSettings nodeSettings;
 
+        /// <summary>
+        /// Available checkpoints
+        /// </summary>
+        private readonly ICheckpoints checkpoints;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public UnreliablePeerBehavior(Network network, IChainState chainState, ILoggerFactory loggerFactory, IPeerBanning peerBanning, NodeSettings nodeSettings)
+        public UnreliablePeerBehavior(Network network, IChainState chainState, ILoggerFactory loggerFactory, IPeerBanning peerBanning, NodeSettings nodeSettings, ICheckpoints checkpoints)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(peerBanning, nameof(nodeSettings));
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
+            Guard.NotNull(checkpoints, nameof(checkpoints));
 
             this.network = network;
             this.chainState = chainState;
             this.loggerFactory = loggerFactory;
             this.peerBanning = peerBanning;
             this.nodeSettings = nodeSettings;
+            this.checkpoints = checkpoints;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -58,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Dns
         /// <inheritdoc />
         public override object Clone()
         {
-            return new UnreliablePeerBehavior(this.network, this.chainState, this.loggerFactory, this.peerBanning, this.nodeSettings);
+            return new UnreliablePeerBehavior(this.network, this.chainState, this.loggerFactory, this.peerBanning, this.nodeSettings, this.checkpoints);
         }
 
         /// <inheritdoc />
@@ -109,13 +117,8 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </returns>
         private bool IsProvenHeaderActivated()
         {
-            if (this.network.Consensus.Options is PosConsensusOptions options)
-            {
-                long currentHeight = this.chainState.ConsensusTip.Height;
-                return (options.ProvenHeadersActivationHeight > 0) && (currentHeight >= options.ProvenHeadersActivationHeight);
-            }
-
-            return false;
+            long currentHeight = this.chainState.ConsensusTip.Height;
+            return currentHeight >= this.checkpoints.GetLastCheckpointHeight(); ;
         }
 
         /// <summary>

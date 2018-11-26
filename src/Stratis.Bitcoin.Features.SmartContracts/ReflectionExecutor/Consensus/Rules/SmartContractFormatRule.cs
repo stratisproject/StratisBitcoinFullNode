@@ -5,7 +5,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -44,9 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 if (!transaction.IsSmartContractExecTransaction())
                     return Task.CompletedTask;
 
-                Money transactionFee = transaction.GetFee(((UtxoRuleContext)context).UnspentOutputSet);
-
-                CheckTransaction(transaction, transactionFee);
+                this.CheckTransaction(transaction, null);
             }
 
             return Task.CompletedTask;
@@ -90,9 +87,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 this.ThrowGasPriceMoreThanMaximum();
             }
 
-            // TODO: When checking gas limit, if checking for a CREATE, do BaseFee + CreationAndValidationFee
-
-
             if (callData.IsCreateContract && callData.GasLimit < GasLimitCreateMinimum)
             {
                 this.ThrowGasLessThenCreateFee();
@@ -110,11 +104,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 this.ThrowGasGreaterThanHardLimit();
             }
 
-            // Note carrier.GasCostBudget cannot overflow given values are within constraints above.
-            if (suppliedBudget < new Money(callData.GasCostBudget))
+            // Only measure budget when coming from mempool - this happens inside SmartContractCoinviewRule instead as part of the block.
+            if (suppliedBudget != null)
             {
-                // Supplied satoshis are less than the budget we said we had for the contract execution
-                this.ThrowGasGreaterThanFee();
+                // Note carrier.GasCostBudget cannot overflow given values are within constraints above.
+                if (suppliedBudget < new Money(callData.GasCostBudget))
+                {
+                    // Supplied satoshis are less than the budget we said we had for the contract execution
+                    SmartContractConsensusErrors.FeeTooSmallForGas.Throw();
+                }
             }
         }
 
@@ -145,12 +143,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
         {
             // TODO make nicer
             new ConsensusError("total-gas-value-greater-than-hard-limit", "total supplied gas value was greater than our hard limit of " + GasLimitMaximum).Throw();
-        }
-
-        private void ThrowGasGreaterThanFee()
-        {
-            // TODO make nicer
-            new ConsensusError("total-gas-value-greater-than-total-fee", "total supplied gas value was greater than total supplied fee value").Throw();
         }
     }
 }

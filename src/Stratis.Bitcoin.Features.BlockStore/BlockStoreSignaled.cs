@@ -18,8 +18,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
     {
         private readonly IBlockStoreQueue blockStoreQueue;
 
-        private readonly ConcurrentChain chain;
-
         private readonly IChainState chainState;
 
         private readonly IConnectionManager connection;
@@ -46,7 +44,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public BlockStoreSignaled(
             IBlockStoreQueue blockStoreQueue,
-            ConcurrentChain chain,
             StoreSettings storeSettings,
             IChainState chainState,
             IConnectionManager connection,
@@ -55,7 +52,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IInitialBlockDownloadState initialBlockDownloadState)
         {
             this.blockStoreQueue = blockStoreQueue;
-            this.chain = chain;
             this.chainState = chainState;
             this.connection = connection;
             this.nodeLifetime = nodeLifetime;
@@ -84,10 +80,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
-            // Ensure the block is written to disk before relaying.
-            this.AddBlockToQueue(blockPair);
+            bool isIBD = this.initialBlockDownloadState.IsInitialBlockDownload();
 
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            // Ensure the block is written to disk before relaying.
+            this.AddBlockToQueue(blockPair, isIBD);
+
+            if (isIBD)
             {
                 this.logger.LogTrace("(-)[IBD]");
                 return;
@@ -102,7 +100,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Ensures the block is written to disk before relaying to peers.
         /// </summary>
         /// <param name="blockPair">The block pair.</param>
-        protected virtual void AddBlockToQueue(ChainedHeaderBlock blockPair)
+        /// <param name="isIBD">Is node in IBD.</param>
+        protected virtual void AddBlockToQueue(ChainedHeaderBlock blockPair, bool isIBD)
         {
             this.blockStoreQueue.AddToPending(blockPair);
         }
@@ -137,7 +136,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         // Set the dequeue task to null so it can be assigned on the next iteration.
                         dequeueTask = null;
                         batch.Add(item);
-                        sendBatch = item == this.chain.Tip;
+
+                        if (this.chainState.IsAtBestChainTip)
+                            sendBatch = true;
                     }
                     else sendBatch = true;
 
@@ -183,7 +184,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Before relaying, verify the block is still in the best chain else discard it.
         /// </para>
         /// <para>
-        /// TODO: consider moving the relay logic to the <see cref="LoopSteps.ProcessPendingStorageStep"/>.
         /// </para>
         /// </remarks>
         private async Task SendBatchAsync(List<ChainedHeader> batch)

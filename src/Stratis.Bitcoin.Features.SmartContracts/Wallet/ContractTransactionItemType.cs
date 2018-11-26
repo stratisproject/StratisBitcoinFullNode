@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
+﻿namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
     public enum ContractTransactionItemType
     {
@@ -10,6 +6,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         Send,
         Staked,
         ContractCall,
-        ContractCreate
+        ContractCreate,
+        GasRefund
     }
 }

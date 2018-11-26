@@ -6,7 +6,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Fields that are serialized and sent as data with a smart contract transaction
     /// </summary>
-    public class ContractTxData : ICreateData, ICallData
+    public class ContractTxData
     {
         /// <summary>
         /// Creates a ContractTxData object for a method invocation

@@ -1467,7 +1467,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
-                Recipients = new List<RecipientModel> { new RecipientModel{ DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1657,7 +1657,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, this.Network, this.chain, mockBroadcasterManager.Object, DateTimeProvider.Default);
 
             IActionResult result = controller.SendTransaction(new SendTransactionRequest(new uint256(15555).ToString()));
-            
+
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
             Assert.Single(errorResponse.Errors);
@@ -2275,7 +2275,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return null;
         }
 
-        public INetworkPeer FindByIp(IPAddress ip)
+        public List<INetworkPeer> FindByIp(IPAddress ip)
         {
             return null;
         }
