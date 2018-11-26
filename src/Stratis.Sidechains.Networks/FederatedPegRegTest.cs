@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -12,7 +14,8 @@ namespace Stratis.Sidechains.Networks
     /// </summary>
     public class FederatedPegRegTest : PoANetwork
     {
-        public Key[] FederationKeys { get; private set; }
+        public IList<Mnemonic> FederationMnemonics { get; }
+        public IList<Key> FederationKeys { get; private set; }
 
         internal FederatedPegRegTest()
         {
@@ -34,20 +37,15 @@ namespace Stratis.Sidechains.Networks
 
             this.Genesis = genesisBlock;
 
-            // Keeping the 3rd there in case we use it in future. For our integration tests we use 2 nodes currently.
-            this.FederationKeys = new Key[]
-            {
-                new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar govern wisdom").DeriveExtKey().PrivateKey,
-                new Mnemonic("idle power swim wash diesel blouse photo among eager reward wide hair").DeriveExtKey().PrivateKey,
-                //new Mnemonic("high neither night category fly wasp inner kitchen phone current skate menu").DeriveExtKey().PrivateKey
-            };
+            this.FederationMnemonics = new[] {
+                   "ensure feel swift crucial bridge charge cloud tell hobby twenty people mandate",
+                   "quiz sunset vote alley draw turkey hill scrap lumber game differ fiction",
+                   "exchange rent bronze pole post hurry oppose drama eternal voice client state"
+               }.Select(m => new Mnemonic(m, Wordlist.English)).ToList();
 
-            var federationPubKeys = new List<PubKey>
-            {
-                this.FederationKeys[0].PubKey,
-                this.FederationKeys[1].PubKey,
-                // this.FederationKeys[2].PubKey
-            };
+            this.FederationKeys = this.FederationMnemonics.Select(m => m.DeriveExtKey().PrivateKey).ToList();
+
+            var federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
 
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
@@ -104,8 +102,8 @@ namespace Stratis.Sidechains.Networks
 
             // Same as current smart contracts test networks to keep tests working
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (111) };
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (196) };
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { (38) }; //G
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { (97) }; //g
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
