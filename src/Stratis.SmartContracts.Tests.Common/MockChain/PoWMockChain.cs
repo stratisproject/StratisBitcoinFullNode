@@ -10,6 +10,8 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
     /// <remarks>TODO: This and PoAMockChain could share most logic.</remarks>
     public class PoWMockChain : IMockChain
     {
+        private int height;
+
         private readonly SmartContractNodeBuilder builder;
 
         protected readonly MockChainNode[] nodes;
@@ -20,6 +22,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public PoWMockChain(int numberOfNodes)
         {
+            this.height = 0;
             this.builder = SmartContractNodeBuilder.Create(this);
             this.nodes = new MockChainNode[numberOfNodes];
 
@@ -51,6 +54,26 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             for (int i = 0; i < this.nodes.Length - 1; i++)
             {
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodes[i].CoreNode, this.nodes[i + 1].CoreNode));
+            }
+        }
+
+        public void MineBlocks(int num)
+        {
+            for (int i = 0; i < num; i++)
+            {
+                int nodeToMineWith = this.height % this.Nodes.Count;
+
+                this.Nodes[nodeToMineWith].MineBlocks(1);
+
+                this.height++;
+            }
+        }
+
+        public void WaitAllMempoolCount(int num)
+        {
+            for (int i = 0; i < this.Nodes.Count; i++)
+            {
+                this.Nodes[i].WaitMempoolCount(num);
             }
         }
 

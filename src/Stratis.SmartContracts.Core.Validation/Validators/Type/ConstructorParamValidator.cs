@@ -2,7 +2,6 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Rocks;
-using Stratis.ModuleValidation.Net;
 
 namespace Stratis.SmartContracts.Core.Validation.Validators.Type
 {
