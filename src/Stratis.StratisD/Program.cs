@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.ColdStaking;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
@@ -23,14 +23,17 @@ namespace Stratis.StratisD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion:ProtocolVersion.ALT_PROTOCOL_VERSION, args:args);
+                var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
+                {
+                    MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                };
 
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseBlockStore()
                     .UsePosConsensus()
                     .UseMempool()
-                    .UseWallet()
+                    .UseColdStakingWallet()
                     .AddPowPosMining()
                     .UseApi()
                     .UseApps()

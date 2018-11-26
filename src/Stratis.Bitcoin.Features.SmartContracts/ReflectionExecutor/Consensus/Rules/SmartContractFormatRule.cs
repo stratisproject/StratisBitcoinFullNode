@@ -5,7 +5,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
@@ -89,9 +88,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 // Supplied gas price is too high.
                 this.ThrowGasPriceMoreThanMaximum();
             }
-
-            // TODO: When checking gas limit, if checking for a CREATE, do BaseFee + CreationAndValidationFee
-
 
             if (callData.IsCreateContract && callData.GasLimit < GasLimitCreateMinimum)
             {

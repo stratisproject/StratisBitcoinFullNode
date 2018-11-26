@@ -5,6 +5,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.BuilderExtensions;
 using NBitcoin.Crypto;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
@@ -172,6 +173,9 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>Memory pool of pending transactions.</summary>
         protected readonly ITxMempool mempool;
 
+        /// <summary>Script types that can participate in staking.</summary>
+        public Dictionary<string, ScriptTemplate> ValidStakingTemplates;
+
         /// <summary>Information about node's staking for RPC "getstakinginfo" command.</summary>
         /// <remarks>This object does not need a synchronized access because there is no execution logic
         /// that depends on the reported information.</remarks>
@@ -211,24 +215,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PosMinting"/> class.
-        /// </summary>
-        /// <param name="consensusManager">Consumes incoming blocks, validates and executes them.</param>
-        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="dateTimeProvider">Provides date time functionality.</param>
-        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="coinView">Consensus' view of UTXO set.</param>
-        /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
-        /// <param name="stakeValidator">Provides functionality for checking validity of PoS blocks.</param>
-        /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
-        /// <param name="mempool">Memory pool of pending transactions.</param>
-        /// <param name="walletManager">A manager providing operations on wallets.</param>
-        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
-        /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
             IBlockProvider blockProvider,
             IConsensusManager consensusManager,
@@ -278,6 +264,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             this.CoinstakeSplitEnabled = minerSettings.EnableCoinStakeSplitting;
             this.MinimumStakingCoinValue = minerSettings.MinimumStakingCoinValue;
             this.MinimumSplitCoinValue = minerSettings.MinimumSplitCoinValue;
+            this.ValidStakingTemplates = walletManager.GetValidStakingTemplates();
         }
 
         /// <inheritdoc/>
@@ -434,7 +421,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
             List<UnspentOutputReference> spendableTransactions = this.walletManager
-                .GetSpendableTransactionsInWallet(walletSecret.WalletName, 1).ToList();
+                .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1).ToList();
 
             FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), cancellationToken).ConfigureAwait(false);
 
@@ -718,21 +705,23 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             // Split stake into SplitFactor utxos if above threshold.
             bool shouldSplitStake = this.ShouldSplitStake(utxosCount, amountStaked, coinstakeOutputValue, currentChainHeight);
 
+            int lastOutputIndex = coinstakeContext.CoinstakeTx.Outputs.Count - 1;
+
             if (!shouldSplitStake)
             {
-                coinstakeContext.CoinstakeTx.Outputs[1].Value = coinstakeOutputValue;
-                this.logger.LogTrace("Coinstake output value is {0}.", coinstakeContext.CoinstakeTx.Outputs[1].Value);
+                coinstakeContext.CoinstakeTx.Outputs[lastOutputIndex].Value = coinstakeOutputValue;
+                this.logger.LogTrace("Coinstake output value is {0}.", coinstakeContext.CoinstakeTx.Outputs[lastOutputIndex].Value);
                 this.logger.LogTrace("(-)[NO_SPLIT]:{0}", coinstakeContext.CoinstakeTx);
                 return coinstakeContext.CoinstakeTx;
             }
 
             long splitValue = coinstakeOutputValue / SplitFactor;
             long remainder = coinstakeOutputValue - (SplitFactor - 1) * splitValue;
-            coinstakeContext.CoinstakeTx.Outputs[1].Value = remainder;
+            coinstakeContext.CoinstakeTx.Outputs[lastOutputIndex].Value = remainder;
 
             for (int i = 0; i < SplitFactor - 1; i++)
             {
-                var split = new TxOut(splitValue, coinstakeContext.CoinstakeTx.Outputs[1].ScriptPubKey);
+                var split = new TxOut(splitValue, coinstakeContext.CoinstakeTx.Outputs[lastOutputIndex].ScriptPubKey);
                 coinstakeContext.CoinstakeTx.Outputs.Add(split);
             }
 
@@ -768,10 +757,9 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                 // Script of the first coinstake input.
                 Script scriptPubKeyKernel = utxoStakeInfo.TxOut.ScriptPubKey;
-                if (!PayToPubkeyTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel)
-                    && !PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(scriptPubKeyKernel))
+                if (!this.ValidStakingTemplates.Any(a => a.Value.CheckScriptPubKey(scriptPubKeyKernel)))
                 {
-                    context.Logger.LogTrace("Kernel type must be P2PK or P2PKH, kernel rejected.");
+                    context.Logger.LogTrace("Kernel type must be {0}, kernel rejected.", string.Join(" or ", this.ValidStakingTemplates.Keys));
                     continue;
                 }
 
@@ -824,15 +812,30 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                             Wallet.Wallet wallet = this.walletManager.GetWalletByName(utxoStakeInfo.Secret.WalletName);
                             context.CoinstakeContext.Key = wallet.GetExtendedPrivateKeyForAddress(utxoStakeInfo.Secret.WalletPassword, utxoStakeInfo.Address).PrivateKey;
-
-                            // Create a pubkey script form the current script.
-                            Script scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(context.CoinstakeContext.Key.PubKey); // scriptPubKeyKernel
-
                             utxoStakeInfo.Key = context.CoinstakeContext.Key;
+
                             context.CoinstakeContext.CoinstakeTx.Time = txTime;
                             context.CoinstakeContext.CoinstakeTx.AddInput(new TxIn(prevoutStake));
-                            context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
+                            Script scriptPubKeyOut;
 
+                            // Create a pubkey script form the current script.
+                            string scriptType = this.ValidStakingTemplates.Single(t => t.Value.CheckScriptPubKey(utxoStakeInfo.TxOut.ScriptPubKey)).Key;
+
+                            // Default behavior.
+                            if ((scriptType == "P2PK") || (scriptType == "P2PKH"))
+                            {
+                                scriptPubKeyOut = PayToPubkeyTemplate.Instance.GenerateScriptPubKey(context.CoinstakeContext.Key.PubKey);
+                            }
+                            else
+                            // Support for otherwise unsupported script types.
+                            {
+                                context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(Money.Zero,
+                                    new Script(OpcodeType.OP_RETURN, Op.GetPushOp(utxoStakeInfo.Key.PubKey.Compress().ToBytes()))));
+
+                                scriptPubKeyOut = utxoStakeInfo.TxOut.ScriptPubKey;
+                            }
+
+                            context.CoinstakeContext.CoinstakeTx.Outputs.Add(new TxOut(0, scriptPubKeyOut));
                             context.Result.KernelCoin = utxoStakeInfo;
 
                             context.Logger.LogTrace("Kernel accepted, coinstake input is '{0}', stopping work.", prevoutStake);
@@ -869,10 +872,14 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             bool res = false;
             try
             {
-                new TransactionBuilder(this.network)
+                var transactionBuilder = new TransactionBuilder(this.network)
                     .AddKeys(input.Key)
-                    .AddCoins(new Coin(input.OutPoint, input.TxOut))
-                    .SignTransactionInPlace(transaction);
+                    .AddCoins(new Coin(input.OutPoint, input.TxOut));
+
+                foreach (BuilderExtension extension in this.walletManager.GetTransactionBuilderExtensionsForStaking())
+                    transactionBuilder.Extensions.Add(extension);
+
+                transactionBuilder.SignTransactionInPlace(transaction);
 
                 res = true;
             }

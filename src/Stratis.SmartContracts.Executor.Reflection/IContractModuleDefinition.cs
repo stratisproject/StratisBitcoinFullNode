@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.ILRewrite;
@@ -9,11 +8,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public interface IContractModuleDefinition : IDisposable
     {
-        /// <summary>
-        /// The <see cref="TypeDefinition"/>s contained in the module, excluding those that are compiler or framework generated.
-        /// </summary>
-        List<TypeDefinition> DevelopedTypes { get; }
-
         /// <summary>
         /// Returns the <see cref="TypeDefinition"/> of the contract denoted as the module's entry point with a <see cref="DeployAttribute"/>.
         /// If no entry point is defined, the first <see cref="TypeDefinition"/> will be chosen.

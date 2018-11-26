@@ -1,6 +1,4 @@
-﻿using System;
-
-namespace Stratis.SmartContracts.Executor.Reflection
+﻿namespace Stratis.SmartContracts.Executor.Reflection
 {
     /// <summary>
     /// Generates an sequence of sequential numbers for one-time use.

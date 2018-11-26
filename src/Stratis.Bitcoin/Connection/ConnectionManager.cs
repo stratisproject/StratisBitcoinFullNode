@@ -178,7 +178,7 @@ namespace Stratis.Bitcoin.Connection
             foreach (NodeServerEndpoint listen in this.ConnectionSettings.Listen)
             {
                 NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
-                NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint);
+                NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint, this.Parameters.Version);
 
                 this.Servers.Add(server);
                 var cmb = (cloneParameters.TemplateBehaviors.Single(x => x is IConnectionManagerBehavior) as ConnectionManagerBehavior);
@@ -286,7 +286,7 @@ namespace Stratis.Bitcoin.Connection
 
         public INetworkPeer FindNodeByIp(IPAddress ipAddress)
         {
-            return this.connectedPeers.FindByIp(ipAddress);
+            return this.connectedPeers.FindByIp(ipAddress).FirstOrDefault();
         }
 
         public INetworkPeer FindLocalNode()

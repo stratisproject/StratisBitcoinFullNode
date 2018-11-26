@@ -78,5 +78,13 @@
         public static readonly ConsensusError BadProvenHeaderMerkleProofSize = new ConsensusError("proven-header-merkle-proof-size", "proven header's merkle proof size must be less than 512 bytes");
         public static readonly ConsensusError BadProvenHeaderCoinstakeSize = new ConsensusError("proven-header-coinstake-size", "proven header's coinstake size must be less than 1,000,000 bytes");
         public static readonly ConsensusError BadProvenHeaderSignatureSize = new ConsensusError("proven-header-signature-size", "proven header's signature size must be less than 80 bytes");
+        public static readonly ConsensusError BadTransactionCoinstakeSpending = new ConsensusError("bad-txns-spend-of-coinstake", "coinstake is already spent");
+        public static readonly ConsensusError UtxoNotFoundInRewindData = new ConsensusError("utxo-not-found-in-rewind-data", "utxo not found in rewind data");
+        public static readonly ConsensusError InvalidPreviousProvenHeader = new ConsensusError("proven-header-invalid-previous-header", "previous header in chain is expected to be of proven header type");
+        public static readonly ConsensusError InvalidPreviousProvenHeaderStakeModifier = new ConsensusError("proven-header-invalid-previous-header-stack-modifier", "previous proven header's StackModifier is null");
+
+        public static readonly ConsensusError BadColdstakeAmount = new ConsensusError("bad-coldstake-amount", "coldstake is negative");
+        public static readonly ConsensusError BadColdstakeInputs = new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");
+        public static readonly ConsensusError BadColdstakeOutputs = new ConsensusError("bad-coldstake-outputs", "coldstake outputs contain unexpected scriptpubkeys");
     }
 }

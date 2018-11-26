@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
@@ -55,13 +54,12 @@ namespace City.Networks
 
             this.Genesis = genesisBlock;
 
-            var consensusOptions = new CityPosConsensusOptions(
+            var consensusOptions = new PosConsensusOptions(
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5,
-                provenHeadersActivationHeight: 20_000_000 // TODO: Set it to the real value once it is known.
+                maxStandardTxSigopsCost: 20_000 / 5
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

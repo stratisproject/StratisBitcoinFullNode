@@ -14,7 +14,7 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-    <Version>1.2.3-beta</Version>
+    <Version>1.2.4-beta</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>	
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
@@ -22,6 +22,7 @@
   <ItemGroup>
     <PackageReference Include="DNS" Version="2.1.0" />
     <PackageReference Include="Newtonsoft.Json" Version="11.0.2" />
+    <PackageReference Include="Tracer.Fody" Version="2.2.0" />
   </ItemGroup>
 
   <ItemGroup>

@@ -10,7 +10,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Local
     /// <summary>
     /// Executes a contract with the specified parameters without making changes to the state database or chain.
     /// </summary>
-    public class LocalExecutor
+    public class LocalExecutor : ILocalExecutor
     {
         private readonly ILogger logger;
         private readonly IStateRepository stateRoot;

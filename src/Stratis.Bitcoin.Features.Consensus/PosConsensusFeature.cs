@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private readonly IPeerBanning peerBanning;
         private readonly ILoggerFactory loggerFactory;
         private readonly ICheckpoints checkpoints;
+        private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
 
         public PosConsensusFeature(
             Network network,
@@ -41,7 +42,8 @@ namespace Stratis.Bitcoin.Features.Consensus
             IPeerBanning peerBanning,
             Signals.Signals signals,
             ILoggerFactory loggerFactory,
-            ICheckpoints checkpoints): base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
+            ICheckpoints checkpoints,
+            IProvenBlockHeaderStore provenBlockHeaderStore) : base(network, chainState, connectionManager, signals, consensusManager, nodeDeployments)
         {
             this.network = network;
             this.chainState = chainState;
@@ -53,6 +55,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.peerBanning = peerBanning;
             this.loggerFactory = loggerFactory;
             this.checkpoints = checkpoints;
+            this.provenBlockHeaderStore = provenBlockHeaderStore;
 
             this.chainState.MaxReorgLength = network.Consensus.MaxReorgLength;
         }
@@ -65,13 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // Replace CMB.
             bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
             Guard.Assert(oldCMBRemoved);
-            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState));
-
-            // Replace connection manager behavior.
-            bool oldConnectionManagerRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConnectionManagerBehavior));
-            Guard.Assert(oldConnectionManagerRemoved);
-
-            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConnectionManagerBehavior(this.connectionManager, this.loggerFactory, this.checkpoints, this.network));
+            connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore));
 
             return Task.CompletedTask;
         }

@@ -17,6 +17,7 @@ namespace NBitcoin
         TX_MULTISIG,
         TX_NULL_DATA,
         TX_SEGWIT,
+        TX_COLDSTAKE
     };
 
     public class TxNullDataTemplate : ScriptTemplate

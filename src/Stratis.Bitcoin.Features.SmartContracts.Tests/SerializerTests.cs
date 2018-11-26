@@ -134,6 +134,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
+        public void Deserialize_LongerThanExpected_Returns_SameAsContractPrimitiveSerializer()
+        {
+            byte[] randomBytes = new byte[10];
+            new Random().NextBytes(randomBytes);
+
+            int intResult = this.serializer.ToInt32(randomBytes);
+            this.contractPrimitiveSerializer.Verify(s => s.Deserialize<int>(It.IsAny<byte[]>()), Times.Once);
+
+            uint uintResult = this.serializer.ToUInt32(randomBytes);
+            this.contractPrimitiveSerializer.Verify(s => s.Deserialize<uint>(It.IsAny<byte[]>()), Times.Once);
+
+            long longResult = this.serializer.ToInt64(randomBytes);
+            this.contractPrimitiveSerializer.Verify(s => s.Deserialize<long>(It.IsAny<byte[]>()), Times.Once);
+
+            ulong ulongResult = this.serializer.ToUInt64(randomBytes);
+            this.contractPrimitiveSerializer.Verify(s => s.Deserialize<ulong>(It.IsAny<byte[]>()), Times.Once);
+        }
+
+        [Fact]
         public void Deserialize_Byte0_Address_Returns_Default()
         {
             var result = this.serializer.ToAddress(new byte[0]);

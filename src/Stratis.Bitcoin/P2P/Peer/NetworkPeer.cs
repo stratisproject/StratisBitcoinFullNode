@@ -12,6 +12,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -62,34 +63,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of network services that the peer must provide.</summary>
         public NetworkPeerServices RequiredServices { get; set; }
 
-        /// <summary><c>true</c> to require the peer to support SPV, <c>false</c> otherwise.</summary>
-        public bool SupportSPV { get; set; }
-
         /// <summary>
         /// Checks a version payload from a peer against the requirements.
         /// </summary>
         /// <param name="version">Version payload to check.</param>
+        /// <param name="reason">The reason the check failed.</param>
         /// <returns><c>true</c> if the version payload satisfies the protocol requirements, <c>false</c> otherwise.</returns>
-        public virtual bool Check(VersionPayload version)
+        public virtual bool Check(VersionPayload version, out string reason)
         {
+            reason = string.Empty;
             if (this.MinVersion != null)
             {
                 if (version.Version < this.MinVersion.Value)
+                {
+                    reason = "peer version is too low";
                     return false;
+                }
             }
 
             if ((this.RequiredServices & version.Services) != this.RequiredServices)
             {
+                reason = "network service not supported";
                 return false;
-            }
-
-            if (this.SupportSPV)
-            {
-                if (version.Version < ProtocolVersion.MEMPOOL_GD_VERSION)
-                    return false;
-
-                if ((ProtocolVersion.NO_BLOOM_VERSION <= version.Version) && ((version.Services & NetworkPeerServices.NODE_BLOOM) == 0))
-                    return false;
             }
 
             return true;
@@ -251,6 +246,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Callback that is invoked when peer has finished disconnecting, or <c>null</c> when no notification after the disconnection is required.</summary>
         private readonly Action<INetworkPeer> onDisconnected;
 
+        /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
+        private readonly Action<IPEndPoint, Payload> onSendingMessage;
+
         /// <summary>
         /// Initializes parts of the object that are common for both inbound and outbound peers.
         /// </summary>
@@ -269,7 +267,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
-            Action<INetworkPeer> onDisconnected = null)
+            Action<INetworkPeer> onDisconnected = null,
+            Action<IPEndPoint, Payload> onSendingMessage = null)
         {
             this.dateTimeProvider = dateTimeProvider;
 
@@ -295,6 +294,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.MessageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
             this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             this.onDisconnected = onDisconnected;
+            this.onSendingMessage = onSendingMessage;
         }
 
         /// <summary>
@@ -315,8 +315,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
-            Action<INetworkPeer> onDisconnected = null)
-            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected)
+            Action<INetworkPeer> onDisconnected = null,
+            Action<IPEndPoint, Payload> onSendingMessage = null)
+            : this(false, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
         {
             var client = new TcpClient(AddressFamily.InterNetworkV6);
             client.Client.SetSocketOption(SocketOptionLevel.IPv6, SocketOptionName.IPv6Only, false);
@@ -348,8 +349,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             INetworkPeerFactory networkPeerFactory,
             ILoggerFactory loggerFactory,
             ISelfEndpointTracker selfEndpointTracker,
-            Action<INetworkPeer> onDisconnected = null)
-            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected)
+            Action<INetworkPeer> onDisconnected = null,
+            Action<IPEndPoint, Payload> onSendingMessage = null)
+            : this(true, peerEndPoint, network, parameters, dateTimeProvider, loggerFactory, selfEndpointTracker, onDisconnected, onSendingMessage)
         {
             this.Connection = networkPeerFactory.CreateNetworkPeerConnection(this, client, this.ProcessMessageAsync);
 
@@ -526,7 +528,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             switch (this.State)
             {
                 case NetworkPeerState.Connected:
-                    if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
+                    if (this.Inbound)
+                        await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
+
                     break;
 
                 case NetworkPeerState.HandShaked:
@@ -634,6 +638,8 @@ namespace Stratis.Bitcoin.P2P.Peer
                 throw new OperationCanceledException("The peer has been disconnected");
             }
 
+            this.onSendingMessage?.Invoke(this.RemoteSocketEndpoint, payload);
+
             await this.Connection.SendAsync(payload, cancellation).ConfigureAwait(false);
         }
 
@@ -682,10 +688,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 return;
                             }
 
-                            if (!requirements.Check(versionPayload))
+                            if (!requirements.Check(versionPayload, out string reason))
                             {
                                 this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
-                                this.Disconnect("The peer does not support the required services requirement");
+                                this.Disconnect("The peer does not support the required services requirement, reason: " + reason);
                                 return;
                             }
 
@@ -842,6 +848,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public T Behavior<T>() where T : INetworkPeerBehavior
         {
             return this.Behaviors.OfType<T>().FirstOrDefault();

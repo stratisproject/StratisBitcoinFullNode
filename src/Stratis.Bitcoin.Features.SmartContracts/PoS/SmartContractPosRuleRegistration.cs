@@ -4,7 +4,6 @@ using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoS.Rules;
-using Stratis.Bitcoin.Features.SmartContracts.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
@@ -45,10 +44,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 new CheckPowTransactionRule(),
                 new CheckPosTransactionRule(),
                 new CheckSigOpsRule(),
-                new PosCoinstakeRule(),
-                new P2PKHNotContractRule()
+                new PosCoinstakeRule()
             };
 
+            // TODO: When looking to make PoS work again, will need to add several of the smart contract consensus rules below (see PoA and PoW implementations)
             consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
             {
                 new SetActivationDeploymentsFullValidationRule(),

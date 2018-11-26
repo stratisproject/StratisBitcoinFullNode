@@ -9,6 +9,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
     {
         public readonly string DataFolder;
 
+        public readonly string Agent;
+
         public bool IsDisposed
         {
             get
@@ -24,9 +26,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public bool OverrideDateTimeProvider { get; internal set; }
         public Action<IServiceCollection> ServiceToOverride { get; internal set; }
 
-        protected NodeRunner(string dataDir)
+        protected NodeRunner(string dataDir, string agent = "StratisBitcoin")
         {
             this.DataFolder = dataDir;
+            this.Agent = agent;
         }
 
         public abstract void BuildNode();

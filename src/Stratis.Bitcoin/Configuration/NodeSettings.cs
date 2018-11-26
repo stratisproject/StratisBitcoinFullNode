@@ -60,6 +60,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Supported protocol version.</summary>
         public ProtocolVersion ProtocolVersion { get; private set; }
 
+        /// <summary>Lowest supported protocol version.</summary>
+        public ProtocolVersion? MinProtocolVersion { get; set; }
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; private set; }
 
@@ -143,7 +146,7 @@ namespace Stratis.Bitcoin.Configuration
             // If the network is not known then derive it from the command line arguments.
             if (this.Network == null)
             {
-                if(networksSelector == null)
+                if (networksSelector == null)
                     throw new ConfigurationException("Network or NetworkSelector not provided.");
 
                 // Find out if we need to run on testnet or regtest from the config file.

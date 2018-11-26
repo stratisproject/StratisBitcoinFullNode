@@ -184,12 +184,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             TxIn txIn = transaction.Inputs[0];
 
-            // First try finding the previous transaction in database.
-            FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
-            if ((coins == null) || (coins.UnspentOutputs.Length != 1))
-                ConsensusErrors.ReadTxPrevFailed.Throw();
-
-            UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
+            UnspentOutputs prevUtxo = context.UnspentOutputSet.AccessCoins(txIn.PrevOut.Hash);
             if (prevUtxo == null)
             {
                 this.logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
@@ -323,12 +318,24 @@ namespace Stratis.Bitcoin.Features.Consensus
             TxIn input = txTo.Inputs[txToInN];
 
             if (input.PrevOut.N >= coin.Outputs.Length)
+            {
+                this.logger.LogTrace("(-)[OUTPUT_INCORRECT_LENGTH]");
                 return false;
+            }
 
             if (input.PrevOut.Hash != coin.TransactionId)
+            {
+                this.logger.LogTrace("(-)[INCORRECT_TX]");
                 return false;
+            }
 
             TxOut output = coin.Outputs[input.PrevOut.N];
+
+            if (output == null)
+            {
+                this.logger.LogTrace("(-)[OUTPUT_NOT_FOUND]");
+                return false;
+            }
 
             var txData = new PrecomputedTransactionData(txTo);
             var checker = new TransactionChecker(txTo, txToInN, output.Value, txData);

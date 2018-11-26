@@ -1,5 +1,6 @@
 ﻿using System;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -59,6 +60,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override bool Equals(object obj)
         {
             var item = obj as ConsensusError;
@@ -72,9 +74,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="a">first instance to compare.</param>
         /// <param name="b">Second instance to compare.</param>
         /// <returns><c>true</c> if bother instances are the same.</returns>
+        [NoTrace]
         public static bool operator ==(ConsensusError a, ConsensusError b)
         {
-            if (Object.ReferenceEquals(a, b))
+            if (object.ReferenceEquals(a, b))
                 return true;
 
             if (((object)a == null) || ((object)b == null))
@@ -86,6 +89,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Compare two instances of <see cref="ConsensusError"/> are not the same.
         /// </summary>
+        [NoTrace]
         public static bool operator !=(ConsensusError a, ConsensusError b)
         {
             return !(a == b);

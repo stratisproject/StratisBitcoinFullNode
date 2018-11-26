@@ -7,10 +7,8 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
-using Stratis.SmartContracts.IntegrationTests.MockChain;
-using Stratis.SmartContracts.IntegrationTests.PoW.MockChain;
+using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
-using Block = NBitcoin.Block;
 
 namespace Stratis.SmartContracts.IntegrationTests.PoW
 {
@@ -27,7 +25,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
-            this.serializer = new ContractPrimitiveSerializer(this.mockChain.Network);
+            this.serializer = new ContractPrimitiveSerializer(this.node1.CoreNode.FullNode.Network);
         }
 
         [Fact]
@@ -43,20 +41,20 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.True(compilationResult.Success);
 
             const char testChar = 'c';
-            string testAddressBase58 = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.mockChain.Network);
-            Address testAddress = testAddressBase58.ToAddress(this.mockChain.Network);
+            string testAddressBase58 = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.node1.CoreNode.FullNode.Network);
+            Address testAddress = testAddressBase58.ToAddress(this.node1.CoreNode.FullNode.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
             const uint testUint = UInt32.MaxValue;
             const ulong testUlong = UInt64.MaxValue;
             const string testString = "The quick brown fox jumps over the lazy dog";
-            byte[] testBytes = new byte[] {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+            byte[] testBytes = new byte[] { 0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09 };
 
             string[] parameters = new string[]
             {
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Char, testChar), 
-                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, testAddressBase58), 
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Char, testChar),
+                string.Format("{0}#{1}", (int)MethodParameterDataType.Address, testAddressBase58),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Bool, testBool),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Int, testInt),
                 string.Format("{0}#{1}", (int)MethodParameterDataType.Long, testLong),
@@ -95,7 +93,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Test that the contract address, event name, and logging values are available in the bloom.
             var scBlockHeader = lastBlock.Header as SmartContractBlockHeader;
-            Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToUint160(this.mockChain.Network).ToBytes()));
+            Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToUint160(this.node1.CoreNode.FullNode.Network).ToBytes()));
             Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Log")));
             Assert.True(scBlockHeader.LogsBloom.Test(this.serializer.Serialize(testChar)));
             Assert.True(scBlockHeader.LogsBloom.Test(this.serializer.Serialize(testAddress)));
@@ -141,7 +139,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
-            string testAddress = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.mockChain.Network);
+            string testAddress = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.node1.CoreNode.FullNode.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
@@ -205,7 +203,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
-            string testAddressBase58 = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.mockChain.Network);            
+            string testAddressBase58 = new uint160("0x0000000000000000000000000000000000000001").ToBase58Address(this.node1.CoreNode.FullNode.Network);
             const bool testBool = true;
             const int testInt = Int32.MaxValue;
             const long testLong = Int64.MaxValue;
@@ -265,14 +263,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CreateWithAllArrays.cs");
             Assert.True(compilationResult.Success);
 
-            char[] chars = new char[] {'a', '9'};
-            Address[] addresses = new Address[]{ this.node1.MinerAddress.Address.ToAddress(this.mockChain.Network), "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn".ToAddress(this.mockChain.Network)};
-            bool[] bools = new bool[]{false, true, false};
-            int[] ints = new int[]{1, -123, int.MaxValue};
-            long[] longs = new long[]{1, -123, long.MaxValue};
-            uint[] uints = new uint[]{1, 123, uint.MaxValue};
-            ulong[] ulongs = new ulong[]{1, 123, ulong.MaxValue};
-            string[] strings = new string[]{"Test", "", "The quick brown fox jumps over the lazy dog" }; // TODO: Ensure Assert checks "" equality in contract when null bug fixed
+            char[] chars = new char[] { 'a', '9' };
+            Address[] addresses = new Address[] { this.node1.MinerAddress.Address.ToAddress(this.node1.CoreNode.FullNode.Network), "mipcBbFg9gMiCh81Kj8tqqdgoZub1ZJRfn".ToAddress(this.node1.CoreNode.FullNode.Network) };
+            bool[] bools = new bool[] { false, true, false };
+            int[] ints = new int[] { 1, -123, int.MaxValue };
+            long[] longs = new long[] { 1, -123, long.MaxValue };
+            uint[] uints = new uint[] { 1, 123, uint.MaxValue };
+            ulong[] ulongs = new ulong[] { 1, 123, ulong.MaxValue };
+            string[] strings = new string[] { "Test", "", "The quick brown fox jumps over the lazy dog" }; // TODO: Ensure Assert checks "" equality in contract when null bug fixed
 
             string[] parameters = new string[]
             {

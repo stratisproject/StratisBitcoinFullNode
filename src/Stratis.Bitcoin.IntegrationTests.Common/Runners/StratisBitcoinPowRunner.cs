@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        public StratisBitcoinPowRunner(string dataDir, Network network)
-            : base(dataDir)
+        public StratisBitcoinPowRunner(string dataDir, Network network, string agent)
+            : base(dataDir, agent)
         {
             this.Network = network;
         }
@@ -34,6 +34,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .AddRPC()
                             .UseApi()
                             .MockIBD();
+
+            if (this.InterceptorDisconnect != null)
+                builder = builder.InterceptBlockDisconnected(this.InterceptorDisconnect);
 
             if (this.ServiceToOverride != null)
                 builder.OverrideService<BaseFeature>(this.ServiceToOverride);

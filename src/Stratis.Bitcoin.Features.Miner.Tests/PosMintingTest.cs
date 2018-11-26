@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public async Task GenerateBlocksAsync_does_not_use_small_coins()
         {
-            var walletSecret = new WalletSecret(){WalletName = "wallet", WalletPassword = "password"};
+            var walletSecret = new WalletSecret() { WalletName = "wallet", WalletPassword = "password" };
             var wallet = new Wallet.Wallet()
             {
                 Network = this.network
@@ -218,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.AddAccountWithSpendableOutputs(wallet);
             var spendableTransactions = wallet.GetAllSpendableTransactions(CoinType.Stratis, this.chain.Tip.Height, 0).ToList();
 
-            this.walletManager.Setup(w => w.GetSpendableTransactionsInWallet(It.IsAny<string>(), It.IsAny<int>()))
+            this.walletManager.Setup(w => w.GetSpendableTransactionsInWalletForStaking(It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(spendableTransactions);
 
             var fetchedUtxos = spendableTransactions

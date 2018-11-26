@@ -173,40 +173,44 @@ namespace Stratis.Bitcoin.Tests.Common
             return block;
         }
 
-        public (ChainedHeader chainedHeader, List<ProvenBlockHeader> provenBlockHeaders) BuildChainWithProvenHeaders(int blockCount, Network network, bool addNext = false)
+        /// <returns>Tip of a created chain of headers.</returns>
+        public ChainedHeader BuildChainWithProvenHeaders(int blockCount)
         {
-            Guard.Assert(blockCount > 0);
+            ChainedHeader currentHeader = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
 
-            var provenBlockHeaders = new List<ProvenBlockHeader>();
-
-            ChainedHeader chainedHeader = null;
-            ChainedHeader previousChainHeader = null;
-
-            for (int i = 0; i < blockCount; i++)
+            for (int i = 1; i < blockCount; i++)
             {
-                PosBlock block = CreatePosBlockMock();
+                PosBlock block = this.CreatePosBlockMock();
                 ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
                 header.Nonce = RandomUtils.GetUInt32();
-                header.HashPrevBlock = i > 0 ? chainedHeader.HashBlock : null;
+                header.HashPrevBlock = currentHeader.HashBlock;
                 header.Bits = Target.Difficulty1;
 
-                chainedHeader = new ChainedHeader(header, header.GetHash(), i);
+                ChainedHeader prevHeader = currentHeader;
+                currentHeader = new ChainedHeader(header, header.GetHash(), i);
 
-                if (previousChainHeader != null)
-                {
-                    chainedHeader.SetPrivatePropertyValue("Previous", previousChainHeader);
-
-                    if (addNext)
-                        chainedHeader.Previous.Next.Add(chainedHeader);
-                }
-
-                previousChainHeader = chainedHeader;
-
-                provenBlockHeaders.Add(header);
+                currentHeader.SetPrivatePropertyValue("Previous", prevHeader);
+                prevHeader.Next.Add(currentHeader);
             }
 
-            return (chainedHeader, provenBlockHeaders);
+            return currentHeader;
+        }
+
+        public SortedDictionary<int, ProvenBlockHeader> ConvertToDictionaryOfProvenHeaders(ChainedHeader tip)
+        {
+            var headers = new SortedDictionary<int, ProvenBlockHeader>();
+
+            ChainedHeader currentHeader = tip;
+
+            while (currentHeader.Height != 0)
+            {
+                headers.Add(currentHeader.Height, currentHeader.Header as ProvenBlockHeader);
+
+                currentHeader = currentHeader.Previous;
+            }
+
+            return headers;
         }
     }
 }

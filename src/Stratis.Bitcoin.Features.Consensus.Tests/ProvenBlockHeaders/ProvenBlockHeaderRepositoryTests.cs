@@ -48,12 +48,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
 
-            var blockHashHieghtPair = new HashHeightPair(provenBlockHeaderIn.GetHash(), 0);
-            var items = new List<ProvenBlockHeader> { provenBlockHeaderIn };
+            var blockHashHeightPair = new HashHeightPair(provenBlockHeaderIn.GetHash(), 0);
+            var items = new SortedDictionary<int, ProvenBlockHeader>() { {0, provenBlockHeaderIn} };
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.PutAsync(items, blockHashHieghtPair);
+                await repo.PutAsync(items, blockHashHeightPair);
             }
 
             using (var engine = new DBreezeEngine(folder))
@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.SynchronizeTables(ProvenBlockHeaderTable);
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var headerOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHashHieghtPair.Height.ToBytes(false)).Value;
+                var headerOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHashHeightPair.Height.ToBytes()).Value;
                 var hashHeightPairOut = txn.Select<byte[], HashHeightPair>(BlockHashTable, new byte[0].ToBytes()).Value;
 
                 headerOut.Should().NotBeNull();
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             ProvenBlockHeader header1 = CreateNewProvenBlockHeaderMock(posBlock);
             ProvenBlockHeader header2 = CreateNewProvenBlockHeaderMock(posBlock);
 
-            var items = new List<ProvenBlockHeader> { header1, header2 };
+            var items = new SortedDictionary<int, ProvenBlockHeader>(){ {0, header1}, {1, header2} };
 
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(false), headerIn);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(), headerIn);
                 txn.Commit();
             }
 
@@ -143,8 +143,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(false), header1);
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 2.ToBytes(false), header2);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(), header1);
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 2.ToBytes(), header2);
                 txn.Commit();
             }
 
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(false), CreateNewProvenBlockHeaderMock());
+                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(), CreateNewProvenBlockHeaderMock());
                 txn.Insert<byte[], HashHeightPair>(BlockHashTable, new byte[0], new HashHeightPair(new uint256(), 1));
                 txn.Commit();
             }
@@ -190,22 +190,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             string folder = CreateTestDir(this);
 
             PosBlock posBlock = CreatePosBlockMock();
-            var headers = new List<ProvenBlockHeader>();
+            var headers = new SortedDictionary<int, ProvenBlockHeader>();
 
             for (int i = 0; i < 10; i++)
             {
-                headers.Add(CreateNewProvenBlockHeaderMock(posBlock));
+                headers.Add(i, CreateNewProvenBlockHeaderMock(posBlock));
             }
 
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
-                await repo.PutAsync(headers, new HashHeightPair(headers.Last().GetHash(), headers.Count - 1));
+                await repo.PutAsync(headers, new HashHeightPair(headers.Last().Value.GetHash(), headers.Count - 1));
             }
 
             using (IProvenBlockHeaderRepository newRepo = this.SetupRepository(this.Network, folder))
             {
-                newRepo.TipHashHeight.Hash.Should().Be(headers.Last().GetHash());
+                newRepo.TipHashHeight.Hash.Should().Be(headers.Last().Value.GetHash());
                 newRepo.TipHashHeight.Height.Should().Be(headers.Count - 1);
             }
         }

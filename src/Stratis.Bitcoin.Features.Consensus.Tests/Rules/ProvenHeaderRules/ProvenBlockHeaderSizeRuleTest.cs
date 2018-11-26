@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Linq;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
@@ -11,10 +12,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
     public class ProvenBlockHeaderSizeRuleTest : TestPosConsensusRulesUnitTestBase
     {
         private PosConsensusOptions options;
+        private int provenHeadersActivationHeight;
 
         public ProvenBlockHeaderSizeRuleTest()
         {
             this.options = (PosConsensusOptions)this.network.Consensus.Options;
+            this.provenHeadersActivationHeight = this.network.Checkpoints.Keys.Last();
         }
 
         [Fact]
@@ -27,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // When we run the validation rule, we should hit merkle proof validation exception.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderSizeRule>().Run(this.ruleContext);
@@ -61,7 +64,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // When we run the validation rule, we should hit merkle proof validation exception.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderSizeRule>().Run(this.ruleContext);
@@ -95,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup chained header and move it to the height higher than proven header activation height.
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(provenBlockHeader, provenBlockHeader.GetHash(), null);
-            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.options.ProvenHeadersActivationHeight + 10);
+            this.ruleContext.ValidationContext.ChainedHeaderToValidate.SetPrivatePropertyValue("Height", this.provenHeadersActivationHeight + 10);
 
             // When we run the validation rule, we should hit merkle proof validation exception.
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderSizeRule>().Run(this.ruleContext);

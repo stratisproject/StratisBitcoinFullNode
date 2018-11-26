@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using NBitcoin.BuilderExtensions;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
@@ -30,6 +31,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// </summary>
         /// <returns>A collection of spendable outputs</returns>
         IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(string walletName, int confirmations = 0);
+
+        /// <summary>
+        /// Lists all spendable transactions from the accounts in the wallet participating in staking.
+        /// </summary>
+        /// <returns>A collection of spendable outputs</returns>
+        IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWalletForStaking(string walletName, int confirmations = 0);
+
+        /// <summary>
+        /// Helps identify UTXO's that can participate in staking.
+        /// </summary>
+        /// <returns>A dictionary containing string and template pairs - e.g. { "P2PK", PayToPubkeyTemplate.Instance }</returns>
+        Dictionary<string, ScriptTemplate> GetValidStakingTemplates();
+
+        /// <summary>
+        /// Returns additional transaction builder extensions to use for building staking transactions.
+        /// </summary>
+        /// <returns>Transaction builder extensions to use for building staking transactions.</returns>
+        IEnumerable<BuilderExtension> GetTransactionBuilderExtensionsForStaking();
 
         /// <summary>
         /// Lists all spendable transactions from the account specified in <see cref="WalletAccountReference"/>.
