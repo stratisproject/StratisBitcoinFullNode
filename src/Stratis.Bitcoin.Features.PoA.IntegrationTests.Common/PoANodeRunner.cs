@@ -26,16 +26,17 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
 
-            this.FullNode = (FullNode)FullNodePoATestBuilderExtension.AddFastMiningCapability(new FullNodeBuilder()
-                    .UseNodeSettings(settings)
-                    .UseBlockStore()
-                    .UsePoAConsensus()
-                    .UseMempool()
-                    .UseWallet()
-                    .UseApi()
-                    .AddRPC()
-                    .MockIBD()
-                    .ReplaceTimeProvider(this.timeProvider))
+            this.FullNode = (FullNode)new FullNodeBuilder()
+                .UseNodeSettings(settings)
+                .UseBlockStore()
+                .UsePoAConsensus()
+                .UseMempool()
+                .UseWallet()
+                .UseApi()
+                .AddRPC()
+                .MockIBD()
+                .ReplaceTimeProvider(this.timeProvider)
+                .AddFastMiningCapability()
                 .Build();
         }
     }
