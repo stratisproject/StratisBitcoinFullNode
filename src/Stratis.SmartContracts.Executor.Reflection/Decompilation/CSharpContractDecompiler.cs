@@ -15,13 +15,22 @@ namespace Stratis.SmartContracts.Executor.Reflection.Decompilation
     {
         public Result<string> GetSource(byte[] bytecode)
         {
+            if (bytecode == null)
+                return Result.Fail<string>("Bytecode cannot be null");
+
             using (var memStream = new MemoryStream(bytecode))
             {
-                var modDefinition = ModuleDefinition.ReadModule(memStream);
-                var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
-                // TODO: Update decompiler to display all code, not just this rando FirstOrDefault (given we now allow multiple types)
-                string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
-                return Result.Ok(cSharp);
+                try
+                {
+                    var modDefinition = ModuleDefinition.ReadModule(memStream);
+                    var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
+                    string cSharp = decompiler.DecompileWholeModuleAsString();
+                    return Result.Ok(cSharp);
+                }
+                catch (BadImageFormatException e)
+                {
+                    return Result.Fail<string>(e.Message);
+                }
             }
         }
     }

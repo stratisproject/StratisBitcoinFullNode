@@ -57,6 +57,9 @@
     <Compile Update="SmartContracts\ContractConstructorInvalid.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\ContractCreation.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\ContractMethodParameterTypeMismatch.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
