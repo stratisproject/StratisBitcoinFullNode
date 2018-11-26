@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
         private bool AllowClientConnection(TcpClient tcpClient)
         {
-            if (this.networkPeerDisposer.ConnectedPeersCount >= this.connectionManagerSettings.MaxConnections)
+            if (this.networkPeerDisposer.connectedPeers.Count(p => p.Value.Inbound) >= this.connectionManagerSettings.MaxConnections - this.connectionManagerSettings.MaxOutboundConnections)
             {
                 this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
                 return false;

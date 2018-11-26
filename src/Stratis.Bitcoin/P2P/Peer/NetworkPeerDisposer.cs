@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly AsyncQueue<INetworkPeer> peersToDispose;
 
         /// <summary>Mapping of connected peers by their connection ID.</summary>
-        private readonly ConcurrentDictionary<int, INetworkPeer> connectedPeers;
+        public ConcurrentDictionary<int, INetworkPeer> connectedPeers { get; }
 
         /// <summary>Gets the connected peers count.</summary>
         public int ConnectedPeersCount
