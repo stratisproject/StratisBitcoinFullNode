@@ -60,8 +60,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
+                try
+                {
+                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
+                }
+                catch (MethodParameterStringSerializerException exception)
+                {
+                    return BuildCallContractTransactionResponse.Failed(exception.Message);
+                }
             }
             else
             {
@@ -111,8 +118,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
+                try
+                {
+                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
+                }
+                catch (MethodParameterStringSerializerException exception)
+                {
+                    return BuildCreateContractTransactionResponse.Failed(exception.Message);
+                }
             }
             else
             {
