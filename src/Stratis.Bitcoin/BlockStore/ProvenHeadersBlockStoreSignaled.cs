@@ -7,13 +7,13 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.BlockStore
+namespace Stratis.Bitcoin.BlockStore
 {
     /// <summary>
     /// The goal of this behavior is to ensure that we have always a Proven Header for each block signaled, because our node
     /// must be able to serve a Proven Header for every block we announce
     /// </summary>
-    /// <seealso cref="Stratis.Bitcoin.Features.BlockStore.BlockStoreSignaled" />
+    /// <seealso cref="BlockStoreSignaled" />
     public class ProvenHeadersBlockStoreSignaled : BlockStoreSignaled
     {
         private readonly Network network;

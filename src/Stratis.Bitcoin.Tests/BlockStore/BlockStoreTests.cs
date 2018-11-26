@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.BlockStore.Tests
+namespace Stratis.Bitcoin.BlockStore.Tests
 {
     public class BlockStoreTests
     {

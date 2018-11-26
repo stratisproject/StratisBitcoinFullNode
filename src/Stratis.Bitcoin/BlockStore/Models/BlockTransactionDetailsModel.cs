@@ -2,7 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Controllers.Models;
 
-namespace Stratis.Bitcoin.Features.BlockStore.Models
+namespace Stratis.Bitcoin.BlockStore.Models
 {
     public class BlockTransactionDetailsModel : BlockModel
     {

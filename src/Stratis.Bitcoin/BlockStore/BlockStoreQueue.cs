@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.BlockStore
+namespace Stratis.Bitcoin.BlockStore
 {
     /// <summary>
     /// Saves blocks to the database in batches, removes reorged blocks from the database.

@@ -4,7 +4,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.BlockStore.Tests
+namespace Stratis.Bitcoin.BlockStore.Tests
 {
     public class StoreSettingsTest : TestBase	
     {	

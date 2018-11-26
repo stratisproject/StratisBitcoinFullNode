@@ -16,7 +16,7 @@ using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
-namespace Stratis.Bitcoin.Features.BlockStore
+namespace Stratis.Bitcoin.BlockStore
 {
     public interface IBlockStoreBehavior : INetworkPeerBehavior
     {

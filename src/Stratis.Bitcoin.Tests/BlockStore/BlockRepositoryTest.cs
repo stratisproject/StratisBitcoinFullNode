@@ -8,7 +8,7 @@ using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.BlockStore.Tests
+namespace Stratis.Bitcoin.BlockStore.Tests
 {
     public class BlockRepositoryTest : LogsTestBase
     {

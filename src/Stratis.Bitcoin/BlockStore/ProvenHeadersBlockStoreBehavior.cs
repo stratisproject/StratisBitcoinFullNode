@@ -7,7 +7,7 @@ using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
-namespace Stratis.Bitcoin.Features.BlockStore
+namespace Stratis.Bitcoin.BlockStore
 {
     /// <inheritdoc />
     public class ProvenHeadersBlockStoreBehavior : BlockStoreBehavior
