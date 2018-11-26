@@ -212,7 +212,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </para>
         /// </summary>
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
-        [Fact]
+        [Retry]
         public void Pos_PullerVsMinerRaceCondition()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -334,6 +334,5 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.Equal(20, minerB.FullNode.Chain.Height);
             }
         }
-
     }
 }

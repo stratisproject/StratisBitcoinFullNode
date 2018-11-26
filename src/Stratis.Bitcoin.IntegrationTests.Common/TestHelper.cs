@@ -363,14 +363,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             {
                 try
                 {
+                    if (IsNodeConnectedTo(thisNode, connectToNode))
+                        return true;
                     thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
-                    WaitLoop(() => IsNodeConnectedTo(thisNode, connectToNode));
                     return true;
                 }
                 catch (Exception) { }
 
                 return false;
-            }, retryDelayInMiliseconds: 100, cancellationToken: cancellation.Token);
+            }, retryDelayInMiliseconds: 5000, cancellationToken: cancellation.Token);
         }
 
         /// <summary>
