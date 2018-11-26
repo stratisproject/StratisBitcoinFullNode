@@ -156,10 +156,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(minerA, 55);
 
                 // Sync the network to height 55.
-                TestHelper.Connect(syncer, minerA);
-                TestHelper.Connect(syncer, minerB);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+                TestHelper.ConnectAndSync(syncer, minerA);
+                TestHelper.ConnectAndSync(syncer, minerB);
 
                 // Disconnect Miner A and B.
                 TestHelper.DisconnectAll(syncer, minerA, minerB);
