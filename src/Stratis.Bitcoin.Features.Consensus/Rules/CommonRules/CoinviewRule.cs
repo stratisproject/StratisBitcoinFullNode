@@ -77,17 +77,20 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         this.CheckInputs(tx, view, index.Height);
 
                         if (!tx.IsCoinStake)
+                        {
                             fees += view.GetValueIn(tx) - tx.TotalOut;
 
-                        var txData = new PrecomputedTransactionData(tx);
-                        for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
-                        {
-                            TxIn input = tx.Inputs[inputIndex];
-                            int inputIndexCopy = inputIndex;
-                            TxOut txout = view.GetOutputFor(input);
-                            var checkInput = new Task<bool>(() => this.CheckInput(tx, inputIndexCopy, txout, txData, input, flags));
-                            checkInput.Start();
-                            checkInputs.Add(checkInput);
+                            var txData = new PrecomputedTransactionData(tx);
+                            for (int inputIndex = 0; inputIndex < tx.Inputs.Count; inputIndex++)
+                            {
+                                TxIn input = tx.Inputs[inputIndex];
+                                int inputIndexCopy = inputIndex;
+                                TxOut txout = view.GetOutputFor(input);
+                                var checkInput = new Task<bool>(() =>
+                                    this.CheckInput(tx, inputIndexCopy, txout, txData, input, flags));
+                                checkInput.Start();
+                                checkInputs.Add(checkInput);
+                            }
                         }
                     }
                 }
@@ -257,11 +260,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionNegativeFee.Throw();
                 }
 
-            fees += txFee;
-            if (!this.MoneyRange(fees))
-            {
-                this.Logger.LogTrace("(-)[BAD_FEE]");
-                ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
+                fees += txFee;
+                if (!this.MoneyRange(fees))
+                {
+                    this.Logger.LogTrace("(-)[BAD_FEE]");
+                    ConsensusErrors.BadTransactionFeeOutOfRange.Throw();
+                }
             }
         }
 
