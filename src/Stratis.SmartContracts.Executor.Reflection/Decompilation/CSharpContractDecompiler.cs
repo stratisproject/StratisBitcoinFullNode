@@ -7,11 +7,10 @@ using CSharpFunctionalExtensions;
 using ICSharpCode.Decompiler;
 using ICSharpCode.Decompiler.CSharp;
 using Mono.Cecil;
-using Stratis.SmartContracts.Core.Decompilation;
 
 namespace Stratis.SmartContracts.Executor.Reflection.Decompilation
 {
-    public class CSharpContractDecompiler : IContractDecompiler
+    public class CSharpContractDecompiler
     {
         public Result<string> GetSource(byte[] bytecode)
         {

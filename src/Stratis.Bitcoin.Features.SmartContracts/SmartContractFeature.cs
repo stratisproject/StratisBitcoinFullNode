@@ -18,7 +18,6 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Decompilation;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -147,7 +146,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<ISerializer, Serializer>();
 
                         // Controllers + utils
-                        services.AddSingleton<IContractDecompiler, CSharpContractDecompiler>();
+                        services.AddSingleton<CSharpContractDecompiler>();
                         services.AddSingleton<SmartContractsController>();
                     });
             });

@@ -20,11 +20,11 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Decompilation;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Decompilation;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IBroadcasterManager broadcasterManager;
         private readonly IBlockStore blockStore;
         private readonly ConcurrentChain chain;
-        private readonly IContractDecompiler contractDecompiler;
+        private readonly CSharpContractDecompiler contractDecompiler;
         private readonly ILogger logger;
         private readonly Network network;
         private readonly IStateRepositoryRoot stateRoot;
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
             ConcurrentChain chain,
-            IContractDecompiler contractDecompiler,
+            CSharpContractDecompiler contractDecompiler,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
