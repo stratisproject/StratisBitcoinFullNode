@@ -249,7 +249,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     ConsensusErrors.BadTransactionInBelowOut.Throw();
                 }
 
-                // Tally transaction fees.
+                // Check transaction fees.
                 Money txFee = valueIn - transaction.TotalOut;
                 if (txFee < 0)
                 {
