@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
                 this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object)
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object)
                 .Register();
 
             var headerValidator = new HeaderValidator(consensusRuleEngine, this.loggerFactory.Object);
@@ -50,11 +50,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Create the chained header tree.
             var chainedHeaderTree = new ChainedHeaderTree(this.network, this.loggerFactory.Object, headerValidator, this.checkpoints.Object,
-                this.chainState.Object, new Mock<IFinalizedBlockInfo>().Object, this.consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));
+                this.chainState.Object, new Mock<IFinalizedBlockInfoRepository>().Object, this.consensusSettings, new InvalidBlockHashStore(new DateTimeProvider()));
 
             // Create consensus manager.
             var consensus = new ConsensusManager(chainedHeaderTree, this.network, this.loggerFactory.Object, this.chainState.Object, integrityValidator,
-                partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfo>().Object, new Signals.Signals(),
+                partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(),
                 new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
                 new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object);
 
@@ -79,12 +79,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(It.IsAny<IStakeChain>(), It.IsAny<ChainedHeader>(), It.IsAny<IConsensus>(), It.IsAny<bool>()))
                 .Returns(this.network.Consensus.PowLimit);
 
+            // Skip validation of signature in the proven header
+            this.stakeValidator.Setup(s => s.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(),0, It.IsAny<ScriptVerify>()))
+                .Returns(true);
+
             // Since we are mocking the stakechain ensure that the Get returns a BlockStake. Otherwise this results in "previous stake is not found".
             this.stakeChain.Setup(d => d.Get(It.IsAny<uint256>())).Returns(new BlockStake()
             {
                 Flags = BlockFlag.BLOCK_PROOF_OF_STAKE,
                 StakeModifierV2 = 0,
-                StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosTimeMaskRule.StakeTimestampMask
+                StakeTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask
             });
 
             // Since we are mocking the chainState ensure that the BlockStoreTip returns a usable value.
@@ -176,7 +180,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Finalize the block and add it to the chain.
             block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
-            block.Header.Time = (this.concurrentChain.Tip.Header.Time + 60) & ~PosTimeMaskRule.StakeTimestampMask;
+            block.Header.Time = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask;
             block.Header.Bits = block.Header.GetWorkRequired(this.network, this.concurrentChain.Tip);
             block.SetPrivatePropertyValue("BlockSize", 1L);
             block.Transactions[0].Time = block.Header.Time;
