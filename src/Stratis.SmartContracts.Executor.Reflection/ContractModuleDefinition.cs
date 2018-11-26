@@ -2,7 +2,6 @@
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
-using Stratis.ModuleValidation.Net;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection.ILRewrite;
 using Stratis.SmartContracts.Executor.Reflection.Loader;

@@ -1728,15 +1728,20 @@ namespace NBitcoin
         {
             if (block == null)
                 return IsFinal(Utils.UnixTimeToDateTime(0), 0);
+
             return IsFinal(block.Header.BlockTime, block.Height);
         }
+
         public bool IsFinal(DateTimeOffset blockTime, int blockHeight)
         {
             uint nBlockTime = Utils.DateTimeToUnixTime(blockTime);
+
             if(this.nLockTime == 0)
                 return true;
+
             if((long) this.nLockTime < ((long) this.nLockTime < LockTime.LOCKTIME_THRESHOLD ? (long)blockHeight : nBlockTime))
                 return true;
+
             foreach(TxIn txin in this.Inputs)
             {
                 if(!txin.IsFinal)

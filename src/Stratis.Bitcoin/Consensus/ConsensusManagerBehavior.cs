@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Consensus
         /// the tip of the best chain we think the peer has.
         /// </para>
         /// </remarks>
-        protected async Task ProcessHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
+        protected virtual async Task ProcessHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
             if (headers.Count == 0)
             {

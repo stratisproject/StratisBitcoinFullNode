@@ -197,9 +197,9 @@ namespace Stratis.Bitcoin.Tests.Common
             return currentHeader;
         }
 
-        public Dictionary<int, ProvenBlockHeader> ConvertToDictionaryOfProvenHeaders(ChainedHeader tip)
+        public SortedDictionary<int, ProvenBlockHeader> ConvertToDictionaryOfProvenHeaders(ChainedHeader tip)
         {
-            var headers = new Dictionary<int, ProvenBlockHeader>();
+            var headers = new SortedDictionary<int, ProvenBlockHeader>();
 
             ChainedHeader currentHeader = tip;
 

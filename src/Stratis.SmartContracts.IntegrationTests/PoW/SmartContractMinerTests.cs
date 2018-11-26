@@ -210,6 +210,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 InitializeSmartContractComponents(callingMethod);
 
                 this.consensusRules = new SmartContractPowConsensusRuleEngine(
+                    this.callDataSerializer,
                     this.chain,
                     new Checkpoints(),
                     consensusSettings,

@@ -17,6 +17,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -99,6 +100,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
         }
+
+        public ICallDataSerializer CallDataSerializer => throw new NotImplementedException();
 
         public IContractExecutorFactory ExecutorFactory => throw new NotImplementedException();
 
