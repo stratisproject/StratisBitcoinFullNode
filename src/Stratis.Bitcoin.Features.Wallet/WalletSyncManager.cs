@@ -69,8 +69,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void Start()
         {
-            this.logger.LogTrace("()");
-
             // When a node is pruned it impossible to catch up
             // if the wallet falls behind the block puller.
             // To support pruning the wallet will need to be
@@ -98,15 +96,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.walletManager.WalletTipHash = fork.HashBlock;
                 this.walletTip = fork;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Stop()
         {
-            this.logger.LogTrace("()");
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Called when a <see cref="Block"/> is added to the <see cref="blocksQueue"/>.
@@ -117,9 +111,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         private async Task OnProcessBlockAsync(Block block, CancellationToken cancellationToken)
         {
             Guard.NotNull(block, nameof(block));
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
-            long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);            
+            long currentBlockQueueSize = Interlocked.Add(ref this.blocksQueueSize, -block.BlockSize.Value);
             this.logger.LogTrace("Queue sized changed to {0} bytes.", currentBlockQueueSize);
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
@@ -232,16 +225,12 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             if (!this.walletManager.ContainsWallets)
             {
@@ -272,8 +261,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 this.blocksQueue.Enqueue(block);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -281,44 +268,28 @@ namespace Stratis.Bitcoin.Features.Wallet
         {
             Guard.NotNull(transaction, nameof(transaction));
 
-            this.logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
-
             this.walletManager.ProcessTransaction(transaction);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void SyncFromDate(DateTime date)
         {
-            this.logger.LogTrace("({0}:'{1::yyyy-MM-dd HH:mm:ss}')", nameof(date), date);
-
             int blockSyncStart = this.chain.GetHeightAtTime(date);
             this.SyncFromHeight(blockSyncStart);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(height), height);
-
             ChainedHeader chainedHeader = this.chain.GetBlock(height);
             this.walletTip = chainedHeader ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedHeader.HashBlock;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Dispose()
         {
-            this.logger.LogTrace("()");
-
             this.blocksQueue.Dispose();
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

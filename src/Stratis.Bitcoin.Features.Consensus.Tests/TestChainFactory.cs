@@ -7,7 +7,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
@@ -68,7 +67,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
         public IChainState ChainState { get; set; }
 
-        public IFinalizedBlockInfo FinalizedBlockInfo { get; set; }
+        public IFinalizedBlockInfoRepository FinalizedBlockInfo { get; set; }
 
         public IInitialBlockDownloadState InitialBlockDownloadState { get; set; }
 
@@ -138,8 +137,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             testChainContext.FullValidator = new FullValidator(testChainContext.ConsensusRules, testChainContext.LoggerFactory);
 
             var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
-            var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, new Mock<StoreSettings>().Object,
-                new Mock<INodeLifetime>().Object, blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
+
+            var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(testChainContext.ChainState);
+
+            var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, blockStoreFlushCondition, new Mock<StoreSettings>().Object,
+                blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);
 
             await blockStore.InitializeAsync();
 
@@ -218,9 +220,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         private static void BuildMutatedBlock(BlockTemplate newBlock)
         {
             Transaction coinbaseTransaction = newBlock.Block.Transactions[0];
-            Transaction outTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 0);
+            Transaction outTransaction = TransactionsHelper.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 0);
             newBlock.Block.Transactions.Add(outTransaction);
-            Transaction duplicateTransaction = Transactions.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 1);
+            Transaction duplicateTransaction = TransactionsHelper.BuildNewTransactionFromExistingTransaction(coinbaseTransaction, 1);
             newBlock.Block.Transactions.Add(duplicateTransaction);
             newBlock.Block.Transactions.Add(duplicateTransaction);
         }

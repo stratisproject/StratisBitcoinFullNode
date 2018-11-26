@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly IConnectionManager connection;
 
         /// <summary>Instance logger.</summary>
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
@@ -69,7 +69,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected override void OnNextCore(ChainedHeaderBlock blockPair)
         {
-            this.logger.LogTrace("()");
             if (this.storeSettings.Prune)
             {
                 this.logger.LogTrace("(-)[PRUNE]");
@@ -85,10 +84,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block hash is '{0}'.", chainedHeader.HashBlock);
 
-            // Ensure the block is written to disk before relaying.
-            this.blockStoreQueue.AddToPending(blockPair);
+            bool isIBD = this.initialBlockDownloadState.IsInitialBlockDownload();
 
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            // Ensure the block is written to disk before relaying.
+            this.AddBlockToQueue(blockPair, isIBD);
+
+            if (isIBD)
             {
                 this.logger.LogTrace("(-)[IBD]");
                 return;
@@ -96,8 +97,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.logger.LogTrace("Block header '{0}' added to the announce queue.", chainedHeader);
             this.blocksToAnnounce.Enqueue(chainedHeader);
+        }
 
-            this.logger.LogTrace("(-)");
+        /// <summary>
+        /// Adds the block to queue.
+        /// Ensures the block is written to disk before relaying to peers.
+        /// </summary>
+        /// <param name="blockPair">The block pair.</param>
+        /// <param name="isIBD">Is node in IBD.</param>
+        protected virtual void AddBlockToQueue(ChainedHeaderBlock blockPair, bool isIBD)
+        {
+            this.blockStoreQueue.AddToPending(blockPair);
         }
 
         /// <summary>
@@ -181,8 +191,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </remarks>
         private async Task SendBatchAsync(List<ChainedHeader> batch)
         {
-            this.logger.LogTrace("()");
-
             int announceBlockCount = batch.Count;
             if (announceBlockCount == 0)
             {
@@ -216,15 +224,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            // Announce the blocks to each of the peers.
-            List<BlockStoreBehavior> behaviours = peers.Select(s => s.Behavior<BlockStoreBehavior>())
-                .Where(b => b != null).ToList();
+            // Announces the headers to peers using the appropriate behavior (BlockStoreBehavior or behaviors that inherits from it).
+            List<BlockStoreBehavior> behaviors = peers.Select(peer => peer.Behavior<BlockStoreBehavior>())
+                .Where(behavior => behavior != null).ToList();
 
-            this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviours.Count);
-            foreach (BlockStoreBehavior behaviour in behaviours)
-                await behaviour.AnnounceBlocksAsync(batch).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
+            this.logger.LogTrace("{0} blocks will be sent to {1} peers.", batch.Count, behaviors.Count);
+            foreach (BlockStoreBehavior behavior in behaviors)
+                await behavior.AnnounceBlocksAsync(batch).ConfigureAwait(false);
         }
 
         /// <inheritdoc />

@@ -7,9 +7,9 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
@@ -21,6 +21,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 {
     public class BlockStoreFeature : FullNodeFeature
     {
+        private readonly Network network;
         private readonly ConcurrentChain chain;
 
         private readonly Signals.Signals signals;
@@ -41,7 +42,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IBlockStoreQueue blockStoreQueue;
 
+        private readonly IConsensusManager consensusManager;
+
+        private readonly ICheckpoints checkpoints;
+
         public BlockStoreFeature(
+            Network network,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             Signals.Signals signals,
@@ -50,8 +56,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             IChainState chainState,
             IBlockStoreQueue blockStoreQueue,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IConsensusManager consensusManager,
+            ICheckpoints checkpoints)
         {
+            this.network = network;
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
             this.signals = signals;
@@ -61,35 +70,48 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.loggerFactory = loggerFactory;
             this.storeSettings = storeSettings;
             this.chainState = chainState;
+            this.consensusManager = consensusManager;
+            this.checkpoints = checkpoints;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
 
-        private void AddInlineStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder log)
         {
             ChainedHeader highestBlock = this.chainState.BlockStoreTip;
 
             if (highestBlock != null)
             {
-                string log = $"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8) +
+                string logString = $"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8) +
                              $" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock;
 
-                benchLogs.AppendLine(log);
+                log.AppendLine(logString);
             }
         }
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
-            this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.blockStoreQueue, this.chainState, this.loggerFactory));
+            // Use ProvenHeadersBlockStoreBehavior for PoS Networks
+            if (this.network.Consensus.IsProofOfStake)
+            {
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints));
+            }
+            else
+            {
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager));
+            }
 
             // Signal to peers that this node can serve blocks.
-            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
+            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
+
+            // Temporary measure to support asking witness data on BTC.
+            // At some point NetworkPeerServices will move to the Network class,
+            // Then this values should be taken from there.
+            if (!this.network.Consensus.IsProofOfStake)
+                this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
 
-            this.logger.LogTrace("(-)");
             return Task.CompletedTask;
         }
 
@@ -119,9 +141,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         services.AddSingleton<IBlockStoreQueue, BlockStoreQueue>().AddSingleton<IBlockStore>(provider => provider.GetService<IBlockStoreQueue>());
                         services.AddSingleton<IBlockRepository, BlockRepository>();
-                        services.AddSingleton<BlockStoreSignaled>();
+
+                        if (fullNodeBuilder.Network.Consensus.IsProofOfStake)
+                            services.AddSingleton<BlockStoreSignaled, ProvenHeadersBlockStoreSignaled>();
+                        else
+                            services.AddSingleton<BlockStoreSignaled>();
+
                         services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
+                        services.AddSingleton<IBlockStoreQueueFlushCondition, BlockStoreQueueFlushCondition>();
                     });
             });
 

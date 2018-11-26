@@ -10,11 +10,11 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class MeteredPersistenceStrategy : IPersistenceStrategy
     {
-        private readonly IContractState stateDb;
+        private readonly IStateRepository stateDb;
         private readonly IGasMeter gasMeter;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
-        public MeteredPersistenceStrategy(IContractState stateDb, IGasMeter gasMeter, IKeyEncodingStrategy keyEncodingStrategy)
+        public MeteredPersistenceStrategy(IStateRepository stateDb, IGasMeter gasMeter, IKeyEncodingStrategy keyEncodingStrategy)
         {
             Guard.NotNull(stateDb, nameof(stateDb));
             Guard.NotNull(gasMeter, nameof(gasMeter));
@@ -23,6 +23,13 @@ namespace Stratis.SmartContracts.Executor.Reflection
             this.stateDb = stateDb;
             this.gasMeter = gasMeter;
             this.keyEncodingStrategy = keyEncodingStrategy;
+        }
+
+        public bool ContractExists(uint160 address)
+        {
+            this.gasMeter.Spend((Gas)GasPriceList.StorageCheckContractExistsCost);
+
+            return this.stateDb.IsExist(address);
         }
 
         public byte[] FetchBytes(uint160 address, byte[] key)

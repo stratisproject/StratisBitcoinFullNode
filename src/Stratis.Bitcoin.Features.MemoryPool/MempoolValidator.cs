@@ -154,18 +154,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         private Network network;
 
-        /// <summary>
-        /// Constructs a memory pool validator object.
-        /// </summary>
-        /// <param name="memPool">Transaction memory pool for managing transactions in the memory pool.</param>
-        /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
-        /// <param name="dateTimeProvider">Date and time information provider.</param>
-        /// <param name="mempoolSettings">Settings from the memory pool.</param>
-        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
-        /// <param name="coinView">Coin view of the memory pool.</param>
-        /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
-        /// <param name="nodeSettings">Full node settings.</param>
-        /// <param name="consensusRules">Consensus rules engine.</param>
         public MempoolValidator(
             ITxMempool memPool,
             MempoolSchedulerLock mempoolLock,
@@ -201,7 +189,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public async Task<bool> AcceptToMemoryPoolWithTime(MempoolValidationState state, Transaction tx)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(tx), tx?.GetHash());
             try
             {
                 var vHashTxToUncache = new List<uint256>();
@@ -255,7 +242,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether the final transaction was valid.</returns>
         /// <seealso cref="Transaction.IsFinal(DateTimeOffset, int)"/>
         public static bool CheckFinalTransaction(ConcurrentChain chain, IDateTimeProvider dateTimeProvider, Transaction tx, Transaction.LockTimeFlags flags)
-        {            
+        {
             // By convention a negative value for flags indicates that the
             // current network-enforced consensus rules should be used. In
             // a future soft-fork scenario that would mean checking which
@@ -428,7 +415,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="vHashTxnToUncache">Not currently used</param>
         private async Task AcceptToMemoryPoolWorkerAsync(MempoolValidationState state, Transaction tx, List<uint256> vHashTxnToUncache)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:{4})", nameof(tx), tx?.GetHash(), nameof(vHashTxnToUncache), nameof(vHashTxnToUncache.Count), vHashTxnToUncache?.Count);
             var context = new MempoolValidationContext(tx, state);
 
             this.PreMempoolChecks(context);
@@ -441,8 +427,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
-                this.logger.LogTrace("()");
-
                 // is it already in the memory pool?
                 if (this.memPool.Exists(context.TransactionHash))
                 {
@@ -499,11 +483,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.PerformanceCounter.SetMempoolSize(state.MempoolSize);
                 this.PerformanceCounter.SetMempoolDynamicSize(state.MempoolDynamicSize);
                 this.PerformanceCounter.AddHitCount(1);
-
-                this.logger.LogTrace("(-)");
             });
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -513,8 +493,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void CheckConflicts(MempoolValidationContext context)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
-
             context.SetConflicts = new List<uint256>();
             foreach (TxIn txin in context.Transaction.Inputs)
             {
@@ -559,8 +537,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     }
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -570,8 +546,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         protected virtual void PreMempoolChecks(MempoolValidationContext context)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
-
             // TODO: fix this to use dedicated mempool rules.
             new CheckPowTransactionRule { Logger = this.logger }.CheckTransaction(this.network, this.ConsensusOptions, context.Transaction);
             if (this.chain.Network.Consensus.IsProofOfStake)
@@ -586,7 +560,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             // Coinstake is only valid in a block, not as a loose transaction
             // TODO: mempool needs to have seprate checks for POW/POS as part of the change to rules.
-            if (context.Transaction.IsCoinStake)
+            if (this.network.Consensus.IsProofOfStake && context.Transaction.IsCoinStake)
             {
                 this.logger.LogTrace("(-)[FAIL_INVALID_COINSTAKE]");
                 context.State.Fail(MempoolErrors.Coinstake).Throw();
@@ -614,8 +588,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-)[FAIL_NONSTANDARD]");
                 context.State.Fail(MempoolErrors.NonFinal).Throw();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -628,7 +600,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="witnessEnabled">Whether witness is enabled.</param>
         private void CheckStandardTransaction(MempoolValidationContext context, bool witnessEnabled)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}',{6}:{7})", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString(), nameof(witnessEnabled), witnessEnabled);
             // TODO: Implement Witness Code
 
             Transaction tx = context.Transaction;
@@ -636,6 +607,18 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.logger.LogTrace("(-)[FAIL_TX_VERSION]");
                 context.State.Fail(MempoolErrors.Version).Throw();
+            }
+
+            if (this.network.Consensus.IsProofOfStake)
+            {
+                long adjustedTime = this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+                PosFutureDriftRule futureDriftRule = this.consensusRules.GetRule<PosFutureDriftRule>();
+
+                // nTime has different purpose from nLockTime but can be used in similar attacks
+                if (tx.Time > adjustedTime + futureDriftRule.GetFutureDrift(adjustedTime))
+                {
+                    context.State.Fail(MempoolErrors.TimeTooNew).Throw();
+                }
             }
 
             // Extremely large transactions with lots of inputs can cost the network
@@ -701,8 +684,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-)[FAIL_MULTI_OPRETURN]");
                 context.State.Fail(MempoolErrors.MultiOpReturn).Throw();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -713,7 +694,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private void CheckMempoolCoinView(MempoolValidationContext context)
         {
             Guard.Assert(context.View != null);
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
 
             context.LockPoints = new LockPoints();
 
@@ -743,8 +723,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-)[INVALID_BAD_INPUTS]");
                 context.State.Invalid(MempoolErrors.BadInputsSpent).Throw();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -755,8 +733,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         public virtual void CheckFee(MempoolValidationContext context)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
-
             Money mempoolRejectFee = this.memPool.GetMinFee(this.mempoolSettings.MaxMempool * 1000000).GetFee(context.EntrySize);
             if (mempoolRejectFee > 0 && context.ModifiedFees < mempoolRejectFee)
             {
@@ -776,8 +752,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogTrace("(-)[INVALID_ABSURD_FEE]");
                 context.State.Invalid(MempoolErrors.AbsurdlyHighFee, $"{context.Fees} > {context.State.AbsurdFee}").Throw();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -786,20 +760,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void CheckSigOps(MempoolValidationContext context)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
-
             // Check that the transaction doesn't have an excessive number of
             // sigops, making it impossible to mine. Since the coinbase transaction
             // itself can contain sigops MAX_STANDARD_TX_SIGOPS is less than
             // MAX_BLOCK_SIGOPS; we still consider this an invalid rather than
             // merely non-standard transaction.
-            if (context.SigOpsCost > this.ConsensusOptions.MaxBlockSigopsCost)
+            if (context.SigOpsCost > this.ConsensusOptions.MaxStandardTxSigopsCost)
             {
                 this.logger.LogTrace("(-)[FAIL_TOO_MANY_SIGOPS]");
                 context.State.Fail(MempoolErrors.TooManySigops).Throw();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -811,8 +781,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="acceptTime">The accept time to use for the entry.</param>
         private void CreateMempoolEntry(MempoolValidationContext context, long acceptTime)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}',{6}:{7})", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString(), nameof(acceptTime), acceptTime);
-
             // Only accept BIP68 sequence locked transactions that can be mined in the next
             // block; we don't want our mempool filled up with transactions that can't
             // be mined yet.
@@ -860,8 +828,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             context.Entry = new TxMempoolEntry(context.Transaction, context.Fees, acceptTime, dPriority, this.chain.Height, inChainInputValue,
                 spendsCoinbase, context.SigOpsCost, context.LockPoints, this.ConsensusOptions);
             context.EntrySize = (int)context.Entry.GetTxSize();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -874,8 +840,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void CheckReplacment(MempoolValidationContext context)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
-
             // Check if it's economically rational to mine this transaction rather
             // than the ones it replaces.
             context.ConflictingFees = 0;
@@ -997,8 +961,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                             $"rejecting replacement {context.TransactionHash}, not enough additional fees to relay; {nDeltaFees} < {this.minRelayTxFee.GetFee(context.EntrySize)}").Throw();
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -1021,8 +983,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void CheckAncestors(MempoolValidationContext context)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
-
             // Calculate in-mempool ancestors, up to a limit.
             context.SetAncestors = new TxMempool.SetEntries();
             int nLimitAncestors = this.mempoolSettings.LimitAncestors;
@@ -1051,8 +1011,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         $"{context.TransactionHash} spends conflicting transaction {hashAncestor}").Throw();
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -1064,16 +1022,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="age">AAge to use for calculating expired transactions.</param>
         private void LimitMempoolSize(long limit, long age)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(limit), limit, nameof(age), age);
-
             int expired = this.memPool.Expire(this.dateTimeProvider.GetTime() - age);
             if (expired != 0)
                 this.logger.LogInformation($"Expired {expired} transactions from the memory pool");
 
             var vNoSpendsRemaining = new List<uint256>();
             this.memPool.TrimToSize(limit, vNoSpendsRemaining);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -1083,7 +1037,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether current for fee estimation.</returns>
         private bool IsCurrentForFeeEstimation()
         {
-            this.logger.LogTrace("()");
             // TODO: implement method (find a way to know if in IBD)
 
             //if (IsInitialBlockDownload())
@@ -1091,14 +1044,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (this.chain.Tip.Header.BlockTime.ToUnixTimeMilliseconds() < (this.dateTimeProvider.GetTime() - MaxFeeEstimationTipAge))
             {
-                this.logger.LogTrace("(-):false");
                 return false;
             }
 
             //if (chainActive.Height() < pindexBestHeader->nHeight - 1)
             //  return false;
 
-            this.logger.LogTrace("(-):true");
             return true;
         }
 
@@ -1109,8 +1060,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="context">Current validation context.</param>
         private void CheckAllInputs(MempoolValidationContext context)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}')", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString());
-
             var scriptVerifyFlags = ScriptVerify.Standard;
             if (!this.mempoolSettings.RequireStandard)
             {
@@ -1153,8 +1102,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 context.State.Fail(new MempoolError(),
                         $"CheckInputs: BUG! PLEASE REPORT THIS! ConnectInputs failed against MANDATORY but not STANDARD flags {context.TransactionHash}").Throw();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -1170,8 +1117,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private bool CheckInputs(MempoolValidationContext context, ScriptVerify scriptVerify,
             PrecomputedTransactionData txData)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}',{6}:{7})", nameof(context), nameof(context.TransactionHash), context?.TransactionHash, nameof(context), nameof(context.State), context?.State?.ToString(), nameof(scriptVerify), scriptVerify.ToString());
-
             Transaction tx = context.Transaction;
             if (!context.Transaction.IsCoinBase)
             {
@@ -1222,7 +1167,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
 
-            this.logger.LogTrace("(-)");
             return true;
         }
 
@@ -1235,8 +1179,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether all inputs (scriptSigs) use only standard transaction forms.</returns>
         private bool AreInputsStandard(Transaction tx, MempoolCoinView mapInputs)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(tx), tx?.GetHash());
-
             if (tx.IsCoinBase)
             {
                 this.logger.LogTrace("(-)[IS_COINBASE]:true");
@@ -1263,7 +1205,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
 
-            this.logger.LogTrace("(-):true");
             return true;
         }
 
@@ -1276,8 +1217,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Whether transaction is witness standard.</returns>
         private bool IsWitnessStandard(Transaction tx, MempoolCoinView mapInputs)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(tx), tx?.GetHash());
-
             if (tx.IsCoinBase)
             {
                 this.logger.LogTrace("(-)[IS_COINBASE]:true");
@@ -1373,7 +1312,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 }
             }
 
-            this.logger.LogTrace("(-):true");
             return true;
         }
     }

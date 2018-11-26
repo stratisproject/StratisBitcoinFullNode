@@ -50,8 +50,6 @@ namespace Stratis.Bitcoin.Features.Api
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             this.logger.LogInformation("API starting on URL '{0}'.", this.apiSettings.ApiUri);
             this.webHost = Program.Initialize(this.fullNodeBuilder.Services, this.fullNode, this.apiSettings, this.certificateStore, new WebHostBuilder());
 
@@ -73,8 +71,7 @@ namespace Stratis.Bitcoin.Features.Api
             };
 
             this.apiSettings.KeepaliveTimer.Start();
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
         }
 

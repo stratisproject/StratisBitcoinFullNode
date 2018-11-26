@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.MemoryPool.Tests
@@ -18,9 +19,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void CanHaveAllFullnodeServicesTest()
         {
             // This test is put in the mempool feature because the
-            // mempool requires all the features to be a fullnode
+            // mempool requires all the features to be a fullnode.
 
-            var nodeSettings = new NodeSettings(args: new string[] {
+            var nodeSettings = new NodeSettings(KnownNetworks.TestNet, args: new string[] {
                 $"-datadir=Stratis.Bitcoin.Features.MemoryPool.Tests/TestData/FullNodeBuilderTest/CanHaveAllServicesTest" });
 
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);

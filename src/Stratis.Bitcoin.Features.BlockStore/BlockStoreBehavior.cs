@@ -12,7 +12,9 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -35,17 +37,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
         // Maximum number of headers to announce when relaying blocks with headers message.
         private const int MaxBlocksToAnnounce = 8;
 
-        private readonly ConcurrentChain chain;
+        protected readonly ConcurrentChain chain;
 
-        private readonly IBlockStore blockStore;
+        protected readonly IConsensusManager consensusManager;
 
-        private ConsensusManagerBehavior consensusManagerBehavior;
+        protected ConsensusManagerBehavior consensusManagerBehavior;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
         /// <summary>Factory for creating loggers.</summary>
-        private readonly ILoggerFactory loggerFactory;
+        protected readonly ILoggerFactory loggerFactory;
 
         /// <inheritdoc />
         public bool CanRespondToGetBlocksPayload { get; set; }
@@ -72,20 +74,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Chained header of the last header sent to the peer.</summary>
         private ChainedHeader lastSentHeader;
 
-        /// <inheritdoc cref="IChainState"/>
-        private readonly IChainState chainState;
+        protected readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConcurrentChain chain, IBlockStore blockStore, IChainState chainState, ILoggerFactory loggerFactory)
+        public BlockStoreBehavior(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
         {
             Guard.NotNull(chain, nameof(chain));
-            Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
+            Guard.NotNull(consensusManager, nameof(consensusManager));
 
             this.chain = chain;
-            this.blockStore = blockStore;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
+            this.consensusManager = consensusManager;
 
             this.CanRespondToGetBlocksPayload = true;
             this.CanRespondToGetDataPayload = true;
@@ -94,29 +95,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.preferHeaderAndIDs = false;
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
             this.consensusManagerBehavior = this.AttachedPeer.Behavior<ConsensusManagerBehavior>();
-
-            this.logger.LogTrace("(-)");
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
-            this.logger.LogTrace("()");
-
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-
-            this.logger.LogTrace("(-)");
         }
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             try
             {
                 await this.ProcessMessageAsync(peer, message).ConfigureAwait(false);
@@ -132,14 +125,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[EXCEPTION]");
                 throw;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
-        private async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
+        protected virtual async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             switch (message.Message.Payload)
             {
                 case GetDataPayload getDataPayload:
@@ -173,8 +162,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.PreferHeaders = true;
                     break;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -184,8 +171,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="getBlocksPayload">Payload of "getblocks" message to process.</param>
         private async Task ProcessGetBlocksAsync(INetworkPeer peer, GetBlocksPayload getBlocksPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(getBlocksPayload), getBlocksPayload);
-
             if (getBlocksPayload.BlockLocators.Blocks.Count > BlockLocator.MaxLocatorSize)
             {
                 this.logger.LogTrace("Peer '{0}' sent getblocks with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
@@ -279,9 +264,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             int count = inv.Inventory.Count;
             if (count > 0)
             {
-                ChainedHeader highestHeader = this.consensusManagerBehavior.BestSentHeader;
-
-                if (highestHeader?.Height < lastAddedChainedHeader.Height)
+                // If we reached the limmit size of inv, we need to tell the downloader to send another 'getblocks' message.
+                if (count == InvPayload.MaxGetBlocksInventorySize && lastAddedChainedHeader != null)
                 {
                     this.logger.LogTrace("Setting peer's last block sent to '{0}'.", lastAddedChainedHeader);
                     this.lastSentHeader = lastAddedChainedHeader;
@@ -299,8 +283,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
             }
             else this.logger.LogTrace("Nothing to send.");
-
-            this.logger.LogTrace("(-)");
         }
 
         private Task ProcessSendCmpctPayloadAsync(INetworkPeer peer, SendCmpctPayload sendCmpct)
@@ -311,20 +293,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}.{4}:{5})", nameof(peer), peer.RemoteSocketEndpoint, nameof(getDataPayload), nameof(getDataPayload.Inventory), nameof(getDataPayload.Inventory.Count), getDataPayload.Inventory.Count);
-
             // TODO: bring logic from core
             foreach (InventoryVector item in getDataPayload.Inventory.Where(inv => inv.Type.HasFlag(InventoryType.MSG_BLOCK)))
             {
-                // TODO: check if we need to add support for "not found"
-                Block block = await this.blockStore.GetBlockAsync(item.Hash).ConfigureAwait(false);
+                ChainedHeaderBlock chainedHeaderBlock = await this.consensusManager.GetBlockDataAsync(item.Hash).ConfigureAwait(false);
 
-                if (block != null)
+                if (chainedHeaderBlock?.Block != null)
                 {
                     this.logger.LogTrace("Sending block '{0}' to peer '{1}'.", item.Hash, peer.RemoteSocketEndpoint);
 
                     //TODO strip block of witness if node does not support
-                    await peer.SendMessageAsync(new BlockPayload(block.WithOptions(this.chain.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
+                    await peer.SendMessageAsync(new BlockPayload(chainedHeaderBlock.Block.WithOptions(this.chain.Network.Consensus.ConsensusFactory, peer.SupportedTransactionOptions))).ConfigureAwait(false);
                 }
 
                 // If the peer is syncing using "getblocks" message we are supposed to send
@@ -347,14 +326,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     else this.logger.LogTrace("Reorg in blockstore, inventory continuation won't be sent to peer '{0}'.", peer.RemoteSocketEndpoint);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         private async Task SendAsBlockInventoryAsync(INetworkPeer peer, List<ChainedHeader> blocks)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.Count:{3})", nameof(peer), peer.RemoteSocketEndpoint, nameof(blocks), blocks.Count());
-
             // TODO please don't use queue here. Refactor it.
             var queue = new Queue<InventoryVector>(blocks.Select(s => new InventoryVector(InventoryType.MSG_BLOCK, s.HashBlock)));
             while (queue.Count > 0)
@@ -366,15 +341,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await peer.SendMessageAsync(new InvPayload(items)).ConfigureAwait(false);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public async Task AnnounceBlocksAsync(List<ChainedHeader> blocksToAnnounce)
         {
             Guard.NotNull(blocksToAnnounce, nameof(blocksToAnnounce));
-            this.logger.LogTrace("({0}.{1}:{2})", nameof(blocksToAnnounce), nameof(blocksToAnnounce.Count), blocksToAnnounce.Count);
 
             if (!blocksToAnnounce.Any())
             {
@@ -409,7 +381,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // We expect peer to answer with getheaders message.
                     if (bestSentHeader == null)
                     {
-                        await peer.SendMessageAsync(new HeadersPayload(blocksToAnnounce.Last().Header)).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildHeadersAnnouncePayload(new[] { blocksToAnnounce.Last().Header })).ConfigureAwait(false);
 
                         this.logger.LogTrace("(-)[SENT_SINGLE_HEADER]");
                         return;
@@ -463,7 +435,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.lastSentHeader = bestIndex;
                         this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
 
-                        await peer.SendMessageAsync(new HeadersPayload(headers.ToArray())).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildHeadersAnnouncePayload(headers)).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
                         return;
                     }
@@ -506,21 +478,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
                 return;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
+        /// <summary>
+        /// Builds payload that announces to the peers new blocks that we've connected.
+        /// This method can be overridden to return different type of HeadersPayload, e.g. <see cref="ProvenHeadersPayload" />
+        /// </summary>
+        /// <param name="headers">The headers.</param>
+        /// <returns>
+        /// The <see cref="HeadersPayload" /> instance to announce to the peer.
+        /// </returns>
+        protected virtual Payload BuildHeadersAnnouncePayload(IEnumerable<BlockHeader> headers)
+        {
+            return new HeadersPayload(headers);
+        }
+
+        [NoTrace]
         public override object Clone()
         {
-            this.logger.LogTrace("()");
-
-            var res = new BlockStoreBehavior(this.chain, this.blockStore, this.chainState, this.loggerFactory)
+            var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
             };
 
-            this.logger.LogTrace("(-)");
             return res;
         }
     }

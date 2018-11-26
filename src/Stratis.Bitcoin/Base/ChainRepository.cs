@@ -22,29 +22,7 @@ namespace Stratis.Bitcoin.Base
         Task SaveAsync(ConcurrentChain chain);
     }
 
-    /// <summary>Provider of the last finalized block's height and hash.</summary>
-    /// <remarks>
-    /// Finalized block height is the height of the last block that can't be reorged.
-    /// Blocks with height greater than finalized height can be reorged.
-    /// <para>Finalized block height value is always <c>0</c> for blockchains without max reorg property.</para>
-    /// </remarks>
-    public interface IFinalizedBlockInfo
-    {
-        /// <summary>Gets the finalized block hash and height.</summary>
-        /// <returns>Hash and height of a block that can't be reorged away from.</returns>
-        HashHeightPair GetFinalizedBlockInfo();
-
-        /// <summary>Loads the finalised block hash and height from the database.</summary>
-        Task LoadFinalizedBlockInfoAsync(Network network);
-
-        /// <summary>Saves the finalized block hash and height to the database if height is greater than the previous value.</summary>
-        /// <param name="hash">Block hash.</param>
-        /// <param name="height">Block height.</param>
-        /// <returns><c>true</c> if new value was set, <c>false</c> if <paramref name="height"/> is lower or equal than current value.</returns>
-        Task<bool> SaveFinalizedBlockHashAndHeightAsync(uint256 hash, int height);
-    }
-
-    public class ChainRepository : IChainRepository, IFinalizedBlockInfo
+    public class ChainRepository : IChainRepository
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -53,12 +31,6 @@ namespace Stratis.Bitcoin.Base
         private readonly DBreezeEngine dbreeze;
 
         private BlockLocator locator;
-
-        /// <summary>Database key under which the block height of the last finalized block height is stored.</summary>
-        private static readonly byte[] finalizedBlockKey = new byte[0];
-
-        /// <summary>Height and hash of a block that can't be reorged away from.</summary>
-        private HashHeightPair finalizedBlockInfo;
 
         public ChainRepository(string folder, ILoggerFactory loggerFactory)
         {
@@ -74,73 +46,6 @@ namespace Stratis.Bitcoin.Base
         public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
             : this(dataFolder.ChainPath, loggerFactory)
         {
-        }
-
-        /// <inheritdoc />
-        public HashHeightPair GetFinalizedBlockInfo()
-        {
-            return this.finalizedBlockInfo;
-        }
-
-        /// <inheritdoc />
-        public Task LoadFinalizedBlockInfoAsync(Network network)
-        {
-            this.logger.LogTrace("()");
-
-            Task task = Task.Run(() =>
-            {
-                this.logger.LogTrace("()");
-
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    transaction.ValuesLazyLoadingIsOn = false;
-
-                    Row<byte[], HashHeightPair> row = transaction.Select<byte[], HashHeightPair>("FinalizedBlock", finalizedBlockKey);
-                    if (!row.Exists)
-                    {
-                        this.finalizedBlockInfo = new HashHeightPair(network.GenesisHash, 0);
-                        this.logger.LogTrace("Finalized block height doesn't exist in the database.");
-                    }
-                    else
-                        this.finalizedBlockInfo = row.Value;
-
-                    this.logger.LogTrace("(-):{0}='{1}'", nameof(this.finalizedBlockInfo), this.finalizedBlockInfo);
-                }
-            });
-
-            this.logger.LogTrace("(-)");
-            return task;
-        }
-
-        /// <inheritdoc />
-        public Task<bool> SaveFinalizedBlockHashAndHeightAsync(uint256 hash, int height)
-        {
-            this.logger.LogTrace("({0}:{1})", nameof(height), height);
-
-            if (this.finalizedBlockInfo != null && height <= this.finalizedBlockInfo.Height)
-            {
-                this.logger.LogTrace("(-)[CANT_GO_BACK]:false");
-                return Task.FromResult(false);
-            }
-
-            this.finalizedBlockInfo = new HashHeightPair(hash, height);
-
-            Task<bool> task = Task.Run(() =>
-            {
-                this.logger.LogTrace("()");
-
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    transaction.Insert<byte[], HashHeightPair>("FinalizedBlock", finalizedBlockKey, this.finalizedBlockInfo);
-                    transaction.Commit();
-                }
-
-                this.logger.LogTrace("(-):true");
-                return true;
-            });
-
-            this.logger.LogTrace("(-)");
-            return task;
         }
 
         /// <inheritdoc />
@@ -207,7 +112,22 @@ namespace Stratis.Bitcoin.Base
                     IOrderedEnumerable<ChainedHeader> orderedChainedHeaders = headers.OrderBy(b => b.Height);
                     foreach (ChainedHeader block in orderedChainedHeaders)
                     {
-                        transaction.Insert("Chain", block.Height, block.Header);
+                        BlockHeader header = block.Header;
+                        if (header is ProvenBlockHeader)
+                        {
+                            // copy the header parameters, untill we dont make PH a normal header we store it in its own repo.
+                            BlockHeader newHeader = chain.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                            newHeader.Bits = header.Bits;
+                            newHeader.Time = header.Time;
+                            newHeader.Nonce = header.Nonce;
+                            newHeader.Version = header.Version;
+                            newHeader.HashMerkleRoot = header.HashMerkleRoot;
+                            newHeader.HashPrevBlock = header.HashPrevBlock;
+
+                            header = newHeader;
+                        }
+
+                        transaction.Insert("Chain", block.Height, header);
                     }
 
                     this.locator = tip.GetLocator();

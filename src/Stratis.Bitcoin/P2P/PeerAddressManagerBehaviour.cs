@@ -9,6 +9,8 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -63,6 +65,7 @@ namespace Stratis.Bitcoin.P2P
             this.PeersToDiscover = 1000;
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.StateChanged.Register(this.OnStateChangedAsync);
@@ -77,8 +80,6 @@ namespace Stratis.Bitcoin.P2P
 
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(peer), peer.RemoteSocketEndpoint, nameof(message), message.Message.Command);
-
             try
             {
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Advertise) != 0)
@@ -88,14 +89,12 @@ namespace Stratis.Bitcoin.P2P
                         if (!peer.Inbound)
                         {
                             this.logger.LogTrace("Outbound peer sent {0}. Not replying to avoid fingerprinting attack.", nameof(GetAddrPayload));
-                            this.logger.LogTrace("(-)");
                             return;
                         }
-                    
+
                         if (this.sentAddress)
                         {
                             this.logger.LogTrace("Multiple GetAddr requests from peer. Not replying to avoid fingerprinting attack.");
-                            this.logger.LogTrace("(-)");
                             return;
                         }
 
@@ -124,8 +123,6 @@ namespace Stratis.Bitcoin.P2P
             catch (OperationCanceledException)
             {
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState previousState)
@@ -136,15 +133,41 @@ namespace Stratis.Bitcoin.P2P
                     this.peerAddressManager.PeerHandshaked(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
             }
 
+            if ((peer.Inbound) && (peer.State == NetworkPeerState.HandShaked) &&
+                (this.Mode == PeerAddressManagerBehaviourMode.Advertise || this.Mode == PeerAddressManagerBehaviourMode.AdvertiseDiscover))
+            {
+                this.logger.LogTrace("[INBOUND] {0}:{1}, {2}:{3}, {4}:{5}", nameof(peer.RemoteSocketAddress), peer.RemoteSocketAddress, nameof(peer.RemoteSocketEndpoint), peer.RemoteSocketEndpoint, nameof(peer.RemoteSocketPort), peer.RemoteSocketPort);
+                this.logger.LogTrace("[INBOUND] {0}:{1}, {2}:{3}", nameof(peer.PeerVersion.AddressFrom), peer.PeerVersion?.AddressFrom, nameof(peer.PeerVersion.AddressReceiver), peer.PeerVersion?.AddressReceiver);
+                this.logger.LogTrace("[INBOUND] {0}:{1}", nameof(peer.PeerEndPoint), peer.PeerEndPoint);
+
+                IPEndPoint inboundPeerEndPoint = null;
+
+                // Use AddressFrom if it is not a Loopback address as this means the inbound node was configured with a different external endpoint.
+                if (!peer.PeerVersion.AddressFrom.Match(new IPEndPoint(IPAddress.Loopback, this.AttachedPeer.Network.DefaultPort)))
+                {
+                    inboundPeerEndPoint = peer.PeerVersion.AddressFrom;
+                }
+                else
+                {
+                    // If it is a Loopback address use PeerEndpoint but combine it with the AdressFrom's port as that is the
+                    // other node's listening port.
+                    inboundPeerEndPoint = new IPEndPoint(peer.PeerEndPoint.Address, peer.PeerVersion.AddressFrom.Port);
+                }
+
+                this.peerAddressManager.AddPeer(inboundPeerEndPoint, IPAddress.Loopback);
+            }
+
             return Task.CompletedTask;
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
             this.AttachedPeer.StateChanged.Unregister(this.OnStateChangedAsync);
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.loggerFactory)

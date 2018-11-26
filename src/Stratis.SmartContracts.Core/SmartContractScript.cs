@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -7,52 +6,38 @@ namespace Stratis.SmartContracts.Core
     {
         public static bool IsSmartContractExec(this Script script)
         {
-            Op firstOp = script.ToOps().FirstOrDefault();
-
-            if (firstOp == null)
-                return false;
-
-            var opCode = (byte)firstOp.Code;
-
-            return opCode == (byte)ScOpcodeType.OP_CALLCONTRACT || opCode == (byte)ScOpcodeType.OP_CREATECONTRACT;
+            return script.IsSmartContractCall() || script.IsSmartContractCreate();
         }
 
         public static bool IsSmartContractCall(this Script script)
         {
-            Op firstOp = script.ToOps().FirstOrDefault();
-
-            if (firstOp == null)
-                return false;
-
-            return (byte)firstOp.Code == (byte)ScOpcodeType.OP_CALLCONTRACT;
+            return TestFirstByte(script, (byte)ScOpcodeType.OP_CALLCONTRACT);
         }
 
         public static bool IsSmartContractCreate(this Script script)
         {
-            Op firstOp = script.ToOps().FirstOrDefault();
-
-            if (firstOp == null)
-                return false;
-
-            return (byte)firstOp.Code == (byte)ScOpcodeType.OP_CREATECONTRACT;
+            return TestFirstByte(script, (byte)ScOpcodeType.OP_CREATECONTRACT);
         }
 
         public static bool IsSmartContractSpend(this Script script)
         {
-            Op op = script.ToOps().FirstOrDefault();
-            if (op == null)
-                return false;
+            return TestFirstByte(script, (byte)ScOpcodeType.OP_SPEND);
 
-            return (byte)op.Code == (byte)ScOpcodeType.OP_SPEND;
         }
 
         public static bool IsSmartContractInternalCall(this Script script)
         {
-            var op = script.ToOps().FirstOrDefault();
-            if (op == null)
+            return TestFirstByte(script, (byte) ScOpcodeType.OP_INTERNALCONTRACTTRANSFER);
+        }
+
+        private static bool TestFirstByte(Script script, byte opcode)
+        {
+            var scriptBytes = script.ToBytes();
+
+            if (scriptBytes.Length == 0)
                 return false;
 
-            return (byte)op.Code == (byte)ScOpcodeType.OP_INTERNALCONTRACTTRANSFER;
+            return scriptBytes[0] == opcode;
         }
     }
 

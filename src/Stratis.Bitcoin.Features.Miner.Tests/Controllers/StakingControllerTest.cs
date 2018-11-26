@@ -1,14 +1,17 @@
 ﻿using System;
 using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
@@ -172,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
                 .Returns(this.walletManager.Object);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
             IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
@@ -196,7 +199,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default()), Configuration.NodeSettings.Default(), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
             IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
@@ -209,6 +212,55 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             Assert.Contains("Staking cannot start", error.Message);
 
             this.posMinting.Verify(pm => pm.Stake(It.IsAny<WalletSecret>()), Times.Never);
+        }
+        
+        [Fact]
+        public void StopStaking_Returns_Ok()
+        {
+            {
+                Wallet.Wallet wallet = WalletTestsHelpers.GenerateBlankWallet("myWallet", "password1");
+                this.walletManager.Setup(w => w.GetWallet("myWallet"))
+                    .Returns(wallet);
+
+                this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
+                    .Returns(this.walletManager.Object);
+
+                this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
+                    .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+
+                IActionResult startStakingResult = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
+
+                Assert.IsType<OkResult>(startStakingResult);
+
+                IActionResult stopStakingResult = this.controller.StopStaking();
+
+                Assert.IsType<OkResult>(stopStakingResult);
+            }
+        }
+
+        [Fact]
+        public void StartStaking_OnProofOfWorkNetwork_Returns_MethodNotAllowed()
+        {
+            {
+                Mock<IFullNode> fullNodeWithPowConsensus = new Mock<IFullNode>();
+
+                fullNodeWithPowConsensus.Setup(i => i.Network).Returns(new BitcoinRegTest());
+
+                fullNodeWithPowConsensus.Setup(f => f.NodeService<IWalletManager>(false))
+                    .Returns(this.walletManager.Object);
+
+                this.controller = new StakingController(fullNodeWithPowConsensus.Object, this.LoggerFactory.Object, this.walletManager.Object);
+
+                IActionResult startStakingResult = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
+
+                var errorResult = Assert.IsType<ErrorResult>(startStakingResult);
+                var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+                Assert.Single(errorResponse.Errors);
+
+                ErrorModel error = errorResponse.Errors[0];
+                Assert.Equal(405, error.Status);
+                Assert.Equal("Method not available for Proof of Stake", error.Description);
+            }
         }
     }
 }

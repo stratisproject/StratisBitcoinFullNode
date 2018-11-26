@@ -1,5 +1,6 @@
 ﻿using System;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -43,13 +44,14 @@ namespace Stratis.Bitcoin.Utilities
     }
 
     /// <inheritdoc />
+    [NoTrace]
     public class DateTimeProvider : IDateTimeProvider
     {
         /// <summary>Static instance of the object to prevent the need of creating new instance.</summary>
         public static IDateTimeProvider Default { get; }
 
         /// <summary>UTC adjusted timestamp, or null if no adjusted time is set.</summary>
-        private TimeSpan adjustedTimeOffset;
+        protected TimeSpan adjustedTimeOffset;
 
         /// <summary>
         /// Initializes a default instance of the object.

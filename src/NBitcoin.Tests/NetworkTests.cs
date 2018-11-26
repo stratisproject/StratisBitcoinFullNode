@@ -7,6 +7,7 @@ using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Networks;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -131,15 +132,15 @@ namespace NBitcoin.Tests
             Assert.False(this.networkMain.Consensus.PowNoRetargeting);
             Assert.Equal(1916, this.networkMain.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, this.networkMain.Consensus.MinerConfirmationWindow);
-            Assert.Equal(28, this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1199145601), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1230767999), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Timeout);
-            Assert.Equal(0, this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.CSV].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1462060800), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.CSV].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.CSV].Timeout);
-            Assert.Equal(1, this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1479168000), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.Segwit].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1510704000), this.networkMain.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Timeout);
+            Assert.Equal(28, this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1199145601), this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1230767999), this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].Timeout);
+            Assert.Equal(0, this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1462060800), this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].Timeout);
+            Assert.Equal(1, this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1479168000), this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1510704000), this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Timeout);
             Assert.Equal(0, this.networkMain.Consensus.CoinType);
             Assert.False(this.networkMain.Consensus.IsProofOfStake);
             Assert.Equal(new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"), this.networkMain.Consensus.DefaultAssumeValid);
@@ -213,15 +214,15 @@ namespace NBitcoin.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1512, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Equal(28, network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1199145601), network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1230767999), network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Timeout);
-            Assert.Equal(0, network.Consensus.BIP9Deployments[BIP9Deployments.CSV].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1456790400), network.Consensus.BIP9Deployments[BIP9Deployments.CSV].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), network.Consensus.BIP9Deployments[BIP9Deployments.CSV].Timeout);
-            Assert.Equal(1, network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(1462060800), network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Timeout);
+            Assert.Equal(28, network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1199145601), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1230767999), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].Timeout);
+            Assert.Equal(0, network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1456790400), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].Timeout);
+            Assert.Equal(1, network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(1462060800), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(1493596800), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Timeout);
             Assert.Equal(1, network.Consensus.CoinType);
             Assert.False(network.Consensus.IsProofOfStake);
             Assert.Equal(new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"), network.Consensus.DefaultAssumeValid);
@@ -295,15 +296,15 @@ namespace NBitcoin.Tests
             Assert.True(network.Consensus.PowNoRetargeting);
             Assert.Equal(108, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(144, network.Consensus.MinerConfirmationWindow);
-            Assert.Equal(28, network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(0), network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(999999999), network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy].Timeout);
-            Assert.Equal(0, network.Consensus.BIP9Deployments[BIP9Deployments.CSV].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(0), network.Consensus.BIP9Deployments[BIP9Deployments.CSV].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(999999999), network.Consensus.BIP9Deployments[BIP9Deployments.CSV].Timeout);
-            Assert.Equal(1, network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Bit);
-            Assert.Equal(Utils.UnixTimeToDateTime(BIP9DeploymentsParameters.AlwaysActive), network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].StartTime);
-            Assert.Equal(Utils.UnixTimeToDateTime(999999999), network.Consensus.BIP9Deployments[BIP9Deployments.Segwit].Timeout);
+            Assert.Equal(28, network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(0), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(999999999), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.TestDummy].Timeout);
+            Assert.Equal(0, network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(0), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(999999999), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.CSV].Timeout);
+            Assert.Equal(1, network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Bit);
+            Assert.Equal(Utils.UnixTimeToDateTime(BIP9DeploymentsParameters.AlwaysActive), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].StartTime);
+            Assert.Equal(Utils.UnixTimeToDateTime(999999999), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Timeout);
             Assert.Equal(0, network.Consensus.CoinType);
             Assert.False(network.Consensus.IsProofOfStake);
             Assert.Null(network.Consensus.DefaultAssumeValid);
@@ -326,7 +327,7 @@ namespace NBitcoin.Tests
         {
             Network network = this.stratisMain;
 
-            Assert.Equal(28, network.Checkpoints.Count);
+            Assert.Equal(29, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(3, network.SeedNodes.Count);
 
@@ -377,9 +378,7 @@ namespace NBitcoin.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
+            Assert.Null(network.Consensus.BIP9Deployments[StratisBIP9Deployments.TestDummy]);
             Assert.Equal(12500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(105, network.Consensus.CoinType);
@@ -405,7 +404,7 @@ namespace NBitcoin.Tests
         {
             Network network = this.stratisTest;
 
-            Assert.Equal(10, network.Checkpoints.Count);
+            Assert.Equal(11, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
             Assert.Equal(4, network.SeedNodes.Count);
 
@@ -456,9 +455,7 @@ namespace NBitcoin.Tests
             Assert.False(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
+            Assert.Null(network.Consensus.BIP9Deployments[StratisBIP9Deployments.TestDummy]);
             Assert.Equal(12500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(105, network.Consensus.CoinType);
@@ -496,9 +493,9 @@ namespace NBitcoin.Tests
             Assert.Equal(18442, network.RPCPort);
             Assert.Equal(StratisMain.StratisMaxTimeOffsetSeconds, network.MaxTimeOffsetSeconds);
             Assert.Equal(StratisMain.StratisDefaultMaxTipAgeInSeconds, network.MaxTipAge);
-            Assert.Equal(0, network.MinTxFee);
-            Assert.Equal(0, network.FallbackFee);
-            Assert.Equal(0, network.MinRelayTxFee);
+            Assert.Equal(10000, network.MinTxFee);
+            Assert.Equal(10000, network.FallbackFee);
+            Assert.Equal(10000, network.MinRelayTxFee);
             Assert.Equal("TSTRAT", network.CoinTicker);
 
             Assert.Equal(2, network.Bech32Encoders.Length);
@@ -535,9 +532,7 @@ namespace NBitcoin.Tests
             Assert.True(network.Consensus.PowNoRetargeting);
             Assert.Equal(1916, network.Consensus.RuleChangeActivationThreshold);
             Assert.Equal(2016, network.Consensus.MinerConfirmationWindow);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.TestDummy]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.CSV]);
-            Assert.Null(network.Consensus.BIP9Deployments[BIP9Deployments.Segwit]);
+            Assert.Null(network.Consensus.BIP9Deployments[StratisBIP9Deployments.TestDummy]);
             Assert.Equal(12500, network.Consensus.LastPOWBlock);
             Assert.True(network.Consensus.IsProofOfStake);
             Assert.Equal(105, network.Consensus.CoinType);

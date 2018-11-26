@@ -12,16 +12,17 @@ namespace Stratis.SmartContracts.Executor.Reflection
     {
         IBlock Block { get; }
         BalanceState BalanceState { get; }
-        IContractState ContractState { get; }
+        IStateRepository ContractState { get; }
         IList<Log> GetLogs(IContractPrimitiveSerializer serializer);
         IReadOnlyList<TransferInfo> InternalTransfers { get; }
         IContractLogHolder LogHolder { get; }
         IState Snapshot();
-        ulong Nonce { get; }
+        NonceGenerator NonceGenerator { get; }
         void TransitionTo(IState state);
         void AddInternalTransfer(TransferInfo transferInfo);
         ulong GetBalance(uint160 address);
         uint160 GenerateAddress(IAddressGenerator addressGenerator);
-        ISmartContractState CreateSmartContractState(IState state, GasMeter gasMeter, uint160 address, BaseMessage message, IContractState repository);
+        ISmartContractState CreateSmartContractState(IState state, IGasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository);
+        void AddInitialTransfer(TransferInfo initialTransfer);
     }
 }

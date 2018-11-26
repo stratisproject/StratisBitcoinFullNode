@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Connection
 {
@@ -35,21 +36,22 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             INetworkPeer peer = this.AttachedPeer;
             var peerBehavior = peer.Behavior<IConnectionManagerBehavior>();
             if (peer.State == NetworkPeerState.Connected && !peerBehavior.Whitelisted)
@@ -62,8 +64,6 @@ namespace Stratis.Bitcoin.Connection
                     return;
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
     }
 }

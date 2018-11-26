@@ -8,6 +8,7 @@ using Moq;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly Mock<IStakeValidator> stakeValidator;
         private readonly MempoolSchedulerLock mempoolSchedulerLock;
         private readonly Mock<ITxMempool> txMempool;
-        private readonly Mock<MinerSettings> minerSettings;
+        private readonly MinerSettings minerSettings;
         private readonly Mock<IWalletManager> walletManager;
         private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
         private readonly Mock<ITimeSyncBehaviorState> timeSyncBehaviorState;
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.SetupStakeChain();
             this.stakeValidator = new Mock<IStakeValidator>();
             this.mempoolSchedulerLock = new MempoolSchedulerLock();
-            this.minerSettings = new Mock<MinerSettings>();
+            this.minerSettings = new MinerSettings(NodeSettings.Default(this.network));
             this.txMempool = new Mock<ITxMempool>();
             this.walletManager = new Mock<IWalletManager>();
             this.asyncLoopFactory = new Mock<IAsyncLoopFactory>();
@@ -208,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public async Task GenerateBlocksAsync_does_not_use_small_coins()
         {
-            var walletSecret = new WalletSecret(){WalletName = "wallet", WalletPassword = "password"};
+            var walletSecret = new WalletSecret() { WalletName = "wallet", WalletPassword = "password" };
             var wallet = new Wallet.Wallet()
             {
                 Network = this.network
@@ -217,7 +218,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
             this.AddAccountWithSpendableOutputs(wallet);
             var spendableTransactions = wallet.GetAllSpendableTransactions(CoinType.Stratis, this.chain.Tip.Height, 0).ToList();
 
-            this.walletManager.Setup(w => w.GetSpendableTransactionsInWallet(It.IsAny<string>(), It.IsAny<int>()))
+            this.walletManager.Setup(w => w.GetSpendableTransactionsInWalletForStaking(It.IsAny<string>(), It.IsAny<int>()))
                 .Returns(spendableTransactions);
 
             var fetchedUtxos = spendableTransactions
@@ -597,7 +598,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.LoggerFactory.Object,
                 this.txMempool.Object,
                 this.mempoolSchedulerLock,
-                this.minerSettings.Object,
+                this.minerSettings,
                 this.network,
                 this.stakeChain.Object,
                 this.stakeValidator.Object);
@@ -623,7 +624,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 this.asyncLoopFactory.Object,
                 this.timeSyncBehaviorState.Object,
                 this.LoggerFactory.Object,
-                this.minerSettings.Object);
+                this.minerSettings);
         }
 
         private static ChainedHeader CreateChainedBlockWithNBits(Network network, uint bits)

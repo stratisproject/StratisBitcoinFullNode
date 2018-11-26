@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Bitcoin.Utilities.ModelStateErrors;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -228,7 +229,7 @@ namespace Stratis.Bitcoin.Controllers
                 Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(txid).ConfigureAwait(false) : null;
                 if (trx == null)
                 {
-                    trx = this.blockStore != null ? await this.blockStore.GetTrxAsync(txid).ConfigureAwait(false) : null;
+                    trx = this.blockStore != null ? await this.blockStore.GetTransactionByIdAsync(txid).ConfigureAwait(false) : null;
                 }
 
                 if (trx == null)
@@ -245,6 +246,31 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     return this.Json(new TransactionBriefModel(trx));
                 }
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Return the JSON representation for a given transaction in hex format.
+        /// </summary>
+        /// <param name="rawHex">The raw hexadecimal form of the transaction.</param>
+        /// <returns>The JSON representation of the transaction.</returns>
+        [HttpPost]
+        [Route("decoderawtransaction")]
+        public IActionResult DecodeRawTransaction([FromBody] DecodeRawTransactionModel request)
+        {
+            try
+            {
+                if (!this.ModelState.IsValid)
+                {
+                    return ModelStateErrors.BuildErrorResponse(this.ModelState);
+                }
+
+                return this.Json(new TransactionVerboseModel(this.network.CreateTransaction(request.RawHex), this.network));
             }
             catch (Exception e)
             {
@@ -365,8 +391,9 @@ namespace Stratis.Bitcoin.Controllers
         [Route("stop")]
         public IActionResult Shutdown([FromBody] bool corsProtection = true)
         {
-            // Start the node shutdown process.
-            this.fullNode?.Dispose();
+            // Start the node shutdown process, by calling StopApplication, which will signal to
+            // the full node RunAsync to continue processing, which calls Dispose on the node.
+            this.fullNode?.NodeLifetime.StopApplication();
 
             return this.Ok();
         }
@@ -387,7 +414,7 @@ namespace Stratis.Bitcoin.Controllers
 
             ChainedHeader block = null;
             var blockStore = fullNode.NodeFeature<IBlockStore>();
-            uint256 blockid = blockStore != null ? await blockStore.GetTrxBlockIdAsync(trxid).ConfigureAwait(false) : null;
+            uint256 blockid = blockStore != null ? await blockStore.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false) : null;
             if (blockid != null)
             {
                 block = chain?.GetBlock(blockid);

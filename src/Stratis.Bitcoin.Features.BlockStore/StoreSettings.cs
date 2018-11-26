@@ -31,13 +31,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public int MaxCacheBlocksCount { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public StoreSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -46,7 +39,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(StoreSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -57,12 +49,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.Prune && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the block store settings to the logger.</summary>
-        public static void PrintHelp()
+        public static void PrintHelp(Network network)
         {
             var builder = new StringBuilder();
 
@@ -71,7 +61,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             builder.AppendLine($"-prune=<0 or 1>           Enable pruning to reduce storage requirements by enabling deleting of old blocks.");
             builder.AppendLine($"-maxCacheBlocksCount=<number> The maximum amount of blocks the cache can contain. Default is {DefaultMaxCacheBlocksCount}.");
 
-            NodeSettings.Default().Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>

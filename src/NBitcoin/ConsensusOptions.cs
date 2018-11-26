@@ -7,7 +7,7 @@
     public class ConsensusOptions
     {
         /// <summary>
-        /// Flag used to detect SegWit transactions.  
+        /// Flag used to detect SegWit transactions.
         /// </summary>
         public const int SerializeTransactionNoWitness = 0x40000000;
 
@@ -39,6 +39,9 @@
         /// <summary>The maximum allowed number of signature check operations in a block (network rule).</summary>
         public int MaxBlockSigopsCost { get; set; }
 
+        /// <summary>The maximum number of sigops we're willing to relay/mine in a single tx.</summary>
+        public int MaxStandardTxSigopsCost { get; set; }
+
         /// <summary>
         /// Initializes the default values. Currently only used for initialising Bitcoin networks and testing.
         /// </summary>
@@ -52,6 +55,7 @@
             this.MaxStandardTxWeight = 400000;
             this.MaxBlockBaseSize = 1000000;
             this.MaxBlockSigopsCost = 80000;
+            this.MaxStandardTxSigopsCost = this.MaxBlockSigopsCost / 5;
         }
 
         /// <summary>
@@ -64,7 +68,8 @@
             int witnessScaleFactor,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
             this.MaxBlockWeight = maxBlockWeight;
@@ -73,6 +78,7 @@
             this.MaxStandardVersion = maxStandardVersion;
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
+            this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
         }
 
         /// <summary>
@@ -82,7 +88,8 @@
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost)
         {
             this.MaxBlockBaseSize = maxBlockBaseSize;
 
@@ -95,22 +102,42 @@
             this.MaxStandardVersion = maxStandardVersion;
             this.MaxStandardTxWeight = maxStandardTxWeight;
             this.MaxBlockSigopsCost = maxBlockSigopsCost;
+            this.MaxStandardTxSigopsCost = maxStandardTxSigopsCost;
         }
     }
 
     /// <summary>
     /// Extension to ConsensusOptions for PoS-related parameters.
-    /// 
+    ///
     /// TODO: When moving rules to be part of consensus for network, move this class to the appropriate project too.
     /// Doesn't make much sense for it to be in NBitcoin. Also remove the CoinstakeMinConfirmation consts and set CointakeMinConfirmation in Network building.
     /// </summary>
     public class PosConsensusOptions : ConsensusOptions
     {
-        /// <summary>Coinstake minimal confirmations softfork activation height for the mainnet.</summary>
+        /// <summary>Coinstake minimal confirmations softfork activation height for mainnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
 
-        /// <summary>Coinstake minimal confirmations softfork activation height for the testnet.</summary>
+        /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
         public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
+
+        /// <summary>A mask for coinstake transaction's timestamp and header's timestamp.</summary>
+        /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
+        public const uint StakeTimestampMask = 0x0000000F;
+
+        /// <summary>
+        /// Maximum coinstake serialized size in bytes.
+        /// </summary>
+        public const int MaxCoinstakeSerializedSize = 1_000_000;
+
+        /// <summary>
+        /// Maximum signature serialized size in bytes.
+        /// </summary>
+        public const int MaxBlockSignatureSerializedSize = 80;
+
+        /// <summary>
+        /// Maximum merkle proof serialized size in bytes.
+        /// </summary>
+        public const int MaxMerkleProofSerializedSize = 512;
 
         /// <summary>
         /// Initializes the default values.
@@ -129,7 +156,8 @@
             int witnessScaleFactor,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
         }
 
@@ -140,7 +168,9 @@
             uint maxBlockBaseSize,
             int maxStandardVersion,
             int maxStandardTxWeight,
-            int maxBlockSigopsCost) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost)
+            int maxBlockSigopsCost,
+            int maxStandardTxSigopsCost
+            ) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
         }
 

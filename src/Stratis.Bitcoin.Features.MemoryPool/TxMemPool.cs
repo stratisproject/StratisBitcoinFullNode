@@ -308,24 +308,19 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public bool AddUnchecked(uint256 hash, TxMempoolEntry entry, bool validFeeEstimate = true)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}:{6})", nameof(hash), hash, nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash, nameof(validFeeEstimate), validFeeEstimate);
-
             //LOCK(cs);
             var setAncestors = new SetEntries();
             long nNoLimit = long.MaxValue;
             string dummy;
             this.CalculateMemPoolAncestors(entry, setAncestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy);
             bool returnVal = this.AddUnchecked(hash, entry, setAncestors, validFeeEstimate);
-
-            this.logger.LogTrace("(-):{0}", returnVal);
+            
             return returnVal;
         }
 
         /// <inheritdoc />
         public bool AddUnchecked(uint256 hash, TxMempoolEntry entry, SetEntries setAncestors, bool validFeeEstimate = true)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}.{3}:'{4}',{5}.{6}:{7},{8}:{9})", nameof(hash), hash, nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash, nameof(setAncestors), nameof(setAncestors.Count), setAncestors?.Count, nameof(validFeeEstimate), validFeeEstimate);
-
             //LOCK(cs);
             this.MapTx.Add(entry);
             this.mapLinks.Add(entry, new TxLinks { Parents = new SetEntries(), Children = new SetEntries() });
@@ -380,7 +375,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.vTxHashes.Add(entry, tx.GetWitHash());
             //entry.vTxHashesIdx = vTxHashes.size() - 1;
 
-            this.logger.LogTrace("(-):true");
             return true;
         }
 
@@ -391,8 +385,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="setAncestors">Transaction ancestors.</param>
         private void UpdateEntryForAncestors(TxMempoolEntry entry, SetEntries setAncestors)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:{5})", nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash, nameof(setAncestors), nameof(setAncestors.Count), setAncestors?.Count);
-
             long updateCount = setAncestors.Count;
             long updateSize = 0;
             Money updateFee = 0;
@@ -404,8 +396,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 updateSigOpsCost += ancestorIt.SigOpCost;
             }
             entry.UpdateAncestorState(updateSize, updateFee, updateCount, updateSigOpsCost);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -416,8 +406,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="setAncestors">Transaction ancestors.</param>
         private void UpdateAncestorsOf(bool add, TxMempoolEntry entry, SetEntries setAncestors)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:'{4}',{5}.{6}:{7})", nameof(add), add, nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash, nameof(setAncestors), nameof(setAncestors.Count), setAncestors?.Count);
-
             SetEntries parentIters = this.GetMemPoolParents(entry);
             // add or remove this tx as a child of each parent
             foreach (TxMempoolEntry piter in parentIters)
@@ -430,8 +418,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 ancestorIt.UpdateDescendantState(updateSize, updateFee, updateCount);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -442,13 +428,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private SetEntries GetMemPoolParents(TxMempoolEntry entry)
         {
             Guard.NotNull(entry, nameof(entry));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(entry), nameof(entry.TransactionHash), entry.TransactionHash);
 
             Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
             TxLinks it = this.mapLinks.TryGet(entry);
             Guard.Assert(it != null);
 
-            this.logger.LogTrace("(-):{0}={1}", nameof(it.Parents.Count), it.Parents?.Count);
             return it.Parents;
         }
 
@@ -460,13 +444,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private SetEntries GetMemPoolChildren(TxMempoolEntry entry)
         {
             Guard.NotNull(entry, nameof(entry));
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(entry), nameof(entry.TransactionHash), entry.TransactionHash);
 
             Guard.Assert(this.MapTx.ContainsKey(entry.TransactionHash));
             TxLinks it = this.mapLinks.TryGet(entry);
             Guard.Assert(it != null);
-
-            this.logger.LogTrace("(-):{0}={1}", nameof(it.Children.Count), it.Children?.Count);
+            
             return it.Children;
         }
 
@@ -478,8 +460,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="add">Whether to add or remove entry.</param>
         private void UpdateChild(TxMempoolEntry entry, TxMempoolEntry child, bool add)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}',{6}:{7})", nameof(entry), nameof(entry.TransactionHash), entry.TransactionHash, nameof(child), nameof(child.TransactionHash), child.TransactionHash, nameof(add), add);
-
             // todo: find how to take a memory size of SetEntries
             //setEntries s;
             if (add && this.mapLinks[entry].Children.Add(child))
@@ -490,8 +470,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.cachedInnerUsage -= child.DynamicMemoryUsage();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -502,8 +480,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="add">Whether to add or remove entry.</param>
         private void UpdateParent(TxMempoolEntry entry, TxMempoolEntry parent, bool add)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:'{5}',{6}:{7})", nameof(entry), nameof(entry.TransactionHash), entry.TransactionHash, nameof(parent), nameof(parent.TransactionHash), parent.TransactionHash, nameof(add), add);
-
             // todo: find how to take a memory size of SetEntries
             //SetEntries s;
             if (add && this.mapLinks[entry].Parents.Add(parent))
@@ -514,8 +490,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.cachedInnerUsage -= parent.DynamicMemoryUsage();
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -523,8 +497,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             long limitAncestorSize, long limitDescendantCount, long limitDescendantSize, out string errString,
             bool fSearchForParents = true)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(entry), nameof(entry.TransactionHash), entry.TransactionHash);
-
             errString = string.Empty;
             var parentHashes = new SetEntries();
             Transaction tx = entry.Transaction;
@@ -551,12 +523,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             else
             {
-                // If we're not searching for parents, we require this to be an
-                // entry in the mempool already.
-                //var it = mapTx.Txids.TryGet(entry.TransactionHash);
-                SetEntries memPoolParents = this.GetMemPoolParents(entry);
-                foreach (TxMempoolEntry item in memPoolParents)
-                    parentHashes.Add(item);
+                if (this.MapTx.ContainsKey(entry.TransactionHash))
+                {
+                    // If we're not searching for parents, we require this to be an
+                    // entry in the mempool already.
+                    //var it = mapTx.Txids.TryGet(entry.TransactionHash);
+                    SetEntries memPoolParents = this.GetMemPoolParents(entry);
+                    foreach (TxMempoolEntry item in memPoolParents)
+                        parentHashes.Add(item);
+                }
             }
 
             long totalSizeWithAncestors = entry.GetTxSize();
@@ -604,36 +579,28 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     }
                 }
             }
-
-            this.logger.LogTrace("(-)");
+            
             return true;
         }
 
         /// <inheritdoc />
         public bool HasNoInputsOf(Transaction tx)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(tx), tx?.GetHash());
-
             foreach (TxIn txInput in tx.Inputs)
             {
                 if (this.Exists(txInput.PrevOut.Hash))
                 {
-                    this.logger.LogTrace("(-):false");
                     return false;
                 }
             }
-
-            this.logger.LogTrace("(-):true");
+            
             return true;
         }
 
         /// <inheritdoc />
         public bool Exists(uint256 hash)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(hash), hash);
-
             bool returnVal = this.MapTx.ContainsKey(hash);
-            this.logger.LogTrace("(-):{0}", returnVal);
 
             return returnVal;
         }
@@ -641,8 +608,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc />
         public void RemoveRecursive(Transaction origTx)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(origTx), origTx?.GetHash());
-
             // Remove transaction from memory pool
             uint256 origHahs = origTx.GetHash();
 
@@ -676,30 +641,22 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             this.RemoveStaged(setAllRemoves, false);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void RemoveStaged(SetEntries stage, bool updateDescendants)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4})", nameof(stage), nameof(stage.Count), stage?.Count, nameof(updateDescendants), updateDescendants);
-
             //AssertLockHeld(cs);
             this.UpdateForRemoveFromMempool(stage, updateDescendants);
             foreach (TxMempoolEntry it in stage)
             {
                 this.RemoveUnchecked(it);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public int Expire(long time)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(time), time);
-
             //LOCK(cs);
             var toremove = new SetEntries();
             foreach (TxMempoolEntry entry in this.MapTx.EntryTime)
@@ -714,8 +671,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.CalculateDescendants(removeit, stage);
             }
             this.RemoveStaged(stage, false);
-
-            this.logger.LogTrace("(-):{0}", stage.Count);
+            
             return stage.Count;
         }
 
@@ -725,8 +681,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="entry">Entry to remove.</param>
         private void RemoveUnchecked(TxMempoolEntry entry)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash);
-
             uint256 hash = entry.TransactionHash;
             foreach (TxIn txin in entry.Transaction.Inputs)
             {
@@ -753,15 +707,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.MapTx.Remove(entry);
             this.nTransactionsUpdated++;
             this.MinerPolicyEstimator.RemoveTx(hash);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void CalculateDescendants(TxMempoolEntry entry, SetEntries setDescendants)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}',{3}.{4}:{5})", nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash, nameof(setDescendants), nameof(setDescendants.Count), setDescendants?.Count);
-
             var stage = new SetEntries();
             if (!setDescendants.Contains(entry))
             {
@@ -785,8 +735,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     }
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -796,8 +744,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="updateDescendants">If updateDescendants is true, then also update in-mempool descendants' ancestor state.</param>
         private void UpdateForRemoveFromMempool(SetEntries entriesToRemove, bool updateDescendants)
         {
-            this.logger.LogTrace("({0}.{1}:{2},{3}:{4}", nameof(entriesToRemove), nameof(entriesToRemove.Count), entriesToRemove?.Count, nameof(updateDescendants), updateDescendants);
-
             // For each entry, walk back all ancestors and decrement size associated with this
             // transaction
             long nNoLimit = long.MaxValue;
@@ -858,8 +804,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             {
                 this.UpdateChildrenForRemoval(removeIt);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -868,20 +812,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="entry">Memory pool entry.</param>
         private void UpdateChildrenForRemoval(TxMempoolEntry entry)
         {
-            this.logger.LogTrace("({0}.{1}:'{2}')", nameof(entry), nameof(entry.TransactionHash), entry?.TransactionHash);
-
             SetEntries setMemPoolChildren = this.GetMemPoolChildren(entry);
             foreach (TxMempoolEntry updateIt in setMemPoolChildren)
                 this.UpdateParent(updateIt, entry, false);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void RemoveForBlock(IEnumerable<Transaction> vtx, int blockHeight)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(blockHeight), blockHeight);
-
             var entries = new List<TxMempoolEntry>();
             foreach (Transaction tx in vtx)
             {
@@ -910,8 +848,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
             this.lastRollingFeeUpdate = this.TimeProvider.GetTime();
             this.blockSinceLastRollingFeeBump = true;
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -920,8 +856,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="tx">Transaction to remove conflicts from.</param>
         private void RemoveConflicts(Transaction tx)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(tx), tx?.GetHash());
-
             // Remove transactions which depend on inputs of tx, recursively
             //LOCK(cs);
             foreach (TxIn txInput in tx.Inputs)
@@ -937,8 +871,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     }
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -957,7 +889,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <returns>Number of bytes in use by memory pool.</returns>
         public long DynamicMemoryUsage()
         {
-            this.logger.LogTrace("()");
             // TODO : calculate roughly the size of each element in its list
 
             //LOCK(cs);
@@ -976,14 +907,12 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             //       cachedInnerUsage;
 
             long returnVal = this.MapTx.Values.Sum(m => m.DynamicMemoryUsage()) + this.cachedInnerUsage;
-            this.logger.LogTrace("(-):{0}", returnVal);
             return returnVal;
         }
 
         /// <inheritdoc />
         public void TrimToSize(long sizelimit, List<uint256> pvNoSpendsRemaining = null)
         {
-            this.logger.LogTrace("({0}:{1},{2}.{3}:{4})", nameof(sizelimit), sizelimit, nameof(pvNoSpendsRemaining), nameof(pvNoSpendsRemaining.Count), pvNoSpendsRemaining?.Count);
             //LOCK(cs);
 
             int nTxnRemoved = 0;
@@ -1032,15 +961,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (maxFeeRateRemoved > new FeeRate(0))
                 this.logger.LogInformation($"Removed {nTxnRemoved} txn, rolling minimum fee bumped to {maxFeeRateRemoved}");
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public FeeRate GetMinFee(long sizelimit)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(sizelimit), sizelimit);
-
             //LOCK(cs);
             if (!this.blockSinceLastRollingFeeBump || this.rollingMinimumFeeRate == 0)
             {
@@ -1069,7 +994,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             }
 
             double ret = Math.Max(this.rollingMinimumFeeRate, this.minReasonableRelayFee.FeePerK.Satoshi);
-            this.logger.LogTrace("(-):{0}", ret);
+
             return new FeeRate(new Money((int)ret));
         }
 

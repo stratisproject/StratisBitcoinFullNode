@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Linq;
 
 namespace NBitcoin
 {
@@ -63,6 +61,31 @@ namespace NBitcoin
         /// </summary>
         public BlockSignature Signature => this.signature;
 
+        /// <summary>Gets the size of the merkle proof in bytes, the header must be serialized or deserialized for this property to be set.</summary>
+        public long MerkleProofSize { get; protected set; }
+
+        /// <summary>Gets the size of the signature in bytes, the header must be serialized or deserialized for this property to be set.</summary>
+        public long SignatureSize { get; protected set; }
+
+        /// <summary>Gets the size of the coinstake in bytes, the header must be serialized or deserialized for this property to be set.</summary>
+        public long CoinstakeSize { get; protected set; }
+
+        /// <summary>Gets the total header size - including the <see cref="BlockHeader.Size"/> - in bytes. <see cref="ProvenBlockHeader"/> must be serialized or deserialized for this property to be set.</summary>
+        public long HeaderSize => Size + this.MerkleProofSize + this.SignatureSize + this.CoinstakeSize;
+
+        /// <summary>
+        /// Gets or sets the stake modifier v2.
+        /// </summary>
+        /// <value>
+        /// The stake modifier v2.
+        /// </value>
+        /// <remarks>This property is used only in memory, it is not persisted to disk not sent over any Payloads.</remarks>
+        public uint256 StakeModifierV2 { get; set; }
+
+        public ProvenBlockHeader()
+        {
+        }
+
         public ProvenBlockHeader(PosBlock block)
         {
             if (block == null) throw new ArgumentNullException(nameof(block));
@@ -75,10 +98,8 @@ namespace NBitcoin
             this.Nonce = block.Header.Nonce;
             this.Version = block.Header.Version;
 
-            // Set additional properties.
             this.signature = block.BlockSignature;
-            this.coinstake = block.Transactions[1];
-
+            this.coinstake = block.GetProtocolTransaction();
             this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
         }
 
@@ -86,9 +107,18 @@ namespace NBitcoin
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
+            long prev = stream.ProcessedBytes;
+
             stream.ReadWrite(ref this.merkleProof);
+            this.MerkleProofSize = stream.ProcessedBytes - prev;
+
+            prev = stream.ProcessedBytes;
             stream.ReadWrite(ref this.signature);
+            this.SignatureSize = stream.ProcessedBytes - prev;
+
+            prev = stream.ProcessedBytes;
             stream.ReadWrite(ref this.coinstake);
+            this.CoinstakeSize = stream.ProcessedBytes - prev;
         }
 
         /// <inheritdoc />

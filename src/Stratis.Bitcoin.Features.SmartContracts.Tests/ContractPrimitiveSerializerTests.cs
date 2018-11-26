@@ -5,6 +5,7 @@ using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Xunit;
@@ -23,9 +24,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void PersistentState_CanSerializeAllTypes()
+        public void PersistentState_CanSerializeAllPrimitives()
         {
-            TestType<Address>(new uint160(123456).ToAddress(this.network));
+            TestType<Address>(new uint160(123456).ToAddress());
             TestType<bool>(true);
             TestType<int>((int)32);
             TestType<long>((long)6775492);
@@ -35,6 +36,34 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             TestType<byte[]>(new byte[] { 127, 123 });
             TestType<char>('c');
             TestType<string>("Test String");
+        }
+
+        [Fact]
+        public void PersistentState_CanSerializeDeserializeArrayOfAllPrimitives()
+        {
+            TestType<Address[]>(new Address[] { new uint160(123456).ToAddress(), new uint160(1234567).ToAddress() });
+            TestType<bool[]>(new bool[] { true, false, true });
+            TestType<int[]>(new int[] { 1, 2, 3 });
+            TestType<long[]>(new long[] { long.MaxValue - 1, 23 });
+            TestType<uint[]>(new uint[] { uint.MaxValue - 1, 1234 });
+            TestType<ulong[]>(new ulong[] { ulong.MaxValue - 1, 123 });
+            TestType<char[]>(new char[] { 'a', 'b', 'c' });
+            TestType<string[]>(new string[] { "test", "1", "2", "3" });
+            TestType<byte[]>(new byte[] { 0x00, 0x01, 0x02, 0x03 });
+        }
+
+        [Fact]
+        public void PersistentState_CanSerializeDeserializeArrayOfAllPrimitives_ViaArrayMethod()
+        {
+            TestTypeArrayMethod<Address>(new Address[] { new uint160(123456).ToAddress(), new uint160(1234567).ToAddress() });
+            TestTypeArrayMethod<bool>(new bool[] { true, false, true });
+            TestTypeArrayMethod<int>(new int[] { 1, 2, 3 });
+            TestTypeArrayMethod<long>(new long[] { long.MaxValue - 1, 23 });
+            TestTypeArrayMethod<uint>(new uint[] { uint.MaxValue - 1, 1234 });
+            TestTypeArrayMethod<ulong>(new ulong[] { ulong.MaxValue - 1, 123 });
+            TestTypeArrayMethod<char>(new char[] { 'a', 'b', 'c' });
+            TestTypeArrayMethod<string>(new string[] { "test", "1", "2", "3" });
+            TestTypeArrayMethod<byte>(new byte[] { 0x00, 0x01, 0x02, 0x03 });
         }
 
         [Fact]
@@ -134,7 +163,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         private TestValueType NewTestValueType()
         {
             var instance = new TestValueType();
-            instance.AddressField = new uint160(123456).ToAddress(this.network);
+            instance.AddressField = new uint160(123456).ToAddress();
             instance.BoolField = true;
             instance.IntField = 123;
             instance.LongField = 123L;
@@ -152,6 +181,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             byte[] testBytes = this.serializer.Serialize(input);
             T output = this.serializer.Deserialize<T>(testBytes);
+            Assert.Equal(input, output);
+        }
+
+        private void TestTypeArrayMethod<T>(T[] input)
+        {
+            byte[] testBytes = this.serializer.Serialize(input);
+            T[] output = this.serializer.Deserialize<T[]>(testBytes);
             Assert.Equal(input, output);
         }
 

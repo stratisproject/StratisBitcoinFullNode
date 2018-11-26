@@ -84,7 +84,5 @@ namespace NBitcoin
         {
             return Encoders.Hex.EncodeData(this.signature);
         }
-
-
     }
 }

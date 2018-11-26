@@ -1,6 +1,5 @@
 ﻿using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.SmartContracts;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
@@ -57,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             return new BuildCreateContractTransactionResponse() { Message = message };
         }
 
-        public static BuildCreateContractTransactionResponse Succeeded(Transaction transaction, Money transactionFee, Address address)
+        public static BuildCreateContractTransactionResponse Succeeded(Transaction transaction, Money transactionFee, string address)
         {
             return new BuildCreateContractTransactionResponse()
             {

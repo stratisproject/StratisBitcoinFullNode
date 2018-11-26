@@ -87,8 +87,6 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void DiscoverPeers(IConnectionManager connectionManager)
         {
-            this.logger.LogTrace("()");
-
             // If peers are specified in the -connect arg then discovery does not happen.
             if (connectionManager.ConnectionSettings.Connect.Any())
                 return;
@@ -97,7 +95,6 @@ namespace Stratis.Bitcoin.P2P
                 return;
 
             this.currentParameters = connectionManager.Parameters.Clone(); // TODO we shouldn't add all the behaviors, only those that we need.
-            this.currentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(connectionManager, this.loggerFactory));
 
             this.peersToFind = this.currentParameters.PeerAddressManagerBehaviour().PeersToDiscover;
 
@@ -108,8 +105,6 @@ namespace Stratis.Bitcoin.P2P
             },
             this.nodeLifetime.ApplicationStopping,
             TimeSpans.TenSeconds);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -117,8 +112,6 @@ namespace Stratis.Bitcoin.P2P
         /// </summary>
         private async Task DiscoverPeersAsync()
         {
-            this.logger.LogTrace("()");
-
             var peersToDiscover = new List<IPEndPoint>();
             List<PeerAddress> foundPeers = this.peerAddressManager.PeerSelector.SelectPeersForDiscovery(1000).ToList();
             peersToDiscover.AddRange(foundPeers.Select(p => p.Endpoint));
@@ -195,8 +188,6 @@ namespace Stratis.Bitcoin.P2P
                     this.logger.LogTrace("Discovery from '{0}' finished", endPoint);
                 }
             }).ConfigureAwait(false);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>

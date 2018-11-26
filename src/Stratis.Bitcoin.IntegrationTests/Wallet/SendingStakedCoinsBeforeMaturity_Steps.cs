@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using NBitcoin;
@@ -7,7 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Xunit.Abstractions;
@@ -43,10 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             this.proofOfStakeSteps.PremineNodeWithWallet();
             this.proofOfStakeSteps.MineGenesisAndPremineBlocks();
 
-            this.receiverNode = this.proofOfStakeSteps.nodeBuilder.CreateStratisPosNode(KnownNetworks.StratisRegTest);
-            this.receiverNode.Start();
-            this.receiverNode.NotInIBD();
-            this.receiverNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletName, WalletPassphrase);
+            this.receiverNode = this.proofOfStakeSteps.nodeBuilder.CreateStratisPosNode(new StratisRegTest()).WithWallet().Start();
 
             TestHelper.ConnectAndSync(this.proofOfStakeSteps.PremineNodeWithCoins, this.receiverNode);
         }
@@ -86,8 +84,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 {
                     AccountName = this.proofOfStakeSteps.PremineWalletAccount,
                     AllowUnconfirmed = true,
-                    Amount = Money.Coins(OneMillion + 40).ToString(),
-                    DestinationAddress = this.GetReceiverUnusedAddressFromWallet(),
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = this.GetReceiverUnusedAddressFromWallet(), Amount = Money.Coins(OneMillion + 40).ToString() } },
                     FeeType = FeeType.Medium.ToString("D"),
                     Password = this.proofOfStakeSteps.PremineWalletPassword,
                     WalletName = this.proofOfStakeSteps.PremineWallet,

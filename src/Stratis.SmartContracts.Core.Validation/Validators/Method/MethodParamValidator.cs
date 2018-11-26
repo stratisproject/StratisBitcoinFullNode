@@ -1,4 +1,3 @@
-using System;
 using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
@@ -7,27 +6,24 @@ using Stratis.ModuleValidation.Net;
 namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
-    /// Validate that a <see cref="Mono.Cecil.MethodDefinition"/> only has parameters of types that are currently supported in the
+    /// Validate that a public <see cref="Mono.Cecil.MethodDefinition"/> only has parameters of types that are currently supported in the
     /// <see cref="MethodParameterSerializer"/>
     /// </summary>
     public class MethodParamValidator : IMethodDefinitionValidator
     {
-        public static readonly string ErrorType = "Invalid Method Param Type";
-
-        // See SmartContractCarrierDataType
+        // See MethodParameterDataType
         public static readonly IEnumerable<string> AllowedTypes = new[]
         {
             typeof(bool).FullName,
             typeof(byte).FullName,
-            typeof(byte[]).FullName,
             typeof(char).FullName,
-            typeof(sbyte).FullName,
-            typeof(int).FullName,
             typeof(string).FullName,
             typeof(uint).FullName,
+            typeof(int).FullName,
             typeof(ulong).FullName,
             typeof(long).FullName,
-            typeof(Address).FullName
+            typeof(Address).FullName,
+            typeof(byte[]).FullName
         };
 
         public IEnumerable<ValidationResult> Validate(MethodDefinition methodDef)
@@ -35,25 +31,54 @@ namespace Stratis.SmartContracts.Core.Validation
             if (!methodDef.HasParameters)
                 return Enumerable.Empty<MethodDefinitionValidationResult>();
 
+            var results = new List<ValidationResult>();
 
-            bool IsValidParamForThisMethod(ParameterDefinition p) => !IsValidParam(methodDef, p);
+            foreach (var param in methodDef.Parameters)
+            {
+                (var valid, var message) = IsValidParam(methodDef, param);
 
-            return methodDef.Parameters
-                .Where(IsValidParamForThisMethod)
-                .Select(paramDef => new MethodParamValidationResult(methodDef, paramDef));
+                if (!valid)
+                {
+                    results.Add(new MethodParamValidationResult(message));
+                }
+            }
+
+            return results;
         }
 
         /// <summary>
         /// Checks that constructor methods contains an allowed parameter. Allowed parameters are <see cref="ISmartContractState"/>
         /// and the types defined in <see cref="AllowedTypes"/>
         /// </summary>
-        public static bool IsValidParam(MethodDefinition methodDefinition, ParameterDefinition param)
+        public static (bool, string) IsValidParam(MethodDefinition methodDefinition, ParameterDefinition param)
         {
-            if (methodDefinition.IsConstructor && ParameterIsSmartContractState(param))
+            if (param.IsOptional)
             {
-                return true;
+                return (false, $"{methodDefinition.FullName} is invalid [{param.Name} is disallowed optional parameter]");
             }
 
+            if (methodDefinition.IsConstructor && ParameterIsSmartContractState(param))
+            {
+                return (true, null);
+            }
+
+            bool allowedType = methodDefinition.IsPublic
+                ? ValidatePublicMethodParam(param)
+                : ValidatePrivateMethodParam(param);
+
+            return allowedType
+                ? (true, null)
+                : (false,
+                    $"{methodDefinition.FullName} is invalid [{param.Name} is disallowed parameter Type {param.ParameterType.FullName}]");
+        }
+
+        private static bool ValidatePrivateMethodParam(ParameterDefinition param) 
+        {
+            return param.ParameterType.IsValueType || param.ParameterType.IsArray || AllowedTypes.Contains(param.ParameterType.FullName);
+        }
+
+        private static bool ValidatePublicMethodParam(ParameterDefinition param)
+        {
             return AllowedTypes.Contains(param.ParameterType.FullName);
         }
 
@@ -64,10 +89,7 @@ namespace Stratis.SmartContracts.Core.Validation
 
         public class MethodParamValidationResult : MethodDefinitionValidationResult
         {
-            public MethodParamValidationResult(MethodDefinition method, ParameterDefinition param) 
-                : base(method.FullName,
-                    ErrorType,
-                    $"{method.FullName} is invalid [{ErrorType} {param.ParameterType.FullName}]")
+            public MethodParamValidationResult(string message) : base(message)
             {
             }
         }

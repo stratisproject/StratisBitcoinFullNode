@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
@@ -63,8 +64,6 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public override Task InitializeAsync()
         {
-            this.logger.LogTrace("()");
-
             if (this.rpcSettings.Server)
             {
                 // TODO: The web host wants to create IServiceProvider, so build (but not start)
@@ -99,15 +98,13 @@ namespace Stratis.Bitcoin.Features.RPC
                 .Build();
 
                 this.fullNode.RPCHost.Start();
-                this.fullNode.Resources.Add(this.fullNode.RPCHost);
                 this.logger.LogInformation("RPC Server listening on: " + Environment.NewLine + string.Join(Environment.NewLine, this.rpcSettings.GetUrls()));
             }
             else
             {
                 this.logger.LogInformation("RPC Server is off based on configuration.");
             }
-
-            this.logger.LogTrace("(-)");
+            
             return Task.CompletedTask;
         }
     }

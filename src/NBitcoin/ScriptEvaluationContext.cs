@@ -27,6 +27,7 @@ namespace NBitcoin
         CheckMultiSigVerify,
         CheckSigVerify,
         NumEqualVerify,
+        CheckColdStakeVerify,
 
         /* Logical/Format/Canonical errors */
         BadOpCode,
@@ -837,12 +838,40 @@ namespace NBitcoin
                                 case OpcodeType.OP_NOP7:
                                 case OpcodeType.OP_NOP8:
                                 case OpcodeType.OP_NOP9:
-                                case OpcodeType.OP_NOP10:
                                     if((this.ScriptVerify & ScriptVerify.DiscourageUpgradableNops) != 0)
                                     {
                                         return SetError(ScriptError.DiscourageUpgradableNops);
                                     }
                                     break;
+
+                                // OP_NOP10 has been redefined as OP_CHECKCOLDSTAKEVERIFY.
+                                case OpcodeType.OP_CHECKCOLDSTAKEVERIFY:
+                                    {
+                                        // Revert to OP_NOP10 behavior if cold staking is not activated yet.
+                                        if ((this.ScriptVerify & ScriptVerify.CheckColdStakeVerify) == 0)
+                                        {
+                                            // not enabled; treat as a NOP10.
+                                            if ((this.ScriptVerify & ScriptVerify.DiscourageUpgradableNops) != 0)
+                                            {
+                                                return SetError(ScriptError.DiscourageUpgradableNops);
+                                            }
+
+                                            break;
+                                        }
+
+                                        // This opcode should not be used outside coinstake transactions.
+                                        if (!(checker.Transaction is PosTransaction posTran) || !posTran.IsCoinStake)
+                                        {
+                                            return SetError(ScriptError.CheckColdStakeVerify);
+                                        }
+
+                                        // Set a flag to perform further checks if the spend is using a hot wallet key.
+                                        // The fact that this opcode is executing implies that this is such a spend.
+                                        posTran.IsColdCoinStake = true;
+
+                                        // If the above-mentioned checks pass, the instruction does nothing.                                        
+                                        break;
+                                    }
 
                                 case OpcodeType.OP_IF:
                                 case OpcodeType.OP_NOTIF:
@@ -1679,9 +1708,9 @@ namespace NBitcoin
             return true;
         }
 
-        public static bool IsLowDerSignature(byte[] vchSig)
+        public static bool IsLowDerSignature(byte[] vchSig, bool haveSigHash = true)
         {
-            if (!IsValidSignatureEncoding(vchSig))
+            if (!IsValidSignatureEncoding(vchSig, haveSigHash))
             {
                 return false;
             }
@@ -1714,9 +1743,9 @@ namespace NBitcoin
             return true;
         }
 
-        public bool IsLowDERSignature(byte[] vchSig)
+        public bool IsLowDERSignature(byte[] vchSig, bool haveSigHash = true)
         {
-            if(!IsValidSignatureEncoding(vchSig))
+            if(!IsValidSignatureEncoding(vchSig, haveSigHash))
             {
                 this.Error = ScriptError.SigDer;
                 return false;
@@ -1797,7 +1826,7 @@ namespace NBitcoin
         }
 
 
-        public static bool IsValidSignatureEncoding(byte[] sig)
+        public static bool IsValidSignatureEncoding(byte[] sig, bool haveSigHash = true)
         {
             // Format: 0x30 [total-length] 0x02 [R-length] [R] 0x02 [S-length] [S] [sighash]
             // * total-length: 1-byte length descriptor of everything that follows,
@@ -1822,7 +1851,7 @@ namespace NBitcoin
                 return false;
 
             // Make sure the length covers the entire signature.
-            if(sig[1] != signLen - 3)
+            if(sig[1] != signLen - (haveSigHash ? 3 : 2))
                 return false;
 
             // Extract the length of the R element.
@@ -1837,7 +1866,7 @@ namespace NBitcoin
 
             // Verify that the length of the signature matches the sum of the length
             // of the elements.
-            if((lenR + lenS + 7) != signLen)
+            if((lenR + lenS + (haveSigHash ? 7 : 6)) != signLen)
                 return false;
 
             // Check whether the R element is an integer.

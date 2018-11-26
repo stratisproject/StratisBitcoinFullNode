@@ -1,13 +1,11 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
-using Stratis.SmartContracts.Core;
+using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
-using Message = Stratis.SmartContracts.Core.Message;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {
@@ -28,7 +26,7 @@ namespace Stratis.SmartContracts.Tools.Sct
             console.WriteLine("Building ModuleDefinition...");
 
             compilation = validationServiceResult.CompilationResult.Compilation;
-            moduleDefinition = SmartContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver());
+            moduleDefinition = ContractDecompiler.GetModuleDefinition(compilation, new DotNetCoreAssemblyResolver()).Value;
             console.WriteLine("ModuleDefinition built successfully.");
 
             console.WriteLine();
@@ -37,7 +35,7 @@ namespace Stratis.SmartContracts.Tools.Sct
         private static void CompileContract(string source, IConsole console, ValidationServiceResult validationServiceResult)
         {
             console.WriteLine($"Compiling...");
-            validationServiceResult.CompilationResult = SmartContractCompiler.Compile(source);
+            validationServiceResult.CompilationResult = ContractCompiler.Compile(source);
             if (!validationServiceResult.CompilationResult.Success)
                 console.WriteLine("Compilation failed!");
             else
@@ -57,12 +55,12 @@ namespace Stratis.SmartContracts.Tools.Sct
 
             Assembly smartContract = Assembly.Load(compilation);
 
-            var serializer = new MethodParameterSerializer();
+            // Network does not matter here as we are only checking the deserialized Types of the params.
+            var serializer = new MethodParameterStringSerializer(new SmartContractsRegTest());
             object[] methodParameters = null;
             if (parameters.Length != 0)
             {
-                var methodParametersRaw = new MethodParameterSerializer().ToRaw(parameters);
-                methodParameters = serializer.ToObjects(methodParametersRaw);
+                methodParameters = serializer.Deserialize(parameters);
             }
 
             validationServiceResult.ConstructorExists = Contract.ConstructorExists(smartContract.ExportedTypes.FirstOrDefault(), methodParameters);
@@ -84,7 +82,7 @@ namespace Stratis.SmartContracts.Tools.Sct
 
     public sealed class ValidationServiceResult
     {
-        public SmartContractCompilationResult CompilationResult { get; set; }
+        public ContractCompilationResult CompilationResult { get; set; }
         public SmartContractValidationResult DeterminismValidationResult { get; set; }
         public SmartContractValidationResult FormatValidationResult { get; set; }
         public bool ConstructorExists { get; set; }
@@ -99,144 +97,6 @@ namespace Stratis.SmartContracts.Tools.Sct
                      this.DeterminismValidationResult.IsValid &&
                      this.ConstructorExists;
             }
-        }
-    }
-
-    public sealed class ValidatorSmartContractState : ISmartContractState
-    {
-        public IBlock Block => new Block();
-
-        public IMessage Message => new Message(new Address("0"), new Address("0"), 0);
-
-        public IPersistentState PersistentState
-        {
-            get
-            {
-                return new ValidatorPersistentState();
-            }
-        }
-
-        public IGasMeter GasMeter => null;
-
-        public IInternalTransactionExecutor InternalTransactionExecutor => null;
-
-        public IInternalHashHelper InternalHashHelper => null;
-
-        public Func<ulong> GetBalance => null;
-
-        public IContractLogger ContractLogger => null;
-
-        public ISerializer Serializer => null;
-    }
-
-    public sealed class ValidatorPersistentState : IPersistentState
-    {
-        public void SetStruct<T>(string key, T value) where T : struct
-        {
-        }
-
-
-        public byte GetByte(string key)
-        {
-            return 0;
-        }
-
-        public byte[] GetByteArray(string key)
-        {
-            return new byte[] { };
-        }
-
-        public char GetChar(string key)
-        {
-            return '\0';
-        }
-
-        public Address GetAddress(string key)
-        {
-            return new Address();
-        }
-
-        public bool GetBool(string key)
-        {
-            return false;
-        }
-
-        public int GetInt32(string key)
-        {
-            return 0;
-        }
-
-        public uint GetUInt32(string key)
-        {
-            return 0;
-        }
-
-        public long GetInt64(string key)
-        {
-            return 0;
-        }
-
-        public ulong GetUInt64(string key)
-        {
-            return 0;
-        }
-
-        public string GetString(string key)
-        {
-            return null;
-        }
-
-        public sbyte GetSbyte(string key)
-        {
-            return 0;
-        }
-
-        public T GetStruct<T>(string key) where T : struct
-        {
-            return default(T);
-        }
-        public void SetByte(string key, byte value)
-        {
-        }
-
-        public void SetByteArray(string key, byte[] value)
-        {
-        }
-
-        public void SetChar(string key, char value)
-        {
-        }
-
-        public void SetAddress(string key, Address value)
-        {
-        }
-
-        public void SetBool(string key, bool value)
-        {
-        }
-
-        public void SetInt32(string key, int value)
-        {
-        }
-
-        public void SetUInt32(string key, uint value)
-        {
-        }
-
-        public void SetInt64(string key, long value)
-        {
-        }
-
-        public void SetUInt64(string key, ulong value)
-        {
-        }
-
-        public void SetString(string key, string value)
-        {
-        }
-
-        public void SetSByte(string key, sbyte value)
-        {
         }
     }
 }

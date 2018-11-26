@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -22,10 +22,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private CoreNode daveNode;
         private Transaction shorterChainTransaction;
         private int jingsBlockHeight;
+
         private const string AccountZero = "account 0";
-        private const string WalletZero = "wallet 0";
-        private const string WalletPassword = "123456";
-        private const string WalletPassphrase = "phrase";
+        private const string WalletZero = "mywallet";
+        private const string WalletPassword = "password";
 
         public ReorgToLongestChainSpecification(ITestOutputHelper output) : base(output)
         {
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         protected override void BeforeTest()
         {
-            this.network = KnownNetworks.RegTest;
+            this.network = new BitcoinRegTest();
             this.nodeBuilder = NodeBuilder.Create(Path.Combine(this.GetType().Name, this.CurrentTest.DisplayName));
         }
 
@@ -44,55 +44,43 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void four_miners()
         {
-            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network);
-            this.jingNode.Start();
-            this.jingNode.NotInIBD();
-            this.jingNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletZero, WalletPassphrase);
+            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
 
-            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network);
-            this.bobNode.Start();
-            this.bobNode.NotInIBD();
-            this.bobNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletZero, WalletPassphrase);
+            TestHelper.Connect(this.jingNode, this.bobNode);
+            TestHelper.Connect(this.jingNode, this.charlieNode);
+            TestHelper.Connect(this.jingNode, this.daveNode);
 
-            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network);
-            this.charlieNode.Start();
-            this.charlieNode.NotInIBD();
-            this.charlieNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletZero, WalletPassphrase);
-
-            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network);
-            this.daveNode.Start();
-            this.daveNode.NotInIBD();
-            this.daveNode.FullNode.WalletManager().CreateWallet(WalletPassword, WalletZero, WalletPassphrase);
-
-            TestHelper.ConnectAndSync(this.jingNode, this.bobNode);
-            TestHelper.ConnectAndSync(this.bobNode, this.charlieNode);
-            TestHelper.ConnectAndSync(this.charlieNode, this.daveNode);
+            TestHelper.Connect(this.bobNode, this.charlieNode);
+            TestHelper.Connect(this.charlieNode, this.daveNode);
         }
 
         private void each_mine_a_block()
         {
-            TestHelper.MineBlocks(this.jingNode, WalletZero, WalletPassword, AccountZero, 1);
-            TestHelper.MineBlocks(this.bobNode, WalletZero, WalletPassword, AccountZero, 1);
-            TestHelper.MineBlocks(this.charlieNode, WalletZero, WalletPassword, AccountZero, 1);
-            TestHelper.MineBlocks(this.daveNode, WalletZero, WalletPassword, AccountZero, 1);
+            TestHelper.MineBlocks(this.bobNode, 1);
+            TestHelper.MineBlocks(this.charlieNode, 1);
+            TestHelper.MineBlocks(this.daveNode, 1);
+            TestHelper.MineBlocks(this.jingNode, 1);
         }
 
         private void jing_loses_connection_to_others_but_carries_on_mining()
         {
-            this.jingNode.FullNode.ConnectionManager.RemoveNodeAddress(this.bobNode.Endpoint);
-            this.jingNode.FullNode.ConnectionManager.RemoveNodeAddress(this.charlieNode.Endpoint);
-            this.jingNode.FullNode.ConnectionManager.RemoveNodeAddress(this.daveNode.Endpoint);
+            TestHelper.Disconnect(this.jingNode, this.bobNode);
+            TestHelper.Disconnect(this.jingNode, this.charlieNode);
+            TestHelper.Disconnect(this.jingNode, this.daveNode);
 
             TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(this.jingNode));
 
-            TestHelper.MineBlocks(this.jingNode, WalletZero, WalletPassword, AccountZero, 1);
+            TestHelper.MineBlocks(this.jingNode, 1);
 
             this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
         }
 
         private void bob_creates_a_transaction_and_broadcasts()
         {
-            HdAddress nodeCReceivingAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.charlieNode);
+            HdAddress charlieAddress = this.GetSecondUnusedAddressToAvoidClashWithMiningAddress(this.charlieNode);
 
             TransactionBuildContext transactionBuildContext = TestHelper.CreateTransactionBuildContext(
                 this.bobNode.FullNode.Network,
@@ -102,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 new[] {
                     new Recipient {
                         Amount = Money.COIN * 1,
-                        ScriptPubKey = nodeCReceivingAddress.ScriptPubKey
+                        ScriptPubKey = charlieAddress.ScriptPubKey
                     }
                 },
                 FeeType.Medium
@@ -121,22 +109,31 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
                 .Skip(1).First();
         }
 
-        private void charlie_mines_this_block()
+        private void charlie_waits_for_the_trx_and_mines_this_block()
         {
-            TestHelper.MineBlocks(this.charlieNode, WalletZero, WalletPassword, AccountZero, 1);
+            TestHelper.WaitLoop(() => this.charlieNode.FullNode.MempoolManager().GetTransaction(this.shorterChainTransaction.GetHash()).Result != null);
+
+            TestHelper.MineBlocks(this.charlieNode, 1);
             TestHelper.WaitForNodeToSync(this.bobNode, this.charlieNode, this.daveNode);
         }
 
         private void dave_confirms_transaction_is_present()
         {
-            Transaction transaction = this.daveNode.FullNode.BlockStore().GetTrxAsync(this.shorterChainTransaction.GetHash()).Result;
+            Transaction transaction = this.daveNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result;
             transaction.Should().NotBeNull();
             transaction.GetHash().Should().Be(this.shorterChainTransaction.GetHash());
         }
 
+        private void meanwhile_jings_chain_advanced_ahead_of_the_others()
+        {
+            TestHelper.MineBlocks(this.jingNode, 5);
+
+            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+        }
+
         private void jings_connection_comes_back()
         {
-            this.jingNode.CreateRPCClient().AddNode(this.bobNode.Endpoint);
+            TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.WaitForNodeToSyncIgnoreMempool(this.jingNode, this.bobNode, this.charlieNode, this.daveNode);
         }
 
@@ -149,7 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
-            this.bobNode.FullNode.BlockStore().GetTrxAsync(this.shorterChainTransaction.GetHash()).Result
+            this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }
 
@@ -163,25 +160,18 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             int coinbaseMaturity = (int)this.bobNode.FullNode.Network.Consensus.CoinbaseMaturity;
 
-            TestHelper.MineBlocks(this.bobNode, WalletZero, WalletPassword, AccountZero, coinbaseMaturity);
+            TestHelper.MineBlocks(this.bobNode, coinbaseMaturity + 1);
 
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.bobNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.charlieNode));
             TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.daveNode));
+            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.jingNode));
 
             // Ensure that all the nodes are synced to at least coinbase maturity.
-            TestHelper.WaitLoop(() => this.jingNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitLoop(() => this.bobNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitLoop(() => this.charlieNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitLoop(() => this.daveNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
-        }
-
-        private void meanwhile_jings_chain_advanced_ahead_of_the_others()
-        {
-            TestHelper.MineBlocks(this.jingNode, WalletZero, WalletPassword, AccountZero, 5);
-
-            this.jingsBlockHeight = this.jingNode.FullNode.Chain.Height;
+            TestHelper.WaitLoop(() => this.jingNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
         }
     }
 }

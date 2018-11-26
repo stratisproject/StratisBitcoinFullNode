@@ -226,10 +226,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = "",
                 Passphrase = "",
-                Network = ""
             });
 
             mockWalletCreate.VerifyAll();
@@ -250,9 +248,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "",
-                FolderPath = "",
                 Password = "",
-                Network = ""
             });
 
             var errorResult = Assert.IsType<ErrorResult>(result);
@@ -277,10 +273,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = "",
                 Passphrase = "",
-                Network = ""
             });
 
             mockWalletCreate.VerifyAll();
@@ -305,10 +299,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Create(new WalletCreationRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = "",
                 Passphrase = "",
-                Network = ""
             });
 
             mockWalletCreate.VerifyAll();
@@ -341,9 +333,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -382,9 +372,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic",
                 CreationDate = lastBlockDateTime
             });
@@ -406,9 +394,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -434,9 +420,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -462,9 +446,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -491,9 +473,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Recover(new WalletRecoveryRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = "",
-                Network = "MainNet",
                 Mnemonic = "mnemonic"
             });
 
@@ -549,10 +529,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.RecoverViaExtPubKey(new WalletExtPubRecoveryRequest
             {
                 Name = walletName,
-                FolderPath = "",
                 ExtPubKey = extPubKey,
                 AccountIndex = 1,
-                Network = wallet.Network.Name
             });
 
             walletManager.VerifyAll();
@@ -600,7 +578,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 Name = walletName,
                 ExtPubKey = extPubKey,
                 AccountIndex = 1,
-                Network = wallet.Network.Name,
                 CreationDate = lastBlockDateTime
             });
 
@@ -626,7 +603,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -646,7 +622,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myWallet",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -670,7 +645,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -696,7 +670,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -722,7 +695,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.Load(new WalletLoadRequest
             {
                 Name = "myName",
-                FolderPath = "",
                 Password = ""
             });
 
@@ -1490,12 +1462,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .Returns(sentTrx);
 
             var controller = new WalletController(this.LoggerFactory.Object, mockWalletManager.Object, mockWalletTransactionHandler.Object, new Mock<IWalletSyncManager>().Object, It.IsAny<ConnectionManager>(), this.Network, this.chain, new Mock<IBroadcasterManager>().Object, DateTimeProvider.Default);
+
             IActionResult result = controller.BuildTransaction(new BuildTransactionRequest
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1524,8 +1496,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 FeeAmount = "0.1234",
                 Password = "test",
@@ -1554,9 +1525,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = true,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
-
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeAmount = "0.1234",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1584,8 +1553,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = false,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1635,8 +1603,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             {
                 AccountName = "Account 1",
                 AllowUnconfirmed = false,
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 Password = "test",
                 WalletName = "myWallet"
@@ -1689,18 +1656,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var controller = new WalletController(this.LoggerFactory.Object, new Mock<IWalletManager>().Object, new Mock<IWalletTransactionHandler>().Object,
                 new Mock<IWalletSyncManager>().Object, connectionManagerMock.Object, this.Network, this.chain, mockBroadcasterManager.Object, DateTimeProvider.Default);
 
-            bool walletExceptionOccurred = false;
+            IActionResult result = controller.SendTransaction(new SendTransactionRequest(new uint256(15555).ToString()));
 
-            try
-            {
-                controller.SendTransaction(new SendTransactionRequest(new uint256(15555).ToString()));
-            }
-            catch (WalletException)
-            {
-                walletExceptionOccurred = true;
-            }
+            var errorResult = Assert.IsType<ErrorResult>(result);
+            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
+            Assert.Single(errorResponse.Errors);
 
-            Assert.True(walletExceptionOccurred);
+            ErrorModel error = errorResponse.Errors[0];
+            Assert.Equal(403, error.Status);
+            Assert.Equal("Can't send transaction: sending transaction requires at least one connection!", error.Message);
         }
 
         [Fact]
@@ -2149,8 +2113,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             IActionResult result = controller.GetTransactionFeeEstimate(new TxFeeEstimateRequest
             {
                 AccountName = "Account 1",
-                Amount = new Money(150000).ToString(),
-                DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(),
+                Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = key.PubKey.GetAddress(this.Network).ToString(), Amount = new Money(150000).ToString() } },
                 FeeType = "105",
                 WalletName = "myWallet"
             });
@@ -2312,7 +2275,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             return null;
         }
 
-        public INetworkPeer FindByIp(IPAddress ip)
+        public List<INetworkPeer> FindByIp(IPAddress ip)
         {
             return null;
         }
