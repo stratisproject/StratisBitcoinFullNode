@@ -14,6 +14,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class Wallet
     {
+        /// <summary>Default pattern for accounts in the wallet. The first account will be called 'account 0', then 'account 1' and so on.</summary>
+        public const string AccountNamePattern = "account {0}";
+
         /// <summary>Account numbers greater or equal to this number are reserved for special purpose account indexes.</summary>
         public const int SpecialPurposeAccountIndexesStart = 100_000_000;
 
@@ -186,13 +189,15 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="password">The password used to decrypt the wallet's <see cref="EncryptedSeed"/>.</param>
         /// <param name="coinType">The type of coin this account is for.</param>
         /// <param name="accountCreationTime">Creation time of the account to be created.</param>
+        /// <param name="accountIndex">The index at which an account will be created. If left null, a new account will be created after the last used one.</param>
+        /// <param name="accountName">The name of the account to be created. If left null, an account will be created according to the <see cref="AccountNamePattern"/>.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccount(string password, CoinType coinType, DateTimeOffset accountCreationTime)
+        public HdAccount AddNewAccount(string password, CoinType coinType, DateTimeOffset accountCreationTime, int? accountIndex = null, string accountName = null)
         {
             Guard.NotEmpty(password, nameof(password));
 
             AccountRoot accountRoot = this.AccountsRoot.Single(a => a.CoinType == coinType);
-            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network, accountCreationTime);
+            return accountRoot.AddNewAccount(password, this.EncryptedSeed, this.ChainCode, this.Network, accountCreationTime, accountIndex, accountName);
         }
 
         /// <summary>
@@ -377,23 +382,37 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="chainCode">The chain code for this wallet.</param>
         /// <param name="network">The network for which this account will be created.</param>
         /// <param name="accountCreationTime">Creation time of the account to be created.</param>
+        /// <param name="accountIndex">The index at which an account will be created. If left null, a new account will be created after the last used one.</param>
+        /// <param name="accountName">The name of the account to be created. If left null, an account will be created according to the <see cref="AccountNamePattern"/>.</param>
         /// <returns>A new HD account.</returns>
-        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network, DateTimeOffset accountCreationTime)
+        public HdAccount AddNewAccount(string password, string encryptedSeed, byte[] chainCode, Network network, DateTimeOffset accountCreationTime, int? accountIndex = null, string accountName = null)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(encryptedSeed, nameof(encryptedSeed));
             Guard.NotNull(chainCode, nameof(chainCode));
 
-            int newAccountIndex = 0;
-            ICollection<HdAccount> hdAccounts = this.Accounts.ToList();
+            ICollection<HdAccount> hdAccounts = this.Accounts;
 
-            if (hdAccounts.Any())
+            // If an account needs to be created at a specific index or with a specific name, make sure it doesn't already exist.
+            if (hdAccounts.Any(a => a.Index == accountIndex || a.Name == accountName))
             {
-                // Hide account indexes used for cold staking from the "Max" calculation.
-                newAccountIndex = hdAccounts.Where(Wallet.NormalAccounts).Max(a => a.Index) + 1;
+                throw new WalletException($"An account at index {accountIndex} or with name {accountName} already exists.");
             }
 
-            HdAccount newAccount = this.CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, newAccountIndex);
+            if (accountIndex == null)
+            {
+                if (hdAccounts.Any())
+                {
+                    // Hide account indexes used for cold staking from the "Max" calculation.
+                    accountIndex = hdAccounts.Where(Wallet.NormalAccounts).Max(a => a.Index) + 1;
+                }
+                else
+                {
+                    accountIndex = 0;
+                }
+            }
+            
+            HdAccount newAccount = this.CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, accountIndex.Value, accountName);
 
             hdAccounts.Add(newAccount);
             this.Accounts = hdAccounts;
@@ -409,13 +428,18 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="chainCode">The chain code for this wallet.</param>
         /// <param name="network">The network for which this account will be created.</param>
         /// <param name="accountCreationTime">Creation time of the account to be created.</param>
-        /// <param name="newAccountIndex">The account index to use.</param>
-        /// <param name="newAccountNamePattern">The account name pattern to use.</param>
+        /// <param name="newAccountIndex">The optional account index to use.</param>
+        /// <param name="newAccountName">The optional account name to use.</param>
         /// <returns>A new HD account.</returns>
         public HdAccount CreateAccount(string password, string encryptedSeed, byte[] chainCode,
             Network network, DateTimeOffset accountCreationTime,
-            int newAccountIndex, string newAccountNamePattern = "account {0}")
+            int newAccountIndex, string newAccountName = null)
         {
+            if (string.IsNullOrEmpty(newAccountName))
+            {
+                newAccountName = string.Format(Wallet.AccountNamePattern, newAccountIndex);
+            }
+
             // Get the extended pub key used to generate addresses for this account.
             string accountHdPath = HdOperations.GetAccountHdPath((int)this.CoinType, newAccountIndex);
             Key privateKey = HdOperations.DecryptSeed(encryptedSeed, password, network);
@@ -427,7 +451,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 ExtendedPubKey = accountExtPubKey.ToString(network),
                 ExternalAddresses = new List<HdAddress>(),
                 InternalAddresses = new List<HdAddress>(),
-                Name = string.Format(newAccountNamePattern, newAccountIndex),
+                Name = newAccountName,
                 HdPath = accountHdPath,
                 CreationTime = accountCreationTime
             };

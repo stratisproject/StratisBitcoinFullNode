@@ -220,23 +220,26 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 return account;
             }
 
-            int accountIndex = isColdWalletAccount ? ColdWalletAccountIndex : HotWalletAccountIndex;
-            var coinType = (CoinType)wallet.Network.Consensus.CoinType;
-
             this.logger.LogTrace("The {0} wallet account for '{1}' does not exist and will now be created.", isColdWalletAccount ? "cold" : "hot", wallet.Name);
 
-            AccountRoot accountRoot = wallet.AccountsRoot.Single(a => a.CoinType == coinType);
+            int accountIndex;
+            string accountName;
 
-            account = accountRoot.CreateAccount(walletPassword, wallet.EncryptedSeed,
-                wallet.ChainCode, wallet.Network, this.dateTimeProvider.GetTimeOffset(), accountIndex,
-                isColdWalletAccount ? ColdWalletAccountName : HotWalletAccountName);
+            if (isColdWalletAccount)
+            {
+                accountIndex = ColdWalletAccountIndex;
+                accountName = ColdWalletAccountName;
+            }
+            else
+            {
+                accountIndex = HotWalletAccountIndex;
+                accountName = HotWalletAccountName;
+            }
+
+            account = wallet.AddNewAccount(walletPassword, this.coinType, this.dateTimeProvider.GetTimeOffset(), accountIndex, accountName);
 
             // Maintain at least one unused address at all times. This will ensure that wallet recovery will also work.
             account.CreateAddresses(wallet.Network, 1, false);
-
-            ICollection<HdAccount> hdAccounts = accountRoot.Accounts.ToList();
-            hdAccounts.Add(account);
-            accountRoot.Accounts = hdAccounts;
 
             this.logger.LogTrace("(-):'{0}'", account.Name);
             return account;
