@@ -23,7 +23,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta7" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.1" />
     <PackageReference Include="NetJSON" Version="1.2.2" />
   </ItemGroup>
 
@@ -45,12 +45,6 @@
     <Compile Update="SmartContracts\ArrayInitialization.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
-    <Compile Update="SmartContracts\AsyncGenericTask.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
-    <Compile Update="SmartContracts\AsyncTask.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
     <Compile Update="SmartContracts\ByteArrayConversion.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
@@ -62,6 +56,9 @@
     </Compile>
     <Compile Update="SmartContracts\ContractConstructorInvalid.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\ContractCreation.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\ContractMethodParameterTypeMismatch.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -82,9 +79,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\InvalidParam.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
-    <Compile Update="SmartContracts\AsyncVoid.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\MemoryLimit.cs">
