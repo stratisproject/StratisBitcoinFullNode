@@ -32,8 +32,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5,
-                provenHeadersActivationHeight: 10_000_000)
+                maxStandardTxSigopsCost: 20_000 / 5)
             {
             }
 
@@ -503,10 +502,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(minerB, 110);
                 TestHelper.WaitForNodeToSync(syncer, minerB);
 
-                // Miner A mines an additional 10 blocks to height 125 that will create the longest chain. 
+                // Miner A mines an additional 10 blocks to height 125 that will create the longest chain.
                 TestHelper.MineBlocks(minerA, 10);
                 TestHelper.WaitForNodeToSync(syncer, minerA);
-                
+
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 120);

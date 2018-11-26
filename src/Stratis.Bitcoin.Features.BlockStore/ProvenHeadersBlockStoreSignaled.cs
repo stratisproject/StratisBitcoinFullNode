@@ -38,13 +38,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <inheritdoc />
         /// <remarks>When a block is signaled, we check if its header is a Proven Header, if not, we need to generate and store it.</remarks>
-        protected override void AddBlockToQueue(ChainedHeaderBlock blockPair)
+        protected override void AddBlockToQueue(ChainedHeaderBlock blockPair, bool isIBD)
         {
             int blockHeight = blockPair.ChainedHeader.Height;
 
             if (blockPair.ChainedHeader.Header is ProvenBlockHeader phHeader)
             {
-                logger.LogTrace("Current header is already a Proven Header.");
+                this.logger.LogTrace("Current header is already a Proven Header.");
+
                 // Add to the store, to be sure we actually store it anyway.
                 // It's ProvenBlockHeaderStore responsibility to prevent us to store it twice.
                 this.provenBlockHeaderStore.AddToPendingBatch(phHeader, new HashHeightPair(phHeader.GetHash(), blockHeight));
@@ -57,9 +58,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // Proven Header not found? create it now.
                 if (provenHeader == null)
                 {
-                    logger.LogTrace("Proven Header at height {0} NOT found.", blockHeight);
+                    this.logger.LogTrace("Proven Header at height {0} NOT found.", blockHeight);
 
-                    CreateAndStoreProvenHeader(blockHeight, blockPair);
+                    this.CreateAndStoreProvenHeader(blockHeight, blockPair, isIBD);
                 }
                 else
                 {
@@ -69,20 +70,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     uint256 provenHeaderHash = provenHeader.GetHash();
                     if (provenHeaderHash == signaledHeaderHash)
                     {
-                        logger.LogTrace("Proven Header {0} found.", signaledHeaderHash);
+                        this.logger.LogTrace("Proven Header {0} found.", signaledHeaderHash);
                     }
                     else
                     {
-                        logger.LogTrace("Found a proven header with a different hash, recreating PH. Expected Hash: {0}, found Hash: {1}.", signaledHeaderHash, provenHeaderHash);
+                        this.logger.LogTrace("Found a proven header with a different hash, recreating PH. Expected Hash: {0}, found Hash: {1}.", signaledHeaderHash, provenHeaderHash);
 
                         // A reorg happened so we recreate a new Proven Header to replace the wrong one.
-                        CreateAndStoreProvenHeader(blockHeight, blockPair);
+                        this.CreateAndStoreProvenHeader(blockHeight, blockPair, isIBD);
                     }
                 }
             }
 
             // At the end, if no exception happened, control is passed back to base AddBlockToQueue.
-            base.AddBlockToQueue(blockPair);
+            base.AddBlockToQueue(blockPair, isIBD);
         }
 
         /// <summary>
@@ -90,7 +91,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="blockHeight">Height of the block used to generate its Proven Header.</param>
         /// <param name="chainedHeaderBlock">Block used to generate its Proven Header.</param>
-        private void CreateAndStoreProvenHeader(int blockHeight, ChainedHeaderBlock chainedHeaderBlock)
+        /// <param name="isIBD">Is node in IBD.</param>
+        private void CreateAndStoreProvenHeader(int blockHeight, ChainedHeaderBlock chainedHeaderBlock, bool isIBD)
         {
             PosBlock block = (PosBlock)chainedHeaderBlock.Block;
 
@@ -99,9 +101,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 provenHeaderHash = newProvenHeader.GetHash();
             this.provenBlockHeaderStore.AddToPendingBatch(newProvenHeader, new HashHeightPair(provenHeaderHash, blockHeight));
 
-            logger.LogTrace("Created Proven Header at height {0} with hash {1} and adding to the pending batch to be stored.", blockHeight, provenHeaderHash);
+            this.logger.LogTrace("Created Proven Header at height {0} with hash {1} and adding to the pending batch to be stored.", blockHeight, provenHeaderHash);
 
-            chainedHeaderBlock.SetHeader(newProvenHeader);
+            // If our node is in IBD the block will not be announced to peers.
+            // If not in IBD the signaler may expect the block header to be of type PH.
+            // TODO: Memory foot print:
+            // This design will cause memory to grow over time (depending on how long the node is running)
+            // based on the size of the Proven Headers (a proven header can be up to 1000 bytes).
+            // This is also correct for regular header (which are 80 bytes in size).
+            // If we want to be able to control the size of PH we will need to change the logic
+            // in ProvenHeadersBlockStoreBehavior and load the PH from the PH store instead
+            if (!isIBD)
+                chainedHeaderBlock.SetHeader(newProvenHeader);
         }
     }
 }

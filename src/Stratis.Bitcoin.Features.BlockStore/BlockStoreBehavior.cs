@@ -381,7 +381,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // We expect peer to answer with getheaders message.
                     if (bestSentHeader == null)
                     {
-                        await peer.SendMessageAsync(this.BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, blocksToAnnounce.Last().Header)).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildHeadersAnnouncePayload(new[] { blocksToAnnounce.Last().Header })).ConfigureAwait(false);
 
                         this.logger.LogTrace("(-)[SENT_SINGLE_HEADER]");
                         return;
@@ -435,7 +435,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         this.lastSentHeader = bestIndex;
                         this.consensusManagerBehavior.UpdateBestSentHeader(this.lastSentHeader);
 
-                        await peer.SendMessageAsync(this.BuildAnnouncedHeaderPayload(this.chainState.BlockStoreTip.Height, headers.ToArray())).ConfigureAwait(false);
+                        await peer.SendMessageAsync(this.BuildHeadersAnnouncePayload(headers)).ConfigureAwait(false);
                         this.logger.LogTrace("(-)[SEND_HEADERS_PAYLOAD]");
                         return;
                     }
@@ -481,15 +481,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <summary>
-        /// Builds the announced header payload.
+        /// Builds payload that announces to the peers new blocks that we've connected.
         /// This method can be overridden to return different type of HeadersPayload, e.g. <see cref="ProvenHeadersPayload" />
         /// </summary>
-        /// <param name="blockstoreTipHeight">Height of the <see cref="ChainState.BlockStoreTip"></see> height.</param>
         /// <param name="headers">The headers.</param>
         /// <returns>
         /// The <see cref="HeadersPayload" /> instance to announce to the peer.
         /// </returns>
-        protected virtual Payload BuildAnnouncedHeaderPayload(int blockstoreTipHeight, params BlockHeader[] headers)
+        protected virtual Payload BuildHeadersAnnouncePayload(IEnumerable<BlockHeader> headers)
         {
             return new HeadersPayload(headers);
         }

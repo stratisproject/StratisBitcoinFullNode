@@ -24,6 +24,7 @@ using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Core.Validation;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Decompilation;
 using Stratis.SmartContracts.Executor.Reflection.Loader;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
@@ -144,7 +145,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
                         services.AddSingleton<ISerializer, Serializer>();
 
-                        // Controllers
+                        // Controllers + utils
+                        services.AddSingleton<CSharpContractDecompiler>();
                         services.AddSingleton<SmartContractsController>();
                     });
             });

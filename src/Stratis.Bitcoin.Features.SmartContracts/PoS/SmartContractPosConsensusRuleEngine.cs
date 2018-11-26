@@ -15,6 +15,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
@@ -23,12 +24,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
     /// </summary>
     public sealed class SmartContractPosConsensusRuleEngine : PosConsensusRuleEngine, ISmartContractCoinviewRule
     {
+        public ICallDataSerializer CallDataSerializer { get; private set; }
         public IContractExecutorFactory ExecutorFactory { get; private set; }
         public IStateRepositoryRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
         public ISenderRetriever SenderRetriever { get; private set; }
 
         public SmartContractPosConsensusRuleEngine(
+            ICallDataSerializer callDataSerializer,
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
@@ -49,6 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             IRewindDataIndexStore rewindDataIndexStore)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexStore)
         {
+            this.CallDataSerializer = callDataSerializer;
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
             this.ReceiptRepository = receiptRepository;

@@ -14,8 +14,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public sealed class StratisBitcoinPowRunner : NodeRunner
     {
-        public StratisBitcoinPowRunner(string dataDir, Network network)
-            : base(dataDir)
+        public StratisBitcoinPowRunner(string dataDir, Network network, string agent)
+            : base(dataDir, agent)
         {
             this.Network = network;
         }

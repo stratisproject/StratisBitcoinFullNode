@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Runtime.CompilerServices;
-using Stratis.ModuleValidation.Net.Determinism;
-using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Policy;
+using Stratis.SmartContracts.Core.Validation.Validators.Instruction;
+using Stratis.SmartContracts.Core.Validation.Validators.Type;
 
 namespace Stratis.SmartContracts.Core.Validation
 {
