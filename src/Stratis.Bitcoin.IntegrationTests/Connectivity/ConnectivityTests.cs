@@ -134,7 +134,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
 
                 node1 = BanNode(node1, node2);
 
-                Action connectAction = () => TestHelper.Connect(node1, node2);
+                // Here we have to use the RPC client directly so that we can get the exception.
+                Action connectAction = () => node1.CreateRPCClient().AddNode(node2.Endpoint, true);
                 connectAction.Should().Throw<RPCException>().WithMessage("Internal error");
 
                 node1.FullNode.ConnectionManager.ConnectedPeers.Should().BeEmpty();
