@@ -13,45 +13,38 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public ProtocolVersion Version
         {
-            get
-            {
-                return (ProtocolVersion)this.version;
-            }
+            get => (ProtocolVersion)this.version;
 
-            set
-            {
-                this.version = (uint)value;
-            }
+            set => this.version = (uint)value;
         }
 
-        private BlockLocator blockLocator;
+        protected BlockLocator blockLocator;
 
+        /// <summary>
+        /// Gets a block locator which represents a compact structure of one's chain position which can be used to find
+        /// forks with another chain.
+        /// </summary>
         public BlockLocator BlockLocator
         {
-            get
-            {
-                return this.blockLocator;
-            }
+            get => this.blockLocator;
 
-            set
-            {
-                this.blockLocator = value;
-            }
+            set => this.blockLocator = value;
         }
 
-        private uint256 hashStop = uint256.Zero;
+        protected uint256 hashStop = uint256.Zero;
 
+        /// <summary>
+        /// Gets a hash after which no new headers should be sent withing the same message.
+        /// </summary>
+        /// <remarks>
+        /// As an example, in case we are asked to send headers from block 1000 but hashStop is at block
+        /// 1200 the answer should contain 200 headers.
+        /// </remarks>
         public uint256 HashStop
         {
-            get
-            {
-                return this.hashStop;
-            }
+            get => this.hashStop;
 
-            set
-            {
-                this.hashStop = value;
-            }
+            set => this.hashStop = value;
         }
 
         public GetHeadersPayload()

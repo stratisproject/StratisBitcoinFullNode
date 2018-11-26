@@ -21,16 +21,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public Network Network { get; }
         public IKeyEncodingStrategy KeyEncodingStrategy { get; }
         public ILoggerFactory LoggerFactory { get; }
-        public ContractStateRoot State { get; }
+        public StateRepositoryRoot State { get; }
         public SmartContractValidator Validator { get; }
         public IAddressGenerator AddressGenerator {get;}
         public ContractAssemblyLoader AssemblyLoader { get; }
         public IContractModuleDefinitionReader ModuleDefinitionReader { get; }
         public IContractPrimitiveSerializer ContractPrimitiveSerializer { get; }
-        public IInternalTransactionExecutorFactory InternalTxExecutorFactory { get; }
+        public IInternalExecutorFactory InternalTxExecutorFactory { get; }
         public ReflectionVirtualMachine Vm { get; }
         public ISmartContractStateFactory SmartContractStateFactory { get; }
         public StateProcessor StateProcessor { get; }
+        public Serializer Serializer { get; }
 
         public ContractExecutorTestContext()
         {
@@ -38,16 +39,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.KeyEncodingStrategy = BasicKeyEncodingStrategy.Default;
             this.LoggerFactory = new ExtendedLoggerFactory();
             this.LoggerFactory.AddConsoleWithFilters();
-            this.State = new ContractStateRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
+            this.State = new StateRepositoryRoot(new NoDeleteSource<byte[], byte[]>(new MemoryDictionarySource()));
             this.ContractPrimitiveSerializer = new ContractPrimitiveSerializer(this.Network);
+            this.Serializer = new Serializer(this.ContractPrimitiveSerializer);
             this.AddressGenerator = new AddressGenerator();
             this.Validator = new SmartContractValidator();
             this.AssemblyLoader = new ContractAssemblyLoader();
             this.ModuleDefinitionReader = new ContractModuleDefinitionReader();
-            this.Vm = new ReflectionVirtualMachine(this.Validator, this.LoggerFactory, this.Network, this.AssemblyLoader, this.ModuleDefinitionReader);
+            this.Vm = new ReflectionVirtualMachine(this.Validator, this.LoggerFactory, this.AssemblyLoader, this.ModuleDefinitionReader);
             this.StateProcessor = new StateProcessor(this.Vm, this.AddressGenerator);
-            this.InternalTxExecutorFactory = new InternalTransactionExecutorFactory(this.LoggerFactory, this.Network, this.StateProcessor);
-            this.SmartContractStateFactory = new SmartContractStateFactory(this.ContractPrimitiveSerializer, this.Network, this.InternalTxExecutorFactory);
+            this.InternalTxExecutorFactory = new InternalExecutorFactory(this.LoggerFactory, this.StateProcessor);
+            this.SmartContractStateFactory = new SmartContractStateFactory(this.ContractPrimitiveSerializer, this.InternalTxExecutorFactory, this.Serializer);
         }
     }
 }

@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using NBitcoin;
+using RuntimeObserver;
 using Stratis.SmartContracts.Executor.Reflection.Exceptions;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -17,6 +18,8 @@ namespace Stratis.SmartContracts.Executor.Reflection
         /// The default binding flags for matching the receive method. Matches public instance methods declared on the contract type only.
         /// </summary>
         private const BindingFlags DefaultReceiveLookup = BindingFlags.DeclaredOnly | BindingFlags.Instance | BindingFlags.Public;
+
+        private const BindingFlags DefaultBindingFlags = BindingFlags.Instance | BindingFlags.NonPublic;
 
         private readonly SmartContract instance;
 
@@ -115,6 +118,12 @@ namespace Stratis.SmartContracts.Executor.Reflection
 
             object[] invokeParams = call.Parameters?.ToArray() ?? new object[0];
 
+            if (invokeParams.Any(p => p == null))
+            {
+                // Do not support binding of null parameter values.
+                return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
+            }
+
             Type[] types = invokeParams.Select(p => p.GetType()).ToArray();
 
             MethodInfo methodToInvoke = this.Type.GetMethod(call.Name, types);
@@ -153,7 +162,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         private void EnsureInitialized()
         {
             if (!this.initialized)
-                SetStateFields(this.instance, this.State);
+                SetStateField(this.instance, this.State);
 
             this.initialized = true;
         }
@@ -181,60 +190,35 @@ namespace Stratis.SmartContracts.Executor.Reflection
                 // This should not happen
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
             }
-            catch (TargetInvocationException targetException) when (!(targetException.InnerException is OutOfGasException))
+            catch (TargetInvocationException targetException) 
+            when (!(targetException.InnerException is OutOfGasException) 
+            && !(targetException.InnerException is MemoryConsumptionException))
             {
-                // Method threw an exception that was not an OutOfGasException
+                // Method threw an exception that was not an OutOfGasException or a MemoryConsumptionException
+                // TODO: OutofGas and MemoryConsumption exceptions should inherit from same base 'ResourceTrackingException'
+                // which can be tracked here.
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.MethodThrewException, targetException.InnerException);
             }
             catch (TargetInvocationException targetException) when (targetException.InnerException is OutOfGasException)
             {
-                // Method threw an exception that was an OutOfGasException.
+                // Method threw an OutOfGasException
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OutOfGas, targetException.InnerException);
-            }           
+            }
+            catch (TargetInvocationException targetException) when (targetException.InnerException is MemoryConsumptionException)
+            {
+                // Method threw a MemoryConsumptionException
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OverMemoryLimit, targetException.InnerException);
+            }
         }
 
         /// <summary>
-        /// Uses reflection to set the state fields on the contract object.
+        /// Uses reflection to set the state field on the contract object.
         /// </summary>
-        private static void SetStateFields(SmartContract smartContract, ISmartContractState contractState)
+        private static void SetStateField(SmartContract smartContract, ISmartContractState contractState)
         {
-            FieldInfo[] fields = typeof(SmartContract).GetFields(BindingFlags.Instance | BindingFlags.NonPublic);
+            FieldInfo field = typeof(SmartContract).GetField("state", DefaultBindingFlags);
 
-            foreach (FieldInfo field in fields)
-            {
-                switch (field.Name)
-                {
-                    case "gasMeter":
-                        field.SetValue(smartContract, contractState.GasMeter);
-                        break;
-                    case "Block":
-                        field.SetValue(smartContract, contractState.Block);
-                        break;
-                    case "getBalance":
-                        field.SetValue(smartContract, contractState.GetBalance);
-                        break;
-                    case "internalTransactionExecutor":
-                        field.SetValue(smartContract, contractState.InternalTransactionExecutor);
-                        break;
-                    case "internalHashHelper":
-                        field.SetValue(smartContract, contractState.InternalHashHelper);
-                        break;
-                    case "Message":
-                        field.SetValue(smartContract, contractState.Message);
-                        break;
-                    case "PersistentState":
-                        field.SetValue(smartContract, contractState.PersistentState);
-                        break;
-                    case "smartContractState":
-                        field.SetValue(smartContract, contractState);
-                        break;
-                    case "Serializer":
-                        field.SetValue(smartContract, contractState.Serializer);
-                        break;
-                    default:
-                        break;
-                }
-            }
+            field.SetValue(smartContract, contractState);
         }
     }
 }

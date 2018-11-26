@@ -1,8 +1,10 @@
 using System.IO;
 using System.Linq;
+using Microsoft.CodeAnalysis;
 using Stratis.ModuleValidation.Net;
 using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.Core.Validation.Validators.Module;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Xunit;
@@ -13,21 +15,21 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
     {
         public IContractModuleDefinition CompileFileToModuleDef(FileInfo file)
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.CompileFile(file.FullName);
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile(file.FullName, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             return decomp;
         }
 
         public IContractModuleDefinition CompileToModuleDef(string source)
         {
-            SmartContractCompilationResult compilationResult = SmartContractCompiler.Compile(source);
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(source, OptimizationLevel.Debug);
             Assert.True(compilationResult.Success);
 
             byte[] assemblyBytes = compilationResult.Compilation;
-            IContractModuleDefinition decomp = SmartContractDecompiler.GetModuleDefinition(assemblyBytes);
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             return decomp;
         }
 
@@ -35,9 +37,9 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
         public void SmartContractValidator_StandardContract_Auction()
         {
             // Validate a standard auction contract
-            var decompilation = CompileFileToModuleDef(new FileInfo("Contracts/Auction.cs"));
+            IContractModuleDefinition decompilation = CompileFileToModuleDef(new FileInfo("Contracts/Auction.cs"));
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -46,9 +48,9 @@ namespace Stratis.SmartContracts.Core.Validation.Tests
         public void SmartContractValidator_StandardContract_Token()
         {
             // Validate a standard auction contract
-            var decompilation = CompileFileToModuleDef(new FileInfo("Contracts/Token.cs"));
+            IContractModuleDefinition decompilation = CompileFileToModuleDef(new FileInfo("Contracts/Token.cs"));
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -68,9 +70,9 @@ public class Test : SmartContract
         : base(state) { }
 }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Empty(result.Errors);
         }
@@ -91,32 +93,9 @@ public class Test : SmartContract
                                                 public void B() { var test = new A(); }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
-
-            Assert.Empty(result.Errors);
-        }
-
-        [Fact]
-        public void SmartContractValidator_Should_Allow_New_TransferFundsToContract()
-        {
-            const string source = @"using System;
-                                            using Stratis.SmartContracts;
-
-                                            public class Test : SmartContract
-                                            {
-                                                public struct A {}
-
-                                                public Test(ISmartContractState state)
-                                                    : base(state) { }
-
-                                                public void B() { var test = new TransferFundsToContract(); }
-                                            }";
-
-            var decompilation = CompileToModuleDef(source);
-
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Empty(result.Errors);
         }
@@ -138,9 +117,9 @@ public class Test : SmartContract
                                                 }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Contains(result.Errors, e => e is WhitelistValidator.WhitelistValidationResult);
         }
@@ -161,9 +140,9 @@ public class Test : SmartContract
                                                 public Test(ISmartContractState state)
                                                     : base(state) { }
                                             }";
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Contains(result.Errors, e => e is WhitelistValidator.WhitelistValidationResult);
         }
@@ -184,9 +163,9 @@ public class Test : SmartContract
                                                 public Test(ISmartContractState state)
                                                     : base(state) { }
                                             }";
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Single(result.Errors);
             Assert.IsType<TryCatchValidator.TryCatchValidationResult>(result.Errors.Single());
@@ -208,9 +187,9 @@ public class Test : SmartContract
                                                 public Test(ISmartContractState state)
                                                     : base(state) { }
                                             }";
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Single(result.Errors);
             Assert.IsType<TryCatchValidator.TryCatchValidationResult>(result.Errors.Single());
@@ -233,9 +212,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Single(result.Errors);
             Assert.IsType<TryCatchValidator.TryCatchValidationResult>(result.Errors.Single());
@@ -259,9 +238,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Contains(result.Errors, e => e is TryCatchValidator.TryCatchValidationResult);
         }
@@ -284,9 +263,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -308,9 +287,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -334,9 +313,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -365,9 +344,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e is TypeHasNestedTypesValidator.TypeHasNestedTypesValidationResult);
@@ -393,9 +372,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -419,9 +398,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -445,9 +424,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
@@ -470,9 +449,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Equal(3, result.Errors.Count());
@@ -492,9 +471,9 @@ public class Test : SmartContract
                                                     : base(state) { var abc = Item.Length; }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.True(result.IsValid);
         }
@@ -513,9 +492,9 @@ public class Test : SmartContract
                                                     : base(state) { }
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e is StaticConstructorValidator.StaticConstructorValidationResult);
@@ -535,9 +514,9 @@ public class Test : SmartContract
                                                 ~Test() {}
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             // Use of finalizer override triggers multiple errors because of the way that it's compiled
             Assert.False(result.IsValid);
@@ -558,13 +537,144 @@ public class Test : SmartContract
                                                 void Finalize() {}
                                             }";
 
-            var decompilation = CompileToModuleDef(source);
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
-            var result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
             Assert.IsType<FinalizerValidator.FinalizerValidationResult>(result.Errors.Single());
+        }
+
+        [Fact]
+        public void SmartContractValidator_Allow_SingleContract()
+        {
+            const string source = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {                                              
+                                                public Test(ISmartContractState state)
+                                                    : base(state) { }
+                                            }";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+            Assert.Empty(result.Errors);
+        }
+
+        [Fact]
+        public void SmartContractValidator_Allow_MultipleContracts_OneDeploy()
+        {
+            const string source = @"using System;
+                                            using Stratis.SmartContracts;
+                                            
+                                            [Deploy]
+                                            public class Test : SmartContract
+                                            {                                              
+                                                public Test(ISmartContractState state)
+                                                    : base(state) { }
+
+                                            }
+
+                                            public class Test2 : SmartContract
+                                            {                                              
+                                                public Test2(ISmartContractState state)
+                                                    : base(state) { }
+
+                                            }";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+            Assert.Empty(result.Errors);
+        }
+
+        [Fact]
+        public void SmartContractValidator_Dont_Allow_MultipleContracts_NoDeploy()
+        {
+            const string source = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {                                              
+                                                public Test(ISmartContractState state)
+                                                    : base(state) { }
+
+                                            }
+
+                                            public class Test2 : SmartContract
+                                            {                                              
+                                                public Test2(ISmartContractState state)
+                                                    : base(state) { }
+
+                                            }";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.Single(result.Errors);
+            Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
+        }
+
+        [Fact]
+        public void SmartContractValidator_Dont_Allow_MultipleContracts_MultipleDeploy()
+        {
+            const string source = @"using System;
+                                            using Stratis.SmartContracts;
+                                            
+                                            [Deploy]
+                                            public class Test : SmartContract
+                                            {                                              
+                                                public Test(ISmartContractState state)
+                                                    : base(state) { }
+                                            }
+
+                                            [Deploy]
+                                            public class Test2 : SmartContract
+                                            {                                              
+                                                public Test2(ISmartContractState state)
+                                                    : base(state) { }
+                                            }";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.Single(result.Errors);
+            Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
+        }
+
+        [Fact]
+        public void SmartContractValidator_Should_Not_Allow_Optional_Params()
+        {
+            const string source = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state)
+        : base(state) { }
+
+    public void Optional(int optionalParam = 1) {
+    }
+}";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.Contains(result.Errors, e => e is MethodParamValidator.MethodParamValidationResult);
         }
     }
 }

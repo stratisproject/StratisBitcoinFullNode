@@ -14,21 +14,30 @@ namespace Stratis.SmartContracts.Core
 
         public static byte[] HexToByteArray(this string hex)
         {
-            int NumberChars = hex.Length;
+            string toHex = hex;
+
+            if (hex.StartsWith("0x"))
+                toHex = hex.Substring(2);
+
+            int NumberChars = toHex.Length;
             byte[] bytes = new byte[NumberChars / 2];
             for (int i = 0; i < NumberChars; i += 2)
-                bytes[i / 2] = Convert.ToByte(hex.Substring(i, 2), 16);
+                bytes[i / 2] = Convert.ToByte(toHex.Substring(i, 2), 16);
             return bytes;
         }
 
-        public static uint160 ToUint160(this Address address, Network network)
+        public static byte[] HexStringToBytes(string val)
         {
-            return new uint160(new BitcoinPubKeyAddress(address.Value, network).Hash.ToBytes());
-        }
+            if (val.StartsWith("0x", StringComparison.OrdinalIgnoreCase))
+                val = val.Substring(2);
 
-        public static Address ToAddress(this uint160 address, Network network)
-        {
-            return new Address(new BitcoinPubKeyAddress(new KeyId(address), network).ToString());
+            byte[] ret = new byte[val.Length / 2];
+            for (int i = 0; i < val.Length; i = i + 2)
+            {
+                string hexChars = val.Substring(i, 2);
+                ret[i / 2] = byte.Parse(hexChars, System.Globalization.NumberStyles.HexNumber);
+            }
+            return ret;
         }
 
         public static Money GetFee(this Transaction transaction, UnspentOutputSet inputs)

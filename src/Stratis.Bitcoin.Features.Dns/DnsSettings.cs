@@ -39,13 +39,6 @@ namespace Stratis.Bitcoin.Features.Dns
         public string DnsMailBox { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public DnsSettings() : this(NodeSettings.Default())
-        {	
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -54,7 +47,6 @@ namespace Stratis.Bitcoin.Features.Dns
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(DnsSettings).FullName);            
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -64,8 +56,6 @@ namespace Stratis.Bitcoin.Features.Dns
             this.DnsHostName = config.GetOrDefault<string>("dnshostname", null, this.logger);
             this.DnsNameServer = config.GetOrDefault<string>("dnsnameserver", null, this.logger);
             this.DnsMailBox = config.GetOrDefault<string>("dnsmailbox", null, this.logger);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>Prints the help information on how to configure the DNS settings to the logger.</summary>
@@ -81,7 +71,7 @@ namespace Stratis.Bitcoin.Features.Dns
             builder.AppendLine($"-dnsnameserver=<string>   The DNS Seed Service nameserver.");
             builder.AppendLine($"-dnsmailbox=<string>      The e-mail address used as the administrative point of contact for the domain.");
 
-            NodeSettings.Default().Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>

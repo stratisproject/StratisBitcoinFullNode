@@ -1,0 +1,104 @@
+#  reference: https://www.appveyor.com/docs/appveyor-yml/
+
+# you can use {branch} name in version format too
+# version: 1.0.{build}-{branch}
+
+version: 1.0.2.{build}
+pull_requests:
+  do_not_increment_build_number: true
+skip_tags: true
+
+
+# branches to build 
+branches:
+  # whitelist
+  only:
+    - master
+
+#---------------------------------#
+#    environment configuration    #
+#---------------------------------#
+
+image: Visual Studio 2017
+clone_folder: c:\projects\fullnode
+
+configuration:
+- Debug
+- Release
+
+# build cache to preserve files/folders between builds
+cache:
+  - '%USERPROFILE%\.nuget\packages'
+  
+init:
+- ps: dotnet --info
+
+#---------------------------------#
+#       build configuration       #
+#---------------------------------#
+build_script:
+- ps: |
+      cd src
+      dotnet remove Stratis.Bitcoin/Stratis.Bitcoin.csproj package Tracer.Fody
+      Write-Host "[$env:configuration] STARTED dotnet build" -foregroundcolor "magenta"
+      dotnet build -c $env:configuration -v m 
+      Write-Host "[$env:configuration] FINISHED dotnet build" -foregroundcolor "magenta"
+      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
+
+# scripts to run after build
+after_build:
+- ps: |
+      if($env:configuration -eq 'Release')
+      {
+        Write-Host "[$env:configuration] STARTED dotnet pack" -foregroundcolor "magenta"
+        
+        cd Stratis.Bitcoin
+        dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
+        
+        cd ../Stratis.Bitcoin.Api
+        dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
+
+        cd ../Stratis.Bitcoin.Features.LightWallet
+        dotnet pack -c $env:configuration -v m --no-build -o $env:APPVEYOR_BUILD_FOLDER\nuget\
+        
+        Write-Host "[$env:configuration] FINISHED dotnet pack" -foregroundcolor "magenta"
+      }
+
+      if ($LastExitCode -ne 0) { $host.SetShouldExit($LastExitCode)  }
+    
+test_script:
+- ps: |
+      Write-Host "[$env:configuration] STARTED dotnet test" -foregroundcolor "magenta"
+      cd $env:APPVEYOR_BUILD_FOLDER/src
+      
+      $anyFailures = $FALSE;
+      
+      foreach ($testFolder in ls *.Tests) {
+
+          # exclude integration tests
+          if ($testFolder -like '*Integration.Tests*' -Or $testFolder -like '*IntegrationTests*') { continue }
+            
+            Push-Location $testFolder
+
+            Write-Host "[$env:configuration] Running tests in $testFolder" -foregroundcolor "magenta"
+            dotnet test -c $env:configuration --no-build
+            
+            if ($LastExitCode -ne 0) { 
+                $anyFailures = $TRUE
+                Add-AppveyorMessage -Message "Some tests failed in $testFolder."
+            }
+    
+            Pop-Location
+      }  
+
+      Write-Host "[$env:configuration] FINISHED dotnet test" -foregroundcolor "magenta"
+      if ($anyFailures -eq $TRUE) { $host.SetShouldExit(1) }
+
+#---------------------------------#
+#      artifacts configuration    #
+#---------------------------------#
+
+# pushing all files in build directory recursively
+artifacts:
+- path: nuget\*.nupkg
+  name: nuget packages

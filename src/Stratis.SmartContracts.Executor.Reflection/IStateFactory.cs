@@ -5,6 +5,6 @@ namespace Stratis.SmartContracts.Executor.Reflection
 {
     public interface IStateFactory
     {
-        IState Create(IContractState stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash);
+        IState Create(IStateRepository stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash);
     }
 }

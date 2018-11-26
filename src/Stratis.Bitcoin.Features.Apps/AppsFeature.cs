@@ -1,4 +1,5 @@
 ﻿using System.IO;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Builder;
@@ -28,13 +29,15 @@ namespace Stratis.Bitcoin.Features.Apps
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        public override void Initialize()
+        public override Task InitializeAsync()
         {
             this.logger.LogInformation("Initializing {0}.", nameof(AppsFeature));
 
             Directory.CreateDirectory(this.dataFolder.ApplicationsPath);
 
             this.appsHost.Host(this.appsStore.Applications);
+
+            return Task.CompletedTask;
         }
 
         public override void Dispose()

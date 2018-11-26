@@ -6,7 +6,6 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
-using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -36,7 +35,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public ConsensusSettings ConsensusSettings = new ConsensusSettings(new NodeSettings(KnownNetworks.RegTest));
         public IConsensusManager ConsensusManager;
         public readonly Mock<IConsensusRuleEngine> ConsensusRulesEngine = new Mock<IConsensusRuleEngine>();
-        public Mock<IFinalizedBlockInfo> FinalizedBlockMock = new Mock<IFinalizedBlockInfo>();
+        public Mock<IFinalizedBlockInfoRepository> FinalizedBlockMock = new Mock<IFinalizedBlockInfoRepository>();
 
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;
@@ -52,8 +51,11 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             var chain = new ConcurrentChain(this.Network);
             var extendedLoggerFactory = new ExtendedLoggerFactory();
-            var powConsensusRulesEngine = new PowConsensusRuleEngine(this.Network, extendedLoggerFactory, DateTimeProvider.Default, chain,
-                new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object, this.ChainState.Object, new InvalidBlockHashStore(new DateTimeProvider()));
+            var dateTimeProvider = new DateTimeProvider();
+            var hashStore = new InvalidBlockHashStore(dateTimeProvider);
+            var powConsensusRulesEngine = new PowConsensusRuleEngine(this.Network, extendedLoggerFactory, dateTimeProvider, chain,
+                new NodeDeployments(this.Network, chain), this.ConsensusSettings, this.Checkpoints.Object, new Mock<ICoinView>().Object,
+                this.ChainState.Object, hashStore, new NodeStats(dateTimeProvider));
 
             this.PartialValidation = new PartialValidator(powConsensusRulesEngine, extendedLoggerFactory);
             this.FullValidation = new FullValidator(powConsensusRulesEngine, extendedLoggerFactory);
@@ -68,7 +70,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 this.ChainState.Object,
                 this.FinalizedBlockMock.Object,
                 this.ConsensusSettings,
-                new InvalidBlockHashStore(new DateTimeProvider()));
+                hashStore);
 
             this.ConsensusManager = CreateConsensusManager();
         }
@@ -97,7 +99,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         internal Target ChangeDifficulty(ChainedHeader header, int difficultyAdjustmentDivisor)
         {
-            NBitcoin.BouncyCastle.Math.BigInteger newTarget = header.Header.Bits.ToBigInteger();
+            var newTarget = header.Header.Bits.ToBigInteger();
             newTarget = newTarget.Divide(NBitcoin.BouncyCastle.Math.BigInteger.ValueOf(difficultyAdjustmentDivisor));
             return new Target(newTarget);
         }
@@ -147,13 +149,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
                                     ? previousHeader.Header.Bits
                                     : this.ChangeDifficulty(previousHeader, difficultyAdjustmentDivisor);
                 header.Nonce = (uint)Interlocked.Increment(ref nonceValue);
+
                 var newHeader = new ChainedHeader(header, header.GetHash(), previousHeader);
+
                 if (validationState.HasValue)
                     newHeader.BlockValidationState = validationState.Value;
 
                 if (assignBlocks)
                 {
-                    Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+                    Block block = this.Network.CreateBlock();
                     block.GetSerializedSize();
                     newHeader.Block = block;
                 }
@@ -166,7 +170,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public Block CreateBlock()
         {
-            Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
+            Block block = this.Network.CreateBlock();
             block.GetSerializedSize();
             return block;
         }

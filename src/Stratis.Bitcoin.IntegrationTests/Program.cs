@@ -5,7 +5,6 @@ using System.Reflection;
 using Stratis.Bitcoin.IntegrationTests.Miners;
 using Stratis.Bitcoin.IntegrationTests.Wallet;
 using Xunit;
-using Xunit.Sdk;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
@@ -21,7 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             Assembly assembly = Assembly.GetExecutingAssembly();
 
-            var testables = 
+            var testables =
             (
                 from type in assembly.GetTypes().Where(t => t == typeof(T))
                 where type.GetConstructor(Type.EmptyTypes) != null
@@ -50,7 +49,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
             foreach (KeyValuePair<MethodInfo, (Type, Exception)> item in executed)
             {
-                Console.WriteLine(item.Value.Item2 == null ? "+" : "-  " +  item.Value.Item1.Name + " " + item.Key.Name);
+                Console.WriteLine(item.Value.Item2 == null ? "+" : "-  " + item.Value.Item1.Name + " " + item.Key.Name);
             }
         }
     }

@@ -11,22 +11,19 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// </summary>
     public class StateFactory : IStateFactory
     {
-        private readonly Network network;
-        private readonly IInternalTransactionExecutorFactory internalTransactionExecutorFactory;
+        private readonly IInternalExecutorFactory internalTransactionExecutorFactory;
         private readonly ISmartContractStateFactory smartContractStateFactory;
 
-        public StateFactory(Network network,
-            ISmartContractStateFactory smartContractStateFactory)
+        public StateFactory(ISmartContractStateFactory smartContractStateFactory)
         {
-            this.network = network;
             this.smartContractStateFactory = smartContractStateFactory;
         }
 
-        public IState Create(IContractState stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash)
+        public IState Create(IStateRepository stateRoot, IBlock block, ulong txOutValue, uint256 transactionHash)
         {
-            var logHolder = new ContractLogHolder(this.network);
+            var logHolder = new ContractLogHolder();
             var internalTransfers = new List<TransferInfo>();
-            return new State(this.smartContractStateFactory, stateRoot, logHolder, internalTransfers, block, this.network, txOutValue, transactionHash);
+            return new State(this.smartContractStateFactory, stateRoot, logHolder, internalTransfers, block, transactionHash);
         }
     }
 }

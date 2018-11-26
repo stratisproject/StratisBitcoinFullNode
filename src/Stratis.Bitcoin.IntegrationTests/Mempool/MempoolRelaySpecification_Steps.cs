@@ -18,10 +18,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         private CoreNode nodeA;
         private CoreNode nodeB;
         private CoreNode nodeC;
-        private int coinbaseMaturity;
         private Transaction transaction;
 
-        // NOTE: This constructor is allows test steps names to be logged
+        // NOTE: This constructor allows test step names to be logged
         public MempoolRelaySpecification(ITestOutputHelper outputHelper) : base(outputHelper)
         {
         }
@@ -40,30 +39,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         {
             Network regTest = KnownNetworks.RegTest;
 
-            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest);
-            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest);
-            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest);
-
-            this.nodeBuilder.StartAll();
-            this.nodeA.NotInIBD().WithWallet();
-            this.nodeB.NotInIBD().WithWallet();
-            this.nodeC.NotInIBD().WithWallet();
-
-            this.coinbaseMaturity = (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity;
+            this.nodeA = this.nodeBuilder.CreateStratisPowNode(regTest).WithDummyWallet().Start();
+            this.nodeB = this.nodeBuilder.CreateStratisPowNode(regTest).Start();
+            this.nodeC = this.nodeBuilder.CreateStratisPowNode(regTest).Start();
         }
 
         protected void nodeA_mines_coins_that_are_spendable()
         {
             // add some coins to nodeA
-            this.nodeA.SetDummyMinerSecret(new BitcoinSecret(new Key(), this.nodeA.FullNode.Network));
-            this.nodeA.GenerateStratisWithMiner(this.coinbaseMaturity + 1);
-            TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(this.nodeA));
+            TestHelper.MineBlocks(this.nodeA, (int)this.nodeA.FullNode.Network.Consensus.CoinbaseMaturity + 1);
         }
 
         protected void nodeA_connects_to_nodeB()
         {
-            this.nodeA.CreateRPCClient().AddNode(this.nodeB.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeA, this.nodeB));
+            TestHelper.ConnectAndSync(this.nodeA, this.nodeB);
         }
 
         protected void nodeA_nodeB_and_nodeC_are_NON_whitelisted()
@@ -75,8 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
         protected void nodeB_connects_to_nodeC()
         {
-            this.nodeB.CreateRPCClient().AddNode(this.nodeC.Endpoint, true);
-            TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.nodeB, this.nodeC));
+            TestHelper.ConnectAndSync(this.nodeB, this.nodeC);
         }
 
         protected void nodeA_creates_a_transaction_and_propagates_to_nodeB()

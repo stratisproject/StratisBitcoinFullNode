@@ -1,5 +1,4 @@
-﻿using Remotion.Linq.Clauses;
-using Xunit;
+﻿using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {

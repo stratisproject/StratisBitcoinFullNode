@@ -55,13 +55,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public bool RequireStandard { get; set; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public MempoolSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -70,7 +63,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(MempoolSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -85,9 +77,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.EnableReplacement = config.GetOrDefault("mempoolreplacement", MempoolValidator.DefaultEnableReplacement, this.logger);
             this.MaxOrphanTx = config.GetOrDefault("maxorphantx", MempoolOrphans.DefaultMaxOrphanTransactions, this.logger);
             this.WhiteListRelay = config.GetOrDefault("whitelistrelay", DefaultWhiteListRelay, this.logger);
-            this.RequireStandard = config.GetOrDefault("acceptnonstdtxn", !(nodeSettings.Network.IsTest()), this.logger);
-
-            this.logger.LogTrace("(-)");
+            this.RequireStandard = !(config.GetOrDefault("acceptnonstdtxn", nodeSettings.Network.IsTest(), this.logger));
         }
 
         /// <summary>Prints the help information on how to configure the mempool settings to the logger.</summary>
@@ -109,7 +99,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"-whitelistrelay=<0 or 1>  Enable to accept relayed transactions received from whitelisted peers even when not relaying transactions. Defaults to { DefaultWhiteListRelay }.");
             builder.AppendLine($"-acceptnonstdtxn=<0 or 1> Accept non-standard transactions. Default {(!(network.IsTest())?1:0)}.");
 
-            NodeSettings.Default().Logger.LogInformation(builder.ToString());
+            NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
 
         /// <summary>

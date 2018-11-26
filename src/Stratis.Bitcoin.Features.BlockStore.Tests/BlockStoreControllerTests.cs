@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
 using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             response.Result.Should().BeOfType<JsonResult>();
             var result = (JsonResult) response.Result;
 
-            result.Value.Should().BeOfType<Models.BlockModel>();
+            result.Value.Should().BeOfType<BlockModel>();
             ((BlockModel) result.Value).Hash.Should().Be(ValidHash);
             ((BlockModel) result.Value).MerkleRoot.Should()
                 .Be("ccd1444acea4b5600c5917985aa369ca5af4f0a2de6b1ed8b6bd3cf2ce4cdf0f");
@@ -169,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             chainState.Setup(c => c.ConsensusTip)
                 .Returns(chain.GetBlock(2));
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object);
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain);
 
             var json = (JsonResult)controller.GetBlockCount();
             int result = int.Parse(json.Value.ToString());
@@ -185,7 +186,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
-            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object);
+            var  chain = new Mock<ConcurrentChain>();
+            Block block = Block.Parse(BlockAsHex, KnownNetworks.StratisTest);
+            chain.Setup(c => c.GetBlock(It.IsAny<uint256>())).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
+
+            var controller = new BlockStoreController(KnownNetworks.StratisTest, logger.Object, store.Object, chainState.Object, chain.Object);
 
             return (store, controller);
         }

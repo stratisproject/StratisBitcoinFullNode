@@ -1,12 +1,15 @@
 ﻿using System;
-using System.Threading;
+using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
+using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
     public abstract class NodeRunner
     {
         public readonly string DataFolder;
+
+        public readonly string Agent;
 
         public bool IsDisposed
         {
@@ -17,12 +20,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         }
 
         public FullNode FullNode { get; set; }
-
+        public Func<ChainedHeaderBlock, bool> InterceptorDisconnect { get; internal set; }
+        public Func<ChainedHeaderBlock, bool> InterceptorConnect { get; internal set; }
         public Network Network { set; get; }
+        public bool OverrideDateTimeProvider { get; internal set; }
+        public Action<IServiceCollection> ServiceToOverride { get; internal set; }
 
-        protected NodeRunner(string dataDir)
+        protected NodeRunner(string dataDir, string agent = "StratisBitcoin")
         {
             this.DataFolder = dataDir;
+            this.Agent = agent;
         }
 
         public abstract void BuildNode();

@@ -23,7 +23,7 @@ namespace NBitcoin
         public Money ProofOfStakeReward { get; }
 
         /// <inheritdoc />
-        public uint MaxReorgLength { get; }
+        public uint MaxReorgLength { get; private set; }
 
         /// <inheritdoc />
         public long MaxMoney { get; }
@@ -32,7 +32,7 @@ namespace NBitcoin
 
         public BuriedDeploymentsArray BuriedDeployments { get; }
 
-        public BIP9DeploymentsArray BIP9Deployments { get; }
+        public IBIP9DeploymentsArray BIP9Deployments { get; }
 
         public int SubsidyHalvingInterval { get; }
 
@@ -104,7 +104,7 @@ namespace NBitcoin
             int majorityRejectBlockOutdated,
             int majorityWindow,
             BuriedDeploymentsArray buriedDeployments,
-            BIP9DeploymentsArray bip9Deployments,
+            IBIP9DeploymentsArray bip9Deployments,
             uint256 bip34Hash,
             int ruleChangeActivationThreshold,
             int minerConfirmationWindow,

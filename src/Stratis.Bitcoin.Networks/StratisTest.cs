@@ -4,6 +4,7 @@ using System.Net;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Networks.Deployments;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Networks
             this.GenesisReward = Money.Zero;
 
             Block genesisBlock = CreateStratisGenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            
+
             genesisBlock.Header.Time = 1493909211;
             genesisBlock.Header.Nonce = 2433759;
             genesisBlock.Header.Bits = powLimit;
@@ -51,7 +52,8 @@ namespace Stratis.Bitcoin.Networks
                 maxBlockBaseSize: 1_000_000,
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
-                maxBlockSigopsCost: 20_000
+                maxBlockSigopsCost: 20_000,
+                maxStandardTxSigopsCost: 20_000 / 5
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -61,9 +63,14 @@ namespace Stratis.Bitcoin.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new BIP9DeploymentsArray();
+            var bip9Deployments = new StratisBIP9Deployments()
+            {
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
+                    new DateTime(2018, 11, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2019, 2, 1, 0, 0, 0, DateTimeKind.Utc))
+            };
 
-            this.Consensus = new Consensus(
+            this.Consensus = new NBitcoin.Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
                 coinType: 105,
@@ -112,7 +119,8 @@ namespace Stratis.Bitcoin.Networks
                 { 250000, new CheckpointInfo(new uint256("0xdd664e15ac679a6f3b96a7176303956661998174a697ad8231f154f1e32ff4a3"), new uint256("0x19fc0fa29418f8b19cbb6557c1c79dfd0eff6779c0eaaec5d245c5cdf3c96d78")) },
                 { 300000, new CheckpointInfo(new uint256("0x2409eb5ae72c80d5b37c77903d75a8e742a33843ab633935ce6e5264db962e23"), new uint256("0xf5ec7af55516b8e264ed280e9a5dba0180a4a9d3713351bfea275b18f3f1514e")) },
                 { 350000, new CheckpointInfo(new uint256("0x36811041e9060f4b4c26dc20e0850dca5efaabb60618e3456992e9c0b1b2120e"), new uint256("0xbfda55ef0756bcee8485e15527a2b8ca27ca877aa09c88e363ef8d3253cdfd1c")) },
-                { 400000, new CheckpointInfo(new uint256("0xb6abcb933d3e3590345ca5d3abb697461093313f8886568ac8ae740d223e56f6"), new uint256("0xfaf5fcebee3ec0df5155393a99da43de18b12e620fef5edb111a791ecbfaa63a")) }
+                { 400000, new CheckpointInfo(new uint256("0xb6abcb933d3e3590345ca5d3abb697461093313f8886568ac8ae740d223e56f6"), new uint256("0xfaf5fcebee3ec0df5155393a99da43de18b12e620fef5edb111a791ecbfaa63a")) },
+                { 650000, new CheckpointInfo(new uint256("0x7065de13f14749798ebf70993af4debeb5bb2a968f5862ca232a2436fbac2fd0"), new uint256("0x175eb3708ffd9a1ca5938b0df0bf1f55af39ec8e2e4c396ed97c1406c4a5d701")) }
             };
 
             this.DNSSeeds = new List<DNSSeedData>
@@ -126,8 +134,8 @@ namespace Stratis.Bitcoin.Networks
             this.SeedNodes = new List<NetworkAddress>
             {
                 new NetworkAddress(IPAddress.Parse("51.140.231.125"), this.DefaultPort), // danger cloud node
-                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node  
-                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node  
+                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 3389), // beard cloud node
+                new NetworkAddress(IPAddress.Parse("191.235.85.131"), 3389), // fassa cloud node
                 new NetworkAddress(IPAddress.Parse("52.232.58.52"), 26178), // neurosploit public node
             };
 

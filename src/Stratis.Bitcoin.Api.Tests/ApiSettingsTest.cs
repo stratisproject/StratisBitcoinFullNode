@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Api.Tests
         {
             // Arrange.
             int customPort = 55555;
-            var nodeSettings = new NodeSettings(args:new[] { $"-apiport={customPort}" });
+            var nodeSettings = new NodeSettings(this.Network, args:new[] { $"-apiport={customPort}" });
 
             // Act.
             ApiSettings settings = FullNodeSetup(nodeSettings);

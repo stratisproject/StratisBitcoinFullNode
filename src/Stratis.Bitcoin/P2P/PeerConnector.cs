@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.P2P
             this.peerAddressManager = peerAddressManager;
             this.networkPeerDisposer = new NetworkPeerDisposer(this.loggerFactory, this.OnPeerDisposed);
             this.selfEndpointTracker = selfEndpointTracker;
-            this.Requirements = new NetworkPeerRequirement { MinVersion = nodeSettings.ProtocolVersion };
+            this.Requirements = new NetworkPeerRequirement { MinVersion = nodeSettings.MinProtocolVersion ?? nodeSettings.ProtocolVersion };
 
             this.defaultConnectionInterval = TimeSpans.Second;
             this.burstConnectionInterval = TimeSpan.Zero;
@@ -140,7 +140,6 @@ namespace Stratis.Bitcoin.P2P
             this.connectedPeers = connectionManager.ConnectedPeers;
 
             this.CurrentParameters = connectionManager.Parameters.Clone();
-            this.CurrentParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(connectionManager, this.loggerFactory));
 
             this.OnInitialize();
         }
@@ -223,12 +222,9 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Attempts to connect to a random peer.</summary>
         internal async Task ConnectAsync(PeerAddress peerAddress)
         {
-            this.logger.LogTrace("({0}:'{1}')", nameof(peerAddress), peerAddress.Endpoint);
-
             if (this.selfEndpointTracker.IsSelf(peerAddress.Endpoint))
             {
                 this.logger.LogTrace("{0} is self. Therefore not connecting.", peerAddress.Endpoint);
-                this.logger.LogTrace("(-)");
                 return;
             }
 
@@ -283,8 +279,6 @@ namespace Stratis.Bitcoin.P2P
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         private bool PeerIsPartOfExistingGroup(PeerAddress peerAddress)

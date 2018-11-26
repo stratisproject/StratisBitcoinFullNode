@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
     /// </summary>
     public abstract class BaseRPCControllerTest : TestBase
     {
-        protected BaseRPCControllerTest() : base(KnownNetworks.Main)
+        protected BaseRPCControllerTest() : base(new BitcoinRegTest())
         {
         }
 
@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         /// <returns>Interface to the newly built node.</returns>
         public IFullNode BuildServicedNode(string dir)
         {
-            var nodeSettings = new NodeSettings(args:new string[] { $"-datadir={dir}" });
+            var nodeSettings = new NodeSettings(this.Network, args: new string[] { $"-datadir={dir}" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
                 .UseBlockStore()

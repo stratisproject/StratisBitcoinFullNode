@@ -1,4 +1,6 @@
-﻿using Mono.Cecil;
+﻿using System.Collections.Generic;
+using System.Linq;
+using Mono.Cecil;
 using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.Executor.Reflection
@@ -9,32 +11,25 @@ namespace Stratis.SmartContracts.Executor.Reflection
     public static class GasPriceList
     {
         /// <summary>The base cost trying to execute a smart contract.</summary>
-        public const ulong BaseCost = 1000;
+        public const ulong BaseCost = 10_000;
 
-        /// <summary>The cost per gas unit if contract does not exist.</summary>
-        public const ulong ContractDoesNotExistCost = 1000;
+        /// <summary>The cost to create and execute the constructor of a contract. To account for validation and code storage.</summary>
+        public const ulong CreateCost = 12_000;
 
-        /// <summary>The cost per gas unit if contract validation fails.</summary>
-        public const ulong ContractValidationFailedCost = 1000;
+        /// <summary>The cost for transferring funds to a P2PKH from inside a contract.</summary>
+        public const ulong TransferCost = 1_000;
 
-        public const int StorageGasCost = 10;
+        public const int StoragePerByteSavedGasCost = 20;
+        public const int StoragePerByteRetrievedGasCost = 1;
+        public const int LogPerTopicByteCost = 2;
+        public const int LogPerByteCost = 1;
         public const int MethodCallGasCost = 5;
         public const int InstructionGasCost = 1;
-
-        public static Gas ContractDoesNotExist()
-        {
-            return (Gas)(ContractDoesNotExistCost);
-        }
-
-        public static Gas ContractValidationFailed()
-        {
-            return (Gas)(ContractValidationFailedCost);
-        }
+        public const ulong StorageCheckContractExistsCost = 5;
 
         /// <summary>
-        /// TODO - Add actual costs
+        /// Get the gas cost for a specific instruction. For v1 all instructions are priced equally.
         /// </summary>
-        /// <param name="instruction"></param>
         public static Gas InstructionOperationCost(Instruction instruction)
         {
             OpCode opcode = instruction.OpCode;
@@ -51,13 +46,36 @@ namespace Stratis.SmartContracts.Executor.Reflection
         }
 
         /// <summary>
-        /// 
+        /// Gas cost to log an event inside a contract.
         /// </summary>
-        /// <param name="keyBytes"></param>
-        /// <param name="valueBytes"></param>
-        public static Gas StorageOperationCost(byte[] keyBytes, byte[] valueBytes)
+        public static Gas LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
         {
-            Gas cost = (Gas)(ulong)(StorageGasCost * keyBytes.Length + StorageGasCost * valueBytes.Length);
+            int topicCost = topics.Select(x => x.Length * LogPerTopicByteCost).Sum();
+            int dataCost = data.Length * LogPerByteCost;
+            return (Gas)(ulong) (topicCost + dataCost);
+        }
+
+        /// <summary>
+        /// Get cost to store this key and value.
+        /// </summary>
+        public static Gas StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        {
+            int keyLen = keyBytes != null ? keyBytes.Length : 0;
+            int valueLen = valueBytes != null ? valueBytes.Length : 0;
+
+            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
+            return cost;
+        }
+
+        /// <summary>
+        /// Get cost to retrieve this value via key.
+        /// </summary>
+        public static Gas StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        {
+            int keyLen = keyBytes != null ? keyBytes.Length : 0;
+            int valueLen = valueBytes != null ? valueBytes.Length : 0;
+
+            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
             return cost;
         }
 

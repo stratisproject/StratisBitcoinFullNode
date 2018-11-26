@@ -17,10 +17,10 @@ namespace Stratis.Bitcoin.Tests.Common
         /// <param name="count">Number of blocks to generate.</param>
         /// <param name="prevBlock">If not <c>null</c> the headers will be generated on top of it.</param>
         /// <param name="includePrevBlock">If <c>true</c> <paramref name="prevBlock"/> will be added as a first item in the list or genesis header if <paramref name="prevBlock"/> is <c>null</c>.</param>
-        public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null, bool includePrevBlock = false)
+        public static List<ChainedHeader> CreateConsecutiveHeaders(int count, ChainedHeader prevBlock = null, bool includePrevBlock = false, Target bits = null, Network network = null)
         {
             var chainedHeaders = new List<ChainedHeader>();
-            Network network = KnownNetworks.StratisMain;
+            network = (network == null) ? KnownNetworks.StratisMain : network;
 
             ChainedHeader tip = prevBlock;
 
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Common
                 BlockHeader header = network.Consensus.ConsensusFactory.CreateBlockHeader();
                 header.Nonce = (uint)Interlocked.Increment(ref currentNonce);
                 header.HashPrevBlock = hashPrevBlock;
-                header.Bits = Target.Difficulty1;
+                header.Bits = (bits == null) ? Target.Difficulty1 : bits;
 
                 var chainedHeader = new ChainedHeader(header, header.GetHash(), tip);
 
@@ -57,6 +57,12 @@ namespace Stratis.Bitcoin.Tests.Common
         public static ChainedHeader CreateGenesisChainedHeader()
         {
             return new ChainedHeader(KnownNetworks.StratisMain.GetGenesis().Header, KnownNetworks.StratisMain.GenesisHash, 0);
+        }
+
+        /// <summary>Creates genesis header for provided network.</summary>
+        public static ChainedHeader CreateGenesisChainedHeader(Network network)
+        {
+            return new ChainedHeader(network.GetGenesis().Header, network.GenesisHash, 0);
         }
     }
 }

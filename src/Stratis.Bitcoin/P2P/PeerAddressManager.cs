@@ -8,6 +8,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -59,10 +60,12 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public void LoadPeers()
         {
-
             List<PeerAddress> loadedPeers = this.fileStorage.LoadByFileName(PeerFileName);
+            this.logger.LogTrace("{0} peers were loaded.", loadedPeers.Count);
+
             loadedPeers.ForEach(peer =>
             {
                 // Ensure that any address already in store is mapped.
@@ -109,7 +112,7 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void RemovePeer(IPEndPoint endPoint)
         {
-           this.peers.TryRemove(endPoint.MapToIpv6(), out PeerAddress address);
+            this.peers.TryRemove(endPoint.MapToIpv6(), out PeerAddress address);
         }
 
         /// <inheritdoc/>
@@ -188,6 +191,13 @@ namespace Stratis.Bitcoin.P2P
             if (peer.Value != null)
                 return peer.Value;
             return null;
+        }
+
+        /// <inheritdoc/>
+        public List<PeerAddress> FindPeersByIp(IPEndPoint endPoint)
+        {
+            IEnumerable<KeyValuePair<IPEndPoint, PeerAddress>> peers = this.peers.Skip(0).Where(p => p.Key.MatchIpOnly(endPoint));
+            return peers.Select(p => p.Value).ToList();
         }
 
         /// <inheritdoc />

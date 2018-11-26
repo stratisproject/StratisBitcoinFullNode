@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
     /// <summary>
     /// Carries the output of a smart contract execution.
     /// </summary>
-    public sealed class SmartContractExecutionResult : ISmartContractExecutionResult
+    public sealed class SmartContractExecutionResult : IContractExecutionResult
     {
         /// <inheritdoc/>
         public uint160 NewContractAddress { get; set; }
@@ -23,10 +23,7 @@ namespace Stratis.SmartContracts.Executor.Reflection
         public bool Revert { get; set; }
 
         /// <inheritdoc/>
-        public ulong FutureRefund { get; set; }
-
-        /// <inheritdoc/>
-        public Gas GasConsumed { get; set; }
+        public ulong GasConsumed { get; set; }
         
         /// <inheritdoc/>
         public object Return { get; set; }

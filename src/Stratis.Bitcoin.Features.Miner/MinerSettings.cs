@@ -1,4 +1,5 @@
-﻿using System.Text;
+﻿using System.IO;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -67,13 +68,6 @@ namespace Stratis.Bitcoin.Features.Miner
         public BlockDefinitionOptions BlockDefinitionOptions { get; }
 
         /// <summary>
-        /// Initializes an instance of the object from the default configuration.
-        /// </summary>
-        public MinerSettings() : this(NodeSettings.Default())
-        {
-        }
-
-        /// <summary>
         /// Initializes an instance of the object from the node configuration.
         /// </summary>
         /// <param name="nodeSettings">The node configuration.</param>
@@ -82,7 +76,6 @@ namespace Stratis.Bitcoin.Features.Miner
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
 
             this.logger = nodeSettings.LoggerFactory.CreateLogger(typeof(MinerSettings).FullName);
-            this.logger.LogTrace("({0}:'{1}')", nameof(nodeSettings), nodeSettings.Network.Name);
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
@@ -106,17 +99,15 @@ namespace Stratis.Bitcoin.Features.Miner
             this.MinimumSplitCoinValue = config.GetOrDefault("minimumsplitcoinvalue", MinimumSplitCoinValueDefaultValue, this.logger);
             this.MinimumStakingCoinValue = config.GetOrDefault("minimumstakingcoinvalue", MinimumStakingCoinValueDefaultValue, this.logger);
             this.MinimumStakingCoinValue = this.MinimumStakingCoinValue == 0 ? 1 : this.MinimumStakingCoinValue;
-
-            this.logger.LogTrace("(-)");
         }
         
         /// <summary>
         /// Displays mining help information on the console.
         /// </summary>
-        /// <param name="mainNet">Not used.</param>
-        public static void PrintHelp(Network mainNet)
+        /// <param name="network">Not used.</param>
+        public static void PrintHelp(Network network)
         {
-            NodeSettings defaults = NodeSettings.Default();
+            NodeSettings defaults = NodeSettings.Default(network);
             var builder = new StringBuilder();
 
             builder.AppendLine("-mine=<0 or 1>                      Enable POW mining.");

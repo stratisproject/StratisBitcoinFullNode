@@ -1,6 +1,8 @@
 ﻿using System;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Interfaces
 {
@@ -18,8 +20,39 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
         /// <param name="transactionTime">Transaction time.</param>
         /// <param name="prevout">Information about transaction id and index.</param>
-        /// <param name="prevBlockTime">The previous block time.</param>
         void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout);
+
+        /// <summary>
+        /// Checks that the stake kernel hash satisfies the target difficulty.
+        /// </summary>
+        /// <param name="context">Staking context.</param>
+        /// <param name="headerBits">Chained block's header bits, which define the difficulty target.</param>
+        /// <param name="prevStakeModifier">Previous staked block modifier.</param>
+        /// <param name="stakingCoins">Coins that participate in staking.</param>
+        /// <param name="prevout">Information about transaction id and index.</param>
+        /// <param name="transactionTime">Transaction time.</param>
+        /// <remarks>
+        /// Coinstake must meet hash target according to the protocol:
+        /// kernel (input 0) must meet the formula
+        /// <c>hash(stakeModifierV2 + stakingCoins.Time + prevout.Hash + prevout.N + transactionTime) &lt; target * weight</c>.
+        /// This ensures that the chance of getting a coinstake is proportional to the amount of coins one owns.
+        /// <para>
+        /// The reason this hash is chosen is the following:
+        /// <list type="number">
+        /// <item><paramref name="prevStakeModifier"/>: Scrambles computation to make it very difficult to precompute future proof-of-stake.</item>
+        /// <item><paramref name="stakingCoins.Time"/>: Time of the coinstake UTXO. Slightly scrambles computation.</item>
+        /// <item><paramref name="prevout.Hash"/> Hash of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.</item>
+        /// <item><paramref name="prevout.N"/>: Output number of stakingCoins UTXO, to reduce the chance of nodes generating coinstake at the same time.</item>
+        /// <item><paramref name="transactionTime"/>: Timestamp of the coinstake transaction.</item>
+        /// </list>
+        /// Block or transaction tx hash should not be used here as they can be generated in vast
+        /// quantities so as to generate blocks faster, degrading the system back into a proof-of-work situation.
+        /// </para>
+        /// </remarks>
+        /// <exception cref="ConsensusErrors.StakeTimeViolation">Thrown in case transaction time is lower than it's own UTXO timestamp.</exception>
+        /// <exception cref="ConsensusErrors.StakeHashInvalidTarget">Thrown in case PoS hash doesn't meet target protocol.</exception>
+        void CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins,
+            OutPoint prevout, uint transactionTime);
 
         /// <summary>
         /// Checks if provided transaction is a valid coinstake transaction.
@@ -35,10 +68,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// Computes stake modifier.
         /// </summary>
         /// <param name="prevChainedHeader">Previous chained block.</param>
-        /// <param name="blockStakePrev">Previous PoS block.</param>
+        /// <param name="prevStakeModifier">Previous PoS block StakeModifier.</param>
         /// <param name="kernel">The PoS kernel.</param>
         /// <returns>Stake modifier.</returns>
-        uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, BlockStake blockStakePrev, uint256 kernel);
+        uint256 ComputeStakeModifierV2(ChainedHeader prevChainedHeader, uint256 prevStakeModifier, uint256 kernel);
 
         /// <summary>
         /// Gets the last block in the chain that was generated using
@@ -87,5 +120,24 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// </para>
         /// </remarks>
         Target CalculateRetarget(uint firstBlockTime, Target firstBlockTarget, uint secondBlockTime, BigInteger targetLimit);
+
+        /// <summary>
+        /// Verifies transaction's signature.
+        /// </summary>
+        /// <param name="coin">UTXO that is spent in the transaction.</param>
+        /// <param name="txTo">Transaction.</param>
+        /// <param name="txToInN">Index of the transaction's input.</param>
+        /// <param name="flagScriptVerify">Script verification flags.</param>
+        /// <returns><c>true</c> if signature is valid.</returns>
+        bool VerifySignature(UnspentOutputs coin, Transaction txTo, int txToInN, ScriptVerify flagScriptVerify);
+
+        /// <summary>
+        /// Returns <c>true</c> if provided coins were confirmed in less than <paramref name="targetDepth"/> number of blocks.
+        /// </summary>
+        /// <param name="coins">Coins to check confirmation depth for.</param>
+        /// <param name="referenceChainedHeader">Chained block from which we are counting the depth.</param>
+        /// <param name="targetDepth">The target depth.</param>
+        /// <returns><c>true</c> if the coins were spent within N blocks from <see cref="referenceChainedHeader"/>, <c>false</c> otherwise.</returns>
+        bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth);
     }
 }

@@ -7,9 +7,9 @@ public class CallInfiniteLoopContract : SmartContract
     {
     }
 
-    public bool CallInfiniteLoop(string addressString)
+    public bool CallInfiniteLoop(Address address)
     {
-        ITransferResult result = Call(new Address(addressString), 100, "Loop", null, 10_000);
+        ITransferResult result = Call(address, 100, "Loop", null, 10_000);
 
         return result.Success;
     }

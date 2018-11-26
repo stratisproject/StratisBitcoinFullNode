@@ -1,9 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Globalization;
 using System.Linq;
 using System.Reflection;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
@@ -35,9 +32,6 @@ namespace Stratis.Bitcoin
 
         /// <summary>Node command line and configuration file settings.</summary>
         public NodeSettings Settings { get; private set; }
-
-        /// <summary>List of disposable resources that the node uses.</summary>
-        public List<IDisposable> Resources { get; private set; }
 
         /// <summary>Information about the best chain.</summary>
         public IChainState ChainBehaviorState { get; private set; }
@@ -79,7 +73,11 @@ namespace Stratis.Bitcoin
         private NodeLifetime nodeLifetime;
 
         /// <see cref="INodeStats"/>
-        private INodeStats nodeStats { get; set; }
+        private INodeStats NodeStats { get; set; }
+
+        private IAsyncLoop periodicLogLoop;
+
+        private IAsyncLoop periodicBenchmarkLoop;
 
         /// <inheritdoc />
         public INodeLifetime NodeLifetime
@@ -172,7 +170,7 @@ namespace Stratis.Bitcoin
             this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
             this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
-            this.nodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
+            this.NodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
 
             this.ConnectionManager = this.Services.ServiceProvider.GetService<IConnectionManager>();
             this.loggerFactory = this.Services.ServiceProvider.GetService<NodeSettings>().LoggerFactory;
@@ -195,10 +193,6 @@ namespace Stratis.Bitcoin
             if (this.State == FullNodeState.Disposing || this.State == FullNodeState.Disposed)
                 throw new ObjectDisposedException(nameof(FullNode));
 
-            if (this.Resources != null)
-                throw new InvalidOperationException("node has already started.");
-
-            this.Resources = new List<IDisposable>();
             this.nodeLifetime = this.Services.ServiceProvider.GetRequiredService<INodeLifetime>() as NodeLifetime;
             this.fullNodeFeatureExecutor = this.Services.ServiceProvider.GetRequiredService<FullNodeFeatureExecutor>();
 
@@ -233,9 +227,9 @@ namespace Stratis.Bitcoin
         /// </summary>
         private void StartPeriodicLog()
         {
-            IAsyncLoop periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
+            this.periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
             {
-                string stats = this.nodeStats.GetStats();
+                string stats = this.NodeStats.GetStats();
 
                 this.logger.LogInformation(stats);
                 this.LastLogOutput = stats;
@@ -246,7 +240,19 @@ namespace Stratis.Bitcoin
             repeatEvery: TimeSpans.FiveSeconds,
             startAfter: TimeSpans.FiveSeconds);
 
-            this.Resources.Add(periodicLogLoop);
+            this.periodicBenchmarkLoop = this.AsyncLoopFactory.Run("PeriodicBenchmarkLog", (cancellation) =>
+            {
+                if (this.InitialBlockDownloadState.IsInitialBlockDownload())
+                {
+                    string benchmark = this.NodeStats.GetBenchmark();
+                    this.logger.LogInformation(benchmark);
+                }
+
+                return Task.CompletedTask;
+            },
+            this.nodeLifetime.ApplicationStopping,
+            repeatEvery: TimeSpan.FromSeconds(17),
+            startAfter: TimeSpan.FromSeconds(17));
         }
 
         public string LastLogOutput { get; private set; }
@@ -267,11 +273,12 @@ namespace Stratis.Bitcoin
             this.logger.LogInformation("Disposing connection manager.");
             this.ConnectionManager.Dispose();
 
-            foreach (IDisposable disposable in this.Resources)
-            {
-                this.logger.LogInformation($"{disposable.GetType().Name}.");
-                disposable.Dispose();
-            }
+            this.logger.LogInformation("Disposing RPC host.");
+            this.RPCHost?.Dispose();
+
+            this.logger.LogInformation("Disposing periodic logging loops.");
+            this.periodicLogLoop?.Dispose();
+            this.periodicBenchmarkLoop?.Dispose();
 
             // Fire the NodeFeatureExecutor.Stop.
             this.logger.LogInformation("Disposing the full node feature executor.");

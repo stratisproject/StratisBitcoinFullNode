@@ -1,6 +1,8 @@
 ﻿using System;
+using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
+using System.Linq.Expressions;
 using System.Reflection;
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Utilities;
@@ -71,6 +73,7 @@ namespace Stratis.Bitcoin.Builder.Feature
         {
             this.ConfigureServicesDelegates = new List<Action<IServiceCollection>>();
             this.FeatureType = typeof(TImplementation);
+
             this.dependencies = new List<Type>();
         }
 
@@ -130,10 +133,8 @@ namespace Stratis.Bitcoin.Builder.Feature
         {
             foreach (Type dependency in this.dependencies)
             {
-                if (!featureRegistrations.Any(x => x.FeatureType == dependency))
-                {
+                if (featureRegistrations.All(x => !dependency.IsAssignableFrom(x.FeatureType)))
                     throw new MissingDependencyException($"Dependency feature {dependency.Name} cannot be found.");
-                }
             }
         }
 

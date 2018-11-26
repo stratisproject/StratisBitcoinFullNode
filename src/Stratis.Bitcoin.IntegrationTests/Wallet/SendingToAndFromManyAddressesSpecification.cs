@@ -2,7 +2,7 @@
 
 namespace Stratis.Bitcoin.IntegrationTests.Wallet
 {
-    public partial class SendingToAndFromManyAddressesSpecification 
+    public partial class SendingToAndFromManyAddressesSpecification
     {
         [Fact]
         public void sending_from_one_address_to_fifty_addresses()

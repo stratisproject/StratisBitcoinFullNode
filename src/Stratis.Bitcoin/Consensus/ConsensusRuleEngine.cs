@@ -1,14 +1,15 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Consensus.PerformanceCounters.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
@@ -49,8 +50,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc cref="IInvalidBlockHashStore"/>
         private readonly IInvalidBlockHashStore invalidBlockHashStore;
 
-        /// <inheritdoc />
-        public ConsensusPerformanceCounter PerformanceCounter { get; }
+        /// <inheritdoc cref="ConsensusRulesPerformanceCounter"/>
+        private ConsensusRulesPerformanceCounter performanceCounter;
 
         /// <summary>Group of rules that are used during block header validation.</summary>
         private List<HeaderValidationConsensusRule> headerValidationRules;
@@ -73,7 +74,8 @@ namespace Stratis.Bitcoin.Consensus
             ConsensusSettings consensusSettings,
             ICheckpoints checkpoints,
             IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore)
+            IInvalidBlockHashStore invalidBlockHashStore,
+            INodeStats nodeStats)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -84,9 +86,9 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(checkpoints, nameof(checkpoints));
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(invalidBlockHashStore, nameof(invalidBlockHashStore));
+            Guard.NotNull(nodeStats, nameof(nodeStats));
 
             this.Network = network;
-
             this.Chain = chain;
             this.ChainState = chainState;
             this.NodeDeployments = nodeDeployments;
@@ -100,16 +102,17 @@ namespace Stratis.Bitcoin.Consensus
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
-            this.PerformanceCounter = new ConsensusPerformanceCounter(this.DateTimeProvider);
 
             this.headerValidationRules = new List<HeaderValidationConsensusRule>();
             this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();
             this.partialValidationRules = new List<PartialValidationConsensusRule>();
             this.fullValidationRules = new List<FullValidationConsensusRule>();
+
+            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
         }
 
         /// <inheritdoc />
-        public virtual Task Initialize()
+        public virtual Task InitializeAsync(ChainedHeader chainTip)
         {
             return Task.CompletedTask;
         }
@@ -133,6 +136,9 @@ namespace Stratis.Bitcoin.Consensus
 
             this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as FullValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
+
+            // Registers all rules that might be executed to the performance counter.
+            this.performanceCounter = new ConsensusRulesPerformanceCounter(this.Network.Consensus);
 
             return this;
         }
@@ -158,7 +164,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public ValidationContext HeaderValidation(ChainedHeader header)
+        public virtual ValidationContext HeaderValidation(ChainedHeader header)
         {
             Guard.NotNull(header, nameof(header));
 
@@ -171,7 +177,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public ValidationContext IntegrityValidation(ChainedHeader header, Block block)
+        public virtual ValidationContext IntegrityValidation(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
@@ -185,7 +191,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
+        public virtual async Task<ValidationContext> FullValidationAsync(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
@@ -202,7 +208,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc/>
-        public async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
+        public virtual async Task<ValidationContext> PartialValidationAsync(ChainedHeader header, Block block)
         {
             Guard.NotNull(header, nameof(header));
             Guard.NotNull(block, nameof(block));
@@ -222,12 +228,14 @@ namespace Stratis.Bitcoin.Consensus
         {
             try
             {
-                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
-                {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
+                ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
 
-                    foreach (AsyncConsensusRule rule in asyncRules)
+                foreach (AsyncConsensusRule rule in asyncRules)
+                {
+                    using (this.performanceCounter.MeasureRuleExecutionTime(rule))
+                    {
                         await rule.RunAsync(ruleContext).ConfigureAwait(false);
+                    }
                 }
             }
             catch (ConsensusErrorException ex)
@@ -244,8 +252,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Adds block hash to a list of failed header unless specific consensus error was used that doesn't require block banning.</summary>
         private void HandleConsensusError(ValidationContext validationContext)
         {
-            this.logger.LogTrace("()");
-
             // This error will be handled in ConsensusManager.
             // The block shouldn't be banned because it might be valid, it's just we need to redownload it including witness data.
             if (validationContext.Error == ConsensusErrors.BadWitnessNonceSize)
@@ -258,20 +264,20 @@ namespace Stratis.Bitcoin.Consensus
 
             this.logger.LogTrace("Marking '{0}' invalid.", hashToBan);
             this.invalidBlockHashStore.MarkInvalid(hashToBan, validationContext.RejectUntil);
-
-            this.logger.LogTrace("(-)");
         }
 
         private void ExecuteRules(IEnumerable<SyncConsensusRule> rules, RuleContext ruleContext)
         {
             try
             {
-                using (new StopwatchDisposable(o => this.PerformanceCounter.AddBlockProcessingTime(o)))
-                {
-                    ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
+                ruleContext.SkipValidation = ruleContext.ValidationContext.ChainedHeaderToValidate.IsAssumedValid;
 
-                    foreach (SyncConsensusRule rule in rules)
+                foreach (SyncConsensusRule rule in rules)
+                {
+                    using (this.performanceCounter.MeasureRuleExecutionTime(rule))
+                    {
                         rule.Run(ruleContext);
+                    }
                 }
             }
             catch (ConsensusErrorException ex)
@@ -308,6 +314,11 @@ namespace Stratis.Bitcoin.Consensus
                 rule = this.fullValidationRules.SingleOrDefault(r => r is T);
 
             return rule as T;
+        }
+
+        private void AddBenchStats(StringBuilder benchLog)
+        {
+            benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
         }
     }
 

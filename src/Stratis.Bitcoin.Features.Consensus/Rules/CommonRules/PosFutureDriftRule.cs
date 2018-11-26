@@ -2,7 +2,6 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
@@ -11,7 +10,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// A rule that will verify the block time drift is according to the PoS consensus rules for the <see cref="StratisMain"/> network (and its test networks).
     /// New networks must use the <see cref="PosFutureDriftRule"/>.
     /// </summary>
-    public class StratisBigFixPosFutureDriftRule : PosFutureDriftRule
+    public class StratisBugFixPosFutureDriftRule : PosFutureDriftRule
     {
         /// <summary>Drifting Bug Fix, hardfork on Sat, 19 Nov 2016 00:00:00 GMT.</summary>
         public const long DriftingBugFixTimestamp = 1479513600;

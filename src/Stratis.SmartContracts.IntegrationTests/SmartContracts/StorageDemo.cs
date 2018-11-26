@@ -50,13 +50,14 @@ public class StorageDemo : SmartContract
     {
         int expected = 12345;
         PersistentState.SetInt32("Int32", expected);
-        byte[] intBytes = PersistentState.GetByteArray("Int32");
+        byte[] intBytes = PersistentState.GetBytes("Int32");
         int actual = Serializer.ToInt32(intBytes);
         Assert(actual == expected);
     }
 
-    public void Increment()
+    public int Increment()
     {
         Counter++;
+        return Counter;
     }
 }

@@ -5,6 +5,7 @@ using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -81,6 +82,7 @@ namespace Stratis.Bitcoin.P2P
         void ResetConnectionAttemptsOnNotBannedPeers();
     }
 
+    [NoTrace]
     public sealed class PeerSelector : IPeerSelector
     {
         /// <summary>Provider of time functions.</summary>
@@ -126,8 +128,6 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public PeerAddress SelectPeer()
         {
-            this.logger.LogTrace("()");
-
             PeerAddress peerAddress = null;
 
             List<PeerAddress> peers = this.SelectPreferredPeers()
@@ -137,10 +137,9 @@ namespace Stratis.Bitcoin.P2P
             if (peers.Any())
             {
                 peerAddress = this.Random(peers);
-                this.logger.LogTrace("(-):'{0}'", peerAddress.Endpoint);
             }
             else
-                this.logger.LogTrace("(-)[NO_PEER]");
+                this.logger.LogTrace("There is no peer.");
 
             return peerAddress;
         }
@@ -222,39 +221,39 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public bool HasAllPeersReachedConnectionThreshold()
         {
-            this.logger.LogTrace("()");
-
             IEnumerable<PeerAddress> notBanned = this.NotBanned();
 
             int attemptedReachedThresholdCount = notBanned.Count(p => p.ConnectionAttempts == PeerAddress.AttemptThreshold);
             bool areAllPeersReachedThreshold = attemptedReachedThresholdCount == notBanned.Count();
 
-            this.logger.LogTrace("(-):{0}={1}", nameof(areAllPeersReachedThreshold), areAllPeersReachedThreshold);
             return areAllPeersReachedThreshold;
         }
 
         /// <inheritdoc/>
         public void ResetConnectionAttemptsOnNotBannedPeers()
         {
-            this.logger.LogTrace("()");
-
             List<PeerAddress> notBanned = this.NotBanned().ToList();
             this.logger.LogTrace("Resetting attempts for {0} addresses.", notBanned.Count);
 
             // Reset attempts for all the peers since we've ran out of options.
             foreach (PeerAddress peer in notBanned)
                 peer.ResetAttempts();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc/>
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
-            IEnumerable<PeerAddress> discoverable = this.peerAddresses.Values
-                .Where(p => p.LastDiscoveredFrom < this.dateTimeProvider.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours))
-                .Where(p => !this.selfEndpointTracker.IsSelf(p.Endpoint))
-                .Where(p => !this.IsBanned(p));
+            if (this.peerAddresses.Count == 0)
+                return Enumerable.Empty<PeerAddress>();
+
+            var discoverable = this.peerAddresses.Values.Where(pa => pa.LastDiscoveredFrom == null).ToList();
+            var filteredDiscoverable = this.peerAddresses.Values.Where(p => p.LastDiscoveredFrom != null && p.LastDiscoveredFrom < this.dateTimeProvider.GetUtcNow().AddHours(-PeerSelector.DiscoveryThresholdHours));
+            discoverable.AddRange(filteredDiscoverable);
+
+            discoverable = discoverable
+                            .Where(p => !this.selfEndpointTracker.IsSelf(p.Endpoint))
+                            .Where(p => !this.IsBanned(p))
+                            .ToList();
 
             return discoverable.OrderBy(p => this.random.Next()).Take(1000).ToList();
         }
@@ -306,6 +305,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>Return a random peer from a given set of peers.</summary>
+        [NoTrace]
         private PeerAddress Random(IEnumerable<PeerAddress> peers)
         {
             if (peers.Count() == 1)
@@ -317,6 +317,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> Attempted()
         {
             return this.peerAddresses.Values.Where(p =>
@@ -327,6 +328,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> FilterBadHandshakedPeers(IEnumerable<PeerAddress> peers)
         {
             IEnumerable<PeerAddress> filteredPeers = peers.Where(p => (p.HandshakedAttempts < PeerAddress.AttemptHandshakeThreshold) ||
@@ -341,12 +343,14 @@ namespace Stratis.Bitcoin.P2P
             return filteredPeers;
         }
 
+        [NoTrace]
         public IEnumerable<PeerAddress> NotBanned()
         {
             return this.peerAddresses.Values.Where(p => !this.IsBanned(p));
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> Connected()
         {
             return this.peerAddresses.Values.Where(p => p.Connected &&
@@ -355,12 +359,14 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> Fresh()
         {
             return this.peerAddresses.Values.Where(p => p.Fresh && !this.IsBanned(p));
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> Handshaked()
         {
             return this.peerAddresses.Values.Where(p => p.Handshaked &&
@@ -371,6 +377,7 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>
         /// <c>True</c> if <see cref="PeerAddress.BanUntil"/> is in the future.
         /// </summary>
+        [NoTrace]
         private bool IsBanned(PeerAddress peerAddress)
         {
             return peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow();
