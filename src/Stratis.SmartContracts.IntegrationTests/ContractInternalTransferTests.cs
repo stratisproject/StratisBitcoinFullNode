@@ -1,5 +1,7 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts;
@@ -12,23 +14,22 @@ using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests.PoW
+namespace Stratis.SmartContracts.IntegrationTests
 {
-    public class ContractInternalTransferTests : IClassFixture<PoWMockChainFixture>
+    public abstract class ContractInternalTransferTests<T> : IClassFixture<T> where T : class, IMockChainFixture
     {
-        private readonly PoWMockChain mockChain;
+        private readonly IMockChain mockChain;
         private readonly MockChainNode node1;
         private readonly MockChainNode node2;
 
         private readonly IAddressGenerator addressGenerator;
         private readonly ISenderRetriever senderRetriever;
 
-        public ContractInternalTransferTests(PoWMockChainFixture fixture)
+        protected ContractInternalTransferTests(T fixture)
         {
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
             this.node2 = this.mockChain.Nodes[1];
-
             this.addressGenerator = new AddressGenerator();
             this.senderRetriever = new SenderRetriever();
         }
@@ -37,14 +38,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_ToWalletAddress()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/BasicTransfer.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -60,8 +61,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 preResponse.NewContractAddress,
                 amount,
                 parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
 
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
@@ -75,17 +76,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint160 transferReceiver = this.senderRetriever.GetAddressFromScript(condensingTransaction.Outputs[0].ScriptPubKey).Sender;
             Assert.Equal(walletUint160, transferReceiver);
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), condensingTransaction.Outputs[0].Value);
-            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
-
-            // Amount in wallet is reduced by amount sent and fee.
-            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee + new Money((long)amount, MoneyUnit.BTC));
 
             // Contract doesn't maintain any balance
             Assert.Equal((ulong)0, this.node1.GetContractBalance(preResponse.NewContractAddress));
 
             // Receipt is correct
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
-            string val = JsonConvert.SerializeObject(receipt);
             Assert.Equal(lastBlock.GetHash().ToString(), receipt.BlockHash);
             Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
             Assert.Empty(receipt.Logs); // TODO: Could add logs to this test
@@ -101,22 +97,22 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_ToContractAddress()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract to send to
             ContractCompilationResult receiveCompilationResult = ContractCompiler.CompileFile("SmartContracts/BasicReceive.cs");
             Assert.True(receiveCompilationResult.Success);
             BuildCreateContractTransactionResponse receiveResponse = this.node1.SendCreateContractTransaction(receiveCompilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(receiveResponse.NewContractAddress));
 
             // Deploy contract to send from
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/BasicTransfer.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -130,8 +126,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 preResponse.NewContractAddress,
                 amount,
                 parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
 
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
@@ -148,7 +144,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(new byte[] { 1 }, this.node1.GetStorageValue(receiveResponse.NewContractAddress, BasicReceive.ReceiveKey));
 
             // Log was stored - bloom filter should be non-zero
-            Assert.NotEqual(new Bloom(), ((SmartContractBlockHeader)lastBlock.Header).LogsBloom);
+            Assert.NotEqual(new Bloom(), ((ISmartContractBlockHeader)lastBlock.Header).LogsBloom);
 
             // Block contains a condensing transaction
             Assert.Equal(3, lastBlock.Transactions.Count);
@@ -159,10 +155,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
             Assert.Equal(receiveResponse.NewContractAddress, toAddress.ToBase58Address(this.node1.CoreNode.FullNode.Network));
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), condensingTransaction.Outputs[0].Value);
-            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
-
-            // Amount in wallet is reduced by amount sent and fee.
-            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee + new Money((long)amount, MoneyUnit.BTC));
 
             // Receipt is correct
             ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
@@ -182,7 +174,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_FromConstructor()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             double amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
@@ -195,8 +187,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             string address = walletUint160.ToBase58Address(this.node1.CoreNode.FullNode.Network);
             string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, address) };
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
@@ -219,10 +211,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint160 transferReceiver = this.senderRetriever.GetAddressFromScript(condensingTransaction.Outputs[1].ScriptPubKey).Sender;
             Assert.Equal(walletUint160, transferReceiver);
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC) / 2, condensingTransaction.Outputs[1].Value);
-            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
-
-            // Amount in wallet is reduced by amount sent and fee.
-            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee + new Money((long)amount, MoneyUnit.BTC));
 
             // Contract maintains half the balance
             Assert.Equal((ulong)new Money((long)amount, MoneyUnit.BTC) / 2, this.node1.GetContractBalance(response.NewContractAddress));
@@ -244,22 +232,22 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_BetweenContracts()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract to send to
             ContractCompilationResult receiveCompilationResult = ContractCompiler.CompileFile("SmartContracts/NestedCallsReceiver.cs");
             Assert.True(receiveCompilationResult.Success);
             BuildCreateContractTransactionResponse receiveResponse = this.node1.SendCreateContractTransaction(receiveCompilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(receiveResponse.NewContractAddress));
 
             // Deploy contract to send from
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NestedCallsStarter.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -271,8 +259,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             };
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(NestedCallsStarter.Start), preResponse.NewContractAddress, amount, parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -313,7 +301,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_BetweenContracts_FromConstructor()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             double amount = 25;
 
@@ -321,8 +309,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/MultipleNestedCalls.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
@@ -356,14 +344,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_Create_WithValueTransfer()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CreationTransfer.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -375,8 +363,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 nameof(CreationTransfer.CreateAnotherContract),
                 preResponse.NewContractAddress,
                 amount);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
 
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
@@ -395,10 +383,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             uint160 toAddress = new uint160(toBytes.Skip(1).ToArray());
             Assert.Equal(createdAddress, toAddress);
             Assert.Equal(new Money((long)amount, MoneyUnit.BTC), condensingTransaction.Outputs[0].Value);
-            Money fee = lastBlock.Transactions[0].Outputs[0].Value - new Money(50, MoneyUnit.BTC);
-
-            // Amount in wallet is reduced by amount sent and fee.
-            Assert.Equal(senderBalanceBefore - this.node1.WalletSpendableBalance, fee + new Money((long)amount, MoneyUnit.BTC));
 
             // Contract doesn't maintain any balance
             Assert.Equal((ulong)0, this.node1.GetContractBalance(preResponse.NewContractAddress));
@@ -423,7 +407,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_CreateMultipleContracts_FromConstructor_NonceIncreases()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             double amount = 25;
 
@@ -431,8 +415,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/NonceTest.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
 
             // Check that there is code for nonces 1 and 3 (not 2, contract deployment should have failed).
@@ -453,14 +437,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         {
             // Regular value transfer
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             uint160 contractAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
 
@@ -470,8 +454,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 MethodCall.ReceiveHandlerName,
                 response.NewContractAddress,
                 amount);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
             byte[] saved = this.node1.GetStorageValue(contractAddress.ToBase58Address(this.node1.CoreNode.FullNode.Network), "ReceiveBalance");
@@ -483,7 +467,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void ExternalTransfer_Create_WithValueTransfer()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             ulong amount = 25;
 
@@ -491,8 +475,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             uint160 contractAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
 
@@ -506,7 +490,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void InternalTransfer_Nested_Create_Balance_Correct()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             double amount = 25;
 
@@ -514,8 +498,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/BalanceTest.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             uint160 internalContract = this.addressGenerator.GenerateAddress(response.TransactionId, 1);
 
@@ -529,14 +513,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void External_Call_Balance_Correct()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             uint160 contractAddress = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
 
@@ -546,8 +530,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 nameof(ReceiveFundsTest.MethodReceiveFunds),
                 response.NewContractAddress,
                 amount);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
             byte[] saved = this.node1.GetStorageValue(contractAddress.ToBase58Address(this.node1.CoreNode.FullNode.Network), "Balance");
@@ -559,7 +543,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void Internal_Nested_Transfer_Balance_Correct()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             double amount = 25;
 
@@ -567,14 +551,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
 
             // Deploy second contract
             BuildCreateContractTransactionResponse response2 = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response2.NewContractAddress));
             uint160 contract2Address = this.addressGenerator.GenerateAddress(response2.TransactionId, 0);
 
@@ -592,8 +576,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 response.NewContractAddress,
                 0,
                 parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
             byte[] saved = this.node1.GetStorageValue(contract2Address.ToBase58Address(this.node1.CoreNode.FullNode.Network), "ReceiveBalance");
@@ -605,7 +589,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void Internal_Nested_Call_Transfer_To_Self_Balance_Correct()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             ulong amount = 25;
 
@@ -613,8 +597,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ReceiveFundsTest.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(response.NewContractAddress));
             uint160 contract1Address = this.addressGenerator.GenerateAddress(response.TransactionId, 0);
 
@@ -632,8 +616,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 response.NewContractAddress,
                 0,
                 parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
 
             // Stored balance in PersistentState should be only that which was sent
             byte[] saved = this.node1.GetStorageValue(contract1Address.ToBase58Address(this.node1.CoreNode.FullNode.Network), "ReceiveBalance");
@@ -641,6 +625,20 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Balance should be the same as the initial amount
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
+        }
+    }
+
+    public class PoAContractInternalTransferTests : ContractInternalTransferTests<PoAMockChainFixture>
+    {
+        public PoAContractInternalTransferTests(PoAMockChainFixture fixture) : base(fixture)
+        {
+        }
+    }
+
+    public class PoWContractInternalTransferTests : ContractInternalTransferTests<PoWMockChainFixture>
+    {
+        public PoWContractInternalTransferTests(PoWMockChainFixture fixture) : base(fixture)
+        {
         }
     }
 }
