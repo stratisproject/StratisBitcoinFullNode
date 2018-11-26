@@ -124,9 +124,9 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             var processedParameters = new List<object>();
 
-            try
+            foreach (var parameter in split)
             {
-                foreach (var parameter in split)
+                try
                 {
                     string[] parameterSignature =
                         Regex.Split(parameter.Replace(@"\|", "|"), @"(?<!(?<!\\)*\\)\#").ToArray();
@@ -166,11 +166,12 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                         throw new MethodParameterStringSerializerException(string.Format("{0} is not supported.",
                             parameterSignature[0]));
                 }
+                catch (Exception e) when (e is FormatException || e is OverflowException || e is ArgumentException || e is ArgumentNullException)
+                {
+                    throw new MethodParameterStringSerializerException(string.Format("Error deserializing parameter {0}", parameter), e);
+                }
             }
-            catch (Exception e) when (e is FormatException || e is OverflowException || e is ArgumentException || e is ArgumentNullException)
-            {
-                throw new MethodParameterStringSerializerException(e.Message);
-            }
+
 
             return processedParameters.ToArray();
         }
@@ -227,6 +228,11 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
     public class MethodParameterStringSerializerException : Exception
     {
         public MethodParameterStringSerializerException(string message) : base(message)
+        {
+        }
+
+        public MethodParameterStringSerializerException(string message, Exception innerException)
+        : base(message, innerException)
         {
         }
     }
