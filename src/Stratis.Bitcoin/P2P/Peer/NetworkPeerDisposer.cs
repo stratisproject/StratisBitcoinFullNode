@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -36,12 +37,18 @@ namespace Stratis.Bitcoin.P2P.Peer
         private readonly AsyncQueue<INetworkPeer> peersToDispose;
 
         /// <summary>Mapping of connected peers by their connection ID.</summary>
-        public ConcurrentDictionary<int, INetworkPeer> connectedPeers { get; }
+        private readonly ConcurrentDictionary<int, INetworkPeer> connectedPeers;
 
         /// <summary>Gets the connected peers count.</summary>
         public int ConnectedPeersCount
         {
             get { return this.connectedPeers.Count; }
+        }
+
+        /// <summary>Gets the connected inbound peers count.</summary>
+        public int ConnectedInboundPeersCount
+        {
+            get { return this.connectedPeers.Count(p => p.Value.Inbound); }
         }
 
         /// <summary>
