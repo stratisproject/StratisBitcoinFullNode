@@ -130,10 +130,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 {
                     this.logger.LogTrace("Invalid proven header, try loading it from the store.");
                     provenBlockHeader = this.provenBlockHeaderStore.GetAsync(header.Height).GetAwaiter().GetResult();
+
                     if (provenBlockHeader == null)
                     {
-                        this.logger.LogTrace("(-)[INVALID_PROVEN_HEADER]:{header}", header);
-                        throw new ConsensusException("Proven header could not be found.");
+                        // Proven header is not available yet for this header.
+                        // This can happen in case headers were requested by the peer right after we advanced consensus tip
+                        // So at this moment proven header is not created yet for the block connected.
+                        this.logger.LogTrace("(-)[NO_PH_AVAILABLE]:{header}", header);
+                        break;
                     }
                 }
 
