@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 if (rewindData.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0)
                 {
-                    continue;
+                   continue;
                 }
 
                 foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)

@@ -15,7 +15,7 @@ using Stratis.SmartContracts.Executor.Reflection;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
-    public class SmartContractPoARuleEngine : PoAConsensusRuleEngine, ISmartContractCoinviewRule
+    public class SmartContractPoARuleEngine: PoAConsensusRuleEngine, ISmartContractCoinviewRule
     {
         public ICallDataSerializer CallDataSerializer { get; private set; }
         public IContractExecutorFactory ExecutorFactory { get; private set; }

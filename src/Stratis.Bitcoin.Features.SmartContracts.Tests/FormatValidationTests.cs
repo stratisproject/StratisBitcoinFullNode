@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         private static readonly ConstructorParamValidator ConstructorParamValidator = new ConstructorParamValidator();
 
-        private static readonly byte[] SingleConstructorCompilation =
+        private static readonly byte[] SingleConstructorCompilation = 
             ContractCompiler.CompileFile("SmartContracts/SingleConstructor.cs").Compilation;
 
         private static readonly IContractModuleDefinition SingleConstructorModuleDefinition = ContractDecompiler.GetModuleDefinition(SingleConstructorCompilation).Value;
@@ -40,9 +40,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         [Fact]
         public void SmartContract_ValidateFormat_HasSingleConstructorSuccess()
-        {
+        {            
             IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(SingleConstructorModuleDefinition.ContractType);
-
+            
             Assert.Empty(validationResult);
         }
 
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SmartContract_ValidateFormat_HasInvalidFirstParamFails()
         {
             bool validationResult = ConstructorParamValidator.Validate(InvalidParamModuleDefinition.ContractType);
-
+            
             Assert.True(validationResult);
         }
 
@@ -251,7 +251,7 @@ public class Test : SmartContract
     }
 }
 ";
-            ContractCompilationResult compilationResult = Compile(adjustedSource, new[] { typeof(IQueryable).Assembly.Location });
+            ContractCompilationResult compilationResult = Compile(adjustedSource, new [] { typeof(IQueryable).Assembly.Location });
             Assert.True(compilationResult.Success);
 
             var validator = new SmartContractFormatValidator();
@@ -428,7 +428,7 @@ public class Test : SmartContract
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
 
             var references = GetReferences().ToList();
-
+            
             if (additionalReferencePaths != null)
                 references.AddRange(additionalReferencePaths.Select(path => MetadataReference.CreateFromFile(path)));
 

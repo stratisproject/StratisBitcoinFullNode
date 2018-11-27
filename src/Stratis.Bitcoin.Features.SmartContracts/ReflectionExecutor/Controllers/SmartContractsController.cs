@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             uint160 addressNumeric = address.ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
-
+            
             return Json(balance);
         }
 
@@ -180,25 +180,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Loop through all headers and check bloom.
             IEnumerable<ChainedHeader> blockHeaders = this.chain.EnumerateToTip(this.chain.Genesis);
             List<ChainedHeader> matches = new List<ChainedHeader>();
-            foreach (ChainedHeader chainedHeader in blockHeaders)
+            foreach(ChainedHeader chainedHeader in blockHeaders)
             {
-                var scHeader = (ISmartContractBlockHeader)chainedHeader.Header;
+                var scHeader = (ISmartContractBlockHeader) chainedHeader.Header;
                 if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
                     matches.Add(chainedHeader);
             }
 
             // For all matching headers, get the block from local db.
             List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
-            foreach (ChainedHeader chainedHeader in matches)
+            foreach(ChainedHeader chainedHeader in matches)
             {
                 blocks.Add(await this.blockStore.GetBlockAsync(chainedHeader.HashBlock).ConfigureAwait(false));
             }
 
             // For each block, get all receipts, and if they match, add to list to return.
             List<ReceiptResponse> receiptResponses = new List<ReceiptResponse>();
-            foreach (NBitcoin.Block block in blocks)
+            foreach(NBitcoin.Block block in blocks)
             {
-                foreach (Transaction transaction in block.Transactions)
+                foreach(Transaction transaction in block.Transactions)
                 {
                     Receipt storedReceipt = this.receiptRepository.Retrieve(transaction.GetHash());
                     if (storedReceipt == null) // not a smart contract transaction. Move to next transaction.
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             return Json(receiptResponses);
-        }
+        } 
 
         [Route("build-create")]
         [HttpPost]
@@ -284,15 +284,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
-
+            
             var transactionContext = new ContractTransactionContext(
-                (ulong)this.chain.Height,
+                (ulong) this.chain.Height,
                 uint160.Zero,
                 0, // Safe to set this to 0 here, it's only used for the refund which we do not create when executing locally
                 request.Sender.ToUint160(this.network),
                 transaction);
 
-            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);
+            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);           
 
             return Json(result);
         }
@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
                 });
             }
-
+            
             return Json(result);
         }
 

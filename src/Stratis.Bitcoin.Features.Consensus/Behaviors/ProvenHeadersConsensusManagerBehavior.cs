@@ -205,7 +205,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             INetworkPeer peer = this.AttachedPeer;
 
-            if (this.isGateway)
+            if (this.isGateway )
             {
                 if (peer.IsWhitelisted())
                 {

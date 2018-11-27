@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
             int vmVersion = 1;
             Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
-            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[] { 0, 1, 2, 3 });
+            var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit,new byte[]{0, 1, 2, 3});
             var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(new SmartContractsRegTest()));
             var contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));
 
@@ -89,12 +89,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             var accountsHistory = new List<AccountHistory> { new AccountHistory { History = flat, Account = account } };
             this.walletManager.Setup(w => w.GetHistory(walletName, It.IsAny<string>())).Returns(accountsHistory);
             this.walletManager.Setup(w => w.GetWalletByName(walletName)).Returns(wallet);
-            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> { account });
+            this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> {account});
 
             this.receiptRepository.Setup(x => x.Retrieve(It.IsAny<uint256>()))
                 .Returns(new Receipt(null, 0, new Log[0], null, null, null, uint160.Zero, true, null, null));
             this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
-                .Returns(Result.Ok(new ContractTxData(0, 0, (Gas)0, new uint160(0), null, null)));
+                .Returns(Result.Ok(new ContractTxData(0, 0, (Gas) 0, new uint160(0), null, null)));
 
             var controller = new SmartContractWalletController(
                 this.broadcasterManager.Object,

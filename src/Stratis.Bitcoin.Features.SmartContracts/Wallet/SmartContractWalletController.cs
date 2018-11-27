@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 // Wallet manager returns only 1 when an account name is specified.
                 AccountHistory accountHistory = accountsHistory.First();
 
-                List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Where(x => x.Address.Address == address).ToList();
+                List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Where(x=>x.Address.Address == address).ToList();
 
                 // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                 // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     }
                 }
 
-                return this.Json(transactionItems.OrderByDescending(x => x.BlockHeight));
+                return this.Json(transactionItems.OrderByDescending(x=>x.BlockHeight));
             }
             catch (Exception e)
             {

@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Array.Resize(ref test, 50);
             Array.Copy(test, test2, len);";
 
-            string adjustedSource = TestString.Replace(ReplaceCodeString, code).Replace(ReplaceReferencesString, "");
+            string adjustedSource = TestString.Replace(ReplaceCodeString,code).Replace(ReplaceReferencesString, "");
 
             byte[] assemblyBytes = ContractCompiler.Compile(adjustedSource).Compilation;
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
@@ -592,7 +592,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
-        }
+        }    
 
         #endregion
 
@@ -923,7 +923,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
         }
-
+        
 
         #endregion
 
@@ -952,7 +952,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Validate_Determinism_StringIteration()
         {
-            string adjustedSource = TestString.Replace(ReplaceCodeString,
+            string adjustedSource = TestString.Replace(ReplaceCodeString,            
                 @"int randomNumber = 0;
                   foreach (byte c in ""Abcdefgh"")
                   {
