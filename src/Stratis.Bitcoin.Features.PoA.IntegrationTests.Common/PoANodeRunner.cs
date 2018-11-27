@@ -9,7 +9,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
+namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public class PoANodeRunner : NodeRunner
     {
