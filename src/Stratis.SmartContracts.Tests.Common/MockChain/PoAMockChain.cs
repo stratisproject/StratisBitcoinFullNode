@@ -66,6 +66,14 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             }
         }
 
+        public void WaitAllMempoolCount(int num)
+        {
+            for (int i = 0; i < this.Nodes.Count; i++)
+            {
+                this.Nodes[i].WaitMempoolCount(num);
+            }
+        }
+
         public void Dispose()
         {
             this.builder.Dispose();

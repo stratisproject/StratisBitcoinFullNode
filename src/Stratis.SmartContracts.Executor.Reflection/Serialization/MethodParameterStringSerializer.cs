@@ -105,7 +105,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
                 return MethodParameterDataType.Int;
             
             // Any other types are not supported.
-            throw new Exception(string.Format("{0} is not supported.", o.GetType().Name));
+            throw new MethodParameterStringSerializerException(string.Format("{0} is not supported.", o.GetType().Name));
         }
 
         public object[] Deserialize(string[] parameters)
@@ -118,7 +118,7 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             return StringToObjects(parameters);
         }
 
-        private  object[] StringToObjects(string parameters)
+        private object[] StringToObjects(string parameters)
         {
             string[] split = Regex.Split(parameters, @"(?<!(?<!\\)*\\)\|").ToArray();
 
@@ -126,42 +126,52 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
 
             foreach (var parameter in split)
             {
-                string[] parameterSignature = Regex.Split(parameter.Replace(@"\|", "|"), @"(?<!(?<!\\)*\\)\#").ToArray();
-                parameterSignature[1] = parameterSignature[1].Replace(@"\#", "#");
+                try
+                {
+                    string[] parameterSignature =
+                        Regex.Split(parameter.Replace(@"\|", "|"), @"(?<!(?<!\\)*\\)\#").ToArray();
+                    parameterSignature[1] = parameterSignature[1].Replace(@"\#", "#");
 
-                if (parameterSignature[0] == MethodParameterDataType.Bool.ToString("d"))
-                    processedParameters.Add(bool.Parse(parameterSignature[1]));
+                    if (parameterSignature[0] == MethodParameterDataType.Bool.ToString("d"))
+                        processedParameters.Add(bool.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == MethodParameterDataType.Byte.ToString("d"))
-                    processedParameters.Add(Convert.ToByte(parameterSignature[1]));
+                    else if (parameterSignature[0] == MethodParameterDataType.Byte.ToString("d"))
+                        processedParameters.Add(Convert.ToByte(parameterSignature[1]));
 
-                else if (parameterSignature[0] == MethodParameterDataType.Char.ToString("d"))
-                    processedParameters.Add(parameterSignature[1][0]);
+                    else if (parameterSignature[0] == MethodParameterDataType.Char.ToString("d"))
+                        processedParameters.Add(parameterSignature[1][0]);
 
-                else if (parameterSignature[0] == MethodParameterDataType.String.ToString("d"))
-                    processedParameters.Add(parameterSignature[1]);
-                
-                else if (parameterSignature[0] == MethodParameterDataType.UInt.ToString("d"))
-                    processedParameters.Add(uint.Parse(parameterSignature[1]));
+                    else if (parameterSignature[0] == MethodParameterDataType.String.ToString("d"))
+                        processedParameters.Add(parameterSignature[1]);
 
-                else if (parameterSignature[0] == MethodParameterDataType.Int.ToString("d"))
-                    processedParameters.Add(int.Parse(parameterSignature[1]));
+                    else if (parameterSignature[0] == MethodParameterDataType.UInt.ToString("d"))
+                        processedParameters.Add(uint.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == MethodParameterDataType.ULong.ToString("d"))
-                    processedParameters.Add(ulong.Parse(parameterSignature[1]));
+                    else if (parameterSignature[0] == MethodParameterDataType.Int.ToString("d"))
+                        processedParameters.Add(int.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == MethodParameterDataType.Long.ToString("d"))
-                    processedParameters.Add(long.Parse(parameterSignature[1]));
-                
-               else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
-                    processedParameters.Add(parameterSignature[1].ToAddress(this.network));
+                    else if (parameterSignature[0] == MethodParameterDataType.ULong.ToString("d"))
+                        processedParameters.Add(ulong.Parse(parameterSignature[1]));
 
-                else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
-                    processedParameters.Add(parameterSignature[1].HexToByteArray());
+                    else if (parameterSignature[0] == MethodParameterDataType.Long.ToString("d"))
+                        processedParameters.Add(long.Parse(parameterSignature[1]));
 
-                else
-                    throw new Exception(string.Format("{0} is not supported.", parameterSignature[0]));
+                    else if (parameterSignature[0] == MethodParameterDataType.Address.ToString("d"))
+                        processedParameters.Add(parameterSignature[1].ToAddress(this.network));
+
+                    else if (parameterSignature[0] == MethodParameterDataType.ByteArray.ToString("d"))
+                        processedParameters.Add(parameterSignature[1].HexToByteArray());
+
+                    else
+                        throw new MethodParameterStringSerializerException(string.Format("{0} is not supported.",
+                            parameterSignature[0]));
+                }
+                catch (Exception e) when (e is FormatException || e is OverflowException || e is ArgumentException || e is ArgumentNullException)
+                {
+                    throw new MethodParameterStringSerializerException(string.Format("Error deserializing parameter {0}", parameter), e);
+                }
             }
+
 
             return processedParameters.ToArray();
         }
@@ -212,6 +222,18 @@ namespace Stratis.SmartContracts.Executor.Reflection.Serialization
             });
 
             return processedHashes;
+        }
+    }
+
+    public class MethodParameterStringSerializerException : Exception
+    {
+        public MethodParameterStringSerializerException(string message) : base(message)
+        {
+        }
+
+        public MethodParameterStringSerializerException(string message, Exception innerException)
+        : base(message, innerException)
+        {
         }
     }
 }

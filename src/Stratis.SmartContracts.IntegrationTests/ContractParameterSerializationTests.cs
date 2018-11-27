@@ -1,26 +1,28 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
-namespace Stratis.SmartContracts.IntegrationTests.PoW
+namespace Stratis.SmartContracts.IntegrationTests
 {
-    public class ContractParameterSerializationTests : IClassFixture<PoWMockChainFixture>
+    public abstract class ContractParameterSerializationTests<T> : IClassFixture<T> where T : class, IMockChainFixture
     {
-        private readonly PoWMockChain mockChain;
+        private readonly IMockChain mockChain;
         private readonly MockChainNode node1;
         private readonly MockChainNode node2;
 
         private readonly IContractPrimitiveSerializer serializer;
 
-        public ContractParameterSerializationTests(PoWMockChainFixture fixture)
+        protected ContractParameterSerializationTests(T fixture)
         {
             this.mockChain = fixture.Chain;
             this.node1 = this.mockChain.Nodes[0];
@@ -32,7 +34,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void CreateContract_OneOfEachParameterType()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             double amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
@@ -64,8 +66,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, testBytes.ToHexString()),
             };
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -92,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(testBytes, this.node1.GetStorageValue(response.NewContractAddress, "bytes"));
 
             // Test that the contract address, event name, and logging values are available in the bloom.
-            var scBlockHeader = lastBlock.Header as SmartContractBlockHeader;
+            var scBlockHeader = lastBlock.Header as ISmartContractBlockHeader;
             Assert.True(scBlockHeader.LogsBloom.Test(response.NewContractAddress.ToUint160(this.node1.CoreNode.FullNode.Network).ToBytes()));
             Assert.True(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("Log")));
             Assert.True(scBlockHeader.LogsBloom.Test(this.serializer.Serialize(testChar)));
@@ -125,14 +127,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void CallContract_SerializeEachParameterType()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CallWithAllParameters.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -159,8 +161,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 string.Format("{0}#{1}", (int)MethodParameterDataType.String, testString)
             };
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(CallWithAllParameters.Call), preResponse.NewContractAddress, amount, parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -189,14 +191,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void Internal_CallContract_SerializeEachParameterType()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             // Deploy contract to send to
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CallWithAllParameters.cs");
             Assert.True(compilationResult.Success);
             BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0);
-            this.node1.WaitMempoolCount(1);
-            this.node1.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             double amount = 25;
@@ -225,8 +227,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             };
             compilationResult = ContractCompiler.CompileFile("SmartContracts/ForwardParameters.cs");
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -255,7 +257,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         public void SerializeArrays_ForEachMethodParamType()
         {
             // Ensure fixture is funded.
-            this.node1.MineBlocks(1);
+            this.mockChain.MineBlocks(1);
 
             double amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
@@ -284,8 +286,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 string.Format("{0}#{1}", (int)MethodParameterDataType.ByteArray, this.serializer.Serialize(strings).ToHexString())
             };
             BuildCreateContractTransactionResponse response = this.node1.SendCreateContractTransaction(compilationResult.Compilation, amount, parameters);
-            this.node2.WaitMempoolCount(1);
-            this.node2.MineBlocks(1);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
             NBitcoin.Block lastBlock = this.node1.GetLastBlock();
 
             // Blocks progressed
@@ -321,6 +323,20 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
             Assert.Null(receipt.To);
             Assert.Null(receipt.Error);
+        }
+    }
+
+    public class PoAContractParameterSerializationTests : ContractParameterSerializationTests<PoAMockChainFixture>
+    {
+        public PoAContractParameterSerializationTests(PoAMockChainFixture fixture) : base(fixture)
+        {
+        }
+    }
+
+    public class PoWContractParameterSerializationTests : ContractParameterSerializationTests<PoWMockChainFixture>
+    {
+        public PoWContractParameterSerializationTests(PoWMockChainFixture fixture) : base(fixture)
+        {
         }
     }
 }

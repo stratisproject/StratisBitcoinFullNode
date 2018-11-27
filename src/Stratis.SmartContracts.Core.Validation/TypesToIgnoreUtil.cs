@@ -2,7 +2,7 @@
 using System.Linq;
 using Mono.Cecil;
 
-namespace Stratis.ModuleValidation.Net
+namespace Stratis.SmartContracts.Core.Validation
 {
     /// <summary>
     /// Util holds types which we need to ignore when retrieving types from module.

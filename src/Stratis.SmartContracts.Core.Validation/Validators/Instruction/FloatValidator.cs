@@ -2,7 +2,7 @@
 using Mono.Cecil;
 using Mono.Cecil.Cil;
 
-namespace Stratis.ModuleValidation.Net.Determinism
+namespace Stratis.SmartContracts.Core.Validation.Validators.Instruction
 {
     /// <summary>
     /// Validates that a <see cref="Mono.Cecil.MethodDefinition"/> does not contain any float opcodes
@@ -29,7 +29,7 @@ namespace Stratis.ModuleValidation.Net.Determinism
             OpCodes.Stind_R8
         };
 
-        public IEnumerable<ValidationResult> Validate(Instruction instruction, MethodDefinition method)
+        public IEnumerable<ValidationResult> Validate(Mono.Cecil.Cil.Instruction instruction, MethodDefinition method)
         {
             var errors = new List<FloatValidationResult>();
 
@@ -41,7 +41,7 @@ namespace Stratis.ModuleValidation.Net.Determinism
             return errors;
         }
 
-        public static bool IsFloat(Instruction instruction)
+        public static bool IsFloat(Mono.Cecil.Cil.Instruction instruction)
         {
             return FloatOpCodes.Contains(instruction.OpCode);
         }

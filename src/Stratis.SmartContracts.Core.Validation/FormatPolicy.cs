@@ -1,8 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Stratis.ModuleValidation.Net;
-using Stratis.ModuleValidation.Net.Format;
 using Stratis.SmartContracts.Core.Validation.Validators.Method;
 using Stratis.SmartContracts.Core.Validation.Validators.Module;
 using Stratis.SmartContracts.Core.Validation.Validators.Type;
