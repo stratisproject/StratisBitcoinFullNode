@@ -1,8 +1,22 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk.Web">
 
   <PropertyGroup>
+    <Description>Stratis Bitcoin Features SignalR</Description>
+    <AssemblyTitle>Stratis.Bitcoin.Features.SignalR</AssemblyTitle>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-    <DebugType>Full</DebugType>
+    <AssemblyName>Stratis.Bitcoin.Features.SignalR</AssemblyName>
+    <PackageId>Stratis.Bitcoin.Features.SignalR</PackageId>
+    <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
+    <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
+    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
+    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
+    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
+    <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
+    <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
+    <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
+    <Version>1.2.5-beta</Version>
+    <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -10,8 +24,11 @@
     <PackageReference Include="Microsoft.AspNetCore.Cors" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.Owin" Version="2.1.1" />
     <PackageReference Include="Microsoft.AspNetCore.SignalR" Version="1.0.2" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.2.3-beta" />
     <PackageReference Include="System.Reactive.Linq" Version="4.1.2" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
   </ItemGroup>
 
 </Project>

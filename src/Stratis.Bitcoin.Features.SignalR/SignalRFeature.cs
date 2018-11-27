@@ -35,12 +35,16 @@ namespace Stratis.Bitcoin.Features.SignalR
             return this.SignalRService.StartAsync();
         }
 
+        /// <inheritdoc />
         public override void Dispose()
         {
             this.SignalRService.Dispose();
         }
     }
 
+    /// <summary>
+    /// A class providing extension methods for <see cref="IFullNodeBuilder"/>.
+    /// </summary>
     public static class SignalRFeatureExtension
     {
         public static IFullNodeBuilder UseSignalR(this IFullNodeBuilder fullNodeBuilder)
@@ -51,9 +55,9 @@ namespace Stratis.Bitcoin.Features.SignalR
                     .AddFeature<SignalRFeature>()
                     .FeatureServices(services =>
                         {
-                            services.AddSingleton(fullNodeBuilder);
                             services.AddSingleton<SignalRSettings>();
                             services.AddSingleton<ISignalRService, SignalRService>();
+                            services.AddSingleton<SignalRController>();
                         });
             });
 

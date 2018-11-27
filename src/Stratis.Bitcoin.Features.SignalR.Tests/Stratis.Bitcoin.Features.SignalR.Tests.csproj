@@ -3,6 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
     <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -16,12 +17,7 @@
 
   <ItemGroup>
     <ProjectReference Include="..\Stratis.Bitcoin.Features.SignalR\Stratis.Bitcoin.Features.SignalR.csproj" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Stratis.Bitcoin.Networks">
-      <HintPath>..\..\..\..\..\.nuget\packages\stratis.bitcoin.networks\1.2.3-beta\lib\netstandard2.0\Stratis.Bitcoin.Networks.dll</HintPath>
-    </Reference>
+    <ProjectReference Include="..\Stratis.Bitcoin.Tests.Common\Stratis.Bitcoin.Tests.Common.csproj" />
   </ItemGroup>
 
 

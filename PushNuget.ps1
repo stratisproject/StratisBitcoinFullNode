@@ -13,6 +13,10 @@ rm "src\Stratis.Bitcoin.Features.Api\bin\debug\" -Recurse -Force
 dotnet pack src\Stratis.Bitcoin.Features.Api --configuration Debug --include-source --include-symbols  
 dotnet nuget push "src\Stratis.Bitcoin.Features.Api\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
 
+rm "src\Stratis.Bitcoin.Features.SignalR\bin\debug\" -Recurse -Force
+dotnet pack src\Stratis.Bitcoin.Features.SignalR --configuration Debug --include-source --include-symbols  
+dotnet nuget push "src\Stratis.Bitcoin.Features.SignalR\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
+
 rm "src\Stratis.Bitcoin.Features.BlockStore\bin\debug\" -Recurse -Force
 dotnet pack src\Stratis.Bitcoin.Features.BlockStore --configuration Debug --include-source --include-symbols  
 dotnet nuget push "src\Stratis.Bitcoin.Features.BlockStore\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
