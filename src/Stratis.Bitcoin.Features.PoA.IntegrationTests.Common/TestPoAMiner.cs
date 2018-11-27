@@ -11,7 +11,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools
+namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public class TestPoAMiner : PoAMiner
     {
