@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="coinType">The type of coin this account is for.</param>
         /// <param name="accountCreationTime">Creation time of the account to be created.</param>
         /// <param name="accountIndex">The index at which an account will be created. If left null, a new account will be created after the last used one.</param>
-        /// <param name="accountName">The name of the account to be created. If left null, an account will be created according to the <see cref="AccountNamePattern"/>.</param>
+        /// <param name="accountName">The name of the account to be created. If left null, an account will be created according to the <see cref="Wallet.AccountNamePattern"/>.</param>
         /// <returns>A new HD account.</returns>
         public HdAccount AddNewAccount(string password, CoinType coinType, DateTimeOffset accountCreationTime, int? accountIndex = null, string accountName = null)
         {
@@ -411,7 +411,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     accountIndex = 0;
                 }
             }
-            
+
             HdAccount newAccount = this.CreateAccount(password, encryptedSeed, chainCode, network, accountCreationTime, accountIndex.Value, accountName);
 
             hdAccounts.Add(newAccount);
