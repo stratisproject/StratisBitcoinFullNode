@@ -16,9 +16,9 @@
   <ItemGroup>
     <PackageReference Include="Microsoft.AspNetCore.Mvc" Version="2.1.3" />
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.2.4-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.2.4-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.4-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.2.5-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="1.2.5-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="1.2.5-beta" />
   </ItemGroup>
 
   <ItemGroup>
