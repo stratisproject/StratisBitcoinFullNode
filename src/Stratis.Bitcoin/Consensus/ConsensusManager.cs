@@ -149,17 +149,20 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public ConsensusManagerState State()
         {
-            var state = new ConsensusManagerState
+            lock (this.peerLock)
             {
-                CallbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>(this.callbacksByBlocksRequestedHash),
-                ExpectedBlockDataBytes = this.expectedBlockDataBytes,
-                ExpectedBlockSizes = new Dictionary<uint256, long>(this.expectedBlockSizes),
-                PeersByPeerId = new Dictionary<int, INetworkPeer>(this.peersByPeerId),
+                var state = new ConsensusManagerState
+                {
+                    CallbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>(this.callbacksByBlocksRequestedHash),
+                    ExpectedBlockDataBytes = this.expectedBlockDataBytes,
+                    ExpectedBlockSizes = new Dictionary<uint256, long>(this.expectedBlockSizes),
+                    PeersByPeerId = new Dictionary<int, INetworkPeer>(this.peersByPeerId),
 
-                ChainedHeaderTreeState = this.chainedHeaderTree.State()
-            };
+                    ChainedHeaderTreeState = this.chainedHeaderTree.State()
+                };
 
-            return state;
+                return state;
+            }
         }
 
         /// <inheritdoc />
