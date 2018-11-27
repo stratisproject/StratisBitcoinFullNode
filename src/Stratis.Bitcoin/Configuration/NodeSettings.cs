@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Configuration
         ///   name would be determined. In this case we first need to determine the network.
         /// </remarks>
         public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion,
-            string agent = "StratisBitcoin", string[] args = null, NetworksSelector networksSelector = null)
+            string agent = "Stratis", string[] args = null, NetworksSelector networksSelector = null)
         {
             // Create the default logger factory and logger.
             var loggerFactory = new ExtendedLoggerFactory();
