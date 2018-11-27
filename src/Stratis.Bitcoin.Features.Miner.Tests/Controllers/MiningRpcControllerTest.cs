@@ -6,6 +6,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
@@ -142,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
             this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(this.Network, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object));
+                .Returns(new MiningFeature(new ConnectionManagerSettings(NodeSettings.Default(this.Network)), this.Network, new MinerSettings(NodeSettings.Default(this.Network)), NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object));
 
             var exception = Assert.Throws<ConfigurationException>(() =>
             {
@@ -160,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
               .Returns(this.fixture.wallet);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(this.Network, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object));
+                .Returns(new MiningFeature(new ConnectionManagerSettings(NodeSettings.Default(this.Network)), this.Network, new MinerSettings(NodeSettings.Default(this.Network)), NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, this.powMining.Object, this.posMinting.Object));
 
             bool result = this.stakingRpcController.StartStaking("myWallet", "password1");
 

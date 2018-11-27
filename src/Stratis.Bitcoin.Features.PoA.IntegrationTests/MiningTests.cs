@@ -1,6 +1,6 @@
 ﻿using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.PoA.IntegrationTests.Tools;
+using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
