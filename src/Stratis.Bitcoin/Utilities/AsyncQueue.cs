@@ -47,18 +47,6 @@ namespace Stratis.Bitcoin.Utilities
         /// <remarks>All access to this object has to be protected by <see cref="lockObject"/>.</remarks>
         private readonly Queue<T> items;
 
-        /// <summary>The amount of items in the queue.</summary>
-        public int Count
-        {
-            get
-            {
-                lock (this.lockObject)
-                {
-                    return this.items.Count;
-                }
-            }
-        }
-
         /// <summary>Event that is triggered when at least one new item is waiting in the queue.</summary>
         private readonly AsyncManualResetEvent signal;
 
@@ -213,7 +201,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="item">If the function succeeds, this is filled with the dequeued item.</param>
         /// <returns><c>true</c> if an item was dequeued, <c>false</c> if the queue was empty.</returns>
-        private bool TryDequeue(out T item)
+        public bool TryDequeue(out T item)
         {
             item = default(T);
             lock (this.lockObject)

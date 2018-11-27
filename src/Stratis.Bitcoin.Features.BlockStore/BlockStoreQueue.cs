@@ -394,18 +394,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
-            await this.SaveBlocksInBatchAndAsyncQueueAsync();
+            await this.FlushAllCollectionsAsync();
         }
 
         /// <summary>
         /// Ensures that any blocks queued in <see cref="blocksQueue"/> gets added to <see cref="batch"/>
         /// so that it can be persisted on dispose.
         /// </summary>
-        private async Task SaveBlocksInBatchAndAsyncQueueAsync()
+        private async Task FlushAllCollectionsAsync()
         {
-            while (this.blocksQueue.Count > 0)
+            ChainedHeaderBlock chainedHeaderBlock = null;
+            while (this.blocksQueue.TryDequeue(out chainedHeaderBlock))
             {
-                this.batch.Add(await this.blocksQueue.DequeueAsync().ConfigureAwait(false));
+                this.batch.Add(chainedHeaderBlock);
             }
 
             if (this.batch.Count != 0)
