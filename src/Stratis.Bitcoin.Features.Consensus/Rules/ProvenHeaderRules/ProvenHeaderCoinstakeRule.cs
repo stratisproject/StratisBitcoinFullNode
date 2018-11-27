@@ -265,7 +265,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 // the logic in ProvenHeadersBlockStoreSignaled.CreateAndStoreProvenHeader.
                 this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
                 ConsensusErrors.InvalidPreviousProvenHeader.Throw();
-                return null;
             }
 
             return previousStakeModifier;
