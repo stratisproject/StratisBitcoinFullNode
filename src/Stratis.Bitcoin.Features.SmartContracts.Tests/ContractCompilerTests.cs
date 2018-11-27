@@ -34,11 +34,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             List<Assembly> allowedAssemblies = ReferencedAssemblyResolver.AllowedAssemblies.ToList();
 
-            Assert.Equal(4, allowedAssemblies.Count);
+            Assert.Equal(5, allowedAssemblies.Count);
             Assert.Contains(allowedAssemblies, a => a.GetName().Name == "System.Runtime");
             Assert.Contains(allowedAssemblies, a => a.GetName().Name == "System.Private.CoreLib");
             Assert.Contains(allowedAssemblies, a => a.GetName().Name == "Stratis.SmartContracts");
             Assert.Contains(allowedAssemblies, a => a.GetName().Name == "System.Linq");
+            Assert.Contains(allowedAssemblies, a => a.GetName().Name == "Stratis.SmartContracts.Standards");
         }
 
         [Fact]
