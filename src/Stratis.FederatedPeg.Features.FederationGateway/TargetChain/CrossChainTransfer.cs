@@ -23,6 +23,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private long depositAmount;
 
         /// <inheritdoc />
+        public int? DepositHeight => this.depositHeight;
+        private int? depositHeight;
+
+        /// <inheritdoc />
         public Transaction PartialTransaction => this.partialTransaction;
         private Transaction partialTransaction;
 
@@ -31,8 +35,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private uint256 blockHash;
 
         /// <inheritdoc />
-        public int BlockHeight => this.blockHeight;
-        private int blockHeight;
+        public int? BlockHeight => this.blockHeight;
+        private int? blockHeight;
 
         /// <inheritdoc />
         public CrossChainTransferStatus Status => this.status;
@@ -52,16 +56,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <param name="depositTransactionId">The transaction id of the deposit transaction.</param>
         /// <param name="depositTargetAddress">The target address of the deposit transaction.</param>
         /// <param name="depositAmount">The amount (in satoshis) of the deposit transaction.</param>
+        /// <param name="depositHeight">The chain A height at which the deposit was made (if known).</param>
         /// <param name="partialTransaction">The unsigned partial transaction containing a full set of available UTXO's.</param>
         /// <param name="blockHash">The hash of the block where the transaction resides.</param>
         /// <param name="blockHeight">The height (in our chain) of the block where the transaction resides.</param>
         public CrossChainTransfer(CrossChainTransferStatus status, uint256 depositTransactionId, Script depositTargetAddress, Money depositAmount,
-            Transaction partialTransaction, uint256 blockHash, int blockHeight)
+            int? depositHeight, Transaction partialTransaction, uint256 blockHash = null, int? blockHeight = null)
         {
             this.status = status;
             this.depositTransactionId = depositTransactionId;
             this.depositTargetAddress = depositTargetAddress;
             this.depositAmount = depositAmount;
+            this.depositHeight = depositHeight;
             this.partialTransaction = partialTransaction;
             this.blockHash = blockHash;
             this.blockHeight = blockHeight;
@@ -87,6 +93,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             stream.ReadWrite(ref this.depositTransactionId);
             stream.ReadWrite(ref this.depositTargetAddress);
             stream.ReadWrite(ref this.depositAmount);
+
+            int depositHeight = this.DepositHeight ?? -1;
+            stream.ReadWrite(ref depositHeight);
+            this.depositHeight = (depositHeight < 0) ? (int?)null : depositHeight;
+
             stream.ReadWrite(ref this.partialTransaction);
 
             if (!stream.Serializing && this.partialTransaction.Inputs.Count == 0 && this.partialTransaction.Outputs.Count == 0)
@@ -94,8 +105,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
             if (this.status == CrossChainTransferStatus.SeenInBlock)
             {
-                stream.ReadWrite(ref this.blockHash);
-                stream.ReadWrite(ref this.blockHeight);
+                uint256 blockHash = this.blockHash ?? 0;
+                stream.ReadWrite(ref blockHash);
+                this.blockHash = (blockHash == 0) ? null : blockHash;
+
+                int blockHeight = this.BlockHeight ?? -1;
+                stream.ReadWrite(ref blockHeight);
+                this.blockHeight = (blockHeight < 0) ? (int?)null : blockHeight;
             }
         }
 
@@ -111,7 +127,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             if (this.PartialTransaction == null)
                 return false;
 
-            if (this.status == CrossChainTransferStatus.SeenInBlock && this.blockHash == null)
+            if (this.status == CrossChainTransferStatus.SeenInBlock && (this.blockHash == null || this.blockHeight == null))
             {
                 return false;
             }
@@ -120,7 +136,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <inheritdoc />
-        public void SetStatus(CrossChainTransferStatus status, uint256 blockHash = null, int blockHeight = 0)
+        public void SetStatus(CrossChainTransferStatus status, uint256 blockHash = null, int? blockHeight = null)
         {
             this.status = status;
 

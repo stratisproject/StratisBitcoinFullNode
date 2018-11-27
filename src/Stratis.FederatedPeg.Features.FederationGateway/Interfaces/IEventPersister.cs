@@ -13,7 +13,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <summary>
         /// When new matured block arrive, this will trigger a call to the store to persist the given deposits.
         /// </summary>
-        Task PersistNewMaturedBlockDeposits(IMaturedBlockDeposits maturedBlockDeposits);
+        Task PersistNewMaturedBlockDepositsAsync(IMaturedBlockDeposits[] maturedBlockDeposits);
 
         /// <summary>
         /// When a new block is produced on the source chain, this will persist the new tip in the store.

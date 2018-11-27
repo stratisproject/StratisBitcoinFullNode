@@ -46,7 +46,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
-            this.MinCoinMaturity = configReader.GetOrDefault<int>(MinCoinMaturityParam, 1);
+            this.MinCoinMaturity = configReader.GetOrDefault<int>(MinCoinMaturityParam, 0);
             this.TransactionFee = new Money(configReader.GetOrDefault<decimal>(TransactionFeeParam, 0.01m), MoneyUnit.BTC);
 
             if (this.FederationPublicKeys.All(p => p != new PubKey(this.PublicKey)))

@@ -40,7 +40,7 @@ namespace Stratis.FederatedPeg.Tests
 
             var restSender = new RestBlockTipSender(this.loggerFactory, this.federationSettings, this.httpClientFactory);
 
-            var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt());
+            var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
 
             await restSender.SendBlockTipAsync(blockTip).ConfigureAwait(false);
 
@@ -54,7 +54,7 @@ namespace Stratis.FederatedPeg.Tests
 
             var restSender = new RestBlockTipSender(this.loggerFactory, this.federationSettings, this.httpClientFactory);
 
-            var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt());
+            var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
 
             await restSender.SendBlockTipAsync(blockTip).ConfigureAwait(false);
 

@@ -1,200 +1,23 @@
-﻿using System;
-using System.Collections.Generic;
-using System.IO;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Runtime.Serialization;
-using Microsoft.Extensions.Logging;
+using System.Threading;
 using NBitcoin;
-using NBitcoin.Networks;
 using NSubstitute;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
-using Stratis.Sidechains.Networks;
 using Xunit;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Connection;
-using System.Threading;
-using System.Diagnostics;
-using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.FederatedPeg.Tests
 {
-    public class CrossChainTransferStoreTests
+    public class CrossChainTransferStoreTests : CrossChainTestBase
     {
-        private const string walletPassword = "123";
-        private Network network;
-        private ConcurrentChain chain;
-        private ILoggerFactory loggerFactory;
-        private ILogger logger;
-        private IDateTimeProvider dateTimeProvider;
-        private IOpReturnDataReader opReturnDataReader;
-        private IWithdrawalExtractor withdrawalExtractor;
-        private IBlockRepository blockRepository;
-        private IFullNode fullNode;
-        private IFederationWalletManager federationWalletManager;
-        private IFederationWalletTransactionHandler federationWalletTransactionHandler;
-        private IFederationGatewaySettings federationGatewaySettings;
-        private IFederationWalletSyncManager federationWalletSyncManager;
-        private IWalletFeePolicy walletFeePolicy;
-        private IAsyncLoopFactory asyncLoopFactory;
-        private INodeLifetime nodeLifetime;
-        private IConnectionManager connectionManager;
-        private Dictionary<uint256, Block> blockDict;
-        private List<Transaction> fundingTransactions;
-        private FederationWallet wallet;
-        private ExtKey[] federationKeys;
-        private ExtKey extendedKey;
-        private Script redeemScript
+        public CrossChainTransferStoreTests() : base()
         {
-            get
-            {
-                return PayToMultiSigTemplate.Instance.GenerateScriptPubKey(2, this.federationKeys.Select(k => k.PrivateKey.PubKey).ToArray());
-            }
-        }
-
-        /// <summary>
-        /// Initializes the cross-chain transfer tests.
-        /// </summary>
-        public CrossChainTransferStoreTests()
-        {
-            this.network = FederatedPegNetwork.NetworksSelector.Regtest();
-            NetworkRegistration.Register(this.network);
-
-            DBreezeSerializer serializer = new DBreezeSerializer();
-            serializer.Initialize(this.network);
-
-            this.loggerFactory = Substitute.For<ILoggerFactory>();
-            this.logger = Substitute.For<ILogger>();
-            this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
-            this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
-            this.dateTimeProvider = DateTimeProvider.Default;
-            this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
-            this.blockRepository = Substitute.For<IBlockRepository>();
-            this.fullNode = Substitute.For<IFullNode>();
-            this.federationWalletManager = Substitute.For<IFederationWalletManager>();
-            this.federationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
-            this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
-            this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
-            this.nodeLifetime = new NodeLifetime();
-            this.connectionManager = Substitute.For<IConnectionManager>();
-
-            this.wallet = null;
-            this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
-            this.chain = new ConcurrentChain(this.network);
-
-            this.federationGatewaySettings.MinCoinMaturity.Returns(1);
-            this.federationGatewaySettings.TransactionFee.Returns(new Money(0.01m, MoneyUnit.BTC));
-
-            // Generate the keys used by the federation members for our tests.
-            this.federationKeys = new[]
-            {
-                "air transfer hello zebra into trick riot elevator maze boring escape wine",
-                "steel evil vivid settle render tobacco trumpet bundle track reveal olympic ski",
-                "public human shoe cram flee deer claw arch equal ghost betray canal",
-                "world joy bundle business wealth price timber salt tilt mesh achieve inmate",
-                "dawn best alone urban visa fine mouse dwarf divorce mercy crawl slab"
-            }.Select(m => HdOperations.GetExtendedKey(m)).ToArray();
-
-            SetExtendedKey(0);
-
-            this.fundingTransactions = new List<Transaction>();
-
-            this.blockDict = new Dictionary<uint256, Block>();
-            this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
-
-            this.blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
-                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
-                var blocks = new List<Block>();
-                for (int i = 0; i < hashes.Count; i++)
-                {
-                    blocks.Add(this.blockDict.TryGetValue(hashes[i], out Block block) ? block : null);
-                }
-
-                return blocks;
-            });
-        }
-
-        /// <summary>
-        /// Chooses the key we use.
-        /// </summary>
-        /// <param name="keyNum">The key number.</param>
-        private void SetExtendedKey(int keyNum)
-        {
-            this.extendedKey = this.federationKeys[keyNum];
-
-            this.federationGatewaySettings.IsMainChain.Returns(false);
-            this.federationGatewaySettings.MultiSigRedeemScript.Returns(this.redeemScript);
-            this.federationGatewaySettings.MultiSigAddress.Returns(this.redeemScript.Hash.GetAddress(this.network));
-            this.federationGatewaySettings.PublicKey.Returns(this.extendedKey.PrivateKey.PubKey.ToHex());
-            this.withdrawalExtractor = new WithdrawalExtractor(this.loggerFactory, this.federationGatewaySettings, this.opReturnDataReader, this.network);
-        }
-
-        private Transaction AddFundingTransaction(Money[] amounts)
-        {
-            Transaction transaction = this.network.CreateTransaction();
-
-            foreach (Money amount in amounts)
-            {
-                transaction.Outputs.Add(new TxOut(amount, this.wallet.MultiSigAddress.ScriptPubKey));
-            }
-
-            transaction.AddInput(new TxIn(new OutPoint(0, 0), new Script(OpcodeType.OP_1)));
-
-            this.AppendBlock(transaction);
-            this.fundingTransactions.Add(transaction);
-
-            return transaction;
-        }
-
-        private void AddFunding()
-        {
-            AddFundingTransaction(new Money[] { Money.COIN * 90, Money.COIN * 80 });
-            AddFundingTransaction(new Money[] { Money.COIN * 70 });
-        }
-
-        /// <summary>
-        /// Create the wallet manager and wallet transaction handler.
-        /// </summary>
-        /// <param name="dataFolder">The data folder.</param>
-        private void CreateWalletManagerAndTransactionHandler(DataFolder dataFolder)
-        {
-            // Create the wallet manager.
-            this.federationWalletManager = new FederationWalletManager(
-                this.loggerFactory,
-                this.network,
-                this.chain,
-                dataFolder,
-                this.walletFeePolicy,
-                this.asyncLoopFactory,
-                new NodeLifetime(),
-                this.dateTimeProvider,
-                this.federationGatewaySettings);
-
-            // Starts and creates the wallet.
-            this.federationWalletManager.Start();
-            this.wallet = this.federationWalletManager.GetWallet();
-            this.federationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
-
-            var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
-
-            this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.chain, this.network,
-                this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());
-
-            this.federationWalletSyncManager.Start();
-
-            // Set up the encrypted seed on the wallet.
-            string encryptedSeed = this.extendedKey.PrivateKey.GetEncryptedBitcoinSecret(walletPassword, this.network).ToWif();
-            this.wallet.EncryptedSeed = encryptedSeed;
-
-            this.federationWalletManager.Secret = new WalletSecret() { WalletPassword = walletPassword };
         }
 
         /// <summary>
@@ -205,11 +28,10 @@ namespace Stratis.FederatedPeg.Tests
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.Init(dataFolder);
             this.AppendBlocks(5);
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
@@ -227,11 +49,10 @@ namespace Stratis.FederatedPeg.Tests
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.Init(dataFolder);
             this.AppendBlocks(5);
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
@@ -246,11 +67,10 @@ namespace Stratis.FederatedPeg.Tests
             var newTest = new CrossChainTransferStoreTests();
 
             // Force a reorg by creating a new chain that only has genesis in common.
-            newTest.CreateWalletManagerAndTransactionHandler(dataFolder);
+            newTest.Init(dataFolder);
             newTest.AppendBlocks(3);
 
-            using (var crossChainTransferStore2 = new CrossChainTransferStore(newTest.network, dataFolder, newTest.chain, newTest.federationGatewaySettings, newTest.dateTimeProvider,
-                newTest.loggerFactory, newTest.withdrawalExtractor, newTest.fullNode, newTest.blockRepository, newTest.federationWalletManager, newTest.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore2 = newTest.CreateStore())
             {
                 crossChainTransferStore2.Initialize();
 
@@ -274,14 +94,13 @@ namespace Stratis.FederatedPeg.Tests
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.Init(dataFolder);
             this.AddFunding();
             this.AppendBlocks(5);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
@@ -355,7 +174,6 @@ namespace Stratis.FederatedPeg.Tests
             }
         }
 
-
         /// <summary>
         /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
         /// </summary>
@@ -364,14 +182,13 @@ namespace Stratis.FederatedPeg.Tests
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.Init(dataFolder);
             this.AddFunding();
             this.AppendBlocks(5);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
@@ -468,14 +285,13 @@ namespace Stratis.FederatedPeg.Tests
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.Init(dataFolder);
             this.AddFunding();
             this.AppendBlocks(5);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
@@ -504,12 +320,11 @@ namespace Stratis.FederatedPeg.Tests
 
                 newTest.federationKeys = this.federationKeys;
                 newTest.SetExtendedKey(1);
-                newTest.CreateWalletManagerAndTransactionHandler(dataFolder2);
+                newTest.Init(dataFolder2);
                 newTest.AddFunding();
                 newTest.AppendBlocks(3);
 
-                using (var crossChainTransferStore2 = new CrossChainTransferStore(newTest.network, dataFolder2, newTest.chain, newTest.federationGatewaySettings, newTest.dateTimeProvider,
-                    newTest.loggerFactory, newTest.withdrawalExtractor, newTest.fullNode, newTest.blockRepository, newTest.federationWalletManager, newTest.federationWalletTransactionHandler))
+                using (ICrossChainTransferStore crossChainTransferStore2 = newTest.CreateStore())
                 {
                     crossChainTransferStore2.Initialize();
                     crossChainTransferStore2.Start();
@@ -554,7 +369,7 @@ namespace Stratis.FederatedPeg.Tests
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.Init(dataFolder);
             this.AddFunding();
             this.AppendBlocks(3);
 
@@ -563,8 +378,7 @@ namespace Stratis.FederatedPeg.Tests
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
@@ -584,8 +398,10 @@ namespace Stratis.FederatedPeg.Tests
 
                 transfer = crossChainTransferStore.GetAsync(new uint256[] { 0 }).GetAwaiter().GetResult().SingleOrDefault();
 
-                // Check that the status reverts for a transaction that is no longer visible on the chain.
-                Assert.Equal(CrossChainTransferStatus.FullySigned, transfer.Status);
+                // Since the info from chain A has not been recovered yet we expect that
+                // that the transfer is completely removed from the DB - I.e. it has only been "seen"
+                // and had no associated deposit height.
+                Assert.Null(transfer);
 
                 // Restore the chain.
                 AppendBlock(transaction);
@@ -606,14 +422,13 @@ namespace Stratis.FederatedPeg.Tests
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
-            this.CreateWalletManagerAndTransactionHandler(dataFolder);
+            this.Init(dataFolder);
             this.AddFunding();
             this.AppendBlocks(5);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
-            using (var crossChainTransferStore = new CrossChainTransferStore(this.network, dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler))
+            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
@@ -658,125 +473,6 @@ namespace Stratis.FederatedPeg.Tests
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
             }
-        }
-
-        /// <summary>
-        /// Builds a chain with the requested number of blocks.
-        /// </summary>
-        /// <param name="blocks">The number of blocks.</param>
-        private void AppendBlocks(int blocks)
-        {
-            for (int i = 0; i < blocks; i++)
-            {
-                this.AppendBlock();
-            }
-        }
-
-        /// <summary>
-        /// Create a block and add it to the dictionary used by the mock block repository.
-        /// </summary>
-        /// <param name="transactions">Additional transactions to add to the block.</param>
-        /// <returns>The last chained header.</returns>
-        private ChainedHeader AppendBlock(params Transaction[] transactions)
-        {
-            ChainedHeader last = null;
-            uint nonce = RandomUtils.GetUInt32();
-
-            Block block = this.network.CreateBlock();
-
-            // Create coinbase.
-            block.AddTransaction(this.network.CreateTransaction());
-
-            // Add additional transactions if any.
-            foreach (Transaction transaction in transactions)
-            {
-                block.AddTransaction(transaction);
-            }
-
-            block.UpdateMerkleRoot();
-            block.Header.HashPrevBlock = this.chain.Tip.HashBlock;
-            block.Header.Nonce = nonce;
-            if (!this.chain.TrySetTip(block.Header, out last))
-                throw new InvalidOperationException("Previous not existing");
-            this.blockDict[block.GetHash()] = block;
-
-            this.federationWalletSyncManager.ProcessBlock(block);
-
-            return last;
-        }
-
-        /// <summary>
-        /// Waits for a function to return true.
-        /// </summary>
-        /// <param name="act">The function returning <c>true</c> or <c>false</c>.</param>
-        /// <param name="failureReason">The failure reason if any.</param>
-        /// <param name="retryDelayInMiliseconds">How often to retry in milliseconds.</param>
-        /// <param name="cancellationToken">Cancellation token.</param>
-        private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
-        {
-            cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
-                : cancellationToken;
-
-            while (!act())
-            {
-                try
-                {
-                    cancellationToken.ThrowIfCancellationRequested();
-                    Thread.Sleep(retryDelayInMiliseconds);
-                }
-                catch (OperationCanceledException e)
-                {
-                    Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
-                }
-            }
-        }
-
-        /// <summary>
-        /// Creates a directory for a test, based on the name of the class containing the test and the name of the test.
-        /// </summary>
-        /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>
-        /// <param name="callingMethod">The name of the test being executed. A directory with the same name will be created.</param>
-        /// <returns>The path of the directory that was created.</returns>
-        public static string CreateTestDir(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
-        {
-            string directoryPath = GetTestDirectoryPath(caller, callingMethod);
-            return AssureEmptyDir(directoryPath);
-        }
-
-        /// <summary>
-        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> or <see cref="CreateDataFolder(object, string)"/> would create.
-        /// </summary>
-        /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
-        /// <param name="caller">The calling object, from which we derive the namespace in which the test is contained.</param>
-        /// <param name="callingMethod">The name of the test being executed. A directory with the same name will be created.</param>
-        /// <returns>The path of the directory.</returns>
-        public static string GetTestDirectoryPath(object caller, [System.Runtime.CompilerServices.CallerMemberName] string callingMethod = "")
-        {
-            return GetTestDirectoryPath(Path.Combine(caller.GetType().Name, callingMethod));
-        }
-
-        /// <summary>
-        /// Gets the path of the directory that <see cref="CreateTestDir(object, string)"/> would create.
-        /// </summary>
-        /// <remarks>The path of the directory is of the form TestCase/{testClass}/{testName}.</remarks>
-        /// <param name="testDirectory">The directory in which the test files are contained.</param>
-        /// <returns>The path of the directory.</returns>
-        public static string GetTestDirectoryPath(string testDirectory)
-        {
-            return Path.Combine("..", "..", "..", "..", "TestCase", testDirectory);
-        }
-
-        /// <summary>
-        /// Creates a new folder that will be empty.
-        /// </summary>
-        /// <param name="dir">The first part of the folder name.</param>
-        /// <returns>A folder name with the current time concatenated.</returns>
-        public static string AssureEmptyDir(string dir)
-        {
-            string uniqueDirName = $"{dir}-{DateTime.UtcNow:ddMMyyyyTHH.mm.ss.fff}";
-            Directory.CreateDirectory(uniqueDirName);
-            return uniqueDirName;
         }
     }
 }

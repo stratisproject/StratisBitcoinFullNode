@@ -10,5 +10,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         uint256 Hash { get; }
 
         int Height { get; }
+
+        int MatureConfirmations { get; }
     }
 }

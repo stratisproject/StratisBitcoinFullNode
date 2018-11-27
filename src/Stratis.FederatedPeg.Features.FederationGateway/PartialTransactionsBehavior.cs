@@ -89,7 +89,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
             {
-                await this.AttachedPeer.SendMessageAsync(payload);
+                await this.AttachedPeer.SendMessageAsync(payload).ConfigureAwait(false);
             }
 
             this.logger.LogTrace("(-)");
@@ -123,7 +123,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             uint256 oldHash = payload.PartialTransaction.GetHash();
 
-            payload.AddPartial(await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }));
+            payload.AddPartial(await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }).ConfigureAwait(false));
 
             if (payload.PartialTransaction.GetHash() == oldHash)
             {

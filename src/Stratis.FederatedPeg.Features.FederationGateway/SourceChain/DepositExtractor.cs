@@ -93,13 +93,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
         private ChainedHeader GetNewlyMaturedBlock(ChainedHeader chainedHeader)
         {
-            var newMaturedHeight = chainedHeader.Height - (int)this.MinimumDepositConfirmations;
+            if ((this.chain.Tip.Height - chainedHeader.Height) < this.MinimumDepositConfirmations)
+                return null;
 
-            if (newMaturedHeight < 0) return null;
-
-            ChainedHeader newMaturedBlock = this.chain.GetBlock(newMaturedHeight);
-
-            return newMaturedBlock;
+            return this.chain.GetBlock(chainedHeader.Height);
         }
     }
 }

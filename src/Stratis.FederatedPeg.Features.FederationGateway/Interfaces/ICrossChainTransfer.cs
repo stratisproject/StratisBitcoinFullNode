@@ -10,8 +10,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         Suspended = 'U',
         Partial = 'P',
         FullySigned = 'F',
-        SeenInBlock = 'S',
-        Rejected = 'R'
+        SeenInBlock = 'S'
     }
 
     public interface ICrossChainTransfer : IBitcoinSerializable
@@ -32,6 +31,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         long DepositAmount { get; }
 
         /// <summary>
+        /// The chain A deposit height of the transaction. Is null if only seen in a block.
+        /// </summary>
+        int? DepositHeight { get; }
+
+        /// <summary>
         /// The unsigned partial transaction containing a full set of available UTXO's.
         /// </summary>
         Transaction PartialTransaction { get; }
@@ -44,7 +48,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <summary>
         /// The height of the block where the transaction resides on our chain.
         /// </summary>
-        int BlockHeight { get; }
+        int? BlockHeight { get; }
 
         CrossChainTransferStatus Status { get; }
 
@@ -60,7 +64,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="status">The new status.</param>
         /// <param name="blockHash">The block hash of the partialTranction.</param>
         /// <param name="blockHeight">The block height of the partialTransaction.</param>
-        void SetStatus(CrossChainTransferStatus status, uint256 blockHash = null, int blockHeight = 0);
+        void SetStatus(CrossChainTransferStatus status, uint256 blockHash = null, int? blockHeight = null);
 
         /// <summary>
         /// Combines signatures from partial transactions received from other federation members.

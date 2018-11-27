@@ -60,9 +60,9 @@ namespace Stratis.FederatedPeg.Tests.Utils
             return new Deposit(depositId, depositAmount, targetAddress, hashHeightPair.Height, hashHeightPair.Hash);
         }
 
-        public static IMaturedBlockDeposits GetMaturedBlockDeposits(int depositCount = 0)
+        public static IMaturedBlockDeposits GetMaturedBlockDeposits(int depositCount = 0, HashHeightPair fixedHashHeight = null)
         {
-            var hashHeightPair = GetHashHeightPair();
+            var hashHeightPair = fixedHashHeight ?? GetHashHeightPair();
             var deposits = Enumerable.Range(0, depositCount).Select(_ => GetDeposit(hashHeightPair));
 
             var maturedBlockDeposits = new MaturedBlockDepositsModel(

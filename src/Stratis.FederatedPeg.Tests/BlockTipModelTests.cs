@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using FluentAssertions;
+﻿using FluentAssertions;
 using Newtonsoft.Json;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
@@ -16,8 +13,9 @@ namespace Stratis.FederatedPeg.Tests
         {
             var blockHash = TestingValues.GetUint256();
             var blockHeight = TestingValues.GetPositiveInt();
+            var matureConfirmation = TestingValues.GetPositiveInt();
 
-            var blockTip = new BlockTipModel(blockHash, blockHeight);
+            var blockTip = new BlockTipModel(blockHash, blockHeight, matureConfirmation);
             return blockTip;
         }
 
@@ -31,6 +29,7 @@ namespace Stratis.FederatedPeg.Tests
 
             reconverted.Hash.Should().Be(blockTip.Hash);
             reconverted.Height.Should().Be(blockTip.Height);
+            reconverted.MatureConfirmations.Should().Be(blockTip.MatureConfirmations);
         }
     }
 }

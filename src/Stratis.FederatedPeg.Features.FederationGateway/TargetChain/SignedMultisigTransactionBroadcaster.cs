@@ -38,7 +38,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.mempoolManager = mempoolManager;
             this.broadcasterManager = broadcasterManager;
 
-            this.leaderReceiverSubscription = leaderReceiver.LeaderProvidersStream.Subscribe(async m => await BroadcastTransactionsAsync(m));
+            this.leaderReceiverSubscription = leaderReceiver.LeaderProvidersStream.Subscribe(async m => await BroadcastTransactionsAsync(m).ConfigureAwait(false));
             this.logger.LogDebug("Subscribed to {0}", nameof(leaderReceiver), nameof(leaderReceiver.LeaderProvidersStream));
         }
 

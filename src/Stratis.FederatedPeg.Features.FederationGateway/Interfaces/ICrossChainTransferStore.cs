@@ -22,6 +22,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         void Start();
 
         /// <summary>
+        /// For optimization purposes the current tip is not saved after receiving an empty block.
+        /// This needs to be called to ensure the tip is persisted.
+        /// </summary>
+        Task SaveCurrentTipAsync();
+
+        /// <summary>
         /// Records the mature deposits from <see cref="NextMatureDepositHeight"/> on the counter-chain.
         /// The value of <see cref="NextMatureDepositHeight"/> is incremented at the end of this call.
         /// </summary>
@@ -60,6 +66,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="depositIds">The deposit transaction ids.</param>
         /// <returns>The cross-chain transfer information.</returns>
         Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds);
+
+        /// <summary>
+        /// Determines if the store contains suspended transactions.
+        /// </summary>
+        /// <returns><c>True</c> if the store contains suspended transaction and <c>false</c> otherwise.</returns>
+        bool HasSuspended();
 
         /// <summary>
         /// The tip of our chain when we last updated the store.
