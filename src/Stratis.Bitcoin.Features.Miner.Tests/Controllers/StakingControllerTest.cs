@@ -1,10 +1,10 @@
 ﻿using System;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Logging;
 using Moq;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.Miner.Controllers;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Models;
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
                 .Returns(this.walletManager.Object);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(new ConnectionManagerSettings(NodeSettings.Default(this.Network)), KnownNetworks.Main, new MinerSettings(NodeSettings.Default(this.Network)), NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
             IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
@@ -195,11 +195,11 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
             this.fullNode.Setup(f => f.NodeService<IWalletManager>(false))
                 .Returns(this.walletManager.Object);
-            
+
             this.timeSyncBehaviorState.Setup(ts => ts.IsSystemTimeOutOfSync).Returns(true);
 
             this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                .Returns(new MiningFeature(new ConnectionManagerSettings(NodeSettings.Default(this.Network)), KnownNetworks.Main, new MinerSettings(NodeSettings.Default(this.Network)), NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
             IActionResult result = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
 
             this.posMinting.Verify(pm => pm.Stake(It.IsAny<WalletSecret>()), Times.Never);
         }
-        
+
         [Fact]
         public void StopStaking_Returns_Ok()
         {
@@ -226,7 +226,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests.Controllers
                     .Returns(this.walletManager.Object);
 
                 this.fullNode.Setup(f => f.NodeFeature<MiningFeature>(true))
-                    .Returns(new MiningFeature(KnownNetworks.Main, new MinerSettings(Configuration.NodeSettings.Default(this.Network)), Configuration.NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
+                    .Returns(new MiningFeature(new ConnectionManagerSettings(NodeSettings.Default(this.Network)), KnownNetworks.Main, new MinerSettings(NodeSettings.Default(this.Network)), NodeSettings.Default(this.Network), this.LoggerFactory.Object, this.timeSyncBehaviorState.Object, null, this.posMinting.Object));
 
                 IActionResult startStakingResult = this.controller.StartStaking(new StartStakingRequest() { Name = "myWallet", Password = "password1" });
 
