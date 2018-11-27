@@ -41,6 +41,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task InitializeAsync(IConsensus consensusParameters, ChainedHeader tip, ICoinView coinView)
         {
+            // A temporary hack until tip manage will be introduced.
+            var breezeCoinView = (DBreezeCoinView)((CachedCoinView)coinView).Inner;
+            uint256 hash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            tip = tip.FindAncestorOrSelf(hash);
+
             this.numberOfBlocksToKeep = (int)consensusParameters.MaxReorgLength;
 
             int heightToSyncTo = tip.Height > this.numberOfBlocksToKeep ? tip.Height - this.numberOfBlocksToKeep : 0;
@@ -56,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 if (rewindData.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0)
                 {
-                   continue;
+                    continue;
                 }
 
                 foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)

@@ -5,8 +5,6 @@ using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
-using ICSharpCode.Decompiler;
-using ICSharpCode.Decompiler.CSharp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Mono.Cecil;
@@ -26,6 +24,7 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Decompilation;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
@@ -43,6 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IBroadcasterManager broadcasterManager;
         private readonly IBlockStore blockStore;
         private readonly ConcurrentChain chain;
+        private readonly CSharpContractDecompiler contractDecompiler;
         private readonly ILogger logger;
         private readonly Network network;
         private readonly IStateRepositoryRoot stateRoot;
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
             ConcurrentChain chain,
-            IConsensusManager consensus,
+            CSharpContractDecompiler contractDecompiler,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -67,6 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ISmartContractTransactionService smartContractTransactionService)
         {
             this.stateRoot = stateRoot;
+            this.contractDecompiler = contractDecompiler;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.chain = chain;
@@ -94,20 +95,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 });
             }
 
-            using (var memStream = new MemoryStream(contractCode))
+            Result<string> sourceResult = this.contractDecompiler.GetSource(contractCode);
+
+            return Json(new GetCodeResponse
             {
-                var modDefinition = ModuleDefinition.ReadModule(memStream);
-                var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
-                // TODO: Update decompiler to display all code, not just this rando FirstOrDefault (given we now allow multiple types)
-                string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
-                
-                return Json(new GetCodeResponse
-                {
-                    Message = string.Format("Contract execution code retrieved at {0}", address),
-                    Bytecode = contractCode.ToHexString(),
-                    CSharp = cSharp
-                });
-            }
+                Message = string.Format("Contract execution code retrieved at {0}", address),
+                Bytecode = contractCode.ToHexString(),
+                CSharp = sourceResult.IsSuccess ? sourceResult.Value : sourceResult.Error // Show the source, or the reason why the source couldn't be retrieved.
+            });
         }
 
         [Route("balance")]
@@ -116,7 +111,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             uint160 addressNumeric = address.ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
-            
+
             return Json(balance);
         }
 
@@ -185,25 +180,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Loop through all headers and check bloom.
             IEnumerable<ChainedHeader> blockHeaders = this.chain.EnumerateToTip(this.chain.Genesis);
             List<ChainedHeader> matches = new List<ChainedHeader>();
-            foreach(ChainedHeader chainedHeader in blockHeaders)
+            foreach (ChainedHeader chainedHeader in blockHeaders)
             {
-                var scHeader = (ISmartContractBlockHeader) chainedHeader.Header;
+                var scHeader = (ISmartContractBlockHeader)chainedHeader.Header;
                 if (scHeader.LogsBloom.Test(addressBytes) && scHeader.LogsBloom.Test(eventBytes)) // TODO: This is really inefficient, should build bloom for query and then compare.
                     matches.Add(chainedHeader);
             }
 
             // For all matching headers, get the block from local db.
             List<NBitcoin.Block> blocks = new List<NBitcoin.Block>();
-            foreach(ChainedHeader chainedHeader in matches)
+            foreach (ChainedHeader chainedHeader in matches)
             {
                 blocks.Add(await this.blockStore.GetBlockAsync(chainedHeader.HashBlock).ConfigureAwait(false));
             }
 
             // For each block, get all receipts, and if they match, add to list to return.
             List<ReceiptResponse> receiptResponses = new List<ReceiptResponse>();
-            foreach(NBitcoin.Block block in blocks)
+            foreach (NBitcoin.Block block in blocks)
             {
-                foreach(Transaction transaction in block.Transactions)
+                foreach (Transaction transaction in block.Transactions)
                 {
                     Receipt storedReceipt = this.receiptRepository.Retrieve(transaction.GetHash());
                     if (storedReceipt == null) // not a smart contract transaction. Move to next transaction.
@@ -216,7 +211,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             return Json(receiptResponses);
-        } 
+        }
 
         [Route("build-create")]
         [HttpPost]
@@ -289,15 +284,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
-            
+
             var transactionContext = new ContractTransactionContext(
-                (ulong) this.chain.Height,
+                (ulong)this.chain.Height,
                 uint160.Zero,
                 0, // Safe to set this to 0 here, it's only used for the refund which we do not create when executing locally
                 request.Sender.ToUint160(this.network),
                 transaction);
 
-            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);           
+            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);
 
             return Json(result);
         }
@@ -343,7 +338,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     Sum = grouping.Sum(x => x.Transaction.SpendableAmount(false))
                 });
             }
-            
+
             return Json(result);
         }
 

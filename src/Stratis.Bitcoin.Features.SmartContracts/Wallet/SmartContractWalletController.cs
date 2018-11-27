@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 // Wallet manager returns only 1 when an account name is specified.
                 AccountHistory accountHistory = accountsHistory.First();
 
-                List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Where(x=>x.Address.Address == address).ToList();
+                List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).Where(x => x.Address.Address == address).ToList();
 
                 // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                 // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                         Amount = transaction.Amount.ToUnit(MoneyUnit.Satoshi),
                         BlockHeight = transaction.BlockHeight,
                         Hash = transaction.Id,
-                        Type = ContractTransactionItemType.Received,
+                        Type = ReceivedTransactionType(transaction),
                         To = address
                     });
 
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     }
                 }
 
-                return this.Json(transactionItems.OrderByDescending(x=>x.BlockHeight));
+                return this.Json(transactionItems.OrderByDescending(x => x.BlockHeight));
             }
             catch (Exception e)
             {
@@ -299,6 +299,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
+        }
+
+        public static ContractTransactionItemType ReceivedTransactionType(TransactionData transaction)
+        {
+            bool isCoinBase = transaction.IsCoinBase.HasValue && transaction.IsCoinBase.Value;
+
+            bool isMiningReward = isCoinBase && transaction.Index == 0;
+
+            bool isGasRefund = isCoinBase && transaction.Index != 0;
+
+            if (isGasRefund)
+                return ContractTransactionItemType.GasRefund;
+
+            if (isMiningReward)
+                return ContractTransactionItemType.Staked;
+
+            return ContractTransactionItemType.Received;
         }
 
         /// <summary>

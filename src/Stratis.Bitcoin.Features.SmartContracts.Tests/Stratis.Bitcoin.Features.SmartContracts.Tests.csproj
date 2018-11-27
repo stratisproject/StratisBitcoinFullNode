@@ -14,7 +14,7 @@
     <GenerateAssemblyCopyrightAttribute>false</GenerateAssemblyCopyrightAttribute>
     <GenerateAssemblyVersionAttribute>false</GenerateAssemblyVersionAttribute>
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
-	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
@@ -23,7 +23,7 @@
       <PrivateAssets>all</PrivateAssets>
       <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
     </PackageReference>
-    <PackageReference Include="Mono.Cecil" Version="0.10.0-beta7" />
+    <PackageReference Include="Mono.Cecil" Version="0.10.1" />
     <PackageReference Include="NetJSON" Version="1.2.2" />
   </ItemGroup>
 
@@ -45,12 +45,6 @@
     <Compile Update="SmartContracts\ArrayInitialization.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
-    <Compile Update="SmartContracts\AsyncGenericTask.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
-    <Compile Update="SmartContracts\AsyncTask.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
     <Compile Update="SmartContracts\ByteArrayConversion.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
@@ -62,6 +56,9 @@
     </Compile>
     <Compile Update="SmartContracts\ContractConstructorInvalid.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\ContractCreation.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\ContractMethodParameterTypeMismatch.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
@@ -84,9 +81,6 @@
     <Compile Update="SmartContracts\InvalidParam.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
-    <Compile Update="SmartContracts\AsyncVoid.cs">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Compile>
     <Compile Update="SmartContracts\MemoryLimit.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
@@ -98,7 +92,7 @@
     </Compile>
     <Compile Update="SmartContracts\MultipleFiles2.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-    </Compile>	
+    </Compile>
     <Compile Update="SmartContracts\OutOfGasTest.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>

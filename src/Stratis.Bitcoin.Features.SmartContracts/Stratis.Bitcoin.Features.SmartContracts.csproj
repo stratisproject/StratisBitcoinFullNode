@@ -2,12 +2,11 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
-    <PackageReference Include="ICSharpCode.Decompiler" Version="3.0.2.3465" />
   </ItemGroup>
 
   <ItemGroup>
