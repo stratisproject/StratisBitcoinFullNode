@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.Executor.Reflection;
+﻿using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Test;
