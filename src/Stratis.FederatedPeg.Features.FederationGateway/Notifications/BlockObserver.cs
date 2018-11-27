@@ -34,6 +34,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <param name="walletSyncManager">The wallet sync manager to pass new incoming blocks to.</param>
         /// <param name="crossChainTransactionMonitor">The cross-chain transaction monitor to pass new incoming blocks to.</param>
         /// <param name="depositExtractor">The component used to extract the deposits from the blocks appearing on chain.</param>
+        /// <param name="withdrawalExtractor">The component used to extract withdrawals from blocks.</param>
+        /// <param name="withdrawalReceiver">The component that receives the withdrawals extracted from blocks.</param>
         /// <param name="maturedBlockSender">Service responsible for publishing newly matured blocks.</param>
         /// <param name="blockTipSender">Service responsible for publishing the block tip.</param>
         public BlockObserver(IFederationWalletSyncManager walletSyncManager,
@@ -67,15 +69,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             this.walletSyncManager.ProcessBlock(chainedHeaderBlock.Block);
 
             this.blockTipSender.SendBlockTipAsync(
-                new BlockTipModel(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock.ChainedHeader.Height));
+                new BlockTipModel(
+                    chainedHeaderBlock.ChainedHeader.HashBlock,
+                    chainedHeaderBlock.ChainedHeader.Height,
+                    (int)this.depositExtractor.MinimumDepositConfirmations));
 
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
                 chainedHeaderBlock.Block,
                 chainedHeaderBlock.ChainedHeader.Height);
 
             this.withdrawalReceiver.ReceiveWithdrawals(withdrawals);
-            
-            IMaturedBlockDeposits maturedBlockDeposits = 
+
+            IMaturedBlockDeposits maturedBlockDeposits =
                 this.depositExtractor.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
 
             if (maturedBlockDeposits == null) return;

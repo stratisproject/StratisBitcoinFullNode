@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -10,8 +11,10 @@ using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Tests.Utils;
 using Xunit;
 using FluentAssertions;
-using Stratis.Sidechains.Networks;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
+using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -25,11 +28,13 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly IMaturedBlockReceiver maturedBlockReceiver;
 
+        private readonly IMaturedBlocksProvider maturedBlocksProvider;
+
+        private readonly IMaturedBlocksRequester maturedBlocksRequester;
+
         private readonly ILeaderProvider leaderProvider;
 
         private ConcurrentChain chain;
-
-        private readonly IMaturedBlockSender maturedBlockSender;
 
         private readonly IDepositExtractor depositExtractor;
 
@@ -43,33 +48,56 @@ namespace Stratis.FederatedPeg.Tests
             this.logger = Substitute.For<ILogger>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
             this.maturedBlockReceiver = Substitute.For<IMaturedBlockReceiver>();
+            this.maturedBlocksRequester = Substitute.For<IMaturedBlocksRequester>();
+            this.maturedBlocksProvider = Substitute.For<IMaturedBlocksProvider>();
             this.leaderProvider = Substitute.For<ILeaderProvider>();
-            this.maturedBlockSender = Substitute.For<IMaturedBlockSender>();
             this.depositExtractor = Substitute.For<IDepositExtractor>();
             this.leaderReceiver = Substitute.For<ILeaderReceiver>();
         }
 
-        [Fact]
-        public void ResyncMaturedBlockDeposits_Fails_When_Block_Not_In_Chain()
+        private MaturedBlocksProvider GetMaturedBlocksProvider()
         {
-            this.chain = this.BuildChain(2);
+            IBlockRepository blockRepository = Substitute.For<IBlockRepository>();
+
+            blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
+            {
+                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                var blocks = new List<Block>();
+
+                foreach (uint256 hash in hashes)
+                {
+                    blocks.Add(this.network.CreateBlock());
+                }
+
+                return blocks;
+            });
+
+            return new MaturedBlocksProvider(
+                this.loggerFactory,
+                this.chain,
+                this.depositExtractor,
+                blockRepository);
+        }
+
+        [Fact]
+        public async void GetMaturedBlockDeposits_Fails_When_Block_Not_In_Chain_Async()
+        {
+            this.chain = Substitute.For<ConcurrentChain>();
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.maturedBlockReceiver,
+                this.maturedBlocksRequester,
                 this.leaderProvider,
                 this.chain,
-                this.maturedBlockSender,
+                this.GetMaturedBlocksProvider(),
                 this.depositExtractor,
                 this.leaderReceiver);
 
-            MaturedBlockModel model = new MaturedBlockModel()
-            {
-                BlockHash = TestingValues.GetUint256(),
-                BlockHeight = TestingValues.GetPositiveInt()
-            };
+            ChainedHeader chainedHeader = this.BuildChain(3).GetBlock(2);
+            this.chain.Tip.Returns(chainedHeader);
 
-            IActionResult result = controller.ResyncMaturedBlockDeposits(model);
+            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(1)).ConfigureAwait(false);
 
             result.Should().BeOfType<ErrorResult>();
 
@@ -88,7 +116,7 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public void ResyncMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations()
+        public async void GetMaturedBlockDeposits_Fails_When_Block_Height_Greater_Than_Minimum_Deposit_Confirmations_Async()
         {
             // Chain header height : 4
             // 0 - 1 - 2 - 3 - 4
@@ -97,27 +125,24 @@ namespace Stratis.FederatedPeg.Tests
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.maturedBlockReceiver,
+                this.maturedBlocksRequester,
                 this.leaderProvider,
                 this.chain,
-                this.maturedBlockSender,
+                this.GetMaturedBlocksProvider(),
                 this.depositExtractor,
                 this.leaderReceiver);
-
-            // Back online at block height : 3
-            // 0 - 1 - 2 - 3
-            ChainedHeader earlierBlock = this.chain.GetBlock(3);
-
-            var model = new MaturedBlockModel()
-            {
-                BlockHash = earlierBlock.HashBlock,
-                BlockHeight = earlierBlock.Height
-            };
 
             // Minimum deposit confirmations : 2
             this.depositExtractor.MinimumDepositConfirmations.Returns((uint)2);
 
+            int maturedHeight = (int)(this.chain.Tip.Height - this.depositExtractor.MinimumDepositConfirmations);
+
+            // Back online at block height : 3
+            // 0 - 1 - 2 - 3
+            ChainedHeader earlierBlock = this.chain.GetBlock(maturedHeight + 1);
+
             // Mature height = 2 (Chain header height (4) - Minimum deposit confirmations (2))
-            IActionResult result = controller.ResyncMaturedBlockDeposits(model);
+            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height)).ConfigureAwait(false);
 
             // Block height (3) > Mature height (2) - returns error message
             result.Should().BeOfType<ErrorResult>();
@@ -133,54 +158,43 @@ namespace Stratis.FederatedPeg.Tests
                 e => e.Status == (int)HttpStatusCode.BadRequest);
 
             errorResponse.Errors.Should().Contain(
-                e => e.Message == "Block height 3 submitted is not mature enough. Blocks less than a height of 2 can be processed.");
+                e => e.Message.Contains($"Block height {earlierBlock.Height} submitted is not mature enough. Blocks less than a height of {maturedHeight} can be processed."));
         }
 
         [Fact]
-        public void ResyncMaturedBlockDeposits_Syncs_And_Sends_All_Block_Deposits()
+        public async void GetMaturedBlockDeposits_Gets_All_Matured_Block_Deposits_Async()
         {
             this.chain = this.BuildChain(10);
 
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.maturedBlockReceiver,
+                this.maturedBlocksRequester,
                 this.leaderProvider,
                 this.chain,
-                this.maturedBlockSender,
+                GetMaturedBlocksProvider(),
                 this.depositExtractor,
                 this.leaderReceiver);
 
             ChainedHeader earlierBlock = this.chain.GetBlock(2);
 
-            var model = new MaturedBlockModel()
-            {
-                BlockHash = earlierBlock.HashBlock,
-                BlockHeight = earlierBlock.Height
-            };
-
             var minConfirmations = 2;
             this.depositExtractor.MinimumDepositConfirmations.Returns((uint)minConfirmations);
 
             var depositExtractorCallCount = 0;
+            this.depositExtractor.ExtractMaturedBlockDeposits(Arg.Any<ChainedHeader>()).Returns(new MaturedBlockDepositsModel(null, null));
             this.depositExtractor.When(x => x.ExtractMaturedBlockDeposits(Arg.Any<ChainedHeader>())).Do(info =>
             {
                 depositExtractorCallCount++;
             });
 
-            var maturedBlockSenderCallCount = 0;
-            this.depositExtractor.When(x => x.ExtractMaturedBlockDeposits(Arg.Any<ChainedHeader>())).Do(info =>
-            {
-                maturedBlockSenderCallCount++;
-            });
+            IActionResult result = await controller.GetMaturedBlockDepositsAsync(new MaturedBlockRequestModel(earlierBlock.Height)).ConfigureAwait(false);
 
-            IActionResult result = controller.ResyncMaturedBlockDeposits(model);
-
-            result.Should().BeOfType<OkResult>();
+            result.Should().BeOfType<JsonResult>();
 
             var expectedCallCount = (this.chain.Height - minConfirmations) - earlierBlock.Height;
 
             depositExtractorCallCount.Should().Be(expectedCallCount);
-            maturedBlockSenderCallCount.Should().Be(expectedCallCount);
         }
 
         [Fact]
@@ -189,17 +203,14 @@ namespace Stratis.FederatedPeg.Tests
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.maturedBlockReceiver,
+                this.maturedBlocksRequester,
                 this.leaderProvider,
                 this.chain,
-                this.maturedBlockSender,
+                GetMaturedBlocksProvider(),
                 this.depositExtractor,
                 this.leaderReceiver);
 
-            var model = new BlockTipModelRequest()
-            {
-                Hash = TestingValues.GetUint256().ToString(),
-                Height = TestingValues.GetPositiveInt()
-            };
+            var model = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
 
             var leaderProviderCallCount = 0;
             this.leaderProvider.When(x => x.Update(Arg.Any<BlockTipModel>())).Do(info =>

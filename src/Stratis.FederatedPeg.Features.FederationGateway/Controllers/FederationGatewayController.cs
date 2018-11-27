@@ -7,6 +7,7 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -17,9 +18,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
     public static class FederationGatewayRouteEndPoint
     {
-        public const string ReceiveMaturedBlock = "receive-matured-block";
+        public const string ReceiveMaturedBlocks = "receive-matured-blocks";
         public const string ReceiveCurrentBlockTip = "receive-current-block-tip";
-        public const string ReSyncMaturedBlockDeposits = "resync_matured_block_depoits";
+        public const string GetMaturedBlockDeposits = "get_matured_block_deposits";
         public const string CreateSessionOnCounterChain = "create-session-oncounterchain";
         public const string ProcessSessionOnCounterChain = "process-session-oncounterchain";
     }
@@ -39,7 +40,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         private readonly ConcurrentChain chain;
 
-        private readonly IMaturedBlockSender maturedBlockSender;
+        private readonly IMaturedBlocksProvider maturedBlocksProvider;
+
+        private readonly IMaturedBlocksRequester maturedBlocksRequester;
 
         private readonly IDepositExtractor depositExtractor;
 
@@ -48,24 +51,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
             IMaturedBlockReceiver maturedBlockReceiver,
+            IMaturedBlocksRequester maturedBlocksRequester,
             ILeaderProvider leaderProvider,
             ConcurrentChain chain,
-            IMaturedBlockSender maturedBlockSender,
+            IMaturedBlocksProvider maturedBlocksProvider,
             IDepositExtractor depositExtractor,
             ILeaderReceiver leaderReceiver)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.maturedBlockReceiver = maturedBlockReceiver;
+            this.maturedBlocksRequester = maturedBlocksRequester;
             this.leaderProvider = leaderProvider;
             this.chain = chain;
-            this.maturedBlockSender = maturedBlockSender;
+            this.maturedBlocksProvider = maturedBlocksProvider;
             this.depositExtractor = depositExtractor;
             this.leaderReceiver = leaderReceiver;
         }
 
-        [Route(FederationGatewayRouteEndPoint.ReceiveMaturedBlock)]
+        [Route(FederationGatewayRouteEndPoint.ReceiveMaturedBlocks)]
         [HttpPost]
-        public void ReceiveMaturedBlock([FromBody] MaturedBlockDepositsModel maturedBlockDeposits)
+        public void ReceiveMaturedBlock([FromBody] MaturedBlockDepositsModel[] maturedBlockDeposits)
         {
             this.maturedBlockReceiver.ReceiveMaturedBlockDeposits(maturedBlockDeposits);
         }
@@ -73,11 +78,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// <summary>
         /// Receives the current block tip to be used for updating the federated leader in a round robin fashion.
         /// </summary>
-        /// <param name="blockTip"><see cref="BlockTipModelRequest"/>Block tip Hash and Height received.</param>
+        /// <param name="blockTip"><see cref="BlockTipModel"/>Block tip Hash and Height received.</param>
         /// <returns><see cref="IActionResult"/>OK on success.</returns>
         [Route(FederationGatewayRouteEndPoint.ReceiveCurrentBlockTip)]
         [HttpPost]
-        public IActionResult ReceiveCurrentBlockTip([FromBody] BlockTipModelRequest blockTip)
+        public IActionResult ReceiveCurrentBlockTip([FromBody] BlockTipModel blockTip)
         {
             Guard.NotNull(blockTip, nameof(blockTip));
 
@@ -88,7 +93,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                this.leaderProvider.Update(new BlockTipModel(uint256.Parse(blockTip.Hash), blockTip.Height));
+                this.leaderProvider.Update(new BlockTipModel(blockTip.Hash, blockTip.Height, blockTip.MatureConfirmations));
 
                 this.leaderReceiver.ReceiveLeader(this.leaderProvider);
 
@@ -102,15 +107,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         }
 
         /// <summary>
-        /// Trigger a sync of missing matured blocks deposits.
+        /// Retrieves blocks deposits.
         /// </summary>
-        /// <param name="blockHashHeight">Last known Block tip Hash and Height.</param>
+        /// <param name="blockRequest">Last known block height and the maximum number of blocks to send.</param>
         /// <returns><see cref="IActionResult"/>OK on success.</returns>
-        [Route(FederationGatewayRouteEndPoint.ReSyncMaturedBlockDeposits)]
+        [Route(FederationGatewayRouteEndPoint.GetMaturedBlockDeposits)]
         [HttpPost]
-        public IActionResult ResyncMaturedBlockDeposits([FromBody] MaturedBlockModel blockHashHeight)
+        public async Task<IActionResult> GetMaturedBlockDepositsAsync([FromBody] MaturedBlockRequestModel blockRequest)
         {
-            Guard.NotNull(blockHashHeight, nameof(blockHashHeight));
+            Guard.NotNull(blockRequest, nameof(blockRequest));
 
             if (!this.ModelState.IsValid)
             {
@@ -120,41 +125,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                ChainedHeader chainedHeader = this.chain.GetBlock(blockHashHeight.BlockHash);
+                List<IMaturedBlockDeposits> deposits = await this.maturedBlocksProvider.GetMaturedDepositsAsync(
+                    blockRequest.BlockHeight, blockRequest.MaxBlocksToSend).ConfigureAwait(false);
 
-                if (chainedHeader == null)
-                {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Block with hash {blockHashHeight.BlockHash} was not found on the block chain.", string.Empty);
-                }
-
-                int currentHeight = chainedHeader.Height;
-                int matureHeight = (this.chain.Tip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
-
-                if (currentHeight > matureHeight)
-                {
-                    return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
-                        $"Block height {blockHashHeight.BlockHeight} submitted is not mature enough. Blocks less than a height of {matureHeight} can be processed.", string.Empty);
-                }
-
-                while (currentHeight < matureHeight)
-                {
-                    IMaturedBlockDeposits maturedBlockDeposits =
-                        this.depositExtractor.ExtractMaturedBlockDeposits(chainedHeader);
-
-                    if (maturedBlockDeposits == null) continue;
-
-                    this.maturedBlockSender.SendMaturedBlockDepositsAsync(maturedBlockDeposits).ConfigureAwait(false);
-
-                    currentHeight++;
-
-                    chainedHeader = this.chain.GetBlock(currentHeight);
-                }
-
-                return this.Ok();
+                return this.Json(deposits);
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception thrown calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.ReSyncMaturedBlockDeposits, e.Message);
+                this.logger.LogError("Exception thrown calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, e.Message);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not re-sync matured block deposits: {e.Message}", e.ToString());
             }
         }

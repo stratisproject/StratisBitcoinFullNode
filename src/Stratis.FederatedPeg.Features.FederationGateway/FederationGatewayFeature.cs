@@ -45,6 +45,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IMaturedBlockSender maturedBlockSender;
 
+        private readonly IMaturedBlocksRequester maturedBlockRequester;
+
+        private readonly IMaturedBlocksProvider maturedBlocksProvider;
+
         private readonly IBlockTipSender blockTipSender;
 
         private readonly Signals signals;
@@ -85,6 +89,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             ILoggerFactory loggerFactory,
             IMaturedBlockReceiver maturedBlockReceiver,
             IMaturedBlockSender maturedBlockSender,
+            IMaturedBlocksRequester maturedBlocksRequester,
+            IMaturedBlocksProvider maturedBlocksProvider,
             IBlockTipSender blockTipSender,
             Signals signals,
             IDepositExtractor depositExtractor,
@@ -105,6 +111,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.loggerFactory = loggerFactory;
             this.maturedBlockReceiver = maturedBlockReceiver;
             this.maturedBlockSender = maturedBlockSender;
+            this.maturedBlockRequester = maturedBlocksRequester;
+            this.maturedBlocksProvider = maturedBlocksProvider;
             this.blockTipSender = blockTipSender;
             this.signals = signals;
             this.depositExtractor = depositExtractor;
@@ -149,6 +157,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.walletSyncManager.Start();
             this.crossChainTransferStore.Start();
             this.partialTransactionRequester.Start();
+            this.maturedBlockRequester.Start();
 
             // Connect the node to the other federation members.
             foreach (var federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
@@ -176,9 +185,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
             var federationWallet = this.federationWalletManager.GetWallet();
-            benchLogs.AppendLine("Federation Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+            benchLogs.AppendLine("Fed. Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                  (federationWallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                 (federationWallet != null ? (" Federation Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : String.Empty));
+                                 (federationWallet != null ? (" Fed. Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : String.Empty));
+
+            benchLogs.AppendLine(
+                "NodeStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                this.crossChainTransferStore.TipHashAndHeight.Height.ToString().PadRight(9) +
+                "NodeStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 2) +
+                this.crossChainTransferStore.TipHashAndHeight.Hash.ToString() + "  " +
+                "NodeStore.NextDepositHeight: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
+                this.crossChainTransferStore.NextMatureDepositHeight.ToString().PadRight(8));
         }
 
         public void AddComponentStats(StringBuilder benchLog)
@@ -209,7 +226,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     .FeatureServices(services => {
                         services.AddSingleton<IHttpClientFactory, HttpClientFactory>();
                         services.AddSingleton<IMaturedBlockReceiver, MaturedBlockReceiver>();
+                        services.AddSingleton<IMaturedBlocksRequester, RestMaturedBlockRequester>();
                         services.AddSingleton<IMaturedBlockSender, RestMaturedBlockSender>();
+                        services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
                         services.AddSingleton<IBlockTipSender, RestBlockTipSender>();
                         services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();

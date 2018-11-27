@@ -1,12 +1,7 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using NBitcoin;
-
-using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
@@ -16,25 +11,38 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private readonly ILogger logger;
 
         private readonly IDisposable maturedBlockDepositSubscription;
-        
+
         private readonly ICrossChainTransferStore store;
-        
+
+        private readonly IMaturedBlocksRequester maturedBlocksRequester;
+
         public EventsPersister(ILoggerFactory loggerFactory,
                                ICrossChainTransferStore store,
-                               IMaturedBlockReceiver maturedBlockReceiver)
+                               IMaturedBlockReceiver maturedBlockReceiver,
+                               IMaturedBlocksRequester maturedBlocksRequester)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.store = store;
+            this.maturedBlocksRequester = maturedBlocksRequester;
 
-            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(async m => await PersistNewMaturedBlockDeposits(m));
+            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(async m => await PersistNewMaturedBlockDepositsAsync(m).ConfigureAwait(false));
             this.logger.LogDebug("Subscribed to {0}", nameof(maturedBlockReceiver), nameof(maturedBlockReceiver.MaturedBlockDepositStream));
         }
 
         /// <inheritdoc />
-        public async Task PersistNewMaturedBlockDeposits(IMaturedBlockDeposits maturedBlockDeposits)
+        public async Task PersistNewMaturedBlockDepositsAsync(IMaturedBlockDeposits[] maturedBlockDeposits)
         {
             this.logger.LogDebug("New {0} received.", nameof(IMaturedBlockDeposits));
-            await store.RecordLatestMatureDepositsAsync(maturedBlockDeposits.Deposits.ToArray());
+
+            for (int i = 0; i < maturedBlockDeposits.Length; i++)
+            {
+                if (maturedBlockDeposits[i].Block.BlockHeight == this.store.NextMatureDepositHeight)
+                {
+                    await this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits[i].Deposits.ToArray()).ConfigureAwait(false);
+                }
+            }
+
+            await this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false);
         }
 
         /// <inheritdoc />
