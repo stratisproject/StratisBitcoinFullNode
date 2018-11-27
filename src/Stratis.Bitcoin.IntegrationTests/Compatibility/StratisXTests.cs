@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -64,8 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// Tests whether a quantity of blocks mined on X are
         /// correctly synced to an SBFN node.
         /// </summary>
-        [Fact]
-        [Trait("Unstable", "True")]
+        [Retry]
         public void XMinesBlocks_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -186,8 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
             }
         }
 
-        [Fact]
-        [Trait("Unstable", "True")]
+        [Retry]
         public void XMinesTransaction_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -375,7 +370,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 sbfnRpc2.AddNode(xNode3.Endpoint, false);
 
                 xRpc1.SendCommand(RPCOperations.generate, 11);
-                
+
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
                 TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
