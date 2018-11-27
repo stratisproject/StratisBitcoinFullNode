@@ -235,45 +235,37 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
         private uint256 GetPreviousStakeModifier(ChainedHeader chainedHeader)
         {
-            uint256 previousStakeModifier = null;
+            var previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
 
-            ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
-
-            if (previousProvenHeader == null)
+            if (previousProvenHeader != null)
             {
-                if (chainedHeader.Previous.Height == 0)
-                {
-                    previousStakeModifier = uint256.Zero;
-                    this.Logger.LogTrace("Genesis header.");
-                }
-                else if (chainedHeader.Previous.Height == this.LastCheckpointHeight)
-                {
-                    previousStakeModifier = this.LastCheckpoint.StakeModifierV2;
-                    this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", previousStakeModifier);
-                }
-                else
-                {
-                    // This means we are one block after the tip.
-                    // TODO: Should we check at this point that we are once block after the tip?
-                    previousStakeModifier = this.PosParent.StakeChain.Get(chainedHeader.Previous.HashBlock)?.StakeModifierV2;
+                //Stake modifier acquired from prev PH.
+                this.Logger.LogTrace("(-)[PREV_PH]");
+                return previousProvenHeader.StakeModifierV2;
+            }
 
-                    if (previousStakeModifier == null)
-                    {
-                        // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
-                        this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
-                        ConsensusErrors.InvalidPreviousProvenHeader.Throw();
-                    }
-                }
-            }
-            else
+            if (chainedHeader.Previous.Height == 0)
             {
-                previousStakeModifier = previousProvenHeader.StakeModifierV2;
+                this.Logger.LogTrace("(-)[GENESIS]");
+                return uint256.Zero;
             }
+
+            if (chainedHeader.Previous.Height == this.LastCheckpointHeight)
+            {
+                this.Logger.LogTrace("(-)[FROM_CHECKPOINT]");
+                return this.LastCheckpoint.StakeModifierV2;
+            }
+
+            uint256 previousStakeModifier = this.PosParent.StakeChain.Get(chainedHeader.Previous.HashBlock)?.StakeModifierV2;
 
             if (previousStakeModifier == null)
             {
-                this.Logger.LogTrace("(-)[PROVEN_HEADER_BAD_PREV_STAKE_MODIFIER]");
-                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
+                // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
+                // If this is not the case we will need to investigate why PH wasn't assigned. This might be due to
+                // the logic in ProvenHeadersBlockStoreSignaled.CreateAndStoreProvenHeader.
+                this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
+                ConsensusErrors.InvalidPreviousProvenHeader.Throw();
+                return null;
             }
 
             return previousStakeModifier;
@@ -290,6 +282,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             uint headerBits = chainedHeader.Header.Bits.ToCompact();
 
             uint256 previousStakeModifier = this.GetPreviousStakeModifier(chainedHeader);
+
+            if (previousStakeModifier == null)
+            {
+                this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
+                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
+            }
 
             if (header.Coinstake.IsCoinStake)
             {
