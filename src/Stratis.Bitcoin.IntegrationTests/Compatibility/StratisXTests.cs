@@ -1,9 +1,12 @@
 ﻿using System;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -70,12 +73,27 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 return;
             }
 
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
             {
                 var network = new StratisRegTest();
 
                 CoreNode stratisXNode = builder.CreateStratisXNode(version: "2.0.0.5").Start();
-                CoreNode stratisNode = builder.CreateStratisPosNode(network).WithWallet().Start();
+
+                var callback = new Action<IFullNodeBuilder>(build => build
+                    .UseBlockStore()
+                    .UsePosConsensus()
+                    .UseMempool()
+                    .UseWallet()
+                    .AddPowPosMining()
+                    .AddRPC());
+
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", stratisXNode.Endpoint.ToString());
+                config.Add("gateway", "1");
+
+                CoreNode stratisNode = builder
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
+                    .WithWallet().Start();
 
                 RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
@@ -190,7 +208,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .AddPowPosMining()
                     .AddRPC());
 
-                CoreNode stratisNode = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", stratisXNode.Endpoint.ToString());
+                config.Add("gateway", "1");
+
+                CoreNode stratisNode = builder
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
+                    .WithWallet().Start();
 
                 RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
@@ -259,7 +283,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .AddPowPosMining()
                     .AddRPC());
 
-                CoreNode sbfnNode2 = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", xNode1.Endpoint.ToString());
+                config.Add("gateway", "1");
+
+                CoreNode sbfnNode2 = builder
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
+                    .WithWallet().Start();
 
                 CoreNode xNode3 = builder.CreateStratisXNode(version: "2.0.0.5").Start();
 
@@ -323,8 +353,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .AddPowPosMining()
                     .AddRPC());
 
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", xNode1.Endpoint.ToString());
+                config.Add("gateway", "1");
+
                 CoreNode sbfnNode2 = builder
-                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION)
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
                     .WithWallet().Start();
 
                 CoreNode xNode3 = builder.CreateStratisXNode(version: "2.0.0.5").Start();
@@ -337,7 +371,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 sbfnRpc2.AddNode(xNode3.Endpoint, false);
 
                 xRpc1.SendCommand(RPCOperations.generate, 11);
-
+                
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
                 TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
