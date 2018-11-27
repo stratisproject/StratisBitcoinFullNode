@@ -306,6 +306,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        [Trait("Unstable", "True")]
         public void Pos_NodesCanConnect_AndSync_AndMineBlocks()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
