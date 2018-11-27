@@ -394,7 +394,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 }
             }
 
-            await SaveBlocksInBatchAndAsyncQueueAsync();
+            await this.SaveBlocksInBatchAndAsyncQueueAsync();
         }
 
         /// <summary>
@@ -403,9 +403,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         private async Task SaveBlocksInBatchAndAsyncQueueAsync()
         {
-            while (this.blocksQueue.ItemCount > 0)
+            while (this.blocksQueue.Count > 0)
             {
-                this.batch.Add(await this.blocksQueue.DequeueAsync());
+                this.batch.Add(await this.blocksQueue.DequeueAsync().ConfigureAwait(false));
             }
 
             if (this.batch.Count != 0)

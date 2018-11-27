@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Utilities
         private readonly Queue<T> items;
 
         /// <summary>The amount of items in the queue.</summary>
-        public int ItemCount
+        public int Count
         {
             get
             {
