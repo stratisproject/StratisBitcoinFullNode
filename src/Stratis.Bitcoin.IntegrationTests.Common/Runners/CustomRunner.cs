@@ -12,23 +12,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
     {
         private readonly Action<IFullNodeBuilder> callback;
         private readonly ProtocolVersion protocolVersion;
+        private readonly ProtocolVersion minProtocolVersion;
         private readonly NodeConfigParameters configParameters;
 
         public CustomNodeRunner(string dataDir, Action<IFullNodeBuilder> callback, Network network,
-            ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, NodeConfigParameters configParameters = null, string agent = "Custom")
-            : base(dataDir, agent)
+            ProtocolVersion protocolVersion = ProtocolVersion.PROTOCOL_VERSION, NodeConfigParameters configParameters = null, string agent = "Custom",
+            ProtocolVersion minProtocolVersion = ProtocolVersion.PROTOCOL_VERSION)
+            : base(dataDir, null)
         {
             this.callback = callback;
             this.Network = network;
             this.protocolVersion = protocolVersion;
             this.configParameters = configParameters ?? new NodeConfigParameters();
+            this.minProtocolVersion = minProtocolVersion;
         }
 
         public override void BuildNode()
         {
             var argsAsStringArray = this.configParameters.AsConsoleArgArray();
-
-            NodeSettings settings = null;
+            var settings = new NodeSettings(this.Network, this.protocolVersion, this.agent, argsAsStringArray)
+            {
+                MinProtocolVersion = this.minProtocolVersion
+            };
 
             if (string.IsNullOrEmpty(this.Agent))
                 settings = new NodeSettings(this.Network, this.protocolVersion, args: argsAsStringArray);
