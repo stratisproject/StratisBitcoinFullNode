@@ -4,7 +4,6 @@ using System.IO;
 using System.Runtime.InteropServices;
 using System.Threading;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 {
@@ -13,7 +12,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         private readonly string stratisDPath;
         private Process process;
 
-        public StratisXRunner(string dataDir, string stratisDPath) : base(dataDir)
+        public StratisXRunner(string dataDir, string stratisDPath) : base(dataDir, null)
         {
             this.stratisDPath = stratisDPath;
             this.Network = new StratisRegTest();

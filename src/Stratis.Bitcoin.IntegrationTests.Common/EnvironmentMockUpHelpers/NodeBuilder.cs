@@ -112,6 +112,15 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateNode(new StratisXRunner(this.GetNextDataFolderName(), stratisDPath), "stratis.conf", useCookieAuth);
         }
 
+        /// <summary>
+        /// Creates a Stratis Proof-of-Work node.
+        /// <para>
+        /// <see cref="P2P.PeerDiscovery"/> and <see cref="P2P.PeerConnectorDiscovery"/> are disabled by default.
+        /// </para>
+        /// </summary>
+        /// <param name="network">The network the node will run on.</param>
+        /// <param name="agent">Overrides the node's agent prefix.</param>
+        /// <returns>The constructed PoW node.</returns>
         public CoreNode CreateStratisPowNode(Network network, string agent = null)
         {
             return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network, agent));
@@ -131,6 +140,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return CreateCustomNode(callback, network, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
         }
 
+        /// <summary>
+        /// Creates a Stratis Proof-of-Stake node.
+        /// <para>
+        /// <see cref="P2P.PeerDiscovery"/> and <see cref="P2P.PeerConnectorDiscovery"/> are disabled by default.
+        /// </para>
+        /// </summary>
+        /// <returns>The constructed PoS node.</returns>
         public CoreNode CreateStratisPosNode(Network network, string agent = "StratisBitcoin")
         {
             return CreateNode(new StratisBitcoinPosRunner(this.GetNextDataFolderName(), network, agent), "stratis.conf");

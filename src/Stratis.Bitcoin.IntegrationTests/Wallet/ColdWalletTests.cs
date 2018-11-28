@@ -103,6 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         /// Success is determined by whether the balance in the cold wallet increases.
         /// </description>
         [Fact]
+        [Trait("Unstable", "True")]
         public void WalletCanMineWithColdWalletCoins()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

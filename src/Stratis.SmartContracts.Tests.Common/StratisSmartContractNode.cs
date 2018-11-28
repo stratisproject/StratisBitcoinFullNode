@@ -16,7 +16,7 @@ namespace Stratis.SmartContracts.Tests.Common
     public sealed class StratisSmartContractNode : NodeRunner
     {
         public StratisSmartContractNode(string dataDir, Network network)
-            : base(dataDir)
+            : base(dataDir, null)
         {
             this.Network = network;
         }

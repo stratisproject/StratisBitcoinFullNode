@@ -13,10 +13,10 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public class PoANodeRunner : NodeRunner
     {
-        private IDateTimeProvider timeProvider;
+        private readonly IDateTimeProvider timeProvider;
 
         public PoANodeRunner(string dataDir, PoANetwork network, EditableTimeProvider timeProvider)
-            : base(dataDir)
+            : base(dataDir, null)
         {
             this.Network = network;
             this.timeProvider = timeProvider;
