@@ -49,10 +49,7 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service =>
-                {
-                    service.InitializeAsync().GetAwaiter().GetResult();
-                });
+                this.Execute(service => service.InitializeAsync().GetAwaiter().GetResult());
             }
             catch
             {
