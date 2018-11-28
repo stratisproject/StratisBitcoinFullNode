@@ -19,6 +19,8 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Collects benchmark stats.</summary>
         string GetBenchmark();
+
+        bool NodeIsInIbd { get; set; }
     }
 
     public class NodeStats : INodeStats
@@ -37,6 +39,8 @@ namespace Stratis.Bitcoin.Utilities
 
             this.stats = new List<StatsItem>();
         }
+
+        public bool NodeIsInIbd { get; set; }
 
         /// <inheritdoc />
         public void RegisterStats(Action<StringBuilder> appendStatsAction, StatsType statsType, int priority = 0)
@@ -62,7 +66,7 @@ namespace Stratis.Bitcoin.Utilities
             lock (this.locker)
             {
                 string date = this.dateTimeProvider.GetUtcNow().ToString(CultureInfo.InvariantCulture);
-                statsBuilder.AppendLine($"======Node stats====== {date}");
+                statsBuilder.AppendLine($"======Node stats====== {date} ====== IBD:({this.NodeIsInIbd})");
 
                 foreach (StatsItem actionPriority in this.stats.Where(x => x.StatsType == StatsType.Inline))
                     actionPriority.AppendStatsAction(statsBuilder);

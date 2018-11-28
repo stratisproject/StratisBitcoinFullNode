@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 10).
+        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.BestReceivedTip"/> is header 10).
         /// Cached headers contain nothing. <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
         /// Make sure that <see cref="GetHeadersPayload"/> wasn't sent to the peer, <see cref="ConsensusManager.HeadersPresented"/> wasn't called.
         /// Return value is <c>null</c>.
@@ -43,9 +43,9 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 10). Cached headers have items 11 to 12.
+        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.BestReceivedTip"/> is header 10). Cached headers have items 11 to 12.
         /// <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
-        /// Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> == 12, cached headers are empty and <see cref="GetHeadersPayload"/> was sent to the peer.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestReceivedTip"/> == 12, cached headers are empty and <see cref="GetHeadersPayload"/> was sent to the peer.
         /// Make sure headers up to header 12 were consumed.
         /// </summary>
         [Fact]
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
-            Assert.Equal(this.headers[12], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[12], behavior.BestReceivedTip);
             Assert.Equal(this.headers[12], behavior.BestSentHeader);
             Assert.Empty(this.helper.GetCachedHeaders(behavior));
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 10).
+        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.BestReceivedTip"/> is header 10).
         /// Cached headers have items 11 to 50. Setup <see cref="ConsensusManager.HeadersPresented"/> to stop consumption when block 40 is reached.
         /// <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6. Make sure ExpectedPeerTip == 40,
         /// cached headers contain 10 items (41 to 50) and <see cref="GetHeadersPayload"/> wasn't sent to the peer.
@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
-            Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[40], behavior.BestReceivedTip);
             Assert.Equal(this.headers[40], behavior.BestSentHeader);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
             Assert.Equal(result.Consumed, this.headers[40]);
@@ -108,9 +108,9 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 10). Cached headers have items 14 to 15.
+        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.BestReceivedTip"/> is header 10). Cached headers have items 14 to 15.
         /// <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6. Make sure that cached headers contain no elements,
-        /// <see cref="GetHeadersPayload"/> was sent to the peer is called and <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is still 10.
+        /// <see cref="GetHeadersPayload"/> was sent to the peer is called and <see cref="ConsensusManagerBehavior.BestReceivedTip"/> is still 10.
         /// Make sure return value is <c>null</c>.
         /// </summary>
         [Fact]
@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             ConnectNewHeadersResult result = await behavior.ConsensusTipChangedAsync();
 
-            Assert.Equal(this.headers[10], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[10], behavior.BestReceivedTip);
             Assert.Equal(this.headers[10], behavior.BestSentHeader);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
             Assert.Null(result);
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 10). Cached headers have items 11 to 12.
+        /// CT is at 5. peer 1 claims block 10 (<see cref="ConsensusManagerBehavior.BestReceivedTip"/> is header 10). Cached headers have items 11 to 12.
         /// Peer is not attached (attached peer is <c>null</c>). <see cref="ConsensusManagerBehavior.ConsensusTipChangedAsync"/> called with header 6.
         /// Make sure return value is <c>null</c>.
         /// </summary>
@@ -439,7 +439,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15. Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/>
+        /// Consensus tip is at 10. We are not in IBD. Present headers 11-15. Make sure <see cref="ConsensusManagerBehavior.BestReceivedTip"/>
         /// is header 15 and <see cref="GetHeadersPayload"/> was sent.
         /// </summary>
         [Fact]
@@ -453,13 +453,13 @@ namespace Stratis.Bitcoin.Tests.Base
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(5).Select(x => x.Header)));
 
-            Assert.Equal(this.headers[15], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[15], behavior.BestReceivedTip);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
 
         /// <summary>
         /// Consensus tip is at 10. We are not in IBD. Setup <see cref="IConsensusManager"/> in a way that it will consume headers up to header 40.
-        /// Present headers 11-50.  Make sure that <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 40 and
+        /// Present headers 11-50.  Make sure that <see cref="ConsensusManagerBehavior.BestReceivedTip"/> is header 40 and
         /// <see cref="GetHeadersPayload"/> wasn't sent. Cached headers contain headers from 41 to 50.
         /// </summary>
         [Fact]
@@ -473,7 +473,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
             await this.helper.ReceivePayloadAsync(new HeadersPayload(this.headers.Skip(11).Take(40).Select(x => x.Header)));
 
-            Assert.Equal(this.headers[40], behavior.ExpectedPeerTip);
+            Assert.Equal(this.headers[40], behavior.BestReceivedTip);
             Assert.Equal(0, this.helper.GetHeadersPayloadSentTimes);
 
             List<BlockHeader> cached = this.helper.GetCachedHeaders(behavior);
@@ -517,8 +517,8 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// Initialize <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> to be header 5. Call <see cref="ConsensusManagerBehavior.ResetPeerTipInformationAndSyncAsync"/>.
-        /// Make sure <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> became <c>null</c> and <see cref="GetHeadersPayload"/> was sent.
+        /// Initialize <see cref="ConsensusManagerBehavior.BestReceivedTip"/> to be header 5. Call <see cref="ConsensusManagerBehavior.ResetPeerTipInformationAndSyncAsync"/>.
+        /// Make sure <see cref="ConsensusManagerBehavior.BestReceivedTip"/> became <c>null</c> and <see cref="GetHeadersPayload"/> was sent.
         /// </summary>
         [Fact]
         public async Task ResetPeerTipInformationAndSyncAsync_ResyncsAndResetsAsync()
@@ -527,13 +527,13 @@ namespace Stratis.Bitcoin.Tests.Base
 
             await behavior.ResetPeerTipInformationAndSyncAsync();
 
-            Assert.Null(behavior.ExpectedPeerTip);
+            Assert.Null(behavior.BestReceivedTip);
             Assert.Null(behavior.BestSentHeader);
             Assert.Equal(1, this.helper.GetHeadersPayloadSentTimes);
         }
 
         /// <summary>
-        /// <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is <c>null</c>. Consensus tip is at header 100.
+        /// <see cref="ConsensusManagerBehavior.BestReceivedTip"/> is <c>null</c>. Consensus tip is at header 100.
         /// Simulate that peer state is now <see cref="NetworkPeerState.HandShaked"/>.
         /// Make sure <see cref="GetHeadersPayload"/> was sent to the peer and it contains some blocks with hashes over header 50.
         /// </summary>
@@ -563,7 +563,7 @@ namespace Stratis.Bitcoin.Tests.Base
         }
 
         /// <summary>
-        /// <see cref="ConsensusManagerBehavior.ExpectedPeerTip"/> is header 50. Consensus tip is at header 100.
+        /// <see cref="ConsensusManagerBehavior.BestReceivedTip"/> is header 50. Consensus tip is at header 100.
         /// Simulate that peer state is now <see cref="NetworkPeerState.HandShaked"/>.
         /// Make sure <see cref="GetHeadersPayload"/> was sent to the peer and it contains blocks with hashes below header 50 and over header 30, but no blocks over 50.
         /// </summary>

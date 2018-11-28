@@ -228,9 +228,9 @@ namespace Stratis.Bitcoin
         private void StartPeriodicLog()
         {
             this.periodicLogLoop = this.AsyncLoopFactory.Run("PeriodicLog", (cancellation) =>
-            {
+           {
+                this.NodeStats.NodeIsInIbd = this.InitialBlockDownloadState.IsInitialBlockDownload();
                 string stats = this.NodeStats.GetStats();
-
                 this.logger.LogInformation(stats);
                 this.LastLogOutput = stats;
 
