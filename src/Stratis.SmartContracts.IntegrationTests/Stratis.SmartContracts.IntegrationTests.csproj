@@ -145,6 +145,9 @@
     <Compile Update="SmartContracts\RecursiveLoopCreate.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
+    <Compile Update="SmartContracts\StandardToken.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
     <Compile Update="SmartContracts\StorageDemo.cs">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Compile>
