@@ -49,7 +49,10 @@ namespace Stratis.Bitcoin.Builder
             try
             {
                 this.Execute(service => service.ValidateDependencies(this.node.Services));
-                this.Execute(service => service.InitializeAsync().GetAwaiter().GetResult());
+                this.Execute(service =>
+                {
+                    service.InitializeAsync().GetAwaiter().GetResult();
+                });
             }
             catch
             {
@@ -78,9 +81,9 @@ namespace Stratis.Bitcoin.Builder
         /// Executes start or stop method of all the features registered with the associated full node.
         /// </summary>
         /// <param name="callback">Delegate to run start or stop method of the feature.</param>
-        /// <param name="reverseOrder">Reverse the order of which the features are executed.</param>
+        /// <param name="disposing">Reverse the order of which the features are executed.</param>
         /// <exception cref="AggregateException">Thrown in case one or more callbacks threw an exception.</exception>
-        private void Execute(Action<IFullNodeFeature> callback, bool reverseOrder = false)
+        private void Execute(Action<IFullNodeFeature> callback, bool disposing = false)
         {
             List<Exception> exceptions = null;
 
@@ -92,7 +95,7 @@ namespace Stratis.Bitcoin.Builder
 
             IEnumerable<IFullNodeFeature> features = this.node.Services.Features;
 
-            if (reverseOrder)
+            if (disposing)
                 features = features.Reverse();
 
             foreach (IFullNodeFeature feature in features)
@@ -107,7 +110,13 @@ namespace Stratis.Bitcoin.Builder
                         exceptions = new List<Exception>();
 
                     exceptions.Add(ex);
+
                     this.logger.LogError("An error occurred: '{0}'", ex.ToString());
+
+                    // If we are starting up we need to exit here and stop the node from
+                    // starting up further.
+                    if (!disposing)
+                        break;
                 }
             }
 
