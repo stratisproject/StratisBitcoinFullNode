@@ -1,12 +1,9 @@
 ﻿using System;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
-using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -64,7 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// Tests whether a quantity of blocks mined on X are
         /// correctly synced to an SBFN node.
         /// </summary>
-        [Fact]
+        [Retry]
         public void XMinesBlocks_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -185,7 +182,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
             }
         }
 
-        [Fact]
+        [Retry]
         public void XMinesTransaction_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -228,7 +225,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 // Without this there seems to be a race condition between the blocks all getting generated and SBFN syncing high enough to fall through the getbestblockhash check.
                 TestHelper.WaitLoop(() => stratisXRpc.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
-                
+
                 TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Send transaction to arbitrary address from X side.
@@ -261,6 +258,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// S2 and X3 should get the transaction in their mempools.
         /// </summary>
         [Fact]
+        [Trait("Unstable", "True")]
         public void Transaction_CreatedByXNode_TraversesSBFN_ReachesSecondXNode()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -306,7 +304,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
                 TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
-                
+
                 TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == sbfnRpc2.GetBestBlockHash(), cancellationToken: shortCancellationToken);
                 TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == xRpc3.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
@@ -331,6 +329,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// All mempools should be empty at the end.
         /// </summary>
         [Fact]
+        [Trait("Unstable", "True")]
         public void Transaction_TraversesNodes_AndIsMined_AndNodesSync()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -371,7 +370,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 sbfnRpc2.AddNode(xNode3.Endpoint, false);
 
                 xRpc1.SendCommand(RPCOperations.generate, 11);
-                
+
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
                 TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);

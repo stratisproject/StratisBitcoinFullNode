@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
+        [Fact]
         [Trait("Unstable", "True")]
         public void Pos_Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(stratisMiner, 11);
                 TestHelper.MineBlocks(stratisReorg, 12);
 
-                // make sure the nodes are actually on different chains.
+                // Make sure the nodes are actually on different chains.
                 Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(2).HashBlock, stratisReorg.FullNode.Chain.GetBlock(2).HashBlock);
 
                 TestHelper.ConnectAndSync(stratisSyncer, stratisMiner);
@@ -213,6 +213,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </summary>
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
         [Fact]
+        [Trait("Unstable", "True")]
         public void Pos_PullerVsMinerRaceCondition()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -305,35 +306,33 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
+        [Trait("Unstable", "True")]
         public void Pos_NodesCanConnect_AndSync_AndMineBlocks()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPosNode(this.posNetwork).Start();
+                var syncer = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
 
-                // MinerA mines to height 5.
-                TestHelper.MineBlocks(minerA, 5);
+                // MinerA mines to height 1.
+                TestHelper.MineBlocks(minerA, 1);
 
-                // Sync the network to height 5.
+                // Sync the network to height 1.
                 TestHelper.ConnectAndSync(syncer, minerA);
 
-                // MinerA mines to height 5.
-                TestHelper.MineBlocks(minerA, 10);
+                // MinerA mines to height 2.
+                TestHelper.MineBlocks(minerA, 1);
 
-                // Sync the network to height 5.
+                // Sync minerB to height 2.
                 TestHelper.ConnectAndSync(syncer, minerB);
 
-                // MinerA mines to height 5.
-                TestHelper.MineBlocks(minerB, 5);
+                // MinerB mines to height 3.
+                TestHelper.MineBlocks(minerB, 1);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
-
-                Assert.Equal(20, minerB.FullNode.Chain.Height);
             }
         }
-
     }
 }

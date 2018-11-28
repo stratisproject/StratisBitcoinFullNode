@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.Executor.Reflection;
+﻿using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
 using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Test;
@@ -15,17 +11,17 @@ namespace Stratis.SmartContracts.IntegrationTests.TestChain
         [Fact]
         public void TestChain_Auction()
         {
+            // Compile the contract we want to deploy
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
+            Assert.True(compilationResult.Success);
+
             using (Test.TestChain chain = new Test.TestChain().Initialize())
             {
                 // Get an address we can use for deploying
                 Base58Address deployerAddress = chain.PreloadedAddresses[0];
 
-                // Compile the contract we want to deploy
-                ContractCompilationResult result = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
-                Assert.True(result.Success);
-
                 // Create and send transaction to mempool with parameters
-                SendCreateContractResult createResult = chain.SendCreateContractTransaction(deployerAddress, result.Compilation, 0, new object[] {20uL});
+                SendCreateContractResult createResult = chain.SendCreateContractTransaction(deployerAddress, compilationResult.Compilation, 0, new object[] {20uL});
 
                 // Mine a block which will contain our sent transaction
                 chain.MineBlocks(1);

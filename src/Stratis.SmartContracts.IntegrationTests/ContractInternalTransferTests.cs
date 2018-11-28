@@ -1,15 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NBitcoin;
-using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.Executor.Reflection;
 using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.Executor.Reflection.Local;
 using Stratis.SmartContracts.Executor.Reflection.Serialization;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -625,6 +623,50 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             // Balance should be the same as the initial amount
             Assert.True((new Money(amount, MoneyUnit.BTC) == new Money(savedUlong, MoneyUnit.Satoshi)));
+        }
+
+        [Fact]
+        public void Token_Standards_Test()
+        {
+            const uint totalSupply = 100_000;
+            // Deploy contract
+            ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StandardToken.cs");
+            Assert.True(compilationResult.Success);
+            string[] constructorParams = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.UInt, totalSupply) };
+            BuildCreateContractTransactionResponse preResponse = this.node1.SendCreateContractTransaction(compilationResult.Compilation, 0, constructorParams);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+            Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
+
+            double amount = 0;
+
+            // Send amount to contract, which will send to wallet address (address without code)
+            var base58Address = this.node1.MinerAddress.Address;
+            string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Address, base58Address) };
+            BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(
+                nameof(StandardToken.GetBalance),
+                preResponse.NewContractAddress,
+                amount,
+                parameters);
+            this.mockChain.WaitAllMempoolCount(1);
+            this.mockChain.MineBlocks(1);
+
+            // Contract doesn't maintain any balance
+            Assert.Equal((ulong)0, this.node1.GetContractBalance(preResponse.NewContractAddress));
+
+            ILocalExecutionResult result = this.node1.CallContractMethodLocally("GetBalance", preResponse.NewContractAddress, 0, parameters);
+            Assert.Equal(totalSupply, result.Return);
+
+            // Receipt is correct
+            ReceiptResponse receipt = this.node1.GetReceipt(response.TransactionId.ToString());
+            Assert.Equal(response.TransactionId.ToString(), receipt.TransactionHash);
+            Assert.Empty(receipt.Logs); // TODO: Could add logs to this test
+            Assert.True(receipt.Success);
+            Assert.True(receipt.GasUsed > GasPriceList.BaseCost);
+            Assert.Null(receipt.NewContractAddress);
+            Assert.Equal(this.node1.MinerAddress.Address, receipt.From);
+            Assert.Null(receipt.Error);
+            Assert.Equal(preResponse.NewContractAddress, receipt.To);
         }
     }
 

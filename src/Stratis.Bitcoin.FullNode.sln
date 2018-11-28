@@ -161,7 +161,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Test
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Test", "Stratis.SmartContracts.Test\Stratis.SmartContracts.Test.csproj", "{F8DCF0D0-8C36-49B4-BD45-5596D61F42C9}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.Bitcoin.Features.PoA.IntegrationTests.Common", "Stratis.Bitcoin.Features.PoA.IntegrationTests.Common\Stratis.Bitcoin.Features.PoA.IntegrationTests.Common.csproj", "{6E5AA962-D466-4E9E-B682-6BB9CD96B6F8}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.PoA.IntegrationTests.Common", "Stratis.Bitcoin.Features.PoA.IntegrationTests.Common\Stratis.Bitcoin.Features.PoA.IntegrationTests.Common.csproj", "{6E5AA962-D466-4E9E-B682-6BB9CD96B6F8}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Standards", "Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj", "{41687AC1-D6A0-4921-ACB1-B3DC18FDBB52}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -425,6 +427,10 @@ Global
 		{6E5AA962-D466-4E9E-B682-6BB9CD96B6F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{6E5AA962-D466-4E9E-B682-6BB9CD96B6F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{6E5AA962-D466-4E9E-B682-6BB9CD96B6F8}.Release|Any CPU.Build.0 = Release|Any CPU
+		{41687AC1-D6A0-4921-ACB1-B3DC18FDBB52}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{41687AC1-D6A0-4921-ACB1-B3DC18FDBB52}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{41687AC1-D6A0-4921-ACB1-B3DC18FDBB52}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{41687AC1-D6A0-4921-ACB1-B3DC18FDBB52}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -486,6 +492,7 @@ Global
 		{EABB9170-7F7C-404B-A248-DFB5A13879BA} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{F8DCF0D0-8C36-49B4-BD45-5596D61F42C9} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{6E5AA962-D466-4E9E-B682-6BB9CD96B6F8} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
+		{41687AC1-D6A0-4921-ACB1-B3DC18FDBB52} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {6C780ABA-5872-4B83-AD3F-A5BD423AD907}
