@@ -8,6 +8,8 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
@@ -534,6 +536,87 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 120);
+            }
+        }
+
+
+        [Fact(Skip = "Work in progress")]
+        public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var network = new StratisRegTest();
+
+                // MinerA requires an physical wallet to stake with.
+                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().WithWallet().Start();
+
+                // MinerA mines to height CoinbaseMaturity.
+                TestHelper.MineBlocks(minerA, (int)network.Consensus.CoinbaseMaturity);
+
+                // Sync the network to height CoinbaseMaturity.
+                TestHelper.ConnectAndSync(minerA, minerB);
+
+                // Disconnect Miner A and B.
+                TestHelper.DisconnectAll(minerA, minerB);
+
+                // MinerA mines 2 blocks on its own fork.
+                TestHelper.MineBlocks(minerA, 2);
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 2);
+
+                // Miner A stakes one coin.
+                var minterA = minerA.FullNode.NodeService<IPosMinting>();
+                minterA.Stake(new WalletSecret() { WalletName = "mywallet", WalletPassword = "password" });
+
+                TestHelper.WaitLoop(() =>
+                {
+                    return minerA.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 3;
+                });
+
+                minterA.StopStake();
+
+                var posBlock = minerA.FullNode.ConsensusManager().Tip.Block as PosBlock;
+                Assert.True(posBlock != null);
+
+                var coinstakeTransactionA = posBlock.GetProtocolTransaction();
+                Assert.True(coinstakeTransactionA.IsCoinStake);
+
+
+
+                // MinerB mines 5 blocks on its own fork.
+                TestHelper.MineBlocks(minerB, 1);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 1);
+
+                // Use the coinstake transaction to spend it on the minerB fork
+                TxIn coinstake = coinstakeTransactionA.Inputs[0];
+
+                Transaction txThatSpendCoinstake = network.CreateTransaction();
+                txThatSpendCoinstake.AddInput(coinstake);
+                txThatSpendCoinstake.AddOutput(new TxOut
+                {
+                    Value = Money.FromUnit(3, MoneyUnit.BTC),
+                    ScriptPubKey = minerB.FullNode.WalletManager().GetUnusedAddress().ScriptPubKey
+                });
+                // TODO: sign transaction
+
+                Assert.True(minerB.AddToStratisMempool(txThatSpendCoinstake));
+
+                // MinerB mines 1 blocks on its own fork.
+                TestHelper.MineBlocks(minerB, 1);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 2);
+                var powBlockWithSpentCoinstake = minerB.FullNode.ConsensusManager().Tip.Block; // TODO: I'd like to mine a block including the txThatSpendCoinstake here
+
+                // Sync the network, minerA should switch to minerB.
+                TestHelper.MineBlocks(minerB, 3);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 5);
+
+                var expectedValidChainHeight = minerB.FullNode.ConsensusManager().Tip.Height;
+
+                // Sync the network to height CoinbaseMaturity.
+                TestHelper.ConnectAndSync(minerA, minerB);
+
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
             }
         }
     }
