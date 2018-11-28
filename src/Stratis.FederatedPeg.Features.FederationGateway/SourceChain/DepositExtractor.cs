@@ -73,8 +73,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
         public IMaturedBlockDeposits ExtractMaturedBlockDeposits(ChainedHeader chainedHeader)
         {
-            ChainedHeader newlyMaturedBlock = this.GetNewlyMaturedBlock(chainedHeader);
+            return this.ExtractBlockDeposits(this.GetNewlyMaturedBlock(chainedHeader));
+        }
 
+        public IMaturedBlockDeposits ExtractBlockDeposits(ChainedHeader newlyMaturedBlock)
+        {
             if (newlyMaturedBlock == null) return null;
 
             var maturedBlock = new MaturedBlockModel()
@@ -91,12 +94,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
             return maturedBlockDeposits;
         }
 
+
         private ChainedHeader GetNewlyMaturedBlock(ChainedHeader chainedHeader)
         {
-            if ((this.chain.Tip.Height - chainedHeader.Height) < this.MinimumDepositConfirmations)
-                return null;
+            var newMaturedHeight = chainedHeader.Height - (int)this.MinimumDepositConfirmations;
 
-            return this.chain.GetBlock(chainedHeader.Height);
+            if (newMaturedHeight < 0) return null;
+
+            ChainedHeader newMaturedBlock = this.chain.GetBlock(newMaturedHeight);
+
+            return newMaturedBlock;
         }
     }
 }
