@@ -14,8 +14,6 @@ namespace Stratis.SmartContracts.Networks
     /// </summary>
     public class SmartContractsPoATest : PoANetwork
     {
-        public Key[] FederationKeys { get; private set; }
-
         public SmartContractsPoATest()
         {
             this.Name = "SmartContractsPoATest";
@@ -35,19 +33,15 @@ namespace Stratis.SmartContracts.Networks
 
             this.Genesis = genesisBlock;
 
-            // TODO: Replace with secret keys before going public
-            this.FederationKeys = new Key[]
-            {
-                new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey,
-                new Mnemonic("idle power swim wash diesel blouse photo among eager reward govern menu").DeriveExtKey().PrivateKey,
-                new Mnemonic("high neither night category fly wasp inner kitchen phone current skate hair").DeriveExtKey().PrivateKey
-            };
-
             var federationPubKeys = new List<PubKey>
             {
-                this.FederationKeys[0].PubKey, // 029528e83f065153d7fa655e73a07fc96fc759162f1e2c8936fa592f2942f39af0
-                this.FederationKeys[1].PubKey, // 03b539807c64abafb2d14c52a0d1858cc29d7c7fad0598f92a1274789c18d74d2d
-                this.FederationKeys[2].PubKey  // 02d6792cf941b68edd1e9056653573917cbaf974d46e9eeb9801d6fcedf846477a
+                new PubKey("03df4a360038a42b68aca8d198fc487c495ef9e4f3fe56daa6bbfdeea1a7cb5ec5"),
+                new PubKey("021c3e5b81a43284d166fb8862a9e7382630c2750f8556a4c7ba405ccdd70d4808"),
+                new PubKey("03a5055a77126a21b6d899482332bd9b2cc88fb96e83b172769754dee852a74316"),
+                new PubKey("03c9e8888a2d32b1022349a3bbf1aa325ed908f066bb0ebba8a1fe5eb6cabf3b7a"),
+                new PubKey("0282d9d0dcb978ecf1411c5cad744059ff75bdc9b352ab9454cf92ffe8cdf14789"),
+                new PubKey("02998a6d9a13446678e9f892c1fcc61834d1d439dd97d57fc9e30b51020d2277e4"),
+                new PubKey("037ab82c35af49860021e89c6868cd4a4b6f839cd1a3094dc828908ce9d86cf94a")
             };
 
             var consensusOptions = new PoAConsensusOptions(
