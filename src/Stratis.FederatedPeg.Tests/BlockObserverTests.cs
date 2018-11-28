@@ -88,11 +88,10 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void BlockObserver_Should_Not_Try_To_Extract_Deposits_Before_MinimumDepositConfirmations()
         {
-            var earlyChainHeaderBlock = this.ChainHeaderBlockBuilder(1);
-            var earlyBlock = earlyChainHeaderBlock.Block;
+            var confirmations = (int)this.minimumDepositConfirmations - 1;
 
-            ChainedHeader tip = ChainedHeaderBuilder(earlyChainHeaderBlock.ChainedHeader.Height + (int)this.minimumDepositConfirmations - 1);
-            this.chain.Tip.Returns(tip);
+            var earlyBlock = new Block();
+            var earlyChainHeaderBlock = new ChainedHeaderBlock(earlyBlock, new ChainedHeader(new BlockHeader(), uint256.Zero, confirmations));
 
             this.blockObserver.OnNext(earlyChainHeaderBlock);
 
@@ -106,23 +105,18 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void BlockObserver_Should_Try_To_Extract_Deposits_After_MinimumDepositConfirmations()
         {
-            var maturedChainHeaderBlock = this.ChainHeaderBlockBuilder(1);
-            var maturedBlock = maturedChainHeaderBlock.Block;
+            var blockBuilder = this.ChainHeaderBlockBuilder();
 
-            ChainedHeader tip = ChainedHeaderBuilder(maturedChainHeaderBlock.ChainedHeader.Height + (int)this.minimumDepositConfirmations);
-            this.chain.Tip.Returns(tip);
+            this.blockObserver.OnNext(blockBuilder.chainedHeaderBlock);
 
-            this.blockObserver.OnNext(maturedChainHeaderBlock);
-
-            this.federationWalletSyncManager.Received(1).ProcessBlock(maturedBlock);
+            this.federationWalletSyncManager.Received(1).ProcessBlock(blockBuilder.block);
             this.maturedBlockSender.ReceivedWithAnyArgs(1).SendMaturedBlockDepositsAsync(null);
         }
 
         [Fact]
         public void BlockObserver_Should_Send_Block_Tip()
         {
-            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder();
-            this.chain.Tip.Returns(chainedHeaderBlock.ChainedHeader);
+            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder().chainedHeaderBlock;
 
             this.blockObserver.OnNext(chainedHeaderBlock);
 
@@ -132,9 +126,7 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void BlockObserver_Should_Extract_Withdrawals()
         {
-            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder();
-            ChainedHeader tip = ChainedHeaderBuilder(10);
-            this.chain.Tip.Returns(tip);
+            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder().chainedHeaderBlock;
 
             this.blockObserver.OnNext(chainedHeaderBlock);
 
@@ -144,32 +136,27 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void BlockObserver_Should_Send_Extracted_Withdrawals_To_WithdrawalReceiver()
         {
-            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder();
-            this.chain.Tip.Returns(chainedHeaderBlock.ChainedHeader);
+            ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder().chainedHeaderBlock;
 
             this.blockObserver.OnNext(chainedHeaderBlock);
 
             this.withdrawalReceiver.ReceivedWithAnyArgs(1).ReceiveWithdrawals(Arg.Is(this.extractedWithdrawals));
         }
 
-        private ChainedHeaderBlock ChainHeaderBlockBuilder(int height = 0)
+        private (ChainedHeaderBlock chainedHeaderBlock, Block block) ChainHeaderBlockBuilder()
         {
+            var confirmations = (int)this.minimumDepositConfirmations;
+
             var blockHeader = new BlockHeader();
-            var chainedHeader = ChainedHeaderBuilder(height);
+            var chainedHeader = new ChainedHeader(blockHeader, uint256.Zero, confirmations);
+            this.chain.GetBlock(0).Returns(chainedHeader);
 
             var block = new Block();
             var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
 
             chainedHeaderBlock.ChainedHeader.Block = chainedHeaderBlock.Block;
 
-            return chainedHeaderBlock;
-        }
-
-        private ChainedHeader ChainedHeaderBuilder(int height)
-        {
-            var chainedHeader = new ChainedHeader(new BlockHeader(), uint256.Zero, height);
-            this.chain.GetBlock(height).Returns(chainedHeader);
-            return chainedHeader;
+            return (chainedHeaderBlock, block);
         }
     }
 }

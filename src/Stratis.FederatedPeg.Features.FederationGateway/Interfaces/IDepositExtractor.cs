@@ -11,11 +11,36 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
     /// </summary>
     public interface IDepositExtractor
     {
+        /// <summary>
+        /// Extracts deposits from the transactions in a block.
+        /// </summary>
+        /// <param name="block">The block containing the transactions.</param>
+        /// <param name="blockHeight">The height of the block containing the transactions.</param>
+        /// <returns>The extracted deposit (if any), otherwise returns an empty list.</returns>
         IReadOnlyList<IDeposit> ExtractDepositsFromBlock(Block block, int blockHeight);
-      
+
+        /// <summary>
+        /// Extracts a deposit from a transaction (if any).
+        /// </summary>
+        /// <param name="transaction">The transaction to extract deposits from.</param>
+        /// <param name="blockHeight">The block height of the block containing the transaction.</param>
+        /// <param name="blockHash">The block hash of the block containing the transaction.</param>
+        /// <returns>The extracted deposit (if any), otherwise <c>null</c>.</returns>
         IDeposit ExtractDepositFromTransaction(Transaction transaction, int blockHeight, uint256 blockHash);
 
+        /// <summary>
+        /// Gets deposits from the block that is expected to be mature given this chain header.
+        /// </summary>
+        /// <param name="chainedHeader">The last received chain header.</param>
+        /// <returns>The matured deposits.</returns>
         IMaturedBlockDeposits ExtractMaturedBlockDeposits(ChainedHeader chainedHeader);
+
+        /// <summary>
+        /// Gets deposits from the newly matured block.
+        /// </summary>
+        /// <param name="newlyMaturedBlock">The newly matured block.</param>
+        /// <returns>The matured deposits.</returns>
+        IMaturedBlockDeposits ExtractBlockDeposits(ChainedHeader newlyMaturedBlock);
 
         uint MinimumDepositConfirmations { get; }
     }

@@ -71,7 +71,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
                 chainedHeaders[index].Block = blocks[index];
 
-                IMaturedBlockDeposits maturedBlockDeposits = this.depositExtractor.ExtractMaturedBlockDeposits(chainedHeaders[index]);
+                IMaturedBlockDeposits maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaders[index]);
 
                 if (maturedBlockDeposits == null)
                 {
