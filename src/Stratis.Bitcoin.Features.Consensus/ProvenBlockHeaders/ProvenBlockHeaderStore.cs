@@ -135,9 +135,31 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 // Repository is behind chain of headers.
                 tip = tip.FindAncestorOrSelf(repoTip.Hash, repoTip.Height);
-            }
 
-            this.TipHashHeight = new HashHeightPair(tip.HashBlock, tip.Height);
+                if (tip == null)
+                {
+                    // Start at one less of the current repo height as we have already checked
+                    // the repo tip.
+                    var height = repoTip.Height - 1;
+                    while (true)
+                    {
+                        var provenBlockHeader = await this.provenBlockHeaderRepository.GetAsync(height).ConfigureAwait(false);
+                        if (provenBlockHeader.GetHash() == highestHeader.HashBlock)
+                        {
+                            this.TipHashHeight = new HashHeightPair(provenBlockHeader.GetHash(), height);
+
+                            tip = highestHeader;
+
+                            break;
+                        }
+
+                        height--;
+                    }
+                }
+            }
+            else
+                this.TipHashHeight = new HashHeightPair(tip.HashBlock, tip.Height);
+
             this.logger.LogDebug("Proven block header store initialized at '{0}'.", this.TipHashHeight);
 
             return tip;
