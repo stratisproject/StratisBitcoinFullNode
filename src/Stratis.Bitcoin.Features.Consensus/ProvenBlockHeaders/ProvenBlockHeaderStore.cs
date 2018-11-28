@@ -140,8 +140,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     // Start at one less of the current repo height as we have already checked
                     // the repo tip.
-                    var height = repoTip.Height - 1;
-                    while (true)
+                    for (int height = repoTip.Height - 1; height > 0; height--)
                     {
                         var provenBlockHeader = await this.provenBlockHeaderRepository.GetAsync(height).ConfigureAwait(false);
                         if (provenBlockHeader.GetHash() == highestHeader.HashBlock)
@@ -152,8 +151,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                             break;
                         }
+                    }
 
-                        height--;
+                    if (tip == null)
+                    {
+                        this.logger.LogTrace("[TIP_NULL]");
+                        throw new ProvenBlockHeaderException("{0} was not found in the store.");
                     }
                 }
             }
