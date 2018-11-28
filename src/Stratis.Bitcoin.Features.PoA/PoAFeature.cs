@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA
         public override Task InitializeAsync()
         {
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
-            bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
+            bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.FirstOrDefault(x => x is ConsensusManagerBehavior));
             Guard.Assert(oldCMBRemoved);
 
             connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
