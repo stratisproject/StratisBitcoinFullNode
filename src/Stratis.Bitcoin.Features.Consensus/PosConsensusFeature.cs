@@ -5,6 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
@@ -69,9 +70,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
 
-            // Replace CMB.
-            bool oldCMBRemoved = connectionParameters.TemplateBehaviors.Remove(connectionParameters.TemplateBehaviors.Single(x => x is ConsensusManagerBehavior));
-            Guard.Assert(oldCMBRemoved);
+            var defaultConsensusManagerBehavior = connectionParameters.TemplateBehaviors.FirstOrDefault(behavior => behavior is ConsensusManagerBehavior);
+            if (defaultConsensusManagerBehavior == null)
+            {
+                throw new MissingServiceException(typeof(ConsensusManagerBehavior), "Missing expected ConsensusManagerBehavior.");
+            }
+
+            // Replace default ConsensusManagerBehavior with ProvenHeadersConsensusManagerBehavior
+            connectionParameters.TemplateBehaviors.Remove(defaultConsensusManagerBehavior);
             connectionParameters.TemplateBehaviors.Add(new ProvenHeadersConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory, this.network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings));
 
             return Task.CompletedTask;
