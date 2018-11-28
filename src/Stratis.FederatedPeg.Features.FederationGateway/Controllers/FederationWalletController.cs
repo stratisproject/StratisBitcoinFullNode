@@ -181,7 +181,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// </summary>
         /// <param name="request">The password of the federation wallet.</param>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
-        [Route("enablefederation")]
+        [Route("enable-federation")]
         [HttpPost]
         public IActionResult EnableFederation([FromBody]EnableFederationRequest request)
         {
