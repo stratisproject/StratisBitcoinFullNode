@@ -250,14 +250,29 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Connect(syncer, minerA);
                 TestHelper.Connect(syncer, minerB);
 
-                // Ensure that Syncer is synced with MinerA.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
+                // Determine which node was disconnected.
+                CoreNode survived = null;
+                CoreNode notSurvived = null;
+                if (TestHelper.IsNodeConnectedTo(syncer, minerA))
+                {
+                    survived = minerA;
+                    notSurvived = minerB;
+                }
+                else
+                {
+                    survived = minerB;
+                    notSurvived = minerA;
+                }
 
-                // Ensure that Syncer is not connected to MinerB.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
+                // Ensure that Syncer is synced with MinerB.
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, survived));
+
+                // Ensure that Syncer is not connected to MinerA.
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, notSurvived));
 
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 45);
-                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 45);
+                Assert.True(survived.FullNode.ConsensusManager().Tip.Height == 45);
+
             }
         }
 
