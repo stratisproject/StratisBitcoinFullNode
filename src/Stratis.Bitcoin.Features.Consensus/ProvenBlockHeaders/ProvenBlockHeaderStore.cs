@@ -143,22 +143,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     for (int height = repoTip.Height - 1; height > 0; height--)
                     {
                         var provenBlockHeader = await this.provenBlockHeaderRepository.GetAsync(height).ConfigureAwait(false);
-                        if (provenBlockHeader.GetHash() == highestHeader.HashBlock)
+
+                        tip = highestHeader.FindAncestorOrSelf(provenBlockHeader.GetHash());
+                        if (tip != null)
                         {
                             this.TipHashHeight = new HashHeightPair(provenBlockHeader.GetHash(), height);
-
-                            tip = highestHeader;
-
                             break;
                         }
                     }
 
                     if (tip == null)
                     {
-                        this.logger.LogTrace("[TIP_NOT_FOUND_IN_PROVENBLOCKHEADERSTORE]:{0}", highestHeader);
+                        this.logger.LogTrace("[TIP_NOT_FOUND]:{0}", highestHeader);
                         throw new ProvenBlockHeaderException(string.Format("{0} was not found in the store.", highestHeader));
                     }
                 }
+                else
+                    this.TipHashHeight = new HashHeightPair(tip.HashBlock, tip.Height);
             }
             else
                 this.TipHashHeight = new HashHeightPair(tip.HashBlock, tip.Height);
