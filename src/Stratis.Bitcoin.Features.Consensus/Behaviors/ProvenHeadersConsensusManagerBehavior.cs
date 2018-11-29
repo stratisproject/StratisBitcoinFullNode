@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             }
 
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
-            lastHeader = null;
+            lastHeader = fork;
 
             if (fork == null)
             {
@@ -132,15 +132,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
                     provenBlockHeader = this.provenBlockHeaderStore.GetAsync(header.Height).GetAwaiter().GetResult();
 
-                    // We need to check that the headers we are returning are consecutive.
-                    // If a specific header is found not to follow on from the previous one,
-                    // we just return what we have that are consecutive.
-                    if ((provenBlockHeader != null) && provenBlockHeader.HashPrevBlock != lastHeader.HashBlock)
-                    {
-                        this.logger.LogTrace("Inconsecutive header found; {0} does not follow on from {1}", header, lastHeader);
-                        break;
-                    }
-
                     if (provenBlockHeader == null)
                     {
                         // Proven header is not available yet for this header.
@@ -148,6 +139,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                         // So at this moment proven header is not created or not yet saved to headers store for the block connected.
                         this.logger.LogDebug("No PH available for header '{0}'.", header);
                         this.logger.LogTrace("(-)[NO_PH_AVAILABLE]");
+                        break;
+                    }
+
+                    // We need to check that the headers we are returning are consecutive.
+                    // If a specific header is found not to follow on from the previous one,
+                    // we just return what we have that are consecutive.
+                    if ((provenBlockHeader != null) && provenBlockHeader.HashPrevBlock != lastHeader.HashBlock)
+                    {
+                        this.logger.LogTrace("Inconsecutive header found; {0} does not follow on from {1}", header, lastHeader);
                         break;
                     }
                 }
