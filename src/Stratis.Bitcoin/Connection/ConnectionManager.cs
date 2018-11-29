@@ -282,6 +282,8 @@ namespace Stratis.Bitcoin.Connection
 
         private Task OnPeerAdded(INetworkPeer peer, CancellationToken cancellationToken)
         {
+            // Code in this method is a quick and dirty fix for the race condition described here: https://github.com/stratisproject/StratisBitcoinFullNode/issues/2864
+            // TODO race condition should be eliminated instead of fixing its consequences.
             if (this.ShouldDisconnect(peer))
                 peer.Disconnect("Peer from the same network group.");
 
