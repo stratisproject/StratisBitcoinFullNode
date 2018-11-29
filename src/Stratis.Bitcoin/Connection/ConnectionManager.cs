@@ -4,6 +4,7 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -82,6 +83,8 @@ namespace Stratis.Bitcoin.Connection
 
         private IConsensusManager consensusManager;
 
+        private AsyncQueue<INetworkPeer> connectedPeersQueue;
+
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -120,6 +123,7 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()} ({(int)this.NodeSettings.ProtocolVersion})";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
+            this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.OnPeerAdded);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1100);
         }
@@ -264,6 +268,8 @@ namespace Stratis.Bitcoin.Connection
             foreach (NetworkPeerServer server in this.Servers)
                 server.Dispose();
 
+            this.connectedPeersQueue.Dispose();
+
             this.networkPeerDisposer.Dispose();
         }
 
@@ -271,6 +277,58 @@ namespace Stratis.Bitcoin.Connection
         public void AddConnectedPeer(INetworkPeer peer)
         {
             this.connectedPeers.Add(peer);
+            this.connectedPeersQueue.Enqueue(peer);
+        }
+
+        private Task OnPeerAdded(INetworkPeer peer, CancellationToken cancellationToken)
+        {
+            if (this.ShouldDisconnect(peer))
+                peer.Disconnect("Peer from the same network group.");
+
+            return Task.CompletedTask;
+        }
+
+        /// <summary>
+        /// Determines if the peer should be disconnected.
+        /// Peer should be disconnected in case it's IP is from the same group in which any other peer
+        /// is and the peer wasn't added using -connect or -addNode command line arguments.
+        /// </summary>
+        private bool ShouldDisconnect(INetworkPeer peer)
+        {
+            bool isAddNodeOrConnect = false;
+
+            foreach (IPEndPoint addNodeEndPoint in this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect))
+            {
+                if (peer.PeerEndPoint.Address.Equals(addNodeEndPoint.Address))
+                {
+                    isAddNodeOrConnect = true;
+                    break;
+                }
+            }
+
+            if (isAddNodeOrConnect)
+            {
+                this.logger.LogTrace("(-)[ADD_NODE_OR_CONNECT]:false");
+                return false;
+            }
+
+            byte[] peerGroup = peer.PeerEndPoint.MapToIpv6().Address.GetGroup();
+
+            foreach (INetworkPeer connectedPeer in this.ConnectedPeers)
+            {
+                if (peer == connectedPeer)
+                    continue;
+
+                byte[] group = connectedPeer.PeerEndPoint.MapToIpv6().Address.GetGroup();
+
+                if (peerGroup.SequenceEqual(group))
+                {
+                    this.logger.LogTrace("(-)[SAME_GROUP]:true");
+                    return true;
+                }
+            }
+
+            return false;
         }
 
         /// <inheritdoc />
