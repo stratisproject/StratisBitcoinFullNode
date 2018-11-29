@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <returns> <c>true</c> if  we need to validate proven headers.</returns>
         private int GetCurrentHeight()
         {
-            var currentHeight = (this.ExpectedPeerTip ?? this.consensusManager.Tip).Height;
+            var currentHeight = (this.BestReceivedTip ?? this.consensusManager.Tip).Height;
 
             return currentHeight;
         }
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 {
                     return new GetProvenHeadersPayload()
                     {
-                        BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                        BlockLocator = (this.BestReceivedTip ?? this.consensusManager.Tip).GetLocator(),
                         HashStop = null
                     };
                 }
