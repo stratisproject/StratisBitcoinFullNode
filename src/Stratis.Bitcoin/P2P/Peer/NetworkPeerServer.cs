@@ -32,10 +32,6 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>The parameters that will be cloned and applied for each peer connecting to <see cref="NetworkPeerServer"/>.</summary>
         public NetworkPeerConnectionParameters InboundNetworkPeerConnectionParameters { get; set; }
 
-        /// <summary>Maximum number of inbound connection that the server is willing to handle simultaneously.</summary>
-        /// <remarks>TODO: consider making this configurable.</remarks>
-        public const int MaxConnectionThreshold = 125;
-
         /// <summary>IP address and port, on which the server listens to incoming connections.</summary>
         public IPEndPoint LocalEndpoint { get; private set; }
 
@@ -217,7 +213,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <returns>When criteria is met returns <c>true</c>, to allow connection.</returns>
         private bool AllowClientConnection(TcpClient tcpClient)
         {
-            if (this.networkPeerDisposer.ConnectedPeersCount >= MaxConnectionThreshold)
+            if (this.networkPeerDisposer.ConnectedInboundPeersCount >= this.connectionManagerSettings.MaxInboundConnections)
             {
                 this.logger.LogTrace("(-)[MAX_CONNECTION_THRESHOLD_REACHED]:false");
                 return false;
