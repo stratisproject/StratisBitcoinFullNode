@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public PoAConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState,
             IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
-        : base (chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+        : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         /// <inheritdoc />
         /// <remarks>Creates <see cref="PoAHeadersPayload"/> instead of <see cref="HeadersPayload"/> like base implementation does.</remarks>
-        protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
+        public override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
             lastHeader = null;

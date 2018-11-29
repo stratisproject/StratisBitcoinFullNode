@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NLog.LayoutRenderers.Wrappers;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -203,7 +202,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="getHeadersPayload">The <see cref="GetHeadersPayload"/> payload that triggered the creation of this payload.</param>
         /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
         /// <returns>Payload with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        protected virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
+        public virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
 

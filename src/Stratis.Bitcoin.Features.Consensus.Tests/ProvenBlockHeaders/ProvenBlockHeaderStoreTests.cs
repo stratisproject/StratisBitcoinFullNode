@@ -9,6 +9,7 @@ using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private readonly ProvenBlockHeaderStore provenBlockHeaderStore;
         private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
 
-        public ProvenBlockHeaderStoreTests() : base(KnownNetworks.StratisTest)
+        public ProvenBlockHeaderStoreTests() : base(new StratisTest())
         {
             var nodeStats = new NodeStats(DateTimeProvider.Default);
 
