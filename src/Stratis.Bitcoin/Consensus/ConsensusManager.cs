@@ -1243,6 +1243,8 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
+                if (this.isIbd) log.AppendLine("IBD Stage");
+
                 string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
                 string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
