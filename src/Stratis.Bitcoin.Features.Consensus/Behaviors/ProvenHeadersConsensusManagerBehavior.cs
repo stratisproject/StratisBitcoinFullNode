@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             }
 
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
-            lastHeader = fork;
+            lastHeader = null;
 
             if (fork == null)
             {
@@ -145,7 +145,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                     // We need to check that the headers we are returning are consecutive.
                     // If a specific header is found not to follow on from the previous one,
                     // we just return what we have that are consecutive.
-                    if ((provenBlockHeader != null) && provenBlockHeader.HashPrevBlock != lastHeader.HashBlock)
+                    var previous = lastHeader ?? fork;
+                    if (provenBlockHeader.HashPrevBlock != previous.HashBlock)
                     {
                         this.logger.LogTrace("Inconsecutive header found; {0} does not follow on from {1}", header, lastHeader);
                         break;
