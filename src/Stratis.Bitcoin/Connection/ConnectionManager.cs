@@ -223,23 +223,29 @@ namespace Stratis.Bitcoin.Connection
 
         private void AddComponentStats(StringBuilder builder)
         {
-            builder.AppendLine();
-            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent}");
-
+            int inboundCount = 0;
+            var peerBuilder = new StringBuilder();
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
+                if (peer.Inbound) inboundCount++;
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
                 string peerHeights = $"(r/s):{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "-")}";
                 peerHeights += $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "-")}";
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
-                builder.AppendLine(
+                peerBuilder.AppendLine(
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected:" + (peer.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7)
                     + peerHeights.PadRight(LoggingConfiguration.ColumnLength + 7)
                     + " agent:" + agent);
             }
+
+            int outboundCount = this.ConnectedPeers.Count() - inboundCount;
+
+            builder.AppendLine();
+            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} in:{inboundCount} out:{outboundCount}");
+            builder.AppendLine(peerBuilder.ToString());
         }
 
         private string ToKBSec(ulong bytesPerSec)
