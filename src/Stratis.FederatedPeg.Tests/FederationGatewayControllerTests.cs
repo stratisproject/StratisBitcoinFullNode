@@ -192,7 +192,8 @@ namespace Stratis.FederatedPeg.Tests
 
             result.Should().BeOfType<JsonResult>();
 
-            var expectedCallCount = (this.chain.Height - minConfirmations) - earlierBlock.Height;
+            // If the minConfirmations == 0 and this.chain.Height == earlierBlock.Height then expectedCallCount must be 1.
+            var expectedCallCount = (this.chain.Height - minConfirmations) - earlierBlock.Height + 1;
 
             depositExtractorCallCount.Should().Be(expectedCallCount);
         }

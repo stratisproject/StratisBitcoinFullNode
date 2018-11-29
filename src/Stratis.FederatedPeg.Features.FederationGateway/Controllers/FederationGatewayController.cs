@@ -7,7 +7,6 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -70,9 +69,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         [Route(FederationGatewayRouteEndPoint.ReceiveMaturedBlocks)]
         [HttpPost]
-        public void ReceiveMaturedBlock([FromBody] MaturedBlockDepositsModel[] maturedBlockDeposits)
+        public void ReceiveMaturedBlock([FromBody] MaturedBlockDepositsModel maturedBlockDeposits)
         {
-            this.maturedBlockReceiver.ReceiveMaturedBlockDeposits(maturedBlockDeposits);
+            this.maturedBlockReceiver.ReceiveMaturedBlockDeposits(new[] { maturedBlockDeposits });
         }
 
         /// <summary>
@@ -132,7 +131,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception thrown calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, e.Message);
+                this.logger.LogTrace("Exception thrown calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetMaturedBlockDeposits, e.Message);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, $"Could not re-sync matured block deposits: {e.Message}", e.ToString());
             }
         }

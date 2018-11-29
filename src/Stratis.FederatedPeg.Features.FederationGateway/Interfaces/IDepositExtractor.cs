@@ -1,6 +1,5 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
-using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
@@ -27,13 +26,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="blockHash">The block hash of the block containing the transaction.</param>
         /// <returns>The extracted deposit (if any), otherwise <c>null</c>.</returns>
         IDeposit ExtractDepositFromTransaction(Transaction transaction, int blockHeight, uint256 blockHash);
-
-        /// <summary>
-        /// Gets deposits from the block that is expected to be mature given this chain header.
-        /// </summary>
-        /// <param name="chainedHeader">The last received chain header.</param>
-        /// <returns>The matured deposits.</returns>
-        IMaturedBlockDeposits ExtractMaturedBlockDeposits(ChainedHeader chainedHeader);
 
         /// <summary>
         /// Gets deposits from the newly matured block.
