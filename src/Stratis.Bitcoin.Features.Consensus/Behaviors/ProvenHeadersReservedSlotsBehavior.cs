@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             return from peer in connectedPeers.ToList() // not sure if connectedPeers can change, so i use ToList to get a snapshot
                    let isLegacy = peer.PeerVersion.Version < NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION
-                   let tip = peer.Behavior<ProvenHeadersConsensusManagerBehavior>()?.ExpectedPeerTip?.Height ?? 0
+                   let tip = peer.Behavior<ProvenHeadersConsensusManagerBehavior>()?.BestReceivedTip?.Height ?? 0
                    where isLegacy
                    orderby tip
                    select peer;
