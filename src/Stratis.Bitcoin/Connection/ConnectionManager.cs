@@ -223,11 +223,9 @@ namespace Stratis.Bitcoin.Connection
 
         private void AddComponentStats(StringBuilder builder)
         {
-            int inboundCount = 0;
             var peerBuilder = new StringBuilder();
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
-                if (peer.Inbound) inboundCount++;
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
                 string peerHeights = $"(r/s):{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "-")}";
@@ -241,10 +239,10 @@ namespace Stratis.Bitcoin.Connection
                     + " agent:" + agent);
             }
 
-            int outboundCount = this.ConnectedPeers.Count() - inboundCount;
+            int inbound = this.ConnectedPeers.Count(x => x.Inbound);
 
             builder.AppendLine();
-            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} in:{inboundCount} out:{outboundCount}");
+            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}]");
             builder.AppendLine(peerBuilder.ToString());
         }
 
