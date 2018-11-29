@@ -147,6 +147,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     this.withdrawalExtractor,
                     this.withdrawalReceiver,
                     this.maturedBlockSender,
+                    this.maturedBlocksProvider,
                     this.blockTipSender));
 
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));

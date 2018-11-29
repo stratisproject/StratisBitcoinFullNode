@@ -18,6 +18,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
         private readonly IMaturedBlockSender maturedBlockSender;
 
+        private readonly IMaturedBlocksProvider maturedBlocksProvider;
+
         private readonly IDepositExtractor depositExtractor;
 
         private readonly IWithdrawalExtractor withdrawalExtractor;
@@ -43,10 +45,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
                              IWithdrawalExtractor withdrawalExtractor,
                              IWithdrawalReceiver withdrawalReceiver,
                              IMaturedBlockSender maturedBlockSender,
+                             IMaturedBlocksProvider maturedBlocksProvider,
                              IBlockTipSender blockTipSender)
         {
             Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
             Guard.NotNull(maturedBlockSender, nameof(maturedBlockSender));
+            Guard.NotNull(maturedBlocksProvider, nameof(maturedBlocksProvider));
             Guard.NotNull(blockTipSender, nameof(blockTipSender));
             Guard.NotNull(depositExtractor, nameof(depositExtractor));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
@@ -54,6 +58,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
             this.walletSyncManager = walletSyncManager;
             this.maturedBlockSender = maturedBlockSender;
+            this.maturedBlocksProvider = maturedBlocksProvider;
             this.depositExtractor = depositExtractor;
             this.withdrawalExtractor = withdrawalExtractor;
             this.withdrawalReceiver = withdrawalReceiver;
@@ -81,7 +86,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             this.withdrawalReceiver.ReceiveWithdrawals(withdrawals);
 
             IMaturedBlockDeposits maturedBlockDeposits =
-                this.depositExtractor.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
+                this.maturedBlocksProvider.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
 
             if (maturedBlockDeposits == null) return;
 

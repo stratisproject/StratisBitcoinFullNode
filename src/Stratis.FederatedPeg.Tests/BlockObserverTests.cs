@@ -11,6 +11,7 @@ using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Microsoft.Extensions.Logging;
 using Stratis.FederatedPeg.Tests.Utils;
 using BlockObserver = Stratis.FederatedPeg.Features.FederationGateway.Notifications.BlockObserver;
+using Stratis.Bitcoin.Features.BlockStore;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -33,6 +34,8 @@ namespace Stratis.FederatedPeg.Tests
         private readonly uint minimumDepositConfirmations;
 
         private readonly IMaturedBlockSender maturedBlockSender;
+
+        private readonly IMaturedBlocksProvider maturedBlocksProvider;
 
         private readonly IBlockTipSender blockTipSender;
 
@@ -57,6 +60,7 @@ namespace Stratis.FederatedPeg.Tests
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
             this.fullNode = Substitute.For<IFullNode>();
             this.maturedBlockSender = Substitute.For<IMaturedBlockSender>();
+            this.maturedBlocksProvider = Substitute.For<IMaturedBlocksProvider>();
             this.blockTipSender = Substitute.For<IBlockTipSender>();
             this.chain = Substitute.ForPartsOf<ConcurrentChain>();
             this.fullNode.NodeService<ConcurrentChain>().Returns(this.chain);
@@ -76,12 +80,19 @@ namespace Stratis.FederatedPeg.Tests
                 this.opReturnDataReader,
                 this.fullNode);
 
+            this.maturedBlocksProvider = new MaturedBlocksProvider(
+                this.loggerFactory,
+                this.chain,
+                this.depositExtractor,
+                Substitute.For<IBlockRepository>());
+
             this.blockObserver = new BlockObserver(
                 this.federationWalletSyncManager,
                 this.depositExtractor,
                 this.withdrawalExtractor,
                 this.withdrawalReceiver,
                 this.maturedBlockSender,
+                this.maturedBlocksProvider,
                 this.blockTipSender);
         }
 
