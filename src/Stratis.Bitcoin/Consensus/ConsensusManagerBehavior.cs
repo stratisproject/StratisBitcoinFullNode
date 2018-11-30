@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>
         /// The announced tip is accepted if it seems to be valid. Validation is only done on headers and so the announced tip may refer to invalid block.
         /// </remarks>
-        public ChainedHeader ExpectedPeerTip { get; protected set; }
+        public ChainedHeader BestReceivedTip { get; protected set; }
 
         /// <summary>Gets the best header sent using <see cref="HeadersPayload"/>.</summary>
         /// <remarks>Write access should be protected by <see cref="bestSentHeaderLock"/>.</remarks>
@@ -106,8 +106,8 @@ namespace Stratis.Bitcoin.Consensus
                         return null;
                     }
 
-                    this.ExpectedPeerTip = result.Consumed;
-                    this.UpdateBestSentHeader(this.ExpectedPeerTip);
+                    this.BestReceivedTip = result.Consumed;
+                    this.UpdateBestSentHeader(this.BestReceivedTip);
 
                     int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
                     this.cachedHeaders.RemoveRange(0, consumedCount);
@@ -291,7 +291,7 @@ namespace Stratis.Bitcoin.Consensus
                         if (headers.Count == 1)
                         {
                             // Distance of header from the peer expected tip.
-                            var distanceSeconds = (headers[0].BlockTime - this.ExpectedPeerTip.Header.BlockTime).TotalSeconds;
+                            var distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
 
                             if (this.chain.Network.MaxTipAge < distanceSeconds)
                             {
@@ -322,8 +322,8 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
-                this.ExpectedPeerTip = result.Consumed;
-                this.UpdateBestSentHeader(this.ExpectedPeerTip);
+                this.BestReceivedTip = result.Consumed;
+                this.UpdateBestSentHeader(this.BestReceivedTip);
 
                 if (result.Consumed.HashBlock != headers.Last().GetHash())
                 {
@@ -441,7 +441,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Resets the expected peer tip and last sent tip and triggers synchronization.</summary>
         public async Task ResetPeerTipInformationAndSyncAsync()
         {
-            this.ExpectedPeerTip = null;
+            this.BestReceivedTip = null;
             this.BestSentHeader = null;
 
             await this.ResyncAsync().ConfigureAwait(false);
@@ -510,7 +510,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             return new GetHeadersPayload()
             {
-                BlockLocator = (this.ExpectedPeerTip ?? this.consensusManager.Tip).GetLocator(),
+                BlockLocator = (this.BestReceivedTip ?? this.consensusManager.Tip).GetLocator(),
                 HashStop = null
             };
         }

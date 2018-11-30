@@ -108,9 +108,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
+        public Task<ProvenBlockHeader> GetAsync(int blockHeight)
         {
-            Task<List<ProvenBlockHeader>> task = Task.Run(() =>
+            Task<ProvenBlockHeader> task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
@@ -118,38 +118,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    this.logger.LogTrace("Loading ProvenBlockHeaders from block height {0} to {1} from the database.", fromBlockHeight, toBlockHeight);
+                    Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes());
 
-                    var headers = new List<ProvenBlockHeader>();
+                    if (row.Exists)
+                        return row.Value;
 
-                    for (int i = fromBlockHeight; i <= toBlockHeight; i++)
-                    {
-                        Row<byte[], ProvenBlockHeader> row = transaction.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, i.ToBytes());
-
-                        if (row.Exists)
-                        {
-                            headers.Add(row.Value);
-                        }
-                        else
-                        {
-                            this.logger.LogDebug("ProvenBlockHeader height {0} does not exist in the database.", i);
-                            headers.Add(null);
-                        }
-                    }
-
-                    return headers;
+                    return null;
                 }
             });
 
             return task;
-        }
-
-        /// <inheritdoc />
-        public async Task<ProvenBlockHeader> GetAsync(int blockHeight)
-        {
-            IEnumerable<ProvenBlockHeader> headers =  await this.GetAsync(blockHeight, blockHeight).ConfigureAwait(false);
-
-            return headers.FirstOrDefault();
         }
 
         /// <inheritdoc />

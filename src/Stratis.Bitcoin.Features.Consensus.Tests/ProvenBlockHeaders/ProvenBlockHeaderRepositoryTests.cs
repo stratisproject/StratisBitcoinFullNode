@@ -132,34 +132,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task GetAsync_Reads_MultipleProvenBlockHeadersAsync()
-        {
-            string folder = CreateTestDir(this);
-
-            PosBlock posBlock = CreatePosBlockMock();
-            ProvenBlockHeader header1 = CreateNewProvenBlockHeaderMock(posBlock);
-            ProvenBlockHeader header2 = CreateNewProvenBlockHeaderMock(posBlock);
-
-            using (var engine = new DBreezeEngine(folder))
-            {
-                DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(), header1);
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 2.ToBytes(), header2);
-                txn.Commit();
-            }
-
-            // Query the repository for the item that was inserted in the above code.
-            using (ProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
-            {
-                List<ProvenBlockHeader> headersOut = await repo.GetAsync(1, 2).ConfigureAwait(false);
-
-                headersOut.Count.Should().Be(2);
-                headersOut.First().GetHash().Should().Be(header1.GetHash());
-                headersOut.Last().GetHash().Should().Be(header2.GetHash());
-            }
-        }
-
-        [Fact]
         public async Task GetAsync_WithWrongBlockHeightReturnsNullAsync()
         {
             string folder = CreateTestDir(this);

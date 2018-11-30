@@ -93,7 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.ReadTxPrevFailed);
+                .Should().Be(ConsensusErrors.ReadTxPrevFailedInsufficient);
         }
 
         [Fact]
@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
-                .Should().Be(ConsensusErrors.ReadTxPrevFailed);
+                .Should().Be(ConsensusErrors.ReadTxPrevFailedInsufficient);
         }
 
         [Fact]

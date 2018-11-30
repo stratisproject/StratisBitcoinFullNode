@@ -4,7 +4,6 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
-using Stratis.Bitcoin.Networks.Deployments;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 {
@@ -20,6 +19,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
+            this.DefaultMaxOutboundConnections = 16;
+            this.DefaultMaxInboundConnections = 109;
             this.RPCPort = 18332;
             this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;

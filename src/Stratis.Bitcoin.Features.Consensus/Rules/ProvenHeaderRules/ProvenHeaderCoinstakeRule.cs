@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             {
                 this.Logger.LogTrace("(-)[NO_REWIND_DATA_INDEX_FOR_INPUT_PREVOUT]");
                 context.ValidationContext.InsufficientHeaderInformation = true;
-                ConsensusErrors.ReadTxPrevFailed.Throw();
+                ConsensusErrors.ReadTxPrevFailedInsufficient.Throw();
             }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
