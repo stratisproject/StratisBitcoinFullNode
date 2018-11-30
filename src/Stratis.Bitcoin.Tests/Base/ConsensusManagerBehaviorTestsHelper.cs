@@ -60,12 +60,12 @@ namespace Stratis.Bitcoin.Tests.Base
         /// <summary>Creates the and attaches a new <see cref="ConsensusManagerBehavior"/>.</summary>
         /// <param name="consensusTip">Consensus tip.</param>
         /// <param name="cache">List of cached headers with which behavior is initialized.</param>
-        /// <param name="expectedPeerTip">Behavior's expected tip's initial value.</param>
+        /// <param name="bestReceivedTip">Behavior's expected tip's initial value.</param>
         /// <param name="peerState">Peer connection state returned by the <see cref="INetworkPeer.State"/>.</param>
         /// <param name="connectNewHeadersMethod">Method which is invoked when behavior calls <see cref="IConsensusManager.HeadersPresented"/>.</param>
         /// <returns></returns>
         public ConsensusManagerBehavior CreateAndAttachBehavior(ChainedHeader consensusTip, List<BlockHeader> cache = null,
-            ChainedHeader expectedPeerTip = null, NetworkPeerState peerState = NetworkPeerState.HandShaked,
+            ChainedHeader bestReceivedTip = null, NetworkPeerState peerState = NetworkPeerState.HandShaked,
             Func<List<BlockHeader>, bool, ConnectNewHeadersResult> connectNewHeadersMethod = null)
         {
             // Chain
@@ -104,10 +104,10 @@ namespace Stratis.Bitcoin.Tests.Base
             this.PeerMock.Setup(x => x.Behavior<ConsensusManagerBehavior>()).Returns(() => cmBehavior);
             this.PeerMock.Setup(x => x.State).Returns(peerState);
 
-            if (expectedPeerTip != null)
+            if (bestReceivedTip != null)
             {
-                cmBehavior.SetPrivatePropertyValue("ExpectedPeerTip", expectedPeerTip);
-                cmBehavior.SetPrivatePropertyValue("BestSentHeader", expectedPeerTip);
+                cmBehavior.SetPrivatePropertyValue(nameof(cmBehavior.BestReceivedTip), bestReceivedTip);
+                cmBehavior.SetPrivatePropertyValue(nameof(cmBehavior.BestSentHeader), bestReceivedTip);
             }
 
             if (cache != null)
@@ -191,7 +191,7 @@ namespace Stratis.Bitcoin.Tests.Base
             message.Payload = payload;
 
             // Length of 1 is a bogus value used just to successfully initialize the class.
-            await this.MessageReceived.ExecuteCallbacksAsync(this.PeerMock.Object, new IncomingMessage() {Length = 1, Message = message}).ConfigureAwait(false);
+            await this.MessageReceived.ExecuteCallbacksAsync(this.PeerMock.Object, new IncomingMessage() { Length = 1, Message = message }).ConfigureAwait(false);
         }
 
         private class TestPeerBanning : IPeerBanning
