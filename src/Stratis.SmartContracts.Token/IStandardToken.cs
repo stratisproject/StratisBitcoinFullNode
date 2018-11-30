@@ -23,7 +23,7 @@
         /// <param name="to">The address to transfer the tokens to.</param>
         /// <param name="amount">The amount of tokens to transfer.</param>
         /// <returns>A bool representing whether the transfer was successful.</returns>
-        bool Transfer(Address to, ulong amount);
+        bool TransferTo(Address to, ulong amount);
 
         /// <summary>
         /// Transfers tokens owned by one address to another address.

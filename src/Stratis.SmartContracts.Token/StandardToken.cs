@@ -38,7 +38,7 @@ public class StandardToken : SmartContract, IStandardToken
     }
 
     /// <inheritdoc />
-    public bool Transfer(Address to, ulong amount)
+    public bool TransferTo(Address to, ulong amount)
     {
         if (amount == 0)
         {

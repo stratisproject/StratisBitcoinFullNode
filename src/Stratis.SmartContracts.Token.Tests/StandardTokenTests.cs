@@ -115,7 +115,7 @@ namespace Stratis.SmartContracts.Token.Tests
 
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 
-            Assert.True(standardToken.Transfer(this.destination, amount));
+            Assert.True(standardToken.TransferTo(this.destination, amount));
             this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.TransferLog { From = this.sender, To = this.destination, Amount = amount }));
         }
 
@@ -134,7 +134,7 @@ namespace Stratis.SmartContracts.Token.Tests
             // Setup the balance of the address in persistent state
             this.mockPersistentState.Setup(s => s.GetUInt64($"Balance:{this.sender}")).Returns(balance);
 
-            Assert.False(standardToken.Transfer(this.destination, amount));
+            Assert.False(standardToken.TransferTo(this.destination, amount));
 
             // Verify we queried the balance
             this.mockPersistentState.Verify(s => s.GetUInt64($"Balance:{this.sender}"));
@@ -159,7 +159,7 @@ namespace Stratis.SmartContracts.Token.Tests
             // Setup the destination's balance to be ulong.MaxValue
             this.mockPersistentState.Setup(s => s.GetUInt64($"Balance:{this.destination}")).Returns(destinationBalance);
 
-            Assert.ThrowsAny<OverflowException>(() => standardToken.Transfer(this.destination, amount));
+            Assert.ThrowsAny<OverflowException>(() => standardToken.TransferTo(this.destination, amount));
 
             // Verify we queried the sender's balance
             this.mockPersistentState.Verify(s => s.GetUInt64($"Balance:{this.sender}"));
@@ -199,7 +199,7 @@ namespace Stratis.SmartContracts.Token.Tests
             this.mockPersistentState.Setup(s => s.SetUInt64($"Balance:{this.destination}", It.IsAny<uint>()))
                 .Callback(() => Assert.Equal(4, callOrder++));
 
-            Assert.True(standardToken.Transfer(this.destination, amount));
+            Assert.True(standardToken.TransferTo(this.destination, amount));
 
             // Verify we queried the sender's balance
             this.mockPersistentState.Verify(s => s.GetUInt64($"Balance:{this.sender}"));
