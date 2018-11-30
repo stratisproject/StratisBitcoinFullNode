@@ -41,7 +41,7 @@
         /// <param name="spender">The address to grant approval to.</param>
         /// <param name="amount">To amount of tokens to approve.</param>
         /// <returns>A bool representing whether the approval was successful.</returns>
-        bool Approve(Address spender, ulong amount);
+        bool Approve(Address spender, ulong currentAmount, ulong amount);
 
         /// <summary>
         /// Returns the amount of tokens owned by owner that the spender is able to spend.

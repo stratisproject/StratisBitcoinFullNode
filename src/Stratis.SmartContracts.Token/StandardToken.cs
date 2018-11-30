@@ -96,11 +96,16 @@ public class StandardToken : SmartContract, IStandardToken
     }
 
     /// <inheritdoc />
-    public bool Approve(Address spender, ulong amount)
+    public bool Approve(Address spender, ulong currentAmount, ulong amount)
     {
+        if (Allowance(Message.Sender, spender) != currentAmount)
+        {
+            return false;
+        }
+
         SetApproval(Message.Sender, spender, amount);
 
-        Log(new ApprovalLog { Owner = Message.Sender, Spender = spender, Amount = amount});
+        Log(new ApprovalLog { Owner = Message.Sender, Spender = spender, Amount = amount, OldAmount = currentAmount });
 
         return true;
     }
@@ -134,6 +139,8 @@ public class StandardToken : SmartContract, IStandardToken
 
         [Index]
         public Address Spender;
+
+        public ulong OldAmount;
 
         public ulong Amount;
     }

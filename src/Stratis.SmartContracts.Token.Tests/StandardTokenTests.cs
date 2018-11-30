@@ -82,11 +82,56 @@ namespace Stratis.SmartContracts.Token.Tests
 
             var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
 
-            standardToken.Approve(this.spender, approval);
+            standardToken.Approve(this.spender, 0, approval);
 
             this.mockPersistentState.Verify(s => s.SetUInt64($"Allowance:{this.owner}:{this.spender}", approval));
 
-            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.ApprovalLog { Owner = this.owner, Spender = this.spender, Amount = approval }));
+            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.ApprovalLog { Owner = this.owner, Spender = this.spender, Amount = approval, OldAmount = 0 }));
+        }
+
+        [Fact]
+        public void Approve_Sets_Approval_Correctly_When_NonZero()
+        {
+            ulong balance = 100_000;
+            ulong approval = 1000;
+            ulong newApproval = 2000;
+
+            // Setup the Message.Sender address
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(this.contract, this.owner, 0));
+
+            var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
+
+            // Set up an existing allowance
+            this.mockPersistentState.Setup(s => s.GetUInt64($"Allowance:{this.owner}:{this.spender}")).Returns(approval);
+
+            standardToken.Approve(this.spender, approval, newApproval);
+
+            this.mockPersistentState.Verify(s => s.SetUInt64($"Allowance:{this.owner}:{this.spender}", newApproval));
+
+            this.mockContractLogger.Verify(l => l.Log(It.IsAny<ISmartContractState>(), new StandardToken.ApprovalLog { Owner = this.owner, Spender = this.spender, Amount = newApproval, OldAmount = approval }));
+        }
+
+        [Fact]
+        public void Approve_Does_Not_Set_Approval_If_Different()
+        {
+            ulong balance = 100_000;
+            ulong approval = 1000;
+            ulong newApproval = 2000;
+
+            // Setup the Message.Sender address
+            this.mockContractState.Setup(m => m.Message).Returns(new Message(this.contract, this.owner, 0));
+
+            var standardToken = new StandardToken(this.mockContractState.Object, 100_000);
+
+            // Set up an existing allowance
+            this.mockPersistentState.Setup(s => s.GetUInt64($"Allowance:{this.owner}:{this.spender}")).Returns(approval);
+
+            // Attempt to set the new approval for a different earlier approval
+            var differentApproval = approval + 1;
+
+            Assert.False(standardToken.Approve(this.spender, differentApproval, newApproval));
+
+            this.mockPersistentState.Verify(s => s.SetUInt64($"Allowance:{this.owner}:{this.spender}", It.IsAny<ulong>()), Times.Never);
         }
 
         [Fact]
