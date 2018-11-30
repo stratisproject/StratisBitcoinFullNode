@@ -40,7 +40,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = "I can't make it work yet.")]
+        [Fact]
         public void NodeCanMine()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
@@ -62,7 +62,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = "I can't make it work yet.")]
+        [Fact]
         public void PremineIsReceived()
         {
             var network = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();

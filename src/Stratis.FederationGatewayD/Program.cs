@@ -48,20 +48,8 @@ namespace Stratis.FederationGatewayD
                 Network network = nodeSettings.Network;
 
                 IFullNode node = isMainchainNode
-                    ? new FullNodeBuilder()
-                        .UseNodeSettings(nodeSettings)
-                        .UseBlockStore()
-                        .UsePosConsensus()
-                        .UseMempool()
-                        .UseWallet()
-                        .UseTransactionNotification()
-                        .UseBlockNotification()
-                        .AddPowPosMining()
-                        .AddFederationGateway()
-                        .UseApi()
-                        .AddRPC()
-                        .Build()
-                    : GetFederatedPegFullNode(nodeSettings);
+                    ? GetMainchainFullNode(nodeSettings)
+                    : GetSidechainFullNode(nodeSettings);
 
                 if (node != null)
                     await node.RunAsync();
@@ -72,19 +60,36 @@ namespace Stratis.FederationGatewayD
             }
         }
 
-        private static IFullNode GetFederatedPegFullNode(NodeSettings nodeSettings)
+        private static IFullNode GetMainchainFullNode(NodeSettings nodeSettings)
         {
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
-                .UsePoAConsensus()
+                .UsePosConsensus()
                 .UseMempool()
                 .UseWallet()
                 .UseTransactionNotification()
                 .UseBlockNotification()
-                .AddFederationGateway()
+                .AddPowPosMining()
                 .UseApi()
-                //.UseApps()
+                .AddRPC()
+                .AddFederationGateway()
+                .Build();
+            return node;
+        }
+
+        private static IFullNode GetSidechainFullNode(NodeSettings nodeSettings)
+        {
+            IFullNode node = new FullNodeBuilder()
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .AddFederationGateway()
+                .UseFederatedPegPoAMining()
+                .UseMempool()
+                .UseWallet()
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
                 .AddRPC()
                 .Build();
             return node;
