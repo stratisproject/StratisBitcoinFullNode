@@ -1,5 +1,5 @@
 ﻿using Stratis.SmartContracts;
-using Stratis.SmartContracts.Token;
+using Stratis.SmartContracts.Standards;
 
 /// <summary>
 /// Implementation of a standard token contract for the Stratis Platform.
