@@ -83,6 +83,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
                     var keyAsString = System.BitConverter.ToString(privateKey.ToBytes());
                     this.newLine($"$mining_key_hex_{i + 1} = \"{keyAsString}\"");
                     this.newLine($"$bytes_{i + 1} = foreach($hexByte in $mining_key_hex_{i + 1}.Split(\"-\")) {{[System.Convert]::ToByte($hexByte, 16)}}");
+                    this.newLine($"New-Item -path \"{targetFile}\" -type file");
                     this.newLine($"$bytes_{i + 1} | set-content {targetFile} -Encoding Byte");
                 });
             this.newLine(Environment.NewLine);
