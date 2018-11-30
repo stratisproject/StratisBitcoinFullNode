@@ -124,7 +124,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
             var provenHeadersPayload = new ProvenHeadersPayload();
 
-            ChainedHeader header = this.FindHeaderToStartFrom(fork);
+            ChainedHeader header = null;
+            if (getHeadersPayload.HashStop != null && getHeadersPayload.HashStop != uint256.Zero)
+                header = this.FindHeaderToStartFromByHashStop(getHeadersPayload.HashStop);
+            else
+                header = this.FindHeaderToStartFrom(fork);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
@@ -146,10 +150,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 }
 
                 lastHeader = header;
-                provenHeadersPayload.Headers.Add(provenBlockHeader);
 
-                if ((header.HashBlock == getHeadersPayload.HashStop) || (provenHeadersPayload.Headers.Count == MaxItemsPerHeadersMessage))
-                    break;
+                provenHeadersPayload.Headers.Add(provenBlockHeader);
 
                 header = header.Previous;
             }
