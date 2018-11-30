@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,12 +9,15 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -552,7 +556,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().WithWallet().Start();
 
                 // MinerA mines to height CoinbaseMaturity.
-                TestHelper.MineBlocks(minerA, (int)network.Consensus.CoinbaseMaturity);
+                HdAddress minerAAddress = TestHelper.MineBlocks(minerA, (int)network.Consensus.CoinbaseMaturity).AddressUsed;
 
                 // Sync the network to height CoinbaseMaturity.
                 TestHelper.ConnectAndSync(minerA, minerB);
@@ -563,6 +567,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // MinerA mines 2 blocks on its own fork.
                 TestHelper.MineBlocks(minerA, 2);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 2);
+
+                //before staking, create a transaction that will spend the coin used to stake
+                Transaction txThatSpendCoinstake = CreateTransactionThatWillSpendCoinstake(network, minerA, minerB);
 
                 // Miner A stakes one coin.
                 var minterA = minerA.FullNode.NodeService<IPosMinting>();
@@ -590,16 +597,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Use the coinstake transaction to spend it on the minerB fork
                 TxIn coinstake = coinstakeTransactionA.Inputs[0];
 
-                Transaction txThatSpendCoinstake = network.CreateTransaction();
-                txThatSpendCoinstake.AddInput(coinstake);
-                txThatSpendCoinstake.AddOutput(new TxOut
-                {
-                    Value = Money.FromUnit(3, MoneyUnit.BTC),
-                    ScriptPubKey = minerB.FullNode.WalletManager().GetUnusedAddress().ScriptPubKey
-                });
-                // TODO: sign transaction
+                // coinstakeTransactionA.Inputs.Remove(coinstakeTransactionA.Inputs)
 
+                // Transaction txThatSpendCoinstake = CreateTransactionThatSpendCoinstake2(network, minerA, minerB, coinstakeTransactionA, coinstake);
+                txThatSpendCoinstake = UpdateTransactionThatWillSpendCoinstake(minerA, txThatSpendCoinstake);
                 Assert.True(minerB.AddToStratisMempool(txThatSpendCoinstake));
+
+                // Wait for the transaction to be picked up by the mempool
+                TestHelper.WaitLoop(() => minerB.CreateRPCClient().GetRawMempool().Length > 0);
 
                 // MinerB mines 1 blocks on its own fork.
                 TestHelper.MineBlocks(minerB, 1);
@@ -618,6 +623,114 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
             }
+        }
+
+        private static Transaction CreateTransactionThatSpendCoinstake(StratisRegTest network, CoreNode minerA, CoreNode minerB, TxIn coinstake)
+        {
+            Transaction txThatSpendCoinstake = network.CreateTransaction();
+            txThatSpendCoinstake.AddInput(coinstake);
+            txThatSpendCoinstake.AddOutput(new TxOut
+            {
+                Value = Money.FromUnit(3, MoneyUnit.BTC),
+                ScriptPubKey = minerB.FullNode.WalletManager().GetUnusedAddress().ScriptPubKey
+            });
+
+            List<ICoin> coins = new List<ICoin>();
+            foreach (var txin in txThatSpendCoinstake.Inputs)
+            {
+                coins.Add(new Coin(txin.PrevOut, new TxOut()
+                {
+                    ScriptPubKey = txin.ScriptSig
+                }));
+            }
+
+            txThatSpendCoinstake.Sign(minerA.FullNode.Network, minerA.MinerSecret, coins[0]);
+
+            return txThatSpendCoinstake;
+        }
+        private static Transaction CreateTransactionThatSpendCoinstake2(StratisRegTest network, CoreNode minerA, CoreNode minerB, Transaction coinstakeTransaction, TxIn coinstake)
+        {
+            var txBuildContext = new TransactionBuildContext(minerA.FullNode.Network)
+            {
+                AccountReference = new WalletAccountReference("mywallet", "account 0"),
+                ChangeAddress = minerA.FullNode.WalletManager().GetUnusedAddress(),
+                MinConfirmations = (int)network.Consensus.CoinbaseMaturity,
+                FeeType = FeeType.High,
+                WalletPassword = "password",
+                Recipients = new[] { new Recipient { Amount = 99999, ScriptPubKey = minerB.FullNode.WalletManager().GetUnusedAddress().ScriptPubKey } }.ToList()
+            };
+
+            var txThatSpendCoinstake = minerA.FullNode.Network.CreateTransaction();
+            txThatSpendCoinstake.Time = (uint)minerA.FullNode.NodeService<IDateTimeProvider>().GetAdjustedTimeAsUnixTimestamp();
+
+            foreach (var txIn in coinstakeTransaction.Inputs)
+            {
+                txThatSpendCoinstake.AddInput(new TxIn(txIn.PrevOut, minerA.MinerSecret.ScriptPubKey));
+            }
+
+            foreach (var txOut in coinstakeTransaction.Outputs)
+            {
+                txThatSpendCoinstake.AddOutput(new TxOut(txOut.Value, txOut.ScriptPubKey));
+            }
+
+            List<ICoin> coins = new List<ICoin>();
+            foreach (var txin in txThatSpendCoinstake.Inputs)
+            {
+                coins.Add(new Coin(txin.PrevOut, new TxOut()
+                {
+                    ScriptPubKey = txin.ScriptSig
+                }));
+            }
+
+            txThatSpendCoinstake.Sign(minerA.FullNode.Network, minerA.MinerSecret, coins[0]);
+
+            return txThatSpendCoinstake;
+        }
+
+        private static Transaction CreateTransactionThatWillSpendCoinstake(StratisRegTest network, CoreNode minerA, CoreNode minerB)
+        {
+            var txBuildContext = new TransactionBuildContext(minerA.FullNode.Network)
+            {
+                AccountReference = new WalletAccountReference("mywallet", "account 0"),
+                ChangeAddress = minerA.FullNode.WalletManager().GetUnusedAddress(),
+                MinConfirmations = (int)network.Consensus.CoinbaseMaturity,
+                FeeType = FeeType.High,
+                WalletPassword = "password",
+                Recipients = new[] { new Recipient { Amount = 999999, ScriptPubKey = minerB.FullNode.WalletManager().GetUnusedAddress().ScriptPubKey } }.ToList()
+            };
+
+            Transaction txThatSpendCoinstake = minerA.FullNode.NodeService<IWalletTransactionHandler>().BuildTransaction(txBuildContext);
+
+            return txThatSpendCoinstake;
+        }
+
+        private Transaction UpdateTransactionThatWillSpendCoinstake(CoreNode scSender, Transaction txThatSpendCoinstake)
+        {
+            var updatedTransaction = scSender.FullNode.Network.CreateTransaction();
+            updatedTransaction.Time = (uint)scSender.FullNode.NodeService<IDateTimeProvider>().GetAdjustedTimeAsUnixTimestamp();
+
+            foreach (var txIn in txThatSpendCoinstake.Inputs)
+            {
+                updatedTransaction.AddInput(new TxIn(txIn.PrevOut, scSender.MinerSecret.ScriptPubKey));
+            }
+
+            foreach (var txOut in txThatSpendCoinstake.Outputs)
+            {
+                updatedTransaction.AddOutput(new TxOut(txOut.Value, txOut.ScriptPubKey));
+            }
+
+            List<ICoin> coins = new List<ICoin>();
+            foreach (var txin in updatedTransaction.Inputs)
+            {
+                coins.Add(new Coin(txin.PrevOut, new TxOut()
+                {
+                    ScriptPubKey = txin.ScriptSig
+                }));
+            }
+
+            updatedTransaction.Sign(scSender.FullNode.Network, scSender.MinerSecret, coins[0]);
+
+            return updatedTransaction;
         }
     }
 
