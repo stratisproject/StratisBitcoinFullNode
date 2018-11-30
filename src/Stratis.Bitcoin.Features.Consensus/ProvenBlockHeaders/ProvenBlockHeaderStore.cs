@@ -160,8 +160,20 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
             {
+                lock (this.lockObject)
+                {
+                    if (this.PendingBatch.TryGetValue(blockHeight, out ProvenBlockHeader headerFromBatch))
+                    {
+                        this.logger.LogTrace("(-)[FROM_BATCH]");
+                        return headerFromBatch;
+                    }
+                }
+
                 if (this.Cache.TryGetValue(blockHeight, out ProvenBlockHeader header))
+                {
+                    this.logger.LogTrace("(-)[FROM_CACHE]");
                     return header;
+                }
 
                 // Check the repository.
                 header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
@@ -171,79 +183,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 return header;
             }
-        }
-
-        /// <inheritdoc />
-        public async Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight)
-        {
-            if (fromBlockHeight >= toBlockHeight)
-                throw new ArgumentException($"{nameof(fromBlockHeight)} can't be equal or greater than {nameof(toBlockHeight)}");
-
-            var provenHeadersOutput = new SortedDictionary<int, ProvenBlockHeader>();
-
-            using (new StopwatchDisposable(o => this.performanceCounter.AddQueryTime(o)))
-            {
-                int index = fromBlockHeight;
-
-                var blockHeightsNotInCache = new List<int>();
-
-                do
-                {
-                    if (this.Cache.TryGetValue(index, out ProvenBlockHeader header))
-                    {
-                        provenHeadersOutput.Add(index, header);
-                    }
-                    else
-                    {
-                        blockHeightsNotInCache.Add(index);
-                    }
-
-                    index++;
-
-                } while (index <= toBlockHeight);
-
-                // Try and get items from the repository if not found in the store cache.
-                if (blockHeightsNotInCache.Count > 0)
-                {
-                    // If headersInCache is empty then we can assume blockHeightsNotInCache is the full range.
-                    if (provenHeadersOutput.Keys.Count == 0)
-                    {
-                        List<ProvenBlockHeader> rangeHeaders = await this.provenBlockHeaderRepository.GetAsync(fromBlockHeight, toBlockHeight);
-
-                        index = fromBlockHeight;
-
-                        foreach (ProvenBlockHeader rangeHeader in rangeHeaders)
-                        {
-                            if (rangeHeader != null)
-                            {
-                                provenHeadersOutput.Add(index, rangeHeader);
-                                this.Cache.AddOrUpdate(index, rangeHeader, rangeHeader.HeaderSize);
-                            }
-
-                            index++;
-                        }
-                    }
-                    else
-                    {
-                        // If not a full sequence then check individually.
-                        foreach (int headerNotInCache in blockHeightsNotInCache)
-                        {
-                            ProvenBlockHeader repositoryHeader = await this.provenBlockHeaderRepository.GetAsync(headerNotInCache).ConfigureAwait(false);
-
-                            if (repositoryHeader != null)
-                            {
-                                provenHeadersOutput.Add(headerNotInCache, repositoryHeader);
-
-                                this.Cache.AddOrUpdate(headerNotInCache, repositoryHeader, repositoryHeader.HeaderSize);
-                            }
-                        }
-                    }
-                }
-            }
-
-            this.CheckItemsAreInConsecutiveSequence(provenHeadersOutput.Keys.ToList());
-
-            return provenHeadersOutput.Values.ToList();
         }
 
         /// <inheritdoc />
@@ -302,9 +241,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
         }
 
-        /// <summary>
-        /// Checks whether block height keys are in consecutive sequence.
-        /// </summary>
+        /// <summary>Checks whether block height keys are in consecutive sequence.</summary>
         /// <param name="keys">List of block height keys to check.</param>
         private void CheckItemsAreInConsecutiveSequence(List<int> keys)
         {
