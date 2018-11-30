@@ -39,6 +39,7 @@
         /// Approves the spender to be able to transfer an amount of tokens on Message.Sender's behalf.
         /// </summary>
         /// <param name="spender">The address to grant approval to.</param>
+        /// <param name="currentAmount">The current amount of tokens that the spender is approved to transfer.</param>
         /// <param name="amount">To amount of tokens to approve.</param>
         /// <returns>A bool representing whether the approval was successful.</returns>
         bool Approve(Address spender, ulong currentAmount, ulong amount);
