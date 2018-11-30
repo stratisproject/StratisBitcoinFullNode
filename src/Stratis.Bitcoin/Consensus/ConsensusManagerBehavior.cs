@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        protected ChainedHeader DetermineFirstHeaderToConstructPayloadFrom(ChainedHeader fork)
+        protected ChainedHeader FindHeaderToStartFrom(ChainedHeader fork)
         {
             // Do not return more than 2000 headers from the fork point.
             ChainedHeader chainedHeaderToStartFrom = this.consensusManager.Tip;
@@ -230,11 +230,9 @@ namespace Stratis.Bitcoin.Consensus
 
             var headersPayload = new HeadersPayload();
 
-            var chainedHeaderToStartFrom = this.DetermineFirstHeaderToConstructPayloadFrom(fork);
+            ChainedHeader header = this.FindHeaderToStartFrom(fork);
 
-            ChainedHeader header = chainedHeaderToStartFrom;
-
-            for (int heightIndex = chainedHeaderToStartFrom.Height; heightIndex > fork.Height; heightIndex--)
+            for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
                 lastHeader = header;
                 headersPayload.Headers.Add(header.Header);

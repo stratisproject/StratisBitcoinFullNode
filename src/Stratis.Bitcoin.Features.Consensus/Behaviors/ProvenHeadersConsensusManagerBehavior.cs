@@ -124,11 +124,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
             var provenHeadersPayload = new ProvenHeadersPayload();
 
-            var chainedHeaderToStartFrom = DetermineFirstHeaderToConstructPayloadFrom(fork);
+            ChainedHeader header = this.FindHeaderToStartFrom(fork);
 
-            ChainedHeader header = chainedHeaderToStartFrom;
-
-            for (int heightIndex = chainedHeaderToStartFrom.Height; heightIndex > fork.Height; heightIndex--)
+            for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
                 if (!(header.Header is ProvenBlockHeader provenBlockHeader))
                 {
