@@ -124,18 +124,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
             var provenHeadersPayload = new ProvenHeadersPayload();
 
-            // Do not return more than 2000 headers from the fork point.
-            ChainedHeader chainedHeaderToStartFrom = this.consensusManager.Tip;
-            if ((this.consensusManager.Tip.Height - fork.Height) > MaxItemsPerHeadersMessage)
-            {
-                // e.g. If fork = 3000 and tip is 6000 we need to start from block 5000.
-                var startFromHeight = (fork.Height + 1) + MaxItemsPerHeadersMessage;
-                chainedHeaderToStartFrom = this.consensusManager.Tip.GetAncestor(startFromHeight);
-            }
+            var chainedHeaderToStartFrom = DetermineFirstHeaderToConstructPayloadFrom(fork);
 
             ChainedHeader header = chainedHeaderToStartFrom;
 
-            for (int i = chainedHeaderToStartFrom.Height; i > fork.Height; i--)
+            for (int heightIndex = chainedHeaderToStartFrom.Height; heightIndex > fork.Height; heightIndex--)
             {
                 if (!(header.Header is ProvenBlockHeader provenBlockHeader))
                 {

@@ -198,6 +198,20 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
+        protected ChainedHeader DetermineFirstHeaderToConstructPayloadFrom(ChainedHeader fork)
+        {
+            // Do not return more than 2000 headers from the fork point.
+            ChainedHeader chainedHeaderToStartFrom = this.consensusManager.Tip;
+            if ((chainedHeaderToStartFrom.Height - fork.Height) > MaxItemsPerHeadersMessage)
+            {
+                // e.g. If fork = 3000 and tip is 6000 we need to start from block 5000.
+                var startFromHeight = fork.Height + MaxItemsPerHeadersMessage;
+                chainedHeaderToStartFrom = chainedHeaderToStartFrom.GetAncestor(startFromHeight);
+            }
+
+            return chainedHeaderToStartFrom;
+        }
+
         /// <summary>Constructs the headers from locator to consensus tip.</summary>
         /// <param name="getHeadersPayload">The <see cref="GetHeadersPayload"/> payload that triggered the creation of this payload.</param>
         /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
@@ -216,16 +230,25 @@ namespace Stratis.Bitcoin.Consensus
 
             var headersPayload = new HeadersPayload();
 
-            foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
+            var chainedHeaderToStartFrom = this.DetermineFirstHeaderToConstructPayloadFrom(fork);
+
+            ChainedHeader header = chainedHeaderToStartFrom;
+
+            for (int heightIndex = chainedHeaderToStartFrom.Height; heightIndex > fork.Height; heightIndex--)
             {
                 lastHeader = header;
                 headersPayload.Headers.Add(header.Header);
 
                 if ((header.HashBlock == getHeadersPayload.HashStop) || (headersPayload.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
+
+                header = header.Previous;
             }
 
             this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
+
+            // We need to reverse it as it was added to the list backwards.
+            headersPayload.Headers.Reverse();
 
             return headersPayload;
         }
