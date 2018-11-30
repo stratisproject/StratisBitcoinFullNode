@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         /// <inheritdoc />
         /// <remarks>Creates <see cref="PoAHeadersPayload"/> instead of <see cref="HeadersPayload"/> like base implementation does.</remarks>
-        public override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
+        protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
             lastHeader = null;

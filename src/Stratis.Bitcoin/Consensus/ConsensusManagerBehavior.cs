@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="getHeadersPayload">The <see cref="GetHeadersPayload"/> payload that triggered the creation of this payload.</param>
         /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
         /// <returns>Payload with headers from locator towards consensus tip or <c>null</c> in case locator was invalid.</returns>
-        public virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
+        protected virtual Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
 

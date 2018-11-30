@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         }
 
         /// <inheritdoc />
-        public override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
+        protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
             // If getHeadersPayload isn't a GetProvenHeadersPayload, return base implementation result
             if (!(getHeadersPayload is GetProvenHeadersPayload))
@@ -124,7 +124,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
             var provenHeadersPayload = new ProvenHeadersPayload();
 
-            foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
+            // Do not return more than 2000 headers from the fork point.
+            ChainedHeader chainedHeaderToStartFrom = this.consensusManager.Tip;
+            if ((this.consensusManager.Tip.Height - fork.Height) > MaxItemsPerHeadersMessage)
+            {
+                // e.g. If fork = 3000 and tip is 6000 we need to start from block 5000.
+                var startFromHeight = (fork.Height + 1) + MaxItemsPerHeadersMessage;
+                chainedHeaderToStartFrom = this.consensusManager.Tip.GetAncestor(startFromHeight);
+            }
+
+            ChainedHeader header = chainedHeaderToStartFrom;
+
+            for (int i = chainedHeaderToStartFrom.Height; i > fork.Height; i--)
             {
                 if (!(header.Header is ProvenBlockHeader provenBlockHeader))
                 {
@@ -141,16 +152,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                         this.logger.LogTrace("(-)[NO_PH_AVAILABLE]");
                         break;
                     }
-
-                    // We need to check that the headers we are returning are consecutive.
-                    // If a specific header is found not to follow on from the previous one,
-                    // we just return what we have that are consecutive.
-                    var previous = lastHeader ?? fork;
-                    if (provenBlockHeader.HashPrevBlock != previous.HashBlock)
-                    {
-                        this.logger.LogTrace("Inconsecutive header found; {0} does not follow on from {1}", header, lastHeader);
-                        break;
-                    }
                 }
 
                 lastHeader = header;
@@ -158,7 +159,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
                 if ((header.HashBlock == getHeadersPayload.HashStop) || (provenHeadersPayload.Headers.Count == MaxItemsPerHeadersMessage))
                     break;
+
+                header = header.Previous;
             }
+
+            provenHeadersPayload.Headers.Reverse();
 
             return provenHeadersPayload;
         }

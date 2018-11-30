@@ -1,4 +1,8 @@
 ﻿using System.Collections.Generic;
+using System.Net;
+using System.Net.Sockets;
+using System.Threading;
+using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
@@ -10,9 +14,11 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Behaviors;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
@@ -22,7 +28,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private readonly IChainState chainState;
         private readonly ICheckpoints checkpoints;
         private readonly ConnectionManagerSettings connectionManagerSettings;
-        private readonly IConsensusManager consensusManager;
         private readonly ExtendedLoggerFactory extendedLoggerFactory;
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
         private readonly IPeerBanning peerBanning;
@@ -33,11 +38,40 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             this.chainState = new Mock<IChainState>().Object;
             this.checkpoints = new Mock<ICheckpoints>().Object;
             this.connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
-            this.consensusManager = new Mock<IConsensusManager>().Object;
             this.extendedLoggerFactory = new ExtendedLoggerFactory(); this.extendedLoggerFactory.AddConsoleWithFilters();
             this.initialBlockDownloadState = new Mock<IInitialBlockDownloadState>().Object;
             this.peerBanning = new Mock<IPeerBanning>().Object;
             this.provenBlockHeaderStore = new Mock<IProvenBlockHeaderStore>().Object;
+        }
+
+        private Mock<INetworkPeer> CreatePeerMock()
+        {
+            var peer = new Mock<INetworkPeer>();
+
+            var connection = new NetworkPeerConnection(this.Network, peer.Object, new TcpClient(), 0, (message, token) => Task.CompletedTask, DateTimeProvider.Default, this.extendedLoggerFactory, new PayloadProvider());
+
+            peer.SetupGet(networkPeer => networkPeer.Connection).Returns(connection);
+
+            var connectionParameters = new NetworkPeerConnectionParameters();
+            VersionPayload version = connectionParameters.CreateVersion(new IPEndPoint(1, 1), new IPEndPoint(1, 1), this.Network, DateTimeProvider.Default.GetTimeOffset());
+            version.Services = NetworkPeerServices.Network;
+
+            peer.SetupGet(x => x.PeerVersion).Returns(version);
+            peer.SetupGet(x => x.State).Returns(NetworkPeerState.HandShaked);
+
+            var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
+            var messageReceived = new AsyncExecutionEvent<INetworkPeer, IncomingMessage>();
+
+            peer.Setup(x => x.StateChanged).Returns(() => stateChanged);
+            peer.Setup(x => x.MessageReceived).Returns(() => messageReceived);
+
+            var connectionManagerBehaviorMock = new Mock<IConnectionManagerBehavior>();
+
+            peer.Setup(x => x.Behavior<IConnectionManagerBehavior>()).Returns(() => connectionManagerBehaviorMock.Object);
+
+            peer.SetupGet(x => x.PeerEndPoint).Returns(new IPEndPoint(1, 1));
+
+            return peer;
         }
 
         [Fact]
@@ -47,9 +81,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             var chain = new ConcurrentChain(this.Network, provenHeaderChain);
 
-            var behavior = new ProvenHeadersConsensusManagerBehavior(chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.extendedLoggerFactory, this.Network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings);
+            var consensusManager = new Mock<IConsensusManager>();
+            consensusManager.Setup(c => c.Tip).Returns(provenHeaderChain);
 
-            ChainedHeader chainedHeader = null;
+            var behavior = new ProvenHeadersConsensusManagerBehavior(chain, this.initialBlockDownloadState, consensusManager.Object, this.peerBanning, this.extendedLoggerFactory, this.Network, this.chainState, this.checkpoints, this.provenBlockHeaderStore, this.connectionManagerSettings);
 
             var hashes = new List<uint256>();
             for (int i = 1; i < 5; i++)
@@ -57,82 +92,48 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 var chainedHeaderToAdd = chain.GetBlock(i);
                 hashes.Add(chainedHeaderToAdd.HashBlock);
             }
-
             hashes.Reverse();
 
-            var blockLocator = new BlockLocator
+            var blockLocator = new BlockLocator { Blocks = hashes };
+
+            var peerMock = CreatePeerMock();
+            behavior.Attach(peerMock.Object);
+
+            var incomingMessage = new IncomingMessage
             {
-                Blocks = hashes
+                Message = new Message(new PayloadProvider().DiscoverPayloads())
+                {
+                    Magic = this.Network.Magic,
+                    Payload = new GetProvenHeadersPayload(blockLocator),
+                }
             };
 
-            var payload = (ProvenHeadersPayload)behavior.ConstructHeadersPayload(new GetProvenHeadersPayload(blockLocator), out chainedHeader);
-            Assert.Equal(5, payload.Headers.Count);
+            var provenBlockHeadersToVerifyAgainst = new List<ProvenBlockHeader>();
+            for (int i = 5; i <= provenHeaderChain.Height; i++)
+            {
+                provenBlockHeadersToVerifyAgainst.Add((ProvenBlockHeader)provenHeaderChain.GetAncestor(i).Header);
+            }
+
+            //Trigger the event handler
+            peerMock.Object.MessageReceived.ExecuteCallbacksAsync(peerMock.Object, incomingMessage).GetAwaiter().GetResult();
+
+            // Check that the headers we sent is the correct headers.
+            var payload = new ProvenHeadersPayload(provenBlockHeadersToVerifyAgainst.ToArray());
+            peerMock.Verify(p => p.SendMessageAsync(It.Is<ProvenHeadersPayload>(pl => VerifyHeaders(pl.Headers, provenBlockHeadersToVerifyAgainst)), default(CancellationToken)));
         }
 
-        [Fact]
-        public void ConstructProvenHeaderPayload_NonConsecutive_Headers()
+        private bool VerifyHeaders(List<ProvenBlockHeader> fromVerify, List<ProvenBlockHeader> matchWith)
         {
-            ChainedHeader provenHeaderChain = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
+            if (fromVerify.Count != 5)
+                return false;
 
-            var itemsToReturnInMock = new List<PosBlockHeader>();
-
-            for (int i = 1; i < 10; i++)
+            for (int i = 0; i < 5; i++)
             {
-                PosBlock block = this.CreatePosBlockMock();
-
-                PosBlockHeader header = null;
-
-                if (i == 7)
-                    header = (PosBlockHeader)((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateBlockHeader();
-                else
-                    header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
-
-                header.Nonce = RandomUtils.GetUInt32();
-                header.HashPrevBlock = provenHeaderChain.HashBlock;
-                header.Bits = Target.Difficulty1;
-
-                ChainedHeader prevHeader = provenHeaderChain;
-                provenHeaderChain = new ChainedHeader(header, header.GetHash(), i);
-
-                provenHeaderChain.SetPrivatePropertyValue("Previous", prevHeader);
-
-                prevHeader.Next.Add(provenHeaderChain);
-
-                if (i >= 5)
-                    itemsToReturnInMock.Add(header);
+                if (fromVerify[i].GetHash() != matchWith[i].GetHash())
+                    return false;
             }
 
-            var chain = new ConcurrentChain(this.Network, provenHeaderChain);
-
-            var provenBlockHeaderStoreWithInvalidPrevious = new Mock<IProvenBlockHeaderStore>();
-
-            provenBlockHeaderStoreWithInvalidPrevious.SetupSequence(p => p.GetAsync(It.IsAny<int>()))
-                .ReturnsAsync((ProvenBlockHeader)itemsToReturnInMock[0]) //5
-                .ReturnsAsync((ProvenBlockHeader)itemsToReturnInMock[1]) //6
-                .ReturnsAsync(new ProvenBlockHeader(CreatePosBlockMock())); //7
-
-            var behavior = new ProvenHeadersConsensusManagerBehavior(chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.extendedLoggerFactory, this.Network, this.chainState, this.checkpoints, provenBlockHeaderStoreWithInvalidPrevious.Object, this.connectionManagerSettings);
-
-            ChainedHeader chainedHeader = null;
-
-            var hashes = new List<uint256>();
-            for (int i = 1; i < 5; i++)
-            {
-                var chainedHeaderToAdd = chain.GetBlock(i);
-                hashes.Add(chainedHeaderToAdd.HashBlock);
-            }
-
-            hashes.Reverse();
-
-            var blockLocator = new BlockLocator
-            {
-                Blocks = hashes
-            };
-
-            var payload = (ProvenHeadersPayload)behavior.ConstructHeadersPayload(new GetProvenHeadersPayload(blockLocator), out chainedHeader);
-            Assert.Equal(2, payload.Headers.Count);
-            Assert.Equal(itemsToReturnInMock[0].GetHash(), payload.Headers[0].GetHash());
-            Assert.Equal(itemsToReturnInMock[1].GetHash(), payload.Headers[1].GetHash());
+            return true;
         }
     }
 }
