@@ -50,13 +50,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             int heightToSyncTo = tip.Height > this.numberOfBlocksToKeep ? tip.Height - this.numberOfBlocksToKeep : 0;
 
-            for (int i = tip.Height - 1; i >= heightToSyncTo; i--)
+            for (int rewindHeight = tip.Height - 1; rewindHeight >= heightToSyncTo; rewindHeight--)
             {
-                RewindData rewindData = await coinView.GetRewindData(i).ConfigureAwait(false);
+                RewindData rewindData = await coinView.GetRewindData(rewindHeight).ConfigureAwait(false);
 
                 if (rewindData == null)
                 {
-                    throw new ConsensusException($"Rewind data of height '{i}' was not found!");
+                    throw new ConsensusException($"Rewind data of height '{rewindHeight}' was not found!");
                 }
 
                 if (rewindData.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0)
@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     for (int outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
                     {
                         string key = $"{unspent.TransactionId}-{outputIndex}";
-                        this.items[key] = checked((int)unspent.Height);
+                        this.items[key] = rewindHeight;
                     }
                 }
             }
