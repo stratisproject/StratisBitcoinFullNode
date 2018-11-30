@@ -371,10 +371,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 }
             }
 
-            //UnspentOutputs matchingUnspentUtxo = rewindData.OutputsToRestore
-            //    .Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N))
-            //    .FirstOrDefault();
-
             if (matchingUnspentUtxo == null)
             {
                 this.Logger.LogTrace("(-)[UTXO_NOT_FOUND_IN_REWIND_DATA]");
