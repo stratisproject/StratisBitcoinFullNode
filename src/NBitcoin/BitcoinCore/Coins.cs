@@ -100,6 +100,9 @@ namespace NBitcoin.BitcoinCore
         private bool IsNull(TxOut o) => o.Value.Satoshi == -1;
         public bool IsEmpty => this.Outputs.Count == 0;
 
+        /// <summary>
+        /// Remove the last items that are <see cref="IsNull"/>, this method may reduce the size of the collection.
+        /// </summary>
         private void Cleanup()
         {
             int count = this.Outputs.Count;
@@ -284,6 +287,7 @@ namespace NBitcoin.BitcoinCore
                     this.Outputs[i] = NullTxOut;
             }
 
+            // Remove empty outputs form the end of the collection.
             this.Cleanup();
         }
 
