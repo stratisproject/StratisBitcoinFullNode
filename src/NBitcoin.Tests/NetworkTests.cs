@@ -322,14 +322,13 @@ namespace NBitcoin.Tests
         }
 
         [Fact]
-        [Trait("UnitTest", "UnitTest")]
         public void StratisMainIsInitializedCorrectly()
         {
             Network network = this.stratisMain;
 
             Assert.Equal(29, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
-            Assert.Equal(3, network.SeedNodes.Count);
+            Assert.Equal(5, network.SeedNodes.Count);
 
             Assert.Equal("StratisMain", network.Name);
             Assert.Equal(StratisMain.StratisRootFolderName, network.RootFolderName);
