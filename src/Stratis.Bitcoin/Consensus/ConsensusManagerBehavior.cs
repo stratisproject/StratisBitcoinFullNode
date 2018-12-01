@@ -198,35 +198,36 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        protected ChainedHeader FindHeaderToStartFrom(ChainedHeader fork)
+        protected ChainedHeader FindStartingHeader(ChainedHeader fork, uint256 hashstop)
         {
+            ChainedHeader tip = this.consensusManager.Tip;
+
+            if (hashstop != null && hashstop != uint256.Zero)
+            {
+                tip = this.consensusManager.Tip.FindAncestorOrSelf(hashstop);
+
+                if (tip == null)
+                {
+                    // Fall back to tip.
+                    tip = this.consensusManager.Tip;
+                }
+
+                if (tip.Height <= fork.Height)
+                {
+                    // The hashstop is bellow the fork point fall back to tip
+                    tip = this.consensusManager.Tip;
+                }
+            }
+
             // Do not return more than 2000 headers from the fork point.
-            ChainedHeader chainedHeaderToStartFrom = this.consensusManager.Tip;
-            if ((chainedHeaderToStartFrom.Height - fork.Height) > MaxItemsPerHeadersMessage)
+            if ((tip.Height - fork.Height) > MaxItemsPerHeadersMessage)
             {
                 // e.g. If fork = 3000 and tip is 6000 we need to start from block 5000.
                 int startFromHeight = fork.Height + MaxItemsPerHeadersMessage;
-                chainedHeaderToStartFrom = chainedHeaderToStartFrom.GetAncestor(startFromHeight);
+                tip = tip.GetAncestor(startFromHeight);
             }
 
-            return chainedHeaderToStartFrom;
-        }
-
-        protected ChainedHeader FindHeaderToStartFromByHashStop(uint256 hashStop)
-        {
-            // Find the header
-            var hashStopHeader = this.consensusManager.Tip.FindAncestorOrSelf(hashStop);
-
-            // Do not return more than 2000 headers from the fork point.
-            ChainedHeader chainedHeaderToStartFrom = hashStopHeader;
-            if ((chainedHeaderToStartFrom.Height - hashStopHeader.Height) > MaxItemsPerHeadersMessage)
-            {
-                // e.g. If fork = 3000 and tip is 6000 we need to start from block 5000.
-                int startFromHeight = hashStopHeader.Height + MaxItemsPerHeadersMessage;
-                chainedHeaderToStartFrom = chainedHeaderToStartFrom.GetAncestor(startFromHeight);
-            }
-
-            return chainedHeaderToStartFrom;
+            return tip;
         }
 
         /// <summary>Constructs the headers from locator to consensus tip.</summary>
@@ -247,11 +248,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var headersPayload = new HeadersPayload();
 
-            ChainedHeader header = null;
-            if (getHeadersPayload.HashStop != null && getHeadersPayload.HashStop != uint256.Zero)
-                header = this.FindHeaderToStartFromByHashStop(getHeadersPayload.HashStop);
-            else
-                header = this.FindHeaderToStartFrom(fork);
+            ChainedHeader header = this.FindStartingHeader(fork, getHeadersPayload.HashStop);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
