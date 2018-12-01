@@ -133,14 +133,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             {
                 // The trx was found now check if the UTXO is spent.
                 prevUtxo = coins.UnspentOutputs[0];
-                if (txIn.PrevOut.N >= prevUtxo.Outputs.Length)
+
+                TxOut utxo = null;
+                if (txIn.PrevOut.N < prevUtxo.Outputs.Length)
                 {
-                    // This should never happen, if it did, an incorrect number of UTXOs were created for a trx.
-                    this.Logger.LogTrace("(-)[PREV_UTXO_COUNT_MISMATCH]");
-                    ConsensusErrors.ReadTxPrevFailed.Throw();
+                    // Check that the size of the outs collection is the same as the expected position of the UTXO 
+                    // Note the collection will not always represent the original size of the transaction unspent
+                    // outputs because when we store outputs do disk the last spent items are removed from the collection.
+                    utxo = prevUtxo.Outputs[txIn.PrevOut.N];
                 }
 
-                TxOut utxo = prevUtxo.Outputs[txIn.PrevOut.N];
                 if (utxo == null)
                 {
                     // UTXO is spent so find it in rewind data.
@@ -355,9 +357,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
-            UnspentOutputs matchingUnspentUtxo = rewindData.OutputsToRestore
-                .Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N))
-                .FirstOrDefault();
+
+            UnspentOutputs matchingUnspentUtxo = null;
+            foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
+            {
+                if (unspent.TransactionId == input.PrevOut.Hash)
+                {
+                    if (input.PrevOut.N < unspent.Outputs.Length)
+                    {
+                        matchingUnspentUtxo = unspent;
+                        break;
+                    }
+                }
+            }
 
             if (matchingUnspentUtxo == null)
             {
