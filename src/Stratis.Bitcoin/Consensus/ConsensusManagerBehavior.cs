@@ -198,36 +198,27 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        protected ChainedHeader FindStartingHeader(ChainedHeader fork, uint256 hashstop)
+        protected ChainedHeader FindLastHeaderForPayload(ChainedHeader fork, uint256 hashstop)
         {
-            ChainedHeader tip = this.consensusManager.Tip;
+            ChainedHeader lastHeader = this.consensusManager.Tip;
 
+            // If the hash stop has been given, calculate the last chained header from it.
             if (hashstop != null && hashstop != uint256.Zero)
             {
-                tip = this.consensusManager.Tip.FindAncestorOrSelf(hashstop);
-
-                if (tip == null)
-                {
-                    // Fall back to tip.
-                    tip = this.consensusManager.Tip;
-                }
-
-                if (tip.Height <= fork.Height)
-                {
-                    // The hashstop is bellow the fork point fall back to tip
-                    tip = this.consensusManager.Tip;
-                }
+                var hashStopHeader = lastHeader.FindAncestorOrSelf(hashstop);
+                if ((hashStopHeader != null) && (lastHeader.Height > fork.Height))
+                    lastHeader = hashStopHeader;
             }
 
             // Do not return more than 2000 headers from the fork point.
-            if ((tip.Height - fork.Height) > MaxItemsPerHeadersMessage)
+            if ((lastHeader.Height - fork.Height) > MaxItemsPerHeadersMessage)
             {
                 // e.g. If fork = 3000 and tip is 6000 we need to start from block 5000.
                 int startFromHeight = fork.Height + MaxItemsPerHeadersMessage;
-                tip = tip.GetAncestor(startFromHeight);
+                lastHeader = lastHeader.GetAncestor(startFromHeight);
             }
 
-            return tip;
+            return lastHeader;
         }
 
         /// <summary>Constructs the headers from locator to consensus tip.</summary>
@@ -248,7 +239,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var headersPayload = new HeadersPayload();
 
-            ChainedHeader header = this.FindStartingHeader(fork, getHeadersPayload.HashStop);
+            ChainedHeader header = this.FindLastHeaderForPayload(fork, getHeadersPayload.HashStop);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {

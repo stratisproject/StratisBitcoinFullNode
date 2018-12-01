@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
             var provenHeadersPayload = new ProvenHeadersPayload();
 
-            ChainedHeader header = this.FindStartingHeader(fork, getHeadersPayload.HashStop);
+            ChainedHeader header = this.FindLastHeaderForPayload(fork, getHeadersPayload.HashStop);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
