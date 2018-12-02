@@ -179,6 +179,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc/>
         public void CheckProofOfStake(PosRuleContext context, ChainedHeader prevChainedHeader, BlockStake prevBlockStake, Transaction transaction, uint headerBits)
         {
+            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(prevChainedHeader, nameof(prevChainedHeader));
+            Guard.NotNull(prevBlockStake, nameof(prevBlockStake));
+            Guard.NotNull(transaction, nameof(transaction));
+
             if (!transaction.IsCoinStake)
             {
                 this.logger.LogTrace("(-)[NO_COINSTAKE]");
@@ -202,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // Min age requirement.
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, GetTargetDepthRequired(prevChainedHeader)))
             {
                 this.logger.LogTrace("(-)[BAD_STAKE_DEPTH]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
@@ -233,6 +238,10 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc/>
         public void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
         {
+            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(prevout, nameof(prevout));
+            Guard.NotNull(prevChainedHeader, nameof(prevChainedHeader));
+
             FetchCoinsResponse coins = this.coinView.FetchCoinsAsync(new[] { prevout.Hash }).GetAwaiter().GetResult();
             if ((coins == null) || (coins.UnspentOutputs.Length != 1))
             {
@@ -248,7 +257,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             UnspentOutputs prevUtxo = coins.UnspentOutputs[0];
-            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, ((PosConsensusOptions)this.network.Consensus.Options).GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1))
+            if (prevUtxo == null)
+            {
+                this.logger.LogTrace("(-)[PREV_UTXO_IS_NULL]");
+                ConsensusErrors.ReadTxPrevFailed.Throw();
+            }
+
+            if (this.IsConfirmedInNPrevBlocks(prevUtxo, prevChainedHeader, GetTargetDepthRequired(prevChainedHeader)))
             {
                 this.logger.LogTrace("(-)[LOW_COIN_AGE]");
                 ConsensusErrors.InvalidStakeDepth.Throw();
@@ -351,10 +366,21 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc />
         public bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth)
         {
+            Guard.NotNull(coins, nameof(coins));
+            Guard.NotNull(referenceChainedHeader, nameof(referenceChainedHeader));
+
             int actualDepth = referenceChainedHeader.Height - (int)coins.Height;
             bool res = actualDepth < targetDepth;
 
             return res;
+        }
+
+        // todo: docs
+        public long GetTargetDepthRequired(ChainedHeader prevChainedHeader)
+        {
+            Guard.NotNull(prevChainedHeader, nameof(ChainedHeader));
+
+            return (this.network.Consensus.Options as PosConsensusOptions).GetStakeMinConfirmations(prevChainedHeader.Height + 1, this.network) - 1;
         }
 
         /// <summary>
@@ -387,7 +413,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         private BigInteger FromUInt256(uint256 input)
         {
             return BigInteger.Zero;
-        }
+        }        
     }
 }
 
