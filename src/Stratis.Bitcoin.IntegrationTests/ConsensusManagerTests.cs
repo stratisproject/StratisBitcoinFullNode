@@ -557,18 +557,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var powBlockWithBigPremine = minerA.FullNode.ConsensusManager().Tip.Block;
                 Transaction txWithBigPremine = powBlockWithBigPremine.Transactions[0];
 
-                // MinerA mines to height CoinbaseMaturity.
-                TestHelper.MineBlocks(minerA, (int)network.Consensus.CoinbaseMaturity - 2);
+                // MinerA mines to height 2 + CoinbaseMaturity.
+                TestHelper.MineBlocks(minerA, (int)network.Consensus.CoinbaseMaturity);
 
                 // Sync the network to height CoinbaseMaturity.
                 TestHelper.ConnectAndSync(minerA, minerB);
 
                 // Disconnect Miner A and B.
                 TestHelper.DisconnectAll(minerA, minerB);
-
-                // MinerA mines 2 blocks on its own fork.
-                TestHelper.MineBlocks(minerA, 2);
-                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 2);
 
                 // Miner A stakes one coin.
                 var minterA = minerA.FullNode.NodeService<IPosMinting>();
@@ -589,7 +585,6 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // MinerB mines 1 block on its own fork.
                 TestHelper.MineBlocks(minerB, 1);
-                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 1);
 
                 // Ensure we are going to create a transaction that spend the coinstake coin
                 Assert.True(coinstakeTransactionA.Inputs[0].PrevOut.Hash == txWithBigPremine.GetHash());
@@ -597,7 +592,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Create a transaction that spend the coinstake
                 Transaction txThatSpendCoinstake = CreateTransactionThatSpendCoinstake(network, minerA, minerB, null, txWithBigPremine);
 
-                // Add the tx that spend coinstake, into the memorypool of minerB
+                // Add the tx that spend coinstake, into the memory pool of minerB
                 Assert.True(minerB.AddToStratisMempool(txThatSpendCoinstake));
 
                 // Wait for the transaction to be picked up by the mempool
@@ -605,7 +600,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // MinerB mines 1 blocks on minerB to include the tx that spend coinstake.
                 TestHelper.MineBlocks(minerB, 1);
-                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 2);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 4);
 
                 var powBlockWithSpentCoinstake = minerB.FullNode.ConsensusManager().Tip.Block;
                 // Ensure my transaction has been included in the block.
@@ -613,7 +608,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Sync the network, minerA should switch to minerB.
                 TestHelper.MineBlocks(minerB, 3);
-                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 5);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 7);
 
                 var expectedValidChainHeight = minerB.FullNode.ConsensusManager().Tip.Height;
 
