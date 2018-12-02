@@ -624,7 +624,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectAndSync(minerA, minerB);
 
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
-                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
             }
         }
 
@@ -634,9 +634,12 @@ namespace Stratis.Bitcoin.IntegrationTests
             txThatSpendCoinstake.AddInput(new TxIn(new OutPoint(txWithBigPremine, 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerA.MinerSecret.PubKey)));
             txThatSpendCoinstake.AddOutput(new TxOut
             {
-                Value = txWithBigPremine.Outputs[0].Value - 1,
+                Value = txWithBigPremine.Outputs[0].Value - new Money(1, MoneyUnit.BTC),
                 ScriptPubKey = minerB.MinerHDAddress.ScriptPubKey
             });
+
+            var dateTimeProvider = minerA.FullNode.NodeService<IDateTimeProvider>();
+            txThatSpendCoinstake.Time = (uint)dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
 
             Coin spentCoin = new Coin(txWithBigPremine, 0);
