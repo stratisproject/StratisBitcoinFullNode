@@ -275,18 +275,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // Outputs addresses are keyvalue pairs of address, amount. Translate to Receipient list.
-            var recipients = new List<Recipient>();
+            IEnumerable<Recipient> recipients = null;
             if (!string.IsNullOrEmpty(addressesJson))
             {
-                JsonConvert.DeserializeObject<List<KeyValuePair<string, decimal>>>(addressesJson).ForEach(address => recipients.Add(new Recipient
+                recipients = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(addressesJson).Select(address => new Recipient
                 {
                     ScriptPubKey = BitcoinAddress.Create(address.Key, this.fullNode.Network).ScriptPubKey,
                     Amount = Money.Coins(address.Value),
-                    SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Any(subAddress => subAddress.ToString().Equals(address))
-                }));
+                    SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.fullNode.Network))
+                });
             }
 
-            if (!recipients.Any())
+            if (recipients == null || !recipients.Any())
             {
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, "No valid output addresses specified.");
             }
@@ -296,7 +296,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 AccountReference = accountReference,                
                 MinConfirmations = minConf,
                 Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.                
-                Recipients = recipients                
+                Recipients = recipients.ToList()                
             };
 
             // Set fee type for transaction build context.

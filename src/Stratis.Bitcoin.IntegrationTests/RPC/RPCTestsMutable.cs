@@ -1,7 +1,9 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading;
 using FluentAssertions;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -179,6 +181,65 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpcClient.WalletPassphrase("password", 5);
                 Thread.Sleep(120 * 1000); // 2 minutes.
                 Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+            }
+        }
+
+        [Fact]
+        public void TestRpcSendManyWithValidDataIsSuccessful()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                int blocksToMine = (int)network.Consensus.CoinbaseMaturity + 1;
+                TestHelper.MineBlocks(node, blocksToMine);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksToMine);
+
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+                var bob = new Key().GetBitcoinSecret(network);
+                var bobAddress = bob.GetAddress();
+
+                rpcClient.WalletPassphrase("password", 60);
+
+                // Test with just defaults.
+                const decimal coinsForAlice = 1.0m;
+                const decimal coinsForBob = 2.0m;
+                Dictionary<string, decimal> addresses = new Dictionary<string, decimal>();
+                addresses.Add(aliceAddress.ToString(), coinsForAlice);
+                addresses.Add(bobAddress.ToString(), coinsForBob);
+                var addressesJson = JsonConvert.SerializeObject(addresses);
+                var response = rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
+                var txid = new uint256(response.ResultString);                
+
+                // Check the hash calculated correctly.               
+                var tx = rpcClient.GetRawTransaction(txid);
+                txid.Should().Be(tx.GetHash());                
+
+                // Check the output is the right amount.
+                var aliceCoins = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == aliceAddress.ScriptPubKey);
+                aliceCoins.Amount.Should().Be(Money.Coins(coinsForAlice));
+                
+                var bobCoins = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == bobAddress.ScriptPubKey);
+                bobCoins.Amount.Should().Be(Money.Coins(coinsForBob));
+
+                // Test option to subtract fees from outputs.
+                var subtractFeeAddresses = new[] { aliceAddress.ToString(), bobAddress.ToString() };
+                response = rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson, 0, string.Empty, subtractFeeAddresses);
+                txid = new uint256(response.ResultString);
+
+                // Check the hash calculated correctly.               
+                tx = rpcClient.GetRawTransaction(txid);
+                txid.Should().Be(tx.GetHash());
+
+                // Check the output is the right amount.
+                aliceCoins = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == aliceAddress.ScriptPubKey);
+                aliceCoins.Amount.Should().Be(Money.Coins(coinsForAlice));
+
+                bobCoins = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == bobAddress.ScriptPubKey);
+                bobCoins.Amount.Should().Be(Money.Coins(coinsForBob));
             }
         }
     }
