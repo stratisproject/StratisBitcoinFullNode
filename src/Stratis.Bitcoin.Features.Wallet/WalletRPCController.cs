@@ -261,6 +261,73 @@ namespace Stratis.Bitcoin.Features.Wallet
             return unspentCoins.ToArray();
         }
 
+        [ActionName("sendmany")]
+        [ActionDescription("Creates and broadcasts a transaction which sends outputs to multiple addresses.")]
+        public async Task<uint256> SendManyAsync(string fromAccount, string addressesJson, int minConf = 1, string comment = null, string subtractFeeFromJson = null, bool isReplaceable = false, int? confTarget = null, string estimateMode = "UNSET")
+        {
+            var accountReference = this.GetAccount();
+           
+            // Optional list of addresses to subtract fees from.
+            IEnumerable<BitcoinAddress> subtractFeeFromAddresses = null;            
+            if (!string.IsNullOrEmpty(subtractFeeFromJson))
+            {
+                subtractFeeFromAddresses = JsonConvert.DeserializeObject<List<string>>(subtractFeeFromJson).Select(i => BitcoinAddress.Create(i, this.fullNode.Network));
+            }
+
+            // Outputs addresses are keyvalue pairs of address, amount. Translate to Receipient list.
+            var recipients = new List<Recipient>();
+            if (!string.IsNullOrEmpty(addressesJson))
+            {
+                JsonConvert.DeserializeObject<List<KeyValuePair<string, decimal>>>(addressesJson).ForEach(address => recipients.Add(new Recipient
+                {
+                    ScriptPubKey = BitcoinAddress.Create(address.Key, this.fullNode.Network).ScriptPubKey,
+                    Amount = Money.Coins(address.Value),
+                    SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Any(subAddress => subAddress.ToString().Equals(address))
+                }));
+            }
+
+            if (!recipients.Any())
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, "No valid output addresses specified.");
+            }
+          
+            var context = new TransactionBuildContext(this.fullNode.Network)
+            {
+                AccountReference = accountReference,                
+                MinConfirmations = minConf,
+                Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.                
+                Recipients = recipients                
+            };
+
+            // Set fee type for transaction build context.
+            context.FeeType = FeeType.Medium;
+            if (estimateMode.Equals("ECONOMICAL", StringComparison.InvariantCultureIgnoreCase))
+                context.FeeType = FeeType.Low;
+            else if (estimateMode.Equals("CONSERVATIVE", StringComparison.InvariantCultureIgnoreCase))
+                context.FeeType = FeeType.High;
+
+            try
+            { 
+                // Log warnings for currently unsupported parameters.
+                if (!string.IsNullOrEmpty(comment))
+                    this.logger.LogWarning("'comment' parameter is currently unsupported. Ignored.");
+                if (isReplaceable)
+                    this.logger.LogWarning("'replaceable' parameter is currently unsupported. Ignored.");
+                if (confTarget != null)
+                    this.logger.LogWarning("'conf_target' parameter is currently unsupported. Ignored.");
+
+                // Build and broadcast the transaction.
+                Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
+                await this.broadcasterManager.BroadcastTransactionAsync(transaction);
+
+                return transaction.GetHash();
+            }
+            catch (WalletException exception)
+            {                
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
+            }          
+        }
+
         private WalletAccountReference GetAccount()
         {
             //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
