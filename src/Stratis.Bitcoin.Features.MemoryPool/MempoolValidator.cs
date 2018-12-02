@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Default for -limitancestorsize, maximum kilobytes of tx + all in-mempool ancestors.
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
-        public const int DefaultAncestorSizeLimit = 101;
+        public const int DefaultAncestorSizeLimit = 1000;
 
         /// <summary>
         /// Default for -limitdescendantcount, max number of in-mempool descendants.
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// Default for -limitdescendantsize, maximum kilobytes of in-mempool descendants.
         /// </summary>
         /// <seealso cref = "MempoolSettings" />
-        public const int DefaultDescendantSizeLimit = 101;
+        public const int DefaultDescendantSizeLimit = 1000;
 
         /// <summary>
         /// Default for -mempoolexpiry, expiration time for mempool transactions in hours.
