@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public PoAConsensusManagerBehavior(ConcurrentChain chain, IInitialBlockDownloadState initialBlockDownloadState,
             IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory)
-        : base (chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
+        : base(chain, initialBlockDownloadState, consensusManager, peerBanning, loggerFactory)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName, $"[{this.GetHashCode():x}] ");
         }
