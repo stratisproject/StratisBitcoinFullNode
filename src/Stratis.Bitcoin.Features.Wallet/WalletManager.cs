@@ -201,14 +201,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // If the node was started with -defaultwallet flag, check if it already exists, if not, create one.
             if (this.walletSettings.DefaultWallet)
             {
-                if (wallets.Any(w => w.Name == DefaultWalletName))
-                {
-                    var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-                    this.CreateWallet(DefaultWalletPassword, DefaultWalletName, string.Empty, mnemonic);
-                }
-
-                // Unlock the default wallet. We only unlock it when the -defaultwallet flag was provided.
-                this.LoadWallet(DefaultWalletPassword, DefaultWalletName);
+                this.CreateDefaultWallet(wallets.Any(w => w.Name == DefaultWalletName));
             }
 
             // Load data in memory for faster lookups.
@@ -284,6 +277,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Load(wallet);
 
             return mnemonic;
+        }
+
+        private void CreateDefaultWallet(bool exists)
+        {
+            if (!exists)
+            {
+                var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                this.CreateWallet(DefaultWalletPassword, DefaultWalletName, string.Empty, mnemonic);
+            }
+
+            // Load the wallet from disk after creation, to verify it and also verify that we can decrypt it.
+            this.LoadWallet(DefaultWalletPassword, DefaultWalletName);
         }
 
         /// <inheritdoc />

@@ -3240,6 +3240,24 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .WithMessage("There is already an account in this wallet with this xpubkey: " + stratisAccount0ExtPubKey);
         }
 
+        [Fact]
+        public void CreateDefaultWalletAndVerify()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet");
+            walletManager.Start();
+            Assert.True(walletManager.ContainsWallets);
+
+            var defaultWallet = walletManager.Wallets.First();
+
+            Assert.Equal("default", defaultWallet.Name);
+
+            // Attempt to load the default wallet.
+            var wallet = walletManager.LoadWallet("default", "default");
+
+            Assert.Equal(wallet.EncryptedSeed, defaultWallet.EncryptedSeed);
+        }
+
         private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)
         {
             var nodeSettings = new NodeSettings(KnownNetworks.RegTest, ProtocolVersion.PROTOCOL_VERSION, network.Name, cmdLineArgs);
