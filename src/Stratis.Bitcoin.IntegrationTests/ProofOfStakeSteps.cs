@@ -68,6 +68,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 .AddPowPosMining()
                 .AddRPC()
                 .MockIBD()
+                .UseTestChainedHeaderTree()
                 .OverrideDateTimeProviderFor<MiningFeature>());
 
             this.PremineNodeWithCoins = this.nodeBuilder.CreateCustomNode(callback, new StratisRegTest(), ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);
