@@ -49,9 +49,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.numberOfBlocksToKeep = (int)this.network.Consensus.MaxReorgLength;
 
-            int heightToSyncTo = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 0;
+            int heightToSyncTo = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1;
 
-            for (int rewindHeight = tipHeight - 1; rewindHeight >= heightToSyncTo; rewindHeight--)
+            for (int rewindHeight = tipHeight; rewindHeight >= heightToSyncTo; rewindHeight--)
             {
                 RewindData rewindData = await coinView.GetRewindData(rewindHeight).ConfigureAwait(false);
 
@@ -86,10 +86,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             this.Flush(tipHeight);
 
-            int heightToKeepItemsTo = tipHeight - this.numberOfBlocksToKeep;
+            int bottomHeight = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1;
 
-            RewindData rewindData = await coinView.GetRewindData(heightToKeepItemsTo).ConfigureAwait(false);
-            this.AddRewindData(heightToKeepItemsTo, rewindData);
+            RewindData rewindData = await coinView.GetRewindData(bottomHeight).ConfigureAwait(false);
+            this.AddRewindData(bottomHeight, rewindData);
         }
 
         /// <inheritdoc />
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void Flush(int tipHeight)
         {
-            int heightToKeepItemsTo = tipHeight - this.numberOfBlocksToKeep;
+            int heightToKeepItemsTo = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1; ;
 
             List<KeyValuePair<string, int>> listOfItems = this.items.ToList();
             foreach (KeyValuePair<string, int> item in listOfItems)

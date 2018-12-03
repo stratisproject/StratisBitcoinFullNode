@@ -57,7 +57,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
             await this.StakeChain.LoadAsync().ConfigureAwait(false);
 
-            await this.RewindDataIndexCache.InitializeAsync(chainTip.Height, this.UtxoSet).ConfigureAwait(false);
+            // A temporary hack until tip manage will be introduced.
+            var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
+            uint256 hash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            ChainedHeader tip = chainTip.FindAncestorOrSelf(hash);
+
+            await this.RewindDataIndexCache.InitializeAsync(tip.Height, this.UtxoSet).ConfigureAwait(false);
         }
     }
 }
