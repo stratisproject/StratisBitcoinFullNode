@@ -24,7 +24,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         private IDateTimeProvider timeProvider;
 
         public SidechainNodeRunner(string dataDir, PoANetwork network, EditableTimeProvider timeProvider)
-            : base(dataDir)
+            : base(dataDir, "")
         {
             this.Network = network;
             this.timeProvider = timeProvider;
