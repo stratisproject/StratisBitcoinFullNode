@@ -37,6 +37,7 @@ namespace Stratis.SmartContracts.Tests.Common
                 .UseSmartContractPosPowMining()
                 .UseReflectionExecutor()
                 .MockIBD()
+                .UseTestChainedHeaderTree()
                 .OverrideDateTimeProviderFor<MiningFeature>()
                 .Build();
         }
