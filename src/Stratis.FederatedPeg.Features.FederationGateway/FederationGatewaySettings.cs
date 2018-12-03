@@ -22,6 +22,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private const string MinCoinMaturityParam = "mincoinmaturity";
 
+        private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
+
         private const string TransactionFeeParam = "transactionfee";
 
         public FederationGatewaySettings(NodeSettings nodeSettings)
@@ -58,7 +60,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
                 .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort));
 
-            this.MinimumDepositConfirmations = nodeSettings.Network.Consensus.MaxReorgLength + 1;
+            //todo : remove that for prod code
+            this.MinimumDepositConfirmations = (uint)configReader.GetOrDefault<int>(MinimumDepositConfirmationsParam, (int)nodeSettings.Network.Consensus.MaxReorgLength + 1);
+            //this.MinimumDepositConfirmations = nodeSettings.Network.Consensus.MaxReorgLength + 1;
         }
 
         /// <inheritdoc/>
