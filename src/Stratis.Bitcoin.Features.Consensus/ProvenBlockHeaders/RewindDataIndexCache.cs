@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     /// <inheritdoc />
-    public class RewindDataIndexStore : IRewindDataIndexStore
+    public class RewindDataIndexCache : IRewindDataIndexCache
     {
         private readonly Network network;
 
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         private readonly BackendPerformanceCounter performanceCounter;
 
-        public RewindDataIndexStore(IDateTimeProvider dateTimeProvider, Network network)
+        public RewindDataIndexCache(IDateTimeProvider dateTimeProvider, Network network)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 

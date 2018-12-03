@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// we do not delete old rewind data that is no longer needed but after the issue #5 (https://github.com/stratisproject/StratisBitcoinFullNode/issues/5)
     /// is fixed we should also make sure that old fork point data is deleted as well).
     /// </summary>
-    public interface IRewindDataIndexStore
+    public interface IRewindDataIndexCache
     {
         /// <summary>
         /// Initializes the rewind data index store by loading rewind data from the cache or dbreeze for the last 500 blocks.

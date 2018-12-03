@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             Transaction coinstake = header.Coinstake;
             TxIn input = coinstake.Inputs[0];
 
-            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
+            int? rewindDataIndex = this.PosParent.RewindDataIndexCache.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
             if (!rewindDataIndex.HasValue)
             {
                 this.Logger.LogTrace("(-)[NO_REWIND_DATA_INDEX_FOR_INPUT_PREVOUT]");
