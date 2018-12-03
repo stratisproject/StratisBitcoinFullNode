@@ -2,6 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 
+using NBitcoin;
+
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -23,8 +25,8 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
     {
         private IDateTimeProvider timeProvider;
 
-        public SidechainNodeRunner(string dataDir, PoANetwork network, EditableTimeProvider timeProvider)
-            : base(dataDir, "")
+        public SidechainNodeRunner(string dataDir, string agent, Network network, EditableTimeProvider timeProvider)
+            : base(dataDir, agent)
         {
             this.Network = network;
             this.timeProvider = timeProvider;
