@@ -479,6 +479,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     this.blockHeight = lastRewindDataItem.Key - 1;
 
                     this.cachedRewindDataIndex.Remove(lastRewindDataItem.Key);
+
+                    if (this.rewindDataIndexStore != null)
+                        await this.rewindDataIndexStore.Remove(this.blockHeight, this);
+
                     this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", this.blockHash);
                     return this.blockHash;
                 }
@@ -492,6 +496,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.innerBlockHash = hash;
                 this.blockHash = hash;
                 this.blockHeight -= 1;
+
+                if (this.rewindDataIndexStore != null)
+                    await this.rewindDataIndexStore.InitializeAsync(this.blockHeight, this);
 
                 return hash;
             }
