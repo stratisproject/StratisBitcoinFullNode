@@ -541,6 +541,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
 
+        /// <remarks>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</remarks>
         [Fact(Skip = "Work in progress")]
         public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
         {
@@ -557,16 +558,16 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var powBlockWithBigPremine = minerA.FullNode.ConsensusManager().Tip.Block;
                 Transaction txWithBigPremine = powBlockWithBigPremine.Transactions[0];
 
-                // MinerA mines to height 2 + CoinbaseMaturity.
-                TestHelper.MineBlocks(minerA, (int)network.Consensus.CoinbaseMaturity);
+                // MinerA mines another 10 blocks.
+                TestHelper.MineBlocks(minerA, 10);
 
-                // Sync the network to height CoinbaseMaturity.
+                // Sync the peers A and B (height 12)
                 TestHelper.ConnectAndSync(minerA, minerB);
 
                 // Disconnect Miner A and B.
                 TestHelper.DisconnectAll(minerA, minerB);
 
-                // Miner A stakes one coin.
+                // Miner A stakes one coin. (height 13)
                 var minterA = minerA.FullNode.NodeService<IPosMinting>();
                 minterA.Stake(new WalletSecret() { WalletName = "mywallet", WalletPassword = "password" });
 
@@ -578,12 +579,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 minterA.StopStake();
 
                 var posBlock = minerA.FullNode.ConsensusManager().Tip.Block as PosBlock;
-                Assert.True(posBlock != null);
+                Assert.True(posBlock != null && minerA.FullNode.ConsensusManager().Tip.Height == 13);
 
                 var coinstakeTransactionA = posBlock.GetProtocolTransaction();
                 Assert.True(coinstakeTransactionA.IsCoinStake);
 
-                // MinerB mines 1 block on its own fork.
+                // MinerB mines 1 block on its own fork. (heightB 13)
                 TestHelper.MineBlocks(minerB, 1);
 
                 // Ensure we are going to create a transaction that spend the coinstake coin
@@ -598,9 +599,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Wait for the transaction to be picked up by the mempool
                 TestHelper.WaitLoop(() => minerB.CreateRPCClient().GetRawMempool().Length > 0);
 
-                // MinerB mines 1 blocks on minerB to include the tx that spend coinstake.
+                // MinerB mines 1 blocks on minerB to include the tx that spend coinstake. (heightB 14)
                 TestHelper.MineBlocks(minerB, 1);
-                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 4);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 14);
 
                 var powBlockWithSpentCoinstake = minerB.FullNode.ConsensusManager().Tip.Block;
                 // Ensure my transaction has been included in the block.
