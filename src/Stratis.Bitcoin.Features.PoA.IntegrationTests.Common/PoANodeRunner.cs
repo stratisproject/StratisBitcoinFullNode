@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 .UseApi()
                 .AddRPC()
                 .MockIBD()
+                .UseTestChainedHeaderTree()
                 .ReplaceTimeProvider(this.timeProvider)
                 .AddFastMiningCapability()
                 .Build();
