@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                 .AddPowPosMining()
                 .AddRPC()
                 .UseApi()
+                .UseTestChainedHeaderTree()
                 .MockIBD();
 
             if (this.OverrideDateTimeProvider)
@@ -75,6 +76,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                                 .AddPowPosMining()
                                 .AddRPC()
                                 .MockIBD()
+                                .UseTestChainedHeaderTree()
                                 .Build();
 
             return fullNode;

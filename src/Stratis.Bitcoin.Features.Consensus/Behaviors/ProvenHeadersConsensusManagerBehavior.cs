@@ -110,7 +110,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             // If getHeadersPayload isn't a GetProvenHeadersPayload, return base implementation result
             if (!(getHeadersPayload is GetProvenHeadersPayload))
             {
-                return base.ConstructHeadersPayload(getHeadersPayload, out lastHeader);
+                var headersPayload = base.ConstructHeadersPayload(getHeadersPayload, out lastHeader) as HeadersPayload;
+
+                for (int i = 0; i < headersPayload.Headers.Count; i++)
+                {
+                    if (headersPayload.Headers[i] is ProvenBlockHeader phHeader)
+                    {
+                        BlockHeader newHeader = this.chain.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                        newHeader.Bits = phHeader.Bits;
+                        newHeader.Time = phHeader.Time;
+                        newHeader.Nonce = phHeader.Nonce;
+                        newHeader.Version = phHeader.Version;
+                        newHeader.HashMerkleRoot = phHeader.HashMerkleRoot;
+                        newHeader.HashPrevBlock = phHeader.HashPrevBlock;
+
+                        headersPayload.Headers[i] = newHeader;
+                    }
+                }
+
+                return headersPayload;
             }
 
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
@@ -124,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
 
             var provenHeadersPayload = new ProvenHeadersPayload();
 
-            ChainedHeader header = this.FindLastHeaderForPayload(fork, getHeadersPayload.HashStop);
+            ChainedHeader header = this.GetLastHeaderToSend(fork, getHeadersPayload.HashStop);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
