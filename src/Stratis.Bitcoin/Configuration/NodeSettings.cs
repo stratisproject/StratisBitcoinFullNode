@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Configuration
         ///   name would be determined. In this case we first need to determine the network.
         /// </remarks>
         public NodeSettings(Network network = null, ProtocolVersion protocolVersion = SupportedProtocolVersion,
-            string agent = "StratisNode", string[] args = null, NetworksSelector networksSelector = null)
+            string agent = "x42", string[] args = null, NetworksSelector networksSelector = null)
         {
             // Create the default logger factory and logger.
             var loggerFactory = new ExtendedLoggerFactory();
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Configuration
             if (this.DataDir == null)
             {
                 // Create the data directories if they don't exist.
-                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("x42Node", this.Network.RootFolderName), this.Network);
             }
             else
             {

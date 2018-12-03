@@ -115,5 +115,14 @@ namespace NBitcoin
 
         /// <summary>Group of rules that are used during full validation (connection of a new block) specific to the given network.</summary>
         List<IFullValidationConsensusRule> FullValidationRules { get; set; }
+
+        Money ProofOfStakeRewardAfterSubsidyLimit { get; }
+
+        long SubsidyLimit { get; }
+
+        /// <summary>
+        /// When to stop the rewards for PoS.
+        /// </summary>
+        Money LastProofOfStakeRewardHeight { get; }
     }
 }
