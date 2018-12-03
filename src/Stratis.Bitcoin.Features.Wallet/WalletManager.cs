@@ -35,6 +35,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
 
+        /// <summary>Name of the default wallet created when -defaultwallet flag is set on startup.</summary>
+        private const string DefaultWalletName = "default";
+
+        /// <summary>Password for the default wallet created when -defaultwallet flag is set on startup.</summary>
+        private const string DefaultWalletPassword = "default"; // Cannot be empty string due to wallet create requirement.
+
         /// <summary>
         /// A lock object that protects access to the <see cref="Wallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
@@ -190,6 +196,19 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.AddAddressesToMaintainBuffer(account, false);
                     this.AddAddressesToMaintainBuffer(account, true);
                 }
+            }
+
+            // If the node was started with -defaultwallet flag, check if it already exists, if not, create one.
+            if (this.walletSettings.DefaultWallet)
+            {
+                if (wallets.Any(w => w.Name == DefaultWalletName))
+                {
+                    var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                    this.CreateWallet(DefaultWalletPassword, DefaultWalletName, string.Empty, mnemonic);
+                }
+
+                // Unlock the default wallet. We only unlock it when the -defaultwallet flag was provided.
+                this.LoadWallet(DefaultWalletPassword, DefaultWalletName);
             }
 
             // Load data in memory for faster lookups.
