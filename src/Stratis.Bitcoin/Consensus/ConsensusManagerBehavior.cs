@@ -198,14 +198,16 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        protected ChainedHeader FindLastHeaderForPayload(ChainedHeader fork, uint256 hashstop)
+        /// <summary>Find last header that should be included in headers payload.</summary>
+        protected ChainedHeader GetLastHeaderToSend(ChainedHeader fork, uint256 hashStop)
         {
             ChainedHeader lastHeader = this.consensusManager.Tip;
 
             // If the hash stop has been given, calculate the last chained header from it.
-            if (hashstop != null && hashstop != uint256.Zero)
+            if (hashStop != null && hashStop != uint256.Zero)
             {
-                var hashStopHeader = lastHeader.FindAncestorOrSelf(hashstop);
+                ChainedHeader hashStopHeader = lastHeader.FindAncestorOrSelf(hashStop);
+
                 if ((hashStopHeader != null) && (lastHeader.Height > fork.Height))
                     lastHeader = hashStopHeader;
             }
@@ -239,7 +241,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var headersPayload = new HeadersPayload();
 
-            ChainedHeader header = this.FindLastHeaderForPayload(fork, getHeadersPayload.HashStop);
+            ChainedHeader header = this.GetLastHeaderToSend(fork, getHeadersPayload.HashStop);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
@@ -385,11 +387,11 @@ namespace Stratis.Bitcoin.Consensus
                 return false;
             }
 
+            headers.ForEach(x => x.PrecomputeHash(true, true));
+
             // Check headers for consecutiveness.
             for (int i = 1; i < headers.Count; i++)
             {
-                headers[i - 1].PrecomputeHash(true, true);
-
                 if (headers[i].HashPrevBlock != headers[i - 1].GetHash())
                 {
                     this.logger.LogDebug("Peer '{0}' presented non-consecutiveness hashes at position {1} with prev hash '{2}' not matching hash '{3}'.",
@@ -401,8 +403,6 @@ namespace Stratis.Bitcoin.Consensus
                     return false;
                 }
             }
-
-            headers[headers.Count - 1].PrecomputeHash(true, true); // cache the last hash as well
 
             return true;
         }
