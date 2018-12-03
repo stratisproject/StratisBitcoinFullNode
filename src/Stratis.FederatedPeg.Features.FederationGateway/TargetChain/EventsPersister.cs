@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -34,19 +33,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             this.logger.LogDebug("New {0} received.", nameof(IMaturedBlockDeposits));
 
-            if (maturedBlockDeposits?.Length <= 0)
-                return;
-
-            if (maturedBlockDeposits.Last().Block.BlockHeight < this.store.NextMatureDepositHeight)
-                return;
-
-            for (int i = 0; i < maturedBlockDeposits.Length; i++)
-            {
-                if (maturedBlockDeposits[i].Block.BlockHeight == this.store.NextMatureDepositHeight)
-                {
-                    await this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits[i].Deposits.ToArray()).ConfigureAwait(false);
-                }
-            }
+            await this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits).ConfigureAwait(false);
 
             await this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false);
         }

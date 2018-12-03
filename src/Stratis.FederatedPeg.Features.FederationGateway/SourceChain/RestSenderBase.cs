@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
@@ -16,11 +15,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
         private readonly int targetApiPort;
 
+        private DateTime backOffUntil;
+
         protected RestSenderBase(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
         {
             this.httpClientFactory = httpClientFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.targetApiPort = settings.CounterChainApiPort;
+            this.backOffUntil = DateTime.Now;
+        }
+
+        protected bool CanSend()
+        {
+            return DateTime.Now >= this.backOffUntil;
         }
 
         protected async Task<HttpResponseMessage> SendAsync<T>(T model, string route)
@@ -42,6 +49,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
                 }
                 catch (Exception ex)
                 {
+                    this.backOffUntil = DateTime.Now.AddSeconds(10);
                     this.logger.LogError(ex, "Failed to send {0}", model);
                     return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
                 }

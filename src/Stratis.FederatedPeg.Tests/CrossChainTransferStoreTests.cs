@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
@@ -36,7 +37,7 @@ namespace Stratis.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.wallet.LastBlockSyncedHeight, crossChainTransferStore.TipHashAndHeight.Height);
             }
         }
@@ -59,7 +60,7 @@ namespace Stratis.FederatedPeg.Tests
 
                 this.federationWalletManager.SaveWallet();
 
-                Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.wallet.LastBlockSyncedHeight, crossChainTransferStore.TipHashAndHeight.Height);
             }
 
@@ -72,16 +73,11 @@ namespace Stratis.FederatedPeg.Tests
 
             using (ICrossChainTransferStore crossChainTransferStore2 = newTest.CreateStore())
             {
-                crossChainTransferStore2.Initialize();
-
-                // Test that the store was reloaded from persistence.
-                Assert.Equal(this.wallet.LastBlockSyncedHash, crossChainTransferStore2.TipHashAndHeight.Hash);
-                Assert.Equal(this.wallet.LastBlockSyncedHeight, crossChainTransferStore2.TipHashAndHeight.Height);
-
                 // Test that synchronizing the store aligns it with the current chain tip after the fork.
+                crossChainTransferStore2.Initialize();
                 crossChainTransferStore2.Start();
 
-                Assert.Equal(newTest.wallet.LastBlockSyncedHash, crossChainTransferStore2.TipHashAndHeight.Hash);
+                Assert.Equal(newTest.wallet.LastBlockSyncedHash, crossChainTransferStore2.TipHashAndHeight.HashBlock);
                 Assert.Equal(newTest.wallet.LastBlockSyncedHeight, crossChainTransferStore2.TipHashAndHeight.Height);
             }
         }
@@ -105,7 +101,7 @@ namespace Stratis.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -114,7 +110,14 @@ namespace Stratis.FederatedPeg.Tests
                 Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
                 Deposit deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
-                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit1, deposit2 }).GetAwaiter().GetResult();
+                IMaturedBlockDeposits[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1, deposit2 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
                 Transaction[] transactions = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.Partial).GetAwaiter().GetResult().Values.ToArray();
 
@@ -193,7 +196,7 @@ namespace Stratis.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -202,7 +205,14 @@ namespace Stratis.FederatedPeg.Tests
                 Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
                 Deposit deposit2 = new Deposit(1, new Money(100m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
-                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit1, deposit2 }).GetAwaiter().GetResult();
+                IMaturedBlockDeposits[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1, deposit2 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
                 ICrossChainTransfer[] transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
 
@@ -242,7 +252,7 @@ namespace Stratis.FederatedPeg.Tests
 
                 // Add more funds and resubmit the deposits.
                 AddFundingTransaction(new Money[] { Money.COIN * 1000 });
-                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit1, deposit2 }).GetAwaiter().GetResult();
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
                 transfers = crossChainTransferStore.GetAsync(new uint256[] { 0, 1 }).GetAwaiter().GetResult().ToArray();
                 transactions = transfers.Select(t => t.PartialTransaction).ToArray();
 
@@ -296,14 +306,21 @@ namespace Stratis.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address = (new Key()).PubKey.Hash.GetAddress(this.network);
 
                 Deposit deposit = new Deposit(0, new Money(160m, MoneyUnit.BTC), address.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
-                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit }).GetAwaiter().GetResult();
+                IMaturedBlockDeposits[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
                 ICrossChainTransfer crossChainTransfer = crossChainTransferStore.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().SingleOrDefault();
 
@@ -329,10 +346,10 @@ namespace Stratis.FederatedPeg.Tests
                     crossChainTransferStore2.Initialize();
                     crossChainTransferStore2.Start();
 
-                    Assert.Equal(newTest.chain.Tip.HashBlock, crossChainTransferStore2.TipHashAndHeight.Hash);
+                    Assert.Equal(newTest.chain.Tip.HashBlock, crossChainTransferStore2.TipHashAndHeight.HashBlock);
                     Assert.Equal(newTest.chain.Tip.Height, crossChainTransferStore2.TipHashAndHeight.Height);
 
-                    crossChainTransferStore2.RecordLatestMatureDepositsAsync(new[] { deposit }).GetAwaiter().GetResult();
+                    crossChainTransferStore2.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
                     ICrossChainTransfer crossChainTransfer2 = crossChainTransferStore2.GetAsync(new[] { deposit.Id }).GetAwaiter().GetResult().SingleOrDefault();
 
@@ -383,7 +400,7 @@ namespace Stratis.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 ICrossChainTransfer transfer = crossChainTransferStore.GetAsync(new uint256[] { 0 }).GetAwaiter().GetResult().SingleOrDefault();
@@ -433,7 +450,7 @@ namespace Stratis.FederatedPeg.Tests
                 crossChainTransferStore.Initialize();
                 crossChainTransferStore.Start();
 
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.Hash);
+                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
                 Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
 
                 BitcoinAddress address1 = (new Key()).PubKey.Hash.GetAddress(this.network);
@@ -442,7 +459,14 @@ namespace Stratis.FederatedPeg.Tests
                 Deposit deposit1 = new Deposit(0, new Money(160m, MoneyUnit.BTC), address1.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
                 Deposit deposit2 = new Deposit(1, new Money(60m, MoneyUnit.BTC), address2.ToString(), crossChainTransferStore.NextMatureDepositHeight, 1);
 
-                crossChainTransferStore.RecordLatestMatureDepositsAsync(new[] { deposit1, deposit2 }).GetAwaiter().GetResult();
+                IMaturedBlockDeposits[] blockDeposits = new[] { new MaturedBlockDepositsModel(
+                    new MaturedBlockModel() {
+                        BlockHash = 1,
+                        BlockHeight = crossChainTransferStore.NextMatureDepositHeight },
+                    new[] { deposit1, deposit2 })
+                };
+
+                crossChainTransferStore.RecordLatestMatureDepositsAsync(blockDeposits).GetAwaiter().GetResult();
 
                 Dictionary<uint256, Transaction> transactions = crossChainTransferStore.GetTransactionsByStatusAsync(
                     CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
