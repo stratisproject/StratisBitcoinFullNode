@@ -77,7 +77,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
                 new BlockTipModel(
                     chainedHeaderBlock.ChainedHeader.HashBlock,
                     chainedHeaderBlock.ChainedHeader.Height,
-                    (int)this.depositExtractor.MinimumDepositConfirmations));
+                    (int)this.depositExtractor.MinimumDepositConfirmations)).ConfigureAwait(false).GetAwaiter().GetResult();
 
             var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
                 chainedHeaderBlock.Block,
@@ -90,7 +90,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
             if (maturedBlockDeposits == null) return;
 
-            this.maturedBlockSender.SendMaturedBlockDepositsAsync(maturedBlockDeposits).ConfigureAwait(false);
+            this.maturedBlockSender.SendMaturedBlockDepositsAsync(maturedBlockDeposits).ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 }

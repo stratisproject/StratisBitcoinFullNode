@@ -11,14 +11,14 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NStratis" Version="4.0.0.68" />
+    <PackageReference Include="NStratis" Version="4.0.0.69" />
     <PackageReference Include="FluentAssertions" Version="5.5.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-    <PackageReference Include="Stratis.Bitcoin" Version="1.2.5-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="1.2.5-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.PoA.IntegrationTests.Common" Version="1.2.5-beta" />
-    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.2.5-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.5-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="1.2.6-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="1.2.6-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.PoA.IntegrationTests.Common" Version="1.2.6-beta" />
+    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="1.2.6-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.6-beta" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
   </ItemGroup>

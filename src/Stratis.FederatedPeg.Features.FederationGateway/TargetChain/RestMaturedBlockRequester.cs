@@ -38,6 +38,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <inheritdoc />
         public async Task<bool> GetMoreBlocksAsync()
         {
+            if (!this.CanSend())
+                return false;
+
             int maxBlocksToRequest = 1;
 
             if (!this.crossChainTransferStore.HasSuspended())
