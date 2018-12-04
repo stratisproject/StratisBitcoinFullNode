@@ -27,7 +27,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
             IFullNode fullNode)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.depositScript = federationGatewaySettings.MultiSigRedeemScript;
+            // Note: MultiSigRedeemScript.PaymentScript equals MultiSigAddress.ScriptPubKey
+            this.depositScript =
+                federationGatewaySettings?.MultiSigRedeemScript?.PaymentScript ??
+                federationGatewaySettings?.MultiSigAddress?.ScriptPubKey;
             this.opReturnDataReader = opReturnDataReader;
             this.MinimumDepositConfirmations = federationGatewaySettings.MinimumDepositConfirmations;
             this.chain = fullNode.NodeService<ConcurrentChain>();
