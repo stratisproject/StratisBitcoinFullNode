@@ -143,6 +143,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             var provenHeadersPayload = new ProvenHeadersPayload();
 
             ChainedHeader header = this.GetLastHeaderToSend(fork, getHeadersPayload.HashStop);
+            this.logger.LogDebug("Last header that will be sent in headers payload is '{0}'.", header);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
@@ -210,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <returns> <c>true</c> if  we need to validate proven headers.</returns>
         private int GetCurrentHeight()
         {
-            var currentHeight = (this.BestReceivedTip ?? this.consensusManager.Tip).Height;
+            int currentHeight = (this.BestReceivedTip ?? this.consensusManager.Tip).Height;
 
             return currentHeight;
         }
@@ -233,7 +234,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 if (peer.IsWhitelisted())
                 {
                     // A gateway node can only sync using regular headers and from whitelisted peers
-                    this.logger.LogTrace("Node is a gateway, sync regular headers from whitelisted peer.");
+                    this.logger.LogDebug("Node is a gateway, sync regular headers from whitelisted peer.");
                     this.logger.LogTrace("(-)[PEER_WHITELISTED_BY_GATEWAY]");
                     return base.BuildGetHeadersPayload();
                 }
@@ -273,7 +274,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             if (this.isGateway)
             {
-                this.logger.LogTrace("Node is a gateway, cannot sync from Proven Headers. Ignoring received headers.");
+                this.logger.LogDebug("Node is a gateway, cannot sync from Proven Headers. Ignoring received headers.");
                 return Task.CompletedTask;
             }
 
@@ -290,7 +291,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             if (this.isGateway && peer.IsWhitelisted())
             {
-                this.logger.LogTrace("Node is a gateway, can only sync regular headers from whitelisted peer.");
+                this.logger.LogDebug("Node is a gateway, can only sync regular headers from whitelisted peer.");
                 await base.ProcessHeadersAsync(peer, headers);
 
                 this.logger.LogTrace("(-)[GATEWAY_AND_WHITELISTED]");
