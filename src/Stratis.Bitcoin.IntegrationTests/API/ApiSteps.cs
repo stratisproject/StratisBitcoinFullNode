@@ -422,7 +422,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
 
-            commands.Count.Should().Be(25);
+            commands.Count.Should().Be(26);
             commands.Should().Contain(x => x.Command == "stop");
             commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
@@ -446,6 +446,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "walletlock");
             commands.Should().Contain(x => x.Command == "walletpassphrase <passphrase> <timeout>");
             commands.Should().Contain(x => x.Command == "listunspent [<minconfirmations>] [<maxconfirmations>] [<addressesjson>]");
+            commands.Should().Contain(x => x.Command == "sendmany <fromaccount> <addressesjson> [<minconf>] [<comment>] [<subtractfeefromjson>] [<isreplaceable>] [<conftarget>] [<estimatemode>]");
         }
 
         private void status_information_is_returned()
