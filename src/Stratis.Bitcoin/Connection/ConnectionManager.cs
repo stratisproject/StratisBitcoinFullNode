@@ -273,12 +273,16 @@ namespace Stratis.Bitcoin.Connection
         /// <inheritdoc />
         public void AddConnectedPeer(INetworkPeer peer)
         {
-            lock (this.connectedPeersLock)
+            if (this.ShouldDisconnect(peer))
             {
-                if (this.ShouldDisconnect(peer))
-                    peer.Disconnect("Peer from the same network group.");
-                else
+                peer.Disconnect("Peer from the same network group.");
+            }
+            else
+            {
+                lock (this.connectedPeersLock)
+                {
                     this.connectedPeers.Add(peer);
+                }
             }
         }
 
