@@ -186,7 +186,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
                     this.newLine($"$params = @{{ \"password\" = \"password\" }}");
                     this.newLine(
                         $"Invoke-WebRequest -Uri http://localhost:38{GetPortNumberSuffix(c, i)}/api/FederationWallet/enable-federation -Method post -Body ($params|ConvertTo-Json) -ContentType \"application/json\"");
-                    this.newLine("timeout $interval_time");
+                    this.newLine("timeout $long_interval_time");
                     this.newLine(Environment.NewLine);
                 });
             });
