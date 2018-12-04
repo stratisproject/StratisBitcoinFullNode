@@ -299,6 +299,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
+                    this.logger.LogDebug("Cache is full. Headers ignored.");
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");
                     return;
                 }
@@ -319,14 +320,15 @@ namespace Stratis.Bitcoin.Consensus
                         return;
                     }
 
+                    // Workaround for special case when peer announces new block but we don't want to clean the cache.
                     if (headers.Count == 1)
                     {
                         // Distance of header from the peer expected tip.
-                        var distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
+                        double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
 
                         if (this.chain.Network.MaxTipAge < distanceSeconds)
                         {
-                            // a single header that is not connected to last header is likely an
+                            // A single header that is not connected to last header is likely an
                             // unsolicited header that is a result of the peer tip being extended.
                             // If the header time is far in the future we ignore it.
                             this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
@@ -521,7 +523,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 try
                 {
-                    this.logger.LogDebug("Sending getheaders payload with last hash: '{0}'.", getHeadersPayload.BlockLocator.Blocks.Last());
+                    this.logger.LogDebug("Sending getheaders payload with first hash: '{0}'.", getHeadersPayload.BlockLocator.Blocks.First());
 
                     await peer.SendMessageAsync(getHeadersPayload).ConfigureAwait(false);
                 }
