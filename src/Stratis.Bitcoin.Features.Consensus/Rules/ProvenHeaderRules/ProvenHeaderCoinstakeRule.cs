@@ -358,18 +358,22 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
 
-            UnspentOutputs matchingUnspentUtxo = null;
-            if (rewindData != null)
+            if (rewindData == null)
             {
-                foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
+                this.Logger.LogTrace("(-)[NO_REWIND_DATA_FOR_INDEX]");
+                this.Logger.LogError("Error - Rewind data should always be present");
+                throw new ConsensusException("Rewind data should always be present");
+            }
+
+            UnspentOutputs matchingUnspentUtxo = null;
+            foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
+            {
+                if (unspent.TransactionId == input.PrevOut.Hash)
                 {
-                    if (unspent.TransactionId == input.PrevOut.Hash)
+                    if (input.PrevOut.N < unspent.Outputs.Length)
                     {
-                        if (input.PrevOut.N < unspent.Outputs.Length)
-                        {
-                            matchingUnspentUtxo = unspent;
-                            break;
-                        }
+                        matchingUnspentUtxo = unspent;
+                        break;
                     }
                 }
             }
