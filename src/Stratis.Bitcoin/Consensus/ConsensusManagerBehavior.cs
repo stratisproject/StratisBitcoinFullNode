@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
 
-                    if (result == null)
+                    if ((result == null) || (result.Consumed == null))
                     {
                         this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
                         return null;
@@ -350,6 +350,14 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     this.logger.LogDebug("Processing of {0} headers failed.", headers.Count);
                     this.logger.LogTrace("(-)[PROCESSING_FAILED]");
+
+                    return;
+                }
+
+                if (result.Consumed == null)
+                {
+                    this.cachedHeaders.AddRange(headers);
+                    this.logger.LogDebug("All {0} items were not consumed and added to cache.", headers.Count);
 
                     return;
                 }
