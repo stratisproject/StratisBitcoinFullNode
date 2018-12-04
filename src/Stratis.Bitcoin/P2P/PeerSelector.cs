@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.P2P
             if (peers.Count() == 1)
                 return peers.First();
 
-            int randomPeerIndex = this.random.Next(peers.Count() - 1);
+            int randomPeerIndex = this.random.Next(peers.Count());
             PeerAddress randomPeer = peers.ElementAt(randomPeerIndex);
             return randomPeer;
         }
