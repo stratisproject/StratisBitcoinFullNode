@@ -46,14 +46,14 @@ namespace Stratis.FederatedPeg.Tests
 
             this.addressHelper = new MultisigAddressHelper(this.network);
 
-            this.settings.MultiSigRedeemScript.Returns(this.addressHelper.SourceChainMultisigAddress.ScriptPubKey);
+            this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
             this.opReturnDataReader.TryGetTargetAddress(null).ReturnsForAnyArgs((string)null);
 
             this.transactionBuilder = new TestTransactionBuilder();
 
             this.depositExtractor = new DepositExtractor(
-                this.loggerFactory, 
-                this.settings, 
+                this.loggerFactory,
+                this.settings,
                 this.opReturnDataReader,
                 this.fullNode);
         }
