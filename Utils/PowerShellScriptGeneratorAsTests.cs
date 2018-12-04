@@ -98,7 +98,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.newLine(Environment.NewLine);
 
             this.newLine("# SidechainUser");
-            this.newLine("cd path_to_sidechaind");
+            this.newLine("cd $path_to_sidechaind");
             this.newLine($"start-process cmd -ArgumentList \"/k color {this.consoleColors[4]} && dotnet run --no-build -testnet -port=26179 -apiport=38225 -agentprefix=sideuser -datadir=$root_datadir\\SidechainUser agentprefix=sc_user -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 0)} -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 1)} -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 2)}\"");
             this.newLine("timeout $interval_time");
             this.newLine(Environment.NewLine);
