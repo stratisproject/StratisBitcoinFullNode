@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseWallet()
                             .AddRPC()
                             .UseApi()
+                            .UseTestChainedHeaderTree()
                             .MockIBD();
 
             if (this.InterceptorDisconnect != null)

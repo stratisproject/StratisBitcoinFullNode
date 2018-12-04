@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Consensus
     }
 
     /// <inheritdoc />
-    public sealed class ChainedHeaderTree : IChainedHeaderTree
+    public class ChainedHeaderTree : IChainedHeaderTree
     {
         private readonly Network network;
         private readonly IHeaderValidator headerValidator;

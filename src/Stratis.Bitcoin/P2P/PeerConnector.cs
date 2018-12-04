@@ -284,7 +284,10 @@ namespace Stratis.Bitcoin.P2P
         private bool PeerIsPartOfExistingGroup(PeerAddress peerAddress)
         {
             if (this.connectedPeers == null)
+            {
+                this.logger.LogTrace("(-)[NO_CONNECTED_PEERS]:false");
                 return false;
+            }
 
             byte[] peerAddressGroup = peerAddress.Endpoint.MapToIpv6().Address.GetGroup();
 
@@ -292,9 +295,13 @@ namespace Stratis.Bitcoin.P2P
             {
                 byte[] endPointGroup = endPoint.PeerEndPoint.MapToIpv6().Address.GetGroup();
                 if (endPointGroup.SequenceEqual(peerAddressGroup))
+                {
+                    this.logger.LogTrace("(-)[SAME_GROUP]:true");
                     return true;
+                }
             }
 
+            this.logger.LogTrace("(-):false");
             return false;
         }
 

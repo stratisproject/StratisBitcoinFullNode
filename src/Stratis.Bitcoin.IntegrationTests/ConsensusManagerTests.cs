@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -8,10 +9,12 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
@@ -535,6 +538,109 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 120);
             }
+        }
+
+
+        /// <remarks>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</remarks>
+        [Fact(Skip = "Work in progress")]
+        public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var network = new StratisRegTest();
+
+                // MinerA requires an physical wallet to stake with.
+                var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
+                var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().WithWallet().Start();
+
+                // MinerA mines 2 blocks to get the big premine coin.
+                HdAddress minerAAddress = TestHelper.MineBlocks(minerA, 2).AddressUsed;
+                var powBlockWithBigPremine = minerA.FullNode.ConsensusManager().Tip.Block;
+                Transaction txWithBigPremine = powBlockWithBigPremine.Transactions[0];
+
+                // MinerA mines another 10 blocks.
+                TestHelper.MineBlocks(minerA, 10);
+
+                // Sync the peers A and B (height 12)
+                TestHelper.ConnectAndSync(minerA, minerB);
+
+                // Disconnect Miner A and B.
+                TestHelper.DisconnectAll(minerA, minerB);
+
+                // Miner A stakes one coin. (height 13)
+                var minterA = minerA.FullNode.NodeService<IPosMinting>();
+                minterA.Stake(new WalletSecret() { WalletName = "mywallet", WalletPassword = "password" });
+
+                TestHelper.WaitLoop(() =>
+                {
+                    return minerA.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 3;
+                });
+
+                minterA.StopStake();
+
+                var posBlock = minerA.FullNode.ConsensusManager().Tip.Block as PosBlock;
+                Assert.True(posBlock != null && minerA.FullNode.ConsensusManager().Tip.Height == 13);
+
+                var coinstakeTransactionA = posBlock.GetProtocolTransaction();
+                Assert.True(coinstakeTransactionA.IsCoinStake);
+
+                // MinerB mines 1 block on its own fork. (heightB 13)
+                TestHelper.MineBlocks(minerB, 1);
+
+                // Ensure we are going to create a transaction that spend the coinstake coin
+                Assert.True(coinstakeTransactionA.Inputs[0].PrevOut.Hash == txWithBigPremine.GetHash());
+
+                // Create a transaction that spend the coinstake
+                Transaction txThatSpendCoinstake = CreateTransactionThatSpendCoinstake(network, minerA, minerB, null, txWithBigPremine);
+
+                // Add the tx that spend coinstake, into the memory pool of minerB
+                Assert.True(minerB.AddToStratisMempool(txThatSpendCoinstake));
+
+                // Wait for the transaction to be picked up by the mempool
+                TestHelper.WaitLoop(() => minerB.CreateRPCClient().GetRawMempool().Length > 0);
+
+                // MinerB mines 1 blocks on minerB to include the tx that spend coinstake. (heightB 14)
+                TestHelper.MineBlocks(minerB, 1);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 14);
+
+                var powBlockWithSpentCoinstake = minerB.FullNode.ConsensusManager().Tip.Block;
+                // Ensure my transaction has been included in the block.
+                Assert.True(powBlockWithSpentCoinstake.Transactions.Count == 2);
+
+                // Sync the network, minerA should switch to minerB.
+                TestHelper.MineBlocks(minerB, 3);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 7);
+
+                var expectedValidChainHeight = minerB.FullNode.ConsensusManager().Tip.Height;
+
+                // Sync the network to height CoinbaseMaturity.
+                TestHelper.ConnectAndSync(minerA, minerB);
+
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
+            }
+        }
+
+        private static Transaction CreateTransactionThatSpendCoinstake(StratisRegTest network, CoreNode minerA, CoreNode minerB, TxIn coinstake, Transaction txWithBigPremine)
+        {
+            Transaction txThatSpendCoinstake = network.CreateTransaction();
+            txThatSpendCoinstake.AddInput(new TxIn(new OutPoint(txWithBigPremine, 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerA.MinerSecret.PubKey)));
+            txThatSpendCoinstake.AddOutput(new TxOut
+            {
+                Value = txWithBigPremine.Outputs[0].Value - new Money(1, MoneyUnit.BTC),
+                ScriptPubKey = minerB.MinerHDAddress.ScriptPubKey
+            });
+
+            var dateTimeProvider = minerA.FullNode.NodeService<IDateTimeProvider>();
+            txThatSpendCoinstake.Time = (uint)dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+
+
+            Coin spentCoin = new Coin(txWithBigPremine, 0);
+            List<ICoin> coins = new List<ICoin> { spentCoin };
+
+            txThatSpendCoinstake.Sign(minerA.FullNode.Network, minerA.MinerSecret, coins[0]);
+
+            return txThatSpendCoinstake;
         }
     }
 

@@ -198,14 +198,16 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
-        protected ChainedHeader FindLastHeaderForPayload(ChainedHeader fork, uint256 hashstop)
+        /// <summary>Find last header that should be included in headers payload.</summary>
+        protected ChainedHeader GetLastHeaderToSend(ChainedHeader fork, uint256 hashStop)
         {
             ChainedHeader lastHeader = this.consensusManager.Tip;
 
             // If the hash stop has been given, calculate the last chained header from it.
-            if (hashstop != null && hashstop != uint256.Zero)
+            if (hashStop != null && hashStop != uint256.Zero)
             {
-                var hashStopHeader = lastHeader.FindAncestorOrSelf(hashstop);
+                ChainedHeader hashStopHeader = lastHeader.FindAncestorOrSelf(hashStop);
+
                 if ((hashStopHeader != null) && (lastHeader.Height > fork.Height))
                     lastHeader = hashStopHeader;
             }
@@ -239,7 +241,7 @@ namespace Stratis.Bitcoin.Consensus
 
             var headersPayload = new HeadersPayload();
 
-            ChainedHeader header = this.FindLastHeaderForPayload(fork, getHeadersPayload.HashStop);
+            ChainedHeader header = this.GetLastHeaderToSend(fork, getHeadersPayload.HashStop);
 
             for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
