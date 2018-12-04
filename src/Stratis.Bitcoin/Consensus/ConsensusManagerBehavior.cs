@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Presents cached headers to <see cref="ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
-        public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
+        public virtual async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
         {
             ConnectNewHeadersResult result = null;
             bool syncRequired = false;
@@ -424,6 +424,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (peer == null)
             {
+                this.logger.LogDebug("Peer detached!");
                 this.logger.LogTrace("(-)[PEER_DETACHED]:null");
                 return null;
             }
