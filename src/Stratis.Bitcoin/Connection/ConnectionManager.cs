@@ -82,6 +82,8 @@ namespace Stratis.Bitcoin.Connection
 
         private IConsensusManager consensusManager;
 
+        private readonly object connectedPeersLock;
+
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -98,6 +100,7 @@ namespace Stratis.Bitcoin.Connection
             INodeStats nodeStats)
         {
             this.connectedPeers = new NetworkPeerCollection();
+            this.connectedPeersLock = new object();
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -270,10 +273,13 @@ namespace Stratis.Bitcoin.Connection
         /// <inheritdoc />
         public void AddConnectedPeer(INetworkPeer peer)
         {
-            if (this.ShouldDisconnect(peer))
-                peer.Disconnect("Peer from the same network group.");
-            else
-                this.connectedPeers.Add(peer);
+            lock (this.connectedPeersLock)
+            {
+                if (this.ShouldDisconnect(peer))
+                    peer.Disconnect("Peer from the same network group.");
+                else
+                    this.connectedPeers.Add(peer);
+            }
         }
 
         /// <summary>
