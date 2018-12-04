@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Presents cached headers to <see cref="ConsensusManager"/> from the cache if any and removes consumed from the cache.</summary>
-        public virtual async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
+        public async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
         {
             ConnectNewHeadersResult result = null;
             bool syncRequired = false;
@@ -465,10 +465,11 @@ namespace Stratis.Bitcoin.Consensus
             return result;
         }
 
-        /// <summary>Resyncs the peer whenever state is changed.</summary>
+        /// <summary>Sync when handshake is finished.</summary>
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
-            await this.ResyncAsync().ConfigureAwait(false);
+            if (peer.State == NetworkPeerState.HandShaked)
+                await this.ResyncAsync().ConfigureAwait(false);
         }
 
         /// <summary>Resets the expected peer tip and last sent tip and triggers synchronization.</summary>

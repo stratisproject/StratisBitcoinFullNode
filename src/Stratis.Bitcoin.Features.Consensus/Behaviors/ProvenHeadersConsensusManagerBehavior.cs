@@ -105,18 +105,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         }
 
         /// <inheritdoc />
-        public override async Task<ConnectNewHeadersResult> ConsensusTipChangedAsync()
-        {
-            if (this.consensusManager.Tip.Height == this.checkpoints.GetLastCheckpointHeight())
-            {
-                this.logger.LogDebug("Sync requested because last checkpointed block was connected.");
-                await this.ResyncAsync().ConfigureAwait(false);
-            }
-
-            return await base.ConsensusTipChangedAsync().ConfigureAwait(false);
-        }
-
-        /// <inheritdoc />
         protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
             // If getHeadersPayload isn't a GetProvenHeadersPayload, return base implementation result
