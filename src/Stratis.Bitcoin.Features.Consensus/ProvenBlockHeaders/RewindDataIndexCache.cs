@@ -73,13 +73,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
             {
-                if (unspent.IsCoinstake)
+                for (int outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
                 {
-                    for (int outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
-                    {
-                        string key = $"{unspent.TransactionId}-{outputIndex}";
-                        this.items[key] = rewindHeight;
-                    }
+                    string key = $"{unspent.TransactionId}-{outputIndex}";
+                    this.items[key] = rewindHeight;
                 }
             }
         }
