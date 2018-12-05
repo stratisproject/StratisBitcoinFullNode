@@ -105,6 +105,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         }
 
         /// <inheritdoc />
+        protected override bool CanConsumeCache()
+        {
+            int height = this.consensusManager.Tip.Height;
+            return (height > this.lastCheckpointHeight) && (height % 50 == 0);
+        }
+
+        /// <inheritdoc />
         protected override Payload ConstructHeadersPayload(GetHeadersPayload getHeadersPayload, out ChainedHeader lastHeader)
         {
             // If getHeadersPayload isn't a GetProvenHeadersPayload, return base implementation result
