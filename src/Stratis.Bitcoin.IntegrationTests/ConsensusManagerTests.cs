@@ -578,7 +578,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 TestHelper.WaitLoop(() =>
                 {
-                    return minerA.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 3;
+                    return minerA.FullNode.ConsensusManager().Tip.Height == 13;
                 });
 
                 minterA.StopStake();
@@ -612,13 +612,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Ensure my transaction has been included in the block.
                 Assert.True(powBlockWithSpentCoinstake.Transactions.Count == 2);
 
-                // Sync the network, minerA should switch to minerB.
-                TestHelper.MineBlocks(minerB, 3);
-                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == network.Consensus.CoinbaseMaturity + 7);
+                TestHelper.MineBlocks(minerB, 10);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 24);
+
+                // Mine 1 PoS stake on minerB to increase chainwork.
+                // pos creates much work and without a pos block, minerB chain wouldn't be considered the legit one.
+                var minterB = minerB.FullNode.NodeService<IPosMinting>();
+                minterB.Stake(new WalletSecret() { WalletName = WalletName, WalletPassword = Password });
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 25);
+                minterB.StopStake();
 
                 var expectedValidChainHeight = minerB.FullNode.ConsensusManager().Tip.Height;
 
-                // Sync the network to height CoinbaseMaturity.
+                // Sync the network, minerA should switch to minerB.
                 TestHelper.ConnectAndSync(minerA, minerB);
 
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == expectedValidChainHeight);
