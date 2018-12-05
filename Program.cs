@@ -9,85 +9,107 @@ using Stratis.Sidechains.Networks;
 
 namespace FederationSetup
 {
-    /*
-        Stratis Federation set up v1.0.0.0 - Set-up genesis block, multisig addresses and generates cryptographic key pairs for Sidechain Federation Members.
-        Copyright(c) 2018 Stratis Group Limited
-
-        usage:  federationsetup [-h]
-         -h        This help message.
-
-        Example:  federationsetup -g -a -p
-    */
-
     // The Stratis Federation set-up is a console app that can be sent to Federation Members
     // in order to set-up the network and generate their Private (and Public) keys without a need to run a Node at this stage.
     // See the "Use Case - Generate Federation Member Key Pairs" located in the Requirements folder in the
     // project repository.
-
     class Program
     {
-        private const string SwitchHelp = "-h";
-        private const string SwitchMineGenesisBlock = "-g";
-        private const string SwitchGenerateFedPublicPrivateKeys = "-p";
-        private const string SwitchGenerateMultiSigAddresses = "-m";
+        private const string SwitchMineGenesisBlock = "g";
+        private const string SwitchGenerateFedPublicPrivateKeys = "p";
+        private const string SwitchGenerateMultiSigAddresses = "m";
+        private const string SwitchMenu = "menu";
+        private const string SwitchExit = "exit";
 
         private static TextFileConfiguration ConfigReader;
 
         static void Main(string[] args)
         {
-            try
+            // Start with the banner and the help message.
+            FederationSetup.OutputHeader();
+            FederationSetup.OutputMenu();
+            args = GetChoice();
+
+            while (true)
             {
-                ConfigReader = new TextFileConfiguration(args ?? new string[] { });
-
-                // Start with the banner.
-                FederationSetup.OutputHeader();
-
-                // Help command output the usage and examples text.
-                if (args.Contains(SwitchHelp))
+                try
                 {
-                    FederationSetup.OutputUsage();
+                    string command = null;
+                    if (args != null)
+                    {
+                        command = args[0];
+                    }
+
+                    Console.WriteLine();
+
+                    if (command == SwitchExit) return;
+
+                    if (command == SwitchMenu)
+                    {
+                        FederationSetup.OutputMenu();
+                    }
+
+                    if (command == SwitchMineGenesisBlock)
+                    {
+                        Console.WriteLine(new GenesisMiner().MineGenesisBlocks(new PoAConsensusFactory(), "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/"));
+                        FederationSetup.OutputSuccess();
+                    }
+
+                    if (command == SwitchGenerateFedPublicPrivateKeys)
+                    {
+                        GeneratePublicPrivateKeys();
+                        FederationSetup.OutputSuccess();
+                    }
+
+                    if (command == SwitchGenerateMultiSigAddresses)
+                    {
+
+                        ConfigReader = new TextFileConfiguration(args);
+
+                        int quorum = GetQuorumFromArguments();
+                        string[] federatedPublicKeys = GetFederatedPublicKeysFromArguments();
+
+                        if (quorum > federatedPublicKeys.Length)
+                            throw new ArgumentException("Quorum has to be smaller than the number of members within the federation.");
+
+                        if (quorum < federatedPublicKeys.Length / 2)
+                            throw new ArgumentException("Quorum has to be greater than half of the members within the federation.");
+
+                        (Network mainChain, Network sideChain) = GetMainAndSideChainNetworksFromArguments();
+
+                        Console.WriteLine($"Creating multisig addresses for {mainChain.Name} and {sideChain.Name}.");
+                        Console.WriteLine(new MultisigAddressCreator().CreateMultisigAddresses(mainChain, sideChain, federatedPublicKeys.Select(f => new PubKey(f)).ToArray(), quorum));
+                    }
+
+                    args = GetChoice();
                 }
-
-                if (args.Contains(SwitchMineGenesisBlock))
+                catch (Exception ex)
                 {
-                    Console.WriteLine(new GenesisMiner().MineGenesisBlocks(
-                        new PoAConsensusFactory(),
-                        "https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/"));
-                }
-
-                if (args.Contains(SwitchGenerateFedPublicPrivateKeys))
-                {
-                    GeneratePublicPrivateKeys();
-                }
-
-                if (args.Contains(SwitchGenerateMultiSigAddresses))
-                {
-                    string[] federatedPublicKeys = GetFederatedPublicKeysFromArguments();
-
-                    int quorum = GetQuorumFromArguments(federatedPublicKeys.Length);
-
-                    (Network mainChain, Network sideChain) = GetMainAndSideChainNetworksFromArguments();
-
-                    Console.WriteLine(new MultisigAddressCreator().CreateMultisigAddresses(
-                        mainChain, sideChain, federatedPublicKeys.Select(f => new PubKey(f)).ToArray(), quorum));
+                    FederationSetup.OutputErrorLine($"An error occurred: {ex.Message}");
+                    Console.WriteLine();
+                    FederationSetup.OutputMenu();
+                    args = GetChoice();
                 }
             }
-            catch (Exception ex)
+        }
+
+        private static string[] GetChoice()
+        {
+            Console.Write("Your choice: ");
+            string command = Console.ReadLine();
+
+            if (!string.IsNullOrEmpty(command))
             {
-                FederationSetup.OutputErrorLine($"An error occurred: {ex.Message}");
-                Console.WriteLine();
-                FederationSetup.OutputUsage();
+                return command.Split(" ");
             }
-            finally
-            {
-                Console.ReadLine();
-            }
+
+            return null;
         }
 
         private static void GeneratePublicPrivateKeys()
         {
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            var pubKey = mnemonic.DeriveExtKey().PrivateKey.PubKey;
+            PubKey pubKey = mnemonic.DeriveExtKey().PrivateKey.PubKey;
 
             Console.WriteLine($"-- For Sidechain Generator --");
             Console.WriteLine($"-----------------------------");
@@ -112,17 +134,17 @@ namespace FederationSetup
             Console.WriteLine($"-- To share for Sidechain Mining --");
             Console.WriteLine($"1. Your pubkey: {Encoders.Hex.EncodeData(pubKey.ToBytes(false))}");
             Console.WriteLine(Environment.NewLine);
-
-            // Write success message including warnings to keep secret private keys safe.
-            FederationSetup.OutputSuccess();
         }
 
-        private static int GetQuorumFromArguments(int federatedPublicKeysCount)
+        private static int GetQuorumFromArguments()
         {
-            int quorum = ConfigReader.GetOrDefault("quorum", 3);
+            int quorum = ConfigReader.GetOrDefault("quorum", 0);
 
-            if (quorum < federatedPublicKeysCount / 2)
-                throw new ArgumentException("Quorum has to be greater than half of the members within the federation.", "-m -quorum");
+            if (quorum == 0)
+                throw new ArgumentException("Please specify a quorum.");
+
+            if (quorum < 0)
+                throw new ArgumentException("Please specify a positive number for the quorum.");
 
             return quorum;
         }
@@ -133,20 +155,20 @@ namespace FederationSetup
 
             int federatedPublicKeyCount = 0;
 
-            if (ConfigReader.GetAll("keys").FirstOrDefault() != null)
+            if (ConfigReader.GetAll("fedpubkeys").FirstOrDefault() != null)
             {
-                pubKeys = ConfigReader.GetAll("keys").FirstOrDefault().Split(',');
+                pubKeys = ConfigReader.GetAll("fedpubkeys").FirstOrDefault().Split(',');
                 federatedPublicKeyCount = pubKeys.Count();
             }
 
             if (federatedPublicKeyCount == 0)
-                throw new ArgumentException("Federated member public keys do not exist.", "-m -keys");
+                throw new ArgumentException("No federation member public keys specified.");
 
             if (federatedPublicKeyCount % 2 == 0)
-                throw new ArgumentException("Federation must have an odd number of members.", "-m -keys");
+                throw new ArgumentException("The federation must have an odd number of members.");
 
             if (federatedPublicKeyCount > 15)
-                throw new ArgumentException("Federation can only have up to fifteen members.", "-m -keys");
+                throw new ArgumentException("The federation can only have up to fifteen members.");
 
             return pubKeys;
         }
