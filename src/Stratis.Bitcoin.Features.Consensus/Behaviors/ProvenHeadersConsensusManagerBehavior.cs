@@ -114,8 +114,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             // Higher the N the better performance boost we can get.
             uint tryCacheEveryBlocksCount = this.network.Consensus.MaxReorgLength / 5;
 
-            return (height == this.lastCheckpointHeight) ||
-                   ((height > this.lastCheckpointHeight) && (height % tryCacheEveryBlocksCount == 0));
+            if (height == this.lastCheckpointHeight)
+                return true;
+
+            if (height > this.lastCheckpointHeight)
+            {
+                // After last checkpoint.
+                if ((height % tryCacheEveryBlocksCount == 0) || (height >= this.BestReceivedTip.Height))
+                    return true;
+            }
+
+            return false;
         }
 
         /// <inheritdoc />
