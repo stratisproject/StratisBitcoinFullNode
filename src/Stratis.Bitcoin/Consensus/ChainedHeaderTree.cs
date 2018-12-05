@@ -640,7 +640,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (insufficientInfo)
             {
-                this.logger.LogTrace("(-)[INSUFF_INFO]:null");
+                this.logger.LogTrace("(-)[INSUFF_INFO]");
                 return new ConnectNewHeadersResult() {Consumed = null};
             }
 
@@ -989,12 +989,6 @@ namespace Stratis.Bitcoin.Consensus
             List<ChainedHeader> newChainedHeaders = null;
 
             ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, out insufficientInfo);
-
-            if (insufficientInfo)
-            {
-                this.logger.LogTrace("(-)[INSUFF_INFO]");
-                return null;
-            }
 
             if (newChainedHeader != null)
             {
