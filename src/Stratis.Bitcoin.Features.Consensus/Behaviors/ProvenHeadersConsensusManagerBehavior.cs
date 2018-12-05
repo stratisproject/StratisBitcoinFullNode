@@ -108,7 +108,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         protected override bool CanConsumeCache()
         {
             int height = this.consensusManager.Tip.Height;
-            return (height > this.lastCheckpointHeight) && (height % 50 == 0);
+
+            // Try cashe consumption every N blocks advanced by consensus.
+            // N should be between 0 and max reorg. 20% of max reorg is a good random value.
+            // Higher the N the better performance boost we can get.
+            uint tryCacheEveryBlocksCount = this.network.Consensus.MaxReorgLength / 5;
+
+            return (height >= this.lastCheckpointHeight) && (height % tryCacheEveryBlocksCount == 0);
         }
 
         /// <inheritdoc />
