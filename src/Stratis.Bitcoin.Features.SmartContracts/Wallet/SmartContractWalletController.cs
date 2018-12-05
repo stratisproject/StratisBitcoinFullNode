@@ -18,7 +18,7 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -202,7 +202,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                     }
                 }
 
-                return this.Json(transactionItems.OrderByDescending(x=>x.BlockHeight));
+                return this.Json(transactionItems.OrderByDescending(x => x.BlockHeight ?? Int32.MaxValue).ThenBy(x => x.Hash.ToString()));
             }
             catch (Exception e)
             {

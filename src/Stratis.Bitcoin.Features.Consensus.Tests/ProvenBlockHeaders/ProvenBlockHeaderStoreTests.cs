@@ -9,6 +9,7 @@ using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -21,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         private readonly ProvenBlockHeaderStore provenBlockHeaderStore;
         private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
 
-        public ProvenBlockHeaderStoreTests() : base(KnownNetworks.StratisTest)
+        public ProvenBlockHeaderStoreTests() : base(new StratisTest())
         {
             var nodeStats = new NodeStats(DateTimeProvider.Default);
 
@@ -39,24 +40,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             this.provenBlockHeaderStore.TipHashHeight.Hash.Should().Be(genesis.HashBlock);
         }
-
-        [Fact]
-        public async Task GetAsync_Get_Items_From_StoreAsync()
-        {
-            var tip = this.BuildChainWithProvenHeaders(3);
-
-            SortedDictionary<int, ProvenBlockHeader> headers = this.ConvertToDictionaryOfProvenHeaders(tip);
-            await this.provenBlockHeaderRepository.PutAsync(headers, new HashHeightPair(tip.HashBlock, tip.Height)).ConfigureAwait(false);
-
-            // Load saved headers.
-            using (IProvenBlockHeaderStore store = this.SetupStore())
-            {
-                var outHeaders = await store.GetAsync(0, tip.Height).ConfigureAwait(false);
-
-                Assert.Equal(tip.Height, outHeaders.Count);
-            }
-        }
-
 
         [Fact]
         public async Task AddToPending_Adds_To_CacheAsync()
@@ -77,8 +60,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             outHeader.GetHash().Should().Be(inHeader.GetHash());
 
             // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
-            var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1, 1).ConfigureAwait(false);
-            outHeaderRepo.FirstOrDefault().Should().BeNull();
+            var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1).ConfigureAwait(false);
+            outHeaderRepo.Should().BeNull();
         }
 
 
@@ -133,8 +116,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             cacheCount.Should().Be(2_000);
 
             // Check if it has been saved to disk.  It shouldn't as the asyncLoopFactory() would not have been called yet.
-            var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1, 1).ConfigureAwait(false);
-            outHeaderRepo.FirstOrDefault().Should().BeNull();
+            var outHeaderRepo = await this.provenBlockHeaderRepository.GetAsync(1).ConfigureAwait(false);
+            outHeaderRepo.Should().BeNull();
         }
 
         [Fact]
@@ -176,93 +159,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             // Check items in cache - should now be empty.
             cacheCount = this.provenBlockHeaderStore.PendingBatch.GetMemberValue("Count");
             cacheCount.Should().Be(0);
-        }
-
-        [Fact]
-        public async Task GetAsync_Add_Items_Greater_Than_Max_Size_Cache_Stays_Below_Max_SizeAsync()
-        {
-            // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1)).ConfigureAwait(false);
-
-            var inHeaders = new SortedDictionary<int, ProvenBlockHeader>();
-
-            // Add maximum cache count items headers.
-            for (int i = 0; i < 10; i++)
-                inHeaders.Add(i, CreateNewProvenBlockHeaderMock());
-
-            long maxSize = 500;
-
-            // Reduce the MaxMemoryCacheSizeInBytes size for test.
-            FieldInfo field = typeof(MemorySizeCache<int, ProvenBlockHeader>).GetField("maxSize", BindingFlags.NonPublic | BindingFlags.Instance);
-            field.SetValue(this.provenBlockHeaderStore.Cache, maxSize);
-
-            // Add items to the repository.
-            await this.provenBlockHeaderRepository.PutAsync(inHeaders,
-                new HashHeightPair(inHeaders.LastOrDefault().Value.GetHash(), inHeaders.Count - 1)).ConfigureAwait(false);
-
-            // Asking for headers will check the cache store.  If the header is not in the cache store, then it will check the repository and add the cache store.
-            var outHeaders = await this.provenBlockHeaderStore.GetAsync(0, inHeaders.Count - 1).ConfigureAwait(false);
-
-            this.provenBlockHeaderStore.Cache.TotalSize.Should().BeLessThan(maxSize);
-        }
-
-        [Fact]
-        public async Task GetAsync_Headers_Should_Be_In_Consecutive_OrderAsync()
-        {
-            var inItems = new List<ProvenBlockHeader>();
-
-            ProvenBlockHeader provenHeaderMock;
-
-            await this.provenBlockHeaderStore.InitializeAsync(this.BuildChainWithProvenHeaders(1)).ConfigureAwait(false);
-            uint nonceIndex = 1; // a random index to change the header hash.
-
-            // Save items 0 - 9 to disk.
-            for (int i = 0; i < 10; i++)
-            {
-                provenHeaderMock = CreateNewProvenBlockHeaderMock();
-                provenHeaderMock.Nonce = ++nonceIndex;
-                this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock, new HashHeightPair(provenHeaderMock.GetHash(), i));
-                inItems.Add(provenHeaderMock);
-            }
-
-            // Save to disk and cache is cleared.
-            this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
-
-            // When pendingTipHashHeight is null we can safely say the items were saved to the repository, based on the above SaveAsync.
-            WaitLoop(() =>
-            {
-                var tipHashHeight = this.provenBlockHeaderStore.GetMemberValue("TipHashHeight") as HashHeightPair;
-                return tipHashHeight.Height == 9;
-            });
-
-            // Clear cache.
-            for (int i = 0; i < 10; i++)
-            {
-                this.provenBlockHeaderStore.Cache.Remove(i);
-            }
-
-            // Add item 4 to cache
-            var provenHeaderMock1 = CreateNewProvenBlockHeaderMock();
-            provenHeaderMock1.Nonce = ++nonceIndex;
-            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock1, new HashHeightPair(provenHeaderMock1.GetHash(), 4));
-            inItems[4] = provenHeaderMock1;
-
-            // Add item 6 to cache.
-            var provenHeaderMock2 = CreateNewProvenBlockHeaderMock();
-            provenHeaderMock2.Nonce = ++nonceIndex;
-            this.provenBlockHeaderStore.AddToPendingBatch(provenHeaderMock2, new HashHeightPair(provenHeaderMock2.GetHash(), 6));
-            inItems[6] = provenHeaderMock2;
-
-            // Load the items and make sure in sequence.
-            var outItems = await this.provenBlockHeaderStore.GetAsync(0, 9).ConfigureAwait(false);
-
-            outItems.Count.Should().Be(10);
-
-            // Items 4 and 6 were added to pending cache and have the same block hash.
-            for (int i = 0; i < 10; i++)
-            {
-                outItems[i].GetHash().Should().Be(inItems[i].GetHash());
-            }
         }
 
         // Commented out because those tests test incorrect logic in PH store.

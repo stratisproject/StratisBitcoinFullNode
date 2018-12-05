@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -111,7 +110,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             // If getHeadersPayload isn't a GetProvenHeadersPayload, return base implementation result
             if (!(getHeadersPayload is GetProvenHeadersPayload))
             {
-                return base.ConstructHeadersPayload(getHeadersPayload, out lastHeader);
+                var headersPayload = base.ConstructHeadersPayload(getHeadersPayload, out lastHeader) as HeadersPayload;
+
+                for (int i = 0; i < headersPayload.Headers.Count; i++)
+                {
+                    if (headersPayload.Headers[i] is ProvenBlockHeader phHeader)
+                    {
+                        BlockHeader newHeader = this.chain.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                        newHeader.Bits = phHeader.Bits;
+                        newHeader.Time = phHeader.Time;
+                        newHeader.Nonce = phHeader.Nonce;
+                        newHeader.Version = phHeader.Version;
+                        newHeader.HashMerkleRoot = phHeader.HashMerkleRoot;
+                        newHeader.HashPrevBlock = phHeader.HashPrevBlock;
+
+                        headersPayload.Headers[i] = newHeader;
+                    }
+                }
+
+                return headersPayload;
             }
 
             ChainedHeader fork = this.chain.FindFork(getHeadersPayload.BlockLocator);
@@ -123,12 +140,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 return null;
             }
 
-            var headers = new ProvenHeadersPayload();
-            foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
+            var provenHeadersPayload = new ProvenHeadersPayload();
+
+            ChainedHeader header = this.GetLastHeaderToSend(fork, getHeadersPayload.HashStop);
+
+            for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
                 if (!(header.Header is ProvenBlockHeader provenBlockHeader))
                 {
                     this.logger.LogTrace("Invalid proven header, try loading it from the store.");
+
                     provenBlockHeader = this.provenBlockHeaderStore.GetAsync(header.Height).GetAwaiter().GetResult();
 
                     if (provenBlockHeader == null)
@@ -143,13 +164,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 }
 
                 lastHeader = header;
-                headers.Headers.Add(provenBlockHeader);
 
-                if ((header.HashBlock == getHeadersPayload.HashStop) || (headers.Headers.Count == MaxItemsPerHeadersMessage))
-                    break;
+                provenHeadersPayload.Headers.Add(provenBlockHeader);
+
+                header = header.Previous;
             }
 
-            return headers;
+            provenHeadersPayload.Headers.Reverse();
+
+            return provenHeadersPayload;
         }
 
         /// <inheritdoc />
@@ -205,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             INetworkPeer peer = this.AttachedPeer;
 
-            if (this.isGateway )
+            if (this.isGateway)
             {
                 if (peer.IsWhitelisted())
                 {

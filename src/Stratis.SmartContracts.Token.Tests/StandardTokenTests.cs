@@ -1,7 +1,8 @@
 using System;
 using Moq;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.CLR;
 using Xunit;
 
 namespace Stratis.SmartContracts.Token.Tests

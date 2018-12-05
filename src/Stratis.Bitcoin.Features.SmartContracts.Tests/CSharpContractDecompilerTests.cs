@@ -2,8 +2,8 @@
 using System.Collections.Generic;
 using System.Text;
 using CSharpFunctionalExtensions;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.Executor.Reflection.Decompilation;
+using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Decompilation;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

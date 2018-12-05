@@ -8,8 +8,8 @@ using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.ResultProcessors;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

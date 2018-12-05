@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         for (int i = 0; i < unspent.Outputs.Length; i++)
                         {
                             string key = $"{unspent.TransactionId}-{i}";
-                            indexItems[key] = checked((int)unspent.Height);
+                            indexItems[key] = this.blockHeight;
                         }
                     }
 

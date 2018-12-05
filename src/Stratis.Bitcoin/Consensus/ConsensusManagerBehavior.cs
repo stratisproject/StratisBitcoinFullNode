@@ -5,7 +5,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NLog.LayoutRenderers.Wrappers;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -199,6 +198,31 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
+        /// <summary>Find last header that should be included in headers payload.</summary>
+        protected ChainedHeader GetLastHeaderToSend(ChainedHeader fork, uint256 hashStop)
+        {
+            ChainedHeader lastHeader = this.consensusManager.Tip;
+
+            // If the hash stop has been given, calculate the last chained header from it.
+            if (hashStop != null && hashStop != uint256.Zero)
+            {
+                ChainedHeader hashStopHeader = lastHeader.FindAncestorOrSelf(hashStop);
+
+                if ((hashStopHeader != null) && (lastHeader.Height > fork.Height))
+                    lastHeader = hashStopHeader;
+            }
+
+            // Do not return more than 2000 headers from the fork point.
+            if ((lastHeader.Height - fork.Height) > MaxItemsPerHeadersMessage)
+            {
+                // e.g. If fork = 3000 and tip is 6000 we need to start from block 5000.
+                int startFromHeight = fork.Height + MaxItemsPerHeadersMessage;
+                lastHeader = lastHeader.GetAncestor(startFromHeight);
+            }
+
+            return lastHeader;
+        }
+
         /// <summary>Constructs the headers from locator to consensus tip.</summary>
         /// <param name="getHeadersPayload">The <see cref="GetHeadersPayload"/> payload that triggered the creation of this payload.</param>
         /// <param name="lastHeader"><see cref="ChainedHeader"/> of the last header that was added to the <see cref="HeadersPayload"/>.</param>
@@ -217,16 +241,21 @@ namespace Stratis.Bitcoin.Consensus
 
             var headersPayload = new HeadersPayload();
 
-            foreach (ChainedHeader header in this.chain.EnumerateToTip(fork).Skip(1))
+            ChainedHeader header = this.GetLastHeaderToSend(fork, getHeadersPayload.HashStop);
+
+            for (int heightIndex = header.Height; heightIndex > fork.Height; heightIndex--)
             {
                 lastHeader = header;
+
                 headersPayload.Headers.Add(header.Header);
 
-                if ((header.HashBlock == getHeadersPayload.HashStop) || (headersPayload.Headers.Count == MaxItemsPerHeadersMessage))
-                    break;
+                header = header.Previous;
             }
 
             this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
+
+            // We need to reverse it as it was added to the list backwards.
+            headersPayload.Headers.Reverse();
 
             return headersPayload;
         }

@@ -140,6 +140,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UseWallet()
                     .AddPowPosMining()
                     .AddRPC()
+                    .UseTestChainedHeaderTree()
                     .MockIBD());
 
                 CoreNode stratisNode = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
