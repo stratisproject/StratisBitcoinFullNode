@@ -21,40 +21,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.network = network;
         }
 
-        /// <inheritdoc />
-        public string GetString(Transaction transaction, out OpReturnDataType opReturnDataType)
-        {
-            if (!TryGetSingleOpReturnOutputContent(transaction, out var content))
-            {
-                opReturnDataType = OpReturnDataType.Unknown;
-                return null;
-            }
-
-            string address = TryConvertValidOpReturnDataToAddress(content);
-            if (address != null)
-            {
-                opReturnDataType = OpReturnDataType.Address;
-                return address;
-            }
-
-            int blockHeight = TryConvertValidOpReturnDataToBlockHeight(content);
-            if (blockHeight != -1)
-            {
-                opReturnDataType = OpReturnDataType.BlockHeight;
-                return blockHeight.ToString();
-            }
-
-            string hash = TryConvertValidOpReturnDataToHash(content);
-            if (hash != null)
-            {
-                opReturnDataType = OpReturnDataType.Hash;
-                return hash;
-            }
-
-            opReturnDataType = OpReturnDataType.Unknown;
-            return null;
-        }
-
         ///<inheritdoc />
         public string TryGetTargetAddress(Transaction transaction)
         {
@@ -90,35 +56,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 .Where(s => s.IsUnspendable)
                 .Select(s => s.ToBytes())
                 .Select(RemoveOpReturnOperator);
-        }
-
-        private bool TryGetSingleOpReturnOutputContent(Transaction transaction, out byte[] content)
-        {
-            try
-            {
-                content = transaction.Outputs.Select(o => o.ScriptPubKey)
-                    .SingleOrDefault(s => s.IsUnspendable).ToBytes();
-                if (content == null) return false;
-
-                content = RemoveOpReturnOperator(content);
-                return true;
-            }
-            catch (Exception e)
-            {
-                this.logger.LogDebug("Failed to find a single OP_RETURN output in transaction {0}: {1}",
-                    transaction.GetHash(), e.Message);
-                content = null;
-                return false;
-            }
-        }
-
-        private int TryConvertValidOpReturnDataToBlockHeight(byte[] data)
-        {
-
-            var asString = Encoding.UTF8.GetString(data);
-            if (int.TryParse(asString, out int blockHeight)) return blockHeight;
-
-            return -1;
         }
 
         // Converts the raw bytes from the output into a BitcoinAddress.
