@@ -3,8 +3,8 @@ using System.Collections.Generic;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Exceptions;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Exceptions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
