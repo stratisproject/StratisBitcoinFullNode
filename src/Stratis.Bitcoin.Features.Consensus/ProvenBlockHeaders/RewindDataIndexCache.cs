@@ -10,8 +10,10 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 {
     /// <inheritdoc />
-    public class RewindDataIndexStore : IRewindDataIndexStore
+    public class RewindDataIndexCache : IRewindDataIndexCache
     {
+        private readonly Network network;
+
         /// <summary>
         /// Internal cache for rewind data index. Key is a TxId + N (N is an index of output in a transaction)
         /// and value is a rewind data index.
@@ -29,9 +31,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         private readonly BackendPerformanceCounter performanceCounter;
 
-        public RewindDataIndexStore(IDateTimeProvider dateTimeProvider)
+        public RewindDataIndexCache(IDateTimeProvider dateTimeProvider, Network network)
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
+
+            this.network = network;
 
             this.items = new ConcurrentDictionary<string, int>();
 
@@ -39,40 +43,59 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public async Task InitializeAsync(IConsensus consensusParameters, ChainedHeader tip, ICoinView coinView)
+        public async Task InitializeAsync(int tipHeight, ICoinView coinView)
         {
-            // A temporary hack until tip manage will be introduced.
-            var breezeCoinView = (DBreezeCoinView)((CachedCoinView)coinView).Inner;
-            uint256 hash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
-            tip = tip.FindAncestorOrSelf(hash);
+            this.items.Clear();
 
-            this.numberOfBlocksToKeep = (int)consensusParameters.MaxReorgLength;
+            this.numberOfBlocksToKeep = (int)this.network.Consensus.MaxReorgLength;
 
-            int heightToSyncTo = tip.Height > this.numberOfBlocksToKeep ? tip.Height - this.numberOfBlocksToKeep : 0;
+            int heightToSyncTo = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1;
 
-            for (int rewindHeight = tip.Height - 1; rewindHeight >= heightToSyncTo; rewindHeight--)
+            for (int rewindHeight = tipHeight; rewindHeight >= heightToSyncTo; rewindHeight--)
             {
                 RewindData rewindData = await coinView.GetRewindData(rewindHeight).ConfigureAwait(false);
 
-                if (rewindData == null)
-                {
-                    throw new ConsensusException($"Rewind data of height '{rewindHeight}' was not found!");
-                }
+                this.AddRewindData(rewindHeight, rewindData);
+            }
+        }
 
-                if (rewindData.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0)
-                {
-                   continue;
-                }
+        /// <summary>
+        /// Adding rewind information for a block in to the cache, we only add the unspent outputs.
+        /// The cache key is [trxid-outputIndex] and the value is the height of the block on with the rewind data information is kept.
+        /// </summary>
+        /// <param name="rewindHeight">Height of the rewind data.</param>
+        /// <param name="rewindData">The data itself</param>
+        private void AddRewindData(int rewindHeight, RewindData rewindData)
+        {
+            if (rewindData == null)
+            {
+                throw new ConsensusException($"Rewind data of height '{rewindHeight}' was not found!");
+            }
 
-                foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
+            if (rewindData.OutputsToRestore == null || rewindData.OutputsToRestore.Count == 0)
+            {
+                return;
+            }
+
+            foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
+            {
+                for (int outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
                 {
-                    for (int outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
-                    {
-                        string key = $"{unspent.TransactionId}-{outputIndex}";
-                        this.items[key] = rewindHeight;
-                    }
+                    string key = $"{unspent.TransactionId}-{outputIndex}";
+                    this.items[key] = rewindHeight;
                 }
             }
+        }
+
+        /// <inheritdoc />
+        public async Task Remove(int tipHeight, ICoinView coinView)
+        {
+            this.Flush(tipHeight);
+
+            int bottomHeight = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1;
+
+            RewindData rewindData = await coinView.GetRewindData(bottomHeight).ConfigureAwait(false);
+            this.AddRewindData(bottomHeight, rewindData);
         }
 
         /// <inheritdoc />
@@ -88,14 +111,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public void Flush(int currentHeight)
+        public void Flush(int tipHeight)
         {
-            int heightToKeepItemsTo = currentHeight - this.numberOfBlocksToKeep;
+            int heightToKeepItemsTo = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1; ;
 
             List<KeyValuePair<string, int>> listOfItems = this.items.ToList();
             foreach (KeyValuePair<string, int> item in listOfItems)
             {
-                if ((item.Value < heightToKeepItemsTo) || (item.Value > currentHeight))
+                if ((item.Value < heightToKeepItemsTo) || (item.Value > tipHeight))
                 {
                     this.items.TryRemove(item.Key, out int unused);
                 }

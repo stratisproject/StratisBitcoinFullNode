@@ -11,21 +11,27 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
     /// we do not delete old rewind data that is no longer needed but after the issue #5 (https://github.com/stratisproject/StratisBitcoinFullNode/issues/5)
     /// is fixed we should also make sure that old fork point data is deleted as well).
     /// </summary>
-    public interface IRewindDataIndexStore
+    public interface IRewindDataIndexCache
     {
         /// <summary>
         /// Initializes the rewind data index store by loading rewind data from the cache or dbreeze for the last 500 blocks.
         /// </summary>
-        /// <param name="consensusParameters">The consensus parameters.</param>
-        /// <param name="tip">The chain tip.</param>
+        /// <param name="tipHeight">The chain tip height.</param>
         /// <param name="coinView">The coin view to be used for getting rewind data.</param>
-        Task InitializeAsync(IConsensus consensusParameters, ChainedHeader tip, ICoinView coinView);
+        Task InitializeAsync(int tipHeight, ICoinView coinView);
+
+        /// <summary>
+        /// Removes the last rewind data index and add one instead.
+        /// </summary>
+        /// <param name="tipHeight">The chain tip height.</param>
+        /// <param name="coinView">The coin view to be used for getting rewind data.</param>
+        Task Remove(int tipHeight, ICoinView coinView);
 
         /// <summary>
         /// Stores all rewind data index from the cache to a disk and clears cache.
         /// </summary>
-        /// <param name="currentHeight">The current block height.</param>
-        void Flush(int currentHeight);
+        /// <param name="tipHeight">The current block height.</param>
+        void Flush(int tipHeight);
 
         /// <summary>
         /// Saves rewind index data to cache.
