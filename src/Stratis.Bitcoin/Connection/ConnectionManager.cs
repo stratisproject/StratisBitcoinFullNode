@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -83,7 +82,7 @@ namespace Stratis.Bitcoin.Connection
 
         private IConsensusManager consensusManager;
 
-        private AsyncQueue<INetworkPeer> connectedPeersQueue;
+        private readonly object connectedPeersLock;
 
         public ConnectionManager(IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
@@ -101,6 +100,7 @@ namespace Stratis.Bitcoin.Connection
             INodeStats nodeStats)
         {
             this.connectedPeers = new NetworkPeerCollection();
+            this.connectedPeersLock = new object();
             this.dateTimeProvider = dateTimeProvider;
             this.loggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -123,7 +123,6 @@ namespace Stratis.Bitcoin.Connection
             this.Parameters.UserAgent = $"{this.ConnectionSettings.Agent}:{versionProvider.GetVersion()} ({(int)this.NodeSettings.ProtocolVersion})";
 
             this.Parameters.Version = this.NodeSettings.ProtocolVersion;
-            this.connectedPeersQueue = new AsyncQueue<INetworkPeer>(this.OnPeerAdded);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1100);
         }
@@ -268,26 +267,23 @@ namespace Stratis.Bitcoin.Connection
             foreach (NetworkPeerServer server in this.Servers)
                 server.Dispose();
 
-            this.connectedPeersQueue.Dispose();
-
             this.networkPeerDisposer.Dispose();
         }
 
         /// <inheritdoc />
         public void AddConnectedPeer(INetworkPeer peer)
         {
-            this.connectedPeers.Add(peer);
-            this.connectedPeersQueue.Enqueue(peer);
-        }
+            bool shouldDisconnect = false;
 
-        private Task OnPeerAdded(INetworkPeer peer, CancellationToken cancellationToken)
-        {
-            // Code in this method is a quick and dirty fix for the race condition described here: https://github.com/stratisproject/StratisBitcoinFullNode/issues/2864
-            // TODO race condition should be eliminated instead of fixing its consequences.
-            if (this.ShouldDisconnect(peer))
+            lock (this.connectedPeersLock)
+            {
+                shouldDisconnect = this.ShouldDisconnect(peer);
+                if (!shouldDisconnect)
+                    this.connectedPeers.Add(peer);
+            }
+
+            if (shouldDisconnect)
                 peer.Disconnect("Peer from the same network group.");
-
-            return Task.CompletedTask;
         }
 
         /// <summary>
@@ -297,8 +293,22 @@ namespace Stratis.Bitcoin.Connection
         /// </summary>
         private bool ShouldDisconnect(INetworkPeer peer)
         {
-            bool isAddNodeOrConnect = false;
+            // Don't disconnect if range filtering is not turned on.
+            if (!this.ConnectionSettings.IpRangeFiltering)
+            {
+                this.logger.LogTrace("(-)[IP_RANGE_FILTERING_OFF]:false");
+                return false;
+            }
 
+            // Don't disconnect if this peer has a local host address.
+            if (peer.PeerEndPoint.Address.IsLocal())
+            {
+                this.logger.LogTrace("(-)[IP_IS_LOCAL]:false");
+                return false;
+            }
+
+            // Don't disconnect if this peer is in -addnode or -connect.
+            bool isAddNodeOrConnect = false;
             foreach (IPEndPoint addNodeEndPoint in this.ConnectionSettings.AddNode.Union(this.ConnectionSettings.Connect))
             {
                 if (peer.PeerEndPoint.Address.Equals(addNodeEndPoint.Address))

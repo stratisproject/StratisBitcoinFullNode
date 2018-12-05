@@ -278,9 +278,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Obtains order number of the last saved rewind state in the database.
         /// </summary>
         /// <param name="transaction">Open dBreeze transaction.</param>
-        /// <returns>Order number of the last saved rewind state, or <c>-1</c> if no rewind state is found in the database.</returns>
-        /// <remarks>TODO: Using <c>-1</c> is hacky here, and <see cref="SaveChangesAsync"/> exploits that in a way that if no such rewind data exist
-        /// the order number of the first rewind data is -1 + 1 = 0.</remarks>
+        /// <returns>Order number of the last saved rewind state, or <c>0</c> if no rewind state is found in the database.</returns>
+        /// <remarks>TODO: Using <c>0</c> is hacky here, and <see cref="SaveChangesAsync"/> exploits that in a way that if no such rewind data exist
+        /// the order number of the first rewind data is 0 + 1 = 1.</remarks>
         private int GetRewindIndex(DBreeze.Transactions.Transaction transaction)
         {
             bool prevLazySettings = transaction.ValuesLazyLoadingIsOn;
@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             Row<int, RewindData> firstRow = transaction.SelectBackward<int, RewindData>("Rewind").FirstOrDefault();
             transaction.ValuesLazyLoadingIsOn = prevLazySettings;
 
-            return firstRow != null ? firstRow.Key : -1;
+            return firstRow != null ? firstRow.Key : 0;
         }
 
         public Task<RewindData> GetRewindData(int height)
@@ -316,7 +316,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 using (DBreeze.Transactions.Transaction transaction = this.CreateTransaction())
                 {
                     transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
-                    if (this.GetRewindIndex(transaction) == -1)
+                    if (this.GetRewindIndex(transaction) == 0)
                     {
                         transaction.RemoveAllKeys("Coins", true);
                         this.SetBlockHash(transaction, this.network.GenesisHash);
