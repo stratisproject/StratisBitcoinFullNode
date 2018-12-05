@@ -15,8 +15,8 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers

@@ -5,10 +5,10 @@ using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
 using Mono.Cecil;
-using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.Core.Validation.Validators.Type;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.CLR.Validation.Validators.Type;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

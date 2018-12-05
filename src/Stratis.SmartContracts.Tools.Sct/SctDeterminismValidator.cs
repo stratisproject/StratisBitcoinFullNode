@@ -1,5 +1,5 @@
-﻿using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.Executor.Reflection;
+﻿using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.SmartContracts.Tools.Sct
 {

@@ -9,9 +9,9 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.ResultProcessors;
+using Stratis.SmartContracts.CLR.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {

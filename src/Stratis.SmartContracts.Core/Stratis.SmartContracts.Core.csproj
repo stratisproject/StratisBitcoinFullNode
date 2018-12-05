@@ -21,7 +21,7 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.Consensus\Stratis.Bitcoin.Features.Consensus.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.MemoryPool\Stratis.Bitcoin.Features.MemoryPool.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
-    <ProjectReference Include="..\Stratis.SmartContracts.Core.Validation\Stratis.SmartContracts.Core.Validation.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.CLR.Validation\Stratis.SmartContracts.CLR.Validation.csproj" />
   </ItemGroup>
 
 </Project>
