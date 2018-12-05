@@ -636,14 +636,11 @@ namespace Stratis.Bitcoin.Consensus
                 return new ConnectNewHeadersResult() { Consumed = this.chainedHeadersByHash[lastHash] };
             }
 
-            List<ChainedHeader> newChainedHeaders;
+            List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers, out bool insufficientInfo);
 
-            try
+            if (insufficientInfo)
             {
-                newChainedHeaders = this.CreateNewHeaders(headers);
-            }
-            catch (InsufficientHeaderInformation)
-            {
+                this.logger.LogTrace("(-)[INSUFF_INFO]:null");
                 return new ConnectNewHeadersResult() {Consumed = null};
             }
 
@@ -946,7 +943,7 @@ namespace Stratis.Bitcoin.Consensus
                 headerToBeCreated = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
             }
 
-            this.CreateNewHeaders(new List<BlockHeader>() { headerToBeCreated });
+            this.CreateNewHeaders(new List<BlockHeader>() { headerToBeCreated }, out bool _);
 
             ChainedHeader chainedHeader = this.GetChainedHeader(block.GetHash());
 
@@ -970,8 +967,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
+        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers, out bool insufficientInfo)
         {
+            insufficientInfo = false;
+
             if (!this.TryFindNewHeaderIndex(headers, out int newHeaderIndex))
             {
                 this.logger.LogTrace("(-)[NO_NEW_HEADERS_FOUND]:null");
@@ -988,7 +987,13 @@ namespace Stratis.Bitcoin.Consensus
 
             List<ChainedHeader> newChainedHeaders = null;
 
-            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
+            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, out insufficientInfo);
+
+            if (insufficientInfo)
+            {
+                this.logger.LogTrace("(-)[INSUFF_INFO]");
+                return null;
+            }
 
             if (newChainedHeader != null)
             {
@@ -1006,14 +1011,10 @@ namespace Stratis.Bitcoin.Consensus
 
                     for (; newHeaderIndex < headers.Count; newHeaderIndex++)
                     {
-                        try
-                        {
-                            newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
-                        }
-                        catch (InsufficientHeaderInformation)
-                        {
+                        newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, out bool _);
+
+                        if (newChainedHeader == null)
                             break;
-                        }
 
                         newChainedHeaders.Add(newChainedHeader);
                         this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
@@ -1037,10 +1038,10 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        /// <exception cref="InsufficientHeaderInformation">Thrown if there is not enough data to validate a header.</exception>
-        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
+        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader, out bool insufficientHeaderInformation)
         {
             uint256 newHeaderHash = currentBlockHeader.GetHash();
+            insufficientHeaderInformation = false;
 
             if (this.invalidHashesStore.IsInvalid(newHeaderHash))
             {
@@ -1056,8 +1057,10 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (result.InsufficientHeaderInformation)
                 {
+                    insufficientHeaderInformation = true;
+
                     this.logger.LogTrace("(-)[INSUFFICIENT_HEADER_INFORMATION]");
-                    throw new InsufficientHeaderInformation();
+                    return null;
                 }
 
                 this.logger.LogTrace("(-)[INVALID_HEADER]");

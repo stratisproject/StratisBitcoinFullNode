@@ -28,14 +28,6 @@ namespace Stratis.Bitcoin.Consensus
         }
     }
 
-    /// <summary>Can validate PH yet.</summary>
-    public class InsufficientHeaderInformation : ConsensusException
-    {
-        public InsufficientHeaderInformation() : base()
-        {
-        }
-    }
-
     /// <summary>
     /// This throws when the header of a previously block that failed
     /// partial or full validation and was marked as invalid is passed to the node.
