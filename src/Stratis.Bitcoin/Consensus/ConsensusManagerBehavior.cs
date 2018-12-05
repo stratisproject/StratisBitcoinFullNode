@@ -101,6 +101,9 @@ namespace Stratis.Bitcoin.Consensus
 
                     if ((result == null) || (result.Consumed == null))
                     {
+                        if (result == null)
+                            this.cachedHeaders.Clear();
+
                         this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
                         return null;
                     }
