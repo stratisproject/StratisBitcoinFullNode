@@ -628,7 +628,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Token_Standards_Test()
         {
-            const uint totalSupply = 100_000;
+            const ulong totalSupply = 100_000;
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StandardToken.cs");
             Assert.True(compilationResult.Success);
