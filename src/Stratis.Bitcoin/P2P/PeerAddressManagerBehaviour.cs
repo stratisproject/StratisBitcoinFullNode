@@ -129,8 +129,7 @@ namespace Stratis.Bitcoin.P2P
                             return;
                         }
 
-                        // TODO prevent spamming by overriding ips
-                        this.peerAddressManager.AddPeers(addr.Addresses.Select(a => a.Endpoint).ToArray(), peer.RemoteSocketAddress);
+                        this.peerAddressManager.AddPeers(addr.Addresses.Select(a => a.Endpoint), peer.RemoteSocketAddress);
                     }
                 }
             }

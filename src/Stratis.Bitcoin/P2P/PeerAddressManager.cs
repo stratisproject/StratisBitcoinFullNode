@@ -43,6 +43,8 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>An object capable of storing a list of <see cref="PeerAddress"/>s to the file system.</summary>
         private readonly FileStorage<List<PeerAddress>> fileStorage;
 
+        private const int MaxAddressesToStoreFromSingleIp = 1500;
+
         /// <summary>Constructor used by dependency injection.</summary>
         public PeerAddressManager(IDateTimeProvider dateTimeProvider, DataFolder peerFilePath, ILoggerFactory loggerFactory, ISelfEndpointTracker selfEndpointTracker)
         {
@@ -90,6 +92,13 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void AddPeer(IPEndPoint endPoint, IPAddress source)
         {
+            this.AddPeerWithoutCleanup(endPoint, source);
+
+            this.EnsureMaxItemsPerSource(source);
+        }
+
+        private void AddPeerWithoutCleanup(IPEndPoint endPoint, IPAddress source)
+        {
             if (!endPoint.Address.IsRoutable(true))
                 return;
 
@@ -100,18 +109,33 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
-        public void RemovePeer(IPEndPoint endPoint)
-        {
-            this.peerInfoByPeerAddress.TryRemove(endPoint.MapToIpv6(), out PeerAddress addr);
-        }
-
-        /// <inheritdoc/>
         public void AddPeers(IEnumerable<IPEndPoint> endPoints, IPAddress source)
         {
             foreach (IPEndPoint endPoint in endPoints)
+                this.AddPeerWithoutCleanup(endPoint, source);
+
+            this.EnsureMaxItemsPerSource(source);
+        }
+
+        private void EnsureMaxItemsPerSource(IPAddress source)
+        {
+            int fromSameSource = this.peerInfoByPeerAddress.Values.Count(x => x.Loopback == source);
+
+            if (fromSameSource > MaxAddressesToStoreFromSingleIp)
             {
-                this.AddPeer(endPoint, source);
+                int deleteCount = fromSameSource - MaxAddressesToStoreFromSingleIp;
+
+                List<IPEndPoint> itemsToRemove = this.peerInfoByPeerAddress.Where(x => x.Value.Loopback == source).Select(x => x.Key).Take(deleteCount).ToList();
+
+                foreach (IPEndPoint toRemove in itemsToRemove)
+                    this.RemovePeer(toRemove);
             }
+        }
+
+        /// <inheritdoc/>
+        public void RemovePeer(IPEndPoint endPoint)
+        {
+            this.peerInfoByPeerAddress.TryRemove(endPoint.MapToIpv6(), out PeerAddress addr);
         }
 
         /// <inheritdoc/>
