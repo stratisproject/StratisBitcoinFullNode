@@ -5,7 +5,7 @@ using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
-using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
 {

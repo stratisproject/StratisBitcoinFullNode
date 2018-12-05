@@ -3,8 +3,8 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.ResultProcessors;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.ResultProcessors;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

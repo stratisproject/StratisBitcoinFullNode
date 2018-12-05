@@ -6,9 +6,9 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Local;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Local;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 

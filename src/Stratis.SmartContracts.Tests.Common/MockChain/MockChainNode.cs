@@ -19,8 +19,8 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Local;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Local;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {

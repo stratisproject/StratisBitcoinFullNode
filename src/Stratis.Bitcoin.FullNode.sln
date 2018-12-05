@@ -108,7 +108,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core.Validation", "Stratis.SmartContracts.Core.Validation\Stratis.SmartContracts.Core.Validation.csproj", "{143DEC12-3B3E-421A-A724-D00BE552D546}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Executor.Reflection", "Stratis.SmartContracts.Executor.Reflection\Stratis.SmartContracts.Executor.Reflection.csproj", "{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.CLR", "Stratis.SmartContracts.CLR\Stratis.SmartContracts.CLR.csproj", "{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Tools.Sct", "Stratis.SmartContracts.Tools.Sct\Stratis.SmartContracts.Tools.Sct.csproj", "{10764B6E-B0D5-4C7C-BDAE-C0EB8CBCEA2A}"
 EndProject
