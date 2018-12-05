@@ -59,6 +59,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             }
         }
 
+        /// <summary>
+        /// Adding rewind information for a block in to the cache, we only add the unspent outputs.
+        /// The cache key is [trxid-outputIndex] and the value is the height of the block on with the rewind data information is kept.
+        /// </summary>
+        /// <param name="rewindHeight">Height of the rewind data.</param>
+        /// <param name="rewindData">The data itself</param>
         private void AddRewindData(int rewindHeight, RewindData rewindData)
         {
             if (rewindData == null)
