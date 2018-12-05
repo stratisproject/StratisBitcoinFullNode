@@ -34,21 +34,6 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public void GetStringFromOpReturn_CanReadAddress()
-        {
-
-            var opReturnAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
-            var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
-
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
-
-            var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
-
-            opReturnDataType.Should().Be(OpReturnDataType.Address);
-            opReturnString.Should().Be(opReturnAddress.ToString());
-        }
-
-        [Fact]
         public void TryGetTargetAddressFromOpReturn_CanReadAddress()
         {
 
@@ -62,20 +47,6 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public void GetStringFromOpReturn_Can_NOT_ReadAddress_FromOwnNetwork()
-        {
-            var opReturnAddress = this.addressHelper.GetNewSourceChainPubKeyAddress();
-            var opReturnBytes = Encoding.UTF8.GetBytes(opReturnAddress.ToString());
-
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
-
-            var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
-
-            opReturnDataType.Should().Be(OpReturnDataType.Unknown);
-            opReturnString.Should().BeNull();
-        }
-
-        [Fact]
         public void TryGetTargetAddressFromOpReturn_Can_NOT_ReadAddress_FromOwnNetwork()
         {
             var opReturnAddress = this.addressHelper.GetNewSourceChainPubKeyAddress();
@@ -85,39 +56,6 @@ namespace Stratis.FederatedPeg.Tests
 
             var opReturnString = this.opReturnDataReader.TryGetTargetAddress(transaction);
 
-            opReturnString.Should().BeNull();
-        }
-
-        [Fact]
-        public void GetStringFromOpReturn_CanReadTransactionHash()
-        {
-            var opReturnTransactionHash = this.transactionBuilder.BuildTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress()).GetHash();
-            var opReturnBytes = opReturnTransactionHash.ToBytes();
-
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
-
-            var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
-
-            opReturnDataType.Should().Be(OpReturnDataType.Hash);
-            var expectedString = new uint256(opReturnBytes).ToString();
-            opReturnString.Should().Be(expectedString);
-        }
-
-        [Fact]
-        public void GetStringFromOpReturn_Can_NOT_Read_Transaction_with_two_OpReturns()
-        {
-            var opReturnAddress1 = this.addressHelper.GetNewTargetChainPubKeyAddress();
-            var opReturnBytes1 = Encoding.UTF8.GetBytes(opReturnAddress1.ToString());
-
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes1);
-
-            var opReturnAddress2 = this.addressHelper.GetNewTargetChainPubKeyAddress();
-            var opReturnBytes2 = Encoding.UTF8.GetBytes(opReturnAddress2.ToString());
-            transaction.AddOutput(Money.Zero, new Script(OpcodeType.OP_RETURN, Op.GetPushOp(opReturnBytes2)));
-
-            var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
-
-            opReturnDataType.Should().Be(OpReturnDataType.Unknown);
             opReturnString.Should().BeNull();
         }
 
@@ -160,18 +98,6 @@ namespace Stratis.FederatedPeg.Tests
 
             var addressFromOpReturn = this.opReturnDataReader.TryGetTargetAddress(transaction);
             addressFromOpReturn.Should().Be(opReturnValidAddress.ToString());
-        }
-
-        [Fact]
-        public void GetStringFromOpReturn_Can_NOT_ReadRandomStrings()
-        {
-            var opReturnBytes = Encoding.UTF8.GetBytes("neither hash, nor address");
-            var transaction = this.transactionBuilder.BuildOpReturnTransaction(this.addressHelper.GetNewSourceChainPubKeyAddress(), opReturnBytes);
-
-            var opReturnString = this.opReturnDataReader.GetString(transaction, out OpReturnDataType opReturnDataType);
-
-            opReturnDataType.Should().Be(OpReturnDataType.Unknown);
-            opReturnString.Should().BeNull();
         }
 
         [Fact]
