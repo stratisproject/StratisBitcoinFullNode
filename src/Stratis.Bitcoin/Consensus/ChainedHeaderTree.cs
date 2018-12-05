@@ -963,6 +963,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <para>When headers are connected the next pointers of their previous headers are updated.</para>
         /// </remarks>
         /// <param name="headers">The new headers that should be connected to a chain.</param>
+        /// <param name="insufficientInfo"><c>true</c> if there wasn't enough data to validate even the first header of all presented.</param>
         /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
