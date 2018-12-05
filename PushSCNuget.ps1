@@ -7,7 +7,7 @@ foreach ($packageName in $packageNames){
 	cd $packageName
 	rm "bin\release\" -Recurse -Force -ErrorAction Ignore
 	dotnet pack --configuration Release
-	dotnet nuget push "bin\Release\*.nupkg" --source "https://api.nuget.org/v3/index.json" 
+	dotnet nuget push "bin\Release\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json" 
 	cd ..
 }
 
