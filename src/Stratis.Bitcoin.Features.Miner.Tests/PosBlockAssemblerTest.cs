@@ -457,7 +457,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider),
-                new Mock<IRewindDataIndexStore>().Object);
+                new Mock<IRewindDataIndexCache>().Object);
 
             posConsensusRules.Register();
 

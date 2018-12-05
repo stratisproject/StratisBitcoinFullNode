@@ -11,9 +11,9 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 

@@ -1,0 +1,22 @@
+﻿<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+	<AssemblyVersion>0.0.1.0</AssemblyVersion>
+	<FileVersion>0.0.1.0</FileVersion>
+	<Version>0.0.1-beta</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />
+    <PackageReference Include="ICSharpCode.Decompiler" Version="3.2.0.3856" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <ProjectReference Include="..\RuntimeObserver\RuntimeObserver.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj" />
+  </ItemGroup>
+
+</Project>

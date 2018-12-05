@@ -4,8 +4,8 @@ using Moq;
 using NBitcoin;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.ContractLogging;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.ContractLogging;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
