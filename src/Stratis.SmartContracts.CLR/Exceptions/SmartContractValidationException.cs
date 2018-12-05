@@ -1,6 +1,6 @@
 ﻿using System.Collections.Generic;
 using Stratis.SmartContracts.Core.Exceptions;
-using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.CLR.Validation;
 
 namespace Stratis.SmartContracts.CLR.Exceptions
 {

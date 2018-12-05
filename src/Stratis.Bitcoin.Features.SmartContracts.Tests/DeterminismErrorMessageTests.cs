@@ -1,7 +1,7 @@
 ﻿using System.Linq;
 using Microsoft.CodeAnalysis;
-using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.Core.Validation.Validators;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.CLR.Validation.Validators;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;

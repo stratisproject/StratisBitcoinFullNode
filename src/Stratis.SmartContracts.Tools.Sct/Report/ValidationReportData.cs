@@ -1,5 +1,5 @@
 ﻿using System.Collections.Generic;
-using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.CLR.Validation;
 
 namespace Stratis.SmartContracts.Tools.Sct.Report
 {

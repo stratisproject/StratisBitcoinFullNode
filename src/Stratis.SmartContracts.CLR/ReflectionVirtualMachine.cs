@@ -5,7 +5,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using RuntimeObserver;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Exceptions;
 using Stratis.SmartContracts.CLR.ILRewrite;
