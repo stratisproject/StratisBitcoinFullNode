@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<PeerBanning>().Object,  this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<IPeerBanning>().Object,  this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             var incomingMessage = new IncomingMessage();
@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<PeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<IPeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             var incomingMessage = new IncomingMessage();
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<PeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<IPeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             var incomingMessage = new IncomingMessage();
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<PeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<IPeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             var incomingMessage = new IncomingMessage();
@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<PeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<IPeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             // Trigger the event handler that signals that the peer has handshaked.
@@ -244,7 +244,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var stateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             networkPeer.SetupGet(n => n.StateChanged).Returns(stateChanged);
 
-            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<PeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
+            var behaviour = new PeerAddressManagerBehaviour(DateTimeProvider.Default, addressManager, new Mock<IPeerBanning>().Object, this.extendedLoggerFactory) { Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover };
             behaviour.Attach(networkPeer.Object);
 
             // Trigger the event handler that signals that the peer has handshaked.

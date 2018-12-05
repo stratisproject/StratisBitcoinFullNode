@@ -26,10 +26,11 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>Key value store that indexes all discovered peers by their end point.</summary>
+        private ConcurrentDictionary<IPEndPoint, PeerAddress> peerInfoByPeerAddress;
+
         /// <inheritdoc />
         public ICollection<PeerAddress> Peers => this.peerInfoByPeerAddress.Values;
-
-        private ConcurrentDictionary<IPEndPoint, PeerAddress> peerInfoByPeerAddress;
 
         /// <summary>The file name of the peers file.</summary>
         internal const string PeerFileName = "peers.json";
@@ -64,19 +65,19 @@ namespace Stratis.Bitcoin.P2P
 
             this.logger.LogTrace("{0} peers were loaded.", loadedPeers.Count);
 
-            foreach (PeerAddress loadedPeer in loadedPeers)
+            foreach (PeerAddress peer in loadedPeers)
             {
                 // If no longer banned reset ban details.
-                if (loadedPeer.BanUntil.HasValue && loadedPeer.BanUntil < this.dateTimeProvider.GetUtcNow())
+                if (peer.BanUntil.HasValue && peer.BanUntil < this.dateTimeProvider.GetUtcNow())
                 {
-                    loadedPeer.BanTimeStamp = null;
-                    loadedPeer.BanUntil = null;
-                    loadedPeer.BanReason = string.Empty;
+                    peer.BanTimeStamp = null;
+                    peer.BanUntil = null;
+                    peer.BanReason = string.Empty;
 
-                    this.logger.LogTrace("{0} no longer banned.", loadedPeer.Endpoint);
+                    this.logger.LogTrace("{0} no longer banned.", peer.Endpoint);
                 }
 
-                this.peerInfoByPeerAddress.TryAdd(loadedPeer.Endpoint, loadedPeer);
+                this.peerInfoByPeerAddress.TryAdd(peer.Endpoint, peer);
             }
         }
 
