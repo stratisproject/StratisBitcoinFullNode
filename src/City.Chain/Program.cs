@@ -12,7 +12,9 @@
     using Stratis.Bitcoin.Builder;
     using Stratis.Bitcoin.Configuration;
     using Stratis.Bitcoin.Features.Api;
+    using Stratis.Bitcoin.Features.Apps;
     using Stratis.Bitcoin.Features.BlockStore;
+    using Stratis.Bitcoin.Features.ColdStaking;
     using Stratis.Bitcoin.Features.Consensus;
     using Stratis.Bitcoin.Features.Dns;
     using Stratis.Bitcoin.Features.MemoryPool;
@@ -71,7 +73,11 @@
                     .Append("-txindex=1") // Required for History (Block) explorer.
                     .Append("-wsport=" + networkConfiguration.WsPort).ToArray();
 
-                var nodeSettings = new NodeSettings(networksSelector: GetNetwork(chain), protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args, agent: "CityChain");
+                var nodeSettings = new NodeSettings(networksSelector: GetNetwork(chain), protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args, agent: "CityChain")
+                {
+                    MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                };
+
                 var dnsSettings = new DnsSettings(nodeSettings);
 
                 WriteDatabaseSchemaInfo(nodeSettings);
@@ -102,14 +108,14 @@
                         .UsePosConsensus()
                         .UseMempool()
                         .UseWallet()
+                        .UseColdStakingWallet()
                         .AddPowPosMining()
+                        .UseApi()
+                        .UseApps()
+                        .AddRPC()
+                        //.AddSimpleWallet()
                         //.UseBlockNotification()
                         //.UseTransactionNotification()
-                        //.AddSimpleWallet()
-                        .UseApi()
-                        //.UseApps()
-                        //.UseDns()
-                        .AddRPC()
                         .Build();
                 }
 

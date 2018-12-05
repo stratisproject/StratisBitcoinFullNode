@@ -26,6 +26,8 @@ namespace City.Networks
         {
             this.Name = "CityMain";
             this.Magic = 0x43545901; // .CTY
+            this.DefaultMaxOutboundConnections = 16;
+            this.DefaultMaxInboundConnections = 109;
             this.DefaultPort = 4333;
             this.RPCPort = 4334;
             this.MaxTipAge = 2 * 60 * 60;
@@ -69,7 +71,12 @@ namespace City.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new CityBIP9Deployments();
+            var bip9Deployments = new CityBIP9Deployments()
+            {
+                [CityBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
+                    new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
+            };
 
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
