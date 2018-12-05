@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
@@ -98,9 +99,9 @@ namespace Stratis.Bitcoin.P2P
                             return;
                         }
 
-                        // TODO use 1000 constant
-                        IPEndPoint[] endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(1000).Select(p => p.Endpoint).ToArray();
+                        IEnumerable<IPEndPoint> endPoints = this.peerAddressManager.PeerSelector.SelectPeersForGetAddrPayload(MaxAddressesPerAddrPayload).Select(p => p.Endpoint);
                         var addressPayload = new AddrPayload(endPoints.Select(p => new NetworkAddress(p)).ToArray());
+
                         await peer.SendMessageAsync(addressPayload).ConfigureAwait(false);
 
                         this.logger.LogTrace("Sent address payload following GetAddr request.");
@@ -108,7 +109,7 @@ namespace Stratis.Bitcoin.P2P
                         this.addrPayloadSent = true;
                     }
 
-                    if ((message.Message.Payload is PingPayload)  || (message.Message.Payload is PongPayload))
+                    if ((message.Message.Payload is PingPayload) || (message.Message.Payload is PongPayload))
                     {
                         if (peer.State == NetworkPeerState.HandShaked)
                             this.peerAddressManager.PeerSeen(peer.PeerEndPoint, this.dateTimeProvider.GetUtcNow());
@@ -118,7 +119,19 @@ namespace Stratis.Bitcoin.P2P
                 if ((this.Mode & PeerAddressManagerBehaviourMode.Discover) != 0)
                 {
                     if (message.Message.Payload is AddrPayload addr)
+                    {
+                        if (addr.Addresses.Length > MaxAddressesPerAddrPayload)
+                        {
+                            // Not respecting the protocol.
+                            this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, "Protocol violation: addr payload size is limited by 1000 entries.");
+
+                            this.logger.LogTrace("(-)[PROTOCOL_VIOLATION]");
+                            return;
+                        }
+
+                        // TODO prevent spamming by overriding ips
                         this.peerAddressManager.AddPeers(addr.Addresses.Select(a => a.Endpoint).ToArray(), peer.RemoteSocketAddress);
+                    }
                 }
             }
             catch (OperationCanceledException)
