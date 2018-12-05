@@ -2,7 +2,7 @@
 using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
-using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Serialization;

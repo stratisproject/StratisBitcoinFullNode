@@ -2,7 +2,7 @@
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
-using Stratis.SmartContracts.Core.Validation;
+using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
 

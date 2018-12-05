@@ -1,10 +1,10 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Stratis.SmartContracts.Core.Validation;
-using Stratis.SmartContracts.Core.Validation.Validators;
-using Stratis.SmartContracts.Core.Validation.Validators.Instruction;
-using Stratis.SmartContracts.Core.Validation.Validators.Method;
-using Stratis.SmartContracts.Core.Validation.Validators.Type;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.CLR.Validation.Validators;
+using Stratis.SmartContracts.CLR.Validation.Validators.Instruction;
+using Stratis.SmartContracts.CLR.Validation.Validators.Method;
+using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
