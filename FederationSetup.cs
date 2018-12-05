@@ -25,13 +25,16 @@ namespace FederationSetup
         {
             Console.WriteLine("Menu:");
             Console.WriteLine("g       Create genesis blocks for Mainnet, Testnet and Regtest.");
+            Console.WriteLine("        args: [-text=\"<text>\"]");
+            Console.WriteLine("              text:    A bit of text or a url to be included in the genesis block.");
+            Console.WriteLine("              Example:    g -text=\"https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/\"");
             Console.WriteLine("p       Create private and public keys for federation members.");  // ask members to create public and private -p (for the specfic network)  - 1 pubpriv for signing transactions and 1 for pubpriv key for mining
             Console.WriteLine("m       Create multi signature addresses for the federation wallets.");
-            Console.WriteLine("        args: [<network>] [-quorum=<quorum>] [-fedpubkeys=<pubkey1, pubkey2, ..>]");
-            Console.WriteLine("              network:    testnet or regtest or mainnet (default).");
+            Console.WriteLine("        args: [-network=<network>] [-quorum=<quorum>] [-fedpubkeys=<pubkey1, pubkey2, ..>]");
+            Console.WriteLine("              network:    mainnet, testnet or regtest.");
             Console.WriteLine("              quorum:     The minimum number of federated members needed to sign transactions.");
             Console.WriteLine("              fedpubkeys: Federation members' public keys. Must have an odd number of up to fifteen members."); // // fed admin will do -m and number (3 qurom + the public keys for the signing of transactions)
-            Console.WriteLine("              Example:    federationsetup -m testnet -quorum=2 -fedpubkeys=PublicKey1, PublicKey2, PublicKey3, PublicKey4, PublicKey5");
+            Console.WriteLine("              Example:    m -network=testnet -quorum=2 -fedpubkeys=PublicKey1,PublicKey2,PublicKey3,PublicKey4,PublicKey5");
             Console.WriteLine("menu    Show this menu.");
             Console.WriteLine("exit    Close the utility.");
             Console.WriteLine(Environment.NewLine);
