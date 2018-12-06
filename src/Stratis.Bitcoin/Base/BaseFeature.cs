@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartAddressManager(NetworkPeerConnectionParameters connectionParameters)
         {
-            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.loggerFactory);
+            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.peerBanning, this.loggerFactory);
             connectionParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
             if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))

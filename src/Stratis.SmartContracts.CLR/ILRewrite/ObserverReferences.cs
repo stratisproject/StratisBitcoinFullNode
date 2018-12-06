@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 using Mono.Cecil;
-using RuntimeObserver;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.ILRewrite
 {

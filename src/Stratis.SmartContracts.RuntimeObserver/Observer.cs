@@ -1,6 +1,4 @@
-﻿using Stratis.SmartContracts;
-
-namespace RuntimeObserver
+﻿namespace Stratis.SmartContracts.RuntimeObserver
 {
     /// <summary>
     /// Is able to hold metrics about the current runtime.

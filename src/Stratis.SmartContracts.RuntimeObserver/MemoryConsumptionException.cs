@@ -1,6 +1,6 @@
 ﻿using System;
 
-namespace RuntimeObserver
+namespace Stratis.SmartContracts.RuntimeObserver
 {
     /// <summary>
     /// Thrown when the amount of memory consumed by contract execution 
