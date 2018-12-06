@@ -76,16 +76,16 @@ namespace Stratis.FederatedPeg.Tests.Utils
         {
             //for now just use the same private keys for multisig wallet and block signing
             this.federationMemberIndexes.ForEach(i =>
-                {
-                    var privateKey = this.mnemonics[i].DeriveExtKey().PrivateKey;
-                    var targetFile = $"$root_datadir\\gateway{i+1}\\poa\\FederatedPegTest\\federationKey.dat";
+            {
+                var privateKey = this.mnemonics[i].DeriveExtKey().PrivateKey;
+                var targetFile = $"$root_datadir\\gateway{i + 1}\\poa\\FederatedPegTest\\federationKey.dat";
 
-                    var keyAsString = System.BitConverter.ToString(privateKey.ToBytes());
-                    this.newLine($"$mining_key_hex_{i + 1} = \"{keyAsString}\"");
-                    this.newLine($"$bytes_{i + 1} = foreach($hexByte in $mining_key_hex_{i + 1}.Split(\"-\")) {{[System.Convert]::ToByte($hexByte, 16)}}");
-                    this.newLine($"New-Item -path \"{targetFile}\" -type file");
-                    this.newLine($"$bytes_{i + 1} | set-content {targetFile} -Encoding Byte");
-                });
+                var keyAsString = System.BitConverter.ToString(privateKey.ToBytes());
+                this.newLine($"$mining_key_hex_{i + 1} = \"{keyAsString}\"");
+                this.newLine($"$bytes_{i + 1} = foreach($hexByte in $mining_key_hex_{i + 1}.Split(\"-\")) {{[System.Convert]::ToByte($hexByte, 16)}}");
+                this.newLine($"New-Item -path \"{targetFile}\" -type file");
+                this.newLine($"$bytes_{i + 1} | set-content {targetFile} -Encoding Byte");
+            });
             this.newLine(Environment.NewLine);
         }
 
@@ -110,17 +110,17 @@ namespace Stratis.FederatedPeg.Tests.Utils
             federationMemberIndexes.ForEach(i => {
                 this.newLine($"# Federation member {i} main and side");
                 this.newLine(
-                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i+1]} && dotnet run --no-build -mainchain -testnet -agentprefix=fed{i + 1}main -datadir=$root_datadir\\gateway{i + 1} -port=36{GetPortNumberSuffix(this.chains[0], i)} -apiport=38{GetPortNumberSuffix(this.chains[0], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[1], i)} -federationips=$mainchain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i+1}_public_key -addnode=13.70.81.5 -addnode=52.151.76.252 -whitelist=52.151.76.252 -gateway=1 -mincoinmaturity=1 -mindepositconfirmations=1\"");
+                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i + 1]} && dotnet run --no-build -mainchain -testnet -agentprefix=fed{i + 1}main -datadir=$root_datadir\\gateway{i + 1} -port=36{GetPortNumberSuffix(this.chains[0], i)} -apiport=38{GetPortNumberSuffix(this.chains[0], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[1], i)} -federationips=$mainchain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i + 1}_public_key -mincoinmaturity=1 -mindepositconfirmations=1 -addnode=13.70.81.5 -addnode=52.151.76.252 -whitelist=52.151.76.252 -gateway=1\"");
                 this.newLine("timeout $long_interval_time");
                 this.newLine(
-                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i + 1]} && dotnet run --no-build -sidechain -testnet -agentprefix=fed{i + 1}side -datadir=$root_datadir\\gateway{i + 1} mine=1 mineaddress=$sidechain_multisig_address -port=36{GetPortNumberSuffix(this.chains[1], i)} -apiport=38{GetPortNumberSuffix(this.chains[1], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[0], i)} -txindex=1 -federationips=$sidechain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i + 1}_public_key -mincoinmaturity=1 -mindepositconfirmations=1\"");
+                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i + 1]} && dotnet run --no-build -sidechain -testnet -agentprefix=fed{i + 1}side -datadir=$root_datadir\\gateway{i + 1} -port=36{GetPortNumberSuffix(this.chains[1], i)} -apiport=38{GetPortNumberSuffix(this.chains[1], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[0], i)} -federationips=$sidechain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i + 1}_public_key -mincoinmaturity=1 -mindepositconfirmations=1 -txindex=1\"");
                 this.newLine("timeout $long_interval_time");
                 this.newLine(Environment.NewLine);
             });
         }
 
         private void CopyStratisChainFiles()
-        {            
+        {
             // Create the folders in case they don't exist.
             this.newLine("# Create the folders in case they don't exist.");
             this.newLine("New-Item -ItemType directory -Force -Path $root_datadir");
@@ -132,7 +132,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway2\poa\FederatedPegTest");
             this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway3\poa\FederatedPegTest");
             this.newLine(Environment.NewLine);
-            
+
             // Copy the blockchain data from a current, ideally up-to-date, Stratis Testnet folder.
             this.newLine("# Copy the blockchain data from a current, ideally up-to-date, Stratis Testnet folder.");
             this.newLine(@"If ((Test-Path $env:APPDATA\StratisNode\stratis\StratisTest) -And -Not (Test-Path $root_datadir\gateway1\stratis\StratisTest\blocks)) {");
@@ -154,10 +154,10 @@ namespace Stratis.FederatedPeg.Tests.Utils
         {
             var appDataDir = Environment.GetFolderPath(Environment.SpecialFolder.ApplicationData);
             var rootDataDir = Path.Combine(appDataDir, "StratisNode", "federation");
-            var fedGatewayDDir = Path.Combine("$git_repos_path", "FederatedSidechains","src","Stratis.FederationGatewayD");
+            var fedGatewayDDir = Path.Combine("$git_repos_path", "FederatedSidechains", "src", "Stratis.FederationGatewayD");
             var sidechainDDir = Path.Combine("$git_repos_path", "FederatedSidechains", "src", "Stratis.SidechainD");
-            var stratisDDir = Path.Combine("$git_repos_path", "StratisBitcoinFullNode","src","Stratis.StratisD");
-            var walletFile = Path.Combine(appDataDir, "StratisNode","stratis", this.mainchainNetwork.Name,"walletTest1.wallet.json");
+            var stratisDDir = Path.Combine("$git_repos_path", "StratisBitcoinFullNode", "src", "Stratis.StratisD");
+            var walletFile = Path.Combine(appDataDir, "StratisNode", "stratis", this.mainchainNetwork.Name, "walletTest1.wallet.json");
             this.newLine("###############################");
             this.newLine("#    UPDATE THESE 5 VALUES    #");
             this.newLine("###############################");
@@ -181,7 +181,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
                     this.newLine(
                         $"$params = @{{ \"mnemonic\" = \"{this.mnemonics[i]}\"; \"password\" = \"password\" }}");
                     this.newLine(
-                        $"Invoke-WebRequest -Uri http://localhost:38{GetPortNumberSuffix(c,i)}/api/FederationWallet/import-key -Method post -Body ($params|ConvertTo-Json) -ContentType \"application/json\"");
+                        $"Invoke-WebRequest -Uri http://localhost:38{GetPortNumberSuffix(c, i)}/api/FederationWallet/import-key -Method post -Body ($params|ConvertTo-Json) -ContentType \"application/json\"");
                     this.newLine("timeout $interval_time");
                     this.newLine($"$params = @{{ \"password\" = \"password\" }}");
                     this.newLine(
@@ -224,10 +224,10 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.newLine("# FEDERATION DETAILS");
             this.federationMemberIndexes.ForEach(
                 i =>
-                    {
-                        this.newLine($"# Member{i + 1} mnemonic: {this.mnemonics[i]}");
-                        this.newLine($"# Member{i + 1} public key: {this.pubKeysByMnemonic[this.mnemonics[i]]}");
-                    });
+                {
+                    this.newLine($"# Member{i + 1} mnemonic: {this.mnemonics[i]}");
+                    this.newLine($"# Member{i + 1} public key: {this.pubKeysByMnemonic[this.mnemonics[i]]}");
+                });
 
             this.newLine($"# Redeem script: {this.scriptAndAddresses.payToMultiSig}");
             this.newLine($"# Sidechan P2SH: {this.scriptAndAddresses.sidechainMultisigAddress.ScriptPubKey}");
