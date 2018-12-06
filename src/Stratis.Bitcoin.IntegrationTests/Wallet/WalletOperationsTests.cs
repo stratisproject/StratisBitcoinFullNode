@@ -1213,7 +1213,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<WalletBuildTransactionModel>();
 
             // Assert.
-            buildTransactionModel.Fee.Should().Be(new Money(3780));
+            buildTransactionModel.Fee.Should().Be(new Money(10000));
 
             Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
             trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address, this.fixture.Node.FullNode.Network).ScriptPubKey);
@@ -1248,7 +1248,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<WalletBuildTransactionModel>();
 
             // Assert.
-            buildTransactionModel.Fee.Should().Be(new Money(6740));
+            buildTransactionModel.Fee.Should().Be(new Money(10000));
 
             Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
             trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address, this.fixture.Node.FullNode.Network).ScriptPubKey);
@@ -1285,7 +1285,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 .ReceiveJson<WalletBuildTransactionModel>();
 
             // Assert.
-            buildTransactionModel.Fee.Should().Be(new Money(2640));
+            buildTransactionModel.Fee.Should().Be(new Money(10000));
 
             Transaction trx = this.fixture.Node.FullNode.Network.Consensus.ConsensusFactory.CreateTransaction(buildTransactionModel.Hex);
             trx.Outputs.Should().Contain(o => o.Value == Money.COIN * 1000 && o.ScriptPubKey == BitcoinAddress.Create(address1, this.fixture.Node.FullNode.Network).ScriptPubKey);
