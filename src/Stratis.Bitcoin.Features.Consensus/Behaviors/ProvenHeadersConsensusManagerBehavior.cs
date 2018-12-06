@@ -252,6 +252,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         {
             INetworkPeer peer = this.AttachedPeer;
 
+            bool aboveLastCheckpoint = this.GetCurrentHeight() >= this.lastCheckpointHeight;
+
+            if (!aboveLastCheckpoint)
+            {
+                // If proven header isn't activated, build a legacy header request
+                // TODO: If the current ExpectedPeerTip is less then MaxItemsPerHeadersMessage from the last checkpoint we can set the GetProvenHeadersPayload.HashStop to be the hash of the last checkpoint (this will prevent sending over regular headers beyond last checkpoint).
+                return base.BuildGetHeadersPayload();
+            }
+
             if (this.isGateway)
             {
                 if (peer.IsWhitelisted())
@@ -266,30 +275,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 return null;
             }
 
-            bool aboveLastCheckpoint = this.GetCurrentHeight() >= this.lastCheckpointHeight;
-            if (aboveLastCheckpoint)
+            if (this.CanPeerProcessProvenHeaders(peer))
             {
-                if (this.CanPeerProcessProvenHeaders(peer))
+                return new GetProvenHeadersPayload()
                 {
-                    return new GetProvenHeadersPayload()
-                    {
-                        BlockLocator = (this.BestReceivedTip ?? this.consensusManager.Tip).GetLocator(),
-                        HashStop = null
-                    };
-                }
-                else
-                {
-                    // If the peer doesn't support PH and we are above last checkpoint
-                    // return null (stop synch).
-                    return null;
-                }
+                    BlockLocator = (this.BestReceivedTip ?? this.consensusManager.Tip).GetLocator(),
+                    HashStop = null
+                };
             }
-            else
-            {
-                // If proven header isn't activated, build a legacy header request
-                // TODO: If the current ExpectedPeerTip is less then MaxItemsPerHeadersMessage from the last checkpoint we can set the GetProvenHeadersPayload.HashStop to be the hash of the last checkpoint (this will prevent sending over regular headers beyond last checkpoint).
-                return base.BuildGetHeadersPayload();
-            }
+
+            // If the peer doesn't support PH and we are above last checkpoint
+            // return null (stop synch).
+            return null;
         }
 
         /// <inheritdoc />
@@ -312,18 +309,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <param name="headers">The headers.</param>
         protected async Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
-            if (this.isGateway && peer.IsWhitelisted())
-            {
-                this.logger.LogDebug("Node is a gateway, can only sync regular headers from whitelisted peer.");
-                await base.ProcessHeadersAsync(peer, headers);
-
-                this.logger.LogTrace("(-)[GATEWAY_AND_WHITELISTED]");
-                return;
-            }
-
             bool belowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
             if (!belowLastCheckpoint)
             {
+                // If we are a gateway and above last checkpoint- sync only from whitelisted peers.
+                if (this.isGateway && peer.IsWhitelisted())
+                {
+                    this.logger.LogDebug("Node is a gateway, can only sync regular headers from whitelisted peer.");
+                    await base.ProcessHeadersAsync(peer, headers);
+
+                    this.logger.LogTrace("(-)[GATEWAY_AND_WHITELISTED]");
+                    return;
+                }
+
                 this.logger.LogTrace("(-)[ABOVE_LAST_CHECKPOINT]");
                 return;
             }
