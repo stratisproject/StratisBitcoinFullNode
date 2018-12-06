@@ -309,19 +309,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <param name="headers">The headers.</param>
         protected async Task ProcessLegacyHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
+            if (this.isGateway && peer.IsWhitelisted())
+            {
+                this.logger.LogDebug("Node is a gateway, can only sync regular headers from whitelisted peer.");
+                await base.ProcessHeadersAsync(peer, headers);
+
+                this.logger.LogTrace("(-)[GATEWAY_AND_WHITELISTED]");
+                return;
+            }
+
             bool belowLastCheckpoint = this.GetCurrentHeight() <= this.lastCheckpointHeight;
             if (!belowLastCheckpoint)
             {
-                // If we are a gateway and above last checkpoint- sync only from whitelisted peers.
-                if (this.isGateway && peer.IsWhitelisted())
-                {
-                    this.logger.LogDebug("Node is a gateway, can only sync regular headers from whitelisted peer.");
-                    await base.ProcessHeadersAsync(peer, headers);
-
-                    this.logger.LogTrace("(-)[GATEWAY_AND_WHITELISTED]");
-                    return;
-                }
-
                 this.logger.LogTrace("(-)[ABOVE_LAST_CHECKPOINT]");
                 return;
             }
