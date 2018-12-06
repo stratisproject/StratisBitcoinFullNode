@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Consensus
 
             using (await this.asyncLock.LockAsync().ConfigureAwait(false))
             {
-                if (this.cachedHeaders.Count != 0)
+                if (this.cachedHeaders.Count != 0 && this.CanConsumeCache())
                 {
                     result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
 
@@ -124,6 +124,12 @@ namespace Stratis.Bitcoin.Consensus
                 await this.ResyncAsync().ConfigureAwait(false);
 
             return result;
+        }
+
+        /// <summary>Determines whether cached headers (if any) should be pushed to consensus manager for consumption.</summary>
+        protected virtual bool CanConsumeCache()
+        {
+            return true;
         }
 
         /// <summary>
