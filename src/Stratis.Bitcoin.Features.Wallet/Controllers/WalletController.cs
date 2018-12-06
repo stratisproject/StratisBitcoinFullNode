@@ -839,7 +839,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
 
-                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
+                if (transactionBroadCastEntry.State == State.CantBroadcast)
                 {
                     this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");

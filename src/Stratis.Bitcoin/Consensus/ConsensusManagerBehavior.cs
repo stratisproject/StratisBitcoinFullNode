@@ -99,8 +99,11 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     result = await this.PresentHeadersLockedAsync(this.cachedHeaders, false).ConfigureAwait(false);
 
-                    if (result == null)
+                    if ((result == null) || (result.Consumed == null))
                     {
+                        if (result == null)
+                            this.cachedHeaders.Clear();
+
                         this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
                         return null;
                     }
@@ -112,7 +115,7 @@ namespace Stratis.Bitcoin.Consensus
                     this.cachedHeaders.RemoveRange(0, consumedCount);
                     int cacheSize = this.cachedHeaders.Count;
 
-                    this.logger.LogTrace("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
+                    this.logger.LogDebug("{0} entries were consumed from the cache, {1} items were left.", consumedCount, cacheSize);
                     syncRequired = cacheSize == 0;
                 }
             }
@@ -164,7 +167,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             if (getHeadersPayload.BlockLocator.Blocks.Count > BlockLocator.MaxLocatorSize)
             {
-                this.logger.LogTrace("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
+                this.logger.LogDebug("Peer '{0}' sent getheader with oversized locator, disconnecting.", peer.RemoteSocketEndpoint);
 
                 peer.Disconnect("Peer sent getheaders with oversized locator");
 
@@ -177,6 +180,7 @@ namespace Stratis.Bitcoin.Consensus
             // because that will slow down our own syncing process.
             if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
             {
+                this.logger.LogDebug("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
                 this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
                 return;
             }
@@ -187,13 +191,12 @@ namespace Stratis.Bitcoin.Consensus
             {
                 try
                 {
-                    this.BestSentHeader = lastHeader;
-
                     await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
+                    this.BestSentHeader = lastHeader;
                 }
                 catch (OperationCanceledException)
                 {
-                    this.logger.LogTrace("Unable to send headers message to peer '{0}'.", peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Unable to send headers message to peer '{0}'.", peer.RemoteSocketEndpoint);
                 }
             }
         }
@@ -252,7 +255,7 @@ namespace Stratis.Bitcoin.Consensus
                 header = header.Previous;
             }
 
-            this.logger.LogTrace("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
+            this.logger.LogDebug("{0} headers were selected for sending, last one is '{1}'.", headersPayload.Headers.Count, headersPayload.Headers.LastOrDefault()?.GetHash());
 
             // We need to reverse it as it was added to the list backwards.
             headersPayload.Headers.Reverse();
@@ -276,9 +279,11 @@ namespace Stratis.Bitcoin.Consensus
         /// </remarks>
         protected virtual async Task ProcessHeadersAsync(INetworkPeer peer, List<BlockHeader> headers)
         {
+            this.logger.LogDebug("Received {0} headers. First: '{1}'  Last: '{2}'.", headers.Count, headers.FirstOrDefault()?.ToString(), headers.LastOrDefault()?.ToString());
+
             if (headers.Count == 0)
             {
-                this.logger.LogTrace("Headers payload with no headers was received. Assuming we're synced with the peer.");
+                this.logger.LogDebug("Headers payload with no headers was received. Assuming we're synced with the peer.");
                 this.logger.LogTrace("(-)[NO_HEADERS]");
                 return;
             }
@@ -287,6 +292,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
+                this.logger.LogDebug("Headers are invalid. Peer was banned.");
                 this.logger.LogTrace("(-)[VALIDATION_FAILED]");
                 return;
             }
@@ -296,6 +302,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
+                    this.logger.LogDebug("Cache is full. Headers ignored.");
                     this.logger.LogTrace("(-)[CACHE_IS_FULL]");
                     return;
                 }
@@ -311,42 +318,49 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.cachedHeaders.AddRange(headers);
 
-                        this.logger.LogTrace("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
+                        this.logger.LogDebug("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
                         this.logger.LogTrace("(-)[HEADERS_ADDED_TO_CACHE]");
                         return;
                     }
-                    else
+
+                    // Workaround for special case when peer announces new block but we don't want to clean the cache.
+                    if (headers.Count == 1 && this.BestReceivedTip != null)
                     {
-                        if (headers.Count == 1)
+                        // Distance of header from the peer expected tip.
+                        double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
+
+                        if (this.chain.Network.MaxTipAge < distanceSeconds)
                         {
-                            // Distance of header from the peer expected tip.
-                            var distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
-
-                            if (this.chain.Network.MaxTipAge < distanceSeconds)
-                            {
-                                // a single header that is not connected to last header is likely an
-                                // unsolicited header that is a result of the peer tip being extended.
-                                // If the header time is far in the future we ignore it.
-                                this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
-                                return;
-                            }
+                            // A single header that is not connected to last header is likely an
+                            // unsolicited header that is a result of the peer tip being extended.
+                            // If the header time is far in the future we ignore it.
+                            this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                            return;
                         }
-
-                        this.cachedHeaders.Clear();
-                        await this.ResyncAsync().ConfigureAwait(false);
-
-                        this.logger.LogTrace("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), cachedHeader);
-                        this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
-                        return;
                     }
+
+                    this.cachedHeaders.Clear();
+                    await this.ResyncAsync().ConfigureAwait(false);
+
+                    this.logger.LogDebug("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), cachedHeader);
+                    this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
+                    return;
                 }
 
                 ConnectNewHeadersResult result = await this.PresentHeadersLockedAsync(headers).ConfigureAwait(false);
 
                 if (result == null)
                 {
-                    this.logger.LogTrace("Processing of {0} headers failed.", headers.Count);
+                    this.logger.LogDebug("Processing of {0} headers failed.", headers.Count);
                     this.logger.LogTrace("(-)[PROCESSING_FAILED]");
+
+                    return;
+                }
+
+                if (result.Consumed == null)
+                {
+                    this.cachedHeaders.AddRange(headers);
+                    this.logger.LogDebug("All {0} items were not consumed and added to cache.", headers.Count);
 
                     return;
                 }
@@ -360,7 +374,7 @@ namespace Stratis.Bitcoin.Consensus
                     int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
                     this.cachedHeaders.AddRange(headers.Skip(consumedCount));
 
-                    this.logger.LogTrace("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
+                    this.logger.LogDebug("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
                 }
 
                 if (this.cachedHeaders.Count == 0)
@@ -421,6 +435,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (peer == null)
             {
+                this.logger.LogDebug("Peer detached!");
                 this.logger.LogTrace("(-)[PEER_DETACHED]:null");
                 return null;
             }
@@ -461,10 +476,11 @@ namespace Stratis.Bitcoin.Consensus
             return result;
         }
 
-        /// <summary>Resyncs the peer whenever state is changed.</summary>
+        /// <summary>Sync when handshake is finished.</summary>
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
-            await this.ResyncAsync().ConfigureAwait(false);
+            if (peer.State == NetworkPeerState.HandShaked)
+                await this.ResyncAsync().ConfigureAwait(false);
         }
 
         /// <summary>Resets the expected peer tip and last sent tip and triggers synchronization.</summary>
@@ -511,24 +527,26 @@ namespace Stratis.Bitcoin.Consensus
 
             if ((peer != null) && (peer.State == NetworkPeerState.HandShaked))
             {
-                var headersPayload = this.BuildGetHeadersPayload();
-                if (headersPayload == null)
+                GetHeadersPayload getHeadersPayload = this.BuildGetHeadersPayload();
+                if (getHeadersPayload == null)
                 {
-                    this.logger.LogTrace("Ignoring sync request, headersPayload is null.");
+                    this.logger.LogDebug("Ignoring sync request, headersPayload is null.");
                     return;
                 }
 
                 try
                 {
-                    await peer.SendMessageAsync(headersPayload).ConfigureAwait(false);
+                    this.logger.LogDebug("Sending getheaders payload with first hash: '{0}'.", getHeadersPayload.BlockLocator.Blocks.First());
+
+                    await peer.SendMessageAsync(getHeadersPayload).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {
-                    this.logger.LogTrace("Unable to send getheaders ({0}) message to peer '{1}'.", headersPayload.GetType().Name, peer.RemoteSocketEndpoint);
+                    this.logger.LogDebug("Unable to send getheaders ({0}) message to peer '{1}'.", getHeadersPayload.GetType().Name, peer.RemoteSocketEndpoint);
                 }
             }
             else
-                this.logger.LogTrace("Can't sync. Peer's state is not handshaked or peer was not attached.");
+                this.logger.LogDebug("Can't sync. Peer's state is not handshaked or peer was not attached.");
         }
 
         /// <summary>
@@ -591,7 +609,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (blockHashAnnounced)
             {
-                this.logger.LogTrace("Block was announced, sending getheaders.");
+                this.logger.LogDebug("Block was announced, sending getheaders.");
                 await this.ResyncAsync().ConfigureAwait(false);
             }
         }

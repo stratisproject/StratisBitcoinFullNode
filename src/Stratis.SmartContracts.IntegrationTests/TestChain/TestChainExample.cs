@@ -1,6 +1,6 @@
 ﻿using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.Executor.Reflection.Local;
+using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.Test;
 using Xunit;
 
