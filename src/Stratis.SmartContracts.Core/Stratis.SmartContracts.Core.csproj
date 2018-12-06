@@ -23,6 +23,7 @@
     <ProjectReference Include="..\Stratis.Bitcoin.Features.MemoryPool\Stratis.Bitcoin.Features.MemoryPool.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.CLR.Validation\Stratis.SmartContracts.CLR.Validation.csproj" />
+    <ProjectReference Include="..\Stratis.SmartContracts.RuntimeObserver\Stratis.SmartContracts.RuntimeObserver.csproj" />
   </ItemGroup>
 
 </Project>
