@@ -1,13 +1,15 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
     <DebugType>Full</DebugType>
+    <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="NStratis" Version="4.0.0.69" />
     <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="1.2.6-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.SmartContracts" Version="0.0.2-beta" />
     <PackageReference Include="Stratis.Bitcoin.Networks" Version="1.2.6-beta" />
   </ItemGroup>
 
