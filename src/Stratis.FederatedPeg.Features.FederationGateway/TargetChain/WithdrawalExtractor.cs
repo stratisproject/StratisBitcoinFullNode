@@ -45,7 +45,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             return withdrawalsFromBlock;
         }
 
-        private IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight)
+        public IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight)
         {
             if (transaction.Outputs.Count(this.IsTargetAddressCandidate) != 1) return null;
             if (!IsOnlyFromMultisig(transaction)) return null;
@@ -53,7 +53,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             var depositId = this.opReturnDataReader.TryGetTransactionId(transaction);
             if (string.IsNullOrWhiteSpace(depositId)) return null;
 
-            this.logger.LogInformation(
+            this.logger.LogTrace(
                 "Processing received transaction with source deposit id: {0}. Transaction hash: {1}.",
                 depositId,
                 transaction.GetHash());

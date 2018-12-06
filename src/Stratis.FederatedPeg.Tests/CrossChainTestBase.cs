@@ -27,7 +27,7 @@ namespace Stratis.FederatedPeg.Tests
 {
     public class CrossChainTestBase
     {
-        protected const string walletPassword = "123";
+        protected const string walletPassword = "password";
         protected Network network;
         protected ConcurrentChain chain;
         protected ILoggerFactory loggerFactory;
@@ -95,11 +95,9 @@ namespace Stratis.FederatedPeg.Tests
             // Generate the keys used by the federation members for our tests.
             this.federationKeys = new[]
             {
-                "air transfer hello zebra into trick riot elevator maze boring escape wine",
-                "steel evil vivid settle render tobacco trumpet bundle track reveal olympic ski",
-                "public human shoe cram flee deer claw arch equal ghost betray canal",
-                "world joy bundle business wealth price timber salt tilt mesh achieve inmate",
-                "dawn best alone urban visa fine mouse dwarf divorce mercy crawl slab"
+                "ensure feel swift crucial bridge charge cloud tell hobby twenty people mandate",
+                "quiz sunset vote alley draw turkey hill scrap lumber game differ fiction",
+                "exchange rent bronze pole post hurry oppose drama eternal voice client state"
             }.Select(m => HdOperations.GetExtendedKey(m)).ToArray();
 
             SetExtendedKey(0);

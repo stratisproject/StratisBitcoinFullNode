@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.Sidechains.Networks;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -224,6 +225,36 @@ namespace Stratis.FederatedPeg.Tests
             result.Should().BeOfType<OkResult>();
             leaderProviderCallCount.Should().Be(1);
         }
+
+        [Fact]
+        public void ReceiveMaturedBlock_Should_Call_ReceivedMatureBlockDeposits()
+        {
+            var controller = new FederationGatewayController(
+                this.loggerFactory,
+                this.maturedBlockReceiver,
+                this.maturedBlocksRequester,
+                this.leaderProvider,
+                this.chain,
+                GetMaturedBlocksProvider(),
+                this.depositExtractor,
+                this.leaderReceiver);
+
+            HashHeightPair hashHeightPair = TestingValues.GetHashHeightPair();
+            var deposits = new MaturedBlockDepositsModel(new MaturedBlockModel()
+                { BlockHash = hashHeightPair.Hash, BlockHeight = hashHeightPair.Height },
+                new[] { new Deposit(0, Money.COIN * 10000, "TTMM7qGGxD5c77pJ8puBg7sTLAm2zZNBwK",
+                    hashHeightPair.Height, hashHeightPair.Hash) });
+
+            var callCount = 0;
+            this.maturedBlockReceiver.When(x => x.ReceiveMaturedBlockDeposits(Arg.Any<IMaturedBlockDeposits[]>())).Do(info =>
+            {
+                callCount++;
+            });
+
+            controller.ReceiveMaturedBlock(deposits);
+            callCount.Should().Be(1);
+        }
+
 
         private ConcurrentChain BuildChain(int blocks)
         {

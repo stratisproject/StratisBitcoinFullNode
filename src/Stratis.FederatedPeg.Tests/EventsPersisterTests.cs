@@ -114,7 +114,7 @@ namespace Stratis.FederatedPeg.Tests
             int blockNum = 0;
             this.mockStore.SetupGet(o => o.NextMatureDepositHeight).Returns(() => blockNum);
             this.mockStore.Setup(mock => mock.RecordLatestMatureDepositsAsync(It.IsAny<IMaturedBlockDeposits[]>()))
-                .Returns(() => Task.Run(() => { blockNum++; }));
+                .Returns(() => Task<bool>.Run(() => { blockNum++; return true; }));
 
             this.eventsPersister = new EventsPersister(this.loggerFactory, this.store, this.maturedBlockReceiver, this.maturedBlocksRequester);
 

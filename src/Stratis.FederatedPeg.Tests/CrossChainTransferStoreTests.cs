@@ -1,9 +1,14 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using NBitcoin;
+using Newtonsoft.Json;
 using NSubstitute;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -299,8 +304,6 @@ namespace Stratis.FederatedPeg.Tests
             this.AddFunding();
             this.AppendBlocks(5);
 
-            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
-
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
                 crossChainTransferStore.Initialize();
@@ -328,7 +331,7 @@ namespace Stratis.FederatedPeg.Tests
 
                 Transaction transaction = crossChainTransfer.PartialTransaction;
 
-                Assert.True(CrossChainTransferStore.ValidateTransaction(transaction, this.wallet));
+                Assert.True(crossChainTransferStore.ValidateTransaction(transaction));
 
                 // Create a separate instance to generate another transaction.
                 Transaction transaction2;
@@ -357,7 +360,7 @@ namespace Stratis.FederatedPeg.Tests
 
                     transaction2 = crossChainTransfer2.PartialTransaction;
 
-                    Assert.True(CrossChainTransferStore.ValidateTransaction(transaction2, newTest.wallet));
+                    Assert.True(crossChainTransferStore2.ValidateTransaction(transaction2));
                 }
 
                 // Merges the transaction signatures.
@@ -374,7 +377,7 @@ namespace Stratis.FederatedPeg.Tests
                 Assert.NotNull(signedTransaction);
 
                 // Check ths signature.
-                Assert.True(CrossChainTransferStore.ValidateTransaction(signedTransaction, this.wallet, true));
+                Assert.True(crossChainTransferStore.ValidateTransaction(signedTransaction, true));
             }
         }
 
@@ -390,10 +393,8 @@ namespace Stratis.FederatedPeg.Tests
             this.AddFunding();
             this.AppendBlocks(3);
 
-            Transaction transaction = this.network.CreateTransaction("0100000002d2eefdc21fb0598664f8fcc8e7866969b9d7bb53f9f8dfb7823ee3eeadb33cbf00000000fd410100473044022038e16c1d58982bf964c186e4d72d372d16a3a63883fa7608261cdb0fdef519e50220149791d4956f0d6ddd61f754274513b2d5ad5fc1df1bed02b1f0f1c7df5322cd01483045022100eb553d5f199cd0aad40b7dd5773741f136e23cf681cc2fb7c2d66a07c2110c3d02207ccbe4547b92ba0ea2e1a01811325ee406c11e5bc832df9c40df9e0bfac59d0a014cad52210332195438ff52eb495321ffb598054e95c8b9aced0238ecf389a55e87f9d26c732103b1af6922b8fc1cc05bec47fdb54f2f85d00a3b4152c7d4bdb5a1e62fea558a362102c426f49fbf65601d7e59bf39cb69a1d488c098aa36caf99cd6ec236830279cdc2102b6128cc9fd484cb2024693e2afbcabecabf44faaa10306459c51a70bb8f510f62103b40dd94129f50521d38b7014295a5c48f2be01eceef2336cc44f321cc613a0c655aeffffffffd2eefdc21fb0598664f8fcc8e7866969b9d7bb53f9f8dfb7823ee3eeadb33cbf01000000fd420100483045022100e232b626ca289b6fe76b4ed011430d67a0243f5a135d5342ea3cd6b02f6bdb780220679de7791bba313373ea906d4236b48358fb00934ac658ad889a7f0e5654c4a301483045022100b698390a1d0c67495be0e14f56e75520e39fa6b01e60e82cc19be32b63b8cc0602206f146ce0324ab795faf19e0802d03c8f036c5cf7ce25d8a70b9b3f17438c2fbf014cad52210332195438ff52eb495321ffb598054e95c8b9aced0238ecf389a55e87f9d26c732103b1af6922b8fc1cc05bec47fdb54f2f85d00a3b4152c7d4bdb5a1e62fea558a362102c426f49fbf65601d7e59bf39cb69a1d488c098aa36caf99cd6ec236830279cdc2102b6128cc9fd484cb2024693e2afbcabecabf44faaa10306459c51a70bb8f510f62103b40dd94129f50521d38b7014295a5c48f2be01eceef2336cc44f321cc613a0c655aeffffffff03c0878b3b0000000017a914623b4eab628d77b96c41df080122ac2c037954138700a0acb9030000001976a914b79f48d2e34702cf134bfbbd3f7787c1db4acd3688ac0000000000000000226a20000000000000000000000000000000000000000000000000000000000000000000000000");
+            Transaction transaction = this.network.CreateTransaction("010000000297faf456cbebc6e612038440370f3e9500040c34a3831a5d613dcbda50fd8a4b00000000b6000047304402205825ad5821a94fa7b5049d35dead43315efbfeb7cf2a4bbbf34db529419703db02200b901fee8d462b396bfea85f7d94172e4c2f0bbfe9880cc420613268bbb0c60801004c69522102eef7619de25578c9717a289d08c61d4598b2bd81d2ee5db3072a07fa2d121e6521027ce19209dd1212a6a4fc2b7ddf678c6dea40b596457f934f73f3dcc5d0d9ee552103093239d5344ddb4c69c46c75bd629519e0b68d2cfc1a86cd63115fd068f202ba53aeffffffff97faf456cbebc6e612038440370f3e9500040c34a3831a5d613dcbda50fd8a4b01000000b6000047304402203b24aedb91d43912da519739a96dff8e0d6600169da2bff72f68f1c92f6a846f022079e6aaf61ea77172c187ffa7dff53e4f8f5d00657a398bca24f1e010ef3ff9ad01004c69522102eef7619de25578c9717a289d08c61d4598b2bd81d2ee5db3072a07fa2d121e6521027ce19209dd1212a6a4fc2b7ddf678c6dea40b596457f934f73f3dcc5d0d9ee552103093239d5344ddb4c69c46c75bd629519e0b68d2cfc1a86cd63115fd068f202ba53aeffffffff03c0878b3b0000000017a91442938bb61378468a38629c4ffa1521759d0283578700a0acb9030000001976a9148b6b8e2cb3d75e538d28fc7f456c4966f880764e88ac0000000000000000226a20000000000000000000000000000000000000000000000000000000000000000000000000");
             this.AppendBlock(transaction);
-
-            MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -479,6 +480,7 @@ namespace Stratis.FederatedPeg.Tests
                 peer.RemoteSocketAddress.Returns(peerEndPoint.Address);
                 peer.RemoteSocketPort.Returns(peerEndPoint.Port);
                 peer.PeerEndPoint.Returns(peerEndPoint);
+                peer.IsConnected.Returns(true);
 
                 var peers = new NetworkPeerCollection();
                 peers.Add(peer);
@@ -496,6 +498,74 @@ namespace Stratis.FederatedPeg.Tests
 
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
+            }
+        }
+
+        [Fact(Skip = "Requires main chain user to be running.")]
+        public void DoTest()
+        {
+            BuildTransactionRequest transactionRequest = new BuildTransactionRequest()
+            {
+                FeeAmount = "0.01",
+                // Change this to the address that should receive the funds.
+                OpReturnData = "PLv2NAsyn22cNbk5veopWCkypaN6DBR27L",
+                AccountName = "account 0",
+                AllowUnconfirmed = true,
+                Recipients = new List<RecipientModel> { new RecipientModel {
+                    DestinationAddress = "2MyKFLbvhSouDYeAHhxsj9a5A4oV71j7SPR",
+                    Amount = "1.1" } },
+                Password = "test",
+                WalletName = "test"
+            };
+
+            var model = Post<BuildTransactionRequest, WalletBuildTransactionModel>(
+                "http://127.0.0.1:38221/api/wallet/build-transaction", transactionRequest);
+
+            var transaction = new PosTransaction(model.Hex);
+
+            var reader = new OpReturnDataReader(this.loggerFactory, Networks.Stratis.Testnet());
+            var extractor = new DepositExtractor(this.loggerFactory, this.federationGatewaySettings, reader, this.fullNode);
+            IDeposit deposit = extractor.ExtractDepositFromTransaction(transaction, 2, 1);
+
+            Assert.NotNull(deposit);
+            Assert.Equal(transaction.GetHash(), deposit.Id);
+            Assert.Equal(transactionRequest.OpReturnData, deposit.TargetAddress);
+            Assert.Equal(Money.Parse(transactionRequest.Recipients[0].Amount), deposit.Amount);
+            Assert.Equal((uint256)1, deposit.BlockHash);
+            Assert.Equal(2, deposit.BlockNumber);
+
+            // Post the transaction
+            SendTransactionRequest sendRequest = new SendTransactionRequest()
+            {
+                Hex = model.Hex
+            };
+
+            var model2 = Post<SendTransactionRequest, WalletSendTransactionModel>(
+                "http://127.0.0.1:38221/api/wallet/send-transaction", sendRequest);
+
+        }
+
+        private Q Post<T,Q>(string url, T body)
+        {
+            // Request is sent to mainchain user.
+            var request = (HttpWebRequest)WebRequest.Create(url);
+            request.ContentType = "application/json";
+            request.Method = "POST";
+
+            var content = new JsonContent(body);
+
+            var strContent = content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+            using (var streamWriter = new StreamWriter(request.GetRequestStream()))
+            {
+                streamWriter.Write(strContent);
+            }
+
+            var response = (HttpWebResponse)request.GetResponse();
+            using (var streamReader = new StreamReader(response.GetResponseStream()))
+            {
+                var result = streamReader.ReadToEnd();
+                return JsonConvert.DeserializeObject<Q>(result);
             }
         }
     }

@@ -202,7 +202,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 "NodeStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 2) +
                 this.crossChainTransferStore.TipHashAndHeight.HashBlock.ToString() + "  " +
                 "NodeStore.NextDepositHeight: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                this.crossChainTransferStore.NextMatureDepositHeight.ToString().PadRight(8) + 
+                this.crossChainTransferStore.NextMatureDepositHeight.ToString().PadRight(8) +
                 "NodeStore.HasSuspended: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                 this.crossChainTransferStore.HasSuspended().ToString().PadRight(8)
                 );
@@ -214,9 +214,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             benchLog.AppendLine("====== Federation Wallet ======");
 
             var balances = this.federationWalletManager.GetWallet().GetSpendableAmount();
-            benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength) 
-                                + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength) 
-                                + " Unconfirmed balance: " + balances.UnConfirmedAmount.ToString());
+            benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
+                                + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
+                                + " Unconfirmed balance: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
+                                + " Federation Status: " + (this.federationWalletManager.IsFederationActive() ? "Active" : "Inactive"));
             benchLog.AppendLine();
         }
     }

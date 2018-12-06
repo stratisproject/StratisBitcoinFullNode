@@ -59,6 +59,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
             foreach (INetworkPeer peer in peers)
             {
+                // Broadcast to peers.
+                if (!peer.IsConnected)
+                    continue;
+
                 if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => ipAddressComparer.Equals(e.Address, peer.PeerEndPoint.Address)))
                 {
                     try
