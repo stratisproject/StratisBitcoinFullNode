@@ -69,12 +69,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             try
             {
                 var bitcoinAddress = network.ToCounterChainNetwork().Parse<BitcoinAddress>(destination);
-                logger.LogInformation($"ConvertValidOpReturnDataToAddress received {destination} and network.Parse received {bitcoinAddress}.");
+                logger.LogTrace($"ConvertValidOpReturnDataToAddress received {destination} and network.Parse received {bitcoinAddress}.");
                 return destination;
             }
             catch (Exception ex)
             {
-                logger.LogInformation($"Address {destination} could not be converted to a valid address. Reason {ex.Message}.");
+                logger.LogTrace($"Address {destination} could not be converted to a valid address. Reason {ex.Message}.");
                 return null;
             }
         }
@@ -85,12 +85,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             try
             {
                 var hash256 = new uint256(data);
-                logger.LogInformation($"ConvertValidOpReturnDataToHash received {hash256}.");
+                logger.LogTrace($"ConvertValidOpReturnDataToHash received {hash256}.");
                 return hash256.ToString();
             }
             catch (Exception ex)
             {
-                logger.LogInformation($"Candidate hash {data} could not be converted to a valid uint256. Reason {ex.Message}.");
+                logger.LogTrace($"Candidate hash {data} could not be converted to a valid uint256. Reason {ex.Message}.");
                 return null;
             }
         }

@@ -33,9 +33,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             this.logger.LogDebug("New {0} received.", nameof(IMaturedBlockDeposits));
 
-            await this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits).ConfigureAwait(false);
-
-            await this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false);
+            if (await this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits).ConfigureAwait(false))
+            {
+                // There may be more blocks. Get them.
+                await this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false);
+            }
         }
 
         /// <inheritdoc />

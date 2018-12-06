@@ -12,5 +12,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
     public interface IWithdrawalExtractor
     {
         IReadOnlyList<IWithdrawal> ExtractWithdrawalsFromBlock(Block block, int blockHeight);
+        IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight);
     }
 }

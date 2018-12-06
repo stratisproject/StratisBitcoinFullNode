@@ -191,13 +191,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             Guard.Assert(this.status == CrossChainTransferStatus.Partial);
 
-            Transaction[] validPartials = partialTransactions.Where(p => TemplatesMatch(p, this.partialTransaction)).ToArray();
+            Transaction[] validPartials = partialTransactions.Where(p => TemplatesMatch(p, this.partialTransaction) && p.GetHash() != this.PartialTransaction.GetHash()).ToArray();
+            if (validPartials.Any())
+            {
+                Transaction[] allPartials = new Transaction[validPartials.Length + 1];
+                allPartials[0] = this.partialTransaction;
+                validPartials.CopyTo(allPartials, 1);
 
-            Transaction[] allPartials = new Transaction[validPartials.Length + 1];
-            allPartials[0] = this.partialTransaction;
-            validPartials.CopyTo(allPartials, 1);
-
-            this.partialTransaction = builder.CombineSignatures(allPartials);
+                this.partialTransaction = builder.CombineSignatures(allPartials);
+            }
         }
 
         /// <inheritdoc />

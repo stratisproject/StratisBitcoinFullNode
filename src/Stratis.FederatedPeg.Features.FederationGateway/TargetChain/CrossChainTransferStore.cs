@@ -140,6 +140,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                             if (!this.depositIdsByBlockHash.TryGetValue(transfer.BlockHash, out HashSet<uint256> deposits))
                             {
                                 deposits = new HashSet<uint256>();
+                                this.depositIdsByBlockHash[transfer.BlockHash] = deposits;
                             }
 
                             deposits.Add(transfer.DepositTransactionId);
@@ -168,6 +169,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         public bool HasSuspended()
         {
             return this.depositsIdsByStatus[CrossChainTransferStatus.Suspended].Count != 0;
+        }
+
+        /// <inheritdoc />
+        public bool CanPersistMatureDeposits()
+        {
+            return this.federationWalletManager.IsFederationActive();
         }
 
         /// <summary>
@@ -217,7 +224,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     continue;
 
                 // Verify that the transaction input UTXO's have been reserved by the wallet.
-                if (ValidateTransaction(partialTransfer.PartialTransaction, wallet))
+                if (ValidateTransaction(partialTransfer.PartialTransaction))
                     continue;
 
                 // If not then the chain has been rewound so far that this transaction has lost its UTXO's.
@@ -341,7 +348,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <inheritdoc />
-        public Task RecordLatestMatureDepositsAsync(IMaturedBlockDeposits[] maturedBlockDeposits)
+        public Task<bool> RecordLatestMatureDepositsAsync(IMaturedBlockDeposits[] maturedBlockDeposits)
         {
             Guard.NotNull(maturedBlockDeposits, nameof(maturedBlockDeposits));
             Guard.Assert(!maturedBlockDeposits.Any(m => m.Deposits.Any(d => d.BlockNumber != m.Block.BlockHeight || d.BlockHash != m.Block.BlockHash)));
@@ -353,6 +360,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     this.logger.LogTrace("()");
 
                     // Sanitize and sort the list.
+                    int originalDepositHeight = this.NextMatureDepositHeight;
+
                     maturedBlockDeposits = maturedBlockDeposits
                         .OrderBy(a => a.Block.BlockHeight)
                         .SkipWhile(m => m.Block.BlockHeight < this.NextMatureDepositHeight).ToArray();
@@ -361,18 +370,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                         maturedBlockDeposits.First().Block.BlockHeight != this.NextMatureDepositHeight)
                     {
                         this.logger.LogTrace("(-):[NO_VIABLE_BLOCKS]");
-                        return;
+                        return true;
                     }
 
                     if (maturedBlockDeposits.Last().Block.BlockHeight != this.NextMatureDepositHeight + maturedBlockDeposits.Length - 1)
                     {
                         this.logger.LogTrace("(-):[DUPLICATE_BLOCKS]");
-                        return;
+                        return true;
                     }
 
                     this.Synchronize();
 
                     FederationWallet wallet = this.federationWalletManager.GetWallet();
+                    bool? canPersist = null;
 
                     for (int j = 0; j < maturedBlockDeposits.Length; j++)
                     {
@@ -383,6 +393,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                         if (deposits.Count == 0)
                         {
                             this.NextMatureDepositHeight++;
+                            continue;
+                        }
+
+                        // CanPersistMatureDeposits is a bit slow. Call it only once.
+                        canPersist = canPersist ?? this.CanPersistMatureDeposits();
+
+                        if (!(bool)canPersist)
+                        {
+                            this.logger.LogError("The store can't persist mature deposits at the moment.");
+                            this.logger.LogTrace("(-)");
                             continue;
                         }
 
@@ -414,18 +434,44 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                                     ScriptPubKey = scriptPubKey
                                 };
 
-                                transaction = BuildDeterministicTransaction(deposit.Id, recipient);
-
+                                // Verify whether the transaction is somehow already in the wallet.
+                                TransactionData transactionData;
+                                (transaction, transactionData) = this.FindWithdrawalTransactionInWallet(deposit.Id);
                                 if (transaction != null)
                                 {
-                                    // Reserve the UTXOs before building the next transaction.
-                                    walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction, isPropagated: false);
+                                    if (transactionData.BlockHash != null)
+                                    {
+                                        status = CrossChainTransferStatus.SeenInBlock;
+                                    }
+                                    else
+                                    {
+                                        // Add my signature.
+                                        var scriptCoins = new List<Coin>();
+                                        if (this.TransactionHasValidUTXOs(transaction, scriptCoins))
+                                        {
+                                            TransactionBuilder builder = new TransactionBuilder(this.network);
 
-                                    status = CrossChainTransferStatus.Partial;
+                                            transaction = builder.AddCoins(scriptCoins).SignTransaction(transaction);
+
+                                            status = this.ValidateTransaction(transaction, true) ? CrossChainTransferStatus.FullySigned : CrossChainTransferStatus.Partial;
+                                        }
+                                    }
                                 }
                                 else
                                 {
-                                    haveSuspendedTransfers = true;
+                                    transaction = BuildDeterministicTransaction(deposit.Id, recipient);
+
+                                    if (transaction != null)
+                                    {
+                                        // Reserve the UTXOs before building the next transaction.
+                                        walletUpdated |= this.federationWalletManager.ProcessTransaction(transaction, isPropagated: false);
+
+                                        status = CrossChainTransferStatus.Partial;
+                                    }
+                                    else
+                                    {
+                                        haveSuspendedTransfers = true;
+                                    }
                                 }
                             }
 
@@ -494,6 +540,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     }
 
                     this.logger.LogTrace("(-)");
+
+                    // If progress was made we will check for more blocks.
+                    return this.NextMatureDepositHeight != originalDepositHeight;
                 }
             });
         }
@@ -543,10 +592,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                         {
                             dbreezeTransaction.SynchronizeTables(transferTableName, commonTableName);
 
-                            this.UpdateSpendingDetailsInWallet(oldTransaction.GetHash(), transfer.PartialTransaction, wallet);
+                            this.federationWalletManager.UpdateTransientTransactionDetails(oldTransaction.GetHash(), transfer.PartialTransaction);
                             this.federationWalletManager.SaveWallet();
 
-                            if (ValidateTransaction(transfer.PartialTransaction, wallet, true))
+                            if (ValidateTransaction(transfer.PartialTransaction, true))
                             {
                                 transfer.SetStatus(CrossChainTransferStatus.FullySigned);
                             }
@@ -561,7 +610,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                         {
                             // Restore expected store state in case the calling code retries / continues using the store.
                             transfer.SetPartialTransaction(oldTransaction);
-                            this.UpdateSpendingDetailsInWallet(transfer.PartialTransaction.GetHash(), oldTransaction, wallet);
+                            this.federationWalletManager.UpdateTransientTransactionDetails(transfer.PartialTransaction.GetHash(), oldTransaction);
                             this.federationWalletManager.SaveWallet();
                             this.RollbackAndThrowTransactionError(dbreezeTransaction, err, "MERGE_ERROR");
                         }
@@ -775,6 +824,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
                 while (!this.cancellation.IsCancellationRequested)
                 {
+                    if (this.HasSuspended())
+                    {
+                        ICrossChainTransfer[] transfers = this.Get(this.depositsIdsByStatus[CrossChainTransferStatus.Suspended].ToArray());
+                        this.NextMatureDepositHeight = transfers.Min(t => t.DepositHeight) ?? this.NextMatureDepositHeight;
+                    }
+
                     this.RewindIfRequired();
 
                     if (this.SynchronizeBatch())
@@ -970,7 +1025,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             foreach (TxIn input in transaction.Inputs)
             {
                 Wallet.TransactionData transactionData = wallet.MultiSigAddress.Transactions
-                    .Where(t => t?.SpendingDetails.TransactionId == transaction.GetHash() && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N)
+                    .Where(t => t?.SpendingDetails?.TransactionId == transaction.GetHash() && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N)
                     .FirstOrDefault();
 
                 if (transactionData != null)
@@ -1000,15 +1055,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                         partialTransfers = partialTransfers.Where(t => t.Status == status).ToArray();
                     }
 
-                    FederationWallet wallet = this.federationWalletManager.GetWallet();
-                    var inputs = partialTransfers.ToDictionary(t => t.DepositTransactionId, t => this.MultiSigInput(wallet, t.PartialTransaction));
-                    var res = partialTransfers
-                        .OrderBy(a => a, Comparer<ICrossChainTransfer>.Create((x, y) =>
-                            FederationWalletTransactionHandler.CompareTransactionData(inputs[x.DepositTransactionId], inputs[y.DepositTransactionId])))
-                        .ToDictionary(t => t.DepositTransactionId, t => t.PartialTransaction);
-
                     this.logger.LogTrace("(-)");
-                    return res;
+                    return partialTransfers
+                        .Where(t => t.PartialTransaction != null)
+                        .ToDictionary(t => t.DepositTransactionId, t => t.PartialTransaction);
                 }
             });
         }
@@ -1178,16 +1228,34 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <summary>
-        /// Verifies that the transaction's input UTXO's have been reserved by the wallet.
+        /// Determines if there is an existing valid withdrawal transaction for a given deposit id.
         /// </summary>
-        /// <param name="transaction">The transaction to check.</param>
-        /// <param name="wallet">The wallet to check.</param>
-        /// <param name="checkSignature">Indictes whether to check the signature.</param>
-        /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
-        public static bool ValidateTransaction(Transaction transaction, FederationWallet wallet, bool checkSignature = false)
+        /// <param name="depositId">The deposit id to find the withrawal transaction for.</param>
+        /// <returns>The transaction data containing the withdrawal transaction.</returns>
+        private (Transaction, TransactionData) FindWithdrawalTransactionInWallet(uint256 depositId)
+        {
+            FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+            foreach (TransactionData transactionData in wallet.MultiSigAddress.Transactions)
+            {
+                Transaction walletTran = transactionData.GetFullTransaction(this.network);
+                IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTran, 0, 0);
+                if (withdrawal?.DepositId == depositId)
+                {
+                    if (!TransactionHasValidUTXOs(walletTran))
+                        continue;
+
+                    return (walletTran, transactionData);
+                }
+            }
+
+            return (null, null);
+        }
+
+        private bool TransactionHasValidUTXOs(Transaction transaction, List<Coin> coins = null)
         {
             // All the input UTXO's should be present in spending details of the multi-sig address.
-            List<Coin> coins = checkSignature ? new List<Coin>() : null;
+            FederationWallet wallet = this.federationWalletManager.GetWallet();
 
             foreach (TxIn input in transaction.Inputs)
             {
@@ -1202,6 +1270,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 }
             }
 
+            return true;
+        }
+
+        /// <inheritdoc />
+        public bool ValidateTransaction(Transaction transaction, bool checkSignature = false)
+        {
+            // All the input UTXO's should be present in spending details of the multi-sig address.
+            List<Coin> coins = checkSignature ? new List<Coin>() : null;
+            FederationWallet wallet = this.federationWalletManager.GetWallet();
+
+            // Verify that the transaction has valid UTXOs.
+            if (!TransactionHasValidUTXOs(transaction, coins))
+                return false;
+
+            // Verify that the deposit does not have an earlier transaction.
+            IWithdrawal myWithdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, 0, 0);
+            (Transaction walletTran, _) = this.FindWithdrawalTransactionInWallet(myWithdrawal.DepositId);
+            if (walletTran != null && walletTran.GetHash() != transaction.GetHash())
+                return false;
+
             // Verify that all inputs are signed.
             if (checkSignature)
             {
@@ -1213,24 +1301,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             }
 
             return true;
-        }
-
-        /// <summary>
-        /// Update spending details when the transaction hash changes.
-        /// </summary>
-        /// <param name="oldTransactionId">The transaction id before signatures were added.</param>
-        /// <param name="transaction">The transaction, possibly with additional signatures.</param>
-        /// <param name="wallet">The wallet to update.</param>
-        private void UpdateSpendingDetailsInWallet(uint256 oldTransactionId, Transaction transaction, FederationWallet wallet)
-        {
-            // Find spends to the old transaction id and update with the new transaction details.
-            foreach (SpendingDetails spendingDetails in wallet.MultiSigAddress.Transactions
-                .Select(t => t.SpendingDetails)
-                .Where(s => s != null && s.TransactionId == oldTransactionId))
-            {
-                spendingDetails.TransactionId = transaction.GetHash();
-                spendingDetails.Hex = transaction.ToHex(this.network);
-            }
         }
 
         /// <inheritdoc />

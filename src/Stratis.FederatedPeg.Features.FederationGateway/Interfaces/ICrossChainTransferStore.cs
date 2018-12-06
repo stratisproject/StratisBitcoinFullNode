@@ -32,13 +32,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// The value of <see cref="NextMatureDepositHeight"/> is incremented at the end of this call.
         /// </summary>
         /// <param name="blockDeposits">The deposits in order of occurrence on the source chain.</param>
+        /// <returns><c>True</c> if there may be more blocks and <c>false</c> otherwise.</returns>
         /// <remarks>
         /// The transfers are set to <see cref="CrossChainTransfer.Status"/> of <see cref="CrossChainTransferStatus.Partial"/>
         /// or <see cref="CrossChainTransferStatus.Rejected"/> depending on whether enough funds are available in the federation wallet.
         /// New partial transactions are recorded in the wallet to ensure that future transactions will not
         /// attempt to re-use UTXO's.
         /// </remarks>
-        Task RecordLatestMatureDepositsAsync(IMaturedBlockDeposits[] blockDeposits);
+        Task<bool> RecordLatestMatureDepositsAsync(IMaturedBlockDeposits[] blockDeposits);
 
         /// <summary>
         /// Returns transactions by status. Orders the results by UTXO selection order.
@@ -72,6 +73,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </summary>
         /// <returns><c>True</c> if the store contains suspended transaction and <c>false</c> otherwise.</returns>
         bool HasSuspended();
+
+        /// <summary>
+        /// Determines if the store can persist mature deposits.
+        /// </summary>
+        /// <returns><c>True</c> if the store can persist mature deposits and <c>false</c> otherwise.</returns>
+        bool CanPersistMatureDeposits();
+
+        /// <summary>
+        /// Verifies that the transaction's input UTXO's have been reserved by the wallet.
+        /// Also checks that an earlier transaction for the same deposit id does not exist.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <param name="checkSignature">Indicates whether to check the signature.</param>
+        /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
+        bool ValidateTransaction(Transaction transaction, bool checkSignature = false);
 
         /// <summary>
         /// The tip of our chain when we last updated the store.

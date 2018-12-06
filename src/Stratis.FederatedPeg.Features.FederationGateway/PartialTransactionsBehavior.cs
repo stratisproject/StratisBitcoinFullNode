@@ -115,29 +115,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // Get the template from the payload.
             Transaction template = this.GetTemplateTransaction(payload.PartialTransaction);
 
-            this.logger.LogInformation("RequestPartialTransactionPayload received.");
-            this.logger.LogInformation("OnMessageReceivedAsync: {0}", this.network.ToChain());
-            this.logger.LogInformation("RequestPartialTransactionPayload: DepositID           - {0}.", payload.DepositId);
-            this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction  - {0}.", payload.PartialTransaction);
-            this.logger.LogInformation("RequestPartialTransactionPayload: TemplateTransaction - {0}.", template);
-
-            uint256 oldHash = payload.PartialTransaction.GetHash();
-
-            payload.AddPartial(await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }).ConfigureAwait(false));
-
-            if (payload.PartialTransaction.GetHash() == oldHash)
+            ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
+            if (transfer[0]?.Status != CrossChainTransferStatus.Partial)
             {
-                this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction already signed.");
+                this.logger.LogTrace("OnMessageReceivedAsync: PartialTransaction {0} already signed.", template);
+                return;
             }
-            else
+
+            uint256 oldHash = transfer[0].PartialTransaction.GetHash();
+
+            Transaction signedTransaction = await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }).ConfigureAwait(false);
+
+            if (oldHash != signedTransaction.GetHash())
             {
-                this.logger.LogInformation("OnMessageReceivedAsync: PartialTransaction signed.");
-                this.logger.LogInformation("RequestPartialTransactionPayload: PartialTransaction  - {0}.", payload.PartialTransaction);
-                this.logger.LogInformation("Broadcasting Payload....");
+                this.logger.LogTrace("Signed transaction (deposit={1}) to produce {2} from {3}.", payload.DepositId, oldHash, signedTransaction.GetHash());
 
-                await BroadcastAsync(payload);
-
-                this.logger.LogInformation("Broadcasted.");
+                // Respond back to the peer that requested a signature.
+                await this.BroadcastAsync(payload.AddPartial(signedTransaction));
             }
         }
     }

@@ -100,5 +100,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="password">The user's password.</param>
         /// <param name="mnemonic">The user's mnemonic.</param>
         void ImportMemberKey(string password, string mnemonic);
+
+        /// <summary>
+        /// Update spending details when the transaction hash changes.
+        /// </summary>
+        /// <param name="oldTransactionId">The transaction id before signatures were added.</param>
+        /// <param name="transaction">The transaction, possibly with additional signatures.</param>
+        void UpdateTransientTransactionDetails(uint256 oldTransactionId, Transaction transaction);
+
+        /// <summary>
+        /// Determines if federation has been activated.
+        /// </summary>
+        /// <returns><c>True</c> if federation is active and <c>false</c> otherwise.</returns>
+        bool IsFederationActive();
     }
 }

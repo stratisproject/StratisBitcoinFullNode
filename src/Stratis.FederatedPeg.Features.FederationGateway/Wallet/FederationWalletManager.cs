@@ -752,6 +752,52 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
+        public void UpdateTransientTransactionDetails(uint256 oldTransactionId, Transaction transaction)
+        {
+            lock (this.lockObject)
+            {
+                ICollection<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions;
+                TransactionData transactionData = transactions.Where(t => t.Id == oldTransactionId).FirstOrDefault();
+
+                Guard.NotNull(transactionData, nameof(transactionData));
+                Guard.Assert(transactionData.IsPropagated != true);
+
+                // Find references to the old transaction id and update with the new transaction details.
+                foreach (SpendingDetails spendingDetails in transactions
+                    .Select(t => t.SpendingDetails)
+                    .Where(s => s != null && s.TransactionId == oldTransactionId))
+                {
+                    spendingDetails.TransactionId = transaction.GetHash();
+                    spendingDetails.Hex = transaction.ToHex(this.network);
+                }
+
+                transactionData.Id = transaction.GetHash();
+                transactionData.Hex = transaction.ToHex(this.network);
+
+                this.outpointLookup.Clear();
+                this.LoadKeysLookupLock();
+            }
+        }
+
+        /// <inheritdoc />
+        public bool IsFederationActive()
+        {
+            // If federation is acive then the extended key in the wallet can be used to derive the public key.
+            FederationWallet wallet = this.Wallet;
+            if (wallet == null || this.Secret == null)
+                return false;
+
+            Key key = wallet.MultiSigAddress.GetPrivateKey(wallet.EncryptedSeed, this.Secret.WalletPassword, this.network);
+
+            if (key.PubKey.ToHex() == this.federationGatewaySettings.PublicKey)
+                return true;
+
+            this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
+
+            return false;
+        }
+
+        /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader)
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
