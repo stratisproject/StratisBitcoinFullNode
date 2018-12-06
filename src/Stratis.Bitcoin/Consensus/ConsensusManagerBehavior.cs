@@ -330,7 +330,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // Workaround for special case when peer announces new block but we don't want to clean the cache.
-                    if (headers.Count == 1)
+                    if (headers.Count == 1 && this.BestReceivedTip != null)
                     {
                         // Distance of header from the peer expected tip.
                         double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;

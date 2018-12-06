@@ -192,11 +192,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
             Guard.NotNull(duration, nameof(duration));
 
-            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);  
+            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
             string cacheKey = wallet.EncryptedSeed;
 
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
-            { 
+            {
                 this.privateKeyCache.Set(cacheKey, secretValue, duration);
             }
             else
@@ -392,15 +392,24 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected void AddFee(TransactionBuildContext context)
         {
             Money fee;
+            Money minTrxFee = new Money(this.network.MinTxFee, MoneyUnit.Satoshi);
 
             // If the fee hasn't been set manually, calculate it based on the fee type that was chosen.
             if (context.TransactionFee == null)
             {
                 FeeRate feeRate = context.OverrideFeeRate ?? this.walletFeePolicy.GetFeeRate(context.FeeType.ToConfirmations());
                 fee = context.TransactionBuilder.EstimateFees(feeRate);
+
+                // Make sure that the fee is at least the minimum transaction fee.
+                fee = Math.Max(fee, minTrxFee);
             }
             else
             {
+                if (context.TransactionFee < minTrxFee)
+                {
+                    throw new WalletException($"Not enough fees. The minimun fee is {minTrxFee}.");
+                }
+
                 fee = context.TransactionFee;
             }
 

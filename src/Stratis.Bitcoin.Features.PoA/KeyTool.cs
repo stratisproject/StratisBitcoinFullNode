@@ -1,6 +1,7 @@
 ﻿using System.IO;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -8,11 +9,16 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         public const string KeyFileDefaultName = "federationKey.dat";
 
-        private readonly DataFolder dataFolder;
+        private readonly string path;
 
         public KeyTool(DataFolder dataFolder)
         {
-            this.dataFolder = dataFolder;
+            this.path = dataFolder.RootPath;
+        }
+
+        public KeyTool(string path)
+        {
+            this.path = path;
         }
 
         /// <summary>Generates a new private key.</summary>
@@ -27,7 +33,7 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Gets the default path for private key saving and loading.</summary>
         public string GetPrivateKeySavePath()
         {
-            string path = Path.Combine(this.dataFolder.RootPath, KeyTool.KeyFileDefaultName);
+            string path = Path.Combine(this.path, KeyTool.KeyFileDefaultName);
 
             return path;
         }
