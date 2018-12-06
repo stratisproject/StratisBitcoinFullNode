@@ -105,7 +105,7 @@ namespace Stratis.Bitcoin.P2P
 
             IPEndPoint ipv6EndPoint = endPoint.MapToIpv6();
 
-            PeerAddress peerToAdd = PeerAddress.Create(ipv6EndPoint, source);
+            PeerAddress peerToAdd = PeerAddress.Create(ipv6EndPoint, source.MapToIPv6());
             this.peerInfoByPeerAddress.TryAdd(ipv6EndPoint, peerToAdd);
         }
 
@@ -120,14 +120,11 @@ namespace Stratis.Bitcoin.P2P
 
         private void EnsureMaxItemsPerSource(IPAddress source)
         {
-            int fromSameSource = this.peerInfoByPeerAddress.Values.Count(x => x.Loopback == source);
+            IEnumerable<IPEndPoint> itemsFromSameSource = this.peerInfoByPeerAddress.Values.Where(x => x.Loopback.Equals(source.MapToIPv6())).Select(x => x.Endpoint);
+            List<IPEndPoint> itemsToRemove = itemsFromSameSource.Skip(MaxAddressesToStoreFromSingleIp).ToList();
 
-            if (fromSameSource > MaxAddressesToStoreFromSingleIp)
+            if (itemsToRemove.Count > 0)
             {
-                int deleteCount = fromSameSource - MaxAddressesToStoreFromSingleIp;
-
-                List<IPEndPoint> itemsToRemove = this.peerInfoByPeerAddress.Where(x => x.Value.Loopback == source).Select(x => x.Key).Take(deleteCount).ToList();
-
                 foreach (IPEndPoint toRemove in itemsToRemove)
                     this.RemovePeer(toRemove);
             }
