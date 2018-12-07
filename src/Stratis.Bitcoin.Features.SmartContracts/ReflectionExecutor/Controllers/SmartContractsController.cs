@@ -278,17 +278,23 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Rewrite the method name to a property name
             this.RewritePropertyGetterName(request);
 
-            uint160 contractAddress = request.ContractAddress.ToUint160(this.network);
+            try
+            {
+                ContractTxData txData = this.smartContractTransactionService.BuildLocalCallTxData(request);
 
-            var txData = new ContractTxData(1, request.GasPrice, (Gas) request.GasLimit, contractAddress, request.MethodName, request.Parameters.Cast<object>().ToArray());
+                ILocalExecutionResult result = this.localExecutor.Execute(
+                    (ulong)this.chain.Height,
+                    request.Sender.ToUint160(this.network),
+                    0,
+                    txData);
 
-            ILocalExecutionResult result = this.localExecutor.Execute(
-                (ulong) this.chain.Height,
-                request.Sender.ToUint160(this.network),
-                0,
-                txData);           
-
-            return Json(result);
+                return Json(result);
+            }
+            catch (MethodParameterStringSerializerException e)
+            {
+                return Json(ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message,
+                    "Error deserializing method parameters"));
+            }
         }
 
         /// <summary>
