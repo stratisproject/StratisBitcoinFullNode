@@ -10,7 +10,6 @@ namespace Stratis.Bitcoin.Networks
 {
     public class X42Main : Network
     {
-
         /// <summary> x42 maximal value for the calculated time offset. If the value is over this limit, the time syncing feature will be switched off. </summary>
         public const int x42MaxTimeOffsetSeconds = 25 * 60;
 
@@ -25,7 +24,6 @@ namespace Stratis.Bitcoin.Networks
 
         public X42Main()
         {
-
             // The message start string is designed to be unlikely to occur in normal data.
             // The characters are rarely used upper ASCII, not valid as UTF-8, and produce
             // a large 4-byte int at any alignment.
@@ -40,6 +38,8 @@ namespace Stratis.Bitcoin.Networks
             this.Magic = magic;
             this.DefaultPort = 52342;
             this.RPCPort = 52343;
+            this.DefaultMaxOutboundConnections = 16;
+            this.DefaultMaxInboundConnections = 109;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = Money.Zero;
             this.FallbackFee = Money.Zero;
@@ -77,7 +77,12 @@ namespace Stratis.Bitcoin.Networks
                 [BuriedDeployments.BIP66] = 0
             };
 
-            var bip9Deployments = new StratisBIP9Deployments() { };
+            var bip9Deployments = new StratisBIP9Deployments()
+            {
+                [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
+                    new DateTime(2018, 12, 1, 0, 0, 0, DateTimeKind.Utc),
+                    new DateTime(2019, 12, 1, 0, 0, 0, DateTimeKind.Utc))
+            };
 
             this.Consensus = new X42Consensus(
                 consensusFactory: consensusFactory,
@@ -135,7 +140,7 @@ namespace Stratis.Bitcoin.Networks
                 { 2, new CheckpointInfo(new uint256("0x1a64847f52fce72763a9eaa99bed6a896556917cd16f491bbdec070b40514282"), new uint256("0xa55d7663540264e7ed1e7195ecd0050303187eaf9485edeec70806491b5a53d1")) }, // Premine
                 { 523, new CheckpointInfo(new uint256("0x1ca01c02f5989a198433cbe83e0eb26d9166d6aaaa9c20d6b765d5bace7829f1"), new uint256("0xbf04ecd478d78d302aa65293dde85036954b76216b0812104315c8a5ad139525")) }, // Last POW Block
                 { 20000, new CheckpointInfo(new uint256("0x79976dfc025e982239a0bd62099475e6abf839c73aba5805b5cbe4091744c09a"), new uint256("0x250690dd6f264565c5ce16d84d250d67eb940d084c253e4006cdba3091fd66b6")) },
-                //{ 60822, new CheckpointInfo(new uint256("0x79976dfc025e982239a0bd62099475e6abf839c73aba5805b5cbe4091744c09a"), new uint256("0x250690dd6f264565c5ce16d84d250d67eb940d084c253e4006cdba3091fd66b6")) },
+                { 150000, new CheckpointInfo(new uint256("0xe3eb190c9672ffdb2852d80c1c9f3cb693356c9555db0903d0443ea9e5191bf3"), new uint256("0x45abba0dbe4dba26adc32c232d780c741d0cd7a4e30067626981d69c53a7aff5")) },
             };
 
             var encoder = new Bech32Encoder("bc");
@@ -146,9 +151,10 @@ namespace Stratis.Bitcoin.Networks
             this.DNSSeeds = new List<DNSSeedData>
             {
                 new DNSSeedData("seednode2.x42.tech", "seednode2.x42.tech"),
+                new DNSSeedData("tech.x42.cloud", "tech.x42.cloud"),
             };
 
-            string[] seedNodes = { "34.255.35.42", "18.223.166.44", "177.18.126.60" };
+            string[] seedNodes = { "34.255.35.42", "52.211.235.48" };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x04ffe583707a96c1c2eb54af33a4b1dc6d9d8e09fea8c9a7b097ba88f0cb64c4"));

@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Networks
         public Money ProofOfStakeReward { get; }
 
         /// <inheritdoc />
-        public uint MaxReorgLength { get; }
+        public uint MaxReorgLength { get; private set; }
 
         /// <inheritdoc />
         public long MaxMoney { get; }
@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Networks
 
         public BigInteger ProofOfStakeLimitV2 { get; }
 
-        /// <inheritdoc />        
+        /// <inheritdoc />
         public int LastPOWBlock { get; set; }
 
         /// <inheritdoc />
