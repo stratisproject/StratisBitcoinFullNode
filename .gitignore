@@ -1,0 +1,6 @@
+bin/
+obj/
+wwwroot/lib
+.vscode
+.vs
+.idea
