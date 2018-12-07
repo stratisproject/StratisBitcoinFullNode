@@ -1,0 +1,400 @@
+@model DashboardModel
+@if(ViewBag.DisplayLoader == true)
+{
+   <partial name="Loader" />
+}
+<div id="@(ViewBag.DisplayLoader == true ? "loading-content":"")">
+   <div class="row my-2">
+      <div class="col-lg-6 col-12">
+         <div class="card mb-4">
+            <div class="card-body">
+               <div class="pb-3 mb-3">
+                  <div class="mr-auto d-inline-block">
+                     <h3>Stratis Node</h3>
+                  </div>
+                  <ul class="list-inline float-right d-flex align-items-center">
+                     <li class="list-inline-item">
+                        <span class="badge badge-@(Model.StratisNode.SyncingStatus >= 100 ? "success":"warning")">
+                        <i class="material-icons">sync</i> Syncing... @Model.StratisNode.SyncingStatus%
+                        </span>
+                     </li>
+                     <li class="list-inline-item ml-3">
+                        <div class="btn-group">
+                           <button type="button" class="btn btn-option btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           <i class="material-icons md-24">more_vert</i>
+                           </button>
+                           <div class="dropdown-menu dropdown-menu-right">
+                              <button data-toggle="modal" data-target="#stratisResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button>
+                              <button data-toggle="modal" data-target="#stratisResyncBlockchain" class="dropdown-item" type="button">Resync blockchain</button>
+                              <div class="dropdown-divider"></div>
+                              <button data-toggle="modal" data-target="#stratisStopNode" class="dropdown-item text-danger d-flex align-items-center" type="button">Stop Node</button>
+                           </div>
+                        </div>
+                     </li>
+                  </ul>
+               </div>
+               <div class="card-text">
+                  <ul class="list-inline mb-0 row">
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Web API URL :</strong></li>
+                           <li class="list-inline-item"><a href="@Model.StratisNode.WebAPIUrl">@Model.StratisNode.WebAPIUrl</a></li>
+                        </ul>
+                     </li>
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Swagger :</strong></li>
+                           <li class="list-inline-item"><a href="@Model.StratisNode.SwaggerUrl">@Model.StratisNode.SwaggerUrl</a></li>
+                        </ul>
+                     </li>
+                  </ul>
+                  <ul class="list-inline mb-0 row">
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Block height :</strong></li>
+                           <li class="list-inline-item"><a href="#">@Model.StratisNode.BlockHeight</a></li>
+                        </ul>
+                     </li>
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline d-flex align-itmes-center">
+                           <li class="list-inline-item"><strong>Block hash :</strong></li>
+                           <li class="list-inline-item text-truncate" style="max-width: 150px;">
+                              <a href="https://chainz.cryptoid.info/strat/block.dws?@(Model.StratisNode.BlockHash).htm" target="_blank">@Model.StratisNode.BlockHash</a>
+                           </li>
+                        </ul>
+                     </li>
+                  </ul>
+                  <ul class="list-inline mb-0 row">
+                     <li class="col-12">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Mempool size :</strong></li>
+                           <li class="list-inline-item text-muted">@Model.StratisNode.MempoolSize</li>
+                        </ul>
+                     </li>
+                     <li class="col-12">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Wallet balance :</strong></li>
+                           <li class="list-inline-item text-green">Confirmed: @Model.StratisNode.ConfirmedBalance.ToString("N8")</li>
+                           <li class="list-inline-item text-muted">/</li>
+                           <li class="list-inline-item text-muted">Unconfirmed: @Model.StratisNode.UnconfirmedBalance.ToString("N8")</li>
+                        </ul>
+                     </li>
+                  </ul>
+                  <label class="mt-3"><strong>Peers :</strong></label>
+                  <table class="table table-sm table-striped">
+                     <tbody>
+                        @foreach(dynamic peer in (JArray) Model.StratisNode.Peers)
+                        {
+                           <tr>
+                              <td class="text-left">@peer.remoteSocketEndpoint</td>
+                              <td class="text-center">outbound</td>
+                              <td class="text-center">height:@peer.tipHeight</td>
+                              <td class="text-right">agent:@peer.version</td>
+                           </tr>
+                        }
+                     </tbody>
+                     <tfoot>
+                        @if(((JArray) Model.StratisNode.Peers).Count == 0)
+                        {
+                           <tr>
+                              <td colspan="4" class="text-center"><em>There no peers to display.</em></td>
+                           </tr>
+                        }
+                     </tfoot>
+                  </table>
+                  <label><strong>Federation members :</strong></label>
+                  <table class="table table-sm table-striped">
+                     <tbody>
+                        @foreach(dynamic member in (JArray) Model.StratisNode.FederationMembers)
+                        {
+                           <tr>
+                              <td class="text-left">@member.remoteSocketEndpoint</td>
+                              <td class="text-center">outbound</td>
+                              <td class="text-center">height:@member.tipHeight</td>
+                              <td class="text-right">agent:@member.version</td>
+                           </tr>
+                        }
+                     </tbody>
+                     <tfoot>
+                        @if(((JArray) Model.StratisNode.FederationMembers).Count == 0)
+                        {
+                           <tr>
+                              <td colspan="4" class="text-center"><em>There no federation member to display.</em></td>
+                           </tr>
+                        }
+                     </tfoot>
+                  </table>
+               </div>
+            </div>
+         </div>
+         <div class="card mb-4">
+            <div class="card-body">
+               <div class="d-flex align-items-center mb-4">
+                  <label class="d-flex justify-content-start">
+                     <strong>History <small class="text-muted">(@(((JArray) Model.StratisNode.History).Count))</small></strong>
+                  </label>
+                  <span class="d-flex justify-content-end align-items-center ml-auto">
+                     <a data-toggle="modal" data-target="#stratisHistory" class="btn btn-outline-primary">See all history</a>
+                  </span>
+               </div>
+               <table class="table table-sm table-history">
+                  <thead>
+                     <tr>
+                        <th class="text-center" scope="col">Status</th>
+                        <th class="text-center" scope="col">Destination</th>
+                        <th class="text-center" scope="col">Tx ID</th>
+                        <th class="text-center" scope="col">Datetime</th>
+                        <th class="text-center" scope="col">Nb. of Confirmations</th>
+                        <th class="text-center" scope="col">Amount</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     @foreach(dynamic transaction in ((JArray)Model.StratisNode.History).Take(5).ToList())
+                     {
+                        if(transaction.type == "send")
+                        {
+                           <tr>
+                              <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                              <td class="text-center text-truncate"><code>@(transaction.payments[0].destinationAddress)</code></td>
+                              <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.id</a></td>
+                              <td class="text-center">@DateTimeOffset.FromUnixTimeSeconds((long)transaction.timestamp).ToString("g")</td>
+                              <td class="text-center">-</td>
+                              <td class="text-right">@(((double)transaction.amount/100000000).ToString("N8")) STRAT</td>
+                           </tr>
+                        }
+                        else
+                        {
+                           <tr>
+                              @if(transaction.confirmedInBlock > 0)
+                              {
+                                 <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                              }
+                              else
+                              {
+                                 <td class="text-center"><i class="material-icons text-yellow md-18">schedule</i></td>
+                              }
+                              <td class="text-center text-truncate"><code>@transaction.toAddress</code></td>
+                              <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.id</a></td>
+                              <td class="text-center">@DateTimeOffset.FromUnixTimeSeconds((long)transaction.timestamp).ToString("g")</td>
+                              <td class="text-center">@transaction.confirmedInBlock</td>
+                              <td class="text-right">@(((double)transaction.amount/100000000).ToString("N8")) STRAT</td>
+                           </tr>
+                        }
+                     }
+                  </tbody>
+                  @if(((JArray)Model.StratisNode.History).Count == 0)
+                  {
+                     <tfoot>
+                        <tr>
+                           <td colspan="6" class="text-center"><em>There no transaction to display.</em></td>
+                        </tr>
+                     </tfoot>
+                  }
+               </table>
+            </div>
+         </div>
+      </div>
+      <div class="col-lg-6 col-12">
+         <div class="card mb-4">
+            <div class="card-body">
+               <div class="pb-3 mb-3">
+                  <div class="mr-auto d-inline-block">
+                     <h3>Apex Node</h3>
+                  </div>
+                  <ul class="list-inline float-right d-flex align-items-center">
+                     <li class="list-inline-item">
+                        <span class="badge badge-@(Model.SidechainNode.SyncingStatus >= 100 ? "success":"warning")">
+                        <i class="material-icons">sync</i> Synced @Model.SidechainNode.SyncingStatus%
+                        </span>
+                     </li>
+                     <li class="list-inline-item ml-3">
+                        <div class="btn-group">
+                           <button type="button" class="btn btn-option btn-outline-secondary dropdown-toggle" data-toggle="dropdown" aria-haspopup="true" aria-expanded="false">
+                           <i class="material-icons md-24">more_vert</i>
+                           </button>
+                           <div class="dropdown-menu dropdown-menu-right">
+                              <button data-toggle="modal" data-target="#sidechainResyncCrosschain" class="dropdown-item" type="button">Resync crosschain transactions</button>
+                              <button data-toggle="modal" data-target="#sidechainResyncBlockchain" class="dropdown-item" type="button">Resync blockchain</button>
+                              <div class="dropdown-divider"></div>
+                              <button data-toggle="modal" data-target="#sidechainStopNode" class="dropdown-item text-danger d-flex align-items-center" type="button">Stop Node</button>
+                           </div>
+                        </div>
+                     </li>
+                  </ul>
+               </div>
+               <div class="card-text">
+                  <ul class="list-inline mb-0 row">
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Web API URL :</strong></li>
+                           <li class="list-inline-item"><a href="@Model.SidechainNode.WebAPIUrl">@Model.SidechainNode.WebAPIUrl</a></li>
+                        </ul>
+                     </li>
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Swagger :</strong></li>
+                           <li class="list-inline-item"><a href="@Model.StratisNode.SwaggerUrl">@Model.SidechainNode.SwaggerUrl</a></li>
+                        </ul>
+                     </li>
+                  </ul>
+                  <ul class="list-inline mb-0 row">
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Block height :</strong></li>
+                           <li class="list-inline-item"><a href="#">@Model.SidechainNode.BlockHeight</a></li>
+                        </ul>
+                     </li>
+                     <li class="col-12 col-xl-6">
+                        <ul class="list-inline d-flex align-itmes-center">
+                           <li class="list-inline-item"><strong>Block hash :</strong></li>
+                           <li class="list-inline-item text-truncate" style="max-width: 150px;">
+                              <a href="https://chainz.cryptoid.info/strat/block.dws?@(Model.SidechainNode.BlockHash).htm" target="_blank">@Model.SidechainNode.BlockHash</a>
+                           </li>
+                        </ul>
+                     </li>
+                  </ul>
+                  <ul class="list-inline mb-0 row">
+                     <li class="col-12">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Mempool size :</strong></li>
+                           <li class="list-inline-item text-muted">@Model.SidechainNode.MempoolSize</li>
+                        </ul>
+                     </li>
+                     <li class="col-12">
+                        <ul class="list-inline">
+                           <li class="list-inline-item"><strong>Wallet balance :</strong></li>
+                           <li class="list-inline-item text-green">Confirmed: @Model.SidechainNode.ConfirmedBalance.ToString("N8")</li>
+                           <li class="list-inline-item text-muted">/</li>
+                           <li class="list-inline-item text-muted">Unconfirmed: @Model.SidechainNode.UnconfirmedBalance.ToString("N8")</li>
+                        </ul>
+                     </li>
+                  </ul>
+                  <label class="mt-3"><strong>Peers :</strong></label>
+                  <table class="table table-sm table-striped">
+                     <tbody>
+                        @foreach(dynamic peer in (JArray) Model.SidechainNode.Peers)
+                        {
+                           <tr>
+                              <td class="text-left">@peer.remoteSocketEndpoint</td>
+                              <td class="text-center">outbound</td>
+                              <td class="text-center">height:@peer.tipHeight</td>
+                              <td class="text-right">agent:@peer.version</td>
+                           </tr>
+                        }
+                     </tbody>
+                     <tfoot>
+                        @if(((JArray) Model.SidechainNode.Peers).Count == 0)
+                        {
+                           <tr>
+                              <td colspan="4" class="text-center"><em>There no peers to display.</em></td>
+                           </tr>
+                        }
+                     </tfoot>
+                  </table>
+                  <label><strong>Federation members :</strong></label>
+                  <table class="table table-sm table-striped">
+                     <tbody>
+                        @foreach(dynamic member in (JArray) Model.SidechainNode.FederationMembers)
+                        {
+                           <tr>
+                              <td class="text-left">@member.remoteSocketEndpoint</td>
+                              <td class="text-center">outbound</td>
+                              <td class="text-center">height:@member.tipHeight</td>
+                              <td class="text-right">agent:@member.version</td>
+                           </tr>
+                        }
+                     </tbody>
+                     <tfoot>
+                        @if(((JArray) Model.SidechainNode.FederationMembers).Count == 0)
+                        {
+                           <tr>
+                              <td colspan="4" class="text-center"><em>There no federation member to display.</em></td>
+                           </tr>
+                        }
+                     </tfoot>
+                  </table>
+               </div>
+            </div>
+         </div>
+         <div class="card mb-4">
+            <div class="card-body">
+               <div class="d-flex align-items-center mb-4">
+                  <label class="d-flex justify-content-start">
+                     <strong>History <small class="text-muted">(@(((JArray) Model.SidechainNode.History).Count))</small></strong>
+                  </label>
+                  <span class="d-flex justify-content-end align-items-center ml-auto">
+                     <a data-toggle="modal" data-target="#sidechainHistory" class="btn btn-outline-primary">See all history</a>
+                  </span>
+               </div>
+               <table class="table table-sm table-history">
+                  <thead>
+                     <tr>
+                        <th class="text-center" scope="col">Status</th>
+                        <th class="text-center" scope="col">Destination</th>
+                        <th class="text-center" scope="col">Tx ID</th>
+                        <th class="text-center" scope="col">Datetime</th>
+                        <th class="text-center" scope="col">Nb. of Confirmations</th>
+                        <th class="text-center" scope="col">Amount</th>
+                     </tr>
+                  </thead>
+                  <tbody>
+                     @foreach(dynamic transaction in ((JArray)Model.SidechainNode.History).Take(5).ToList())
+                     {
+                        if(transaction.type == "send")
+                        {
+                           <tr>
+                              <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                              <td class="text-center text-truncate"><code>@(transaction.payments[0].destinationAddress)</code></td>
+                              <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.id</a></td>
+                              <td class="text-center">@DateTimeOffset.FromUnixTimeSeconds((long)transaction.timestamp).ToString("g")</td>
+                              <td class="text-center">-</td>
+                              <td class="text-right">@(((double)transaction.amount/100000000).ToString("N8")) STRAT</td>
+                           </tr>
+                        }
+                        else
+                        {
+                           <tr>
+                              @if(transaction.confirmedInBlock > 0)
+                              {
+                                 <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                              }
+                              else
+                              {
+                                 <td class="text-center"><i class="material-icons text-yellow md-18">schedule</i></td>
+                              }
+                              <td class="text-center text-truncate"><code>@transaction.toAddress</code></td>
+                              <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.id</a></td>
+                              <td class="text-center">@DateTimeOffset.FromUnixTimeSeconds((long)transaction.timestamp).ToString("g")</td>
+                              <td class="text-center">@transaction.confirmedInBlock</td>
+                              <td class="text-right">@(((double)transaction.amount/100000000).ToString("N8")) STRAT</td>
+                           </tr>
+                        }
+                     }
+                  </tbody>
+                  @if(((JArray) Model.SidechainNode.History).Count == 0)
+                  {
+                     <tfoot>
+                        <tr>
+                           <td colspan="6" class="text-center"><em>There no transaction to display.</em></td>
+                        </tr>
+                     </tfoot>
+                  }
+               </table>
+            </div>
+         </div>
+      </div>
+   </div>
+</div>
+@section Scripts
+{
+   <script type="text/javascript">
+   $(document).ready(function()
+   {
+      setTimeout(function () {
+         $(".loader").fadeOut(function() {
+            $("#loading-content").fadeIn();
+         });
+      }, 500);
+   });
+   </script>
+}
