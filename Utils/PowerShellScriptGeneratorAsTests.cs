@@ -20,7 +20,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
         private Network mainchainNetwork;
 
-        private FederatedPegTest sidechainNetwork;
+        private FederatedPegRegTest sidechainNetwork;
 
         private IList<Mnemonic> mnemonics;
 
@@ -44,8 +44,8 @@ namespace Stratis.FederatedPeg.Tests.Utils
         [Fact]
         public void Generate_PS1_Fragment()
         {
-            this.mainchainNetwork = Networks.Stratis.Testnet();
-            this.sidechainNetwork = (FederatedPegTest)FederatedPegNetwork.NetworksSelector.Testnet();
+            this.mainchainNetwork = Networks.Stratis.Regtest();
+            this.sidechainNetwork = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
 
             this.mnemonics = this.sidechainNetwork.FederationMnemonics;
             this.pubKeysByMnemonic = this.mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
