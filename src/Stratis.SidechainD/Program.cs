@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.RPC;
@@ -35,23 +34,10 @@ namespace Stratis.SidechainD
             {
                 if (!args.Any(a => a.Contains("apiport")))
                 {
-                    // TEMP set the default port to 38225 if it isn't set.
                     args = args.Concat(new[] { "apiport=38225" }).ToArray();
                 }
 
                 NodeSettings nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
-
-                Network network = nodeSettings.Network;
-                string[] seedNodes = { };
-                switch (network.Name)
-                {
-                    case FederatedPegNetwork.TestNetworkName:
-                        //seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149", "51.140.231.125", "13.70.81.5" };
-                        seedNodes = new[] { "104.211.178.243", "51.144.35.218", "65.52.5.149" };
-                        break;
-                }
-
-                network.SeedNodes.AddRange(ConvertToNetworkAddresses(seedNodes, network.DefaultPort).ToList());
 
                 IFullNode node = GetFederatedPegFullNode(nodeSettings);
 
@@ -73,7 +59,6 @@ namespace Stratis.SidechainD
                 .UseMempool()
                 .UseWallet()
                 .UseApi()
-                //.UseApps()
                 .AddRPC()
                 .Build();
             return node;
