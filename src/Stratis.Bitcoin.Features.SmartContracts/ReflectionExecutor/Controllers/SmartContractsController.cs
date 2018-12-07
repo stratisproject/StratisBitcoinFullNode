@@ -284,8 +284,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
                 ILocalExecutionResult result = this.localExecutor.Execute(
                     (ulong)this.chain.Height,
-                    request.Sender.ToUint160(this.network),
-                    0,
+                    request.Sender?.ToUint160(this.network) ?? new uint160(),
+                    string.IsNullOrWhiteSpace(request.Amount) ? (Money) request.Amount : 0,
                     txData);
 
                 return Json(result);

@@ -14,7 +14,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Required(ErrorMessage = "A method name is required.")]
         public string MethodName { get; set; }
 
-        [Required(ErrorMessage = "An amount is required.")]
         public string Amount { get; set; }
 
         [Range(SmartContractFormatRule.GasPriceMinimum, SmartContractFormatRule.GasPriceMaximum)]
@@ -23,7 +22,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Range(SmartContractFormatRule.GasLimitCallMinimum, SmartContractFormatRule.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
-        [Required(ErrorMessage = "Sender is required.")]
         [IsBitcoinAddress]
         public string Sender { get; set; }
 
