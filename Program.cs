@@ -6,6 +6,7 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Networks;
 using Stratis.Sidechains.Networks;
 
@@ -27,6 +28,11 @@ namespace FederationSetup
 
         static void Main(string[] args)
         {
+            Console.SetIn(new StreamReader(Console.OpenStandardInput(),
+                Console.InputEncoding,
+                false,
+                bufferSize: 1024));
+
             // Start with the banner and the help message.
             FederationSetup.OutputHeader();
             FederationSetup.OutputMenu();
@@ -79,7 +85,7 @@ namespace FederationSetup
                         if (string.IsNullOrEmpty(text))
                             throw new ArgumentException("Please specify the text to be included in the genesis block.");
 
-                        Console.WriteLine(new GenesisMiner().MineGenesisBlocks(new PoAConsensusFactory(), text));
+                        Console.WriteLine(new GenesisMiner().MineGenesisBlocks(new SmartContractPoAConsensusFactory(), text));
                         FederationSetup.OutputSuccess();
                     }
 
