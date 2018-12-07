@@ -122,7 +122,7 @@ namespace NBitcoin.Tests
             Assert.Equal("bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3", addressScript.Hash.GetAddress(addressScript.Network).ToString());
             Assert.Equal("bc1qrp33g0q5c5txsp9arysrx4k6zdkfs4nce4xj0gdcccefvpysxf3qccfmv3", addressScript.ScriptPubKey.GetDestinationAddress(addressScript.Network).ToString());
 
-            //Example of the BIP        
+            //Example of the BIP
             pubkey = new PubKey("0450863AD64A87AE8A2FE83C1AF1A8403CB53F53E486D8511DAD8A04887E5B23522CD470243453A299FA9E77237716103ABC11A1DF38855ED6F2EE187E9C582BA6");
             Assert.Equal(new Script("OP_0 010966776006953D5567439E5E39F86A0D273BEE"), pubkey.GetSegwitAddress(KnownNetworks.Main).ScriptPubKey);
 
@@ -942,6 +942,20 @@ namespace NBitcoin.Tests
             endpoint = Utils.ParseIpEndpoint("[2001:db8:1f70::999:de8:7648:6e8]:94", 90);
             Assert.Equal("2001:db8:1f70:0:999:de8:7648:6e8", endpoint.Address.ToString());
             Assert.Equal(94, endpoint.Port);
+        }
+
+        [Fact]
+        [Trait("UnitTest", "UnitTest")]
+        public void FeeRateOverflowPrevented()
+        {
+            Money feeToPay = Money.Coins(98_000_000);
+            int fakeTxSize = 180;
+
+            var feeRate = new FeeRate(feeToPay, fakeTxSize);
+
+            //if you use an amount close to long.MaxValue it will throw Overflow
+            feeToPay = long.MaxValue;
+            Assert.Throws<OverflowException>(() => new FeeRate(feeToPay, fakeTxSize));
         }
     }
 }
