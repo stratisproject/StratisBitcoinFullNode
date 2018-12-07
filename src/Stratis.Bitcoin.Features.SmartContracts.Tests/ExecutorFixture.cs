@@ -3,15 +3,14 @@ using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.ResultProcessors;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.ResultProcessors;
-using Stratis.SmartContracts.CLR.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {

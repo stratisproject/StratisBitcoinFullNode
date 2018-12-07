@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
@@ -7,9 +6,7 @@ using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Mono.Cecil;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -19,14 +16,14 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Decompilation;
 using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -273,7 +270,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         [Route("local-call")]
         [HttpPost]
-        public IActionResult LocalCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        public IActionResult LocalCallSmartContractTransaction([FromBody] LocalCallContractRequest request)
         {
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
@@ -281,18 +278,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Rewrite the method name to a property name
             this.RewritePropertyGetterName(request);
 
-            BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
+            uint160 contractAddress = request.ContractAddress.ToUint160(this.network);
 
-            Transaction transaction = this.network.CreateTransaction(response.Hex);
-            
-            var transactionContext = new ContractTransactionContext(
+            var txData = new ContractTxData(1, request.GasPrice, (Gas) request.GasLimit, contractAddress, request.MethodName, request.Parameters.Cast<object>().ToArray());
+
+            ILocalExecutionResult result = this.localExecutor.Execute(
                 (ulong) this.chain.Height,
-                uint160.Zero,
-                0, // Safe to set this to 0 here, it's only used for the refund which we do not create when executing locally
                 request.Sender.ToUint160(this.network),
-                transaction);
-
-            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);           
+                0,
+                txData);           
 
             return Json(result);
         }
@@ -300,7 +294,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// <summary>
         /// If the call is to a property, rewrites the method name to the getter method's name.
         /// </summary>
-        private void RewritePropertyGetterName(BuildCallContractTransactionRequest request)
+        private void RewritePropertyGetterName(LocalCallContractRequest request)
         {
             // Don't rewrite if there are params
             if (request.Parameters != null && request.Parameters.Any())
