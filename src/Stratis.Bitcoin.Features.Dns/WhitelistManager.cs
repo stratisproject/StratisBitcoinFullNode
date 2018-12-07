@@ -104,15 +104,15 @@ namespace Stratis.Bitcoin.Features.Dns
             this.fullNodeMode = this.dnsSettings.DnsFullNode;
 
             DateTimeOffset activePeerLimit = this.dateTimeProvider.GetTimeOffset().AddSeconds(-this.dnsPeerBlacklistThresholdInSeconds);
-            
+
             IEnumerable<PeerAddress> whitelist = this.peerAddressManager.Peers.Where(p => p.LastSeen > activePeerLimit);
-            
+
             if (!this.fullNodeMode)
             {
                 // Exclude the current external ip address from DNS as its not a full node.
                 whitelist = whitelist.Where(p => !p.Endpoint.Match(this.externalEndpoint));
             }
-            
+
             IMasterFile masterFile = new DnsSeedMasterFile();
             foreach (PeerAddress whitelistEntry in whitelist)
             {

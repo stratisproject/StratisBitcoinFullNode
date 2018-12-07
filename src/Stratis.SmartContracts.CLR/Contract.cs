@@ -4,8 +4,8 @@ using System.Linq;
 using System.Reflection;
 using System.Runtime.Serialization;
 using NBitcoin;
-using RuntimeObserver;
 using Stratis.SmartContracts.CLR.Exceptions;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {

@@ -4,7 +4,6 @@ using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 
 namespace Stratis.SmartContracts.Networks
@@ -16,14 +15,23 @@ namespace Stratis.SmartContracts.Networks
     {
         public SmartContractsPoATest()
         {
-            this.Name = "SmartContractsPoATest";
+            this.Name = "SmartContractsPoATest-0.13.0-beta";
             this.CoinTicker = "SCPOA";
 
             var consensusFactory = new SmartContractPoAConsensusFactory();
 
+            var messageStart = new byte[4];
+            messageStart[0] = 0x76;
+            messageStart[1] = 0x36;
+            messageStart[2] = 0x23;
+            messageStart[3] = 0x07; // Incremented 6/12/18
+            uint magic = BitConverter.ToUInt32(messageStart, 0);
+
+            this.Magic = magic;
+
             // Create the genesis block.
             this.GenesisTime = 1513622125;
-            this.GenesisNonce = 1560058197;
+            this.GenesisNonce = 1560058198; // Incremented 6/12/18
             this.GenesisBits = 402691653;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;

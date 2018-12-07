@@ -1,7 +1,7 @@
 ﻿using System;
 using System.Collections.Concurrent;
 
-namespace RuntimeObserver
+namespace Stratis.SmartContracts.RuntimeObserver
 {
     /// <summary>
     /// Global static, used to hold all of the Observers in memory. 
