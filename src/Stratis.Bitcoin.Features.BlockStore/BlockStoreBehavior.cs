@@ -154,10 +154,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     await this.ProcessGetBlocksAsync(peer, getBlocksPayload).ConfigureAwait(false);
                     break;
 
-                case SendCmpctPayload sendCmpctPayload:
-                    await this.ProcessSendCmpctPayloadAsync(peer, sendCmpctPayload).ConfigureAwait(false);
-                    break;
-
                 case SendHeadersPayload sendHeadersPayload:
                     this.PreferHeaders = true;
                     break;
@@ -283,12 +279,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 await peer.SendMessageAsync(inv).ConfigureAwait(false);
             }
             else this.logger.LogTrace("Nothing to send.");
-        }
-
-        private Task ProcessSendCmpctPayloadAsync(INetworkPeer peer, SendCmpctPayload sendCmpct)
-        {
-            // TODO: announce using compact blocks
-            return Task.CompletedTask;
         }
 
         private async Task ProcessGetDataAsync(INetworkPeer peer, GetDataPayload getDataPayload)

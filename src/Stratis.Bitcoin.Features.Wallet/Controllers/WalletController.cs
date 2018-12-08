@@ -797,7 +797,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Sends a transaction.
         /// </summary>
         /// <param name="request">The hex representing the transaction.</param>
-        /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
         public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
