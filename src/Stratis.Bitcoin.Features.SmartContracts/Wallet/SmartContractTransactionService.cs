@@ -6,9 +6,9 @@ using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -166,5 +166,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return BuildCreateContractTransactionResponse.Failed(exception.Message);
             }
         }
+
+        public ContractTxData BuildLocalCallTxData(LocalCallContractRequest request)
+        {
+            uint160 contractAddress = request.ContractAddress.ToUint160(this.network);
+
+            if (request.Parameters != null && request.Parameters.Any())
+            {
+                object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+
+                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);                
+            }
+
+            return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName);
+        }
+
     }
 }
