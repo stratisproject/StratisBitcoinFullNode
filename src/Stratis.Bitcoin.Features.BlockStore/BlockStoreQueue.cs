@@ -162,6 +162,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 throw new BlockStoreException("Block store initialized after consensus!");
             }
 
+            this.chainState.BlockStoreCacheTip = initializationTip;
+
             // Start dequeuing.
             this.currentBatchSizeBytes = 0;
             this.dequeueLoopTask = this.DequeueBlocksContinuouslyAsync();
@@ -305,6 +307,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
                     this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
+
+                this.chainState.BlockStoreCacheTip = chainedHeaderBlock.ChainedHeader;
             }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);

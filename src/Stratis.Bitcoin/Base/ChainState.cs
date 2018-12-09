@@ -14,6 +14,9 @@ namespace Stratis.Bitcoin.Base
         /// <summary>The highest stored block in the repository or <c>null</c> if block store feature is not enabled.</summary>
         ChainedHeader BlockStoreTip { get; set; }
 
+        /// <summary>The highest stored block in the block store cache or <c>null</c> if block store feature is not enabled.</summary>
+        ChainedHeader BlockStoreCacheTip { get; set; }
+
         /// <summary>Indicates whether consensus tip is equal to the tip of the most advanced peer node is connected to.</summary>
         bool IsAtBestChainTip { get; set; }
 
@@ -35,6 +38,9 @@ namespace Stratis.Bitcoin.Base
 
         /// <inheritdoc />
         public ChainedHeader BlockStoreTip { get; set; }
+
+        /// <inheritdoc />
+        public ChainedHeader BlockStoreCacheTip { get; set; }
 
         /// <inheritdoc />
         public bool IsAtBestChainTip { get; set; }

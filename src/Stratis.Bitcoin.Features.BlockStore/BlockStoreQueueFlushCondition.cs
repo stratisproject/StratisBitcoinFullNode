@@ -14,6 +14,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public bool ShouldFlush { get { return this.chainState.IsAtBestChainTip; } }
+        public bool ShouldFlush
+        {
+            get
+            {
+                // Once store is 5 blocks form the consensus tip then flush on every block.
+                if (this.chainState.ConsensusTip.Height - this.chainState.BlockStoreTip.Height < 5)
+                    return true;
+
+                return false;
+            }
+        }
     }
 }
