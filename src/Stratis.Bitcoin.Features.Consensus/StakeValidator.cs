@@ -283,6 +283,11 @@ namespace Stratis.Bitcoin.Features.Consensus
         public void CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins,
             OutPoint prevout, uint transactionTime)
         {
+            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(prevout, nameof(prevout));
+            Guard.NotNull(prevBlockStake, nameof(prevBlockStake));
+            Guard.NotNull(stakingCoins, nameof(stakingCoins));
+
             if (transactionTime < stakingCoins.Time)
             {
                 this.logger.LogTrace("Coinstake transaction timestamp {0} is lower than it's own UTXO timestamp {1}.", transactionTime, stakingCoins.Time);
@@ -333,6 +338,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc/>
         public bool VerifySignature(UnspentOutputs coin, Transaction txTo, int txToInN, ScriptVerify flagScriptVerify)
         {
+            Guard.NotNull(coin, nameof(coin));
+            Guard.NotNull(txTo, nameof(txTo));
+
+            if (txToInN < 0 || txToInN >= txTo.Inputs.Count)
+                return false;
+
             TxIn input = txTo.Inputs[txToInN];
 
             if (input.PrevOut.N >= coin.Outputs.Length)
@@ -375,7 +386,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             return res;
         }
 
-        // todo: docs
+        /// <inheritdoc />
         public long GetTargetDepthRequired(ChainedHeader prevChainedHeader)
         {
             Guard.NotNull(prevChainedHeader, nameof(ChainedHeader));
@@ -403,17 +414,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 array = new byte[missingZero].Concat(array).ToArray();
 
             return new uint256(array, false);
-        }
-
-        /// <summary>
-        /// Converts <see cref="uint256" /> to <see cref="BigInteger" />.
-        /// </summary>
-        /// <param name="input"><see cref="uint256"/> input value.</param>
-        /// <returns><see cref="BigInteger"/> version of <paramref name="input"/>.</returns>
-        private BigInteger FromUInt256(uint256 input)
-        {
-            return BigInteger.Zero;
-        }        
+        }    
     }
 }
 
