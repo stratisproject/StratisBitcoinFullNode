@@ -2,19 +2,19 @@
   "profiles": {
     "Stratis.FederationGatewayD Sidechain": {
       "commandName": "Project",
-      "commandLineArgs": "-sidechain -conf=apex.gateway.conf"
+      "commandLineArgs": "-sidechain"
     },
     "Stratis.FederationGatewayD Mainchain": {
       "commandName": "Project",
-      "commandLineArgs": "-mainchain -conf=stratis.gateway.conf"
+      "commandLineArgs": "-mainchain"
     },
     "Stratis.FederationGatewayD Sidechain - Test": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -sidechain -conf=apex.gateway.conf"
+      "commandLineArgs": "-testnet -sidechain"
     },
     "Stratis.FederationGatewayD Mainchain - Test": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -mainchain -conf=stratis.gateway.conf"
+      "commandLineArgs": "-testnet -mainchain"
     }
   }
 }
