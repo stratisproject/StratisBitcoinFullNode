@@ -285,7 +285,6 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(prevout, nameof(prevout));
-            Guard.NotNull(prevBlockStake, nameof(prevBlockStake));
             Guard.NotNull(stakingCoins, nameof(stakingCoins));
 
             if (transactionTime < stakingCoins.Time)
@@ -414,7 +413,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 array = new byte[missingZero].Concat(array).ToArray();
 
             return new uint256(array, false);
-        }    
+        }
     }
 }
 

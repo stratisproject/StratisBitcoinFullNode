@@ -690,73 +690,22 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         [Fact]
-        public void CheckProofOfStake_CoinsNotInCoinView_ThrowsConsensusError()
+        public void CheckProofOfStake_UTXONotInUnspentOutputSet_ThrowsConsensusError()
         {
             var chainedHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
             var transaction = CreateStubCoinStakeTransaction();
             Assert.True(transaction.IsCoinStake);
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync((FetchCoinsResponse)null);
-
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(new PosRuleContext(), chainedHeader, new BlockStake(), transaction, 15));
-            Assert.Equal(ConsensusErrors.ReadTxPrevFailed.Code, exception.ConsensusError.Code);
-        }
-
-        [Fact]
-        public void CheckProofOfStake_LessThanOneCoinsInCoinView_ThrowsConsensusError()
-        {
-            var chainedHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
-            var transaction = CreateStubCoinStakeTransaction();
-            Assert.True(transaction.IsCoinStake);
-
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[0], uint256.One));
-
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(new PosRuleContext(), chainedHeader, new BlockStake(), transaction, 15));
-            Assert.Equal(ConsensusErrors.ReadTxPrevFailed.Code, exception.ConsensusError.Code);
-        }
-
-        [Fact]
-        public void CheckProofOfStake_MoreThanOneCoinsInCoinView_ThrowsConsensusError()
-        {
-            var chainedHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
-            var transaction = CreateStubCoinStakeTransaction();
-            Assert.True(transaction.IsCoinStake);
-
-            var unspentoutputs = new UnspentOutputs[]
+            var context = new PosRuleContext()
             {
-                new UnspentOutputs(),
-                new UnspentOutputs(),
+                UnspentOutputSet = new UnspentOutputSet()
             };
+            context.UnspentOutputSet.SetCoins(new UnspentOutputs[0]);
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, uint256.One));
-
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(new PosRuleContext(), chainedHeader, new BlockStake(), transaction, 15));
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(context, chainedHeader, new BlockStake(), transaction, 15));
             Assert.Equal(ConsensusErrors.ReadTxPrevFailed.Code, exception.ConsensusError.Code);
         }
-
-
-        [Fact]
-        public void CheckProofOfStake_SingleNullValueCoinInCoinView_ThrowsConsensusError()
-        {
-            var chainedHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
-            var transaction = CreateStubCoinStakeTransaction();
-            Assert.True(transaction.IsCoinStake);
-
-            var unspentoutputs = new UnspentOutputs[]
-            {
-                null
-            };
-
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, uint256.One));
-
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(new PosRuleContext(), chainedHeader, new BlockStake(), transaction, 15));
-            Assert.Equal(ConsensusErrors.ReadTxPrevFailed.Code, exception.ConsensusError.Code);
-        }
-
+    
         [Fact]
         public void CheckProofOfStake_InvalidSignature_ThrowsConsensusError()
         {
@@ -769,16 +718,19 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             var unspentoutputs = new UnspentOutputs[]
             {
-                new UnspentOutputs()
-                {
+                new UnspentOutputs(transaction.Inputs[0].PrevOut.Hash, new NBitcoin.BitcoinCore.Coins(transaction, 15))
+                {                    
                     Outputs = new TxOut[] { new TxOut() }
                 }
             };
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, uint256.One)); // invalid hash not matching previousTx
+            var context = new PosRuleContext()
+            {
+                UnspentOutputSet = new UnspentOutputSet()
+            };
+            context.UnspentOutputSet.SetCoins(unspentoutputs);
 
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(new PosRuleContext(), chainedHeader, new BlockStake(), transaction, 15));
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(context, chainedHeader, new BlockStake(), transaction, 15));
             Assert.Equal(ConsensusErrors.CoinstakeVerifySignatureFailed.Code, exception.ConsensusError.Code);
         }
 
@@ -807,10 +759,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var chainedHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
             Assert.True(input1.IsCoinStake);
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
-                .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[] { unspentoutputs }, uint256.One));
+            var context = new PosRuleContext()
+            {
+                UnspentOutputSet = new UnspentOutputSet()
+            };
+            context.UnspentOutputSet.SetCoins(new UnspentOutputs[] { unspentoutputs });
 
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(new PosRuleContext(), chainedHeader, new BlockStake(), input1, 15));
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(context, chainedHeader, new BlockStake(), input1, 15));
 
             Assert.Equal(ConsensusErrors.InvalidStakeDepth.Code, exception.ConsensusError.Code);
         }
@@ -838,8 +793,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             CreateCreditAndSpend(keystore, scriptPubkey1, ref output1, ref input1, output1Satoshis: satoshis);
 
             var unspentoutputs = new UnspentOutputs(output1.GetHash(), new NBitcoin.BitcoinCore.Coins(output1, 1));
-
-            // var chainedHeader = ChainedHeadersHelper.CreateGenesisChainedHeader();
             var chainedHeader = ChainedHeadersHelper.CreateConsecutiveHeaders(15).Last();
 
             Assert.True(input1.IsCoinStake);
@@ -850,7 +803,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var headerbits = Target.Difficulty1.ToCompact();
             var blockStake = new BlockStake() { StakeModifierV2 = uint256.Zero };
 
-            this.stakeValidator.CheckProofOfStake(new PosRuleContext(), chainedHeader, blockStake, input1, headerbits);
+            var context = new PosRuleContext()
+            {
+                UnspentOutputSet = new UnspentOutputSet()
+            };
+            context.UnspentOutputSet.SetCoins(new UnspentOutputs[] { unspentoutputs });
+
+            this.stakeValidator.CheckProofOfStake(context, chainedHeader, blockStake, input1, headerbits);
         }
 
         [Fact]
@@ -863,7 +822,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             uint transactionTime = Utils.DateTimeToUnixTime(posTimeStamp);
             UnspentOutputs stakingCoins = new UnspentOutputs(15, transaction);
 
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), 0, new BlockStake(), stakingCoins, new OutPoint(), transactionTime));
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), 0, uint256.Zero, stakingCoins, new OutPoint(), transactionTime));
 
             Assert.Equal(ConsensusErrors.StakeTimeViolation.Code, exception.ConsensusError.Code);
         }
@@ -879,7 +838,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             UnspentOutputs stakingCoins = new UnspentOutputs(15, transaction);
             var outpoint = new OutPoint(transaction, 1);
 
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), 0, new BlockStake(), stakingCoins, outpoint, transactionTime));
+            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), 0, uint256.Zero, stakingCoins, outpoint, transactionTime));
 
             Assert.Equal(ConsensusErrors.StakeHashInvalidTarget.Code, exception.ConsensusError.Code);
         }
@@ -896,9 +855,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             UnspentOutputs stakingCoins = new UnspentOutputs(15, transaction);
             var outpoint = new OutPoint(transaction, 1);
             var headerbits = Target.Difficulty1.ToCompact();
-            var blockStake = new BlockStake() { StakeModifierV2 = uint256.Zero };
 
-            this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), headerbits, blockStake, stakingCoins, outpoint, transactionTime);
+            this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), headerbits, uint256.Zero, stakingCoins, outpoint, transactionTime);
         }
 
         [Fact]
@@ -913,9 +871,8 @@ namespace Stratis.Bitcoin.Tests.Consensus
             UnspentOutputs stakingCoins = new UnspentOutputs(15, transaction);
             var outpoint = new OutPoint(transaction, 1);
             var headerbits = Target.Difficulty1.ToCompact();
-            var blockStake = new BlockStake() { StakeModifierV2 = uint256.Zero };
 
-            this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), headerbits, blockStake, stakingCoins, outpoint, transactionTime);
+            this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), headerbits, uint256.Zero, stakingCoins, outpoint, transactionTime);
         }
 
         [Fact]
@@ -930,16 +887,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             UnspentOutputs stakingCoins = new UnspentOutputs(15, transaction);
             var outpoint = new OutPoint(transaction, 1);
             var headerbits = Target.Difficulty1.ToCompact();
-            var blockStake = new BlockStake() { StakeModifierV2 = uint256.Zero };
 
-            this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), headerbits, blockStake, stakingCoins, outpoint, transactionTime);
+            this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), headerbits, uint256.Zero, stakingCoins, outpoint, transactionTime);
         }
 
 
         [Fact]
         public void ComputeStakeModifierV2_PrevChainedHeaderNull_ReturnsZero()
         {
-            var result = this.stakeValidator.ComputeStakeModifierV2(null, null, uint256.One);
+            var result = this.stakeValidator.ComputeStakeModifierV2(null, uint256.Zero, uint256.One);
 
             Assert.Equal(uint256.Zero, result);
         }
@@ -947,12 +903,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ComputeStakeModifierV2_UsingBlockStakeAndKernel_CalculatesStakeModifierHash()
         {
-            var blockStake = new BlockStake()
-            {
-                StakeModifierV2 = 1273671
-            };
-
-            var result = this.stakeValidator.ComputeStakeModifierV2(ChainedHeadersHelper.CreateGenesisChainedHeader(), blockStake, uint256.One);
+            var result = this.stakeValidator.ComputeStakeModifierV2(ChainedHeadersHelper.CreateGenesisChainedHeader(), 1273671, uint256.One);
 
             Assert.Equal(new uint256("9a37d63a1cddaeb9b018d24f05020d46945b0292f5642cbbcf3b204a14d3748d"), result);
         }
@@ -960,12 +911,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ComputeStakeModifierV2_UsingChangedBlockStakeAndKernel_CalculatesStakeModifierHash()
         {
-            var blockStake = new BlockStake()
-            {
-                StakeModifierV2 = 12
-            };
-
-            var result = this.stakeValidator.ComputeStakeModifierV2(ChainedHeadersHelper.CreateGenesisChainedHeader(), blockStake, uint256.One);
+            var result = this.stakeValidator.ComputeStakeModifierV2(ChainedHeadersHelper.CreateGenesisChainedHeader(), 12, uint256.One);
 
             Assert.Equal(new uint256("f9a82ef89e0bf841dd9a6b5cea0131a61ea3e2e4a3d1ab56eca5a8ee4da1dade"), result);
         }
@@ -974,12 +920,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void ComputeStakeModifierV2_UsingBlockStakeAndChangedKernel_CalculatesStakeModifierHash()
         {
-            var blockStake = new BlockStake()
-            {
-                StakeModifierV2 = 1273671
-            };
-
-            var result = this.stakeValidator.ComputeStakeModifierV2(ChainedHeadersHelper.CreateGenesisChainedHeader(), blockStake, new uint256(2));
+            var result = this.stakeValidator.ComputeStakeModifierV2(ChainedHeadersHelper.CreateGenesisChainedHeader(), 1273671, new uint256(2));
 
             Assert.Equal(new uint256("8e6316364421f6afe6d18a799e2643b4226f0ca3d60e9a71f6064908aafbe65a"), result);
         }
