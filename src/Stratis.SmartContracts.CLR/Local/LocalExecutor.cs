@@ -1,9 +1,8 @@
 ﻿using System.Linq;
-using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
+using NBitcoin;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.CLR.Local
 {
@@ -34,24 +33,20 @@ namespace Stratis.SmartContracts.CLR.Local
             this.contractPrimitiveSerializer = contractPrimitiveSerializer;
         }
 
-        public ILocalExecutionResult Execute(IContractTransactionContext transactionContext)
+        public ILocalExecutionResult Execute(ulong blockHeight, uint160 sender, Money txOutValue, ContractTxData callData)
         {
-            Result<ContractTxData> callDataDeserializationResult = this.serializer.Deserialize(transactionContext.Data);
-
-            ContractTxData callData = callDataDeserializationResult.Value;
-
             bool creation = callData.IsCreateContract;
 
             var block = new Block(
-                transactionContext.BlockHeight,
-                transactionContext.CoinbaseAddress.ToAddress()
+                blockHeight,
+                Address.Zero
             );
 
             IState state = this.stateFactory.Create(
                 this.stateRoot.StartTracking(),
                 block,
-                transactionContext.TxOutValue,
-                transactionContext.TransactionHash);
+                txOutValue,
+                new uint256());
 
             StateTransitionResult result;
             IState newState = state.Snapshot();
@@ -59,8 +54,8 @@ namespace Stratis.SmartContracts.CLR.Local
             if (creation)
             {
                 var message = new ExternalCreateMessage(
-                    transactionContext.Sender,
-                    transactionContext.TxOutValue,
+                    sender,
+                    txOutValue,
                     callData.GasLimit,
                     callData.ContractExecutionCode,
                     callData.MethodParameters
@@ -72,8 +67,8 @@ namespace Stratis.SmartContracts.CLR.Local
             {
                 var message = new ExternalCallMessage(
                         callData.ContractAddress,
-                        transactionContext.Sender,
-                        transactionContext.TxOutValue,
+                        sender,
+                        txOutValue,
                         callData.GasLimit,
                         new MethodCall(callData.MethodName, callData.MethodParameters)
                 );
