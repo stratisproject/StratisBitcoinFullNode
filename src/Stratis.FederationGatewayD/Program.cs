@@ -44,12 +44,9 @@ namespace Stratis.FederationGatewayD
                     throw new ArgumentException($"Gateway node needs to be started specifying either a {SidechainArgument} or a {MainchainArgument} argument");
                 }
 
-                var nodeSettings = new NodeSettings(networksSelector: isMainchainNode ? Networks.Stratis : FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
-                Network network = nodeSettings.Network;
-
                 IFullNode node = isMainchainNode
-                    ? GetMainchainFullNode(nodeSettings)
-                    : GetSidechainFullNode(nodeSettings);
+                    ? GetMainchainFullNode(args)
+                    : GetSidechainFullNode(args);
 
                 if (node != null)
                     await node.RunAsync();
@@ -60,8 +57,10 @@ namespace Stratis.FederationGatewayD
             }
         }
 
-        private static IFullNode GetMainchainFullNode(NodeSettings nodeSettings)
+        private static IFullNode GetMainchainFullNode(string[] args)
         {
+            var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args);
+
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
@@ -78,8 +77,10 @@ namespace Stratis.FederationGatewayD
             return node;
         }
 
-        private static IFullNode GetSidechainFullNode(NodeSettings nodeSettings)
+        private static IFullNode GetSidechainFullNode(string[] args)
         {
+            var nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
