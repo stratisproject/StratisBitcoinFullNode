@@ -63,23 +63,5 @@ namespace Stratis.SidechainD
                 .Build();
             return node;
         }
-
-        protected static IEnumerable<NetworkAddress> ConvertToNetworkAddresses(string[] seeds, int defaultPort)
-        {
-            var rand = new Random();
-            TimeSpan oneWeek = TimeSpan.FromDays(7);
-
-            foreach (string seed in seeds)
-            {
-                // It'll only connect to one or two seed nodes because once it connects,
-                // it'll get a pile of addresses with newer timestamps.
-                // Seed nodes are given a random 'last seen time' of between one and two weeks ago.
-                yield return new NetworkAddress
-                {
-                    Time = DateTime.UtcNow - TimeSpan.FromSeconds(rand.NextDouble() * oneWeek.TotalSeconds) - oneWeek,
-                    Endpoint = Utils.ParseIpEndpoint(seed, defaultPort)
-                };
-            }
-        }
     }
 }

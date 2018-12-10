@@ -12,7 +12,7 @@ namespace Stratis.Sidechains.Networks
     /// <summary>
     /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
     /// </summary>
-    public class FederatedPegTest : Network
+    public class FederatedPegTest : PoANetwork
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
         private const string NetworkRootFolderName = "fedpeg";
@@ -59,7 +59,7 @@ namespace Stratis.Sidechains.Networks
             var federationPubKeys = new List<PubKey>()
             {
                 new PubKey("03e89abd3c9e791f4fb13ced638457c85beb4aff74d37b3fe031cd888f0f92989e"), // I
-                new PubKey("036f77376cb171fc57dfbe1b9176d72af37c92482a25ead936342c58c29aa0c9eb"), // J
+                new PubKey("026b7b9092828f3bf9e73995bfa3547c3bcd3814f8101fac626b8349d9a6f0e534"), // J
                 new PubKey("02a8a565bf3c675aee4eb8585771c7517e358708faee4f9db2ed7502d7f9dae740"), // L
                 new PubKey("0248de019680c6f18e434547c8c9d48965b656b8e5e70c5a5564cfb1270db79a11"), // M
                 new PubKey("034bd1a94b0ae315f584ecd22b2ad8fa35056cc70862f33e3e08286f3bbe2207c4")  // P
