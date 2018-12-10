@@ -78,9 +78,14 @@ namespace Stratis.Bitcoin.Features.Miner
                 this.futureDriftRule = this.ConsensusManager.ConsensusRules.GetRule<PosFutureDriftRule>();
 
             long adjustedTime = this.DateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+            long latestValidTime = adjustedTime + this.futureDriftRule.GetFutureDrift(adjustedTime);
 
-            if (entry.Transaction.Time > adjustedTime + this.futureDriftRule.GetFutureDrift(adjustedTime))
+            if (entry.Transaction.Time > latestValidTime)
+            {
+                this.logger.LogDebug("Transaction '{0}' has timestamp of {1} but latest valid tx time that can be mined is {2}.", entry.TransactionHash, entry.Transaction.Time, latestValidTime);
+                this.logger.LogTrace("(-)[TOO_EARLY_TO_MINE_TX]:false");
                 return false;
+            }
 
             return base.TestPackage(entry, packageSize, packageSigOpsCost);
         }
