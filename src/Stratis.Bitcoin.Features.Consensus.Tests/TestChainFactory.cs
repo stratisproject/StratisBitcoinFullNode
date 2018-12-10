@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.DateTimeProvider, testChainContext.LoggerFactory);
 
-            var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(testChainContext.ChainState);
+            var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(testChainContext.ChainState, testChainContext.InitialBlockDownloadState);
 
             var blockStore = new BlockStoreQueue(testChainContext.Chain, testChainContext.ChainState, blockStoreFlushCondition, new Mock<StoreSettings>().Object,
                 blockRepository, testChainContext.LoggerFactory, new Mock<INodeStats>().Object);

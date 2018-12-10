@@ -232,8 +232,8 @@ namespace Stratis.Bitcoin.Connection
             {
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
-                string peerHeights = $"(r/s):{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "-")}";
-                peerHeights += $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion?.StartHeight.ToString() ?? "-")}";
+                string peerHeights = $"(r/s):{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
+                peerHeights += $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 peerBuilder.AppendLine(

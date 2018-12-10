@@ -5,6 +5,7 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -17,6 +18,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         private ConcurrentChain chain;
         private readonly ILoggerFactory loggerFactory;
         private Mock<IConsensusManager> consensusManager;
+        private Mock<IBlockStoreQueue> blockStore;
 
         public BlockStoreBehaviorTest()
         {
@@ -24,8 +26,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.chain = new ConcurrentChain(KnownNetworks.StratisMain);
             this.chainState = new Mock<IChainState>();
             this.consensusManager = new Mock<IConsensusManager>();
+            this.blockStore = new Mock<IBlockStoreQueue>();
 
-            this.behavior = new BlockStoreBehavior(this.chain, this.chainState.Object, this.loggerFactory, this.consensusManager.Object);
+            this.behavior = new BlockStoreBehavior(this.chain, this.chainState.Object, this.loggerFactory, this.consensusManager.Object, this.blockStore.Object);
         }
 
         [Fact]

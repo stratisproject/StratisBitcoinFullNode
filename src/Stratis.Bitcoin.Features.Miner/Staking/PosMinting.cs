@@ -554,7 +554,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     {
                         if (block.Transactions[i].Time > block.Header.Time)
                         {
-                            this.logger.LogTrace("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
+                            this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
                             block.Transactions.Remove(block.Transactions[i]);
                         }
                     }
