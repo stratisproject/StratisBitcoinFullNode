@@ -5,6 +5,7 @@ using System.Runtime.CompilerServices;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Policy;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
@@ -76,6 +77,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
+        /// <summary>The withdrawal extractor used to extract withdrawals from transactions.</summary>
+        private readonly IWithdrawalExtractor withdrawalExtractor;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -122,6 +126,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             INodeLifetime nodeLifetime,
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
+            IWithdrawalExtractor withdrawalExtractor,
             IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -131,6 +136,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             Guard.NotNull(walletFeePolicy, nameof(walletFeePolicy));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
+            Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
 
             this.lockObject = new object();
 
@@ -145,6 +152,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.broadcasterManager = broadcasterManager;
             this.dateTimeProvider = dateTimeProvider;
             this.federationGatewaySettings = federationGatewaySettings;
+            this.withdrawalExtractor = withdrawalExtractor;
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
 
             // register events
@@ -390,6 +398,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             }
 
             bool foundReceivingTrx = false, foundSendingTrx = false;
+
+            // Remove this transaction if already present and unspent.
+            IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, block?.GetHash(), blockHeight ?? 0);
+            if (withdrawal != null)
+            {
+                // Exit if final.
+                if (withdrawal.BlockNumber != 0)
+                    return false;
+
+                // Remove this to prevent duplicates if the transaction hash has changed.
+                this.RemoveTransientTransactions(withdrawal.DepositId);
+            }
 
             lock (this.lockObject)
             {
@@ -752,30 +772,123 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
-        public void UpdateTransientTransactionDetails(uint256 oldTransactionId, Transaction transaction)
+        public bool RemoveTransientTransactions(uint256 depositId = null)
         {
             lock (this.lockObject)
             {
-                ICollection<TransactionData> transactions = this.Wallet.MultiSigAddress.Transactions;
-                TransactionData transactionData = transactions.Where(t => t.Id == oldTransactionId).FirstOrDefault();
+                // Remove transient transactions not seen in a block yet.
+                bool walletUpdated = false;
 
-                Guard.NotNull(transactionData, nameof(transactionData));
-                Guard.Assert(transactionData.IsPropagated != true);
-
-                // Find references to the old transaction id and update with the new transaction details.
-                foreach (SpendingDetails spendingDetails in transactions
-                    .Select(t => t.SpendingDetails)
-                    .Where(s => s != null && s.TransactionId == oldTransactionId))
+                foreach ((Transaction transaction, TransactionData transactionData) in FindWithdrawalTransactions(depositId)
+                    .Where(w => w.Item2.BlockHash == null))
                 {
-                    spendingDetails.TransactionId = transaction.GetHash();
-                    spendingDetails.Hex = transaction.ToHex(this.network);
+                    Guard.Assert(transactionData.SpendingDetails == null);
+                    RemoveTransaction(transaction);
                 }
 
-                transactionData.Id = transaction.GetHash();
-                transactionData.Hex = transaction.ToHex(this.network);
+                return walletUpdated;
+            }
+        }
 
-                this.outpointLookup.Clear();
-                this.LoadKeysLookupLock();
+        /// <inheritdoc />
+        public List<(Transaction, TransactionData)> FindWithdrawalTransactions(uint256 depositId = null, uint256 transactionId = null)
+        {
+            lock (this.lockObject)
+            {
+                var withdrawals = new List<(Transaction, TransactionData)>();
+
+                foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
+                {
+                    if (transactionId != null && transactionData.Id != transactionId)
+                        continue;
+
+                    Transaction walletTran = transactionData.GetFullTransaction(this.network);
+                    IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTran, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
+                    if (withdrawal == null)
+                        continue;
+
+                    if (depositId != null && withdrawal.DepositId != depositId)
+                        continue;
+
+                    withdrawals.Add((walletTran, transactionData));
+                }
+
+                return withdrawals;
+            }
+        }
+
+        /// <summary>
+        /// Checks if a transaction has valid UTXOs that are spent by it.
+        /// </summary>
+        /// <param name="transaction">The transaction to check.</param>
+        /// <param name="coins">Returns the coins found if this parameter supplies an empty coin list.</param>
+        /// <returns><c>True</c> if UTXO's are valid and <c>false</c> otherwise.</returns>
+        private bool TransactionHasValidUTXOs(Transaction transaction, List<Coin> coins = null)
+        {
+            lock (this.lockObject)
+            {
+                // All the input UTXO's should be present in spending details of the multi-sig address.
+                foreach (TxIn input in transaction.Inputs)
+                {
+                    foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions
+                        .Where(t => t.SpendingDetails != null && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N))
+                    {
+                        // Check that the previous outputs are only spent by this transaction.
+                        if (transactionData == null || transactionData.SpendingDetails.TransactionId != transaction.GetHash())
+                            return false;
+
+                        coins?.Add(new Coin(transactionData.Id, (uint)transactionData.Index, transactionData.Amount, transactionData.ScriptPubKey));
+                    }
+                }
+
+                return true;
+            }
+        }
+
+        /// <inheritdoc />
+        public int CompareOutpoints(OutPoint outPoint1, OutPoint outPoint2)
+        {
+            lock (this.lockObject)
+            {
+                TransactionData transactionData1 = this.outpointLookup[outPoint1];
+                TransactionData transactionData2 = this.outpointLookup[outPoint2];
+
+                return FederationWalletTransactionHandler.CompareTransactionData(transactionData1, transactionData2);
+            }
+        }
+
+        /// <inheritdoc />
+        public bool ValidateTransaction(Transaction transaction, bool checkSignature = false)
+        {
+            lock (this.lockObject)
+            {
+                // All the input UTXO's should be present in spending details of the multi-sig address.
+                List<Coin> coins = checkSignature ? new List<Coin>() : null;
+                // Verify that the transaction has valid UTXOs.
+                if (!TransactionHasValidUTXOs(transaction, coins))
+                    return false;
+
+                // Verify that there are no earler unspent UTXOs.
+                var comparer = Comparer<TransactionData>.Create((x, y) => FederationWalletTransactionHandler.CompareTransactionData(x, y));
+                TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails == null).OrderBy(t => t, comparer).FirstOrDefault();
+                if (earliestUnspent != null)
+                {
+                    TransactionData oldestInput = transaction.Inputs.Select(i => this.outpointLookup[i.PrevOut]).OrderByDescending(t => t, comparer).FirstOrDefault();
+                    if (oldestInput != null && FederationWalletTransactionHandler.CompareTransactionData(earliestUnspent, oldestInput) < 0)
+                        return false;
+                }
+
+                // Verify that all inputs are signed.
+                if (checkSignature)
+                {
+                    TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
+                    if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee, out TransactionPolicyError[] errors))
+                    {
+                        return false;
+                    }
+                }
+
+                return true;
             }
         }
 
@@ -795,6 +908,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
 
             return false;
+        }
+
+        /// <summary>
+        /// Identifies the earliest multisig transaction data input associated with a transaction.
+        /// </summary>
+        /// <param name="transaction">The transaction to find the earliest multisig transaction data input for.</param>
+        /// <returns>The earliest multisig transaction data input.</returns>
+        private TransactionData MultiSigInput(Transaction transaction)
+        {
+            foreach (TxIn input in transaction.Inputs)
+            {
+                Wallet.TransactionData transactionData = this.Wallet.MultiSigAddress.Transactions
+                    .Where(t => t?.SpendingDetails?.TransactionId == transaction.GetHash() && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N)
+                    .FirstOrDefault();
+
+                if (transactionData != null)
+                    return transactionData;
+            }
+
+            return null;
         }
 
         /// <inheritdoc />
