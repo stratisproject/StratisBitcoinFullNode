@@ -4,7 +4,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Script = NBitcoin.Script;
@@ -38,7 +37,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                                    ? this.payToMultisigScript 
                                    : this.payToMemberScript;
 
-            base.OnBuild(chainTip, this.payToMultisigScript);
+            base.OnBuild(chainTip, rewardScript);
 
             return this.BlockTemplate;
         }
