@@ -1,12 +1,12 @@
 # City Chain - Continuous Integration Setup for Azure DevOps
 
-trigger:
- batch: true
- branches:
-   include:
-   - master
-   exclude:
-   - v* #Exclude verions tags
+#trigger:
+# batch: true
+# branches:
+#   include:
+#   - master
+#   exclude:
+#   - v* #Exclude verions tags
 
 phases:
 - template: build.yml
