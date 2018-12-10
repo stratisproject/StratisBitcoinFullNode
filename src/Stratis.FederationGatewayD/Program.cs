@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -12,8 +11,9 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
-using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.RPC;
+using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
@@ -84,10 +84,12 @@ namespace Stratis.FederationGatewayD
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
+                .AddSmartContracts()
+                .UseSmartContractWallet()
+                .UseReflectionExecutor()
                 .AddFederationGateway()
                 .UseFederatedPegPoAMining()
                 .UseMempool()
-                .UseWallet()
                 .UseTransactionNotification()
                 .UseBlockNotification()
                 .UseApi()
