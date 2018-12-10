@@ -308,8 +308,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (hashProofOfStakeTarget.CompareTo(weightedTarget) > 0)
             {
                 this.logger.LogTrace("(-)[TARGET_MISSED]");
-                //TODO: Add this back in after we start staking with proven headers.
-                //ConsensusErrors.StakeHashInvalidTarget.Throw();
+                ConsensusErrors.StakeHashInvalidTarget.Throw();
             }
         }
 
