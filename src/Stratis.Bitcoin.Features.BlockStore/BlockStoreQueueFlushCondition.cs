@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 int distanceFromConsensusTip = this.chainState.ConsensusTip.Height - this.chainState.BlockStoreTip.Height;
 
-                // Once store is 5 blocks form the consensus tip then flush on every block.
+                // Once store is less then 5 blocks form the consensus tip then flush on every block.
                 if (distanceFromConsensusTip < 5)
                     return true;
 

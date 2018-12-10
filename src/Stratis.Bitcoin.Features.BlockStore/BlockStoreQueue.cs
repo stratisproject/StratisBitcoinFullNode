@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly CancellationTokenSource cancellation;
 
-        /// <inheritdoc cref="IBlockStoreQueue.BlockStoreCacheTip"/>
+        /// <inheritdoc/>
         public ChainedHeader BlockStoreCacheTip { get; private set; }
 
         public BlockStoreQueue(
