@@ -40,6 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         protected readonly ConcurrentChain chain;
 
         protected readonly IConsensusManager consensusManager;
+        protected readonly IBlockStoreQueue blockStoreQueue;
 
         protected ConsensusManagerBehavior consensusManagerBehavior;
 
@@ -76,17 +77,19 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected readonly IChainState chainState;
 
-        public BlockStoreBehavior(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
+        public BlockStoreBehavior(ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, IBlockStoreQueue blockStoreQueue)
         {
             Guard.NotNull(chain, nameof(chain));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(consensusManager, nameof(consensusManager));
+            Guard.NotNull(blockStoreQueue, nameof(blockStoreQueue));
 
             this.chain = chain;
             this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.loggerFactory = loggerFactory;
             this.consensusManager = consensusManager;
+            this.blockStoreQueue = blockStoreQueue;
 
             this.CanRespondToGetBlocksPayload = true;
             this.CanRespondToGetDataPayload = true;
@@ -179,7 +182,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             // We only want to work with blocks that are in the store,
             // so we first get information about the store's tip.
-            ChainedHeader blockStoreTip = this.chainState.BlockStoreCacheTip;
+            ChainedHeader blockStoreTip = this.blockStoreQueue.BlockStoreCacheTip;
             if (blockStoreTip == null)
             {
                 this.logger.LogTrace("(-)[REORG]");
@@ -308,7 +311,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.getBlocksBatchLastItemHash = null;
 
                     // Announce last block we have in the store.
-                    ChainedHeader blockStoreTip = this.chainState.BlockStoreCacheTip;
+                    ChainedHeader blockStoreTip = this.blockStoreQueue.BlockStoreCacheTip;
                     if (blockStoreTip != null)
                     {
                         this.logger.LogDebug("Sending continuation inventory message for block '{0}' to peer '{1}'.", blockStoreTip, peer.RemoteSocketEndpoint);
@@ -492,7 +495,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         [NoTrace]
         public override object Clone()
         {
-            var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager)
+            var res = new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload

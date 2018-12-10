@@ -80,6 +80,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly CancellationTokenSource cancellation;
 
+        /// <inheritdoc cref="IBlockStoreQueue.BlockStoreCacheTip"/>
+        public ChainedHeader BlockStoreCacheTip { get; private set; }
+
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
@@ -162,7 +165,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 throw new BlockStoreException("Block store initialized after consensus!");
             }
 
-            this.chainState.BlockStoreCacheTip = initializationTip;
+            this.BlockStoreCacheTip = initializationTip;
 
             // Start dequeuing.
             this.currentBatchSizeBytes = 0;
@@ -308,7 +311,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
 
-                this.chainState.BlockStoreCacheTip = chainedHeaderBlock.ChainedHeader;
+                this.BlockStoreCacheTip = chainedHeaderBlock.ChainedHeader;
             }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
