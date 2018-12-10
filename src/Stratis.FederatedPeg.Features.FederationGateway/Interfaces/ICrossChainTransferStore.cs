@@ -45,8 +45,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// Returns transactions by status. Orders the results by UTXO selection order.
         /// </summary>
         /// <param name="status">The status to get the transactions for.</param>
+        /// <param name="sort">Set to <c>true</c> to sort the transfers by their earliest inputs.</param>
         /// <returns>An array of transactions.</returns>
-        Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status);
+        Task<Dictionary<uint256, Transaction>> GetTransactionsByStatusAsync(CrossChainTransferStatus status, bool sort = false);
 
         /// <summary>
         /// Updates partial transactions in the store with signatures obtained from the passed transactions.

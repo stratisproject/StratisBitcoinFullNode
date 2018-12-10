@@ -83,17 +83,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             this.asyncLoop = this.asyncLoopFactory.Run(nameof(PartialTransactionRequester), token =>
             {
-                Dictionary<uint256, Transaction> transactions = this.crossChainTransferStore.GetTransactionsByStatusAsync(
-                    CrossChainTransferStatus.Partial).GetAwaiter().GetResult();
+                // Broadcast the partial transaction with the earliest inputs.
+                KeyValuePair<uint256, Transaction> kv = this.crossChainTransferStore.GetTransactionsByStatusAsync(
+                    CrossChainTransferStatus.Partial, true).GetAwaiter().GetResult().FirstOrDefault();
 
-                foreach (KeyValuePair<uint256, Transaction> kv in transactions)
+                if (kv.Key != null)
                 {
                     BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value)).GetAwaiter().GetResult();
-                }
-
-                if (transactions.Count > 0)
-                {
-                    this.logger.LogInformation("Partial templates requested");
+                    this.logger.LogInformation("Partial template requested");
                 }
 
                 this.logger.LogTrace("(-)[PARTIAL_TEMPLATES_JOB]");

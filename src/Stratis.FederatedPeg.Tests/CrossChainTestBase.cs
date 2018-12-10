@@ -175,7 +175,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.asyncLoopFactory,
                 new NodeLifetime(),
                 this.dateTimeProvider,
-                this.federationGatewaySettings);
+                this.federationGatewaySettings,
+                this.withdrawalExtractor);
 
             // Starts and creates the wallet.
             this.federationWalletManager.Start();

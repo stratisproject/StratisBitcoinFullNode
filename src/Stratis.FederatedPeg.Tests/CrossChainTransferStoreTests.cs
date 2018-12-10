@@ -436,7 +436,7 @@ namespace Stratis.FederatedPeg.Tests
         /// Check that partial transactions present in the store cause partial transaction requests made to peers.
         /// </summary>
         [Fact]
-        public void StoredPartialTransactionsTriggerSignatureRequests()
+        public void StoredPartialTransactionsTriggerSignatureRequest()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
 
@@ -496,7 +496,7 @@ namespace Stratis.FederatedPeg.Tests
                 peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 0 && o.PartialTransaction.GetHash() == transactions[0].GetHash())).GetAwaiter().GetResult();
 
-                peer.Received().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
+                peer.DidNotReceive().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
             }
         }
