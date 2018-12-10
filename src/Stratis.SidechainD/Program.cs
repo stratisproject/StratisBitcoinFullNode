@@ -1,8 +1,6 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
@@ -10,9 +8,10 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Sidechains.Networks;
 
@@ -55,9 +54,12 @@ namespace Stratis.SidechainD
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
-                .UsePoAConsensus()
+                .AddSmartContracts()
+                .UseSmartContractPoAConsensus()
+                .UseSmartContractPoAMining()
+                .UseSmartContractWallet()
+                .UseReflectionExecutor()
                 .UseMempool()
-                .UseWallet()
                 .UseApi()
                 .AddRPC()
                 .Build();
