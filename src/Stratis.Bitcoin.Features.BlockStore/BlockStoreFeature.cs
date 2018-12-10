@@ -94,11 +94,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
             if (this.network.Consensus.IsProofOfStake)
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue));
             }
             else
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue));
             }
 
             // Signal to peers that this node can serve blocks.
