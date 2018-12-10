@@ -107,7 +107,7 @@
                         .UseBlockExplorer()
                         .UsePosConsensus()
                         .UseMempool()
-                        .UseWallet()
+                        //.UseWallet()
                         .UseColdStakingWallet()
                         .AddPowPosMining()
                         .UseApi()
