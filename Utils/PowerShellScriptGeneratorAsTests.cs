@@ -78,7 +78,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.federationMemberIndexes.ForEach(i =>
             {
                 var privateKey = this.mnemonics[i].DeriveExtKey().PrivateKey;
-                var targetFile = $"$root_datadir\\gateway{i + 1}\\poa\\FederatedPegTest\\federationKey.dat";
+                var targetFile = $"$root_datadir\\gateway{i + 1}\\fedpeg\\FederatedPegRegTest\\federationKey.dat";
 
                 var keyAsString = System.BitConverter.ToString(privateKey.ToBytes());
                 this.newLine($"$mining_key_hex_{i + 1} = \"{keyAsString}\"");
@@ -93,13 +93,13 @@ namespace Stratis.FederatedPeg.Tests.Utils
         {
             this.newLine("# MainchainUser");
             this.newLine("cd $path_to_stratisd");
-            this.newLine($"start-process cmd -ArgumentList \"/k color {this.consoleColors[5]} && dotnet run --no-build -testnet -port=36178 -apiport=38221 -agentprefix=mainuser -datadir=$root_datadir\\MainchainUser -addnode=13.70.81.5 -addnode=52.151.76.252 -whitelist=52.151.76.252 -gateway=1\"");
+            this.newLine($"start-process cmd -ArgumentList \"/k color {this.consoleColors[5]} && dotnet run -testnet -port=36178 -apiport=38221 -agentprefix=mainuser -datadir=$root_datadir\\MainchainUser -addnode=13.70.81.5 -addnode=52.151.76.252 -whitelist=52.151.76.252 -gateway=1\"");
             this.newLine("timeout $interval_time");
             this.newLine(Environment.NewLine);
 
             this.newLine("# SidechainUser");
             this.newLine("cd $path_to_sidechaind");
-            this.newLine($"start-process cmd -ArgumentList \"/k color {this.consoleColors[4]} && dotnet run --no-build -testnet -port=26179 -apiport=38225 -agentprefix=sideuser -datadir=$root_datadir\\SidechainUser agentprefix=sc_user -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 0)} -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 1)} -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 2)}\"");
+            this.newLine($"start-process cmd -ArgumentList \"/k color {this.consoleColors[4]} && dotnet run -regtest -port=26179 -apiport=38225 -agentprefix=sideuser -datadir=$root_datadir\\SidechainUser agentprefix=sc_user -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 0)} -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 1)} -addnode=127.0.0.1:36{GetPortNumberSuffix(this.chains[1], 2)}\"");
             this.newLine("timeout $interval_time");
             this.newLine(Environment.NewLine);
         }
@@ -110,10 +110,10 @@ namespace Stratis.FederatedPeg.Tests.Utils
             federationMemberIndexes.ForEach(i => {
                 this.newLine($"# Federation member {i} main and side");
                 this.newLine(
-                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i + 1]} && dotnet run --no-build -mainchain -testnet -agentprefix=fed{i + 1}main -datadir=$root_datadir\\gateway{i + 1} -port=36{GetPortNumberSuffix(this.chains[0], i)} -apiport=38{GetPortNumberSuffix(this.chains[0], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[1], i)} -federationips=$mainchain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i + 1}_public_key -mincoinmaturity=1 -mindepositconfirmations=1 -addnode=13.70.81.5 -addnode=52.151.76.252 -whitelist=52.151.76.252 -gateway=1\"");
+                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i + 1]} && dotnet run --no-build -mainchain -testnet -agentprefix=fed{i + 1}main -datadir=$root_datadir\\gateway{i + 1} -port=36{GetPortNumberSuffix(this.chains[0], i)} -apiport=38{GetPortNumberSuffix(this.chains[0], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[1], i)} -federationips=$mainchain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i + 1}_public_key -mincoinmaturity=1 -mindepositconfirmations=1\"");
                 this.newLine("timeout $long_interval_time");
                 this.newLine(
-                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i + 1]} && dotnet run --no-build -sidechain -testnet -agentprefix=fed{i + 1}side -datadir=$root_datadir\\gateway{i + 1} -port=36{GetPortNumberSuffix(this.chains[1], i)} -apiport=38{GetPortNumberSuffix(this.chains[1], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[0], i)} -federationips=$sidechain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i + 1}_public_key -mincoinmaturity=1 -mindepositconfirmations=1 -txindex=1\"");
+                    $"start-process cmd -ArgumentList \"/k color {this.consoleColors[i + 1]} && dotnet run --no-build -sidechain -regtest -agentprefix=fed{i + 1}side -datadir=$root_datadir\\gateway{i + 1} -port=36{GetPortNumberSuffix(this.chains[1], i)} -apiport=38{GetPortNumberSuffix(this.chains[1], i)} -counterchainapiport=38{GetPortNumberSuffix(this.chains[0], i)} -federationips=$sidechain_federationips -redeemscript=\"\"$redeemscript\"\" -publickey=$gateway{i + 1}_public_key -mincoinmaturity=1 -mindepositconfirmations=1 -txindex=1\"");
                 this.newLine("timeout $long_interval_time");
                 this.newLine(Environment.NewLine);
             });
@@ -128,9 +128,9 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway2\stratis\StratisTest");
             this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway3\stratis\StratisTest");
             this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\MainchainUser\stratis\StratisTest");
-            this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway1\poa\FederatedPegTest");
-            this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway2\poa\FederatedPegTest");
-            this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway3\poa\FederatedPegTest");
+            this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway1\fedpeg\FederatedPegRegTest");
+            this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway2\fedpeg\FederatedPegRegTest");
+            this.newLine(@"New-Item -ItemType directory -Force -Path $root_datadir\gateway3\fedpeg\FederatedPegRegTest");
             this.newLine(Environment.NewLine);
 
             // Copy the blockchain data from a current, ideally up-to-date, Stratis Testnet folder.
