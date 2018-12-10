@@ -47,7 +47,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                                    ? this.payToMultisigScript 
                                    : this.payToMemberScript;
 
-            base.OnBuild(chainTip, rewardScript);
+            base.Build(chainTip, rewardScript);
 
             return this.BlockTemplate;
         }
