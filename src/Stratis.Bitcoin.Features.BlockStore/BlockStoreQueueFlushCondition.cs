@@ -20,9 +20,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             get
             {
+                if (!this.chainState.IsAtBestChainTip)
+                    return false;
+
                 // If the node is in IBD we don't flush on each block.
                 if (this.blockDownloadState.IsInitialBlockDownload())
                     return false;
+
+                // TODO: this code is not ideal it can be improved.
+                // Checking the distance form tip is not ideal, it still leaves room for persisting single blocks when that is not desired.
+                // For example if CT is not in IBD (node shutdown only for short time) but still needs to sync move then 100 blocks then we relay 
+                // on a race condition that CT will validate faster then store can persists to move to batch based persistence.
+                // The best fix is to pass in the dequeued block and check its height. 
 
                 int distanceFromConsensusTip = this.chainState.ConsensusTip.Height - this.chainState.BlockStoreTip.Height;
 
