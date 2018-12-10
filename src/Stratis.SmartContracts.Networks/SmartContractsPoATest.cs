@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.Networks
             this.Magic = magic;
 
             // Create the genesis block.
-            this.GenesisTime = 1513622125;
+            this.GenesisTime = 1513622125; // TODO: Very important! Increase for future SC test networks to roughly the time we start.
             this.GenesisNonce = 1560058198; // Incremented 6/12/18
             this.GenesisBits = 402691653;
             this.GenesisVersion = 1;
