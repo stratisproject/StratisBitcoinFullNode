@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.RPC;
@@ -39,9 +40,12 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
+                .AddFederationGateway()
                 .UseFederatedPegPoAMining()
                 .UseMempool()
                 .UseWallet()
+                .UseTransactionNotification()
+                .UseBlockNotification()
                 .UseApi()
                 .AddRPC()
                 .MockIBD()

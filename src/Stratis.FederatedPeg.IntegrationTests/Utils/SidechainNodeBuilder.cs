@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Runtime.CompilerServices;
-using System.Text;
+﻿using System.Runtime.CompilerServices;
 using System.Threading;
 
 using NBitcoin;
@@ -10,7 +7,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Utils
 {
@@ -27,7 +23,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
         public static SidechainNodeBuilder CreateSidechainNodeBuilder(object caller, [CallerMemberName] string callingMethod = null)
         {
-            string testFolderPath = TestBase.CreateTestDir(caller, callingMethod);
+            string testFolderPath = Bitcoin.Tests.Common.TestBase.CreateTestDir(caller, callingMethod);
             SidechainNodeBuilder builder = new SidechainNodeBuilder(testFolderPath);
             builder.WithLogsDisabled();
 
