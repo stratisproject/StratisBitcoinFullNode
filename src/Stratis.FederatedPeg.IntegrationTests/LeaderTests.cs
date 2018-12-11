@@ -40,7 +40,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 var tipBefore = node.GetTip().Height;
 
                 // TODO check blocks get mined and make sure the block notification will change
-                // the leader.
+                // the leader
                 //TestHelper.WaitLoop(
                 //    () =>
                 //    {
