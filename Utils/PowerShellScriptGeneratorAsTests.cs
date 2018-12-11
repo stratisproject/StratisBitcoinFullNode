@@ -3,34 +3,17 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Text;
-
 using NBitcoin;
-
-using Stratis.Bitcoin.Networks;
-using Stratis.Sidechains.Networks;
+using Stratis.FederatedPeg.IntegrationTests.Utils;
 
 using Xunit;
 using Xunit.Abstractions;
 
 namespace Stratis.FederatedPeg.Tests.Utils
 {
-    public class PowerShellScriptGeneratorAsTests
+    public class PowerShellScriptGeneratorAsTests : TestBase
     {
         private readonly ITestOutputHelper output;
-
-        private Network mainchainNetwork;
-
-        private FederatedPegRegTest sidechainNetwork;
-
-        private IList<Mnemonic> mnemonics;
-
-        private Dictionary<Mnemonic, PubKey> pubKeysByMnemonic;
-
-        private (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress) scriptAndAddresses;
-
-        private List<int> federationMemberIndexes;
-
-        private List<string> chains;
 
         private Dictionary<int, string> consoleColors;
 
@@ -44,17 +27,6 @@ namespace Stratis.FederatedPeg.Tests.Utils
         [Fact]
         public void Generate_PS1_Fragment()
         {
-            this.mainchainNetwork = Networks.Stratis.Testnet();
-            this.sidechainNetwork = (FederatedPegRegTest)FederatedPegNetwork.NetworksSelector.Regtest();
-
-            this.mnemonics = this.sidechainNetwork.FederationMnemonics;
-            this.pubKeysByMnemonic = this.mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
-
-            this.scriptAndAddresses = GenerateScriptAndAddresses(this.mainchainNetwork, this.sidechainNetwork, 2, this.pubKeysByMnemonic);
-
-            this.federationMemberIndexes = Enumerable.Range(0, this.pubKeysByMnemonic.Count).ToList();
-            this.chains = new[] { "mainchain", "sidechain" }.ToList();
-
             var stringBuilder = new StringBuilder();
             this.newLine = s => stringBuilder.AppendLine(s);
 
@@ -249,23 +221,6 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.consoleColors =
                 new Dictionary<int, string>() { { 1, "0E" }, { 2, "0A" }, { 3, "09" }, { 4, "0C" }, { 5, "0D" }, };
             this.newLine(Environment.NewLine);
-        }
-
-        private IList<Mnemonic> GenerateMnemonics(int keyCount)
-        {
-            return Enumerable.Range(0, keyCount)
-                .Select(k => new Mnemonic(Wordlist.English, WordCount.Twelve))
-                .ToList();
-        }
-
-
-        private (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress)
-            GenerateScriptAndAddresses(Network mainchainNetwork, Network sidechainNetwork, int quorum, Dictionary<Mnemonic, PubKey> pubKeysByMnemonic)
-        {
-            Script payToMultiSig = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(quorum, pubKeysByMnemonic.Values.ToArray());
-            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(sidechainNetwork);
-            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(mainchainNetwork);
-            return (payToMultiSig, sidechainMultisigAddress, mainchainMultisigAddress);
         }
     }
 }
