@@ -43,14 +43,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            var rewardScript = chainTip.Height == this.Network.Consensus.PremineHeight 
+            var rewardScript = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight 
                                    ? this.payToMultisigScript 
                                    : this.payToMemberScript;
 
-            base.Build(chainTip, rewardScript);
-
-            return this.BlockTemplate;
+            return base.Build(chainTip, rewardScript);
         }
-
     }
 }
