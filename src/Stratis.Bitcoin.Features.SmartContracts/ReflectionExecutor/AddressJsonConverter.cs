@@ -44,12 +44,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
             }
             else
             {
-                JObject o = new JObject(((Address)value).ToUint160().ToBase58Address(this.network));
-                IList<string> propertyNames = o.Properties().Select(p => p.Name).ToList();
-
-                o.AddFirst(new JProperty("Keys", new JArray(propertyNames)));
-
-                o.WriteTo(writer);
+                JValue v = JValue.CreateString(((Address)value).ToUint160().ToBase58Address(this.network));
+                v.WriteTo(writer);
             }
         }
     }

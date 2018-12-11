@@ -7,6 +7,8 @@ using Newtonsoft.Json.Serialization;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Local;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
@@ -34,7 +36,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             {
                 ContractResolver = this.resolver
             });
-            Assert.Equal(expectedString, jsonOutput);
+            Assert.Equal(expectedString, jsonOutput.Replace("\"", ""));
+        }
+
+        [Fact]
+        public void LocalExecutionResult_Outputs_With_Address()
+        {
+            uint160 testUint160 = new uint160(123);
+            Address testAddress = testUint160.ToAddress();
+            string expectedString = testUint160.ToBase58Address(this.network);
+
+            var execResult = new LocalExecutionResult
+            {
+                ErrorMessage = new ContractErrorMessage("Error message"),
+                GasConsumed = (Gas) 69,
+                Return = testAddress
+            };
+
+            string jsonOutput = JsonConvert.SerializeObject(execResult, new JsonSerializerSettings
+            {
+                ContractResolver = this.resolver
+            });
+            Assert.Contains($"\"Return\":\"{expectedString}\"", jsonOutput);
         }
     }
 }
