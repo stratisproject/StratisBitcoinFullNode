@@ -116,7 +116,15 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
         private Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             if (peer.State == NetworkPeerState.HandShaked)
-                this.Ping(null);
+            {
+                Task task = Task.Factory.StartNew(async () =>
+                {
+                    // To avoid a deadlock in cases the method peer.SendMessageAsync fails and attempts to disconnect while inside the event OnStateChangedAsync.
+                    // We execute the SendMessageAsync in a separate thread, if the connection fails the handle will wait for the OnStateChangedAsync to finish.
+
+                    this.Ping(null);
+                });
+            }
 
             return Task.CompletedTask;
         }

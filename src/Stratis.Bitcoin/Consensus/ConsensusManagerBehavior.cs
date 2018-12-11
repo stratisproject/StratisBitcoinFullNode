@@ -486,7 +486,15 @@ namespace Stratis.Bitcoin.Consensus
         private async Task OnStateChangedAsync(INetworkPeer peer, NetworkPeerState oldState)
         {
             if (peer.State == NetworkPeerState.HandShaked)
-                await this.ResyncAsync().ConfigureAwait(false);
+            {
+                Task task = Task.Factory.StartNew(async () =>
+                {
+                    // To avoid a deadlock in cases the method peer.SendMessageAsync fails and attempts to disconnect while inside the event OnStateChangedAsync.
+                    // We execute the SendMessageAsync in a separate thread, if the connection fails the handle will wait for the OnStateChangedAsync to finish.
+
+                    await this.ResyncAsync().ConfigureAwait(false);
+                });
+            }
         }
 
         /// <summary>Resets the expected peer tip and last sent tip and triggers synchronization.</summary>

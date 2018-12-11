@@ -1,6 +1,8 @@
 using System;
 using System.Linq;
 using System.Net;
+using System.Reactive.Concurrency;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.P2P.Peer;
@@ -82,7 +84,19 @@ namespace Stratis.Bitcoin.Connection
                     this.connectionManager.AddConnectedPeer(peer);
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
 
-                    await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
+                    Task task = Task.Factory.StartNew(async () =>
+                    {
+                        // To avoid a deadlock in cases the method peer.SendMessageAsync fails and attempts to disconnect while inside the event OnStateChangedAsync.
+                        // We execute the SendMessageAsync in a separate thread, if the connection fails the handle will wait for the OnStateChangedAsync to finish.
+
+                        try
+                        {
+                            await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
+                        }
+                        catch (OperationCanceledException)
+                        {
+                        }
+                    });
                 }
 
                 if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))
