@@ -646,6 +646,11 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.asyncQueue.Enqueue(payload);
         }
 
+        /// <summary>
+        /// This is used by the asyncQueue to send payloads messages to peers under a separate thread.
+        /// If a message is sent inside the state change even and the send fails this could cause a deadlock,
+        /// to avoid that if there is any danger of a deadlock it better to use the SendMessage method and go via the queue.
+        /// </summary>
         private async Task SendMessageHandledAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
             try
