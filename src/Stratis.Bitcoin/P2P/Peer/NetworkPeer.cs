@@ -633,7 +633,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public void SendQueueMessageAsync(Payload payload)
+        public void SendMessage(Payload payload)
         {
             Guard.NotNull(payload, nameof(payload));
 
