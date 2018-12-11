@@ -82,7 +82,13 @@ namespace Stratis.Bitcoin.Connection
                     this.connectionManager.AddConnectedPeer(peer);
                     this.infoLogger.LogInformation("Peer '{0}' connected ({1}), agent '{2}', height {3}", peer.RemoteSocketEndpoint, peer.Inbound ? "inbound" : "outbound", peer.PeerVersion.UserAgent, peer.PeerVersion.StartHeight);
 
-                    await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
+                    // TEMPORARY QUICK FIX FOR DEADLOCK
+                    Task.Run(async () =>
+                    {
+                        await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
+                    });
+                    
+                    // await peer.SendMessageAsync(new SendHeadersPayload()).ConfigureAwait(false);
                 }
 
                 if ((peer.State == NetworkPeerState.Failed) || (peer.State == NetworkPeerState.Offline))

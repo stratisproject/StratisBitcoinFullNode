@@ -136,7 +136,8 @@ namespace City.Networks
                 { 1000, new CheckpointInfo(new uint256("0xc848602fe0f33511766b66c6d5a28e11cd54e7c61d69c0898f868f46b5c9d6f7"), new uint256("0x13fad5f4e1dc5120f88e48e3f8d08bbc57b78fa960df8b600819c631f1038327")) },
                 { 2000, new CheckpointInfo(new uint256("0xe73ec56e8c4159594bea6e8d73f1a5e0c980246861064451e2f0d2f609ed7d0b"), new uint256("0x569ab17ece910f954d26f3ab8a83ec5ae8952957b3f1c1868fb7b04abd52dd19")) },
                 { 10000, new CheckpointInfo(new uint256("0x5fba1895ca1134f3c6fefdd45996039d45aab0177a10e86cac4990226f62ad95"), new uint256("0x47c6db50a945d8d4b17676e65a74ccd64e3b73f696082c3cdb7a9c0b9658e9cb")) },
-                { 20000, new CheckpointInfo(new uint256("0xa0f81a7734e621ae2e2cecea7a3b851dee3b5a85ba4732e0867cbf5c496f04ed"), new uint256("0xf044e402b75b4314231e1498fefc8b11da8cc9cb7797e2e59b2acdbcea1b02b3")) }
+                { 20000, new CheckpointInfo(new uint256("0xa0f81a7734e621ae2e2cecea7a3b851dee3b5a85ba4732e0867cbf5c496f04ed"), new uint256("0xf044e402b75b4314231e1498fefc8b11da8cc9cb7797e2e59b2acdbcea1b02b3")) },
+                { 40000, new CheckpointInfo(new uint256("0xd3fc0976cb034b1e3eccdd6c4ebb76c0933ea37c47d43831371880346b9200b8"), new uint256("0x03a09ede5eadd8dbbc36806ef530c21c5548a7a823cf173c97439576dcb4d26d")) },
             };
 
             var encoder = new Bech32Encoder("bc");
