@@ -249,6 +249,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
         private readonly Action<IPEndPoint, Payload> onSendingMessage;
 
+        /// <summary>A queue for sending payload messages to peers.</summary>
+        private readonly AsyncQueue<Payload> asyncQueue;
+
         /// <summary>
         /// Initializes parts of the object that are common for both inbound and outbound peers.
         /// </summary>
@@ -295,6 +298,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             this.onDisconnected = onDisconnected;
             this.onSendingMessage = onSendingMessage;
+
+            this.asyncQueue = new AsyncQueue<Payload>(this.SendMessageAsync);
         }
 
         /// <summary>
@@ -625,6 +630,20 @@ namespace Stratis.Bitcoin.P2P.Peer
                     behavior.Attach(this);
                 }
             }
+        }
+
+        /// <inheritdoc/>
+        public void SendQueueMessageAsync(Payload payload)
+        {
+            Guard.NotNull(payload, nameof(payload));
+
+            if (!this.IsConnected)
+            {
+                this.logger.LogTrace("(-)[NOT_CONNECTED]");
+                throw new OperationCanceledException("The peer has been disconnected");
+            }
+
+            this.asyncQueue.Enqueue(payload);
         }
 
         /// <inheritdoc/>
