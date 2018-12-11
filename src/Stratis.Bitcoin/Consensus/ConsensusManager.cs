@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", validationContext.Error.Message);
                     this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]");
-                    throw new ConsensusException(validationContext.Error.Message);
+                    throw new ConsensusException(validationContext.Error.ToString());
                 }
             }
 
