@@ -1,7 +1,6 @@
 ﻿namespace City.Chain
 {
     using System;
-    using System.IO;
     using System.Linq;
     using System.Threading.Tasks;
     using City.Features.BlockExplorer;
@@ -29,8 +28,8 @@
         /// City.Chain daemon can be launched with options to specify coin and network, using the parameters -chain and -testnet. It defaults to City main network.
         /// </summary>
         /// <example>
-        /// dotnet city.chain.dll -coin bitcoin -network regtest
-        /// dotnet city.chain.dll -coin city -network test
+        /// dotnet city.chain.dll -coin=bitcoin -network=regtest
+        /// dotnet city.chain.dll -coin=city -network=test
         /// </example>
         /// <param name="args"></param>
         /// <returns></returns>
@@ -38,15 +37,11 @@
         {
             try
             {
-                // To avoid modifying Stratis source, we'll parse the arguments and set some hard-coded defaults for City Chain, like the ports.
                 var configReader = new TextFileConfiguration(args ?? new string[] { });
 
                 // City Chain daemon supports multiple networks, supply the chain parameter to change it.
                 // Example: -chain=bitcoin
                 var chain = configReader.GetOrDefault<string>("chain", "city");
-
-                // TODO: Perform full test validation of Stratis and Bitcoin before adding support for it.
-                //chain = "city";
 
                 var networkIdentifier = "main";
 
@@ -80,7 +75,22 @@
 
                 var dnsSettings = new DnsSettings(nodeSettings);
 
-                WriteDatabaseSchemaInfo(nodeSettings);
+                // Create or read the node info.
+                var nodeInfoManager = new NodeInfoManager(nodeSettings);
+
+                // Indicates if we should clear the blockchain database. When this is performed, the daemon will exit immediately.
+                if (configReader.GetOrDefault<bool>("reset", false))
+                {
+                    Console.WriteLine("Reset option was supplied, blockchain database is being reset.");
+                    nodeInfoManager.ClearBlockchainDatabase();
+                    Console.WriteLine("Blockchain database was successfully reset. Exiting.");
+                    return;
+                }
+
+                var nodeInfo = nodeInfoManager.CreateOrReadNodeInfo();
+
+                // Perform any migrations if there is any waiting.
+                nodeInfoManager.PerformMigration(nodeInfo);
 
                 IFullNode node;
 
@@ -107,15 +117,11 @@
                         .UseBlockExplorer()
                         .UsePosConsensus()
                         .UseMempool()
-                        //.UseWallet()
                         .UseColdStakingWallet()
                         .AddPowPosMining()
                         .UseApi()
                         .UseApps()
                         .AddRPC()
-                        //.AddSimpleWallet()
-                        //.UseBlockNotification()
-                        //.UseTransactionNotification()
                         .Build();
                 }
 
@@ -146,36 +152,6 @@
             }
 
             return null;
-        }
-
-        private static void WriteDatabaseSchemaInfo(NodeSettings nodeSettings)
-        {
-            // Write the schema version, if not already exists.
-            var infoPath = System.IO.Path.Combine(nodeSettings.DataDir, "city.info");
-
-            if (!System.IO.File.Exists(infoPath))
-            {
-                // For clients earlier than this version, the database already existed so we'll
-                // write that it is currently version 100.
-                var infoBuilder = new System.Text.StringBuilder();
-
-                // If the chain exists from before, but we did not have .info file, the database is old version.
-                if (System.IO.Directory.Exists(Path.Combine(nodeSettings.DataDir, "chain")))
-                {
-                    infoBuilder.AppendLine("dbversion=100");
-                }
-                else
-                {
-                    infoBuilder.AppendLine("dbversion=110");
-                }
-
-                File.WriteAllText(infoPath, infoBuilder.ToString());
-            }
-            else
-            {
-                var fileConfig = new TextFileConfiguration(File.ReadAllText(infoPath));
-                var dbversion = fileConfig.GetOrDefault<int>("dbversion", 110);
-            }
         }
     }
 }
