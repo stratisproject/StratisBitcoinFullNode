@@ -864,6 +864,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
+            this.asyncQueue.Dispose();
             this.Connection.Dispose();
 
             this.MessageReceived.Dispose();
