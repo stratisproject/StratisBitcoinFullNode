@@ -299,7 +299,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.onDisconnected = onDisconnected;
             this.onSendingMessage = onSendingMessage;
 
-            this.asyncQueue = new AsyncQueue<Payload>(this.SendMessageAsync);
+            this.asyncQueue = new AsyncQueue<Payload>(this.SendMessageHandledAsync);
         }
 
         /// <summary>
@@ -644,6 +644,17 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
 
             this.asyncQueue.Enqueue(payload);
+        }
+
+        private async Task SendMessageHandledAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
+        {
+            try
+            {
+                await this.SendMessageAsync(payload, cancellation);
+            }
+            catch (OperationCanceledException)
+            {
+            }
         }
 
         /// <inheritdoc/>
