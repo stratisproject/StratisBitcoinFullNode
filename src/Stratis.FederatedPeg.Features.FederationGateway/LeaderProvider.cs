@@ -23,8 +23,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// </summary>
         private readonly IReadOnlyList<string> orderedFederationPublicKeys;
 
-        private PubKey currentLeader;
-
         public LeaderProvider(IFederationGatewaySettings federationGatewaySettings)
         {
             this.orderedFederationPublicKeys = federationGatewaySettings.FederationPublicKeys.
@@ -32,15 +30,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 OrderBy(j => j).
                 ToList().
                 AsReadOnly();
+
+            this.CurrentLeader = new PubKey(this.orderedFederationPublicKeys.First());
         }
 
-        public PubKey CurrentLeader => this.currentLeader;
+        public PubKey CurrentLeader { get; private set; }
 
         public void Update(BlockTipModel blockTipModel)
         {
             Guard.NotNull(blockTipModel, nameof(blockTipModel));
 
-            this.currentLeader = new PubKey(this.orderedFederationPublicKeys[blockTipModel.Height % this.orderedFederationPublicKeys.Count]);
+            this.CurrentLeader = new PubKey(this.orderedFederationPublicKeys[blockTipModel.Height % this.orderedFederationPublicKeys.Count]);
         }
     }
 }
