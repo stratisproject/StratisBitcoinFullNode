@@ -176,6 +176,11 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
 
         public static Transaction SetupValidTransaction(Features.Wallet.Wallet wallet, string password, HdAddress spendingAddress, PubKey destinationPubKey, HdAddress changeAddress, Money amount, Money fee)
         {
+            return SetupValidTransaction(wallet, password, spendingAddress, destinationPubKey.ScriptPubKey, changeAddress, amount, fee);
+        }
+
+        public static Transaction SetupValidTransaction(Features.Wallet.Wallet wallet, string password, HdAddress spendingAddress, Script destinationScript, HdAddress changeAddress, Money amount, Money fee)
+        {
             TransactionData spendingTransaction = spendingAddress.Transactions.ElementAt(0);
             var coin = new Coin(spendingTransaction.Id, (uint)spendingTransaction.Index, spendingTransaction.Amount, spendingTransaction.ScriptPubKey);
 
@@ -185,7 +190,7 @@ namespace Stratis.Bitcoin.Tests.Wallet.Common
             Transaction tx = builder
                 .AddCoins(new List<Coin> { coin })
                 .AddKeys(new ExtKey(privateKey, wallet.ChainCode).Derive(new KeyPath(spendingAddress.HdPath)).GetWif(wallet.Network))
-                .Send(destinationPubKey.ScriptPubKey, amount)
+                .Send(destinationScript, amount)
                 .SetChange(changeAddress.ScriptPubKey)
                 .SendFees(fee)
                 .BuildTransaction(true);
