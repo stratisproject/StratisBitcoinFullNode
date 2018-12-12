@@ -40,6 +40,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes);
 
         /// <summary>
+        /// Delete blocks and their transactions from disk.
+        /// </summary>
+        /// <param name="hashes">List of block hashes to be deleted.</param>
+        Task DeleteBlocksAsync(List<uint256> hashes);
+
+        /// <summary>
         /// Determine if a block already exists
         /// </summary>
         /// <param name="hash">The hash.</param>
@@ -513,6 +519,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
                     this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
                     this.SaveTipHashAndHeight(transaction, newTip);
+                    transaction.Commit();
+                }
+            });
+
+            return task;
+        }
+
+        /// <inheritdoc />
+        public Task DeleteBlocksAsync(List<uint256> hashes)
+        {
+            Guard.NotNull(hashes, nameof(hashes));
+
+            Task task = Task.Run(() =>
+            {
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    transaction.SynchronizeTables(BlockTableName, CommonTableName, TransactionTableName);
+                    transaction.ValuesLazyLoadingIsOn = false;
+
+                    List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
+                    this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
                     transaction.Commit();
                 }
             });

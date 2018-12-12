@@ -1,13 +1,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
-using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Networks;
@@ -34,16 +34,18 @@ namespace Stratis.BreezeD
                     if (isTestNet)
                         args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
 
-                    nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, agent: agent, args:args);
+                    nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, agent: agent, args: args);
                 }
                 else
                 {
-                    nodeSettings = new NodeSettings(networksSelector:Networks.Bitcoin, agent: agent, args: args);
+                    nodeSettings = new NodeSettings(networksSelector: Networks.Bitcoin, agent: agent, args: args);
                 }
 
                 IFullNodeBuilder fullNodeBuilder = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseLightWallet()
+                    .UseBlockStore()
+                    .UsePosConsensus()
                     .UseBlockNotification()
                     .UseTransactionNotification()
                     .UseApi();
