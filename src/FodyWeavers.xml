@@ -1,0 +1,14 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<Weavers>
+  <Tracer adapterAssembly="FodyNlogAdapter"
+      logManager="FodyNlogAdapter.Adapters.LogManagerAdapter"      
+      logger="FodyNlogAdapter.Adapters.LoggerAdapter"
+      staticLogger="FodyNlogAdapter.Log"
+      traceConstructors="false"
+      traceProperties="false">
+      <TraceOn namespace="Stratis.FederatedSidechains.Initialisation+*" class="private" method="private" />
+      <TraceOn namespace="Stratis.FederatedPeg.Features.FederationGateway+*" class="private" method="private" />
+      <NoTrace namespace="*.Tests+*" />
+      <NoTrace namespace="*.IntegrationTests+*" />
+  </Tracer>  
+</Weavers>

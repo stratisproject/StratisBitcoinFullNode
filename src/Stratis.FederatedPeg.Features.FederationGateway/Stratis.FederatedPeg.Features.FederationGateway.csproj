@@ -19,6 +19,11 @@
     <PackageReference Include="Stratis.Bitcoin" Version="3.0.0.0" />
     <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="3.0.0.0" />
     <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="3.0.0.0" />
+    <PackageReference Include="Stratis.FodyNlogAdapter" Version="3.0.0" />
+    <PackageReference Include="Tracer.Fody" Version="2.2.0">
+      <PrivateAssets>all</PrivateAssets>
+      <IncludeAssets>runtime; build; native; contentfiles; analyzers</IncludeAssets>
+    </PackageReference>
   </ItemGroup>
 
   <ItemGroup>
