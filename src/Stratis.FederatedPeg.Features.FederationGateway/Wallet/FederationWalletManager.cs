@@ -399,20 +399,22 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             bool foundReceivingTrx = false, foundSendingTrx = false;
 
-            // Remove this transaction if already present and unspent.
-            IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, block?.GetHash(), blockHeight ?? 0);
-            if (withdrawal != null)
-            {
-                // Exit if final.
-                if (withdrawal.BlockNumber != 0)
-                    return false;
-
-                // Remove this to prevent duplicates if the transaction hash has changed.
-                this.RemoveTransientTransactions(withdrawal.DepositId);
-            }
-
             lock (this.lockObject)
             {
+                // Extract the withdrawal from the transaction (if any).
+                IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(transaction, block?.GetHash(), blockHeight ?? 0);
+                if (withdrawal != null)
+                {
+                    // Exit if already present and included in a block.
+                    List<(Transaction, TransactionData, IWithdrawal)> walletData = FindWithdrawalTransactions(withdrawal.DepositId);
+                    if ((walletData.Count == 1) && (walletData[0].Item2.BlockHeight != null))
+                        return false;
+
+                    // Remove this to prevent duplicates if the transaction hash has changed.
+                    if (walletData.Count != 0)
+                        this.RemoveTransientTransactions(withdrawal.DepositId);
+                }
+
                 // Check the outputs.
                 foreach (TxOut utxo in transaction.Outputs)
                 {
@@ -779,11 +781,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                foreach ((Transaction transaction, TransactionData transactionData) in FindWithdrawalTransactions(depositId)
+                foreach ((Transaction transaction, TransactionData transactionData, _) in FindWithdrawalTransactions(depositId)
                     .Where(w => w.Item2.BlockHash == null))
                 {
                     Guard.Assert(transactionData.SpendingDetails == null);
-                    RemoveTransaction(transaction);
+                    walletUpdated |= RemoveTransaction(transaction);
                 }
 
                 return walletUpdated;
@@ -791,17 +793,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
-        public List<(Transaction, TransactionData)> FindWithdrawalTransactions(uint256 depositId = null, uint256 transactionId = null)
+        public List<(Transaction, TransactionData, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null)
         {
             lock (this.lockObject)
             {
-                var withdrawals = new List<(Transaction, TransactionData)>();
+                var withdrawals = new List<(Transaction, TransactionData, IWithdrawal)>();
 
                 foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
                 {
-                    if (transactionId != null && transactionData.Id != transactionId)
-                        continue;
-
                     Transaction walletTran = transactionData.GetFullTransaction(this.network);
                     IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTran, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
                     if (withdrawal == null)
@@ -810,7 +809,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     if (depositId != null && withdrawal.DepositId != depositId)
                         continue;
 
-                    withdrawals.Add((walletTran, transactionData));
+                    withdrawals.Add((walletTran, transactionData, withdrawal));
                 }
 
                 return withdrawals;
@@ -868,7 +867,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 if (!TransactionHasValidUTXOs(transaction, coins))
                     return false;
 
-                // Verify that there are no earler unspent UTXOs.
+                // Verify that there are no earlier unspent UTXOs.
                 var comparer = Comparer<TransactionData>.Create((x, y) => FederationWalletTransactionHandler.CompareTransactionData(x, y));
                 TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails == null).OrderBy(t => t, comparer).FirstOrDefault();
                 if (earliestUnspent != null)

@@ -116,14 +116,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Transaction template = this.GetTemplateTransaction(payload.PartialTransaction);
 
             ICrossChainTransfer[] transfer = await this.crossChainTransferStore.GetAsync(new[] { payload.DepositId });
-            if (transfer[0]?.Status != CrossChainTransferStatus.Partial)
+
+            if (transfer[0] == null)
             {
-                this.logger.LogTrace("OnMessageReceivedAsync: PartialTransaction {0} already signed.", template);
+                this.logger.LogTrace("OnMessageReceivedAsync: Transaction {0} does not exist.", template);
+                return;
+            }
+
+            if (transfer[0].Status != CrossChainTransferStatus.Partial)
+            {
+                this.logger.LogTrace("OnMessageReceivedAsync: Transaction {0} is {1}.", template, transfer[0].Status);
                 return;
             }
 
             uint256 oldHash = transfer[0].PartialTransaction.GetHash();
-
+            
             Transaction signedTransaction = await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }).ConfigureAwait(false);
 
             if (oldHash != signedTransaction.GetHash())
