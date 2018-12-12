@@ -48,5 +48,18 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
             return node;
         }
+
+        public CoreNode CreateSidechainNodeWithSmartContracts(Network network, Key key)
+        {
+            var agentName = $"sidechain{Interlocked.Increment(ref agentCount)}";
+            string dataFolder = this.GetNextDataFolderName(agentName);
+            CoreNode node = this.CreateNode(new SidechainWithSmartContractsNodeRunner(dataFolder, agentName, network), "poa.conf");
+
+            var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
+            var tool = new KeyTool(settings.DataFolder);
+            tool.SavePrivateKey(key);
+
+            return node;
+        }
     }
 }
