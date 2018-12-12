@@ -114,7 +114,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="depositId">Filters by this deposit id if not <c>null</c>.</param>
         /// <param name="transactionId">Filters by this transaction id if not <c>null</c>.</param>
         /// <returns>The transaction data containing the withdrawal transaction.</returns>
-        List<(Transaction, TransactionData)> FindWithdrawalTransactions(uint256 depositId = null, uint256 transactionId = null);
+        List<(Transaction, TransactionData, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null);
 
         /// <summary>
         /// Removes the transient transactions associated with the corresponding deposit ids.

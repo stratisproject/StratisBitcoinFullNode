@@ -15,6 +15,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private readonly IMaturedBlocksRequester maturedBlocksRequester;
 
+        private readonly object lockObj;
+
         public EventsPersister(ILoggerFactory loggerFactory,
                                ICrossChainTransferStore store,
                                IMaturedBlockReceiver maturedBlockReceiver,
@@ -23,20 +25,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.store = store;
             this.maturedBlocksRequester = maturedBlocksRequester;
+            this.lockObj = new object();
 
-            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(async m => await PersistNewMaturedBlockDepositsAsync(m).ConfigureAwait(false));
+            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(async m => PersistNewMaturedBlockDeposits(m) );
             this.logger.LogDebug("Subscribed to {0}", nameof(maturedBlockReceiver), nameof(maturedBlockReceiver.MaturedBlockDepositStream));
         }
 
         /// <inheritdoc />
-        public async Task PersistNewMaturedBlockDepositsAsync(IMaturedBlockDeposits[] maturedBlockDeposits)
+        public void PersistNewMaturedBlockDeposits(IMaturedBlockDeposits[] maturedBlockDeposits)
         {
-            this.logger.LogDebug("New {0} received.", nameof(IMaturedBlockDeposits));
-
-            if (await this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits).ConfigureAwait(false))
+            lock (this.lockObj)
             {
-                // There may be more blocks. Get them.
-                await this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false);
+                this.logger.LogDebug("New {0} received.", nameof(IMaturedBlockDeposits));
+
+                if (this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits).ConfigureAwait(false).GetAwaiter().GetResult())
+                {
+                    // There may be more blocks. Get them.
+                    this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                }
             }
         }
 
