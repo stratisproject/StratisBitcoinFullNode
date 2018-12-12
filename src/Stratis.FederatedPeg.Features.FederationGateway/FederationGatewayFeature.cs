@@ -167,12 +167,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.maturedBlockRequester.Start();
 
             // Connect the node to the other federation members.
-            if (this.federationGatewaySettings.FederationNodeIpEndPoints != null)
+            foreach (var federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
             {
-                foreach (var federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
-                {
-                    this.connectionManager.AddNodeAddress(federationMemberIp);
-                }
+                this.connectionManager.AddNodeAddress(federationMemberIp);
             }
 
             var networkPeerConnectionParameters = this.connectionManager.Parameters;
