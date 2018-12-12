@@ -659,6 +659,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             }
             catch (OperationCanceledException)
             {
+                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerEndPoint);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("Exception occurred while connecting to peer '{0}': {1}", this.PeerEndPoint, ex is SocketException ? ex.Message : ex.ToString());
+                throw;
             }
         }
 
