@@ -11,7 +11,7 @@ using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
-    class PartialTransactionsBehavior : NetworkPeerBehavior
+    public class PartialTransactionsBehavior : NetworkPeerBehavior
     {
         private readonly ILoggerFactory loggerFactory;
 
@@ -83,7 +83,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// Broadcast the partial transaction request to federation members.
         /// </summary>
         /// <param name="payload">The payload to broadcast.</param>
-        async Task BroadcastAsync(RequestPartialTransactionPayload payload)
+        private async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(payload.Command), payload.Command, nameof(payload.DepositId), payload.DepositId);
 
@@ -130,7 +130,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
 
             uint256 oldHash = transfer[0].PartialTransaction.GetHash();
-            
+
             Transaction signedTransaction = await this.crossChainTransferStore.MergeTransactionSignaturesAsync(payload.DepositId, new[] { payload.PartialTransaction }).ConfigureAwait(false);
 
             if (oldHash != signedTransaction.GetHash())

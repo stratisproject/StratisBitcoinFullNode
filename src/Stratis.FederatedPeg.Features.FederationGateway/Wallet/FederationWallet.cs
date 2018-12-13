@@ -118,7 +118,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // Find the transaction(s) in the MultiSigAddress that have the
             // referenced inputs among their outputs.
 
-            List<Transaction> fundingTransactions = new List<Transaction>();
+            var fundingTransactions = new List<Transaction>();
 
             foreach (TransactionData tx in this.MultiSigAddress.Transactions)
             {
@@ -136,7 +136,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             // Then convert the outputs to Coins & make ScriptCoins out of them.
 
-            List<ScriptCoin> scriptCoins = new List<ScriptCoin>();
+            var scriptCoins = new List<ScriptCoin>();
 
             foreach (var tx in fundingTransactions)
             {
@@ -153,7 +153,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // Need to construct a transaction using a transaction builder with
             // the appropriate state
 
-            TransactionBuilder builder = new TransactionBuilder(this.Network);
+            var builder = new TransactionBuilder(this.Network);
 
             Transaction signed = builder
                 .AddCoins(scriptCoins)
@@ -174,7 +174,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // Find the transaction(s) in the MultiSigAddress that have the
             // referenced inputs among their outputs.
 
-            List<Transaction> fundingTransactions = new List<Transaction>();
+            var fundingTransactions = new List<Transaction>();
 
             foreach (TransactionData tx in this.MultiSigAddress.Transactions)
             {
@@ -191,7 +191,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             // Then convert the outputs to Coins & make ScriptCoins out of them.
 
-            List<ScriptCoin> scriptCoins = new List<ScriptCoin>();
+            var scriptCoins = new List<ScriptCoin>();
 
             foreach (var tx in fundingTransactions)
             {
@@ -208,7 +208,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // Need to construct a transaction using a transaction builder with
             // the appropriate state
 
-            TransactionBuilder builder = new TransactionBuilder(this.Network);
+            var builder = new TransactionBuilder(this.Network);
 
             Transaction combined =
                 builder

@@ -110,11 +110,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         // we keep a couple of objects in memory:
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
         // 2. the list of addresses contained in our wallet for checking whether a transaction is being paid to the wallet.
-        private Dictionary<OutPoint, TransactionData> outpointLookup;
+        private readonly Dictionary<OutPoint, TransactionData> outpointLookup;
         //    internal Dictionary<Script, MultiSigAddress> multiSigKeysLookup;
 
         // Gateway settings picked up from the node config.
-        private IFederationGatewaySettings federationGatewaySettings;
+        private readonly IFederationGatewaySettings federationGatewaySettings;
 
         public FederationWalletManager(
             ILoggerFactory loggerFactory,
@@ -968,7 +968,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 throw new WalletException("A federation wallet already exists.");
             }
 
-            FederationWallet wallet = new FederationWallet
+            var wallet = new FederationWallet
             {
                 CreationTime = this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,

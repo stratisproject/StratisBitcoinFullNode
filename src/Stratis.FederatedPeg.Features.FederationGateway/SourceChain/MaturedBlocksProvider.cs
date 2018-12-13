@@ -11,10 +11,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 {
     public class MaturedBlocksProvider : IMaturedBlocksProvider
     {
-        private ConcurrentChain chain;
-        private IDepositExtractor depositExtractor;
-        private IBlockRepository blockRepository;
-        private Dictionary<uint256, Block> blockCache;
+        private readonly ConcurrentChain chain;
+        private readonly IDepositExtractor depositExtractor;
+        private readonly IBlockRepository blockRepository;
+        private readonly Dictionary<uint256, Block> blockCache;
 
         public MaturedBlocksProvider(ILoggerFactory loggerFactory,
             ConcurrentChain chain, IDepositExtractor depositExtractor, IBlockRepository blockRepository)

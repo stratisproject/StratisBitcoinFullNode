@@ -50,7 +50,7 @@ namespace Stratis.Sidechains.Networks
             this.GenesisBits = 402691653;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
-            
+
             Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
 
             this.Genesis = genesisBlock;

@@ -58,11 +58,11 @@ namespace Stratis.FederatedPeg.Tests
 
         private MaturedBlocksProvider GetMaturedBlocksProvider()
         {
-            IBlockRepository blockRepository = Substitute.For<IBlockRepository>();
+            var blockRepository = Substitute.For<IBlockRepository>();
 
             blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) =>
             {
-                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                var hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
 
                 foreach (uint256 hash in hashes)
@@ -258,7 +258,7 @@ namespace Stratis.FederatedPeg.Tests
 
         private ConcurrentChain BuildChain(int blocks)
         {
-            ConcurrentChain chain = new ConcurrentChain(this.network);
+            var chain = new ConcurrentChain(this.network);
 
             for(int i = 0; i < blocks - 1; i++)
             {

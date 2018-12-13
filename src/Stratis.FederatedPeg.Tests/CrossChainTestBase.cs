@@ -67,7 +67,7 @@ namespace Stratis.FederatedPeg.Tests
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
             NetworkRegistration.Register(this.network);
 
-            DBreezeSerializer serializer = new DBreezeSerializer();
+            var serializer = new DBreezeSerializer();
             serializer.Initialize(this.network);
 
             this.loggerFactory = Substitute.For<ILoggerFactory>();
@@ -108,7 +108,7 @@ namespace Stratis.FederatedPeg.Tests
             this.blockDict[this.network.GenesisHash] = this.network.GetGenesis();
 
             this.blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).ReturnsForAnyArgs((x) => {
-                List<uint256> hashes = x.ArgAt<List<uint256>>(0);
+                var hashes = x.ArgAt<List<uint256>>(0);
                 var blocks = new List<Block>();
                 for (int i = 0; i < hashes.Count; i++)
                 {
