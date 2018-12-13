@@ -57,7 +57,7 @@ namespace Stratis.FederatedPeg.Tests
 
             await restSender.SendMaturedBlockDepositsAsync(maturedBlockDeposits).ConfigureAwait(false);
 
-            this.logger.Received(1).Log<object>(LogLevel.Error, 0, Arg.Any<object>(), Arg.Is<Exception>(e => e != null), Arg.Any<Func<object, Exception, string>>());
+            this.logger.Received(1).Log<object>(LogLevel.Error, 0, Arg.Any<object>(), Arg.Is<Exception>(e => e == null), Arg.Any<Func<object, Exception, string>>());
         }
 
         /// <inheritdoc />
