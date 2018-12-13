@@ -1,9 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
-
-namespace Stratis.FederatedSidechains.AdminDashboard.Rest
+﻿namespace Stratis.FederatedSidechains.AdminDashboard.Rest
 {
     public class ApiResponse
     {

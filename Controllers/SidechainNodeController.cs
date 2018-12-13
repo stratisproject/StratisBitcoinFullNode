@@ -1,12 +1,9 @@
-using System;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Options;
-using Stratis.FederatedSidechains.AdminDashboard.Settings;
-using Stratis.FederatedSidechains.AdminDashboard.Rest;
-using RestSharp;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
-using Newtonsoft.Json;
+using Stratis.FederatedSidechains.AdminDashboard.Rest;
+using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
 {

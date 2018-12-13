@@ -1,17 +1,17 @@
 using System;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
+using Microsoft.AspNetCore.SignalR;
+using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Hosting;
 using Microsoft.Extensions.Options;
+using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
+using Stratis.FederatedSidechains.AdminDashboard.Hubs;
+using Stratis.FederatedSidechains.AdminDashboard.Models;
 using Stratis.FederatedSidechains.AdminDashboard.Rest;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
-using Newtonsoft.Json;
-using Stratis.FederatedSidechains.AdminDashboard.Models;
-using Microsoft.AspNetCore.SignalR;
-using Stratis.FederatedSidechains.AdminDashboard.Hubs;
-using Microsoft.Extensions.Caching.Distributed;
-using System.Net.Sockets;
-using Newtonsoft.Json.Linq;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Services
 {
@@ -47,22 +47,22 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         /// <returns></returns>
         private async Task BuildCacheAsync()
         {
-            var walletName = "clintm";
+            string walletName = "clintm";
 
             #region Stratis Node
-            var stratisStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/status");
-            var stratisRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Mempool/getrawmempool");
-            var stratisBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Consensus/getbestblockhash");
-            var stratisWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, $"/api/Wallet/history?WalletName={walletName}&AccountName=account%200");
-            var stratisWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, $"/api/Wallet/balance?WalletName={walletName}&AccountName=account%200");
+            ApiResponse stratisStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Node/status");
+            ApiResponse stratisRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Mempool/getrawmempool");
+            ApiResponse stratisBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Consensus/getbestblockhash");
+            ApiResponse stratisWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, $"/api/Wallet/history?WalletName={walletName}&AccountName=account%200");
+            ApiResponse stratisWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, $"/api/Wallet/balance?WalletName={walletName}&AccountName=account%200");
             #endregion
 
             #region Sidechain Node
-            var sidechainStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Node/status");
-            var sidechainRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Mempool/getrawmempool");
-            var sidechainBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Consensus/getbestblockhash");
-            var sidechainWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, $"/api/Wallet/history?WalletName={walletName}&AccountName=account%200");
-            var sidechainWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, $"/api/FederationWallet/balance");
+            ApiResponse sidechainStatus = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Node/status");
+            ApiResponse sidechainRawmempool = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Mempool/getrawmempool");
+            ApiResponse sidechainBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Consensus/getbestblockhash");
+            ApiResponse sidechainWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, $"/api/Wallet/history?WalletName={walletName}&AccountName=account%200");
+            ApiResponse sidechainWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, $"/api/FederationWallet/balance");
             #endregion
 
             var dashboardModel = new DashboardModel

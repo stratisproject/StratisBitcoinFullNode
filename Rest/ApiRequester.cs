@@ -1,11 +1,7 @@
-using System;
-using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Stratis.FederatedSidechains.AdminDashboard.Settings;
-using RestSharp;
-using Newtonsoft.Json;
 using System.Net;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using RestSharp;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Rest
 {
