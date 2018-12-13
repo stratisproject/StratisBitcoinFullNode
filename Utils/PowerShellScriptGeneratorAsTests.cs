@@ -262,7 +262,7 @@ function Start-Node {
     param( [string]$Path, [string]$WindowTitle, [string]$ConsoleColor, [string]$CmdArgs, [int]$Timeout )
 
     cd $Path
-    start-process cmd -ArgumentList ""/k title ${WindowTitle} && color ${ConsoleColor} && dotnet run ${CmdArgs}""
+    start-process cmd -ArgumentList ""/k title ${WindowTitle} && color ${ConsoleColor} && dotnet run --no-build ${CmdArgs}""
     $running_nodes.Add(""------------------${WindowTitle}------------------`n${CmdArgs}"")
     timeout $Timeout
 }
