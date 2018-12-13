@@ -27,12 +27,12 @@ namespace Stratis.FederationGatewayD
         private const string MainchainArgument = "-mainchain";
         private const string SidechainArgument = "-sidechain";
 
-        static void Main(string[] args)
+        private static void Main(string[] args)
         {
             RunFederationGatewayAsync(args).Wait();
         }
 
-        public static async Task RunFederationGatewayAsync(string[] args)
+        private static async Task RunFederationGatewayAsync(string[] args)
         {
             try
             {
@@ -44,9 +44,7 @@ namespace Stratis.FederationGatewayD
                     throw new ArgumentException($"Gateway node needs to be started specifying either a {SidechainArgument} or a {MainchainArgument} argument");
                 }
 
-                IFullNode node = isMainchainNode
-                    ? GetMainchainFullNode(args)
-                    : GetSidechainFullNode(args);
+                IFullNode node = isMainchainNode ? GetMainchainFullNode(args) : GetSidechainFullNode(args);
 
                 if (node != null)
                     await node.RunAsync();
@@ -62,17 +60,10 @@ namespace Stratis.FederationGatewayD
             var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args);
 
             IFullNode node = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseBlockStore()
+                .AddCommonFeatures(nodeSettings)
                 .UsePosConsensus()
-                .UseMempool()
                 .UseWallet()
-                .UseTransactionNotification()
-                .UseBlockNotification()
                 .AddPowPosMining()
-                .UseApi()
-                .AddRPC()
-                .AddFederationGateway()
                 .Build();
 
             return node;
@@ -83,21 +74,30 @@ namespace Stratis.FederationGatewayD
             var nodeSettings = new NodeSettings(networksSelector: FederatedPegNetwork.NetworksSelector, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
 
             IFullNode node = new FullNodeBuilder()
-                .UseNodeSettings(nodeSettings)
-                .UseBlockStore()
+                .AddCommonFeatures(nodeSettings)
                 .AddSmartContracts()
                 .UseSmartContractWallet()
                 .UseReflectionExecutor()
-                .AddFederationGateway()
                 .UseFederatedPegPoAMining()
-                .UseMempool()
-                .UseTransactionNotification()
-                .UseBlockNotification()
-                .UseApi()
-                .AddRPC()
                 .Build();
 
             return node;
+        }
+    }
+
+    internal static class CommonFeaturesExtension
+    {
+        internal static IFullNodeBuilder AddCommonFeatures(this IFullNodeBuilder fullNodeBuilder, NodeSettings nodeSettings)
+        {
+            return fullNodeBuilder
+                .UseNodeSettings(nodeSettings)
+                .UseBlockStore()
+                .AddFederationGateway()
+                .UseTransactionNotification()
+                .UseBlockNotification()
+                .UseApi()
+                .UseMempool()
+                .AddRPC();
         }
     }
 }
