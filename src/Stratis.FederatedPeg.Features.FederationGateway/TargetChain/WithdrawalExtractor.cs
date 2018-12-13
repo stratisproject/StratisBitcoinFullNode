@@ -49,8 +49,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             if (transaction.Outputs.Count(this.IsTargetAddressCandidate) != 1) return null;
             if (!IsOnlyFromMultisig(transaction)) return null;
 
-            string depositId = this.opReturnDataReader.TryGetTransactionId(transaction);
-            if (string.IsNullOrWhiteSpace(depositId)) return null;
+            if (!this.opReturnDataReader.TryGetTransactionId(transaction, out string depositId))
+                return null;
 
             this.logger.LogTrace(
                 "Processing received transaction with source deposit id: {0}. Transaction hash: {1}.",

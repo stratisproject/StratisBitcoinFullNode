@@ -44,7 +44,7 @@ namespace Stratis.FederatedPeg.Tests
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
             this.settings.FederationPublicKeys.Returns(this.addressHelper.MultisigPrivateKeys.Select(k => k.PubKey).ToArray());
 
-            this.opReturnDataReader.TryGetTargetAddress(null).ReturnsForAnyArgs((string)null);
+            this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });
 
             this.transactionBuilder = new TestMultisigTransactionBuilder(this.addressHelper);
 
@@ -193,7 +193,8 @@ namespace Stratis.FederatedPeg.Tests
                 true);
 
             block.AddTransaction(validWithdrawalTransaction);
-            this.opReturnDataReader.TryGetTransactionId(validWithdrawalTransaction).Returns(opReturnDepositId.ToString());
+            this.opReturnDataReader.TryGetTransactionId(validWithdrawalTransaction, out string txId).Returns(callInfo => { callInfo[1] = opReturnDepositId.ToString(); return true; });
+
             return (targetScript, opReturnDepositId, amount, validWithdrawalTransaction);
         }
 

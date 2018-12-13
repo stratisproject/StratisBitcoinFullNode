@@ -21,8 +21,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.network = network;
         }
 
-        ///<inheritdoc />
-        public string TryGetTargetAddress(Transaction transaction)
+        /// <inheritdoc />
+        public bool TryGetTargetAddress(Transaction transaction, out string address)
         {
             List<string> opReturnAddresses = SelectBytesContentFromOpReturn(transaction)
                 .Select(this.TryConvertValidOpReturnDataToAddress)
@@ -32,11 +32,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.logger.LogDebug("Address(es) found in OP_RETURN(s) of transaction {0}: [{1}]",
                 transaction.GetHash(), string.Join(",", opReturnAddresses));
 
-            return opReturnAddresses.Count != 1 ? null : opReturnAddresses[0];
+            if (opReturnAddresses.Count != 1)
+            {
+                address = null;
+                return false;
+            }
+
+            address = opReturnAddresses[0];
+            return true;
         }
 
         /// <inheritdoc />
-        public string TryGetTransactionId(Transaction transaction)
+        public bool TryGetTransactionId(Transaction transaction, out string txId)
         {
             List<string> transactionId = SelectBytesContentFromOpReturn(transaction)
                 .Select(this.TryConvertValidOpReturnDataToHash)
@@ -46,7 +53,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.logger.LogDebug("Transaction Id(s) found in OP_RETURN(s) of transaction {0}: [{1}]",
                 transaction.GetHash(), string.Join(",", transactionId));
 
-            return transactionId.Count != 1 ? null : transactionId[0];
+            if (transactionId.Count != 1)
+            {
+                txId = null;
+                return false;
+            }
+
+            txId = transactionId[0];
+            return true;
         }
 
         private static IEnumerable<byte[]> SelectBytesContentFromOpReturn(Transaction transaction)
