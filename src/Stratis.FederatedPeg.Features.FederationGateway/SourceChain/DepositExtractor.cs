@@ -57,14 +57,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
         /// <inheritdoc />
         public IDeposit ExtractDepositFromTransaction(Transaction transaction, int blockHeight, uint256 blockHash)
         {
-            var depositsToMultisig = transaction.Outputs.Where(output =>
+            List<TxOut> depositsToMultisig = transaction.Outputs.Where(output =>
                 output.ScriptPubKey == this.depositScript
                 && !output.IsDust(FeeRate.Zero)).ToList();
 
             if (!depositsToMultisig.Any())
                 return null;
 
-            var targetAddress = this.opReturnDataReader.TryGetTargetAddress(transaction);
+            string targetAddress = this.opReturnDataReader.TryGetTargetAddress(transaction);
             if (string.IsNullOrWhiteSpace(targetAddress))
                 return null;
 

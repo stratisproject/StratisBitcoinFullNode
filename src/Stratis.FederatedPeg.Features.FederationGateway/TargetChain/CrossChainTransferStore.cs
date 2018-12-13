@@ -101,13 +101,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.cancellation = new CancellationTokenSource();
 
             // Future-proof store name.
-            var depositStoreName = "federatedTransfers" + settings.MultiSigAddress.ToString();
+            string depositStoreName = "federatedTransfers" + settings.MultiSigAddress.ToString();
             string folder = Path.Combine(dataFolder.RootPath, depositStoreName);
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
 
             // Initialize tracking deposits by status.
-            foreach (var status in typeof(CrossChainTransferStatus).GetEnumValues())
+            foreach (object status in typeof(CrossChainTransferStatus).GetEnumValues())
                 this.depositsIdsByStatus[(CrossChainTransferStatus)status] = new HashSet<uint256>();
         }
 
@@ -252,7 +252,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     continue;
                 }
 
-                var walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
+                List<(Transaction, TransactionData, IWithdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
                 if (walletData.Count == 1 && ValidateTransaction(walletData[0].Item1))
                 {
                     Transaction walletTran = walletData[0].Item1;
@@ -1054,7 +1054,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private OutPoint EarliestOutput(Transaction transaction)
         {
-            var comparer = Comparer<OutPoint>.Create((x, y) => this.federationWalletManager.CompareOutpoints(x, y));
+            Comparer<OutPoint> comparer = Comparer<OutPoint>.Create((x, y) => this.federationWalletManager.CompareOutpoints(x, y));
             return transaction.Inputs.Select(i => i.PrevOut).OrderByDescending(t => t, comparer).FirstOrDefault();
         }
 

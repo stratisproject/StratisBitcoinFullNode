@@ -11,17 +11,17 @@ using NBitcoin.Networks;
 using NSubstitute;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 using Stratis.Sidechains.Networks;
 using Xunit;
-using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Connection;
 
 namespace Stratis.FederatedPeg.Tests
 {

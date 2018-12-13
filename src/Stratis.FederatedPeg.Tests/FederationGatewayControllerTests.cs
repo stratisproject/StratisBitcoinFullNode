@@ -1,21 +1,21 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Net;
+using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.Controllers;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
-using Stratis.FederatedPeg.Tests.Utils;
-using Xunit;
-using FluentAssertions;
-using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
+using Stratis.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
-using Stratis.Bitcoin.Utilities;
+using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
 {
@@ -179,10 +179,10 @@ namespace Stratis.FederatedPeg.Tests
 
             ChainedHeader earlierBlock = this.chain.GetBlock(2);
 
-            var minConfirmations = 2;
+            int minConfirmations = 2;
             this.depositExtractor.MinimumDepositConfirmations.Returns((uint)minConfirmations);
 
-            var depositExtractorCallCount = 0;
+            int depositExtractorCallCount = 0;
             this.depositExtractor.ExtractBlockDeposits(Arg.Any<ChainedHeader>()).Returns(new MaturedBlockDepositsModel(null, null));
             this.depositExtractor.When(x => x.ExtractBlockDeposits(Arg.Any<ChainedHeader>())).Do(info =>
             {
@@ -194,7 +194,7 @@ namespace Stratis.FederatedPeg.Tests
             result.Should().BeOfType<JsonResult>();
 
             // If the minConfirmations == 0 and this.chain.Height == earlierBlock.Height then expectedCallCount must be 1.
-            var expectedCallCount = (this.chain.Height - minConfirmations) - earlierBlock.Height + 1;
+            int expectedCallCount = (this.chain.Height - minConfirmations) - earlierBlock.Height + 1;
 
             depositExtractorCallCount.Should().Be(expectedCallCount);
         }
@@ -214,7 +214,7 @@ namespace Stratis.FederatedPeg.Tests
 
             var model = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
 
-            var leaderProviderCallCount = 0;
+            int leaderProviderCallCount = 0;
             this.leaderProvider.When(x => x.Update(Arg.Any<BlockTipModel>())).Do(info =>
             {
                 leaderProviderCallCount++;
@@ -245,7 +245,7 @@ namespace Stratis.FederatedPeg.Tests
                 new[] { new Deposit(0, Money.COIN * 10000, "TTMM7qGGxD5c77pJ8puBg7sTLAm2zZNBwK",
                     hashHeightPair.Height, hashHeightPair.Hash) });
 
-            var callCount = 0;
+            int callCount = 0;
             this.maturedBlockReceiver.When(x => x.ReceiveMaturedBlockDeposits(Arg.Any<IMaturedBlockDeposits[]>())).Do(info =>
             {
                 callCount++;

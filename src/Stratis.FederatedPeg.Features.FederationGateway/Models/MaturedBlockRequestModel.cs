@@ -1,5 +1,4 @@
-﻿using System.Collections.Generic;
-using System.ComponentModel.DataAnnotations;
+﻿using System.ComponentModel.DataAnnotations;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 

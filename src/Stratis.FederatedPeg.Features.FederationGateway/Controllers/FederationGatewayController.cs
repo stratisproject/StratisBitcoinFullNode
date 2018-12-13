@@ -12,7 +12,6 @@ using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
-
 namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
     public static class FederationGatewayRouteEndPoint

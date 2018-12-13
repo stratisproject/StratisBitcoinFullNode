@@ -6,7 +6,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
     {
         protected Coin RandomCoin(Money amount, Script scriptPubKey, bool p2sh)
         {
-            var outpoint = RandomOutpoint();
+            OutPoint outpoint = RandomOutpoint();
             return p2sh
                        ? new ScriptCoin(outpoint, new TxOut(amount, scriptPubKey.Hash), scriptPubKey)
                        : new Coin(outpoint, new TxOut(amount, scriptPubKey));
@@ -14,7 +14,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
         protected Coin RandomCoin(Money amount, Key receiver)
         {
-            var outpoint = RandomOutpoint();
+            OutPoint outpoint = RandomOutpoint();
             return new Coin(outpoint, new TxOut(amount, receiver));
         }
 
@@ -32,7 +32,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
         public Transaction BuildOpReturnTransaction(IDestination receiverAddress, byte[] opReturnBytes, Money amount = null)
         {
-            var transaction = this.BuildTransaction(receiverAddress, amount)
+            Transaction transaction = this.BuildTransaction(receiverAddress, amount)
                 .AddOpReturn(opReturnBytes);
             return transaction;
         }
@@ -48,7 +48,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
         {
             var txBuilder = new TransactionBuilder(network);
             amount = amount ?? TestingValues.GetMoney();
-            var change = withChange ? TestingValues.GetMoney() : Money.Zero;
+            Money change = withChange ? TestingValues.GetMoney() : Money.Zero;
             var multisigCoins = new ICoin[] { RandomCoin(amount + change, senderScript, true) };
 
             txBuilder
@@ -59,7 +59,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
             txBuilder.AddKeys(senderSecrets);
 
-            var signed = txBuilder.BuildTransaction(true);
+            Transaction signed = txBuilder.BuildTransaction(true);
 
             if (opReturnBytes != null) signed.AddOpReturn(opReturnBytes);
 
@@ -74,8 +74,8 @@ namespace Stratis.FederatedPeg.Tests.Utils
             Money amount = null,
             bool withChange = true)
         {
-            var senderSecrets = new[] { senderSecret };
-            var senderScript = senderSecret.ScriptPubKey;
+            Key[] senderSecrets = new[] { senderSecret };
+            Script senderScript = senderSecret.ScriptPubKey;
             return GetTransactionWithInputs(
                 network,
                 senderSecrets,

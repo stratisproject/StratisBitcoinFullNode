@@ -146,7 +146,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                         return;
                     }
 
-                    var token = this.nodeLifetime.ApplicationStopping;
+                    CancellationToken token = this.nodeLifetime.ApplicationStopping;
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;

@@ -35,7 +35,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
             var publicationUri = new Uri(
                 $"http://localhost:{this.targetApiPort}/api/FederationGateway/{route}");
 
-            using (var client = this.httpClientFactory.CreateClient())
+            using (HttpClient client = this.httpClientFactory.CreateClient())
             {
                 var sendModel = (T)model;
                 var request = new JsonContent(sendModel);

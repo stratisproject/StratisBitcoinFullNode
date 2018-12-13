@@ -24,7 +24,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         ///<inheritdoc />
         public string TryGetTargetAddress(Transaction transaction)
         {
-            var opReturnAddresses = SelectBytesContentFromOpReturn(transaction)
+            List<string> opReturnAddresses = SelectBytesContentFromOpReturn(transaction)
                 .Select(this.TryConvertValidOpReturnDataToAddress)
                 .Where(s => s != null)
                 .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
@@ -38,7 +38,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <inheritdoc />
         public string TryGetTransactionId(Transaction transaction)
         {
-            var transactionId = SelectBytesContentFromOpReturn(transaction)
+            List<string> transactionId = SelectBytesContentFromOpReturn(transaction)
                 .Select(this.TryConvertValidOpReturnDataToHash)
                 .Where(s => s != null)
                 .Distinct(StringComparer.InvariantCultureIgnoreCase).ToList();
@@ -68,13 +68,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             // Attempt to parse the string. Validates the base58 string.
             try
             {
-                var bitcoinAddress = network.ToCounterChainNetwork().Parse<BitcoinAddress>(destination);
-                logger.LogTrace($"ConvertValidOpReturnDataToAddress received {destination} and network.Parse received {bitcoinAddress}.");
+                var bitcoinAddress = this.network.ToCounterChainNetwork().Parse<BitcoinAddress>(destination);
+                this.logger.LogTrace($"ConvertValidOpReturnDataToAddress received {destination} and network.Parse received {bitcoinAddress}.");
                 return destination;
             }
             catch (Exception ex)
             {
-                logger.LogTrace($"Address {destination} could not be converted to a valid address. Reason {ex.Message}.");
+                this.logger.LogTrace($"Address {destination} could not be converted to a valid address. Reason {ex.Message}.");
                 return null;
             }
         }
@@ -85,12 +85,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             try
             {
                 var hash256 = new uint256(data);
-                logger.LogTrace($"ConvertValidOpReturnDataToHash received {hash256}.");
+                this.logger.LogTrace($"ConvertValidOpReturnDataToHash received {hash256}.");
                 return hash256.ToString();
             }
             catch (Exception ex)
             {
-                logger.LogTrace($"Candidate hash {data} could not be converted to a valid uint256. Reason {ex.Message}.");
+                this.logger.LogTrace($"Candidate hash {data} could not be converted to a valid uint256. Reason {ex.Message}.");
                 return null;
             }
         }

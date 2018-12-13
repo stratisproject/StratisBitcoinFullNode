@@ -13,7 +13,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public uint256 DepositId => this.depositId;
 
-        // Needed for deserialization.
+        /// <remarks>Needed for deserialization.</remarks>
         public RequestPartialTransactionPayload()
         {
         }

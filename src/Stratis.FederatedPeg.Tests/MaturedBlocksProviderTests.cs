@@ -8,24 +8,23 @@ using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
-using Stratis.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
 {
     public class MaturedBlocksProviderTests
     {
-        private IDepositExtractor depositExtractor;
+        private readonly IDepositExtractor depositExtractor;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         private IFederationGatewaySettings federationSettings;
 
-        private ILogger logger;
+        private readonly ILogger logger;
 
-        private IBlockRepository blockRepository;
+        private readonly IBlockRepository blockRepository;
 
-        private ConcurrentChain chain;
+        private readonly ConcurrentChain chain;
 
         public MaturedBlocksProviderTests()
         {

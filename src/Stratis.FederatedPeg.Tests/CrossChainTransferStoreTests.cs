@@ -518,7 +518,7 @@ namespace Stratis.FederatedPeg.Tests
                 WalletName = "test"
             };
 
-            var model = Post<BuildTransactionRequest, WalletBuildTransactionModel>(
+            WalletBuildTransactionModel model = Post<BuildTransactionRequest, WalletBuildTransactionModel>(
                 "http://127.0.0.1:38221/api/wallet/build-transaction", transactionRequest);
 
             var transaction = new PosTransaction(model.Hex);
@@ -540,7 +540,7 @@ namespace Stratis.FederatedPeg.Tests
                 Hex = model.Hex
             };
 
-            var model2 = Post<SendTransactionRequest, WalletSendTransactionModel>(
+            WalletSendTransactionModel model2 = Post<SendTransactionRequest, WalletSendTransactionModel>(
                 "http://127.0.0.1:38221/api/wallet/send-transaction", sendRequest);
 
         }
@@ -554,7 +554,7 @@ namespace Stratis.FederatedPeg.Tests
 
             var content = new JsonContent(body);
 
-            var strContent = content.ReadAsStringAsync().GetAwaiter().GetResult();
+            string strContent = content.ReadAsStringAsync().GetAwaiter().GetResult();
 
             using (var streamWriter = new StreamWriter(request.GetRequestStream()))
             {
@@ -564,7 +564,7 @@ namespace Stratis.FederatedPeg.Tests
             var response = (HttpWebResponse)request.GetResponse();
             using (var streamReader = new StreamReader(response.GetResponseStream()))
             {
-                var result = streamReader.ReadToEnd();
+                string result = streamReader.ReadToEnd();
                 return JsonConvert.DeserializeObject<Q>(result);
             }
         }

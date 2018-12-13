@@ -1,6 +1,6 @@
 ﻿using System;
-using System.Threading.Tasks;
 using System.Net.Http;
+using System.Threading.Tasks;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {

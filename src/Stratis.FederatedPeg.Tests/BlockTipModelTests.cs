@@ -1,4 +1,5 @@
 ﻿using FluentAssertions;
+using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
@@ -11,9 +12,9 @@ namespace Stratis.FederatedPeg.Tests
     {
         public static IBlockTip PrepareBlockTip()
         {
-            var blockHash = TestingValues.GetUint256();
-            var blockHeight = TestingValues.GetPositiveInt();
-            var matureConfirmation = TestingValues.GetPositiveInt();
+            uint256 blockHash = TestingValues.GetUint256();
+            int blockHeight = TestingValues.GetPositiveInt();
+            int matureConfirmation = TestingValues.GetPositiveInt();
 
             var blockTip = new BlockTipModel(blockHash, blockHeight, matureConfirmation);
             return blockTip;
@@ -22,8 +23,8 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void ShouldSerialiseAsJson()
         {
-            var blockTip = PrepareBlockTip();
-            var asJson = blockTip.ToString();
+            IBlockTip blockTip = PrepareBlockTip();
+            string asJson = blockTip.ToString();
 
             var reconverted = JsonConvert.DeserializeObject<BlockTipModel>(asJson);
 

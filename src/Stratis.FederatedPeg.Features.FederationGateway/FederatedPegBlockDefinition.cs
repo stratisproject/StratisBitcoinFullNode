@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
-using Script = NBitcoin.Script;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
@@ -43,7 +42,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            var rewardScript = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight 
+            Script rewardScript = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight 
                                    ? this.payToMultisigScript 
                                    : this.payToMemberScript;
 

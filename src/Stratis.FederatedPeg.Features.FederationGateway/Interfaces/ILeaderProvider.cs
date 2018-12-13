@@ -1,5 +1,4 @@
-﻿using Stratis.Bitcoin.Utilities;
-using Stratis.FederatedPeg.Features.FederationGateway.Models;
+﻿using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {

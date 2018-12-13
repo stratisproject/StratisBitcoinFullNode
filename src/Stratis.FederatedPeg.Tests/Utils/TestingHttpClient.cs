@@ -24,7 +24,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
         {
             httpMessageHandler = Substitute.ForPartsOf<HttpMessageHandler>();
 
-            var sendCall = httpMessageHandler.Protected("SendAsync", Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>());
+            object sendCall = httpMessageHandler.Protected("SendAsync", Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>());
 
             if (failingClient)
                 sendCall.ThrowsForAnyArgs(new Exception("failed"));

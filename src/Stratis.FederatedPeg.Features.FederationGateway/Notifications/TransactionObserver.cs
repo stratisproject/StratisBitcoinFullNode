@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Signals;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 

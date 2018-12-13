@@ -2,16 +2,14 @@
 using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
-
 using Stratis.Bitcoin.Utilities;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 
 namespace Stratis.FederatedPeg.Tests.Utils
 {
-    using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
-
     public static class TestingValues
     {
         private static readonly Random Random = new Random(DateTime.Now.Millisecond);
@@ -36,7 +34,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
         public static string GetString(int length = 30)
         {
             const string allowed = "abcdefghijklmnopqrstuvwxyz0123456789";
-            var result = new string(Enumerable.Repeat("_", length)
+            string result = new string(Enumerable.Repeat("_", length)
                 .Select(_ => allowed[Random.Next(0, allowed.Length)])
                 .ToArray());
             return result;
@@ -53,17 +51,17 @@ namespace Stratis.FederatedPeg.Tests.Utils
         public static IDeposit GetDeposit(HashHeightPair hashHeightPair = null)
         {
             hashHeightPair = hashHeightPair ?? GetHashHeightPair();
-            var depositId = GetUint256();
-            var depositAmount = GetMoney();
-            var targetAddress = GetString();
+            uint256 depositId = GetUint256();
+            Money depositAmount = GetMoney();
+            string targetAddress = GetString();
 
             return new Deposit(depositId, depositAmount, targetAddress, hashHeightPair.Height, hashHeightPair.Hash);
         }
 
         public static IMaturedBlockDeposits GetMaturedBlockDeposits(int depositCount = 0, HashHeightPair fixedHashHeight = null)
         {
-            var hashHeightPair = fixedHashHeight ?? GetHashHeightPair();
-            var deposits = Enumerable.Range(0, depositCount).Select(_ => GetDeposit(hashHeightPair));
+            HashHeightPair hashHeightPair = fixedHashHeight ?? GetHashHeightPair();
+            IEnumerable<IDeposit> deposits = Enumerable.Range(0, depositCount).Select(_ => GetDeposit(hashHeightPair));
 
             var maturedBlockDeposits = new MaturedBlockDepositsModel(
                 new MaturedBlockModel() { BlockHash = hashHeightPair.Hash, BlockHeight = hashHeightPair.Height },
@@ -74,10 +72,10 @@ namespace Stratis.FederatedPeg.Tests.Utils
         public static IWithdrawal GetWithdrawal(HashHeightPair hashHeightPair = null)
         {
             hashHeightPair = hashHeightPair ?? GetHashHeightPair();
-            var depositId = GetUint256();
-            var id = GetUint256();
-            var amount = GetMoney();
-            var targetAddress = GetString();
+            uint256 depositId = GetUint256();
+            uint256 id = GetUint256();
+            Money amount = GetMoney();
+            string targetAddress = GetString();
 
             return new Withdrawal(depositId, id, amount, targetAddress, hashHeightPair.Height, hashHeightPair.Hash);
         }

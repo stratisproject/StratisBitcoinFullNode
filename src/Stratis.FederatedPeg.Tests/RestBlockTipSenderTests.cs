@@ -19,11 +19,11 @@ namespace Stratis.FederatedPeg.Tests
 
         private HttpClient httpClient;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
-        private IFederationGatewaySettings federationSettings;
+        private readonly IFederationGatewaySettings federationSettings;
 
-        private ILogger logger;
+        private readonly ILogger logger;
 
         public RestBlockTipSenderTests()
         {

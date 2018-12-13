@@ -36,7 +36,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             if (!this.IsMainChain && !configReader.GetOrDefault("sidechain", false))
                 throw new ConfigurationException("Either -mainchain or -sidechain must be specified");
 
-            var redeemScriptRaw = configReader.GetOrDefault<string>(RedeemScriptParam, null);
+            string redeemScriptRaw = configReader.GetOrDefault<string>(RedeemScriptParam, null);
             Console.WriteLine(redeemScriptRaw);
             if (redeemScriptRaw == null)
                 throw new ConfigurationException($"could not find {RedeemScriptParam} configuration parameter");

@@ -19,28 +19,28 @@ namespace Stratis.FederatedPeg.Tests.Utils
         public BitcoinPubKeyAddress GetNewSourceChainPubKeyAddress()
         {
             var key = new Key();
-            var newAddress = this.TargetChainNetwork.CreateBitcoinSecret(key).GetAddress();
+            BitcoinPubKeyAddress newAddress = this.TargetChainNetwork.CreateBitcoinSecret(key).GetAddress();
             return newAddress;
         }
 
         public BitcoinPubKeyAddress GetNewTargetChainPubKeyAddress()
         {
             var key = new Key();
-            var newAddress = this.SourceChainNetwork.CreateBitcoinSecret(key).GetAddress();
+            BitcoinPubKeyAddress newAddress = this.SourceChainNetwork.CreateBitcoinSecret(key).GetAddress();
             return newAddress;
         }
 
         public Script GetNewTargetChainPaymentScript()
         {
             var key = new Key();
-            var script = this.TargetChainNetwork.CreateBitcoinSecret(key).ScriptPubKey;
+            Script script = this.TargetChainNetwork.CreateBitcoinSecret(key).ScriptPubKey;
             return script;
         }
 
         public Script GetNewSourceChainPaymentScript()
         {
             var key = new Key();
-            var script = this.SourceChainNetwork.CreateBitcoinSecret(key).ScriptPubKey;
+            Script script = this.SourceChainNetwork.CreateBitcoinSecret(key).ScriptPubKey;
             return script;
         }
     }
