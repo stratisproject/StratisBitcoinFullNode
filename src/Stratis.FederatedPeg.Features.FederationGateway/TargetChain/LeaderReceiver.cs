@@ -7,7 +7,8 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
-    public class LeaderReceiver : ILeaderReceiver, IDisposable
+    /// <inheritdoc />
+    public class LeaderReceiver : ILeaderReceiver
     {
         private readonly ReplaySubject<ILeaderProvider> leaderProvidersStream;
 
@@ -28,7 +29,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <inheritdoc />
         public void ReceiveLeader(ILeaderProvider leaderProvider)
         {
-            this.logger.LogDebug("Received federated leader: {0}", leaderProvider.CurrentLeader);
+            this.logger.LogDebug("Received federated leader: {0}.", leaderProvider.CurrentLeaderKey);
             this.leaderProvidersStream.OnNext(leaderProvider);
         }
 

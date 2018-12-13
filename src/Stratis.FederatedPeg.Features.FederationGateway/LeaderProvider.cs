@@ -31,16 +31,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 ToList().
                 AsReadOnly();
 
-            this.CurrentLeader = new PubKey(this.orderedFederationPublicKeys.First());
+            this.CurrentLeaderKey = new PubKey(this.orderedFederationPublicKeys.First());
         }
 
-        public PubKey CurrentLeader { get; private set; }
+        public PubKey CurrentLeaderKey { get; private set; }
 
         public void Update(BlockTipModel blockTipModel)
         {
             Guard.NotNull(blockTipModel, nameof(blockTipModel));
 
-            this.CurrentLeader = new PubKey(this.orderedFederationPublicKeys[blockTipModel.Height % this.orderedFederationPublicKeys.Count]);
+            this.CurrentLeaderKey = new PubKey(this.orderedFederationPublicKeys[blockTipModel.Height % this.orderedFederationPublicKeys.Count]);
         }
     }
 }
