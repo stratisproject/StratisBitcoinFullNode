@@ -1,10 +1,12 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using NSubstitute.Core;
 using Stratis.Bitcoin;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -48,7 +50,7 @@ namespace Stratis.FederatedPeg.Tests
             this.addressHelper = new MultisigAddressHelper(this.network);
 
             this.settings.MultiSigRedeemScript.Returns(this.addressHelper.PayToMultiSig);
-            this.opReturnDataReader.TryGetTargetAddress(null).ReturnsForAnyArgs((string)null);
+            this.opReturnDataReader.TryGetTargetAddress(null, out string address).Returns(callInfo => { callInfo[1] = null; return false; });
 
             this.transactionBuilder = new TestTransactionBuilder();
 
@@ -71,8 +73,7 @@ namespace Stratis.FederatedPeg.Tests
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
 
-            this.opReturnDataReader.TryGetTargetAddress(depositTransaction)
-                .Returns(targetAddress.ToString());
+            this.opReturnDataReader.TryGetTargetAddress(depositTransaction, out string address).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
 
             Transaction nonDepositTransactionToMultisig = this.transactionBuilder.BuildTransaction(
                 this.addressHelper.SourceChainMultisigAddress);
@@ -114,16 +115,14 @@ namespace Stratis.FederatedPeg.Tests
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
 
-            this.opReturnDataReader.TryGetTargetAddress(depositTransaction)
-                .Returns(targetAddress.ToString());
+            this.opReturnDataReader.TryGetTargetAddress(depositTransaction, out string unused1).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
 
             //add another deposit to the same address
             long secondDepositAmount = Money.COIN * 2;
             Transaction secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, secondDepositAmount);
             block.AddTransaction(secondDepositTransaction);
-            this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction)
-                .Returns(targetAddress.ToString());
+            this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction, out string unused2).Returns(callInfo => { callInfo[1] = targetAddress.ToString(); return true; });
 
             //add another deposit to a different address
             string newTargetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress().ToString();
@@ -133,8 +132,7 @@ namespace Stratis.FederatedPeg.Tests
                 this.addressHelper.SourceChainMultisigAddress, newOpReturnBytes, thirdDepositAmount);
             block.AddTransaction(thirdDepositTransaction);
 
-            this.opReturnDataReader.TryGetTargetAddress(thirdDepositTransaction)
-                .Returns(newTargetAddress);
+            this.opReturnDataReader.TryGetTargetAddress(thirdDepositTransaction, out string unused3).Returns(callInfo => { callInfo[1] = newTargetAddress; return true; });
 
             int blockHeight = 12345;
             IReadOnlyList<IDeposit> extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);

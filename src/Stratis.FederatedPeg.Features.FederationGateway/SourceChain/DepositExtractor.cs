@@ -64,8 +64,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
             if (!depositsToMultisig.Any())
                 return null;
 
-            string targetAddress = this.opReturnDataReader.TryGetTargetAddress(transaction);
-            if (string.IsNullOrWhiteSpace(targetAddress))
+            if (!this.opReturnDataReader.TryGetTargetAddress(transaction, out string targetAddress))
                 return null;
 
             this.logger.LogInformation("Processing received transaction with address: {0}. Transaction hash: {1}.",
