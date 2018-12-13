@@ -1,18 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Net;
-using System.Text;
-using FluentAssertions;
-using NBitcoin;
-using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
+﻿using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.FederatedPeg.Features.FederationGateway;
-using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.IntegrationTests.Utils;
-using Stratis.Sidechains.Networks;
 using Xunit;
 
 namespace Stratis.FederatedPeg.IntegrationTests

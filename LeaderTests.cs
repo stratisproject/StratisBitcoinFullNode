@@ -1,14 +1,9 @@
-﻿using System.Linq;
-using FluentAssertions;
-
+﻿using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.IntegrationTests.Utils;
-
 using Xunit;
 
 namespace Stratis.FederatedPeg.IntegrationTests
@@ -30,7 +25,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
             PubKey currentLeader = leaderProvider.CurrentLeader;
 
-            var tipBefore = this.MainAndSideChainNodeMap["fedSide1"].Node.GetTip().Height;
+            int tipBefore = this.MainAndSideChainNodeMap["fedSide1"].Node.GetTip().Height;
 
             // TODO check blocks get mined and make sure the block notification will change
             // the leader.

@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Notifications;
-using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
