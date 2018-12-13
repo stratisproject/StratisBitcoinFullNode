@@ -160,14 +160,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                         // The block should be put in a queue and pushed to the wallet in an async way.
                         // If the wallet is behind it will just read blocks from store (or download in case of a pruned node).
 
-                        token.ThrowIfCancellationRequested();
-
                         next = newTip.GetAncestor(next.Height + 1);
                         Block nextblock = null;
                         int index = 0;
                         while (true)
                         {
-                            token.ThrowIfCancellationRequested();
+                            if (token.IsCancellationRequested)
+                            {
+                                this.logger.LogTrace("(-)[CANCELLATION_REQUESTED]");
+                                return;
+                            }
 
                             nextblock = this.blockStore.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
                             if (nextblock == null)
