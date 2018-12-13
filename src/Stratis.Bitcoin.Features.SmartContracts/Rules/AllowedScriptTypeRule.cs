@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (PayToMultiSigTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 return;
 
-            //// For cross-chain transfers
+            // For cross-chain transfers
             if (TxNullDataTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 return;
 
