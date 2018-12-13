@@ -115,10 +115,10 @@
     public class PosConsensusOptions : ConsensusOptions
     {
         /// <summary>Coinstake minimal confirmations softfork activation height for mainnet.</summary>
-        public const int CoinstakeMinConfirmationActivationHeightMainnet = 1005000;
+        public const int CoinstakeMinConfirmationActivationHeightMainnet = 200000;
 
         /// <summary>Coinstake minimal confirmations softfork activation height for testnet.</summary>
-        public const int CoinstakeMinConfirmationActivationHeightTestnet = 436000;
+        public const int CoinstakeMinConfirmationActivationHeightTestnet = 2000;
 
         /// <summary>A mask for coinstake transaction's timestamp and header's timestamp.</summary>
         /// <remarks>Used to decrease granularity of timestamp. Supposed to be 2^n-1.</remarks>
