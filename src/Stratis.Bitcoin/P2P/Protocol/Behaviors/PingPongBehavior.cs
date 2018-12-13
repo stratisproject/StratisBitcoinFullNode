@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
                     this.currentPing = new PingPayload();
                     this.dateSent = DateTimeOffset.UtcNow;
-                    peer.SendMessageAsync(this.currentPing).GetAwaiter().GetResult();
+                    peer.SendMessage(this.currentPing);
                     this.pingTimeoutTimer = new Timer(this.PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
                 }
                 catch (OperationCanceledException)
