@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (ops.Any() && ops.First().Code == OpcodeType.OP_RETURN)
                 return;
 
-            new ConsensusError("disallowed-output-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
+            new ConsensusError("disallowed-output-script", "Only the following script types are allowed on smart contracts network: P2PKH, P2SH, P2MultiSig, OP_RETURN and smart contracts").Throw();
         }
 
         private void CheckInput(TxIn input)
@@ -97,7 +97,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (PayToMultiSigTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
                 return;
 
-            new ConsensusError("disallowed-input-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
+            new ConsensusError("disallowed-input-script", "Only the following script types are allowed on smart contracts network: P2PKH, P2SH, P2MultiSig, OP_RETURN and smart contracts").Throw();
         }
     }
 }
