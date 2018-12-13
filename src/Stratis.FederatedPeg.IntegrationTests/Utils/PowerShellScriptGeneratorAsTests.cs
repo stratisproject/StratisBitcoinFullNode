@@ -19,9 +19,26 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
         private Action<string> newLine;
 
+        private Dictionary<Mnemonic, PubKey> PubKeysByMnemonic { get { return originalPubKeysByMnemonic ?? this.pubKeysByMnemonic; }}
+
+        private Dictionary<Mnemonic, PubKey> originalPubKeysByMnemonic;
+
+        private IList<Mnemonic> originalMnemonics;
+
+        private IList<Mnemonic> Mnemonics { get { return originalMnemonics ?? this.mnemonics; } }
+
         public PowerShellScriptGeneratorAsTests(ITestOutputHelper output)
         {
             this.output = output;
+        }
+
+        [Fact]
+        public void Generate_PS1_Fragment_With_New_Mnemonics()
+        {
+            this.originalMnemonics = Enumerable.Range(0, this.mnemonics.Count)
+                .Select(_ => new Mnemonic(Wordlist.English, WordCount.Twelve)).ToArray();
+            this.originalPubKeysByMnemonic = this.Mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
+            Generate_PS1_Fragment();
         }
 
         [Fact]
@@ -51,7 +68,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             //for now just use the same private keys for multisig wallet and block signing
             this.federationMemberIndexes.ForEach(i =>
             {
-                var privateKey = this.mnemonics[i].DeriveExtKey().PrivateKey;
+                var privateKey = this.Mnemonics[i].DeriveExtKey().PrivateKey;
                 var targetFile = $"$root_datadir\\gateway{i + 1}\\fedpeg\\FederatedPegRegTest\\federationKey.dat";
 
                 var keyAsString = System.BitConverter.ToString(privateKey.ToBytes());
@@ -169,7 +186,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
                 this.federationMemberIndexes.ForEach(i =>
                 {
                     this.newLine(
-                        $"$params = @{{ \"mnemonic\" = \"{this.mnemonics[i]}\"; \"password\" = \"password\" }}");
+                        $"$params = @{{ \"mnemonic\" = \"{this.Mnemonics[i]}\"; \"password\" = \"password\" }}");
                     this.newLine(
                         $"Invoke-WebRequest -Uri http://localhost:38{GetPortNumberSuffix(c, i)}/api/FederationWallet/import-key -Method post -Body ($params|ConvertTo-Json) -ContentType \"application/json\"");
                     this.newLine("timeout $interval_time");
@@ -205,7 +222,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.newLine($"$redeemscript = \"{this.scriptAndAddresses.payToMultiSig}\"");
             this.newLine($"$sidechain_multisig_address = \"{this.scriptAndAddresses.sidechainMultisigAddress}\"");
             this.federationMemberIndexes.ForEach(
-                i => { this.newLine($"$gateway{i + 1}_public_key = \"{this.pubKeysByMnemonic[this.mnemonics[i]]}\""); });
+                i => { this.newLine($"$gateway{i + 1}_public_key = \"{this.PubKeysByMnemonic[this.Mnemonics[i]]}\""); });
             this.newLine(Environment.NewLine);
         }
 
@@ -215,8 +232,8 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.federationMemberIndexes.ForEach(
                 i =>
                 {
-                    this.newLine($"# Member{i + 1} mnemonic: {this.mnemonics[i]}");
-                    this.newLine($"# Member{i + 1} public key: {this.pubKeysByMnemonic[this.mnemonics[i]]}");
+                    this.newLine($"# Member{i + 1} mnemonic: {this.Mnemonics[i]}");
+                    this.newLine($"# Member{i + 1} public key: {this.PubKeysByMnemonic[this.Mnemonics[i]]}");
                 });
 
             this.newLine($"# Redeem script: {this.scriptAndAddresses.payToMultiSig}");
