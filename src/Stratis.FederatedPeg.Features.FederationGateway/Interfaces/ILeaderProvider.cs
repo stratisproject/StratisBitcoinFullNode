@@ -1,4 +1,5 @@
-﻿using Stratis.FederatedPeg.Features.FederationGateway.Models;
+﻿using NBitcoin;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
@@ -7,7 +8,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
     /// </summary>
     public interface ILeaderProvider
     {
-        NBitcoin.PubKey CurrentLeader { get; }
+        /// <summary>Public key of the current leader.</summary>
+        PubKey CurrentLeaderKey { get; }
 
         void Update(BlockTipModel blockTipModel);
     }

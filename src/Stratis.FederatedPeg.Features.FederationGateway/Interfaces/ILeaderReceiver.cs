@@ -9,7 +9,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
     public interface ILeaderReceiver : IDisposable
     {
         /// <summary>
-        /// Notifies subscribed and future observers about the arrival of a change in federatated leader.
+        /// Notifies subscribed and future observers about the arrival of a change in federated leader.
         /// </summary>
         /// <param name="leaderProvider">
         /// Provides the current federated leader.

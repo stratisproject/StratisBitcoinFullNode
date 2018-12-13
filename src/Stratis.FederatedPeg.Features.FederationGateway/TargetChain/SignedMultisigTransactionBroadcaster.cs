@@ -47,7 +47,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <inheritdoc />
         public async Task BroadcastTransactionsAsync(ILeaderProvider leaderProvider)
         {
-            if (this.publicKey != leaderProvider.CurrentLeader.ToString()) return;
+            if (this.publicKey != leaderProvider.CurrentLeaderKey.ToString()) return;
 
             Dictionary<uint256, Transaction> transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
 

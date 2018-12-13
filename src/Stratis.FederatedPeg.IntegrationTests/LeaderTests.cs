@@ -23,7 +23,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             IFederationGatewaySettings federationGatewaySettings = new FederationGatewaySettings(this.MainAndSideChainNodeMap["fedSide1"].Node.FullNode.Settings);
             ILeaderProvider leaderProvider = new LeaderProvider(federationGatewaySettings);
 
-            PubKey currentLeader = leaderProvider.CurrentLeader;
+            PubKey currentLeader = leaderProvider.CurrentLeaderKey;
 
             int tipBefore = this.MainAndSideChainNodeMap["fedSide1"].Node.GetTip().Height;
 
@@ -36,7 +36,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 }
             );
 
-            leaderProvider.CurrentLeader.Should().NotBe(currentLeader);
+            leaderProvider.CurrentLeaderKey.Should().NotBe(currentLeader);
         }
     }
 }

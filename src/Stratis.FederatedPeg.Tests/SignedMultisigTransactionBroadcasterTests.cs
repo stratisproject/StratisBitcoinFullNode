@@ -95,7 +95,7 @@ namespace Stratis.FederatedPeg.Tests
         public async Task When_Not_The_CurrentLeader_Dont_Call_GetSignedTransactionsAsync()
         {
             this.federationGatewaySettings.PublicKey.Returns("dummykey");
-            this.leaderProvider.CurrentLeader.Returns(new PubKey(PublicKey));
+            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
 
             IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
             this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
@@ -117,7 +117,7 @@ namespace Stratis.FederatedPeg.Tests
         public async Task When_CurrentLeader_Call_GetSignedTransactionsAsync()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
-            this.leaderProvider.CurrentLeader.Returns(new PubKey(PublicKey));
+            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
 
             IObservable<ILeaderProvider> leaderStream = new[] { this.leaderProvider }.ToObservable();
             this.leaderReceiver.LeaderProvidersStream.Returns(leaderStream);
@@ -149,7 +149,7 @@ namespace Stratis.FederatedPeg.Tests
         public async Task When_CurrentLeader_BroadcastsTransactionAsync()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
-            this.leaderProvider.CurrentLeader.Returns(new PubKey(PublicKey));
+            this.leaderProvider.CurrentLeaderKey.Returns(new PubKey(PublicKey));
 
             var transactionPair = new Dictionary<uint256, Transaction>
             {

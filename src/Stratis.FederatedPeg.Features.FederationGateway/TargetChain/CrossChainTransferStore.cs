@@ -238,7 +238,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             var tracker = new StatusChangeTracker();
             int newChainATip = this.NextMatureDepositHeight;
 
-            foreach (CrossChainTransfer partialTransfer in crossChainTransfers)
+            foreach (ICrossChainTransfer partialTransfer in crossChainTransfers)
             {
                 if (partialTransfer == null)
                     continue;
