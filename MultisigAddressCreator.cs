@@ -19,17 +19,14 @@ namespace FederationSetup
             this.output = output;
         }
 
-        //[Fact]
         [Fact(Skip = "This is not a test, it is meant to be run upon creating a network")]
         public void Run_CreateMultisigAddresses()
         {
-            var mainchainNetwork = Networks.Stratis.Testnet();
-            var sidechainNetwork = FederatedPegNetwork.NetworksSelector.Testnet();
-
-            string password = "mypassword";
+            Network mainchainNetwork = Networks.Stratis.Testnet();
+            Network sidechainNetwork = FederatedPegNetwork.NetworksSelector.Testnet();
 
             // Create a mnemonic and get the corresponding pubKey.
-            PubKey[] pubKeys = new PubKey[1];
+            var pubKeys = new PubKey[1];
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
             pubKeys[0] = mnemonic.DeriveExtKey().PrivateKey.PubKey;
 
