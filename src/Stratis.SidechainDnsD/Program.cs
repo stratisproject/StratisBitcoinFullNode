@@ -54,7 +54,6 @@ namespace Stratis.SidechainDnsD
                     .UseReflectionExecutor()
                     .UseMempool()
                     .UseApi()
-                    .AddRPC()
                     .UseDns()
                     .Build();
 
