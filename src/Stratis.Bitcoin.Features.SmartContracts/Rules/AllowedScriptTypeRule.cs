@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -61,7 +63,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 return;
 
             // For cross-chain transfers
+            if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                return;
+
+            // For cross-chain transfers
             if (PayToMultiSigTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                return;
+
+            // For cross-chain transfers
+            IEnumerable<Op> ops = output.ScriptPubKey.ToOps();
+            if (ops.Any() && ops.First().Code == OpcodeType.OP_RETURN)
                 return;
 
             new ConsensusError("disallowed-output-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
@@ -77,6 +88,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             // Currently necessary to spend premine. Could be stricter.
             if (PayToPubkeyTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
+                return;
+
+            if (PayToScriptHashTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
                 return;
 
             // For cross-chain transfers
