@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.Prune)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.blockRepository.CompactBlockAndTransactionDatabase();
+                this.blockRepository.PruneBlockAndTransactionDatabase();
             }
 
             this.logger.LogInformation("Stopping BlockStore.");

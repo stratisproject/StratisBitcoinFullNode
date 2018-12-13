@@ -64,6 +64,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="txIndex">Whether to index transactions.</param>
         Task SetTxIndexAsync(bool txIndex);
 
+        /// <summary>Hash and height indicating where the node's block store has been pruned up to.</summary>
+        HashHeightPair PrunedTipHashAndHeight { get; }
+
         /// <summary>Hash and height of the repository's tip.</summary>
         HashHeightPair TipHashAndHeight { get; }
 
@@ -73,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Compacts the block and transaction database by resaving the database file without
         /// all the deleted referencs.
         /// </summary>
-        Task CompactBlockAndTransactionDatabase();
+        Task PruneBlockAndTransactionDatabase();
     }
 
     public class BlockRepository : IBlockRepository
@@ -94,18 +97,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private static readonly byte[] TxIndexKey = new byte[1];
 
+        public HashHeightPair PrunedTipHashAndHeight { get; private set; }
+
         public HashHeightPair TipHashAndHeight { get; private set; }
 
         public bool TxIndex { get; private set; }
 
-        private readonly IDateTimeProvider dateTimeProvider;
-
-        public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory)
+        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.BlockPath, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
+        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
@@ -115,7 +118,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
             this.network = network;
-            this.dateTimeProvider = dateTimeProvider;
         }
 
         /// <inheritdoc />
@@ -149,7 +151,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task CompactBlockAndTransactionDatabase()
+        public Task PruneBlockAndTransactionDatabase()
         {
             Task task = Task.Run(() =>
             {
@@ -160,8 +162,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     var tempBlocks = dbreezeTransaction.SelectDictionary<byte[], Block>(BlockTableName);
                     var tempTransactions = dbreezeTransaction.SelectDictionary<byte[], Block>(TransactionTableName);
 
-                    this.logger.LogDebug($"{tempBlocks.Count} blocks will be copied.");
-                    this.logger.LogDebug($"{tempTransactions.Count} transactions will be copied.");
+                    this.logger.LogDebug($"{tempBlocks.Count} blocks will be copied to the pruned table.");
+                    this.logger.LogDebug($"{tempTransactions.Count} transactions will be copied to the pruned table.");
 
                     dbreezeTransaction.RemoveAllKeys(BlockTableName, true);
                     dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);

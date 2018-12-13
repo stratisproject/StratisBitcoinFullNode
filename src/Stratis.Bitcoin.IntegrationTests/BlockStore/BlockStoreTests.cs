@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), this.loggerFactory))
             {
                 blockRepository.SetTxIndexAsync(true).Wait();
 
