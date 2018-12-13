@@ -17,8 +17,8 @@ namespace Stratis.FederatedSidechains.Initialisation
 
         public void Run(string[] args = null)
         {
-            if (args == null || args.Length == 0) ConfigFile = DefaultConfigFile;
-            else ConfigFile = new FileInfo(args.First());
+            if (args == null || args.Length == 0) this.ConfigFile = DefaultConfigFile;
+            else this.ConfigFile = new FileInfo(args.First());
         }
     }
 }

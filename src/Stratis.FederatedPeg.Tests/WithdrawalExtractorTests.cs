@@ -1,5 +1,4 @@
 ﻿using System.Linq;
-using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -9,29 +8,26 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
-using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
 {
-    using System.Collections.Generic;
-
     public class WithdrawalExtractorTests
     {
-        private IFederationGatewaySettings settings;
+        private readonly IFederationGatewaySettings settings;
 
-        private IOpReturnDataReader opReturnDataReader;
+        private readonly IOpReturnDataReader opReturnDataReader;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         private IWithdrawalReceiver withdrawalReceiver;
 
         private WithdrawalExtractor withdrawalExtractor;
 
-        private Network network;
+        private readonly Network network;
 
-        private MultisigAddressHelper addressHelper;
+        private readonly MultisigAddressHelper addressHelper;
 
-        private TestMultisigTransactionBuilder transactionBuilder;
+        private readonly TestMultisigTransactionBuilder transactionBuilder;
 
         public WithdrawalExtractorTests()
         {
@@ -187,10 +183,10 @@ namespace Stratis.FederatedPeg.Tests
         private (Script targetScript, uint256 opReturnDepositId, long amount, Transaction validWithdrawalTransaction)
             AddWithdrawalToBlock(Block block)
         {
-            var targetScript = this.addressHelper.GetNewTargetChainPaymentScript();
-            var opReturnDepositId = TestingValues.GetUint256();
+            Script targetScript = this.addressHelper.GetNewTargetChainPaymentScript();
+            uint256 opReturnDepositId = TestingValues.GetUint256();
             long amount = 22 * Money.COIN;
-            var validWithdrawalTransaction = this.transactionBuilder.GetWithdrawalOutOfMultisigTo(
+            Transaction validWithdrawalTransaction = this.transactionBuilder.GetWithdrawalOutOfMultisigTo(
                 targetScript,
                 opReturnDepositId.ToBytes(),
                 amount,

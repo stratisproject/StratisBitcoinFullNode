@@ -32,19 +32,19 @@ namespace Stratis.FederatedPeg.Tests
             this.leaderReceiver = new LeaderReceiver(this.loggerFactory);
 
             const int LeaderCount = 3;
-            var receivedLeaderCount = 0;
+            int receivedLeaderCount = 0;
 
             this.streamSubscription = this.leaderReceiver.LeaderProvidersStream.Subscribe(
                 _ => { receivedLeaderCount++; });
 
             this.leaderProvider.CurrentLeader.Returns(new NBitcoin.PubKey(PublicKey));
 
-            for (var i = 0; i < LeaderCount; i++)
+            for (int i = 0; i < LeaderCount; i++)
                 this.leaderReceiver.ReceiveLeader(this.leaderProvider);
 
             receivedLeaderCount.Should().Be(LeaderCount);
 
-            var logMsg = string.Format("Received federated leader: {0}", PublicKey);
+            string logMsg = string.Format("Received federated leader: {0}", PublicKey);
 
             this.logger.Received(receivedLeaderCount).Log(LogLevel.Debug,
                 Arg.Any<EventId>(),

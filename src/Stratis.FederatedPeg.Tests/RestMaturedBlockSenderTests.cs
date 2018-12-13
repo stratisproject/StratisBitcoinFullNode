@@ -4,6 +4,7 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Stratis.FederatedPeg.Features.FederationGateway;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Tests.Utils;
 using Xunit;
@@ -18,11 +19,11 @@ namespace Stratis.FederatedPeg.Tests
 
         private HttpClient httpClient;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
-        private IFederationGatewaySettings federationSettings;
+        private readonly IFederationGatewaySettings federationSettings;
 
-        private ILogger logger;
+        private readonly ILogger logger;
 
         public RestMaturedBlockSenderTests()
         {
@@ -37,7 +38,7 @@ namespace Stratis.FederatedPeg.Tests
         {
             TestingHttpClient.PrepareWorkingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
 
-            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
+            IMaturedBlockDeposits maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
 
             var restSender = new RestMaturedBlockSender(this.loggerFactory, this.federationSettings, this.httpClientFactory);
 
@@ -51,7 +52,7 @@ namespace Stratis.FederatedPeg.Tests
         {
             TestingHttpClient.PrepareFailingHttpClient(ref this.messageHandler, ref this.httpClient, ref this.httpClientFactory);
 
-            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
+            IMaturedBlockDeposits maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
 
             var restSender = new RestMaturedBlockSender(this.loggerFactory, this.federationSettings, this.httpClientFactory);
 

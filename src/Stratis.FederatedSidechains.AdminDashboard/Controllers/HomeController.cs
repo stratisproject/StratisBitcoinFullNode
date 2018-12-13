@@ -1,16 +1,12 @@
-﻿using System.Threading.Tasks;
-using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.Options;
-using Stratis.FederatedSidechains.AdminDashboard.Settings;
-using RestSharp;
-using System.Threading;
+﻿using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
-using Stratis.FederatedSidechains.AdminDashboard.Hubs;
-using Stratis.FederatedSidechains.AdminDashboard.Filters;
 using Microsoft.Extensions.Caching.Distributed;
+using Microsoft.Extensions.Options;
 using Newtonsoft.Json;
+using Stratis.FederatedSidechains.AdminDashboard.Filters;
+using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.Models;
-using System;
+using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
 {
@@ -40,13 +36,13 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             // Checking if the local cache is built otherwise we will display the initialization page
             if(string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
             {
-                ViewBag.NodeUnavailable = !string.IsNullOrEmpty(this.distributedCache.GetString("NodeUnavailable"));
+                this.ViewBag.NodeUnavailable = !string.IsNullOrEmpty(this.distributedCache.GetString("NodeUnavailable"));
                 return View("Initialization");
             }
 
             var dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
-            ViewBag.DisplayLoader = true;
-            ViewBag.History = new[] {
+            this.ViewBag.DisplayLoader = true;
+            this.ViewBag.History = new[] {
                 dashboardModel.StratisNode.History,
                 dashboardModel.SidechainNode.History
             };

@@ -19,15 +19,15 @@ namespace Stratis.FederatedPeg.Tests
 
         private HttpClient httpClient;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
-        private IFederationGatewaySettings federationSettings;
+        private readonly IFederationGatewaySettings federationSettings;
 
-        private ICrossChainTransferStore crossChainTransferStore;
+        private readonly ICrossChainTransferStore crossChainTransferStore;
 
-        private IMaturedBlockReceiver maturedBlocksReceiver;
+        private readonly IMaturedBlockReceiver maturedBlocksReceiver;
 
-        private ILogger logger;
+        private readonly ILogger logger;
 
         public RestMaturedBlocksRequesterTests()
         {

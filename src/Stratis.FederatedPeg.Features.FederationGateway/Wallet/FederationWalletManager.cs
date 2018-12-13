@@ -554,7 +554,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             if (foundTransaction == null)
             {
                 this.logger.LogTrace("UTXO '{0}-{1}' not found, creating.", transactionHash, index);
-                var newTransaction = new TransactionData
+                TransactionData newTransaction = new TransactionData
                 {
                     Amount = amount,
                     BlockHeight = blockHeight,
@@ -640,7 +640,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             {
                 this.logger.LogTrace("Spending UTXO '{0}-{1}' is new.", spendingTransactionId, spendingTransactionIndex);
 
-                var payments = new List<PaymentDetails>();
+                List<PaymentDetails> payments = new List<PaymentDetails>();
                 foreach (TxOut paidToOutput in paidToOutputs)
                 {
                     // Figure out how to retrieve the destination address.
@@ -675,7 +675,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     });
                 }
 
-                var spendingDetails = new SpendingDetails
+                SpendingDetails spendingDetails = new SpendingDetails
                 {
                     TransactionId = transaction.GetHash(),
                     Payments = payments,
@@ -797,7 +797,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             lock (this.lockObject)
             {
-                var withdrawals = new List<(Transaction, TransactionData, IWithdrawal)>();
+                List<(Transaction, TransactionData, IWithdrawal)> withdrawals = new List<(Transaction, TransactionData, IWithdrawal)>();
 
                 foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions)
                 {
@@ -868,7 +868,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     return false;
 
                 // Verify that there are no earlier unspent UTXOs.
-                var comparer = Comparer<TransactionData>.Create((x, y) => FederationWalletTransactionHandler.CompareTransactionData(x, y));
+                Comparer<TransactionData> comparer = Comparer<TransactionData>.Create((x, y) => FederationWalletTransactionHandler.CompareTransactionData(x, y));
                 TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails == null).OrderBy(t => t, comparer).FirstOrDefault();
                 if (earliestUnspent != null)
                 {
@@ -968,7 +968,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 throw new WalletException("A federation wallet already exists.");
             }
 
-            var wallet = new FederationWallet
+            FederationWallet wallet = new FederationWallet
             {
                 CreationTime = this.dateTimeProvider.GetTimeOffset(),
                 Network = this.network,
@@ -1002,7 +1002,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 {
                     int heightAtDate = this.chain.GetHeightAtTime(date);
 
-                    foreach (var wallet in wallets)
+                    foreach (FederationWallet wallet in wallets)
                     {
                         this.logger.LogTrace("The chain of headers has finished downloading, updating wallet with height {0}", heightAtDate);
                         this.UpdateLastBlockSyncedHeight(this.chain.GetBlock(heightAtDate));
@@ -1015,7 +1015,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     // sync from the current height.
                     this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
 
-                    foreach (var wallet in wallets)
+                    foreach (FederationWallet wallet in wallets)
                     {
                         this.UpdateLastBlockSyncedHeight(this.chain.Tip);
                     }

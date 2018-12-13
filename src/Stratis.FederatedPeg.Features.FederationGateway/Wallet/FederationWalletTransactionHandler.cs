@@ -218,8 +218,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             }
 
             // Get total spendable balance in the account.
-            var balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
-            var totalToSend = context.Recipients.Sum(s => s.Amount);
+            long balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
+            long totalToSend = context.Recipients.Sum(s => s.Amount);
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
@@ -230,14 +230,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 // input is part of the UTXO set and filter out UTXOs that are not
                 // in the initial list if 'context.AllowOtherInputs' is false.
 
-                var availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
+                Dictionary<OutPoint, UnspentOutputReference> availableHashList = context.UnspentOutputs.ToDictionary(item => item.ToOutPoint(), item => item);
 
                 if (!context.SelectedInputs.All(input => availableHashList.ContainsKey(input)))
                     throw new WalletException("Not all the selected inputs were found on the wallet.");
 
                 if (!context.AllowOtherInputs)
                 {
-                    foreach (var unspentOutputsItem in availableHashList)
+                    foreach (KeyValuePair<OutPoint, UnspentOutputReference> unspentOutputsItem in availableHashList)
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
                 }
@@ -278,7 +278,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
                 throw new NotImplementedException("Substracting the fee from the recipient is not supported yet.");
 
-            foreach (var recipient in context.Recipients)
+            foreach (Recipient recipient in context.Recipients)
                 context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
         }
 
@@ -313,7 +313,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             if (context.OpReturnData == null) return;
 
-            var opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(context.OpReturnData);
+            Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(context.OpReturnData);
             context.TransactionBuilder.Send(opReturnScript, Money.Zero);
         }
     }

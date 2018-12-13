@@ -1,12 +1,7 @@
-﻿using System.Linq;
-using FluentAssertions;
-using NBitcoin;
+﻿using FluentAssertions;
 using Newtonsoft.Json;
-
-using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
-using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Tests.Utils;
 using Xunit;
 
@@ -18,8 +13,8 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void ShouldSerialiseAsJson()
         {
-            var maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits(3);
-            var asJson = maturedBlockDeposits.ToString();
+            IMaturedBlockDeposits maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits(3);
+            string asJson = maturedBlockDeposits.ToString();
 
             var reconverted = JsonConvert.DeserializeObject<MaturedBlockDepositsModel>(asJson);
 

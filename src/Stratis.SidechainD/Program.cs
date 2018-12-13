@@ -63,6 +63,7 @@ namespace Stratis.SidechainD
                 .UseApi()
                 .AddRPC()
                 .Build();
+
             return node;
         }
     }

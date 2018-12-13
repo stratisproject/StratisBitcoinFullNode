@@ -63,7 +63,7 @@ namespace Stratis.Sidechains.Networks
 
             this.FederationKeys = this.FederationMnemonics.Select(m => m.DeriveExtKey().PrivateKey).ToList();
 
-            var federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
+            List<PubKey> federationPubKeys = this.FederationKeys.Select(k => k.PubKey).ToList();
 
             var consensusOptions = new PoAConsensusOptions(
                 maxBlockBaseSize: 1_000_000,

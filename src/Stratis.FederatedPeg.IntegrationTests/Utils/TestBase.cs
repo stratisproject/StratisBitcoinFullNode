@@ -197,7 +197,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
         private void ApplyFederationIPs(CoreNode fed1, CoreNode fed2, CoreNode fed3)
         {
-            var fedIps = $"{fed1.Endpoint},{fed2.Endpoint},{fed3.Endpoint}";
+            string fedIps = $"{fed1.Endpoint},{fed2.Endpoint},{fed3.Endpoint}";
 
             this.AppendToConfig(fed1, $"{FederationGatewaySettings.FederationIpsParam}={fedIps}");
             this.AppendToConfig(fed2, $"{FederationGatewaySettings.FederationIpsParam}={fedIps}");

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.FederatedSidechains.Initialisation
+﻿namespace Stratis.FederatedSidechains.Initialisation
 {
     public class SidechainInitialisationConfigModel
     {

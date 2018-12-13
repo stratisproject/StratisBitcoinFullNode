@@ -55,7 +55,7 @@ namespace FederationSetup
         /// <param name="message">The message to show.</param>
         public static void OutputErrorLine(string message)
         {
-            var colorSaved = Console.ForegroundColor;
+            ConsoleColor colorSaved = Console.ForegroundColor;
             Console.ForegroundColor = ConsoleColor.Red;
             Console.WriteLine(message);
             Console.ForegroundColor = colorSaved;

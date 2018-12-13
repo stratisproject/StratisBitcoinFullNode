@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using FluentAssertions;
 using Microsoft.Extensions.Logging;
@@ -16,21 +17,21 @@ namespace Stratis.FederatedPeg.Tests
 {
     public class DepositExtractorTests
     {
-        private IFederationGatewaySettings settings;
+        private readonly IFederationGatewaySettings settings;
 
-        private IOpReturnDataReader opReturnDataReader;
+        private readonly IOpReturnDataReader opReturnDataReader;
 
-        private ILoggerFactory loggerFactory;
+        private readonly ILoggerFactory loggerFactory;
 
         private readonly IFullNode fullNode;
 
-        private DepositExtractor depositExtractor;
+        private readonly DepositExtractor depositExtractor;
 
-        private Network network;
+        private readonly Network network;
 
-        private MultisigAddressHelper addressHelper;
+        private readonly MultisigAddressHelper addressHelper;
 
-        private TestTransactionBuilder transactionBuilder;
+        private readonly TestTransactionBuilder transactionBuilder;
 
         private readonly ConcurrentChain chain;
 
@@ -61,38 +62,38 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void ExtractDepositsFromBlock_Should_Only_Find_Deposits_To_Multisig()
         {
-            var block = this.network.Consensus.ConsensusFactory.CreateBlock();
+            Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
 
-            var targetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
-            var opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
+            BitcoinPubKeyAddress targetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
+            byte[] opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
             long depositAmount = Money.COIN * 3;
-            var depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+            Transaction depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
 
             this.opReturnDataReader.TryGetTargetAddress(depositTransaction)
                 .Returns(targetAddress.ToString());
 
-            var nonDepositTransactionToMultisig = this.transactionBuilder.BuildTransaction(
+            Transaction nonDepositTransactionToMultisig = this.transactionBuilder.BuildTransaction(
                 this.addressHelper.SourceChainMultisigAddress);
             block.AddTransaction(nonDepositTransactionToMultisig);
 
-            var otherAddress = this.addressHelper.GetNewSourceChainPubKeyAddress();
+            BitcoinPubKeyAddress otherAddress = this.addressHelper.GetNewSourceChainPubKeyAddress();
             otherAddress.ToString().Should().NotBe(this.addressHelper.SourceChainMultisigAddress.ToString(),
                 "otherwise the next deposit should actually be extracted");
-            var depositTransactionToOtherAddress =
+            Transaction depositTransactionToOtherAddress =
                 this.transactionBuilder.BuildOpReturnTransaction(otherAddress, opReturnBytes);
             block.AddTransaction(depositTransactionToOtherAddress);
 
-            var nonDepositTransactionToOtherAddress = this.transactionBuilder.BuildTransaction(
+            Transaction nonDepositTransactionToOtherAddress = this.transactionBuilder.BuildTransaction(
                 otherAddress);
             block.AddTransaction(nonDepositTransactionToOtherAddress);
 
             int blockHeight = 230;
-            var extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
+            IReadOnlyList<IDeposit> extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
 
             extractedDeposits.Count.Should().Be(1);
-            var extractedTransaction = extractedDeposits[0];
+            IDeposit extractedTransaction = extractedDeposits[0];
 
             extractedTransaction.Amount.Satoshi.Should().Be(depositAmount);
             extractedTransaction.Id.Should().Be(depositTransaction.GetHash());
@@ -104,12 +105,12 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void ExtractDepositsFromBlock_Should_Create_One_Deposit_Per_Transaction_To_Multisig()
         {
-            var block = this.network.Consensus.ConsensusFactory.CreateBlock();
+            Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
 
-            var targetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
-            var opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
+            BitcoinPubKeyAddress targetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress();
+            byte[] opReturnBytes = Encoding.UTF8.GetBytes(targetAddress.ToString());
             long depositAmount = Money.COIN * 3;
-            var depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+            Transaction depositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, depositAmount);
             block.AddTransaction(depositTransaction);
 
@@ -118,17 +119,17 @@ namespace Stratis.FederatedPeg.Tests
 
             //add another deposit to the same address
             long secondDepositAmount = Money.COIN * 2;
-            var secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+            Transaction secondDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, opReturnBytes, secondDepositAmount);
             block.AddTransaction(secondDepositTransaction);
             this.opReturnDataReader.TryGetTargetAddress(secondDepositTransaction)
                 .Returns(targetAddress.ToString());
 
             //add another deposit to a different address
-            var newTargetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress().ToString();
-            var newOpReturnBytes = Encoding.UTF8.GetBytes(newTargetAddress);
+            string newTargetAddress = this.addressHelper.GetNewTargetChainPubKeyAddress().ToString();
+            byte[] newOpReturnBytes = Encoding.UTF8.GetBytes(newTargetAddress);
             long thirdDepositAmount = Money.COIN * 34;
-            var thirdDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
+            Transaction thirdDepositTransaction = this.transactionBuilder.BuildOpReturnTransaction(
                 this.addressHelper.SourceChainMultisigAddress, newOpReturnBytes, thirdDepositAmount);
             block.AddTransaction(thirdDepositTransaction);
 
@@ -136,13 +137,13 @@ namespace Stratis.FederatedPeg.Tests
                 .Returns(newTargetAddress);
 
             int blockHeight = 12345;
-            var extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
+            IReadOnlyList<IDeposit> extractedDeposits = this.depositExtractor.ExtractDepositsFromBlock(block, blockHeight);
 
             extractedDeposits.Count.Should().Be(3);
             extractedDeposits.Select(d => d.BlockNumber).Should().AllBeEquivalentTo(blockHeight);
             extractedDeposits.Select(d => d.BlockHash).Should().AllBeEquivalentTo(block.GetHash());
 
-            var extractedTransaction = extractedDeposits[0];
+            IDeposit extractedTransaction = extractedDeposits[0];
             extractedTransaction.Amount.Satoshi.Should().Be(depositAmount);
             extractedTransaction.Id.Should().Be(depositTransaction.GetHash());
             extractedTransaction.TargetAddress.Should()

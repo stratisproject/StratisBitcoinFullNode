@@ -1,23 +1,22 @@
 ﻿using System.Collections.Generic;
-
+using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
-using Xunit;
+using Stratis.FederatedPeg.Features.FederationGateway.Notifications;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
-using Microsoft.Extensions.Logging;
 using Stratis.FederatedPeg.Tests.Utils;
-using BlockObserver = Stratis.FederatedPeg.Features.FederationGateway.Notifications.BlockObserver;
-using Stratis.Bitcoin.Features.BlockStore;
+using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
 {
     public class BlockObserverTests
     {
-        private BlockObserver blockObserver;
+        private readonly BlockObserver blockObserver;
 
         private readonly IFederationWalletSyncManager federationWalletSyncManager;
 
@@ -99,7 +98,7 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void BlockObserver_Should_Not_Try_To_Extract_Deposits_Before_MinimumDepositConfirmations()
         {
-            var confirmations = (int)this.minimumDepositConfirmations - 1;
+            int confirmations = (int)this.minimumDepositConfirmations - 1;
 
             var earlyBlock = new Block();
             var earlyChainHeaderBlock = new ChainedHeaderBlock(earlyBlock, new ChainedHeader(new BlockHeader(), uint256.Zero, confirmations));
@@ -116,7 +115,7 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void BlockObserver_Should_Try_To_Extract_Deposits_After_MinimumDepositConfirmations()
         {
-            var blockBuilder = this.ChainHeaderBlockBuilder();
+            (ChainedHeaderBlock chainedHeaderBlock, Block block) blockBuilder = this.ChainHeaderBlockBuilder();
 
             this.blockObserver.OnNext(blockBuilder.chainedHeaderBlock);
 
@@ -156,7 +155,7 @@ namespace Stratis.FederatedPeg.Tests
 
         private (ChainedHeaderBlock chainedHeaderBlock, Block block) ChainHeaderBlockBuilder()
         {
-            var confirmations = (int)this.minimumDepositConfirmations;
+            int confirmations = (int)this.minimumDepositConfirmations;
 
             var blockHeader = new BlockHeader();
             var chainedHeader = new ChainedHeader(blockHeader, uint256.Zero, confirmations);

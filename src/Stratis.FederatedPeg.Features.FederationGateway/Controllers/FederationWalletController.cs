@@ -2,23 +2,22 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Security;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.Mvc.ModelBinding;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
-    using System.Security;
-
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
@@ -100,7 +99,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                     return this.NotFound("No federation wallet found.");
                 }
 
-                var result = wallet.GetSpendableAmount();
+                (Money ConfirmedAmount, Money UnConfirmedAmount) result = wallet.GetSpendableAmount();
 
                 var balance = new AccountBalanceModel
                 {

@@ -1,11 +1,13 @@
 ﻿using System;
-using System.Threading.Tasks;
+using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
-using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using NBitcoin;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
@@ -47,7 +49,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             if (this.publicKey != leaderProvider.CurrentLeader.ToString()) return;
 
-            var transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
+            Dictionary<uint256, Transaction> transactions = await this.store.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).ConfigureAwait(false);
 
             if (!transactions.Any())
             {
@@ -55,9 +57,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 return;
             }
 
-            foreach (var transaction in transactions)
+            foreach (KeyValuePair<uint256, Transaction> transaction in transactions)
             {
-                var txInfo = await this.mempoolManager.InfoAsync(transaction.Key).ConfigureAwait(false);
+                TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(transaction.Key).ConfigureAwait(false);
 
                 if (txInfo != null)
                 {
