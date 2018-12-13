@@ -68,6 +68,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         HashHeightPair TipHashAndHeight { get; }
 
         bool TxIndex { get; }
+
+        Task CompactBlockDatabase();
     }
 
     public class BlockRepository : IBlockRepository
@@ -140,6 +142,27 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (doCommit) transaction.Commit();
                 }
+            });
+
+            return task;
+        }
+
+        /// <inheritdoc />
+        public Task CompactBlockDatabase()
+        {
+            Task task = Task.Run(() =>
+            {
+                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
+                {
+                    dbreezeTransaction.SynchronizeTables(BlockTableName, TransactionTableName);
+
+                    dbreezeTransaction.RemoveAllKeys(BlockTableName, true);
+                    dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
+
+                    dbreezeTransaction.Commit();
+                }
+
+                return Task.CompletedTask;
             });
 
             return task;

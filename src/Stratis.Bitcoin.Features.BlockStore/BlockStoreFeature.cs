@@ -46,6 +46,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly ICheckpoints checkpoints;
 
+        private readonly IBlockRepository blockRepository;
+
         public BlockStoreFeature(
             Network network,
             ConcurrentChain chain,
@@ -58,7 +60,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IBlockStoreQueue blockStoreQueue,
             INodeStats nodeStats,
             IConsensusManager consensusManager,
-            ICheckpoints checkpoints)
+            ICheckpoints checkpoints,
+            IBlockRepository blockRepository)
         {
             this.network = network;
             this.chain = chain;
@@ -72,6 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chainState = chainState;
             this.consensusManager = consensusManager;
             this.checkpoints = checkpoints;
+            this.blockRepository = blockRepository;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
@@ -91,6 +95,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override Task InitializeAsync()
         {
+            if (this.storeSettings.Prune)
+                this.blockRepository.CompactBlockDatabase();
+
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
             if (this.network.Consensus.IsProofOfStake)
             {
