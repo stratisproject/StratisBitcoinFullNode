@@ -1,5 +1,6 @@
 ﻿using System;
 using Newtonsoft.Json;
+using TracerAttributes;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 {
@@ -7,6 +8,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
     {
         public override bool CanConvert(Type objectType) => true;
 
+        [NoTrace]
         public override object ReadJson(JsonReader reader, Type objectType, object existingValue, JsonSerializer serializer)
         {
             return serializer.Deserialize<T>(reader);
