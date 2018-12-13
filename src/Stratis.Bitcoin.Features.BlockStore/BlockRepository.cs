@@ -69,7 +69,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         bool TxIndex { get; }
 
-        Task CompactBlockDatabase();
+        /// <summary>
+        /// Compacts the block and transaction database by resaving the database file without
+        /// all the deleted referencs.
+        /// </summary>
+        Task CompactBlockAndTransactionDatabase();
     }
 
     public class BlockRepository : IBlockRepository
@@ -80,10 +84,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private const string CommonTableName = "Common";
 
-        /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Access to DBreeze database.</summary>
         private readonly DBreezeEngine DBreeze;
 
         private readonly Network network;
@@ -96,7 +98,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public bool TxIndex { get; private set; }
 
-        /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
         public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
@@ -148,7 +149,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task CompactBlockDatabase()
+        public Task CompactBlockAndTransactionDatabase()
         {
             Task task = Task.Run(() =>
             {
@@ -156,8 +157,17 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     dbreezeTransaction.SynchronizeTables(BlockTableName, TransactionTableName);
 
+                    var tempBlocks = dbreezeTransaction.SelectDictionary<byte[], Block>(BlockTableName);
+                    var tempTransactions = dbreezeTransaction.SelectDictionary<byte[], Block>(TransactionTableName);
+
+                    this.logger.LogDebug($"{tempBlocks.Count} blocks will be copied.");
+                    this.logger.LogDebug($"{tempTransactions.Count} transactions will be copied.");
+
                     dbreezeTransaction.RemoveAllKeys(BlockTableName, true);
                     dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
+
+                    dbreezeTransaction.InsertDictionary(BlockTableName, tempBlocks, false);
+                    dbreezeTransaction.InsertDictionary(TransactionTableName, tempTransactions, false);
 
                     dbreezeTransaction.Commit();
                 }
