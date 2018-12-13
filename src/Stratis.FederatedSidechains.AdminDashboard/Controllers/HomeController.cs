@@ -26,7 +26,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
             this.distributedCache = distributedCache;
             this.updaterHub = hubContext;
         }
-        
+
         [Ajax]
         [Route("check-federation")]
         public IActionResult CheckFederation()
@@ -43,7 +43,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
                 ViewBag.NodeUnavailable = !string.IsNullOrEmpty(this.distributedCache.GetString("NodeUnavailable"));
                 return View("Initialization");
             }
-            
+
             var dashboardModel = JsonConvert.DeserializeObject<DashboardModel>(this.distributedCache.GetString("DashboardData"));
             ViewBag.DisplayLoader = true;
             ViewBag.History = new[] {

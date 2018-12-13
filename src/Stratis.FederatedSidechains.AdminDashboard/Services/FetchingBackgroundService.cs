@@ -149,7 +149,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         /// <returns>True if the port is opened</returns>
         private bool PortCheck(int port)
         {
-            using(TcpClient tcpClient = new TcpClient())
+            using(var tcpClient = new TcpClient())
             {
                 try
                 {

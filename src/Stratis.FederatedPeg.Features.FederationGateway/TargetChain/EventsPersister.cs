@@ -27,11 +27,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.maturedBlocksRequester = maturedBlocksRequester;
             this.lockObj = new object();
 
-            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(async m => PersistNewMaturedBlockDeposits(m) );
+            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(PersistNewMaturedBlockDeposits);
             this.logger.LogDebug("Subscribed to {0}", nameof(maturedBlockReceiver), nameof(maturedBlockReceiver.MaturedBlockDepositStream));
         }
 
-        /// <inheritdoc />
         public void PersistNewMaturedBlockDeposits(IMaturedBlockDeposits[] maturedBlockDeposits)
         {
             lock (this.lockObj)

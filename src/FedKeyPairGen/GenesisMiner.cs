@@ -58,7 +58,7 @@ namespace FederationSetup
 
         private string NetworkOutput(Block genesisBlock, string network, string coinbaseText)
         {
-            SmartContractPoABlockHeader header = (SmartContractPoABlockHeader) genesisBlock.Header;
+            var header = (SmartContractPoABlockHeader) genesisBlock.Header;
 
             var output = new StringBuilder();
             output.AppendLine(network);

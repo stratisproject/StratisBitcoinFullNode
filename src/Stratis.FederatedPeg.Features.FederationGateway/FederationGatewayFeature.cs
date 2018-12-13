@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
 using System.Runtime.CompilerServices;
@@ -22,6 +23,7 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -143,7 +145,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 800);
         }
 
-        public override async Task InitializeAsync()
+        public override Task InitializeAsync()
         {
             // Subscribe to receiving blocks and transactions.
             this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(
@@ -167,14 +169,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.maturedBlockRequester.Start();
 
             // Connect the node to the other federation members.
-            foreach (var federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
+            foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
             {
                 this.connectionManager.AddNodeAddress(federationMemberIp);
             }
 
-            var networkPeerConnectionParameters = this.connectionManager.Parameters;
+            NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
                 this.network, this.federationGatewaySettings, this.crossChainTransferStore));
+
+            return Task.CompletedTask;
         }
 
         public override void Dispose()
@@ -184,17 +188,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.crossChainTransferStore.Dispose();
         }
 
-        public void AddInlineStats(StringBuilder benchLogs)
+        private void AddInlineStats(StringBuilder benchLogs)
         {
             if (this.federationWalletManager == null) return;
             int height = this.federationWalletManager.LastBlockHeight();
             ChainedHeader block = this.chain.GetBlock(height);
             uint256 hashBlock = block == null ? 0 : block.HashBlock;
 
-            var federationWallet = this.federationWalletManager.GetWallet();
+            FederationWallet federationWallet = this.federationWalletManager.GetWallet();
             benchLogs.AppendLine("Fed. Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                  (federationWallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
-                                 (federationWallet != null ? (" Fed. Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : String.Empty));
+                                 (federationWallet != null ? (" Fed. Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
 
             benchLogs.AppendLine(
                 "NodeStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
@@ -208,12 +212,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 );
        }
 
-        public void AddComponentStats(StringBuilder benchLog)
+        private void AddComponentStats(StringBuilder benchLog)
         {
             benchLog.AppendLine();
             benchLog.AppendLine("====== Federation Wallet ======");
 
-            var balances = this.federationWalletManager.GetWallet().GetSpendableAmount();
+            (Money ConfirmedAmount, Money UnConfirmedAmount) balances = this.federationWalletManager.GetWallet().GetSpendableAmount();
             benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
                                 + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
                                 + " Unconfirmed balance: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)

@@ -102,14 +102,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
                 var result = wallet.GetSpendableAmount();
 
-                AccountBalanceModel balance = new AccountBalanceModel
+                var balance = new AccountBalanceModel
                 {
                     CoinType = this.coinType,
                     AmountConfirmed = result.ConfirmedAmount,
                     AmountUnconfirmed = result.UnConfirmedAmount,
                 };
 
-                WalletBalanceModel model = new WalletBalanceModel();
+                var model = new WalletBalanceModel();
                 model.AccountsBalances.Add(balance);
 
                 return this.Json(model);

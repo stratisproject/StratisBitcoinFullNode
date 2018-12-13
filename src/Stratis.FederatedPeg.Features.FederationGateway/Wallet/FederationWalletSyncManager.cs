@@ -79,7 +79,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 // a common fork and bringing the wallet back to a good
                 // state (behind the best chain).
                 ICollection<uint256> locators = this.walletManager.GetWallet().BlockLocator;
-                BlockLocator blockLocator = new BlockLocator { Blocks = locators.ToList() };
+                var blockLocator = new BlockLocator { Blocks = locators.ToList() };
                 ChainedHeader fork = this.chain.FindFork(blockLocator);
                 this.walletManager.RemoveBlocks(fork);
                 this.walletManager.WalletTipHash = fork.HashBlock;

@@ -24,7 +24,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         public static SidechainNodeBuilder CreateSidechainNodeBuilder(object caller, [CallerMemberName] string callingMethod = null)
         {
             string testFolderPath = Bitcoin.Tests.Common.TestBase.CreateTestDir(caller, callingMethod);
-            SidechainNodeBuilder builder = new SidechainNodeBuilder(testFolderPath);
+            var builder = new SidechainNodeBuilder(testFolderPath);
             builder.WithLogsDisabled();
 
             return builder;

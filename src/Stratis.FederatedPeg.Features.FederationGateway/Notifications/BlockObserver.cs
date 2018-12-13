@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using System.Collections.Generic;
+using NBitcoin;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -28,13 +29,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
         private readonly IBlockTipSender blockTipSender;
 
-        private readonly ConcurrentChain chain;
-
         /// <summary>
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
         /// <param name="walletSyncManager">The wallet sync manager to pass new incoming blocks to.</param>
-        /// <param name="crossChainTransactionMonitor">The cross-chain transaction monitor to pass new incoming blocks to.</param>
         /// <param name="depositExtractor">The component used to extract the deposits from the blocks appearing on chain.</param>
         /// <param name="withdrawalExtractor">The component used to extract withdrawals from blocks.</param>
         /// <param name="withdrawalReceiver">The component that receives the withdrawals extracted from blocks.</param>
@@ -79,7 +77,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
                     chainedHeaderBlock.ChainedHeader.Height,
                     (int)this.depositExtractor.MinimumDepositConfirmations)).ConfigureAwait(false).GetAwaiter().GetResult();
 
-            var withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
+            IReadOnlyList<IWithdrawal> withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
                 chainedHeaderBlock.Block,
                 chainedHeaderBlock.ChainedHeader.Height);
 

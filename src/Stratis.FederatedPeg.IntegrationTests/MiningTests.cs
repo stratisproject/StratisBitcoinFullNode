@@ -73,7 +73,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 CoreNode node = builder.CreatePoANode(network, network.FederationKeys[0]).WithWallet("pass", walletName).Start();
                 node.EnableFastMining();
 
-                IWalletManager walletManager = node.FullNode.NodeService<IWalletManager>();
+                var walletManager = node.FullNode.NodeService<IWalletManager>();
                 long balanceOnStart = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
                 Assert.Equal(0, balanceOnStart);
 
