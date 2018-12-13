@@ -249,6 +249,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
         private readonly Action<IPEndPoint, Payload> onSendingMessage;
 
+        /// <summary>A queue for sending payload messages to peers.</summary>
+        private readonly AsyncQueue<Payload> asyncQueue;
+
         /// <summary>
         /// Initializes parts of the object that are common for both inbound and outbound peers.
         /// </summary>
@@ -295,6 +298,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             this.onDisconnected = onDisconnected;
             this.onSendingMessage = onSendingMessage;
+
+            this.asyncQueue = new AsyncQueue<Payload>(this.SendMessageHandledAsync);
         }
 
         /// <summary>
@@ -628,6 +633,42 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
+        public void SendMessage(Payload payload)
+        {
+            Guard.NotNull(payload, nameof(payload));
+
+            if (!this.IsConnected)
+            {
+                this.logger.LogTrace("(-)[NOT_CONNECTED]");
+                throw new OperationCanceledException("The peer has been disconnected");
+            }
+
+            this.asyncQueue.Enqueue(payload);
+        }
+
+        /// <summary>
+        /// This is used by the asyncQueue to send payloads messages to peers under a separate thread.
+        /// If a message is sent inside the state change even and the send fails this could cause a deadlock,
+        /// to avoid that if there is any danger of a deadlock it better to use the SendMessage method and go via the queue.
+        /// </summary>
+        private async Task SendMessageHandledAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
+        {
+            try
+            {
+                await this.SendMessageAsync(payload, cancellation);
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerEndPoint);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("Exception occurred while connecting to peer '{0}': {1}", this.PeerEndPoint, ex is SocketException ? ex.Message : ex.ToString());
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
         public async Task SendMessageAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
             Guard.NotNull(payload, nameof(payload));
@@ -829,6 +870,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
+            this.asyncQueue.Dispose();
             this.Connection.Dispose();
 
             this.MessageReceived.Dispose();

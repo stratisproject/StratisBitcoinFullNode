@@ -285,18 +285,20 @@ namespace Stratis.Bitcoin.Features.PoA
             ChainedHeader currentHeader = tip;
             uint currentTime = currentHeader.Header.Time;
 
-            int depth = 20;
+            int maxDepth = 20;
             int pubKeyTakeCharacters = 4;
+            int depthReached = 0;
 
-            log.AppendLine($"Mining information for the last {depth} blocks.");
+            log.AppendLine($"Mining information for the last {maxDepth} blocks.");
             log.AppendLine("MISS means that miner didn't produce a block at the timestamp he was supposed to.");
 
-            for (int i = tip.Height; (i > 0) && (i > tip.Height - depth); i--)
+            for (int i = tip.Height; (i > 0) && (i > tip.Height - maxDepth); i--)
             {
                 // Add stats for current header.
                 string pubKeyRepresentation = this.slotsManager.GetPubKeyForTimestamp(currentTime).ToString().Substring(0, pubKeyTakeCharacters);
 
                 log.Append("[" + pubKeyRepresentation + "]-");
+                depthReached++;
 
                 currentHeader = currentHeader.Previous;
                 currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
@@ -304,11 +306,15 @@ namespace Stratis.Bitcoin.Features.PoA
                 if (currentHeader.Height == 0)
                     break;
 
-                while (currentHeader.Header.Time != currentTime)
+                while ((currentHeader.Header.Time != currentTime) && (depthReached <= maxDepth))
                 {
                     log.Append("MISS-");
                     currentTime -= this.network.ConsensusOptions.TargetSpacingSeconds;
+                    depthReached++;
                 }
+
+                if (depthReached >= maxDepth)
+                    break;
             }
 
             log.Append("...");
