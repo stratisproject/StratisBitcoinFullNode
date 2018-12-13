@@ -95,6 +95,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override Task InitializeAsync()
         {
+            if (this.storeSettings.Prune)
+            {
+                this.logger.LogInformation("Pruning BlockStore...");
+                this.blockRepository.PruneDatabase(this.consensusManager.Tip).GetAwaiter().GetResult();
+            }
+
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
             if (this.network.Consensus.IsProofOfStake)
             {
@@ -125,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.Prune)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.blockRepository.PruneBlockAndTransactionDatabase();
+                this.blockRepository.PruneDatabase(this.consensusManager.Tip);
             }
 
             this.logger.LogInformation("Stopping BlockStore.");

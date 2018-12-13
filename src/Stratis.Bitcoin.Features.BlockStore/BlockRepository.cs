@@ -65,59 +65,65 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task SetTxIndexAsync(bool txIndex);
 
         /// <summary>Hash and height indicating where the node's block store has been pruned up to.</summary>
-        HashHeightPair PrunedTipHashAndHeight { get; }
+        HashHeightPair PrunedTip { get; }
 
         /// <summary>Hash and height of the repository's tip.</summary>
         HashHeightPair TipHashAndHeight { get; }
 
+        /// <summary> Indicates that the node should store all transaction data in the database.</summary>
         bool TxIndex { get; }
 
         /// <summary>
         /// Compacts the block and transaction database by resaving the database file without
-        /// all the deleted referencs.
+        /// all the deleted references.
         /// </summary>
-        Task PruneBlockAndTransactionDatabase();
+        Task PruneDatabase(ChainedHeader consensusTip);
     }
 
     public class BlockRepository : IBlockRepository
     {
         private const string BlockTableName = "Block";
-
-        private const string TransactionTableName = "Transaction";
-
+        private const int MaxBlocksToKeep = 500;
         private const string CommonTableName = "Common";
-
-        private readonly ILogger logger;
+        private const string TransactionTableName = "Transaction";
 
         private readonly DBreezeEngine DBreeze;
 
+        private readonly ILogger logger;
+
         private readonly Network network;
+
+        private readonly StoreSettings storeSettings;
+
+        private static readonly byte[] PrunedTipKey = new byte[2];
 
         private static readonly byte[] RepositoryTipKey = new byte[0];
 
         private static readonly byte[] TxIndexKey = new byte[1];
 
-        public HashHeightPair PrunedTipHashAndHeight { get; private set; }
+        public HashHeightPair PrunedTip { get; private set; }
 
         public HashHeightPair TipHashAndHeight { get; private set; }
 
         public bool TxIndex { get; private set; }
 
-        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(network, dataFolder.BlockPath, loggerFactory)
+        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, StoreSettings storeSettings)
+            : this(network, dataFolder.BlockPath, loggerFactory, storeSettings)
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
+        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory, StoreSettings storeSettings)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
-
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            Guard.NotNull(storeSettings, nameof(storeSettings));
 
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
+            this.storeSettings = storeSettings;
         }
 
         /// <inheritdoc />
@@ -130,6 +136,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
                     bool doCommit = false;
+
+                    if (this.storeSettings.Prune)
+                    {
+                        if (this.LoadPrunedTip(transaction) == null)
+                        {
+                            this.PrunedTip = new HashHeightPair(genesis.GetHash(), 0);
+                            transaction.Insert(CommonTableName, PrunedTipKey, this.PrunedTip);
+                            doCommit = true;
+                        }
+                    }
 
                     if (this.LoadTipHashAndHeight(transaction) == null)
                     {
@@ -151,8 +167,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public Task PruneBlockAndTransactionDatabase()
+        public async Task PruneDatabase(ChainedHeader consensusTip)
         {
+            if (!this.storeSettings.Prune)
+                return;
+
+            if (IsDatabasePruned())
+                return;
+
+            await PrepareDatabaseForPruningAsync(consensusTip);
+
             Task task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
@@ -171,13 +195,57 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     dbreezeTransaction.InsertDictionary(BlockTableName, tempBlocks, false);
                     dbreezeTransaction.InsertDictionary(TransactionTableName, tempTransactions, false);
 
+                    // Save the hash and height of where the node was pruned up to.
+                    dbreezeTransaction.Insert(CommonTableName, PrunedTipKey, this.PrunedTip);
+
                     dbreezeTransaction.Commit();
                 }
 
                 return Task.CompletedTask;
             });
 
-            return task;
+            return;
+        }
+
+        private bool IsDatabasePruned()
+        {
+            return this.TipHashAndHeight.Height <= this.PrunedTip.Height + MaxBlocksToKeep;
+        }
+
+        private async Task PrepareDatabaseForPruningAsync(ChainedHeader consensusTip)
+        {
+            var upperHeight = this.TipHashAndHeight.Height - MaxBlocksToKeep;
+
+            var chainedHeadersToDelete = new List<ChainedHeader>();
+
+            var startFrom = consensusTip.GetAncestor(upperHeight);
+            var endAt = consensusTip.GetAncestor(this.PrunedTip.Height);
+
+            while (startFrom.Previous != null && startFrom != endAt)
+            {
+                chainedHeadersToDelete.Add(startFrom);
+                startFrom = startFrom.Previous;
+            }
+
+            await this.DeleteBlocksAsync(chainedHeadersToDelete.Select(c => c.HashBlock).ToList()).ConfigureAwait(false);
+
+            this.PrunedTip = new HashHeightPair(consensusTip.GetAncestor(upperHeight));
+        }
+
+        private HashHeightPair LoadPrunedTip(DBreeze.Transactions.Transaction dbreezeTransaction)
+        {
+            if (this.PrunedTip == null)
+            {
+                dbreezeTransaction.ValuesLazyLoadingIsOn = false;
+
+                Row<byte[], HashHeightPair> row = dbreezeTransaction.Select<byte[], HashHeightPair>(CommonTableName, PrunedTipKey);
+                if (row.Exists)
+                    this.PrunedTip = row.Value;
+
+                dbreezeTransaction.ValuesLazyLoadingIsOn = true;
+            }
+
+            return this.PrunedTip;
         }
 
         /// <inheritdoc />

@@ -57,8 +57,6 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
             if (this.blockStore.TipHashAndHeight.Height == (this.PrunedUpToHeader?.Height ?? 0))
                 return;
 
-            // 1500 - 1000
-            // Pruned 1400 to 1000
             if (this.blockStore.TipHashAndHeight.Height < (this.PrunedUpToHeader?.Height ?? 0 + MaxBlocksToKeep))
                 return;
 
