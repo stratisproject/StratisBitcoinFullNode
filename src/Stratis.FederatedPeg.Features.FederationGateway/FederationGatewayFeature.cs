@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -192,17 +194,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             benchLogs.AppendLine("Fed. Wallet.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
                                  (federationWallet != null ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
                                  (federationWallet != null ? (" Fed. Wallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
-
-            benchLogs.AppendLine(
-                "NodeStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                this.crossChainTransferStore.TipHashAndHeight.Height.ToString().PadRight(9) +
-                "NodeStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 2) +
-                this.crossChainTransferStore.TipHashAndHeight.HashBlock.ToString() + "  " +
-                "NodeStore.NextDepositHeight: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                this.crossChainTransferStore.NextMatureDepositHeight.ToString().PadRight(8) +
-                "NodeStore.HasSuspended: ".PadRight(LoggingConfiguration.ColumnLength + 1) +
-                this.crossChainTransferStore.HasSuspended().ToString().PadRight(8)
-                );
         }
 
         private void AddComponentStats(StringBuilder benchLog)
@@ -216,6 +207,47 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                                 + " Unconfirmed balance: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
                                 + " Federation Status: " + (this.federationWalletManager.IsFederationActive() ? "Active" : "Inactive"));
             benchLog.AppendLine();
+
+
+            benchLog.AppendLine("====== NodeStore ======");
+            this.AddBenchmarkLine(benchLog, new (string, int)[] {
+                ("Height:", LoggingConfiguration.ColumnLength),
+                (this.crossChainTransferStore.TipHashAndHeight.Height.ToString(), LoggingConfiguration.ColumnLength),
+                ("Hash:",LoggingConfiguration.ColumnLength),
+                (this.crossChainTransferStore.TipHashAndHeight.HashBlock.ToString(), 0),
+                ("NextDepositHeight:", LoggingConfiguration.ColumnLength),
+                (this.crossChainTransferStore.NextMatureDepositHeight.ToString(), LoggingConfiguration.ColumnLength),
+                ("HasSuspended:",LoggingConfiguration.ColumnLength),
+                (this.crossChainTransferStore.HasSuspended().ToString(), 0)
+            },
+            4);
+
+            AddBenchmarkLine(benchLog,
+                this.crossChainTransferStore.GetCrossChainTransferStatusCounter().SelectMany(item => new (string, int)[]{
+                    (item.Key.ToString()+":", LoggingConfiguration.ColumnLength),
+                    (item.Value.ToString(), LoggingConfiguration.ColumnLength)
+                    }).ToArray(),
+                4);
+
+            benchLog.AppendLine();
+        }
+
+        private void AddBenchmarkLine(StringBuilder benchLog, (string Value, int ValuePadding)[] items, int maxItemsPerLine = int.MaxValue)
+        {
+            if (items != null)
+            {
+                int itemsAdded = 0;
+                foreach (var item in items)
+                {
+                    if (itemsAdded++ >= maxItemsPerLine)
+                    {
+                        benchLog.AppendLine();
+                        itemsAdded = 1;
+                    }
+                    benchLog.Append(item.Value.PadRight(item.ValuePadding));
+                }
+                benchLog.AppendLine();
+            }
         }
     }
 
