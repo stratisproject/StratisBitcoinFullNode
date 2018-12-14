@@ -45,7 +45,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
             var model = new MaturedBlockRequestModel(this.crossChainTransferStore.NextMatureDepositHeight, maxBlocksToRequest);
 
-            List<IMaturedBlockDeposits> blockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model).ConfigureAwait(false);
+            List<MaturedBlockDepositsModel> blockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model).ConfigureAwait(false);
 
             if (blockDeposits != null)
             {

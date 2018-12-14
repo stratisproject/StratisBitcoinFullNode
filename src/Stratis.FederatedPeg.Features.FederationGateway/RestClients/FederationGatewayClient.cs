@@ -18,7 +18,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
         Task PushCurrentBlockTipAsync(BlockTipModel model);
 
         /// <summary><see cref="FederationGatewayController.GetMaturedBlockDepositsAsync"/></summary>
-        Task<List<IMaturedBlockDeposits>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model);
+        Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model);
     }
 
     /// <inheritdoc cref="IFederationGatewayClient"/>
@@ -42,9 +42,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
         }
 
         /// <inheritdoc />
-        public Task<List<IMaturedBlockDeposits>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model)
+        public Task<List<MaturedBlockDepositsModel>> GetMaturedBlockDepositsAsync(MaturedBlockRequestModel model)
         {
-            return this.SendPostRequestAsync<MaturedBlockRequestModel, List<IMaturedBlockDeposits>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits);
+            return this.SendPostRequestAsync<MaturedBlockRequestModel, List<MaturedBlockDepositsModel>>(model, FederationGatewayRouteEndPoint.GetMaturedBlockDeposits);
         }
     }
 }
