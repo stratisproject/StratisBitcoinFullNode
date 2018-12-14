@@ -40,7 +40,7 @@ namespace Stratis.FederatedPeg.Tests
             this.leaderProvider.CurrentLeaderKey.Returns(new NBitcoin.PubKey(PublicKey));
 
             for (int i = 0; i < LeaderCount; i++)
-                this.leaderReceiver.ReceiveLeader(this.leaderProvider);
+                this.leaderReceiver.PushLeader(this.leaderProvider);
 
             receivedLeaderCount.Should().Be(LeaderCount);
 

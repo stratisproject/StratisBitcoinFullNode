@@ -4,7 +4,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
     public interface IMaturedBlockReceiver
     {
-        void ReceiveMaturedBlockDeposits(IMaturedBlockDeposits[] maturedBlockDeposits);
+        void PushMaturedBlockDeposits(IMaturedBlockDeposits[] maturedBlockDeposits);
 
         IObservable<IMaturedBlockDeposits[]> MaturedBlockDepositStream { get; }
     }

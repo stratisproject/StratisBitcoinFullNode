@@ -35,6 +35,7 @@ using Stratis.FederatedPeg.Features.FederationGateway.Notifications;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
+using Stratis.FederatedPeg.Features.FederationGateway.RestClients;
 
 [assembly: InternalsVisibleTo("Stratis.FederatedPeg.Features.FederationGateway.Tests")]
 [assembly: InternalsVisibleTo("Stratis.FederatedPeg.IntegrationTests")]
@@ -48,13 +49,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
     {
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
-        private readonly IMaturedBlockSender maturedBlockSender;
-
         private readonly IMaturedBlocksRequester maturedBlockRequester;
 
         private readonly IMaturedBlocksProvider maturedBlocksProvider;
-
-        private readonly IBlockTipSender blockTipSender;
 
         private readonly Signals signals;
 
@@ -90,12 +87,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IPartialTransactionRequester partialTransactionRequester;
 
+        private readonly IFederationGatewayClient federationGatewayClient;
+
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
-            IMaturedBlockSender maturedBlockSender,
             IMaturedBlocksRequester maturedBlocksRequester,
             IMaturedBlocksProvider maturedBlocksProvider,
-            IBlockTipSender blockTipSender,
             Signals signals,
             IDepositExtractor depositExtractor,
             IWithdrawalExtractor withdrawalExtractor,
@@ -110,13 +107,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             ConcurrentChain chain,
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore,
-            IPartialTransactionRequester partialTransactionRequester)
+            IPartialTransactionRequester partialTransactionRequester,
+            IFederationGatewayClient federationGatewayClient)
         {
             this.loggerFactory = loggerFactory;
-            this.maturedBlockSender = maturedBlockSender;
             this.maturedBlockRequester = maturedBlocksRequester;
             this.maturedBlocksProvider = maturedBlocksProvider;
-            this.blockTipSender = blockTipSender;
             this.signals = signals;
             this.depositExtractor = depositExtractor;
             this.withdrawalExtractor = withdrawalExtractor;
@@ -131,6 +127,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.network = network;
             this.crossChainTransferStore = crossChainTransferStore;
             this.partialTransactionRequester = partialTransactionRequester;
+            this.federationGatewayClient = federationGatewayClient;
 
             // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
@@ -149,9 +146,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     this.depositExtractor,
                     this.withdrawalExtractor,
                     this.withdrawalReceiver,
-                    this.maturedBlockSender,
-                    this.maturedBlocksProvider,
-                    this.blockTipSender));
+                    this.federationGatewayClient,
+                    this.maturedBlocksProvider));
 
             this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
 
@@ -161,7 +157,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.walletSyncManager.Start();
             this.crossChainTransferStore.Start();
             this.partialTransactionRequester.Start();
-            this.maturedBlockRequester.Start();
+            // TODO investiagte why are we doing this. Looks incorrect.
+            this.maturedBlockRequester.GetMoreBlocksAsync().GetAwaiter().GetResult();
 
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
@@ -269,9 +266,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IHttpClientFactory, HttpClientFactory>();
                         services.AddSingleton<IMaturedBlockReceiver, MaturedBlockReceiver>();
                         services.AddSingleton<IMaturedBlocksRequester, RestMaturedBlockRequester>();
-                        services.AddSingleton<IMaturedBlockSender, RestMaturedBlockSender>();
                         services.AddSingleton<IMaturedBlocksProvider, MaturedBlocksProvider>();
-                        services.AddSingleton<IBlockTipSender, RestBlockTipSender>();
                         services.AddSingleton<IFederationGatewaySettings, FederationGatewaySettings>();
                         services.AddSingleton<IOpReturnDataReader, OpReturnDataReader>();
                         services.AddSingleton<IDepositExtractor, DepositExtractor>();
@@ -288,6 +283,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<ILeaderReceiver, LeaderReceiver>();
                         services.AddSingleton<ISignedMultisigTransactionBroadcaster, SignedMultisigTransactionBroadcaster>();
                         services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
+                        services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                     });
             });
             return fullNodeBuilder;
