@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
+using Stratis.FederatedPeg.Features.FederationGateway.RestClients;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 {
@@ -17,7 +18,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         // The monitor we pass the new blocks onto.
         private readonly IFederationWalletSyncManager walletSyncManager;
 
-        private readonly IMaturedBlockSender maturedBlockSender;
+        private readonly IFederationGatewayClient federationGatewayClient;
 
         private readonly IMaturedBlocksProvider maturedBlocksProvider;
 
@@ -27,8 +28,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
         private readonly IWithdrawalReceiver withdrawalReceiver;
 
-        private readonly IBlockTipSender blockTipSender;
-
         /// <summary>
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
@@ -36,31 +35,28 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <param name="depositExtractor">The component used to extract the deposits from the blocks appearing on chain.</param>
         /// <param name="withdrawalExtractor">The component used to extract withdrawals from blocks.</param>
         /// <param name="withdrawalReceiver">The component that receives the withdrawals extracted from blocks.</param>
-        /// <param name="maturedBlockSender">Service responsible for publishing newly matured blocks.</param>
+        /// <param name="federationGatewayClient">Client for federation gateway api.</param>
         /// <param name="blockTipSender">Service responsible for publishing the block tip.</param>
         public BlockObserver(IFederationWalletSyncManager walletSyncManager,
                              IDepositExtractor depositExtractor,
                              IWithdrawalExtractor withdrawalExtractor,
                              IWithdrawalReceiver withdrawalReceiver,
-                             IMaturedBlockSender maturedBlockSender,
-                             IMaturedBlocksProvider maturedBlocksProvider,
-                             IBlockTipSender blockTipSender)
+                             IFederationGatewayClient federationGatewayClient,
+                             IMaturedBlocksProvider maturedBlocksProvider)
         {
             Guard.NotNull(walletSyncManager, nameof(walletSyncManager));
-            Guard.NotNull(maturedBlockSender, nameof(maturedBlockSender));
+            Guard.NotNull(federationGatewayClient, nameof(federationGatewayClient));
             Guard.NotNull(maturedBlocksProvider, nameof(maturedBlocksProvider));
-            Guard.NotNull(blockTipSender, nameof(blockTipSender));
             Guard.NotNull(depositExtractor, nameof(depositExtractor));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
             Guard.NotNull(withdrawalReceiver, nameof(withdrawalReceiver));
 
             this.walletSyncManager = walletSyncManager;
-            this.maturedBlockSender = maturedBlockSender;
+            this.federationGatewayClient = federationGatewayClient;
             this.maturedBlocksProvider = maturedBlocksProvider;
             this.depositExtractor = depositExtractor;
             this.withdrawalExtractor = withdrawalExtractor;
             this.withdrawalReceiver = withdrawalReceiver;
-            this.blockTipSender = blockTipSender;
         }
 
         /// <summary>
@@ -71,7 +67,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         {
             this.walletSyncManager.ProcessBlock(chainedHeaderBlock.Block);
 
-            this.blockTipSender.SendBlockTipAsync(
+            this.federationGatewayClient.PushCurrentBlockTipAsync(
                 new BlockTipModel(
                     chainedHeaderBlock.ChainedHeader.HashBlock,
                     chainedHeaderBlock.ChainedHeader.Height,
@@ -83,12 +79,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
             this.withdrawalReceiver.ReceiveWithdrawals(withdrawals);
 
-            IMaturedBlockDeposits maturedBlockDeposits =
-                this.maturedBlocksProvider.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
+            IMaturedBlockDeposits maturedBlockDeposits = this.maturedBlocksProvider.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
 
-            if (maturedBlockDeposits == null) return;
+            if (maturedBlockDeposits == null)
+                return;
 
-            this.maturedBlockSender.SendMaturedBlockDepositsAsync(maturedBlockDeposits).ConfigureAwait(false).GetAwaiter().GetResult();
+            // TODO remove this ugly cast: (MaturedBlockDepositsModel)maturedBlockDeposits
+            this.federationGatewayClient.PushMaturedBlockAsync((MaturedBlockDepositsModel)maturedBlockDeposits).ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 }

@@ -6,6 +6,7 @@ using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.RestClients;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Xunit;
 
@@ -29,6 +30,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly ILogger logger;
 
+        private readonly IFederationGatewayClient federationGatewayClient;
+
         public RestMaturedBlocksRequesterTests()
         {
             this.loggerFactory = Substitute.For<ILoggerFactory>();
@@ -37,6 +40,7 @@ namespace Stratis.FederatedPeg.Tests
             this.federationSettings = Substitute.For<IFederationGatewaySettings>();
             this.crossChainTransferStore = Substitute.For<ICrossChainTransferStore>();
             this.maturedBlocksReceiver = Substitute.For<IMaturedBlockReceiver>();
+            this.federationGatewayClient = Substitute.For<IFederationGatewayClient>();
         }
 
         [Fact]
@@ -57,8 +61,8 @@ namespace Stratis.FederatedPeg.Tests
 
             this.httpClientFactory.CreateClient(Arg.Any<string>()).Returns(this.httpClient);
 
-            var restRequester = new RestMaturedBlockRequester(this.loggerFactory, this.federationSettings, this.httpClientFactory, this.crossChainTransferStore, this.maturedBlocksReceiver);
-            restRequester.Start();
+            var restRequester = new RestMaturedBlockRequester(this.crossChainTransferStore, this.maturedBlocksReceiver, this.federationGatewayClient);
+            restRequester.GetMoreBlocksAsync().GetAwaiter().GetResult();
 
             // Wait one minute max.
             for (int i = 0; i < 600 && !called; i++)

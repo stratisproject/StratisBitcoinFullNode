@@ -20,7 +20,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <inheritdoc />
-        public void ReceiveMaturedBlockDeposits(IMaturedBlockDeposits[] maturedBlockDeposits)
+        public void PushMaturedBlockDeposits(IMaturedBlockDeposits[] maturedBlockDeposits)
         {
             this.logger.LogDebug("Received new matured block for{0}{1}", Environment.NewLine, this.maturedBlockDepositStream);
             this.maturedBlockDepositStream.OnNext(maturedBlockDeposits);

@@ -14,7 +14,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <param name="leaderProvider">
         /// Provides the current federated leader.
         /// </param>
-        void ReceiveLeader(ILeaderProvider leaderProvider);
+        void PushLeader(ILeaderProvider leaderProvider);
 
         /// <summary>
         /// Streams a change in federated leader.

@@ -126,7 +126,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// This is for demo and testing use only.
         /// </summary>
         /// <param name="model">The hash of the block from which to start syncing.</param>
-        /// <returns></returns>
         [HttpPost]
         [Route("sync")]
         public IActionResult Sync([FromBody] HashModel model)
@@ -151,7 +150,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// Imports the federation member's mnemonic key.
         /// </summary>
         /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        /// <returns></returns>
         [Route("import-key")]
         [HttpPost]
         public IActionResult ImportMemberKey([FromBody]ImportMemberKeyRequest request)

@@ -5,19 +5,13 @@ using NBitcoin;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
 {
-    /// <summary>
-    /// Interface for interacting with the cross-chain transfer database.
-    /// </summary>
+    /// <summary>Interface for interacting with the cross-chain transfer database.</summary>
     public interface ICrossChainTransferStore : IDisposable
     {
-        /// <summary>
-        /// Initializes the cross-chain-transfer store.
-        /// </summary>
+        /// <summary>Initializes the cross-chain-transfer store.</summary>
         void Initialize();
 
-        /// <summary>
-        /// Starts the cross-chain-transfer store.
-        /// </summary>
+        /// <summary>Starts the cross-chain-transfer store.</summary>
         void Start();
 
         /// <summary>
@@ -40,9 +34,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </remarks>
         Task<bool> RecordLatestMatureDepositsAsync(IMaturedBlockDeposits[] blockDeposits);
 
-        /// <summary>
-        /// Returns transactions by status. Orders the results by UTXO selection order.
-        /// </summary>
+        /// <summary>Returns transactions by status. Orders the results by UTXO selection order.</summary>
         /// <param name="status">The status to get the transactions for.</param>
         /// <param name="sort">Set to <c>true</c> to sort the transfers by their earliest inputs.</param>
         /// <returns>An array of transactions.</returns>
@@ -68,15 +60,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <returns>The cross-chain transfer information.</returns>
         Task<ICrossChainTransfer[]> GetAsync(uint256[] depositIds);
 
-        /// <summary>
-        /// Determines if the store contains suspended transactions.
-        /// </summary>
+        /// <summary>Determines if the store contains suspended transactions.</summary>
         /// <returns><c>True</c> if the store contains suspended transaction and <c>false</c> otherwise.</returns>
         bool HasSuspended();
 
-        /// <summary>
-        /// Determines if the store can persist mature deposits.
-        /// </summary>
+        /// <summary>Determines if the store can persist mature deposits.</summary>
         /// <returns><c>True</c> if the store can persist mature deposits and <c>false</c> otherwise.</returns>
         bool CanPersistMatureDeposits();
 
@@ -89,14 +77,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <returns><c>True</c> if all's well and <c>false</c> otherwise.</returns>
         bool ValidateTransaction(Transaction transaction, bool checkSignature = false);
 
-        /// <summary>
-        /// The tip of our chain when we last updated the store.
-        /// </summary>
+        /// <summary>The tip of our chain when we last updated the store.</summary>
         ChainedHeader TipHashAndHeight { get; }
 
-        /// <summary>
-        /// The block height on the counter-chain for which the next list of deposits is expected.
-        /// </summary>
+        /// <summary>The block height on the counter-chain for which the next list of deposits is expected.</summary>
         int NextMatureDepositHeight { get; }
 
         /// <summary>
