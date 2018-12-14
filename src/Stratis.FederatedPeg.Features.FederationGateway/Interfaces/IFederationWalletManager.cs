@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using NBitcoin;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 
@@ -135,5 +136,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </summary>
         /// <returns><c>True</c> if federation is active and <c>false</c> otherwise.</returns>
         bool IsFederationActive();
+
+        /// <summary>
+        /// Removes all the transactions from the federation wallet.
+        /// </summary>
+        /// <returns>A list of objects made up of transaction IDs along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions();
     }
 }
