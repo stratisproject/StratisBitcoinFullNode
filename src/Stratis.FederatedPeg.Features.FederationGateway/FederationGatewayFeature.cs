@@ -276,6 +276,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                     });
             });
 
+            // TODO: Consensus and Mining should be separated. Sidechain nodes don't need any of the Federation code but do need Consensus.
+            // In the dependency tree as it is currently however, consensus is dependent on PoAFeature (needs SlotManager) which is in turn dependent on
+            // FederationGatewayFeature. https://github.com/stratisproject/FederatedSidechains/issues/273
+
             LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
             fullNodeBuilder.ConfigureFeature(features =>
             {

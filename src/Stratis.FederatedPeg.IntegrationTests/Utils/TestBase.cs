@@ -91,10 +91,10 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.fedMain3 = this.nodeBuilder.CreateStratisPosNode(this.mainchainNetwork, nameof(this.fedMain3));
 
             this.sidechainNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
-            this.sideUser = this.nodeBuilder.CreateStratisPosNode(this.sidechainNetwork);
-            this.fedSide1 = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[0]).WithWallet(); // TODO: Do we need wallets like this on every node?
-            this.fedSide2 = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[1]);
-            this.fedSide3 = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[2]);
+            this.sideUser = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork);
+            this.fedSide1 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[0]);
+            this.fedSide2 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[1]);
+            this.fedSide3 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[2]);
 
             this.MainAndSideChainNodeMap = new Dictionary<string, NodeChain>()
             {
