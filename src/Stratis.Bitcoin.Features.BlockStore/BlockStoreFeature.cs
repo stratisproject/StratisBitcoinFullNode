@@ -86,10 +86,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (highestBlock != null)
             {
-                string logString = $"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8) +
-                             $" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock;
-
-                log.AppendLine(logString);
+                if (!this.storeSettings.Prune)
+                {
+                    var builder = new StringBuilder();
+                    builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1));
+                    builder.Append($" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock);
+                    log.AppendLine(builder.ToString());
+                }
             }
         }
 
@@ -98,7 +101,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.Prune)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.blockRepository.PruneDatabase(this.consensusManager.Tip).GetAwaiter().GetResult();
+                this.blockRepository.PruneDatabase(this.consensusManager.Tip, true).GetAwaiter().GetResult();
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
@@ -131,7 +134,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.Prune)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.blockRepository.PruneDatabase(this.consensusManager.Tip);
+                this.blockRepository.PruneDatabase(this.consensusManager.Tip, false);
             }
 
             this.logger.LogInformation("Stopping BlockStore.");

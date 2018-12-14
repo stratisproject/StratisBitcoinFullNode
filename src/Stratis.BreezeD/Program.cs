@@ -21,44 +21,38 @@ namespace Stratis.BreezeD
         {
             try
             {
-                // Get the API uri.
-                bool isTestNet = args.Contains("-testnet");
                 bool isStratis = args.Contains("stratis");
-
-                string agent = "Breeze";
 
                 NodeSettings nodeSettings;
 
                 if (isStratis)
                 {
-                    if (isTestNet)
-                        args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
-
-                    nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, agent: agent, args: args);
+                    nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, agent: "Breeze", args: args)
+                    {
+                        MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                    };
                 }
                 else
                 {
-                    nodeSettings = new NodeSettings(networksSelector: Networks.Bitcoin, agent: agent, args: args);
+                    nodeSettings = new NodeSettings(networksSelector: Networks.Bitcoin, agent: "Breeze", args: args);
                 }
 
                 IFullNodeBuilder fullNodeBuilder = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
-                    .UseLightWallet()
                     .UseBlockStore()
                     .UsePosConsensus()
+                    .UseLightWallet()
                     .UseBlockNotification()
                     .UseTransactionNotification()
                     .UseApi();
 
                 IFullNode node = fullNodeBuilder.Build();
 
-                // Start Full Node - this will also start the API.
-                if (node != null)
-                    await node.RunAsync();
+                await node.RunAsync();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.ToString());
+                Console.WriteLine($"There was a problem initializing the node: '{ex.ToString()}'");
             }
         }
     }

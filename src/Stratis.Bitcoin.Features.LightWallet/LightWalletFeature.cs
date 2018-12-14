@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         (manager.ContainsWallets ? height.ToString().PadRight(8) : "No Wallet".PadRight(8)) +
                         (manager.ContainsWallets ? (" LightWallet.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + hashBlock) : string.Empty));
 
-                log.AppendLine("LightWallet.Pruned:".PadRight(LoggingConfiguration.ColumnLength + 1) + this.lightWalletBlockStoreService.PrunedUpToHeader?.Height.ToString().PadRight(8));
+                log.AppendLine("LightWallet.Height.Pruned:".PadRight(LoggingConfiguration.ColumnLength + 1) + this.lightWalletBlockStoreService.PrunedUpToHeaderTip?.Height.ToString().PadRight(8));
             }
         }
 

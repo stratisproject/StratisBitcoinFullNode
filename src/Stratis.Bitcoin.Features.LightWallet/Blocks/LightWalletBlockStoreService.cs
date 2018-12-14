@@ -13,31 +13,34 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
     {
         private IAsyncLoop asyncLoop;
         private readonly IAsyncLoopFactory asyncLoopFactory;
-        private readonly IBlockRepository blockStore;
+        private readonly IBlockRepository blockRepository;
         private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
         private readonly INodeLifetime nodeLifetime;
 
-        public ChainedHeader PrunedUpToHeader { get; private set; }
+        public ChainedHeader PrunedUpToHeaderTip { get; private set; }
 
         private const int MaxBlocksToKeep = 500;
 
         public LightWalletBlockStoreService(
             IAsyncLoopFactory asyncLoopFactory,
-            IBlockRepository blockStore,
+            IBlockRepository blockRepository,
             IConsensusManager consensusManager,
             ILoggerFactory loggerFactory,
             INodeLifetime nodeLifetime)
         {
             this.asyncLoopFactory = asyncLoopFactory;
-            this.blockStore = blockStore;
+            this.blockRepository = blockRepository;
             this.consensusManager = consensusManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
+
         }
 
         public void Start()
         {
+            this.PrunedUpToHeaderTip = this.consensusManager.Tip.GetAncestor(this.blockRepository.PrunedTip.Height);
+
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.PruneBlocksAsync)}", async token =>
             {
                 await PruneBlocksAsync();
@@ -51,25 +54,24 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// </summary>
         private async Task PruneBlocksAsync()
         {
-            if (this.blockStore.TipHashAndHeight.Height < MaxBlocksToKeep)
+            if (this.blockRepository.TipHashAndHeight.Height < MaxBlocksToKeep)
                 return;
 
-            if (this.blockStore.TipHashAndHeight.Height == (this.PrunedUpToHeader?.Height ?? 0))
+            if (this.blockRepository.TipHashAndHeight.Height == (this.PrunedUpToHeaderTip?.Height ?? 0))
                 return;
 
-            if (this.blockStore.TipHashAndHeight.Height < (this.PrunedUpToHeader?.Height ?? 0 + MaxBlocksToKeep))
+            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + MaxBlocksToKeep))
                 return;
 
-            var heightToPruneFrom = this.blockStore.TipHashAndHeight.Height - MaxBlocksToKeep;
+            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - MaxBlocksToKeep;
             ChainedHeader startFrom = this.consensusManager.Tip.GetAncestor(heightToPruneFrom);
-            if (this.PrunedUpToHeader != null && startFrom == this.PrunedUpToHeader)
+            if (this.PrunedUpToHeaderTip != null && startFrom == this.PrunedUpToHeaderTip)
                 return;
 
-            this.logger.LogDebug($"Pruning triggered, delete from {heightToPruneFrom} to {this.PrunedUpToHeader?.Height ?? 0}.");
+            this.logger.LogInformation($"Pruning triggered, delete from {heightToPruneFrom} to {this.PrunedUpToHeaderTip?.Height ?? 0}.");
 
             var chainedHeadersToDelete = new List<ChainedHeader>();
-
-            while (startFrom.Previous != null)
+            while (startFrom.Previous != null && this.PrunedUpToHeaderTip != startFrom)
             {
                 chainedHeadersToDelete.Add(startFrom);
                 startFrom = startFrom.Previous;
@@ -77,11 +79,14 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
 
             this.logger.LogDebug($"{chainedHeadersToDelete.Count} blocks will be pruned.");
 
-            await this.blockStore.DeleteBlocksAsync(chainedHeadersToDelete.Select(ch => ch.HashBlock).ToList());
+            ChainedHeader prunedTip = chainedHeadersToDelete.First();
 
-            this.PrunedUpToHeader = chainedHeadersToDelete.First();
+            await this.blockRepository.DeleteBlocksAsync(chainedHeadersToDelete.Select(c => c.HashBlock).ToList());
+            this.blockRepository.UpdatePrunedTip(prunedTip);
 
-            this.logger.LogDebug($"Store has been pruned to {this.PrunedUpToHeader}");
+            this.PrunedUpToHeaderTip = prunedTip;
+
+            this.logger.LogInformation($"Store has been pruned up to {this.PrunedUpToHeaderTip}.");
         }
 
         /// <inheritdoc/>
