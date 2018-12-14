@@ -1,4 +1,10 @@
-﻿namespace Stratis.FederatedPeg.IntegrationTests.Utils
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Newtonsoft.Json;
+using Stratis.Bitcoin.Features.Wallet.Models;
+
+namespace Stratis.FederatedPeg.IntegrationTests.Utils
 {
     using System;
     using System.Collections.Generic;
@@ -18,6 +24,10 @@
 
     public class TestBase : IDisposable
     {
+        private const string WalletName = "mywallet";
+        private const string WalletPassword = "password";
+        private const string WalletPassphrase = "passphrase";
+
         protected readonly Network mainchainNetwork;
         protected readonly FederatedPegRegTest sidechainNetwork;
         protected readonly IList<Mnemonic> mnemonics;
@@ -75,14 +85,14 @@
             this.chains = new[] { "mainchain", "sidechain" }.ToList();
 
             this.nodeBuilder = NodeBuilder.Create(this);
-            this.mainUser = this.nodeBuilder.CreateStratisPosNode(this.mainchainNetwork, nameof(this.mainUser));
+            this.mainUser = this.nodeBuilder.CreateStratisPosNode(this.mainchainNetwork, nameof(this.mainUser)).WithWallet(); // TODO: Do we need wallets like this on every node?
             this.fedMain1 = this.nodeBuilder.CreateStratisPosNode(this.mainchainNetwork, nameof(this.fedMain1));
             this.fedMain2 = this.nodeBuilder.CreateStratisPosNode(this.mainchainNetwork, nameof(this.fedMain2));
             this.fedMain3 = this.nodeBuilder.CreateStratisPosNode(this.mainchainNetwork, nameof(this.fedMain3));
 
             this.sidechainNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
             this.sideUser = this.nodeBuilder.CreateStratisPosNode(this.sidechainNetwork);
-            this.fedSide1 = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[0]);
+            this.fedSide1 = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[0]).WithWallet(); // TODO: Do we need wallets like this on every node?
             this.fedSide2 = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[1]);
             this.fedSide3 = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[2]);
 
@@ -202,6 +212,52 @@
                     }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
                 });
             });
+        }
+
+        /// <summary>
+        /// Get balance of the local wallet.
+        /// </summary>
+        protected Money GetBalance(CoreNode node)
+        {
+            IEnumerable<Bitcoin.Features.Wallet.UnspentOutputReference> spendableOutputs = node.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName);
+            return spendableOutputs.Sum(x => x.Transaction.Amount);
+        }
+
+        /// <summary>
+        /// Helper method to build and send a deposit transaction to the federation on the main chain.
+        /// </summary>
+        protected async Task DepositToSideChain(CoreNode node, decimal amount, string sidechainDepositAddress)
+        {
+            HttpResponseMessage depositTransaction = await $"http://localhost:{node.ApiPort}/api"
+                .AppendPathSegment("wallet/build-transaction")
+                .PostJsonAsync(new
+                {
+                    walletName = WalletName,
+                    accountName = "account 0",
+                    password =  WalletPassphrase,
+                    opReturnData = sidechainDepositAddress,
+                    feeAmount = "0.01",
+                    recipients = new[]
+                    {
+                        new
+                        {
+                            destinationAddress = this.scriptAndAddresses.mainchainMultisigAddress.ToString(),
+                            amount = amount
+                        }
+                    }
+                });
+
+            string result = await depositTransaction.Content.ReadAsStringAsync();
+            WalletBuildTransactionModel walletBuildTxModel = JsonConvert.DeserializeObject<WalletBuildTransactionModel>(result);
+
+            HttpResponseMessage sendTransaction = await $"http://localhost:{node.ApiPort}/api"
+                .AppendPathSegment("wallet/send-transaction")
+                .PostJsonAsync(new
+                {
+                    hex = walletBuildTxModel.Hex
+                });
+
+            // TODO: Check transaction sent without errors
         }
 
         private void ApplyFederationIPs(CoreNode fed1, CoreNode fed2, CoreNode fed3)
