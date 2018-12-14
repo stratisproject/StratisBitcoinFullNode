@@ -31,14 +31,14 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         public CoreNode CreateSidechainNode(Network network)
         {
             string agentName = $"sidechain{Interlocked.Increment(ref agentCount)}";
-            return this.CreateNode(new SidechainNodeRunner(this.GetNextDataFolderName(agentName), agentName, network, this.TimeProvider), "poa.conf");
+            return this.CreateNode(new SidechainUserNodeRunner(this.GetNextDataFolderName(agentName), agentName, network), "poa.conf");
         }
 
-        public CoreNode CreateSidechainNode(Network network, Key key)
+        public CoreNode CreateSidechainFederationNode(Network network, Key key)
         {
             string agentName = $"sidechain{Interlocked.Increment(ref agentCount)}";
             string dataFolder = this.GetNextDataFolderName(agentName);
-            CoreNode node = this.CreateNode(new SidechainNodeRunner(dataFolder, agentName, network, this.TimeProvider), "poa.conf");
+            CoreNode node = this.CreateNode(new SidechainFederationNodeRunner(dataFolder, agentName, network), "poa.conf");
 
             var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
             var tool = new KeyTool(settings.DataFolder);

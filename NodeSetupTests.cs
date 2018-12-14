@@ -1,5 +1,7 @@
 using System.Linq;
 using FluentAssertions;
+using NBitcoin;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -56,6 +58,26 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
             Assert.Equal(this.mainchainNetwork.Consensus.ProofOfWorkReward, GetBalance(mainUser.Node));
         }
+        
+        [Fact]
+        public void Sidechain_Premine_Received()
+        {
+            this.StartNodes(Chain.Side);
+            this.ConnectSideChainNodes();
 
+            CoreNode node = this.MainAndSideChainNodeMap["sideUser"].Node;
+            CoreNode fedSide1 = this.MainAndSideChainNodeMap["fedSide1"].Node;
+
+            // Wait for node to reach premine height 
+            TestHelper.WaitLoop(() => node.FullNode.Chain.Height == node.FullNode.Network.Consensus.PremineHeight);
+            TestHelper.WaitForNodeToSync(node, fedSide1);
+
+            // Ensure that coinbase contains premine reward and it goes to the fed.
+            Block block = node.FullNode.Chain.Tip.Block;
+            Transaction coinbase = block.Transactions[0];
+            Assert.Single(coinbase.Outputs);
+            Assert.Equal(node.FullNode.Network.Consensus.PremineReward, coinbase.Outputs[0].Value);
+            Assert.Equal(this.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[0].ScriptPubKey);
+        }
     }
 }

@@ -1,4 +1,7 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
@@ -6,27 +9,27 @@ using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Notifications;
-using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
-using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Utils
 {
-    public class SidechainNodeRunner : NodeRunner
+    /// <summary>
+    /// Currently identical to <see cref="SidechainFederationNodeRunner"/> but will be lighter after fixing
+    /// https://github.com/stratisproject/FederatedSidechains/issues/273
+    /// </summary>
+    public class SidechainUserNodeRunner : NodeRunner
     {
-        private IDateTimeProvider timeProvider;
-
-        public SidechainNodeRunner(string dataDir, string agent, Network network, EditableTimeProvider timeProvider)
+        public SidechainUserNodeRunner(string dataDir, string agent, Network network)
             : base(dataDir, agent)
         {
             this.Network = network;
-            this.timeProvider = timeProvider;
         }
 
         public override void BuildNode()
@@ -37,19 +40,14 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
                 .UseNodeSettings(settings)
                 .UseBlockStore()
                 .AddSmartContracts()
+                .UseSmartContractPoAConsensus()
+                .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
                 .UseReflectionExecutor()
-                .AddFederationGateway()
-                .UseFederatedPegPoAMining()
                 .UseMempool()
-                .UseWallet()
-                .UseTransactionNotification()
-                .UseBlockNotification()
                 .UseApi()
-                .AddRPC()
                 .MockIBD()
-                //.ReplaceTimeProvider(this.timeProvider)
-                //.AddFastMiningCapability()
+                .AddRPC()
                 .Build();
         }
     }
