@@ -92,6 +92,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
             this.sidechainNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
             this.sideUser = this.sidechainNodeBuilder.CreateSidechainNode(this.sidechainNetwork);
+
             this.fedSide1 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[0]);
             this.fedSide2 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[1]);
             this.fedSide3 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.sidechainNetwork, this.sidechainNetwork.FederationKeys[2]);
@@ -200,13 +201,13 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             {
                 this.federationMemberIndexes.ForEach(i =>
                 {
-                    $"http://localhost:{node.ApiPort}/api".AppendPathSegment("FederationWallet/import-key").PostJsonAsync(new ImportMemberKeyRequest
+                    $"http://localhost:{node.Endpoint.Port}/api".AppendPathSegment("FederationWallet/import-key").PostJsonAsync(new ImportMemberKeyRequest
                     {
                         Mnemonic = this.mnemonics[i].ToString(),
                         Password = "password"
                     }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
 
-                    $"http://localhost:{node.ApiPort}/api".AppendPathSegment("FederationWallet/enable-federation").PostJsonAsync(new EnableFederationRequest
+                    $"http://localhost:{node.Endpoint.Port}/api".AppendPathSegment("FederationWallet/enable-federation").PostJsonAsync(new EnableFederationRequest
                     {
                         Password = "password"
                     }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
@@ -276,11 +277,11 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.AppendToConfig(toNode, $"{FederationGatewaySettings.CounterChainApiPortParam}={fromNode.ApiPort.ToString()}");
         }
 
-        private void AppendToConfig(CoreNode node, string configKeyValueIten)
+        private void AppendToConfig(CoreNode node, string configKeyValueItem)
         {
             using (StreamWriter sw = File.AppendText(node.Config))
             {
-                sw.WriteLine(configKeyValueIten);
+                sw.WriteLine(configKeyValueItem);
             }
         }
 
@@ -305,9 +306,16 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.ApplyCounterChainAPIPort(this.fedMain2, this.fedSide2);
             this.ApplyCounterChainAPIPort(this.fedMain3, this.fedSide3);
 
-            this.MainAndSideChainNodeMap.ToList().ForEach(n =>
+            this.ApplyAgentPrefix(this.MainAndSideChainNodeMap);
+        }
+
+        private void ApplyAgentPrefix(IReadOnlyDictionary<string, NodeChain> nodes)
+        {
+            nodes.ToList().ForEach(n =>
             {
-                this.AppendToConfig(n.Value.Node, $"{ConfigAgentPrefix}={n.Key}");
+                string text = File.ReadAllText(n.Value.Node.Config);
+                text = text.Replace($"{ConfigAgentPrefix}=node{n.Value.Node.Endpoint.Port}", $"{ConfigAgentPrefix}={n.Key}");
+                File.WriteAllText(n.Value.Node.Config, text);
             });
         }
 
