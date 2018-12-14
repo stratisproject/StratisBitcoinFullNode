@@ -98,5 +98,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// The block height on the counter-chain for which the next list of deposits is expected.
         /// </summary>
         int NextMatureDepositHeight { get; }
+
+        /// <summary>
+        /// Gets the counter of the cross chain transfer for each available status
+        /// </summary>
+        /// <returns>The counter of the cross chain transfer for each <see cref="CrossChainTransferStatus"/> status</returns>
+        Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter();
     }
 }

@@ -1264,6 +1264,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <inheritdoc />
+        public Dictionary<CrossChainTransferStatus, int> GetCrossChainTransferStatusCounter()
+        {
+            Dictionary<CrossChainTransferStatus, int> result = new Dictionary<CrossChainTransferStatus, int>();
+            foreach (CrossChainTransferStatus status in Enum.GetValues(typeof(CrossChainTransferStatus)).Cast<CrossChainTransferStatus>())
+            {
+                result[status] = this.depositsIdsByStatus.TryGet(status)?.Count ?? 0;
+            }
+
+            return result;
+        }
+
+        /// <inheritdoc />
         public void Dispose()
         {
             this.SaveCurrentTipAsync().GetAwaiter().GetResult();
