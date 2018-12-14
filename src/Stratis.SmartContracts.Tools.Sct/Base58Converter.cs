@@ -4,6 +4,7 @@ using System.Linq;
 using System.Reflection;
 using McMaster.Extensions.CommandLineUtils;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.SmartContracts.Core;
 
 namespace Stratis.SmartContracts.Tools.Sct
@@ -28,16 +29,47 @@ namespace Stratis.SmartContracts.Tools.Sct
         public string Address { get; }
 
         [Option("-network|--network", CommandOptionType.SingleValue, Description = "The name of the network class object. Default is 'SmartContractsPoATest'")]
-        public string Network { get; }       
+        public string Network { get; }
+
+        [Option("-prefix|--prefix", CommandOptionType.SingleValue, Description = "The hexadecimal pubkey prefix to use. If defined, will override the -network option.")]
+        public string PubKeyPrefix { get; }
 
         private int OnExecuteAsync(CommandLineApplication app, IConsole console)
         {
-            var hex = this.Address.HexToByteArray();
+            byte[] hex;
+
+            try
+            {
+                hex = this.Address.HexToByteArray();
+            }
+            catch (Exception e)
+            {
+                console.WriteLine("Error parsing hex value {0}", this.Address);
+                return 0;
+            }
 
             if (hex.Length != 20)
             {
                 console.WriteLine("Address must be 20 bytes long");
                 return 0;
+            }
+
+            if (!string.IsNullOrWhiteSpace(PubKeyPrefix))
+            {
+                byte[] versionBytes;
+                try
+                {
+                    versionBytes = this.PubKeyPrefix.HexToByteArray();
+                }
+                catch (Exception e)
+                {
+                    console.WriteLine("Error parsing hex value {0}", this.PubKeyPrefix);
+                    return 0;
+                }
+
+                var base58WithPrefix = Encoders.Base58Check.EncodeData(versionBytes.Concat(hex).ToArray());
+                console.Write(base58WithPrefix);
+                return 1;
             }
 
             Network network;
@@ -52,7 +84,6 @@ namespace Stratis.SmartContracts.Tools.Sct
             }
 
             var base58 = new BitcoinPubKeyAddress(new KeyId(hex), network).ToString();
-
             console.Write(base58);
 
             return 1;
