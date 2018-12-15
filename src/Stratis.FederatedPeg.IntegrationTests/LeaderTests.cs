@@ -8,7 +8,7 @@ using Xunit;
 
 namespace Stratis.FederatedPeg.IntegrationTests
 {
-    public class LeaderTests : TestBase
+    public class LeaderTest
     {
         /// <summary>
         /// https://stratisplatform.sharepoint.com/:x:/g/EehmhCsUSRFKnUgJ1nZNDxoBlyxcGcmfwmCdgg7MJqkYgA?e=0iChWb
@@ -18,25 +18,28 @@ namespace Stratis.FederatedPeg.IntegrationTests
         [Fact(Skip = "Check out the  block is being notified as this will cause the leader to changee. At the moment in this test the leader doesn't change.")]
         public void LeaderChange()
         {
-            this.StartAndConnectNodes();
+            using (SidechainTestContext context = new SidechainTestContext())
+            {
+                context.StartAndConnectNodes();
 
-            IFederationGatewaySettings federationGatewaySettings = new FederationGatewaySettings(this.MainAndSideChainNodeMap["fedSide1"].Node.FullNode.Settings);
-            ILeaderProvider leaderProvider = new LeaderProvider(federationGatewaySettings);
+                IFederationGatewaySettings federationGatewaySettings = new FederationGatewaySettings(context.FedSide1.FullNode.Settings);
+                ILeaderProvider leaderProvider = new LeaderProvider(federationGatewaySettings);
 
-            PubKey currentLeader = leaderProvider.CurrentLeaderKey;
+                PubKey currentLeader = leaderProvider.CurrentLeaderKey;
 
-            int tipBefore = this.MainAndSideChainNodeMap["fedSide1"].Node.GetTip().Height;
+                int tipBefore = context.FedSide1.GetTip().Height;
 
-            // TODO check blocks get mined and make sure the block notification will change
-            // the leader.
-            TestHelper.WaitLoop(
-                () =>
-                {
-                    return this.MainAndSideChainNodeMap["fedSide1"].Node.GetTip().Height >= tipBefore + 5;
-                }
-            );
+                // TODO check blocks get mined and make sure the block notification will change
+                // the leader.
+                TestHelper.WaitLoop(
+                    () =>
+                    {
+                        return context.FedSide1.GetTip().Height >= tipBefore + 5;
+                    }
+                );
 
-            leaderProvider.CurrentLeaderKey.Should().NotBe(currentLeader);
+                leaderProvider.CurrentLeaderKey.Should().NotBe(currentLeader);
+            }
         }
     }
 }
