@@ -1,0 +1,30 @@
+version: '2'
+services:
+  nako:
+    container_name: city-nako
+    networks: 
+        - city
+    image: coinvault/nako:core
+    command: city
+    ports: 
+        - 9019:9000
+    depends_on:
+        - mongo
+        - client
+  client:
+    container_name: city-client
+    networks: 
+        - city
+    image: citychain/citychain
+    command: ["-server=1", "-rpcallowip=0.0.0.0", "-rpcport=5000", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-rpcthreads=300", "-txindex=1"]
+    ports: 
+        - 5019:5000
+        - 4333:4333
+  mongo:
+    container_name: city-mongo
+    networks: 
+        - city
+    image: mongo:3.2
+networks:
+    city:
+      driver: bridge

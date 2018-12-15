@@ -11,17 +11,17 @@
       "commandName": "Project",
       "commandLineArgs": "-datadir=citynode"
     },
+    "City.Chain (Network with RPC)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=citynode -server -rpcallowip=0.0.0.0 -rpcpassword=rpcpassword -rpcuser=rpcuser"
+    },
     "Stratis (Local Data Dir)": {
       "commandName": "Project",
-      "commandLineArgs": "-chain=stratis -datadir=stratisnode"
+      "commandLineArgs": "-datadir=stratisnode -chain=stratis"
     },
     "City.Chain (Test) (Local Data Dir)": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet -datadir=citynode"
-    },
-    "City.Chain (Test Network with RPC)": {
-      "commandName": "Project",
-      "commandLineArgs": "-coin city -network test -server -rpcpassword=password -rpcuser=user"
+      "commandLineArgs": "-datadir=citynode -testnet"
     }
   }
 }
