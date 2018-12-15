@@ -1,5 +1,0 @@
-server=1
-rpcbind=127.0.0.1
-rpcallowip=127.0.0.1
-apiuri=http://0.0.0.0
-testnet=1
