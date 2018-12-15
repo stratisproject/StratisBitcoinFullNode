@@ -27,6 +27,9 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         private const string WalletName = "mywallet";
         private const string WalletPassword = "password";
         private const string WalletPassphrase = "passphrase";
+        private const string ConfigSideChain = "sidechain";
+        private const string ConfigMainChain = "mainchain";
+        private const string ConfigAgentPrefix = "agentprefix";
 
         // TODO: Make these private, or move to public immutable properties. Will happen naturally over time.
 
@@ -57,9 +60,6 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         public CoreNode FedSide2 { get; }
         public CoreNode FedSide3 { get; }
 
-        private const string ConfigSideChain = "sidechain";
-        private const string ConfigAgentPrefix = "agentprefix";
-
         public SidechainTestContext()
         {
             this.MainChainNetwork = Networks.Stratis.Regtest();
@@ -73,13 +73,15 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.federationMemberIndexes = Enumerable.Range(0, this.pubKeysByMnemonic.Count).ToList();
             this.chains = new[] { "mainchain", "sidechain" }.ToList();
 
+            // TODO: Because it inherits I believe we can use only the SidechainNodeBuilder
             this.nodeBuilder = NodeBuilder.Create(this);
-            this.MainUser = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.MainUser)).WithWallet(); // TODO: Do we need wallets like this on every node?
-            this.FedMain1 = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.FedMain1));
-            this.FedMain2 = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.FedMain2));
-            this.FedMain3 = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.FedMain3));
-
             this.sidechainNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
+
+            this.MainUser = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.MainUser)).WithWallet(); // TODO: Do we need wallets like this on every node?
+            this.FedMain1 = this.sidechainNodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.FedMain2 = this.sidechainNodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.FedMain3 = this.sidechainNodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+
             this.SideUser = this.sidechainNodeBuilder.CreateSidechainNode(this.SideChainNetwork);
 
             this.FedSide1 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[0]);
@@ -156,23 +158,15 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
         public void ConnectSideChainNodes()
         {
-            try
-            {
-                TestHelper.Connect(this.SideUser, this.FedSide1);
-                TestHelper.Connect(this.SideUser, this.FedSide2);
-                TestHelper.Connect(this.SideUser, this.FedSide3);
-                TestHelper.Connect(this.FedSide1, this.FedSide2);
-                TestHelper.Connect(this.FedSide1, this.FedSide3);
-                TestHelper.Connect(this.FedSide2, this.FedSide1);
-                TestHelper.Connect(this.FedSide2, this.FedSide3);
-                TestHelper.Connect(this.FedSide3, this.FedSide1);
-                TestHelper.Connect(this.FedSide3, this.FedSide2);
-
-            }
-            catch (Exception)
-            {
-                throw;
-            }
+            TestHelper.Connect(this.SideUser, this.FedSide1);
+            TestHelper.Connect(this.SideUser, this.FedSide2);
+            TestHelper.Connect(this.SideUser, this.FedSide3);
+            TestHelper.Connect(this.FedSide1, this.FedSide2);
+            TestHelper.Connect(this.FedSide1, this.FedSide3);
+            TestHelper.Connect(this.FedSide2, this.FedSide1);
+            TestHelper.Connect(this.FedSide2, this.FedSide3);
+            TestHelper.Connect(this.FedSide3, this.FedSide1);
+            TestHelper.Connect(this.FedSide3, this.FedSide2);
         }
 
         public void EnableWallets(List<CoreNode> nodes)
@@ -274,13 +268,25 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.AppendToConfig(this.FedSide2, $"{ConfigSideChain}=1");
             this.AppendToConfig(this.FedSide3, $"{ConfigSideChain}=1");
 
+            this.AppendToConfig(this.FedMain1, $"{ConfigMainChain}=1");
+            this.AppendToConfig(this.FedMain2, $"{ConfigMainChain}=1");
+            this.AppendToConfig(this.FedMain3, $"{ConfigMainChain}=1");
+
             this.AppendToConfig(this.FedSide1, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
             this.AppendToConfig(this.FedSide2, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
             this.AppendToConfig(this.FedSide3, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
 
+            this.AppendToConfig(this.FedMain1, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.AppendToConfig(this.FedMain2, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+            this.AppendToConfig(this.FedMain3, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
+
             this.AppendToConfig(this.FedSide1, $"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[0]].ToString()}");
             this.AppendToConfig(this.FedSide2, $"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[1]].ToString()}");
             this.AppendToConfig(this.FedSide3, $"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[2]].ToString()}");
+
+            this.AppendToConfig(this.FedMain1, $"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[0]].ToString()}");
+            this.AppendToConfig(this.FedMain2, $"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[1]].ToString()}");
+            this.AppendToConfig(this.FedMain3, $"{FederationGatewaySettings.PublicKeyParam}={this.pubKeysByMnemonic[this.mnemonics[2]].ToString()}");
 
             this.ApplyFederationIPs(this.FedMain1, this.FedMain2, this.FedMain3);
             this.ApplyFederationIPs(this.FedSide1, this.FedSide2, this.FedSide3);
