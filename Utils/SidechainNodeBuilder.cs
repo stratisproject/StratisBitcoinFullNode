@@ -46,5 +46,14 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
             return node;
         }
+
+        public CoreNode CreateMainChainFederationNode(Network network)
+        {
+            string agentName = $"sidechain{Interlocked.Increment(ref agentCount)}";
+            string dataFolder = this.GetNextDataFolderName(agentName);
+            CoreNode node = this.CreateNode(new MainChainFederationNodeRunner(dataFolder, agentName, network), "stratis.conf");
+
+            return node;
+        }
     }
 }

@@ -2,16 +2,18 @@
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
-using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
@@ -20,9 +22,12 @@ using Stratis.FederatedPeg.Features.FederationGateway;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Utils
 {
-    public class SidechainUserNodeRunner : NodeRunner
+    /// <summary>
+    /// To emulate the behaviour of a main chain node in FederationGatewayD.
+    /// </summary>
+    public class MainChainFederationNodeRunner : NodeRunner
     {
-        public SidechainUserNodeRunner(string dataDir, string agent, Network network)
+        public MainChainFederationNodeRunner(string dataDir, string agent, Network network)
             : base(dataDir, agent)
         {
             this.Network = network;
@@ -30,20 +35,21 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
         public override void BuildNode()
         {
-            var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
+            var settings = new NodeSettings(this.Network, ProtocolVersion.PROVEN_HEADER_VERSION, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
             this.FullNode = (FullNode)new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .AddSmartContracts()
-                .UseSmartContractPoAConsensus()
-                .UseSmartContractPoAMining()
-                .UseSmartContractWallet()
-                .UseReflectionExecutor()
-                .UseMempool()
+                .AddFederationGateway()
+                .UseTransactionNotification()
+                .UseBlockNotification()
                 .UseApi()
-                .MockIBD()
+                .UseMempool()
                 .AddRPC()
+                .UsePosConsensus()
+                .UseWallet()
+                .AddPowPosMining()
+                .MockIBD()
                 .Build();
         }
     }
