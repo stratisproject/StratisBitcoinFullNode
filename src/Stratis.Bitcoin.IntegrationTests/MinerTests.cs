@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 }
 
                 var error = Assert.Throws<ConsensusException>(() => TestHelper.MineBlocks(miner, 1));
-                Assert.True(error.Message == ConsensusErrors.BadBlockSigOps.Message);
+                Assert.True(error.Message == ConsensusErrors.BadBlockSigOps.ToString());
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
 
@@ -494,7 +494,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 miner.FullNode.NodeService<ITxMempool>().AddUnchecked(duplicateCoinbase.GetHash(), txMempoolEntry);
 
                 var error = Assert.Throws<ConsensusException>(() => TestHelper.MineBlocks(miner, 1));
-                Assert.True(error.Message == ConsensusErrors.BadMultipleCoinbase.Message);
+                Assert.True(error.Message == ConsensusErrors.BadMultipleCoinbase.ToString());
 
                 TestHelper.WaitLoop(() => TestHelper.IsNodeSynced(miner));
 

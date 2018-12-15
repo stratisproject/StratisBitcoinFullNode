@@ -24,8 +24,10 @@ namespace Stratis.Bitcoin.Consensus
                 case TxOutType.TX_PUBKEYHASH:
                     destinationAddress = script.GetDestinationAddress(network).ToString();
                     break;
-                case TxOutType.TX_NONSTANDARD:
                 case TxOutType.TX_SCRIPTHASH:
+                    destinationAddress = script.GetDestinationAddress(network).ToString();
+                    break;
+                case TxOutType.TX_NONSTANDARD:
                 case TxOutType.TX_MULTISIG:
                 case TxOutType.TX_NULL_DATA:
                 case TxOutType.TX_SEGWIT:

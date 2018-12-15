@@ -131,6 +131,18 @@ namespace Stratis.Bitcoin.Tests.Base
                 return Task.CompletedTask;
             });
 
+            this.PeerMock.Setup(x => x.SendMessage(It.IsAny<Payload>())).Callback((Payload payload) =>
+            {
+                if (payload is GetHeadersPayload getHeadersPayload)
+                {
+                    this.GetHeadersPayloadSentTimes++;
+                    this.GetHeadersPayloadsSent.Add(getHeadersPayload);
+                }
+
+                if (payload is HeadersPayload headersPayload)
+                    this.HeadersPayloadsSent.Add(headersPayload);
+            });
+
             return cmBehavior;
         }
 
