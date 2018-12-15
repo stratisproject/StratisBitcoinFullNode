@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Reflection;
+using System.Text;
 
 namespace FederationSetup
 {
@@ -11,10 +12,12 @@ namespace FederationSetup
         /// </summary>
         public static void OutputHeader()
         {
-            Console.WriteLine(Environment.NewLine);
-            Console.WriteLine($"Stratis Federation Set up v{Assembly.GetEntryAssembly().GetName().Version}");
-            Console.WriteLine("Copyright (c) 2018 Stratis Group Limited");
-            Console.WriteLine(Environment.NewLine);
+            var builder = new StringBuilder();
+
+            builder.AppendLine($"Stratis Federation Set up v{Assembly.GetEntryAssembly().GetName().Version}");
+            builder.AppendLine("Copyright (c) 2018 Stratis Group Limited");
+
+            Console.WriteLine(builder);
         }
 
         /// <summary>
@@ -23,21 +26,24 @@ namespace FederationSetup
         /// </summary>
         public static void OutputMenu()
         {
-            Console.WriteLine("Menu:");
-            Console.WriteLine("g       Create genesis blocks for Mainnet, Testnet and Regtest.");
-            Console.WriteLine("        args: [-text=\"<text>\"]");
-            Console.WriteLine("              text:    A bit of text or a url to be included in the genesis block.");
-            Console.WriteLine("              Example:    g -text=\"https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/\"");
-            Console.WriteLine("p       Create private and public keys for federation members.");  // ask members to create public and private -p (for the specfic network)  - 1 pubpriv for signing transactions and 1 for pubpriv key for mining
-            Console.WriteLine("m       Create multi signature addresses for the federation wallets.");
-            Console.WriteLine("        args: [-network=<network>] [-quorum=<quorum>] [-fedpubkeys=<pubkey1, pubkey2, ..>]");
-            Console.WriteLine("              network:    mainnet, testnet or regtest.");
-            Console.WriteLine("              quorum:     The minimum number of federated members needed to sign transactions.");
-            Console.WriteLine("              fedpubkeys: Federation members' public keys. Must have an odd number of up to fifteen members."); // // fed admin will do -m and number (3 qurom + the public keys for the signing of transactions)
-            Console.WriteLine("              Example:    m -network=testnet -quorum=2 -fedpubkeys=PublicKey1,PublicKey2,PublicKey3,PublicKey4,PublicKey5");
-            Console.WriteLine("menu    Show this menu.");
-            Console.WriteLine("exit    Close the utility.");
-            Console.WriteLine(Environment.NewLine);
+            var builder = new StringBuilder();
+
+            builder.AppendLine("Menu:");
+            builder.AppendLine("g       Create genesis blocks for Mainnet, Testnet and Regtest.");
+            builder.AppendLine("        args: [-text=\"<text>\"]");
+            builder.AppendLine("              text:    A bit of text or a url to be included in the genesis block.");
+            builder.AppendLine("              Example:    g -text=\"https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/\"");
+            builder.AppendLine("p       Create private and public keys for federation members.");  // ask members to create public and private -p (for the specfic network)  - 1 pubpriv for signing transactions and 1 for pubpriv key for mining
+            builder.AppendLine("m       Create multi signature addresses for the federation wallets.");
+            builder.AppendLine("        args: [-network=<network>] [-quorum=<quorum>] [-fedpubkeys=<pubkey1, pubkey2, ..>]");
+            builder.AppendLine("              network:    mainnet, testnet or regtest.");
+            builder.AppendLine("              quorum:     The minimum number of federated members needed to sign transactions.");
+            builder.AppendLine("              fedpubkeys: Federation members' public keys. Must have an odd number of up to fifteen members."); // // fed admin will do -m and number (3 qurom + the public keys for the signing of transactions)
+            builder.AppendLine("              Example:    m -network=testnet -quorum=2 -fedpubkeys=PublicKey1,PublicKey2,PublicKey3,PublicKey4,PublicKey5");
+            builder.AppendLine("menu    Show this menu.");
+            builder.AppendLine("exit    Close the utility.");
+
+            Console.WriteLine(builder);
         }
 
         /// <summary>
