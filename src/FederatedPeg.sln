@@ -27,7 +27,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Integr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains.AdminDashboard", "Stratis.FederatedSidechains.AdminDashboard\Stratis.FederatedSidechains.AdminDashboard.csproj", "{2D99612E-84FE-4D46-AB3C-B6A4C08828E9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainsDnsD", "Stratis.SidechainDnsD\Stratis.SidechainDnsD.csproj", "{C6A25E69-CB21-464D-91D0-9C390849C62E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainDnsD", "Stratis.SidechainDnsD\Stratis.SidechainDnsD.csproj", "{C6A25E69-CB21-464D-91D0-9C390849C62E}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

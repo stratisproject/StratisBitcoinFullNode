@@ -9,13 +9,15 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Networks;
 using Stratis.Sidechains.Networks;
+using Xunit.Sdk;
 
 namespace FederationSetup
 {
-    // The Stratis Federation set-up is a console app that can be sent to Federation Members
-    // in order to set-up the network and generate their Private (and Public) keys without a need to run a Node at this stage.
-    // See the "Use Case - Generate Federation Member Key Pairs" located in the Requirements folder in the
-    // project repository.
+    /// <summary>
+    /// The Stratis Federation set-up is a console app that can be sent to Federation Members
+    /// in order to set-up the network and generate their Private (and Public) keys without a need to run a Node at this stage.
+    /// See the "Use Case - Generate Federation Member Key Pairs" located in the Requirements folder in the project repository.
+    /// </summary>
     class Program
     {
         private const string SwitchMineGenesisBlock = "g";
@@ -28,15 +30,11 @@ namespace FederationSetup
 
         static void Main(string[] args)
         {
-            Console.SetIn(new StreamReader(Console.OpenStandardInput(),
-                Console.InputEncoding,
-                false,
-                bufferSize: 1024));
+            Console.SetIn(new StreamReader(Console.OpenStandardInput(), Console.InputEncoding, false, bufferSize: 1024));
 
             // Start with the banner and the help message.
             FederationSetup.OutputHeader();
             FederationSetup.OutputMenu();
-            
 
             while (true)
             {
@@ -44,7 +42,7 @@ namespace FederationSetup
                 {
                     Console.Write("Your choice: ");
                     string userInput = Console.ReadLine().Trim();
-                    
+
                     string command = null;
                     if (!string.IsNullOrEmpty(userInput))
                     {
@@ -56,68 +54,35 @@ namespace FederationSetup
                         args = null;
                         command = null;
                     }
-                    
+
                     Console.WriteLine();
 
-                    if (command == SwitchExit) return;
-
-                    if (command == SwitchMenu)
+                    switch (command)
                     {
-                        if (args.Length != 1)
-                            throw new ArgumentException("Please enter the exact number of argument required.");
-
-                        FederationSetup.OutputMenu();
-                    }
-
-                    if (command == SwitchMineGenesisBlock)
-                    {
-                        int index = userInput.IndexOf("text=");
-                        if (index < 0)
-                            throw new ArgumentException("The -text=\"<text>\" argument is missing.");
-
-                        string text = userInput.Substring(userInput.IndexOf("text=") + 5);
-
-                        if (text.Substring(0, 1) != "\"" || text.Substring(text.Length - 1, 1) != "\"")
-                            throw new ArgumentException("The -text=\"<text>\" argument should have double-quotes.");
-                        
-                        text = text.Substring(1, text.Length - 2);
-
-                        if (string.IsNullOrEmpty(text))
-                            throw new ArgumentException("Please specify the text to be included in the genesis block.");
-
-                        Console.WriteLine(new GenesisMiner().MineGenesisBlocks(new SmartContractPoAConsensusFactory(), text));
-                        FederationSetup.OutputSuccess();
-                    }
-
-                    if (command == SwitchGenerateFedPublicPrivateKeys)
-                    {
-                        if (args.Length != 1)
-                            throw new ArgumentException("Please enter the exact number of argument required.");
-
-                        GeneratePublicPrivateKeys();
-                        FederationSetup.OutputSuccess();
-                    }
-
-                    if (command == SwitchGenerateMultiSigAddresses)
-                    {
-                        if (args.Length != 4)
-                            throw new ArgumentException("Please enter the exact number of argument required.");
-
-                        ConfigReader = new TextFileConfiguration(args);
-
-                        int quorum = GetQuorumFromArguments();
-                        string[] federatedPublicKeys = GetFederatedPublicKeysFromArguments();
-
-                        if (quorum > federatedPublicKeys.Length)
-                            throw new ArgumentException("Quorum has to be smaller than the number of members within the federation.");
-
-                        if (quorum < federatedPublicKeys.Length / 2)
-                            throw new ArgumentException("Quorum has to be greater than half of the members within the federation.");
-
-                        (Network mainChain, Network sideChain) = GetMainAndSideChainNetworksFromArguments();
-
-                        Console.WriteLine($"Creating multisig addresses for {mainChain.Name} and {sideChain.Name}.");
-                        Console.WriteLine(new MultisigAddressCreator().CreateMultisigAddresses(mainChain, sideChain, federatedPublicKeys.Select(f => new PubKey(f)).ToArray(), quorum));
+                        case SwitchExit:
+                        {
+                            return;
+                        }
+                        case SwitchMenu:
+                        {
+                            HandleSwitchMenuCommand(args);
+                            break;
+                        }
+                        case SwitchMineGenesisBlock:
+                        {
+                            HandleSwitchMineGenesisBlockCommand(userInput);
+                            break;
+                        }
+                        case SwitchGenerateFedPublicPrivateKeys:
+                        {
+                            HandleSwitchGenerateFedPublicPrivateKeysCommand(args);
+                            break;
+                        }
+                        case SwitchGenerateMultiSigAddresses:
+                        {
+                            HandleSwitchGenerateMultiSigAddressesCommand(args);
+                            break;
+                        }
                     }
                 }
                 catch (Exception ex)
@@ -127,6 +92,65 @@ namespace FederationSetup
                     FederationSetup.OutputMenu();
                 }
             }
+        }
+
+        private static void HandleSwitchMenuCommand(string[] args)
+        {
+            if (args.Length != 1)
+                throw new ArgumentException("Please enter the exact number of argument required.");
+
+            FederationSetup.OutputMenu();
+        }
+
+        private static void HandleSwitchMineGenesisBlockCommand(string userInput)
+        {
+            int index = userInput.IndexOf("text=");
+            if (index < 0)
+                throw new ArgumentException("The -text=\"<text>\" argument is missing.");
+
+            string text = userInput.Substring(userInput.IndexOf("text=") + 5);
+
+            if (text.Substring(0, 1) != "\"" || text.Substring(text.Length - 1, 1) != "\"")
+                throw new ArgumentException("The -text=\"<text>\" argument should have double-quotes.");
+
+            text = text.Substring(1, text.Length - 2);
+
+            if (string.IsNullOrEmpty(text))
+                throw new ArgumentException("Please specify the text to be included in the genesis block.");
+
+            Console.WriteLine(new GenesisMiner().MineGenesisBlocks(new SmartContractPoAConsensusFactory(), text));
+            FederationSetup.OutputSuccess();
+        }
+
+        private static void HandleSwitchGenerateFedPublicPrivateKeysCommand(string[] args)
+        {
+            if (args.Length != 1)
+                throw new ArgumentException("Please enter the exact number of argument required.");
+
+            GeneratePublicPrivateKeys();
+            FederationSetup.OutputSuccess();
+        }
+
+        private static void HandleSwitchGenerateMultiSigAddressesCommand(string[] args)
+        {
+            if (args.Length != 4)
+                throw new ArgumentException("Please enter the exact number of argument required.");
+
+            ConfigReader = new TextFileConfiguration(args);
+
+            int quorum = GetQuorumFromArguments();
+            string[] federatedPublicKeys = GetFederatedPublicKeysFromArguments();
+
+            if (quorum > federatedPublicKeys.Length)
+                throw new ArgumentException("Quorum has to be smaller than the number of members within the federation.");
+
+            if (quorum < federatedPublicKeys.Length / 2)
+                throw new ArgumentException("Quorum has to be greater than half of the members within the federation.");
+
+            (Network mainChain, Network sideChain) = GetMainAndSideChainNetworksFromArguments();
+
+            Console.WriteLine($"Creating multisig addresses for {mainChain.Name} and {sideChain.Name}.");
+            Console.WriteLine(new MultisigAddressCreator().CreateMultisigAddresses(mainChain, sideChain, federatedPublicKeys.Select(f => new PubKey(f)).ToArray(), quorum));
         }
 
         private static void GeneratePublicPrivateKeys()
