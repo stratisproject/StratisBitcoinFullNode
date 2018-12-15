@@ -160,7 +160,6 @@ namespace Stratis.Bitcoin.Features.Wallet
                         return;
                     }
 
-                    CancellationToken token = this.nodeLifetime.ApplicationStopping;
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     ChainedHeader next = this.walletTip;
@@ -174,14 +173,16 @@ namespace Stratis.Bitcoin.Features.Wallet
                         // The block should be put in a queue and pushed to the wallet in an async way.
                         // If the wallet is behind it will just read blocks from store (or download in case of a pruned node).
 
-                        token.ThrowIfCancellationRequested();
-
                         next = newTip.GetAncestor(next.Height + 1);
                         Block nextblock = null;
                         int index = 0;
                         while (true)
                         {
-                            token.ThrowIfCancellationRequested();
+                            if (cancellationToken.IsCancellationRequested)
+                            {
+                                this.logger.LogTrace("(-)[CANCELLATION_REQUESTED]");
+                                return;
+                            }
 
                             nextblock = await this.blockStore.GetBlockAsync(next.HashBlock).ConfigureAwait(false);
                             if (nextblock == null)
