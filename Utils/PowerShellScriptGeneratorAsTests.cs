@@ -44,6 +44,11 @@ namespace Stratis.FederatedPeg.Tests.Utils
         [Fact]
         public void Generate_PS1_Fragment()
         {
+            this.output.WriteLine(CreatePowershellScript());
+        }
+
+        public string CreatePowershellScript()
+        {
             var stringBuilder = new StringBuilder();
             this.newLine = s => stringBuilder.AppendLine(s);
 
@@ -60,7 +65,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             ShowRunningNodes();
             EnableWallets();
 
-            this.output.WriteLine(stringBuilder.ToString());
+            return stringBuilder.ToString();
         }
 
         private void CreatePoaKeyFiles()
