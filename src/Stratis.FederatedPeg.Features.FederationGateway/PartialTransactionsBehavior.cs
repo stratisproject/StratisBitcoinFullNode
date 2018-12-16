@@ -135,7 +135,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
             if (oldHash != signedTransaction.GetHash())
             {
-                this.logger.LogTrace("Signed transaction (deposit={1}) to produce {2} from {3}.", payload.DepositId, oldHash, signedTransaction.GetHash());
+                this.logger.LogInformation("Signed transaction (deposit={1}) to produce {2} from {3}.", payload.DepositId, oldHash, signedTransaction.GetHash());
 
                 // Respond back to the peer that requested a signature.
                 await this.BroadcastAsync(payload.AddPartial(signedTransaction));

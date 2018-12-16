@@ -155,8 +155,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <param name="partialTransaction1">First transaction.</param>
         /// <param name="partialTransaction2">Second transaction.</param>
         /// <returns><c>True</c> if identical and <c>false</c> otherwise.</returns>
-        public static bool TemplatesMatch(Transaction partialTransaction1, Transaction partialTransaction2)
+        public static bool TemplatesMatch(Network network, Transaction partialTransaction1, Transaction partialTransaction2)
         {
+            if (network.Consensus.IsProofOfStake)
+            {
+                if (partialTransaction1.Time != partialTransaction2.Time)
+                {
+                    return false;
+                }
+            }
+
             if ((partialTransaction1.Inputs.Count != partialTransaction2.Inputs.Count) ||
                 (partialTransaction1.Outputs.Count != partialTransaction2.Outputs.Count))
             {
@@ -191,7 +199,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             Guard.Assert(this.status == CrossChainTransferStatus.Partial);
 
-            Transaction[] validPartials = partialTransactions.Where(p => TemplatesMatch(p, this.partialTransaction) && p.GetHash() != this.PartialTransaction.GetHash()).ToArray();
+            Transaction[] validPartials = partialTransactions.Where(p => TemplatesMatch(builder.Network, p, this.partialTransaction) && p.GetHash() != this.PartialTransaction.GetHash()).ToArray();
             if (validPartials.Any())
             {
                 var allPartials = new Transaction[validPartials.Length + 1];

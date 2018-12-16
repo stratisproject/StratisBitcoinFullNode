@@ -4,7 +4,9 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
@@ -14,15 +16,15 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
         private readonly ConcurrentChain chain;
         private readonly IDepositExtractor depositExtractor;
         private readonly IBlockRepository blockRepository;
-        private readonly Dictionary<uint256, Block> blockCache;
+        private readonly IConsensusManager consensusManager;
 
         public MaturedBlocksProvider(ILoggerFactory loggerFactory,
-            ConcurrentChain chain, IDepositExtractor depositExtractor, IBlockRepository blockRepository)
+            ConcurrentChain chain, IDepositExtractor depositExtractor, IBlockRepository blockRepository, IConsensusManager consensusManager)
         {
             this.chain = chain;
             this.depositExtractor = depositExtractor;
             this.blockRepository = blockRepository;
-            this.blockCache = new Dictionary<uint256, Block>();
+            this.consensusManager = consensusManager;
         }
 
         /// <summary>
@@ -50,6 +52,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
                 blockHashes.Add(chainedHeader.HashBlock);
             }
 
+            // // TODO: this should be called from consensus manager.GetBlockData().
             List<Block> blocks = await this.blockRepository.GetBlocksAsync(blockHashes).ConfigureAwait(false);
             for (int index = 0; index < blockHashes.Count; index++)
             {
@@ -85,7 +88,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
             for (int index = 0; index < chainedHeaders.Count; index++)
             {
-                IMaturedBlockDeposits maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(chainedHeaders[index]);
+                // TODO: ChainedHeaderBlock should be called from consensus manager.
+                IMaturedBlockDeposits maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(new ChainedHeaderBlock(chainedHeaders[index].Block, chainedHeaders[index]));
 
                 if (maturedBlockDeposits == null)
                 {
@@ -98,36 +102,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
             return maturedBlocks;
         }
 
-        private ChainedHeader GetNewlyMaturedBlock(ChainedHeader chainedHeader)
+        private ChainedHeaderBlock GetNewlyMaturedBlock(ChainedHeader chainedHeader)
         {
             int newMaturedHeight = chainedHeader.Height - (int)this.depositExtractor.MinimumDepositConfirmations;
 
             if (newMaturedHeight < 0) return null;
 
+            // This is not so correct we should be walking back the chained header tree.
             ChainedHeader newMaturedBlock = this.chain.GetBlock(newMaturedHeight);
 
-            if (newMaturedBlock.Block != null)
-                return newMaturedBlock;
+            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.GetBlockDataAsync(newMaturedBlock.HashBlock).GetAwaiter().GetResult();
 
-            if (!this.blockCache.TryGetValue(newMaturedBlock.HashBlock, out Block block))
+            if (chainedHeaderBlock?.Block == null)
             {
-                List<ChainedHeader> chainedHeaders = this.GetChainedHeadersAsync(newMaturedHeight, (int)this.depositExtractor.MinimumDepositConfirmations).GetAwaiter().GetResult();
-                foreach (ChainedHeader header in chainedHeaders)
-                {
-                    this.blockCache[header.HashBlock] = header.Block;
-                }
-
-                if (chainedHeaders.Count < 1)
-                    return null;
-
-                block = chainedHeaders[0].Block;
+                throw new InvalidOperationException($"Block was not found in store {chainedHeader}");
             }
 
-            newMaturedBlock.Block = block;
-
-            this.blockCache.Remove(newMaturedBlock.HashBlock);
-
-            return newMaturedBlock;
+            return chainedHeaderBlock;
         }
 
         /// <inheritdoc />

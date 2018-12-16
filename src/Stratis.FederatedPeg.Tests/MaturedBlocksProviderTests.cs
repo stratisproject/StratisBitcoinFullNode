@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway;
@@ -24,6 +25,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly IBlockRepository blockRepository;
 
+        private readonly IConsensusManager consensusManager;
+
         private readonly ConcurrentChain chain;
 
         public MaturedBlocksProviderTests()
@@ -35,6 +38,7 @@ namespace Stratis.FederatedPeg.Tests
             this.depositExtractor = Substitute.For<IDepositExtractor>();
             this.chain = Substitute.ForPartsOf<ConcurrentChain>();
             this.blockRepository = Substitute.For<IBlockRepository>();
+            this.consensusManager = Substitute.For<IConsensusManager>();
         }
 
         [Fact]
@@ -53,7 +57,7 @@ namespace Stratis.FederatedPeg.Tests
 
             this.blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).Returns(blocks);
 
-            var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.chain, this.depositExtractor, this.blockRepository);
+            var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.chain, this.depositExtractor, this.blockRepository, this.consensusManager);
 
             List<IMaturedBlockDeposits> deposits = maturedBlocksProvider.GetMaturedDepositsAsync(0, 10).GetAwaiter().GetResult();
 

@@ -18,5 +18,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 
         [Required(ErrorMessage = "A block height is required")]
         public int BlockHeight { get; set; }
+
+        [Required(ErrorMessage = "A block time is required")]
+        public uint BlockTime { get; set; }
     }
 }

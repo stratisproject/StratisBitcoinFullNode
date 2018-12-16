@@ -27,7 +27,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.maturedBlocksRequester = maturedBlocksRequester;
             this.lockObj = new object();
 
-            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(PersistNewMaturedBlockDeposits);
+            this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(this.PersistNewMaturedBlockDeposits);
             this.logger.LogDebug("Subscribed to {0}", nameof(maturedBlockReceiver), nameof(maturedBlockReceiver.MaturedBlockDepositStream));
         }
 
@@ -35,7 +35,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             lock (this.lockObj)
             {
-                this.logger.LogDebug("New {0} received.", nameof(IMaturedBlockDeposits));
+                foreach (IMaturedBlockDeposits maturedBlockDeposit in maturedBlockDeposits)
+                {
+                    foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
+                    {
+                        this.logger.LogDebug("New deposit received BlockNumber={0} TargetAddress={1} deposit-id={2} Amount={3} .", deposit.BlockNumber, deposit.TargetAddress, deposit.Id, deposit.Amount);
+                    }
+                }
 
                 if (this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits).ConfigureAwait(false).GetAwaiter().GetResult())
                 {

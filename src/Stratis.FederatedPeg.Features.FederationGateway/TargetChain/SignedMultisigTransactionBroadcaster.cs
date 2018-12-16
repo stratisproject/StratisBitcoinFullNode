@@ -40,7 +40,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.mempoolManager = mempoolManager;
             this.broadcasterManager = broadcasterManager;
 
-            this.leaderReceiverSubscription = leaderReceiver.LeaderProvidersStream.Subscribe(async m => await BroadcastTransactionsAsync(m).ConfigureAwait(false));
+            this.leaderReceiverSubscription = leaderReceiver.LeaderProvidersStream.Subscribe(async m => await this.BroadcastTransactionsAsync(m).ConfigureAwait(false));
             this.logger.LogDebug("Subscribed to {0}", nameof(leaderReceiver), nameof(leaderReceiver.LeaderProvidersStream));
         }
 
@@ -66,6 +66,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     this.logger.LogTrace("Transaction ID '{0}' already in the mempool.", transaction.Key);
                     continue;
                 }
+
+                this.logger.LogInformation("Broadcasting deposit-id={0} a signed multisig transaction {1} to the network.", transaction.Key, transaction.Value.GetHash());
 
                 await this.broadcasterManager.BroadcastTransactionAsync(transaction.Value).ConfigureAwait(false);
             }

@@ -7,5 +7,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         uint256 BlockHash { get; }
 
         int BlockHeight { get; }
+
+        uint BlockTime { get; }
     }
 }
