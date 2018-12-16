@@ -3,6 +3,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway;
@@ -47,6 +48,8 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly IReadOnlyList<IWithdrawal> extractedWithdrawals;
 
+        private readonly IConsensusManager consensusManager;
+
         public BlockObserverTests()
         {
             this.minimumDepositConfirmations = 10;
@@ -63,7 +66,7 @@ namespace Stratis.FederatedPeg.Tests
             this.fullNode.NodeService<ConcurrentChain>().Returns(this.chain);
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
-
+            this.consensusManager = Substitute.For<IConsensusManager>();
             this.withdrawalExtractor = Substitute.For<IWithdrawalExtractor>();
             this.extractedWithdrawals = TestingValues.GetWithdrawals(2);
             this.withdrawalExtractor.ExtractWithdrawalsFromBlock(null, 0)
@@ -81,7 +84,8 @@ namespace Stratis.FederatedPeg.Tests
                 this.loggerFactory,
                 this.chain,
                 this.depositExtractor,
-                Substitute.For<IBlockRepository>());
+                Substitute.For<IBlockRepository>(),
+                this.consensusManager);
 
             this.blockObserver = new BlockObserver(
                 this.federationWalletSyncManager,
@@ -159,8 +163,10 @@ namespace Stratis.FederatedPeg.Tests
 
             var block = new Block();
             var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
-
+            
             chainedHeaderBlock.ChainedHeader.Block = chainedHeaderBlock.Block;
+
+            this.consensusManager.GetBlockDataAsync(uint256.Zero).Returns(chainedHeaderBlock);
 
             return (chainedHeaderBlock, block);
         }

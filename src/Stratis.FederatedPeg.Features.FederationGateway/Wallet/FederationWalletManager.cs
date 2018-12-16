@@ -883,7 +883,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 // All the input UTXO's should be present in spending details of the multi-sig address.
                 List<Coin> coins = checkSignature ? new List<Coin>() : null;
                 // Verify that the transaction has valid UTXOs.
-                if (!TransactionHasValidUTXOs(transaction, coins))
+                if (!this.TransactionHasValidUTXOs(transaction, coins))
                     return false;
 
                 // Verify that there are no earlier unspent UTXOs.
@@ -902,6 +902,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     TransactionBuilder builder = new TransactionBuilder(this.Wallet.Network).AddCoins(coins);
                     if (!builder.Verify(transaction, this.federationGatewaySettings.TransactionFee, out TransactionPolicyError[] errors))
                     {
+                        foreach (TransactionPolicyError transactionPolicyError in errors)
+                        {
+                            this.logger.LogError("TransactionBuilder.Verify FAILED - {0}", transactionPolicyError.ToString());
+                        }
+
                         return false;
                     }
                 }
