@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
 
             this.PrunedUpToHeaderTip = prunedTip;
 
-            this.logger.LogInformation($"Store has been pruned up to {this.PrunedUpToHeaderTip}.");
+            this.logger.LogInformation($"Store has been pruned up to {this.PrunedUpToHeaderTip.Height}.");
         }
 
         /// <inheritdoc/>

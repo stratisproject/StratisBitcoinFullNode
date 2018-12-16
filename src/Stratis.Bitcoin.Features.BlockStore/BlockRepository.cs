@@ -98,8 +98,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class BlockRepository : IBlockRepository
     {
         private const string BlockTableName = "Block";
-        private const int MaxBlocksToKeep = 500;
+
         private const string CommonTableName = "Common";
+
+        /// <summary> The amount of blocks to keep from the block store's tip.</summary>
+        private const int PruneBlockMargin = 1000;
+
         private const string TransactionTableName = "Transaction";
 
         private readonly DBreezeEngine DBreeze;
@@ -184,6 +188,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public async Task PruneDatabase(ChainedHeader consensusTip, bool nodeInitializing)
         {
+            this.logger.LogInformation($"Pruning started.");
+
             if (nodeInitializing)
             {
                 if (IsDatabasePruned())
@@ -194,27 +200,39 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.CompactDataBase();
 
+            this.logger.LogInformation($"Pruning complete.");
+
             return;
         }
 
         private bool IsDatabasePruned()
         {
-            return this.TipHashAndHeight.Height <= this.PrunedTip.Height + MaxBlocksToKeep;
+            if (this.TipHashAndHeight.Height <= this.PrunedTip.Height + PruneBlockMargin)
+            {
+                this.logger.LogDebug("(-):true");
+                return true;
+            }
+            else
+            {
+                this.logger.LogDebug("(-):false");
+                return false;
+            }
         }
 
         /// <summary>
         /// Compacts the block and transaction database by recreating the tables without the deleted references.
         /// </summary>
+        /// <param name="consensusTip">The last fully validated block of the node.</param>
         private async Task PrepareDatabaseForPruningAsync(ChainedHeader consensusTip)
         {
-            var upperHeight = this.TipHashAndHeight.Height - MaxBlocksToKeep;
+            var upperHeight = this.TipHashAndHeight.Height - PruneBlockMargin;
 
             var toDelete = new List<ChainedHeader>();
 
             var startFromHeader = consensusTip.GetAncestor(upperHeight);
             var endAtHeader = consensusTip.GetAncestor(this.PrunedTip.Height);
 
-            this.logger.LogInformation($"Pruning triggered, delete from {upperHeight} to {endAtHeader.Height}.");
+            this.logger.LogInformation($"Pruning blocks from height {upperHeight} to {endAtHeader.Height}.");
 
             while (startFromHeader.Previous != null && startFromHeader != endAtHeader)
             {
@@ -255,19 +273,25 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     dbreezeTransaction.SynchronizeTables(BlockTableName, TransactionTableName);
 
                     var tempBlocks = dbreezeTransaction.SelectDictionary<byte[], Block>(BlockTableName);
-                    var tempTransactions = dbreezeTransaction.SelectDictionary<byte[], Block>(TransactionTableName);
 
-                    this.logger.LogDebug($"{tempBlocks.Count} blocks will be copied to the pruned table.");
-                    this.logger.LogDebug($"{tempTransactions.Count} transactions will be copied to the pruned table.");
+                    if (tempBlocks.Count != 0)
+                    {
+                        this.logger.LogInformation($"{tempBlocks.Count} blocks will be copied to the pruned table.");
 
-                    dbreezeTransaction.RemoveAllKeys(BlockTableName, true);
-                    dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
+                        dbreezeTransaction.RemoveAllKeys(BlockTableName, true);
+                        dbreezeTransaction.InsertDictionary(BlockTableName, tempBlocks, false);
 
-                    dbreezeTransaction.InsertDictionary(BlockTableName, tempBlocks, false);
-                    dbreezeTransaction.InsertDictionary(TransactionTableName, tempTransactions, false);
+                        var tempTransactions = dbreezeTransaction.SelectDictionary<byte[], Block>(TransactionTableName);
+                        if (tempTransactions.Count != 0)
+                        {
+                            this.logger.LogInformation($"{tempTransactions.Count} transactions will be copied to the pruned table.");
+                            dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
+                            dbreezeTransaction.InsertDictionary(TransactionTableName, tempTransactions, false);
+                        }
 
-                    // Save the hash and height of where the node was pruned up to.
-                    dbreezeTransaction.Insert(CommonTableName, PrunedTipKey, this.PrunedTip);
+                        // Save the hash and height of where the node was pruned up to.
+                        dbreezeTransaction.Insert(CommonTableName, PrunedTipKey, this.PrunedTip);
+                    }
 
                     dbreezeTransaction.Commit();
                 }

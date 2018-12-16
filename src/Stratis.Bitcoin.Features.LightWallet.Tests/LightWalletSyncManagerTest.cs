@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
@@ -20,18 +21,20 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 {
     public class LightWalletSyncManagerTest : LogsTestBase
     {
-        private Mock<IWalletManager> walletManager;
+        private readonly Mock<IBlockStore> blockStore;
+        private readonly Mock<IWalletManager> walletManager;
         private ConcurrentChain chain;
-        private Mock<IBlockNotification> blockNotification;
-        private Mock<ISignals> signals;
-        private Mock<INodeLifetime> nodeLifetime;
-        private Mock<IAsyncLoopFactory> asyncLoopFactory;
-        private Network network;
+        private readonly Mock<IBlockNotification> blockNotification;
+        private readonly Mock<ISignals> signals;
+        private readonly Mock<INodeLifetime> nodeLifetime;
+        private readonly Mock<IAsyncLoopFactory> asyncLoopFactory;
+        private readonly Network network;
 
         public LightWalletSyncManagerTest()
         {
             this.network = KnownNetworks.StratisMain;
 
+            this.blockStore = new Mock<IBlockStore>();
             this.walletManager = new Mock<IWalletManager>();
             this.chain = new ConcurrentChain(this.network);
             this.blockNotification = new Mock<IBlockNotification>();
@@ -44,7 +47,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         public void Start_StartsBlockAndTransactionObserver()
         {
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -63,7 +66,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.walletManager.Setup(w => w.ContainsWallets)
                 .Returns(false);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -87,7 +90,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(1);
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -114,7 +117,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(new DateTimeOffset(new DateTime(2017, 1, 2)));
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -142,7 +145,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(new List<uint256>() { this.chain.GetBlock(2).HashBlock });
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -176,7 +179,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(new List<uint256>() { this.chain.Genesis.HashBlock });
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -214,7 +217,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(new List<uint256>() { this.chain.GetBlock(3).HashBlock });
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -252,7 +255,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(new List<uint256>() { this.chain.Genesis.HashBlock });
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -284,7 +287,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(new DateTimeOffset(new DateTime(2000, 1, 1)));
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
 
@@ -320,7 +323,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
                 .Returns(asyncLoop.Object);
 
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.Start();
             lightWalletSyncManager.SyncFromHeight(3);
@@ -336,7 +339,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         {
             this.chain = new ConcurrentChain(this.network);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.SyncFromHeight(3);
 
@@ -358,7 +361,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             {
                 this.chain = new ConcurrentChain(this.network);
                 var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                    this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                    this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
                 lightWalletSyncManager.SyncFromHeight(-1);
             });
@@ -369,7 +372,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         {
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(2, this.network);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.SyncFromHeight(1);
 
@@ -386,7 +389,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(2, this.network);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.SyncFromHeight(3);
 
@@ -406,7 +409,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         {
             this.chain = new ConcurrentChain(this.network);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.SyncFromDate(new DateTime(2017, 1, 1));
 
@@ -426,7 +429,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         {
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(3, this.network);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.SyncFromDate(this.chain.GetBlock(1).Header.BlockTime.DateTime);
 
@@ -443,7 +446,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(2, this.network);
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             lightWalletSyncManager.SyncFromDate(this.chain.Tip.Header.BlockTime.DateTime.AddDays(15));
 
@@ -462,7 +465,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         public void ProcessTransaction_CallsWalletManager()
         {
             var lightWalletSyncManager = new LightWalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             var transaction = new Transaction()
             {
@@ -485,7 +488,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.chain = result.Chain;
             List<Block> blocks = result.Blocks;
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
             lightWalletSyncManager.SetWalletTip(this.chain.GetBlock(3));
 
             Block blockToProcess = blocks[3];
@@ -508,7 +511,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.chain = result.Chain;
             List<Block> blocks = result.Blocks;
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-              this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+              this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             // set 2nd block as tip
             lightWalletSyncManager.SetWalletTip(this.chain.GetBlock(2));
@@ -535,7 +538,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.chain = result.Chain;
             List<Block> blocks = result.Blocks;
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-              this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+              this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             // set 2nd block as tip
             lightWalletSyncManager.SetWalletTip(this.chain.GetBlock(4));
@@ -563,7 +566,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             // right side chain containing the 'new' fork. Work on this.
             this.chain = result.RightChain;
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+                this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
             lightWalletSyncManager.SetWalletTip(leftChain.GetBlock(result.LeftForkBlocks[3].Header.GetHash()));
@@ -597,7 +600,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
             this.chain = result.RightChain;
 
             var lightWalletSyncManager = new LightWalletSyncManagerOverride(this.LoggerFactory.Object, this.walletManager.Object, this.chain, this.network,
-               this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object);
+               this.blockNotification.Object, this.signals.Object, this.nodeLifetime.Object, this.asyncLoopFactory.Object, this.blockStore.Object);
 
             // set 4th block of the old chain as tip. 2 ahead of the fork thus not being on the right chain.
             lightWalletSyncManager.SetWalletTip(leftChain.GetBlock(result.LeftForkBlocks[3].Header.GetHash()));
@@ -628,8 +631,8 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
         private class LightWalletSyncManagerOverride : LightWalletSyncManager
         {
             public LightWalletSyncManagerOverride(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
-                Network network, IBlockNotification blockNotification, ISignals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory)
-                : base(loggerFactory, walletManager, chain, network, blockNotification, signals, nodeLifetime, asyncLoopFactory)
+                Network network, IBlockNotification blockNotification, ISignals signals, INodeLifetime nodeLifetime, IAsyncLoopFactory asyncLoopFactory, IBlockStore blockStore)
+                : base(loggerFactory, walletManager, chain, network, blockNotification, signals, nodeLifetime, asyncLoopFactory, blockStore)
             {
             }
 

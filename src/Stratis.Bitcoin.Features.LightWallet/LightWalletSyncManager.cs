@@ -1,12 +1,14 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -41,6 +43,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
+        private IBlockStore blockStore;
+
         public LightWalletSyncManager(
             ILoggerFactory loggerFactory,
             IWalletManager walletManager,
@@ -49,7 +53,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
             IBlockNotification blockNotification,
             ISignals signals,
             INodeLifetime nodeLifetime,
-            IAsyncLoopFactory asyncLoopFactory)
+            IAsyncLoopFactory asyncLoopFactory,
+            IBlockStore blockStore)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -59,6 +64,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
+            Guard.NotNull(blockStore, nameof(blockStore));
 
             this.walletManager = walletManager;
             this.chain = chain;
@@ -67,6 +73,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
+            this.blockStore = blockStore;
         }
 
         /// <inheritdoc />
@@ -210,7 +217,57 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
                     // The wallet is falling behind we need to catch up.
                     this.logger.LogWarning("New tip '{0}' is too far in advance, put the puller back.", newTip);
-                    this.blockNotification.SyncFrom(this.walletTip.HashBlock);
+
+                    CancellationToken token = this.nodeLifetime.ApplicationStopping;
+
+                    ChainedHeader next = this.walletTip;
+                    while (next != newTip)
+                    {
+                        // While the wallet is catching up the entire node will wait.
+                        // If a wallet is recovered to a date in the past. Consensus will stop until the wallet is up to date.
+
+                        // TODO: This code should be replaced with a different approach
+                        // Similar to BlockStore the wallet should be standalone and not depend on consensus.
+                        // The block should be put in a queue and pushed to the wallet in an async way.
+                        // If the wallet is behind it will just read blocks from store (or download in case of a pruned node).
+
+                        token.ThrowIfCancellationRequested();
+
+                        next = newTip.GetAncestor(next.Height + 1);
+                        Block nextblock = null;
+                        int index = 0;
+                        while (true)
+                        {
+                            token.ThrowIfCancellationRequested();
+
+                            nextblock = this.blockStore.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            if (nextblock == null)
+                            {
+                                // The idea in this abandoning of the loop is to release consensus to push the block.
+                                // That will make the block available in the next push from consensus.
+                                index++;
+                                if (index > 10)
+                                {
+                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
+                                    return;
+                                }
+
+                                // Really ugly hack to let store catch up.
+                                // This will block the entire consensus pulling.
+                                this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
+                                Thread.Sleep(100);
+                                continue;
+                            }
+
+                            break;
+                        }
+
+                        this.walletTip = next;
+                        this.walletManager.ProcessBlock(nextblock, next);
+                    }
+
+                    //this.blockNotification.SyncFrom(this.walletTip.HashBlock);
+
                     return;
                 }
                 else
