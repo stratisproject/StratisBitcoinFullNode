@@ -212,7 +212,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
             {
                 features
                     .AddFeature<LightWalletFeature>()
-                    //.DependOn<BlockNotificationFeature>()
                     .DependOn<TransactionNotificationFeature>()
                     .FeatureServices(services =>
                     {
