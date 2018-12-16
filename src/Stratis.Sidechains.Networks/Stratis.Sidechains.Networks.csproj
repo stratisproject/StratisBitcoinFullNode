@@ -7,10 +7,10 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="NStratis" Version="4.0.0.72" />
-    <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="3.0.0.1-beta" />
+    <PackageReference Include="NStratis" Version="4.0.0.73" />
+    <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="3.0.0.2-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.SmartContracts" Version="0.0.3-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Networks" Version="3.0.0.1-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Networks" Version="3.0.0.2-beta" />
   </ItemGroup>
 
 </Project>
