@@ -13,14 +13,14 @@
   <ItemGroup>
     <PackageReference Include="Flurl" Version="2.8.0" />
     <PackageReference Include="Flurl.Http" Version="2.4.0" />
-    <PackageReference Include="NStratis" Version="4.0.0.72" />
+    <PackageReference Include="NStratis" Version="4.0.0.73" />
     <PackageReference Include="FluentAssertions" Version="5.5.3" />
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.9.0" />
-    <PackageReference Include="Stratis.Bitcoin" Version="3.0.0.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="3.0.0.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.PoA.IntegrationTests.Common" Version="3.0.0.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="3.0.0.1-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Networks" Version="3.0.0.1-beta" />
+    <PackageReference Include="Stratis.Bitcoin" Version="3.0.0.2-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="3.0.0.2-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.PoA.IntegrationTests.Common" Version="3.0.0.2-beta" />
+    <PackageReference Include="Stratis.Bitcoin.IntegrationTests.Common" Version="3.0.0.2-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Networks" Version="3.0.0.2-beta" />
     <PackageReference Include="xunit" Version="2.4.1" />
     <PackageReference Include="xunit.runner.visualstudio" Version="2.4.1" />
   </ItemGroup>
