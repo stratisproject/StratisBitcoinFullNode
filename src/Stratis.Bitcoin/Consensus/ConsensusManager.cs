@@ -7,6 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager;
 using Stratis.Bitcoin.Consensus.ValidationResults;
@@ -25,11 +26,11 @@ namespace Stratis.Bitcoin.Consensus
         /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
         /// not yet validated or included to the consensus chain.
         /// </summary>
-        private const long MaxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
+        public long MaxUnconsumedBlocksDataBytes { get; private set; }
 
         /// <summary>Queue consumption threshold in bytes.</summary>
         /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
-        private const long ConsumptionThresholdBytes = MaxUnconsumedBlocksDataBytes / 10;
+        private long ConsumptionThresholdBytes => this.MaxUnconsumedBlocksDataBytes / 10;
 
         /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
         private const int MaxBlocksToAskFromPuller = 10000;
@@ -108,7 +109,8 @@ namespace Stratis.Bitcoin.Consensus
             IBlockStore blockStore,
             IConnectionManager connectionManager,
             INodeStats nodeStats,
-            INodeLifetime nodeLifetime)
+            INodeLifetime nodeLifetime,
+            ConsensusSettings consensusSettings)
         {
             this.network = network;
             this.chainState = chainState;
@@ -140,6 +142,8 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
+
+            this.MaxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
