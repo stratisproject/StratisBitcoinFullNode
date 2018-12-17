@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
@@ -17,6 +18,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
         private readonly object lockObj;
 
+        private Dictionary<int, DateTime> blockRequest;
+
         public EventsPersister(ILoggerFactory loggerFactory,
                                ICrossChainTransferStore store,
                                IMaturedBlockReceiver maturedBlockReceiver,
@@ -26,6 +29,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             this.store = store;
             this.maturedBlocksRequester = maturedBlocksRequester;
             this.lockObj = new object();
+            this.blockRequest = new Dictionary<int, DateTime>();
 
             this.maturedBlockDepositSubscription = maturedBlockReceiver.MaturedBlockDepositStream.Subscribe(this.PersistNewMaturedBlockDeposits);
             this.logger.LogDebug("Subscribed to {0}", nameof(maturedBlockReceiver), nameof(maturedBlockReceiver.MaturedBlockDepositStream));
@@ -46,7 +50,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 if (this.store.RecordLatestMatureDepositsAsync(maturedBlockDeposits).ConfigureAwait(false).GetAwaiter().GetResult())
                 {
                     // There may be more blocks. Get them.
-                    this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                    // Don't ask for the same blocks if the last time was less that 30 seconds ago.
+                    if (!this.blockRequest.TryGetValue(this.store.NextMatureDepositHeight, out DateTime lastTime) ||
+                        (lastTime.AddSeconds(30) < DateTime.Now))
+                    {
+                        this.maturedBlocksRequester.GetMoreBlocksAsync().ConfigureAwait(false).GetAwaiter().GetResult();
+                        this.blockRequest[this.store.NextMatureDepositHeight] = DateTime.Now;
+                    }
                 }
             }
         }
