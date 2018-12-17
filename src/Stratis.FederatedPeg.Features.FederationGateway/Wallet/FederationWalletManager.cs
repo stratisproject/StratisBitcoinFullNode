@@ -169,8 +169,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
         public void Start()
         {
-            this.logger.LogTrace("()");
-
             // Find the wallet and load it in memory.
             if (this.fileStorage.Exists(WalletFileName))
                 this.Wallet = this.fileStorage.LoadByFileName(WalletFileName);
@@ -190,33 +188,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // save the wallets file every 5 minutes to help against crashes.
             this.asyncLoop = this.asyncLoopFactory.Run("wallet persist job", token =>
             {
-                this.logger.LogTrace("()");
-
                 this.SaveWallet();
                 this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
 
-                this.logger.LogTrace("(-)");
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes),
             startAfter: TimeSpan.FromMinutes(WalletSavetimeIntervalInMinutes));
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Stop()
         {
-            this.logger.LogTrace("()");
-
             if (this.broadcasterManager != null)
                 this.broadcasterManager.TransactionStateChanged -= this.BroadcasterManager_TransactionStateChanged;
 
             this.asyncLoop?.Dispose();
             this.SaveWallet();
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -229,15 +218,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 items = this.Wallet.MultiSigAddress.Transactions.Select(t => new FlatHistory { Address = this.Wallet.MultiSigAddress, Transaction = t }).ToArray();
             }
 
-            this.logger.LogTrace("(-):*.Count={0}", items.Count());
             return items;
         }
 
         /// <inheritdoc />
         public int LastBlockHeight()
         {
-            this.logger.LogTrace("()");
-
             if (this.Wallet == null)
             {
                 int height = this.chain.Tip.Height;
@@ -246,7 +232,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             }
 
             int res = this.Wallet.LastBlockSyncedHeight ?? 0;
-            this.logger.LogTrace("(-):{0}", res);
             return res;
         }
 
@@ -256,8 +241,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <returns>Hash of the last block received by the wallets.</returns>
         public uint256 LastReceivedBlockHash()
         {
-            this.logger.LogTrace("()");
-
             if (this.Wallet == null)
             {
                 uint256 hash = this.chain.Tip.HashBlock;
@@ -272,27 +255,23 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 lastBlockSyncedHash = this.chain.Tip.HashBlock;
             }
 
-            this.logger.LogTrace("(-):'{0}'", lastBlockSyncedHash);
             return lastBlockSyncedHash;
         }
 
         /// <inheritdoc />
-        public IEnumerable<Wallet.UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0)
+        public IEnumerable<UnspentOutputReference> GetSpendableTransactionsInWallet(int confirmations = 0)
         {
-            this.logger.LogTrace("({0}:'{1}'", nameof(confirmations), confirmations);
-
             if (this.Wallet == null)
             {
                 return Enumerable.Empty<Wallet.UnspentOutputReference>();
             }
 
-            Wallet.UnspentOutputReference[] res;
+            UnspentOutputReference[] res;
             lock (this.lockObject)
             {
                 res = this.Wallet.GetSpendableTransactions(this.chain.Tip.Height, confirmations).ToArray();
             }
 
-            this.logger.LogTrace("(-):*.Count={0}", res.Count());
             return res;
         }
 
@@ -300,7 +279,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         public void RemoveBlocks(ChainedHeader fork)
         {
             Guard.NotNull(fork, nameof(fork));
-            this.logger.LogTrace("({0}:'{1}'", nameof(fork), fork);
 
             lock (this.lockObject)
             {
@@ -316,8 +294,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
                 this.UpdateLastBlockSyncedHeight(fork);
             }
-
-            this.logger.LogTrace("(-)");
         }
 
 
@@ -326,7 +302,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             Guard.NotNull(block, nameof(block));
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(block), block.GetHash(), nameof(chainedHeader), chainedHeader);
 
             // If there is no wallet yet, update the wallet tip hash and do nothing else.
             if (this.Wallet == null)
@@ -380,8 +355,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     this.SaveWallet();
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -389,7 +362,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(transaction), hash, nameof(blockHeight), blockHeight);
 
             if (this.Wallet == null)
             {
@@ -471,7 +443,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 }
             }
 
-            this.logger.LogTrace("(-)");
             return foundSendingTrx || foundReceivingTrx;
         }
 
@@ -480,7 +451,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             Guard.NotNull(transaction, nameof(transaction));
             uint256 hash = transaction.GetHash();
-            this.logger.LogTrace("({0}:'{1}')", nameof(transaction), hash);
 
             bool updatedWallet = false;
 
@@ -520,8 +490,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 }
             }
 
-            this.logger.LogTrace("(-)");
-
             return updatedWallet;
         }
 
@@ -559,8 +527,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             Guard.NotNull(utxo, nameof(utxo));
 
             uint256 transactionHash = transaction.GetHash();
-
-            this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(transaction), transactionHash, nameof(blockHeight), blockHeight);
 
             // Get the collection of transactions to add to.
             Script script = utxo.ScriptPubKey;
@@ -623,7 +589,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             }
 
             this.TransactionFoundInternal(script);
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -641,9 +606,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             Guard.NotNull(transaction, nameof(transaction));
             Guard.NotNull(paidToOutputs, nameof(paidToOutputs));
-
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}',{4}:{5},{6}:'{7}')", nameof(transaction), transaction.GetHash(),
-                nameof(spendingTransactionId), spendingTransactionId, nameof(spendingTransactionIndex), spendingTransactionIndex, nameof(blockHeight), blockHeight);
 
             // Get the transaction being spent.
             TransactionData spentTransaction = this.Wallet.MultiSigAddress.Transactions.SingleOrDefault(t => (t.Id == spendingTransactionId) && (t.Index == spendingTransactionIndex));
@@ -723,8 +685,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -769,18 +729,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
         public void TransactionFoundInternal(Script script)
         {
-            this.logger.LogTrace("()");
-
             // Persists the wallet file.
             this.SaveWallet();
-            this.logger.LogTrace("()");
         }
 
         /// <inheritdoc />
         public void SaveWallet()
         {
-            this.logger.LogTrace("()");
-
             if (this.Wallet != null)
             {
                 lock (this.lockObject)
@@ -788,8 +743,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                     this.fileStorage.SaveToFile(this.Wallet, WalletFileName);
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
@@ -956,7 +909,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         {
             foreach (TxIn input in transaction.Inputs)
             {
-                Wallet.TransactionData transactionData = this.Wallet.MultiSigAddress.Transactions
+                TransactionData transactionData = this.Wallet.MultiSigAddress.Transactions
                     .Where(t => t?.SpendingDetails?.TransactionId == transaction.GetHash() && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N)
                     .FirstOrDefault();
 
@@ -971,7 +924,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         public void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader)
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
-            this.logger.LogTrace("({0}:'{1}')", nameof(chainedHeader), chainedHeader);
 
             lock (this.lockObject)
             {
@@ -984,10 +936,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 this.Wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
             }
 
-            this.logger.LogTrace("(-)");
-
             this.WalletTipHash = chainedHeader.HashBlock;
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -1040,6 +989,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 {
                     int heightAtDate = this.chain.GetHeightAtTime(date);
 
+                    // TODO why are we foreaching wallets and doing nothing with each wallet?
                     foreach (FederationWallet wallet in wallets)
                     {
                         this.logger.LogTrace("The chain of headers has finished downloading, updating wallet with height {0}", heightAtDate);

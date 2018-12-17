@@ -51,8 +51,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <inheritdoc />
         public async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(payload.Command), payload.Command, nameof(payload.DepositId), payload.DepositId);
-
             List<INetworkPeer> peers = this.connectionManager.ConnectedPeers.ToList();
 
             var ipAddressComparer = new IPAddressComparer();
@@ -74,8 +72,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     }
                 }
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />

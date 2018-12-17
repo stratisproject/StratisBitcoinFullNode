@@ -56,8 +56,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <inheritdoc />
         public void Start()
         {
-            this.logger.LogTrace("()");
-
             // When a node is pruned it impossible to catch up
             // if the wallet falls behind the block puller.
             // To support pruning the wallet will need to be
@@ -85,22 +83,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
                 this.walletManager.WalletTipHash = fork.HashBlock;
                 this.walletTip = fork;
             }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public void Stop()
         {
-            this.logger.LogTrace("()");
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void ProcessBlock(Block block)
         {
             Guard.NotNull(block, nameof(block));
-            this.logger.LogTrace("({0}:'{1}')", nameof(block), block.GetHash());
 
             ChainedHeader newTip = this.chain.GetBlock(block.GetHash());
             if (newTip == null)
@@ -213,43 +206,29 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
-
-            this.logger.LogTrace("({0}:'{1}')", nameof(transaction), transaction.GetHash());
-
+            
             this.walletManager.ProcessTransaction(transaction);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void SyncFromDate(DateTime date)
         {
-            this.logger.LogTrace("({0}:'{1::yyyy-MM-dd HH:mm:ss}')", nameof(date), date);
-
             int blockSyncStart = this.chain.GetHeightAtTime(date);
             this.SyncFromHeight(blockSyncStart);
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <inheritdoc />
         public virtual void SyncFromHeight(int height)
         {
-            this.logger.LogTrace("({0}:{1})", nameof(height), height);
-
             ChainedHeader chainedBlock = this.chain.GetBlock(height);
             this.walletTip = chainedBlock ?? throw new WalletException("Invalid block height");
             this.walletManager.WalletTipHash = chainedBlock.HashBlock;
-
-            this.logger.LogTrace("(-)");
         }
     }
 }
