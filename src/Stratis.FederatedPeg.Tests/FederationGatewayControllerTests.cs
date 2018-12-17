@@ -1,21 +1,25 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using FluentAssertions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.Protocol;
 using NSubstitute;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Controllers;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
-using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
@@ -42,6 +46,12 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly IConsensusManager consensusManager;
 
+        private readonly IFederationGatewaySettings federationGatewaySettings;
+
+        private readonly FederationManager federationManager;
+
+        private readonly IFederationWalletManager federationWalletManager;
+
         public FederationGatewayControllerTests()
         {
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
@@ -55,16 +65,23 @@ namespace Stratis.FederatedPeg.Tests
             this.leaderReceiver = Substitute.For<ILeaderReceiver>();
             this.consensusManager = Substitute.For<IConsensusManager>();
 
+            this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
+            this.federationWalletManager = Substitute.For<IFederationWalletManager>();
+            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory);
         }
 
         private FederationGatewayController CreateController()
         {
             var controller = new FederationGatewayController(
                 this.loggerFactory,
+                this.network,
                 this.maturedBlockReceiver,
                 this.leaderProvider,
                 this.GetMaturedBlocksProvider(),
-                this.leaderReceiver);
+                this.leaderReceiver,
+                this.federationGatewaySettings,
+                this.federationWalletManager,
+                this.federationManager);
 
             return controller;
         }
@@ -229,6 +246,86 @@ namespace Stratis.FederatedPeg.Tests
             callCount.Should().Be(1);
         }
 
+        [Fact]
+        public void Call_Sidechain_Gateway_Get_Info()
+        {
+            string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
+            string federationIps = "127.0.0.1:36201,127.0.0.1:36202,127.0.0.1:36203";
+            string multisigPubKey = "03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c";
+            string[] args = new[] { "-sidechain", "-regtest", $"-federationips={federationIps}", $"-redeemscript={redeemScript}", $"-publickey={multisigPubKey}", "-mincoinmaturity=1", "-mindepositconfirmations=1" };
+            NodeSettings nodeSettings = new NodeSettings(FederatedPegNetwork.NetworksSelector.Regtest(), ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+
+            this.federationWalletManager.IsFederationActive().Returns(true);
+
+            FederationGatewaySettings settings = new FederationGatewaySettings(nodeSettings);
+
+            var controller = new FederationGatewayController(
+                this.loggerFactory,
+                this.network,
+                this.maturedBlockReceiver,
+                this.leaderProvider,
+                this.GetMaturedBlocksProvider(),
+                this.leaderReceiver,
+                settings,
+                this.federationWalletManager,
+                this.federationManager);
+
+            IActionResult result = controller.GetInfo();
+
+            result.Should().BeOfType<JsonResult>();
+            ((JsonResult)result).Value.Should().BeOfType<FederationGatewayInfoModel>();
+
+            FederationGatewayInfoModel model = ((JsonResult)result).Value as FederationGatewayInfoModel;
+            model.IsMainChain.Should().BeFalse();
+            model.FederationMiningPubKeys.Should().Equal(((PoAConsensusOptions)FederatedPegNetwork.NetworksSelector.Regtest().Consensus.Options).FederationPublicKeys.Select(keys => keys.ToString()));
+            model.MultiSigRedeemScript.Should().Be(redeemScript);
+            string.Join(",", model.FederationNodeIpEndPoints).Should().Be(federationIps);
+            model.IsActive.Should().BeTrue();
+            model.MinCoinMaturity.Should().Be(1);
+            model.MinimumDepositConfirmations.Should().Be(1);
+            model.MultisigPublicKey.Should().Be(multisigPubKey);
+        }
+
+        [Fact]
+        public void Call_Mainchain_Gateway_Get_Info()
+        {
+            string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
+            string federationIps = "127.0.0.1:36201,127.0.0.1:36202,127.0.0.1:36203";
+            string multisigPubKey = "03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c";
+            string[] args = new[] { "-mainchain", "-testnet", $"-federationips={federationIps}", $"-redeemscript={redeemScript}", $"-publickey={multisigPubKey}", "-mincoinmaturity=1", "-mindepositconfirmations=1" };
+            NodeSettings nodeSettings = new NodeSettings(FederatedPegNetwork.NetworksSelector.Regtest(), ProtocolVersion.ALT_PROTOCOL_VERSION, args: args);
+
+            this.federationWalletManager.IsFederationActive().Returns(true);
+
+            FederationGatewaySettings settings = new FederationGatewaySettings(nodeSettings);
+
+            var controller = new FederationGatewayController(
+                this.loggerFactory,
+                this.network,
+                this.maturedBlockReceiver,
+                this.leaderProvider,
+                this.GetMaturedBlocksProvider(),
+                this.leaderReceiver,
+                settings,
+                this.federationWalletManager,
+                this.federationManager);
+
+            IActionResult result = controller.GetInfo();
+
+            result.Should().BeOfType<JsonResult>();
+            ((JsonResult)result).Value.Should().BeOfType<FederationGatewayInfoModel>();
+
+            FederationGatewayInfoModel model = ((JsonResult)result).Value as FederationGatewayInfoModel;
+            model.IsMainChain.Should().BeTrue();
+            model.FederationMiningPubKeys.Should().BeNull();
+            model.MiningPublicKey.Should().BeNull();
+            model.MultiSigRedeemScript.Should().Be(redeemScript);
+            string.Join(",", model.FederationNodeIpEndPoints).Should().Be(federationIps);
+            model.IsActive.Should().BeTrue();
+            model.MinCoinMaturity.Should().Be(1);
+            model.MinimumDepositConfirmations.Should().Be(1);
+            model.MultisigPublicKey.Should().Be(multisigPubKey);
+        }
 
         private ConcurrentChain BuildChain(int blocks)
         {
