@@ -3,7 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities;
 
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         private IAsyncLoop asyncLoop;
         private readonly IAsyncLoopFactory asyncLoopFactory;
         private readonly IBlockRepository blockRepository;
-        private readonly IConsensusManager consensusManager;
+        private readonly IChainState chainState;
         private readonly ILogger logger;
         private readonly INodeLifetime nodeLifetime;
         private readonly IPrunedBlockRepository prunedBlockRepository;
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
             IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             IPrunedBlockRepository prunedBlockRepository,
-            IConsensusManager consensusManager,
+            IChainState chainState,
             ILoggerFactory loggerFactory,
             INodeLifetime nodeLifetime,
             StoreSettings storeSettings)
@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockRepository = blockRepository;
             this.prunedBlockRepository = prunedBlockRepository;
-            this.consensusManager = consensusManager;
+            this.chainState = chainState;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
             this.storeSettings = storeSettings;
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// <inheritdoc/>
         public void Start()
         {
-            this.PrunedUpToHeaderTip = this.consensusManager.Tip.GetAncestor(this.prunedBlockRepository.PrunedTip.Height);
+            this.PrunedUpToHeaderTip = this.chainState.BlockStoreTip.GetAncestor(this.prunedBlockRepository.PrunedTip.Height);
 
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.PruneBlocksAsync)}", async token =>
             {
@@ -61,21 +61,21 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// <returns>The awaited task.</returns>
         private async Task PruneBlocksAsync()
         {
-            if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.PruneBlockMargin)
+            if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.Prune)
                 return;
 
             if (this.blockRepository.TipHashAndHeight.Height == (this.PrunedUpToHeaderTip?.Height ?? 0))
                 return;
 
-            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + this.storeSettings.PruneBlockMargin))
+            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + this.storeSettings.Prune))
                 return;
 
-            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.PruneBlockMargin;
-            ChainedHeader startFrom = this.consensusManager.Tip.GetAncestor(heightToPruneFrom);
+            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.Prune;
+            ChainedHeader startFrom = this.chainState.BlockStoreTip.GetAncestor(heightToPruneFrom);
             if (this.PrunedUpToHeaderTip != null && startFrom == this.PrunedUpToHeaderTip)
                 return;
 
-            this.logger.LogInformation($"Pruning triggered, delete from {heightToPruneFrom} to {this.PrunedUpToHeaderTip?.Height ?? 0}.");
+            this.logger.LogInformation("Pruning triggered, delete from {0} to {1}.", heightToPruneFrom, this.PrunedUpToHeaderTip?.Height ?? 0);
 
             var chainedHeadersToDelete = new List<ChainedHeader>();
             while (startFrom.Previous != null && this.PrunedUpToHeaderTip != startFrom)

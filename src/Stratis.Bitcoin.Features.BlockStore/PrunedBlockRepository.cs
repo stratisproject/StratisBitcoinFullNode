@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     bool doCommit = false;
 
-                    if (this.storeSettings.Prune)
+                    if (this.storeSettings.Prune != 0)
                     {
                         if (this.LoadPrunedTip(transaction) == null)
                         {
@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public async Task PruneDatabase(ChainedHeader consensusTip, bool nodeInitializing)
+        public async Task PruneDatabase(ChainedHeader blockRepositoryTip, bool nodeInitializing)
         {
             this.logger.LogInformation($"Pruning started.");
 
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (IsDatabasePruned())
                     return;
 
-                await this.PrepareDatabaseForPruningAsync(consensusTip);
+                await this.PrepareDatabaseForCompactingAsync(blockRepositoryTip);
             }
 
             this.CompactDataBase();
@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private bool IsDatabasePruned()
         {
-            if (this.blockRepository.TipHashAndHeight.Height <= this.PrunedTip.Height + this.storeSettings.PruneBlockMargin)
+            if (this.blockRepository.TipHashAndHeight.Height <= this.PrunedTip.Height + this.storeSettings.Prune)
             {
                 this.logger.LogDebug("(-):true");
                 return true;
@@ -91,16 +91,16 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Compacts the block and transaction database by recreating the tables without the deleted references.
         /// </summary>
-        /// <param name="consensusTip">The last fully validated block of the node.</param>
+        /// <param name="blockRepositoryTip">The last fully validated block of the node.</param>
         /// <returns>The awaited task.</returns>
-        private async Task PrepareDatabaseForPruningAsync(ChainedHeader consensusTip)
+        private async Task PrepareDatabaseForCompactingAsync(ChainedHeader blockRepositoryTip)
         {
-            int upperHeight = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.PruneBlockMargin;
+            int upperHeight = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.Prune;
 
             var toDelete = new List<ChainedHeader>();
 
-            ChainedHeader startFromHeader = consensusTip.GetAncestor(upperHeight);
-            ChainedHeader endAtHeader = consensusTip.GetAncestor(this.PrunedTip.Height);
+            ChainedHeader startFromHeader = blockRepositoryTip.FindAncestorOrSelf(this.blockRepository.TipHashAndHeight.Hash);
+            ChainedHeader endAtHeader = blockRepositoryTip.FindAncestorOrSelf(this.PrunedTip.Hash);
 
             this.logger.LogInformation($"Pruning blocks from height {upperHeight} to {endAtHeader.Height}.");
 
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             await this.blockRepository.DeleteBlocksAsync(toDelete.Select(cb => cb.HashBlock).ToList()).ConfigureAwait(false);
 
-            this.UpdatePrunedTip(consensusTip.GetAncestor(upperHeight));
+            this.UpdatePrunedTip(blockRepositoryTip.FindAncestorOrSelf(this.blockRepository.TipHashAndHeight.Hash));
         }
 
         private HashHeightPair LoadPrunedTip(DBreeze.Transactions.Transaction dbreezeTransaction)

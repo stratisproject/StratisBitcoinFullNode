@@ -4,11 +4,12 @@ using System.Linq;
 using System.Threading;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Notifications;
-using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         public ChainedHeader WalletTip => this.walletTip;
 
-        private IBlockStore blockStore;
+        private readonly IConsensusManager consensusManager;
 
         public LightWalletSyncManager(
             ILoggerFactory loggerFactory,
@@ -54,7 +55,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             ISignals signals,
             INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
-            IBlockStore blockStore)
+            IConsensusManager consensusManager)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -64,7 +65,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             Guard.NotNull(signals, nameof(signals));
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(asyncLoopFactory, nameof(asyncLoopFactory));
-            Guard.NotNull(blockStore, nameof(blockStore));
+            Guard.NotNull(consensusManager, nameof(consensusManager));
 
             this.walletManager = walletManager;
             this.chain = chain;
@@ -73,7 +74,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
             this.asyncLoopFactory = asyncLoopFactory;
-            this.blockStore = blockStore;
+            this.consensusManager = consensusManager;
         }
 
         /// <inheritdoc />
@@ -234,13 +235,13 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         token.ThrowIfCancellationRequested();
 
                         next = newTip.GetAncestor(next.Height + 1);
-                        Block nextblock = null;
+                        ChainedHeaderBlock nextblock = null;
                         int index = 0;
                         while (true)
                         {
                             token.ThrowIfCancellationRequested();
 
-                            nextblock = this.blockStore.GetBlockAsync(next.HashBlock).GetAwaiter().GetResult();
+                            nextblock = this.consensusManager.GetBlockDataAsync(next.HashBlock).GetAwaiter().GetResult();
                             if (nextblock == null)
                             {
                                 // The idea in this abandoning of the loop is to release consensus to push the block.
@@ -263,7 +264,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         }
 
                         this.walletTip = next;
-                        this.walletManager.ProcessBlock(nextblock, next);
+                        this.walletManager.ProcessBlock(nextblock.Block, next);
                     }
 
                     //this.blockNotification.SyncFrom(this.walletTip.HashBlock);

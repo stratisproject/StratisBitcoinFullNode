@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (highestBlock != null)
             {
-                if (!this.storeSettings.Prune)
+                if (this.storeSettings.Prune == 0)
                 {
                     var builder = new StringBuilder();
                     builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1));
@@ -98,11 +98,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override Task InitializeAsync()
         {
-            if (this.storeSettings.Prune)
+            if (this.storeSettings.Prune != 0)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
                 this.prunedBlockRepository.InitializeAsync(this.network).GetAwaiter().GetResult();
-                this.prunedBlockRepository.PruneDatabase(this.consensusManager.Tip, true).GetAwaiter().GetResult();
+                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, true).GetAwaiter().GetResult();
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // Signal to peers that this node can serve blocks.
-            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
+            this.connectionManager.Parameters.Services = (this.storeSettings.Prune != 0 ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
 
             // Temporary measure to support asking witness data on BTC.
             // At some point NetworkPeerServices will move to the Network class,
@@ -132,10 +132,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public override void Dispose()
         {
-            if (this.storeSettings.Prune)
+            if (this.storeSettings.Prune != 0)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.prunedBlockRepository.PruneDatabase(this.consensusManager.Tip, false);
+                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, false);
             }
 
             this.logger.LogInformation("Stopping BlockStore.");

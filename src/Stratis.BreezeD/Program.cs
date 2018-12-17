@@ -63,7 +63,7 @@ namespace Stratis.BreezeD
             }
             catch (Exception ex)
             {
-                Console.WriteLine($"There was a problem initializing the node: '{ex.ToString()}'");
+                Console.WriteLine($"There was a problem initializing the node: '{ex}'");
             }
         }
     }
