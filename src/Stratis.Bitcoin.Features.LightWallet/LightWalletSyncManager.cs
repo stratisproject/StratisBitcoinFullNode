@@ -242,32 +242,29 @@ namespace Stratis.Bitcoin.Features.LightWallet
                             token.ThrowIfCancellationRequested();
 
                             nextblock = this.consensusManager.GetBlockDataAsync(next.HashBlock).GetAwaiter().GetResult();
-                            if (nextblock == null)
-                            {
-                                // The idea in this abandoning of the loop is to release consensus to push the block.
-                                // That will make the block available in the next push from consensus.
-                                index++;
-                                if (index > 10)
-                                {
-                                    this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
-                                    return;
-                                }
+                            if (nextblock != null && nextblock.Block != null)
+                                break;
 
-                                // Really ugly hack to let store catch up.
-                                // This will block the entire consensus pulling.
-                                this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
-                                Thread.Sleep(100);
-                                continue;
+                            // The idea in this abandoning of the loop is to release consensus to push the block.
+                            // That will make the block available in the next push from consensus.
+                            index++;
+                            if (index > 10)
+                            {
+                                this.logger.LogTrace("(-)[WALLET_CATCHUP_INDEX_MAX]");
+                                return;
                             }
 
-                            break;
+                            // Really ugly hack to let store catch up.
+                            // This will block the entire consensus pulling.
+                            this.logger.LogWarning("Wallet is behind the best chain and the next block is not found in store.");
+                            Thread.Sleep(100);
+
+                            continue;
                         }
 
                         this.walletTip = next;
                         this.walletManager.ProcessBlock(nextblock.Block, next);
                     }
-
-                    //this.blockNotification.SyncFrom(this.walletTip.HashBlock);
 
                     return;
                 }
