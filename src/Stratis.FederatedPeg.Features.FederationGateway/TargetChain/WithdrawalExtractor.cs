@@ -7,6 +7,18 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
+    /// <summary>
+    /// This component is responsible for finding all deposits made from the federation's
+    /// multisig address to a target address, find out if they represent a cross chain transfer
+    /// and if so, extract the details into an <see cref="IWithdrawal"/>.
+    /// </summary>
+    public interface IWithdrawalExtractor
+    {
+        IReadOnlyList<IWithdrawal> ExtractWithdrawalsFromBlock(Block block, int blockHeight);
+
+        IWithdrawal ExtractWithdrawalFromTransaction(Transaction transaction, uint256 blockHash, int blockHeight);
+    }
+
     public class WithdrawalExtractor : IWithdrawalExtractor
     {
         private readonly IOpReturnDataReader opReturnDataReader;

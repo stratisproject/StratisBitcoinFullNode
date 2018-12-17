@@ -78,7 +78,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
         {
             if (newlyMaturedBlock == null) return null;
 
-            var maturedBlock = new MaturedBlockModel()
+            var maturedBlock = new MaturedBlockInfoModel()
             {
                 BlockHash = newlyMaturedBlock.ChainedHeader.HashBlock,
                 BlockHeight = newlyMaturedBlock.ChainedHeader.Height,

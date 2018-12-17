@@ -11,6 +11,24 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
+    /// <summary>
+    /// This component is responsible retrieving signed multisig transactions (from <see cref="ICrossChainTransferStore"/>)
+    /// and broadcasting them into the network.
+    /// </summary>
+    public interface ISignedMultisigTransactionBroadcaster
+    {
+        /// <summary>
+        /// Broadcast signed transactions that are not in the mempool.
+        /// </summary>
+        /// <param name="leaderProvider">
+        /// The current federated leader.
+        /// </param>
+        /// <remarks>
+        /// The current federated leader equal the <see cref="IFederationGatewaySettings.PublicKey"/> before it can broadcast the transactions.
+        /// </remarks>
+        Task BroadcastTransactionsAsync(ILeaderProvider leaderProvider);
+    }
+
     public class SignedMultisigTransactionBroadcaster : ISignedMultisigTransactionBroadcaster, IDisposable
     {
         private readonly ILogger logger;
@@ -20,12 +38,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private readonly MempoolManager mempoolManager;
         private readonly IBroadcasterManager broadcasterManager;
 
-        public SignedMultisigTransactionBroadcaster(ILoggerFactory loggerFactory,
-                                                    ICrossChainTransferStore store,
-                                                    ILeaderReceiver leaderReceiver,
-                                                    IFederationGatewaySettings settings,
-                                                    MempoolManager mempoolManager,
-                                                    IBroadcasterManager broadcasterManager)
+        public SignedMultisigTransactionBroadcaster(ILoggerFactory loggerFactory, ICrossChainTransferStore store, ILeaderReceiver leaderReceiver, IFederationGatewaySettings settings,
+            MempoolManager mempoolManager, IBroadcasterManager broadcasterManager)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(store, nameof(store));

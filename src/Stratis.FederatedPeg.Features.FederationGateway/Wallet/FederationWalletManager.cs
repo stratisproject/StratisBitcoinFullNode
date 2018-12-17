@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.FederationWallet.Tests")]
 

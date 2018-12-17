@@ -10,7 +10,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         [JsonConverter(typeof(ConcreteConverter<List<Deposit>>))]
         IReadOnlyList<IDeposit> Deposits { get; set; }
 
-        [JsonConverter(typeof(ConcreteConverter<MaturedBlockModel>))]
-        IMaturedBlock Block { get; set; }
+        [JsonConverter(typeof(ConcreteConverter<MaturedBlockInfoModel>))]
+        IMaturedBlockInfo BlockInfo { get; set; }
     }
 }

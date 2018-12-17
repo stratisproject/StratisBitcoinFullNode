@@ -312,7 +312,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IDepositExtractor, DepositExtractor>();
                         services.AddSingleton<IWithdrawalExtractor, WithdrawalExtractor>();
                         services.AddSingleton<IWithdrawalReceiver, WithdrawalReceiver>();
-                        services.AddSingleton<IEventPersister, EventsPersister>();
+                        services.AddSingleton<EventsPersister>();
                         services.AddSingleton<FederationGatewayController>();
                         services.AddSingleton<IFederationWalletSyncManager, FederationWalletSyncManager>();
                         services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
