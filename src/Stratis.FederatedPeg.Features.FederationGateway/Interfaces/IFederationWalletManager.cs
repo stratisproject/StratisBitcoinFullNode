@@ -142,5 +142,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </summary>
         /// <returns>A list of objects made up of transaction IDs along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions();
+
+        /// <summary>
+        /// Enumerate withdrawals starting with the most recent.
+        /// </summary>
+        /// <returns>An enumeration of IWithdrawal objects.</returns>
+        IEnumerable<IWithdrawal> GetWithdrawals();
     }
 }

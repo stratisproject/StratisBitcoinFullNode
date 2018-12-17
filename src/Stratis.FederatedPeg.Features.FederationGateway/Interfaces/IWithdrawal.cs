@@ -44,5 +44,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </summary>
         [JsonConverter(typeof(UInt256JsonConverter))]
         uint256 BlockHash { get; }
+
+        /// <summary>
+        /// Abbreviated information about the withdrawal.
+        /// </summary>
+        string GetInfo();
     }
 }

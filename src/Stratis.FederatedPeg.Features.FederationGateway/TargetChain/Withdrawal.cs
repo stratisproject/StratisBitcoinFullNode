@@ -38,5 +38,16 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         {
             return JsonConvert.SerializeObject(this, Formatting.Indented);
         }
+
+        public string GetInfo()
+        {
+            return string.Format("Tran#={0} Dep#={1} Amount={2,12} Addr={3} BlkNum={4,8} BlkHash={5}",
+                this.Id.ToString().Substring(0, 6),
+                this.DepositId.ToString().Substring(0, 6),
+                this.Amount.ToString(),
+                this.TargetAddress,
+                this.BlockNumber,
+                this.BlockHash?.ToString().Substring(0, 6));
+        }
     }
 }

@@ -812,6 +812,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
+        public IEnumerable<IWithdrawal> GetWithdrawals()
+        {
+            foreach (TransactionData transactionData in this.Wallet.MultiSigAddress.Transactions.OrderByDescending(t => t.CreationTime))
+            {
+                Transaction walletTrx = transactionData.GetFullTransaction(this.network);
+                IWithdrawal withdrawal = this.withdrawalExtractor.ExtractWithdrawalFromTransaction(walletTrx, transactionData.BlockHash, transactionData.BlockHeight ?? 0);
+                if (withdrawal == null)
+                    continue;
+
+                yield return withdrawal;
+            }
+        }
+
+        /// <inheritdoc />
         public List<(Transaction, TransactionData, IWithdrawal)> FindWithdrawalTransactions(uint256 depositId = null)
         {
             lock (this.lockObject)
