@@ -45,14 +45,14 @@ namespace Stratis.FederatedPeg.Tests
         {
             int depositCount = 20;
             var deposits = new List<IMaturedBlockDeposits[]>();
-            deposits.Add(new[] { new MaturedBlockDepositsModel(new MaturedBlockModel()
+            deposits.Add(new[] { new MaturedBlockDepositsModel(new MaturedBlockInfoModel()
             {
                 BlockHash = 0,
                 BlockHeight = 0
             }, TestingValues.GetMaturedBlockDeposits(depositCount, new HashHeightPair(0, 0)).Deposits)});
 
             IObservable<IMaturedBlockDeposits[]> maturedBlockStream = deposits.ToObservable();
-            this.maturedBlockReceiver.MaturedBlockDepositStream.Returns(maturedBlockStream);
+            this.maturedBlockReceiver.OnMaturedBlockDepositsPushed.Returns(maturedBlockStream);
 
             this.eventsPersister = new EventsPersister(this.loggerFactory, this.store, this.maturedBlockReceiver, this.maturedBlocksRequester);
 
@@ -73,14 +73,14 @@ namespace Stratis.FederatedPeg.Tests
         {
             int depositCount = 0;
             var deposits = new List<IMaturedBlockDeposits[]>();
-            deposits.Add(new[] { new MaturedBlockDepositsModel(new MaturedBlockModel()
+            deposits.Add(new[] { new MaturedBlockDepositsModel(new MaturedBlockInfoModel()
             {
                 BlockHash = 0,
                 BlockHeight = 0
             }, TestingValues.GetMaturedBlockDeposits(depositCount, new HashHeightPair(0, 0)).Deposits)});
 
             IObservable<IMaturedBlockDeposits[]> maturedBlockStream = deposits.ToObservable();
-            this.maturedBlockReceiver.MaturedBlockDepositStream.Returns(maturedBlockStream);
+            this.maturedBlockReceiver.OnMaturedBlockDepositsPushed.Returns(maturedBlockStream);
 
             this.eventsPersister = new EventsPersister(this.loggerFactory, this.store, this.maturedBlockReceiver, this.maturedBlocksRequester);
 
@@ -102,14 +102,14 @@ namespace Stratis.FederatedPeg.Tests
             int blocksCount = 10;
             var deposits = new List<IMaturedBlockDeposits[]>();
             for (int i = 0; i < blocksCount; i++)
-                deposits.Add(new[] { new MaturedBlockDepositsModel(new MaturedBlockModel()
+                deposits.Add(new[] { new MaturedBlockDepositsModel(new MaturedBlockInfoModel()
                 {
                     BlockHash = new uint256((ulong)i),
                     BlockHeight = i
                 }, TestingValues.GetMaturedBlockDeposits(i, new HashHeightPair((uint)i, i)).Deposits)});
 
             IObservable<IMaturedBlockDeposits[]> maturedBlockStream = deposits.ToObservable();
-            this.maturedBlockReceiver.MaturedBlockDepositStream.Returns(maturedBlockStream);
+            this.maturedBlockReceiver.OnMaturedBlockDepositsPushed.Returns(maturedBlockStream);
 
             int blockNum = 0;
             this.mockStore.SetupGet(o => o.NextMatureDepositHeight).Returns(() => blockNum);

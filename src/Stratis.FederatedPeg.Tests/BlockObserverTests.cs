@@ -11,6 +11,7 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Notifications;
 using Stratis.FederatedPeg.Features.FederationGateway.RestClients;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
+using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Tests.Utils;
 using Xunit;
 
@@ -23,8 +24,6 @@ namespace Stratis.FederatedPeg.Tests
         private readonly IFederationWalletSyncManager federationWalletSyncManager;
 
         private readonly IDepositExtractor depositExtractor;
-
-        private readonly ILeaderProvider leaderProvider;
 
         private readonly IFederationGatewaySettings federationGatewaySettings;
 
@@ -57,7 +56,6 @@ namespace Stratis.FederatedPeg.Tests
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
             this.federationGatewaySettings.MinimumDepositConfirmations.Returns(this.minimumDepositConfirmations);
 
-            this.leaderProvider = Substitute.For<ILeaderProvider>();
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
             this.fullNode = Substitute.For<IFullNode>();
             this.federationGatewayClient = Substitute.For<IFederationGatewayClient>();
@@ -163,7 +161,7 @@ namespace Stratis.FederatedPeg.Tests
 
             var block = new Block();
             var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
-            
+
             chainedHeaderBlock.ChainedHeader.Block = chainedHeaderBlock.Block;
 
             this.consensusManager.GetBlockDataAsync(uint256.Zero).Returns(chainedHeaderBlock);

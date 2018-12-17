@@ -12,9 +12,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
     /// </summary>
     public class MaturedBlockDepositsModel : RequestModel, IMaturedBlockDeposits
     {
-        public MaturedBlockDepositsModel(MaturedBlockModel maturedBlock, IReadOnlyList<IDeposit> deposits)
+        public MaturedBlockDepositsModel(MaturedBlockInfoModel maturedBlockInfo, IReadOnlyList<IDeposit> deposits)
         {
-            this.Block = maturedBlock;
+            this.BlockInfo = maturedBlockInfo;
             this.Deposits = deposits;
         }
 
@@ -22,6 +22,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
         public IReadOnlyList<IDeposit> Deposits { get; set; }
 
         [Required(ErrorMessage = "A block is required")]
-        public IMaturedBlock Block { get; set; }
+        public IMaturedBlockInfo BlockInfo { get; set; }
     }
 }

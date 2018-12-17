@@ -64,10 +64,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// <returns><c>True</c> if the store contains suspended transaction and <c>false</c> otherwise.</returns>
         bool HasSuspended();
 
-        /// <summary>Determines if the store can persist mature deposits.</summary>
-        /// <returns><c>True</c> if the store can persist mature deposits and <c>false</c> otherwise.</returns>
-        bool CanPersistMatureDeposits();
-
         /// <summary>
         /// Verifies that the transaction's input UTXO's have been reserved by the wallet.
         /// Also checks that an earlier transaction for the same deposit id does not exist.

@@ -3,14 +3,22 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities.JsonConverters;
-using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 {
+    public interface IMaturedBlockInfo
+    {
+        uint256 BlockHash { get; }
+
+        int BlockHeight { get; }
+
+        uint BlockTime { get; }
+    }
+
     /// <summary>
     /// An instance of this class represents a particular block hash and associated height on the source chain.
     /// </summary>
-    public class MaturedBlockModel : RequestModel, IMaturedBlock
+    public class MaturedBlockInfoModel : RequestModel, IMaturedBlockInfo
     {
         [Required(ErrorMessage = "A block hash is required")]
         [JsonConverter(typeof(UInt256JsonConverter))]

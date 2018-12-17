@@ -6,6 +6,14 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
+    public interface IWithdrawalReceiver
+    {
+        IObservable<IReadOnlyList<IWithdrawal>> NewWithdrawalsOnTargetChainStream { get; }
+
+
+        void ReceiveWithdrawals(IReadOnlyList<IWithdrawal> withdrawals);
+    }
+
     public class WithdrawalReceiver : IWithdrawalReceiver, IDisposable
     {
         private readonly ReplaySubject<IReadOnlyList<IWithdrawal>> newWithdrawalsOnTargetChainStream;

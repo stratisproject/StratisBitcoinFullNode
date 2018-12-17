@@ -18,8 +18,8 @@ namespace Stratis.FederatedPeg.Tests
 
             var reconverted = JsonConvert.DeserializeObject<MaturedBlockDepositsModel>(asJson);
 
-            reconverted.Block.BlockHash.Should().Be(maturedBlockDeposits.Block.BlockHash);
-            reconverted.Block.BlockHeight.Should().Be(maturedBlockDeposits.Block.BlockHeight);
+            reconverted.BlockInfo.BlockHash.Should().Be(maturedBlockDeposits.BlockInfo.BlockHash);
+            reconverted.BlockInfo.BlockHeight.Should().Be(maturedBlockDeposits.BlockInfo.BlockHeight);
             reconverted.Deposits.Should().BeEquivalentTo(maturedBlockDeposits.Deposits);
         }
     }
