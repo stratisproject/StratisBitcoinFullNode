@@ -59,7 +59,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
             foreach (KeyValuePair<uint256, Transaction> transaction in transactions)
             {
-                TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(transaction.Key).ConfigureAwait(false);
+                TxMempoolInfo txInfo = await this.mempoolManager.InfoAsync(transaction.Value.GetHash()).ConfigureAwait(false);
 
                 if (txInfo != null)
                 {
