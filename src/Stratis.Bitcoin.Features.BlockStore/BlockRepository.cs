@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                     if (blockRow.Exists)
                     {
-                        var block = this.dBreezeSerializer.Deserializer<Block>(blockRow.Value);
+                        var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
                         res = block.Transactions.FirstOrDefault(t => t.GetHash() == trxid);
                     }
                 }
@@ -276,7 +276,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         IEnumerable<Row<byte[], byte[]>> blockRows = dbreezeTransaction.SelectForward<byte[], byte[]>(BlockTableName);
                         foreach (Row<byte[], byte[]> blockRow in blockRows)
                         {
-                            var block = this.dBreezeSerializer.Deserializer<Block>(blockRow.Value);
+                            var block = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
                             foreach (Transaction transaction in block.Transactions)
                             {
                                 dbreezeTransaction.Insert<byte[], byte[]>(TransactionTableName, transaction.GetHash().ToBytes(), block.GetHash().ToBytes());
@@ -364,7 +364,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
                 Row<byte[], byte[]> row = dbreezeTransaction.Select<byte[], byte[]>(CommonTableName, RepositoryTipKey);
                 if (row.Exists)
-                    this.TipHashAndHeight = this.dBreezeSerializer.Deserializer<HashHeightPair>(row.Value);
+                    this.TipHashAndHeight = this.dBreezeSerializer.Deserialize<HashHeightPair>(row.Value);
 
                 dbreezeTransaction.ValuesLazyLoadingIsOn = true;
             }
@@ -393,7 +393,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     byte[] key = hash.ToBytes();
                     Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>(BlockTableName, key);
                     if (blockRow.Exists)
-                        res = this.dBreezeSerializer.Deserializer<Block>(blockRow.Value);
+                        res = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
                 }
 
                 // If searching for genesis block, return it.
@@ -491,7 +491,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 Row<byte[], byte[]> blockRow = dbreezeTransaction.Select<byte[], byte[]>(BlockTableName, key.Item2);
                 if (blockRow.Exists)
                 {
-                    results[key.Item1] = this.dBreezeSerializer.Deserializer<Block>(blockRow.Value);
+                    results[key.Item1] = this.dBreezeSerializer.Deserialize<Block>(blockRow.Value);
 
                     this.logger.LogTrace("Block hash '{0}' loaded from the store.", key.Item1);
                 }

@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Base
                     if (!firstRow.Exists)
                         return genesisHeader;
 
-                    BlockHeader previousHeader = this.dBreezeSerializer.Deserializer<BlockHeader>(firstRow.Value);
+                    BlockHeader previousHeader = this.dBreezeSerializer.Deserialize<BlockHeader>(firstRow.Value);
                     Guard.Assert(previousHeader.GetHash() == genesisHeader.HashBlock); // can't swap networks
 
                     foreach (Row<int, byte[]> row in transaction.SelectForwardSkip<int, byte[]>("Chain", 1))
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Base
                         if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
 
-                        BlockHeader blockHeader = this.dBreezeSerializer.Deserializer<BlockHeader>(row.Value);
+                        BlockHeader blockHeader = this.dBreezeSerializer.Deserialize<BlockHeader>(row.Value);
                         tip = new ChainedHeader(previousHeader, blockHeader.HashPrevBlock, tip);
                         previousHeader = blockHeader;
                     }

@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         foreach (uint256 input in txIds)
                         {
                             Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>("Coins", input.ToBytes(false));
-                            UnspentOutputs outputs = row.Exists ? new UnspentOutputs(input, this.dBreezeSerializer.Deserializer<Coins>(row.Value)) : null;
+                            UnspentOutputs outputs = row.Exists ? new UnspentOutputs(input, this.dBreezeSerializer.Deserialize<Coins>(row.Value)) : null;
 
                             this.logger.LogTrace("Outputs for '{0}' were {1}.", input, outputs == null ? "NOT loaded" : "loaded");
 
@@ -311,7 +311,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
                     Row<int, byte[]> row = transaction.Select<int, byte[]>("Rewind", height);
-                    return row.Exists ? this.dBreezeSerializer.Deserializer<RewindData>(row.Value) : null;
+                    return row.Exists ? this.dBreezeSerializer.Deserialize<RewindData>(row.Value) : null;
                 }
             });
 
@@ -340,7 +340,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         Row<int, byte[]> firstRow = transaction.SelectBackward<int, byte[]>("Rewind").FirstOrDefault();
                         transaction.RemoveKey("Rewind", firstRow.Key);
-                        var rewindData = this.dBreezeSerializer.Deserializer<RewindData>(firstRow.Value);
+                        var rewindData = this.dBreezeSerializer.Deserialize<RewindData>(firstRow.Value);
                         this.SetBlockHash(transaction, rewindData.PreviousBlockHash);
 
                         foreach (uint256 txId in rewindData.TransactionsToRemove)
@@ -423,7 +423,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         if (stakeRow.Exists)
                         {
-                            blockStake.BlockStake = this.dBreezeSerializer.Deserializer<BlockStake>(stakeRow.Value);
+                            blockStake.BlockStake = this.dBreezeSerializer.Deserialize<BlockStake>(stakeRow.Value);
                             blockStake.InStore = true;
                         }
                     }

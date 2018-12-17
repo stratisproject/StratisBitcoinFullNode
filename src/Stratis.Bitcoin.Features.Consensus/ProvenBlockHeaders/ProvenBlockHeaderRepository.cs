@@ -128,7 +128,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>(ProvenBlockHeaderTable, blockHeight.ToBytes());
 
                     if (row.Exists)
-                        return this.dBreezeSerializer.Deserializer<ProvenBlockHeader>(row.Value);
+                        return this.dBreezeSerializer.Deserialize<ProvenBlockHeader>(row.Value);
 
                     return null;
                 }
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>(BlockHashHeightTable, blockHashHeightKey);
 
             if (row.Exists)
-                tipHash = this.dBreezeSerializer.Deserializer<HashHeightPair>(row.Value);
+                tipHash = this.dBreezeSerializer.Deserialize<HashHeightPair>(row.Value);
 
             return tipHash;
         }

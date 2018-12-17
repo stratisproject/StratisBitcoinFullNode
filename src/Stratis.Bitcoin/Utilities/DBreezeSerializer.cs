@@ -78,9 +78,9 @@ namespace Stratis.Bitcoin.Utilities
             return res;
         }
 
-        public T Deserializer<T>(byte[] bytes)
+        public T Deserialize<T>(byte[] bytes)
         {
-            return (T) this.Deserializer(bytes, typeof(T));
+            return (T) this.Deserialize(bytes, typeof(T));
         }
 
         /// <summary>
@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <param name="bytes">Binary data representing a serialized object.</param>
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
-        public object Deserializer(byte[] bytes, Type type)
+        public object Deserialize(byte[] bytes, Type type)
         {
             if (type == typeof(Coins))
             {

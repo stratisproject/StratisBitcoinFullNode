@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin
                         this.logger.LogTrace("Finalized block height doesn't exist in the database.");
                     }
                     else
-                        this.finalizedBlockInfo = this.dBreezeSerializer.Deserializer<HashHeightPair>(row.Value);
+                        this.finalizedBlockInfo = this.dBreezeSerializer.Deserialize<HashHeightPair>(row.Value);
                 }
             });
             return task;
