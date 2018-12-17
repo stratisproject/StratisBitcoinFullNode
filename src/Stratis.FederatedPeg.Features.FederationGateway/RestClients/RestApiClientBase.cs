@@ -1,9 +1,12 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using Newtonsoft.Json;
+using Polly;
+using Polly.Retry;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
@@ -18,12 +21,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
         /// <summary>URL of API endpoint.</summary>
         private readonly string endpointUrl;
 
+        public const int RetryCount = 3;
+
+        /// <summary>Delay between retries.</summary>
+        public const int AttemptDelayMs = 1000;
+
+        private readonly RetryPolicy policy;
+
         public RestApiClientBase(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
         {
             this.httpClientFactory = httpClientFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             this.endpointUrl = $"http://localhost:{settings.CounterChainApiPort}/api/FederationGateway";
+
+            this.policy = Policy.Handle<Exception>().WaitAndRetryAsync(retryCount: RetryCount, sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(AttemptDelayMs), onRetry: OnRetry);
         }
 
         protected async Task<HttpResponseMessage> SendPostRequestAsync<Model>(Model requestModel, string apiMethodName) where Model : class
@@ -38,16 +50,18 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
 
                 try
                 {
-                    this.logger.LogDebug("Sending request of type '{0}' to Uri '{1}'.", requestModel.GetType().FullName, publicationUri);
+                    // Retry the following call according to the policy.
+                    await this.policy.ExecuteAsync(async token =>
+                    {
+                        this.logger.LogDebug("Sending request of type '{0}' to Uri '{1}'.", requestModel.GetType().FullName, publicationUri);
 
+                        response = await client.PostAsync(publicationUri, request).ConfigureAwait(false);
+                        this.logger.LogDebug("Response received: {0}", response);
 
-                    response = await client.PostAsync(publicationUri, request).ConfigureAwait(false);
-                    this.logger.LogDebug("Response received: {0}", response);
+                    }, CancellationToken.None);
                 }
                 catch (Exception ex)
                 {
-                    // TODO handle using polly in the next PR
-
                     this.logger.LogError("The counter-chain daemon is not ready to receive API calls at this time ({0})", publicationUri);
                     this.logger.LogDebug(ex, "Failed to send {0}", requestModel);
                     return new HttpResponseMessage() { ReasonPhrase = ex.Message, StatusCode = HttpStatusCode.InternalServerError };
@@ -77,6 +91,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
 
             this.logger.LogTrace("(-)[NO_CONTENT]:null");
             return null;
+        }
+
+        protected virtual void OnRetry(Exception exception, TimeSpan delay)
+        {
+            this.logger.LogDebug("Exception while calling API method: {0}.", exception.ToString());
         }
     }
 }
