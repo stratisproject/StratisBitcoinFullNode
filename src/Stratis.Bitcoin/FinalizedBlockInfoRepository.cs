@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.Insert("FinalizedBlock", finalizedBlockKey, this.dBreezeSerializer.Serializer(lastFinalizedBlock));
+                    transaction.Insert("FinalizedBlock", finalizedBlockKey, this.dBreezeSerializer.Serialize(lastFinalizedBlock));
                     transaction.Commit();
                 }
 

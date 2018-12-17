@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             Guard.NotNull(newTip, nameof(newTip));
 
-            transaction.Insert(BlockHashHeightTable, blockHashHeightKey, this.dBreezeSerializer.Serializer(newTip));
+            transaction.Insert(BlockHashHeightTable, blockHashHeightKey, this.dBreezeSerializer.Serialize(newTip));
         }
 
         /// <summary>
@@ -193,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         private void InsertHeaders(DBreeze.Transactions.Transaction transaction, SortedDictionary<int, ProvenBlockHeader> headers)
         {
             foreach (KeyValuePair<int, ProvenBlockHeader> header in headers)
-                transaction.Insert(ProvenBlockHeaderTable, header.Key.ToBytes(), this.dBreezeSerializer.Serializer(header.Value));
+                transaction.Insert(ProvenBlockHeaderTable, header.Key.ToBytes(), this.dBreezeSerializer.Serialize(header.Value));
 
             // Store the latest ProvenBlockHeader in memory.
             this.provenBlockHeaderTip = headers.Last().Value;

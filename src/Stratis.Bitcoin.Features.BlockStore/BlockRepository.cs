@@ -237,7 +237,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 Row<byte[], byte[]> blockRow = dbreezeTransaction.Select<byte[], byte[]>(BlockTableName, blockId.ToBytes());
                 if (!blockRow.Exists)
                 {
-                    dbreezeTransaction.Insert<byte[], byte[]>(BlockTableName, blockId.ToBytes(), this.dBreezeSerializer.Serializer(block));
+                    dbreezeTransaction.Insert<byte[], byte[]>(BlockTableName, blockId.ToBytes(), this.dBreezeSerializer.Serialize(block));
 
                     if (this.TxIndex)
                     {
@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private void SaveTipHashAndHeight(DBreeze.Transactions.Transaction dbreezeTransaction, HashHeightPair newTip)
         {
             this.TipHashAndHeight = newTip;
-            dbreezeTransaction.Insert(CommonTableName, RepositoryTipKey, this.dBreezeSerializer.Serializer(newTip));
+            dbreezeTransaction.Insert(CommonTableName, RepositoryTipKey, this.dBreezeSerializer.Serialize(newTip));
         }
 
         /// <inheritdoc />

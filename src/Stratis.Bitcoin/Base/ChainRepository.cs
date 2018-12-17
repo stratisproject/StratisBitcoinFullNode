@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Base
                             header = newHeader;
                         }
 
-                        transaction.Insert("Chain", block.Height, this.dBreezeSerializer.Serializer(header));
+                        transaction.Insert("Chain", block.Height, this.dBreezeSerializer.Serialize(header));
                     }
 
                     this.locator = tip.GetLocator();

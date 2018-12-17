@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
-        public byte[] Serializer(object obj)
+        public byte[] Serialize(object obj)
         {
             var serializable = obj as IBitcoinSerializable;
             if (serializable != null)
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Utilities
                 int itemIndex = 0;
                 foreach (object arrayObject in arr)
                 {
-                    byte[] serializedObject = this.Serializer(arrayObject);
+                    byte[] serializedObject = this.Serialize(arrayObject);
                     serializedItems[itemIndex] = serializedObject;
                     itemIndex++;
                 }

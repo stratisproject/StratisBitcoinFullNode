@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             var coin = toInsert[i];
                             this.logger.LogTrace("Outputs of transaction ID '{0}' are NOT PRUNABLE and will be inserted into the database. {1}/{2}.", coin.TransactionId, i, toInsert.Count);
 
-                            transaction.Insert("Coins", coin.TransactionId.ToBytes(false), this.dBreezeSerializer.Serializer(coin.ToCoins()));
+                            transaction.Insert("Coins", coin.TransactionId.ToBytes(false), this.dBreezeSerializer.Serialize(coin.ToCoins()));
                         }
 
                         if (rewindDataList != null)
@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             {
                                 this.logger.LogTrace("Rewind state #{0} created.", nextRewindIndex);
 
-                                transaction.Insert("Rewind", nextRewindIndex, this.dBreezeSerializer.Serializer(rewindData));
+                                transaction.Insert("Rewind", nextRewindIndex, this.dBreezeSerializer.Serialize(rewindData));
                                 nextRewindIndex++;
                             }
                         }
@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         foreach (UnspentOutputs coin in rewindData.OutputsToRestore)
                         {
                             this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", coin.TransactionId);
-                            transaction.Insert("Coins", coin.TransactionId.ToBytes(false), this.dBreezeSerializer.Serializer(coin.ToCoins()));
+                            transaction.Insert("Coins", coin.TransactionId.ToBytes(false), this.dBreezeSerializer.Serialize(coin.ToCoins()));
                         }
 
                         res = rewindData.PreviousBlockHash;
@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 if (!stakeEntry.InStore)
                 {
-                    transaction.Insert("Stake", stakeEntry.BlockId.ToBytes(false), this.dBreezeSerializer.Serializer(stakeEntry.BlockStake));
+                    transaction.Insert("Stake", stakeEntry.BlockId.ToBytes(false), this.dBreezeSerializer.Serialize(stakeEntry.BlockStake));
                     stakeEntry.InStore = true;
                 }
             }

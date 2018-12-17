@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             Block block = KnownNetworks.StratisRegTest.Consensus.ConsensusFactory.CreateBlock();
 
-            byte[] result = this.dbreezeSerializer.Serializer(block);
+            byte[] result = this.dbreezeSerializer.Serialize(block);
 
             Assert.Equal(block.ToBytes(), result);
         }
@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         {
             var val = new uint256();
 
-            byte[] result = this.dbreezeSerializer.Serializer(val);
+            byte[] result = this.dbreezeSerializer.Serialize(val);
 
             Assert.Equal(val.ToBytes(), result);
         }
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             {
                 string test = "Should throw exception.";
 
-                this.dbreezeSerializer.Serializer(test);
+                this.dbreezeSerializer.Serialize(test);
             });
         }
 
@@ -155,7 +155,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         public void SerializeAnyIBitcoinSerializableDoesNotThrowException()
         {
             var serialisable = new UnknownBitcoinSerialisable();
-            this.dbreezeSerializer.Serializer(serialisable);
+            this.dbreezeSerializer.Serialize(serialisable);
             serialisable.ReadWriteCalls.Should().Be(1);
         }
 
