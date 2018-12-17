@@ -98,11 +98,15 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public override Task InitializeAsync()
         {
+            this.prunedBlockRepository.InitializeAsync().GetAwaiter().GetResult();
+
+            if (this.storeSettings.Prune == 0 && this.prunedBlockRepository.PrunedTip != null)
+                throw new BlockStoreException("The node cannot start as it has been previously pruned, please clear the data folders and resync.");
+
             if (this.storeSettings.Prune != 0)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.prunedBlockRepository.InitializeAsync(this.network).GetAwaiter().GetResult();
-                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, true).GetAwaiter().GetResult();
+                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, this.network, true).GetAwaiter().GetResult();
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
@@ -135,7 +139,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.Prune != 0)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, false);
+                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, this.network, false);
             }
 
             this.logger.LogInformation("Stopping BlockStore.");

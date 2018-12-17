@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class PrunedBlockRepository : IPrunedBlockRepository
     {
         private readonly IBlockRepository blockRepository;
+        private readonly DBreezeSerializer dBreezeSerializer;
         private readonly ILogger logger;
         private static readonly byte[] prunedTipKey = new byte[2];
         private readonly StoreSettings storeSettings;
@@ -19,35 +20,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public HashHeightPair PrunedTip { get; private set; }
 
-        public PrunedBlockRepository(IBlockRepository blockRepository, ILoggerFactory loggerFactory, StoreSettings storeSettings)
+        public PrunedBlockRepository(IBlockRepository blockRepository, DBreezeSerializer dBreezeSerializer, ILoggerFactory loggerFactory, StoreSettings storeSettings)
         {
             this.blockRepository = blockRepository;
+            this.dBreezeSerializer = dBreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
         }
 
         /// <inheritdoc />
-        public Task InitializeAsync(Network network)
+        public Task InitializeAsync()
         {
-            Block genesis = network.GetGenesis();
-
             Task task = Task.Run(() =>
             {
                 using (DBreeze.Transactions.Transaction transaction = this.blockRepository.DBreeze.GetTransaction())
                 {
-                    bool doCommit = false;
-
-                    if (this.storeSettings.Prune != 0)
-                    {
-                        if (this.LoadPrunedTip(transaction) == null)
-                        {
-                            this.PrunedTip = new HashHeightPair(genesis.GetHash(), 0);
-                            transaction.Insert(BlockRepository.CommonTableName, prunedTipKey, this.PrunedTip);
-                            doCommit = true;
-                        }
-                    }
-
-                    if (doCommit) transaction.Commit();
+                    this.LoadPrunedTip(transaction);
                 }
             });
 
@@ -55,9 +43,22 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public async Task PruneDatabase(ChainedHeader blockRepositoryTip, bool nodeInitializing)
+        public async Task PruneDatabase(ChainedHeader blockRepositoryTip, Network network, bool nodeInitializing)
         {
             this.logger.LogInformation($"Pruning started.");
+
+            if (this.PrunedTip == null)
+            {
+                Block genesis = network.GetGenesis();
+
+                this.PrunedTip = new HashHeightPair(genesis.GetHash(), 0);
+
+                using (DBreeze.Transactions.Transaction transaction = this.blockRepository.DBreeze.GetTransaction())
+                {
+                    transaction.Insert(BlockRepository.CommonTableName, prunedTipKey, this.dBreezeSerializer.Serialize(this.PrunedTip));
+                    transaction.Commit();
+                }
+            }
 
             if (nodeInitializing)
             {
@@ -115,20 +116,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.UpdatePrunedTip(blockRepositoryTip.FindAncestorOrSelf(this.blockRepository.TipHashAndHeight.Hash));
         }
 
-        private HashHeightPair LoadPrunedTip(DBreeze.Transactions.Transaction dbreezeTransaction)
+        private void LoadPrunedTip(DBreeze.Transactions.Transaction dbreezeTransaction)
         {
             if (this.PrunedTip == null)
             {
                 dbreezeTransaction.ValuesLazyLoadingIsOn = false;
 
-                Row<byte[], HashHeightPair> row = dbreezeTransaction.Select<byte[], HashHeightPair>(BlockRepository.CommonTableName, prunedTipKey);
+                Row<byte[], byte[]> row = dbreezeTransaction.Select<byte[], byte[]>(BlockRepository.CommonTableName, prunedTipKey);
                 if (row.Exists)
-                    this.PrunedTip = row.Value;
+                    this.PrunedTip = this.dBreezeSerializer.Deserialize<HashHeightPair>(row.Value);
 
                 dbreezeTransaction.ValuesLazyLoadingIsOn = true;
             }
-
-            return this.PrunedTip;
         }
 
         /// <summary>
@@ -142,7 +141,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     dbreezeTransaction.SynchronizeTables(BlockRepository.BlockTableName, BlockRepository.TransactionTableName);
 
-                    var tempBlocks = dbreezeTransaction.SelectDictionary<byte[], Block>(BlockRepository.BlockTableName);
+                    var tempBlocks = dbreezeTransaction.SelectDictionary<byte[], byte[]>(BlockRepository.BlockTableName);
 
                     if (tempBlocks.Count != 0)
                     {
@@ -151,7 +150,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         dbreezeTransaction.RemoveAllKeys(BlockRepository.BlockTableName, true);
                         dbreezeTransaction.InsertDictionary(BlockRepository.BlockTableName, tempBlocks, false);
 
-                        var tempTransactions = dbreezeTransaction.SelectDictionary<byte[], Block>(BlockRepository.TransactionTableName);
+                        var tempTransactions = dbreezeTransaction.SelectDictionary<byte[], byte[]>(BlockRepository.TransactionTableName);
                         if (tempTransactions.Count != 0)
                         {
                             this.logger.LogInformation($"{tempTransactions.Count} transactions will be copied to the pruned table.");
@@ -160,7 +159,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         }
 
                         // Save the hash and height of where the node was pruned up to.
-                        dbreezeTransaction.Insert(BlockRepository.CommonTableName, prunedTipKey, this.PrunedTip);
+                        dbreezeTransaction.Insert(BlockRepository.CommonTableName, prunedTipKey, this.dBreezeSerializer.Serialize(this.PrunedTip));
                     }
 
                     dbreezeTransaction.Commit();

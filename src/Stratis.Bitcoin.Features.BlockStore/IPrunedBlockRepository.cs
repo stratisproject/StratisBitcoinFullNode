@@ -12,18 +12,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// INitializes the pruned block repository.
         /// </summary>
-        /// <param name="network">The network the node is running on.</param>
         /// <returns>The awaited task.</returns>
-        Task InitializeAsync(Network network);
+        Task InitializeAsync();
 
         /// <summary>
         /// Compacts the block and transaction database by resaving the database file without
         /// all the deleted references.
         /// </summary>
         /// <param name="consensusTip">The current tip of consensus.</param>
+        /// <param name="network">The network the node is running on.</param>
         /// <param name="nodeInitializing">Indicates whether or not this method is called from node startup or not.</param>
         /// <returns>The awaited task.</returns>
-        Task PruneDatabase(ChainedHeader consensusTip, bool nodeInitializing);
+        Task PruneDatabase(ChainedHeader consensusTip, Network network, bool nodeInitializing);
 
         /// <summary> 
         /// The lowest block height that the repository has.
