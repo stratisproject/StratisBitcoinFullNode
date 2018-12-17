@@ -36,6 +36,8 @@ namespace Stratis.Bitcoin
 
     public class FinalizedBlockInfoRepository : IFinalizedBlockInfoRepository
     {
+        private readonly DBreezeSerializer dBreezeSerializer;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -62,8 +64,9 @@ namespace Stratis.Bitcoin
 
         private readonly AsyncManualResetEvent queueUpdatedEvent;
 
-        public FinalizedBlockInfoRepository(string folder, ILoggerFactory loggerFactory)
+        public FinalizedBlockInfoRepository(string folder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
         {
+            this.dBreezeSerializer = dBreezeSerializer;
             Guard.NotEmpty(folder, nameof(folder));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
@@ -80,8 +83,8 @@ namespace Stratis.Bitcoin
             this.finalizedBlockInfoPersistingTask = this.PersistFinalizedBlockInfoContinuouslyAsync();
         }
 
-        public FinalizedBlockInfoRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(dataFolder.FinalizedBlockInfoPath, loggerFactory)
+        public FinalizedBlockInfoRepository(DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
+            : this(dataFolder.FinalizedBlockInfoPath, loggerFactory, dBreezeSerializer)
         {
         }
 
@@ -115,7 +118,7 @@ namespace Stratis.Bitcoin
 
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.Insert<byte[], HashHeightPair>("FinalizedBlock", finalizedBlockKey, lastFinalizedBlock);
+                    transaction.Insert("FinalizedBlock", finalizedBlockKey, this.dBreezeSerializer.Serialize(lastFinalizedBlock));
                     transaction.Commit();
                 }
 
@@ -138,14 +141,14 @@ namespace Stratis.Bitcoin
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
 
-                    Row<byte[], HashHeightPair> row = transaction.Select<byte[], HashHeightPair>("FinalizedBlock", finalizedBlockKey);
+                    Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>("FinalizedBlock", finalizedBlockKey);
                     if (!row.Exists)
                     {
                         this.finalizedBlockInfo = new HashHeightPair(network.GenesisHash, 0);
                         this.logger.LogTrace("Finalized block height doesn't exist in the database.");
                     }
                     else
-                        this.finalizedBlockInfo = row.Value;
+                        this.finalizedBlockInfo = this.dBreezeSerializer.Deserialize<HashHeightPair>(row.Value);
                 }
             });
             return task;

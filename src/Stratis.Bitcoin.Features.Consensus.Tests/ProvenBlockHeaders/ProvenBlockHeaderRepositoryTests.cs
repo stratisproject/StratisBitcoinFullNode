@@ -19,12 +19,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
     public class ProvenBlockHeaderRepositoryTests : LogsTestBase
     {
         private readonly Mock<ILoggerFactory> loggerFactory;
+        private readonly DBreezeSerializer dBreezeSerializer;
         private const string ProvenBlockHeaderTable = "ProvenBlockHeader";
         private const string BlockHashTable = "BlockHashHeight";
 
         public ProvenBlockHeaderRepositoryTests() : base(KnownNetworks.StratisTest)
         {
             this.loggerFactory = new Mock<ILoggerFactory>();
+            this.dBreezeSerializer = new DBreezeSerializer(this.Network);
         }
 
         [Fact]
@@ -62,8 +64,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.SynchronizeTables(ProvenBlockHeaderTable);
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var headerOut = txn.Select<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHashHeightPair.Height.ToBytes()).Value;
-                var hashHeightPairOut = txn.Select<byte[], HashHeightPair>(BlockHashTable, new byte[0].ToBytes()).Value;
+                var headerOut = this.dBreezeSerializer.Deserialize<ProvenBlockHeader>(txn.Select<byte[], byte[]>(ProvenBlockHeaderTable, blockHashHeightPair.Height.ToBytes()).Value);
+                var hashHeightPairOut = this.DBreezeSerializer.Deserialize<HashHeightPair>(txn.Select<byte[], byte[]>(BlockHashTable, new byte[0].ToBytes()).Value);
 
                 headerOut.Should().NotBeNull();
                 headerOut.GetHash().Should().Be(provenBlockHeaderIn.GetHash());
@@ -97,11 +99,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
                 txn.SynchronizeTables(ProvenBlockHeaderTable);
                 txn.ValuesLazyLoadingIsOn = false;
 
-                var headersOut = txn.SelectDictionary<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable);
+                var headersOut = txn.SelectDictionary<byte[], byte[]>(ProvenBlockHeaderTable);
 
                 headersOut.Keys.Count.Should().Be(2);
-                headersOut.First().Value.GetHash().Should().Be(items[0].GetHash());
-                headersOut.Last().Value.GetHash().Should().Be(items[1].GetHash());
+                this.dBreezeSerializer.Deserialize<ProvenBlockHeader>(headersOut.First().Value).GetHash().Should().Be(items[0].GetHash());
+                this.dBreezeSerializer.Deserialize<ProvenBlockHeader>(headersOut.Last().Value).GetHash().Should().Be(items[1].GetHash());
             }
         }
 
@@ -117,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, blockHeight.ToBytes(), headerIn);
+                txn.Insert<byte[], byte[]>(ProvenBlockHeaderTable, blockHeight.ToBytes(), this.dBreezeSerializer.Serialize(headerIn));
                 txn.Commit();
             }
 
@@ -139,8 +141,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             using (var engine = new DBreezeEngine(folder))
             {
                 DBreeze.Transactions.Transaction txn = engine.GetTransaction();
-                txn.Insert<byte[], ProvenBlockHeader>(ProvenBlockHeaderTable, 1.ToBytes(), CreateNewProvenBlockHeaderMock());
-                txn.Insert<byte[], HashHeightPair>(BlockHashTable, new byte[0], new HashHeightPair(new uint256(), 1));
+                txn.Insert<byte[], byte[]>(ProvenBlockHeaderTable, 1.ToBytes(), this.dBreezeSerializer.Serialize(CreateNewProvenBlockHeaderMock()));
+                txn.Insert<byte[], byte[]>(BlockHashTable, new byte[0], this.DBreezeSerializer.Serialize(new HashHeightPair(new uint256(), 1)));
                 txn.Commit();
             }
 
@@ -184,7 +186,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
         private ProvenBlockHeaderRepository SetupRepository(Network network, string folder)
         {
-            var repo = new ProvenBlockHeaderRepository(network, folder, this.LoggerFactory.Object);
+            var repo = new ProvenBlockHeaderRepository(network, folder, this.LoggerFactory.Object, this.dBreezeSerializer);
 
             Task task = repo.InitializeAsync();
 
