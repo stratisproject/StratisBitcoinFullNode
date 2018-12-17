@@ -25,8 +25,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             var nodeStats = new NodeStats(DateTimeProvider.Default);
 
-            var dBreezeSerializer = new DBreezeSerializer();
-            dBreezeSerializer.Initialize(this.Network);
+            var dBreezeSerializer = new DBreezeSerializer(this.Network);
 
             this.provenBlockHeaderRepository = new ProvenBlockHeaderRepository(this.Network, CreateTestDir(this), this.LoggerFactory.Object, dBreezeSerializer);
 

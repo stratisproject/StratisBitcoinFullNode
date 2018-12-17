@@ -15,8 +15,7 @@ namespace Stratis.Bitcoin.Tests
         public FinalizedBlockInfoRepositoryTest() : base(KnownNetworks.StratisRegTest)
         {
             this.loggerFactory = new LoggerFactory();
-            this.dBreezeSerializer = new DBreezeSerializer();
-            this.dBreezeSerializer.Initialize(this.Network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.Network);
         }
 
         [Fact]

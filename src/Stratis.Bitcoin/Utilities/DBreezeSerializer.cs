@@ -11,17 +11,12 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public class DBreezeSerializer
     {
-        public Network Network { get; private set; }
-
-        /// <summary>
-        /// Initializes custom serializers for DBreeze engine.
-        /// </summary>
-        public void Initialize(Network network)
+        public DBreezeSerializer(Network network)
         {
             this.Network = network;
-            //CustomSerializator.ByteArraySerializator = this.Serializer;
-            //CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
         }
+
+        public Network Network { get; }
 
         /// <summary>
         /// Serializes object to a binary data format.

@@ -173,8 +173,6 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
-            this.dbreezeSerializer.Initialize(this.chain.Network);
-
             await this.StartChainAsync().ConfigureAwait(false);
 
             if (this.provenBlockHeaderStore != null)
