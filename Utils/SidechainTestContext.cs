@@ -36,19 +36,19 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         public readonly IList<Mnemonic> mnemonics;
         public readonly Dictionary<Mnemonic, PubKey> pubKeysByMnemonic;
         public readonly (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress) scriptAndAddresses;
-        public readonly List<int> federationMemberIndexes;
         public readonly List<string> chains;
 
-        private readonly NodeBuilder nodeBuilder;
-        private readonly SidechainNodeBuilder sidechainNodeBuilder;
+        private readonly SidechainNodeBuilder nodeBuilder;
 
         public Network MainChainNetwork { get; }
 
         public FederatedPegRegTest SideChainNetwork { get; }
 
+        // TODO: HashSets / Readonly
         public IReadOnlyList<CoreNode> MainChainNodes { get; }
-
         public IReadOnlyList<CoreNode> SideChainNodes { get; }
+        public IReadOnlyList<CoreNode> MainChainFedNodes { get; }
+        public IReadOnlyList<CoreNode> SideChainFedNodes { get; }
 
         public CoreNode MainUser{ get; }
         public CoreNode FedMain1 { get; }
@@ -70,23 +70,20 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
             this.scriptAndAddresses = this.GenerateScriptAndAddresses(this.MainChainNetwork, this.SideChainNetwork, 2, this.pubKeysByMnemonic);
 
-            this.federationMemberIndexes = Enumerable.Range(0, this.pubKeysByMnemonic.Count).ToList();
             this.chains = new[] { "mainchain", "sidechain" }.ToList();
 
-            // TODO: Because it inherits I believe we can use only the SidechainNodeBuilder
-            this.nodeBuilder = NodeBuilder.Create(this);
-            this.sidechainNodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
+            this.nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
 
             this.MainUser = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.MainUser)).WithWallet(); // TODO: Do we need wallets like this on every node?
-            this.FedMain1 = this.sidechainNodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
-            this.FedMain2 = this.sidechainNodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
-            this.FedMain3 = this.sidechainNodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.FedMain1 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.FedMain2 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.FedMain3 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
 
-            this.SideUser = this.sidechainNodeBuilder.CreateSidechainNode(this.SideChainNetwork);
+            this.SideUser = this.nodeBuilder.CreateSidechainNode(this.SideChainNetwork);
 
-            this.FedSide1 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[0]);
-            this.FedSide2 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[1]);
-            this.FedSide3 = this.sidechainNodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[2]);
+            this.FedSide1 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[0]);
+            this.FedSide2 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[1]);
+            this.FedSide3 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[2]);
 
             this.SideChainNodes = new List<CoreNode>()
             {
@@ -102,6 +99,20 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
                 this.FedMain1,
                 this.FedMain2,
                 this.FedMain3,
+            };
+
+            this.SideChainFedNodes = new List<CoreNode>()
+            {
+                this.FedSide1,
+                this.FedSide2,
+                this.FedSide3
+            };
+
+            this.MainChainFedNodes = new List<CoreNode>()
+            {
+                this.FedMain1,
+                this.FedMain2,
+                this.FedMain3
             };
 
             this.ApplyConfigParametersToNodes();
@@ -148,10 +159,16 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             TestHelper.Connect(this.MainUser, this.FedMain1);
             TestHelper.Connect(this.MainUser, this.FedMain2);
             TestHelper.Connect(this.MainUser, this.FedMain3);
+
+            TestHelper.Connect(this.FedMain1, this.MainUser);
             TestHelper.Connect(this.FedMain1, this.FedMain2);
             TestHelper.Connect(this.FedMain1, this.FedMain3);
+
+            TestHelper.Connect(this.FedMain2, this.MainUser);
             TestHelper.Connect(this.FedMain2, this.FedMain1);
             TestHelper.Connect(this.FedMain2, this.FedMain3);
+
+            TestHelper.Connect(this.FedMain3, this.MainUser);
             TestHelper.Connect(this.FedMain3, this.FedMain1);
             TestHelper.Connect(this.FedMain3, this.FedMain2);
         }
@@ -161,35 +178,47 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             TestHelper.Connect(this.SideUser, this.FedSide1);
             TestHelper.Connect(this.SideUser, this.FedSide2);
             TestHelper.Connect(this.SideUser, this.FedSide3);
+
+            TestHelper.Connect(this.FedSide1, this.SideUser);
             TestHelper.Connect(this.FedSide1, this.FedSide2);
             TestHelper.Connect(this.FedSide1, this.FedSide3);
+
+            TestHelper.Connect(this.FedSide2, this.SideUser);
             TestHelper.Connect(this.FedSide2, this.FedSide1);
             TestHelper.Connect(this.FedSide2, this.FedSide3);
+
+            TestHelper.Connect(this.FedSide3, this.SideUser);
             TestHelper.Connect(this.FedSide3, this.FedSide1);
             TestHelper.Connect(this.FedSide3, this.FedSide2);
         }
 
-        public void EnableWallets(List<CoreNode> nodes)
+        public void EnableMainFedWallets()
         {
-            this.FedMain3.State.Should().Be(CoreNodeState.Running);
-            this.FedSide3.State.Should().Be(CoreNodeState.Running);
+            EnableFederationWallets(this.MainChainFedNodes);
+        }
 
-            nodes.ForEach(node =>
+        public void EnableSideFedWallets()
+        {
+            EnableFederationWallets(this.SideChainFedNodes);
+        }
+
+        private void EnableFederationWallets(IReadOnlyList<CoreNode> nodes)
+        {
+            for (int i = 0; i < nodes.Count; i++)
             {
-                this.federationMemberIndexes.ForEach(i =>
-                {
-                    $"http://localhost:{node.Endpoint.Port}/api".AppendPathSegment("FederationWallet/import-key").PostJsonAsync(new ImportMemberKeyRequest
-                    {
-                        Mnemonic = this.mnemonics[i].ToString(),
-                        Password = "password"
-                    }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
+                CoreNode node = nodes[i];
 
-                    $"http://localhost:{node.Endpoint.Port}/api".AppendPathSegment("FederationWallet/enable-federation").PostJsonAsync(new EnableFederationRequest
-                    {
-                        Password = "password"
-                    }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
-                });
-            });
+                $"http://localhost:{node.ApiPort}/api".AppendPathSegment("FederationWallet/import-key").PostJsonAsync(new ImportMemberKeyRequest
+                {
+                    Mnemonic = this.mnemonics[i].ToString(),
+                    Password = "password"
+                }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
+
+                $"http://localhost:{node.ApiPort}/api".AppendPathSegment("FederationWallet/enable-federation").PostJsonAsync(new EnableFederationRequest
+                {
+                    Password = "password"
+                }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
+            }
         }
 
         /// <summary>
@@ -315,7 +344,6 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         public void Dispose()
         {
             this.nodeBuilder?.Dispose();
-            this.sidechainNodeBuilder?.Dispose();
         }
     }
 }
