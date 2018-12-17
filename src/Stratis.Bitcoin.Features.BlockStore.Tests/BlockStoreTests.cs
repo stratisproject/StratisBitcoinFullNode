@@ -9,7 +9,6 @@ using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Interfaces;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -40,9 +39,6 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             this.network = KnownNetworks.StratisMain;
             this.repositoryTipHashAndHeight = new HashHeightPair(this.network.GenesisHash, 0);
-
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(new StratisMain());
 
             this.random = new Random();
 

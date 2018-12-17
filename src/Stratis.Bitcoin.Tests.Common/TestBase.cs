@@ -5,7 +5,6 @@ using System.Linq;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Common
 {
@@ -19,8 +18,6 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.Network);
         }
 
         public static string AssureEmptyDir(string dir)

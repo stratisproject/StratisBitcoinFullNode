@@ -25,8 +25,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// </summary>
         public DBreezeTest() : base(KnownNetworks.StratisRegTest)
         {
-            this.dbreezeSerializer = new DBreezeSerializer();
-            this.dbreezeSerializer.Initialize(this.Network);
+            this.dbreezeSerializer = new DBreezeSerializer(this.Network);
         }
 
         [Fact]
