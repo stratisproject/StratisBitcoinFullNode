@@ -2,6 +2,9 @@
 using System.Reactive.Linq;
 using System.Reactive.Subjects;
 using Microsoft.Extensions.Logging;
+
+using Newtonsoft.Json;
+
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
@@ -22,7 +25,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <inheritdoc />
         public void PushMaturedBlockDeposits(IMaturedBlockDeposits[] maturedBlockDeposits)
         {
-            this.logger.LogDebug("Received new matured block for{0}{1}", Environment.NewLine, this.maturedBlockDepositStream);
+            if(maturedBlockDeposits == null) return;
+            this.logger.LogDebug("Pushing {0} matured deposit(s)", maturedBlockDeposits.Length);
+            this.logger.LogDebug("{0}", string.Join(Environment.NewLine, JsonConvert.SerializeObject(maturedBlockDeposits)));
             this.maturedBlockDepositStream.OnNext(maturedBlockDeposits);
         }
 
