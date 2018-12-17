@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
         /// <param name="folder"><see cref="ProvenBlockHeaderRepository"/> folder path to the DBreeze database files.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="dBreezeSerializer">DBreeze serializer</param>
+        /// <param name="dBreezeSerializer">The serializer to use for <see cref="IBitcoinSerializable"/> objects.</param>
         public ProvenBlockHeaderRepository(Network network, DataFolder folder, ILoggerFactory loggerFactory,
             DBreezeSerializer dBreezeSerializer)
         : this(network, folder.ProvenBlockHeaderPath, loggerFactory, dBreezeSerializer)
@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="network">Specification of the network the node runs on - RegTest/TestNet/MainNet.</param>
         /// <param name="folder"><see cref="ProvenBlockHeaderRepository"/> folder path to the DBreeze database files.</param>
         /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="dBreezeSerializer">DBreeze serializer</param>
+        /// <param name="dBreezeSerializer">The serializer to use for <see cref="IBitcoinSerializable"/> objects.</param>
         public ProvenBlockHeaderRepository(Network network, string folder, ILoggerFactory loggerFactory,
             DBreezeSerializer dBreezeSerializer)
         {

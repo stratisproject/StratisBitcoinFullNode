@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="nodeStats"></param>
-        /// <param name="dBreezeSerializer1"></param>
+        /// <param name="dBreezeSerializer">The serializer to use for <see cref="IBitcoinSerializable"/> objects.</param>
         public DBreezeCoinView(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, INodeStats nodeStats, DBreezeSerializer dBreezeSerializer)
             : this(network, dataFolder.CoinViewPath, dateTimeProvider, loggerFactory, nodeStats, dBreezeSerializer)
@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <param name="dateTimeProvider">Provider of time functions.</param>
         /// <param name="loggerFactory">Factory to be used to create logger for the puller.</param>
         /// <param name="nodeStats"></param>
-        /// <param name="dBreezeSerializer1"></param>
+        /// <param name="dBreezeSerializer">The serializer to use for <see cref="IBitcoinSerializable"/> objects.</param>
         public DBreezeCoinView(Network network, string folder, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, INodeStats nodeStats, DBreezeSerializer dBreezeSerializer)
         {
