@@ -35,5 +35,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             stream.ReadWrite(ref this.depositId);
             stream.ReadWrite(ref this.transactionPartial);
         }
+
+        public override string ToString()
+        {
+            return $"{nameof(this.Command)}:'{this.Command}',{nameof(this.DepositId)}:'{this.DepositId}'";
+        }
     }
 }

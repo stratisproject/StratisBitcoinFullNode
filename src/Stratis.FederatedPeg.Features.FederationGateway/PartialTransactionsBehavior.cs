@@ -57,26 +57,14 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         protected override void AttachCore()
         {
-            this.logger.LogTrace("()");
-
             if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
-            {
                 this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync, true);
-            }
-
-            this.logger.LogTrace("(-)");
         }
 
         protected override void DetachCore()
         {
-            this.logger.LogTrace("()");
-
             if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
-            {
                 this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
-            }
-
-            this.logger.LogTrace("(-)");
         }
 
         /// <summary>
@@ -85,14 +73,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         /// <param name="payload">The payload to broadcast.</param>
         private async Task BroadcastAsync(RequestPartialTransactionPayload payload)
         {
-            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(payload.Command), payload.Command, nameof(payload.DepositId), payload.DepositId);
-
             if (this.federationGatewaySettings.FederationNodeIpEndPoints.Any(e => this.ipAddressComparer.Equals(e.Address, this.AttachedPeer.PeerEndPoint.Address)))
-            {
                 await this.AttachedPeer.SendMessageAsync(payload).ConfigureAwait(false);
-            }
-
-            this.logger.LogTrace("(-)");
         }
 
         private Transaction GetTemplateTransaction(Transaction partialTransaction)
@@ -100,9 +82,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             Transaction templateTransaction = this.network.CreateTransaction(partialTransaction.ToBytes(this.network.Consensus.ConsensusFactory));
 
             foreach (TxIn input in templateTransaction.Inputs)
-            {
                 input.ScriptSig = new Script();
-            }
 
             return templateTransaction;
         }
@@ -110,7 +90,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             var payload = message.Message.Payload as RequestPartialTransactionPayload;
-            if (payload == null) return;
+
+            if (payload == null)
+                return;
 
             // Get the template from the payload.
             Transaction template = this.GetTemplateTransaction(payload.PartialTransaction);
