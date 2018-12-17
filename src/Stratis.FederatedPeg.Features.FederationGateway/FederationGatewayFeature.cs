@@ -91,6 +91,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly MempoolManager mempoolManager;
 
+        private readonly ILogger logger;
+
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
             IMaturedBlocksRequester maturedBlocksRequester,
@@ -132,6 +134,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.partialTransactionRequester = partialTransactionRequester;
             this.federationGatewayClient = federationGatewayClient;
             this.mempoolManager = mempoolManager;
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             // add our payload
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
@@ -199,6 +203,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private void AddComponentStats(StringBuilder benchLog)
         {
+            try
+            {
+                string stats = this.CollectStats();
+                benchLog.Append(stats);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError(e.ToString());
+                throw;
+            }
+        }
+
+        private string CollectStats()
+        {
+            StringBuilder benchLog = new StringBuilder();
             benchLog.AppendLine();
             benchLog.AppendLine("====== Federation Wallet ======");
 
@@ -247,6 +266,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 4);
 
             benchLog.AppendLine();
+            return benchLog.ToString();
         }
 
         private void AddBenchmarkLine(StringBuilder benchLog, (string Value, int ValuePadding)[] items, int maxItemsPerLine = int.MaxValue)
