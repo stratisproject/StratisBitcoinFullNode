@@ -16,20 +16,20 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
     {
         private readonly ILoggerFactory loggerFactory;
         private readonly Network network;
+        private readonly DBreezeSerializer dBreezeSerializer;
 
         public BlockStoreTests()
         {
             this.loggerFactory = new LoggerFactory();
 
             this.network = new BitcoinRegTest();
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.network);
         }
 
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory))
+            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), DateTimeProvider.Default, this.loggerFactory, this.dBreezeSerializer))
             {
                 blockRepository.SetTxIndexAsync(true).Wait();
 

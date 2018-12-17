@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Tests.Common
     public class TestBase
     {
         public Network Network { get; protected set; }
+        public DBreezeSerializer DBreezeSerializer { get; }
 
         /// <summary>
         /// Initializes logger factory for inherited tests.
@@ -19,8 +20,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.Network);
+            this.DBreezeSerializer = new DBreezeSerializer(network);
         }
 
         public static string AssureEmptyDir(string dir)
