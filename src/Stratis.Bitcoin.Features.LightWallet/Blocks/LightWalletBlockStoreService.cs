@@ -18,6 +18,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
         private readonly INodeLifetime nodeLifetime;
+        private readonly IPrunedBlockRepository prunedBlockRepository;
         private readonly StoreSettings storeSettings;
 
         /// <inheritdoc/>
@@ -26,6 +27,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         public LightWalletBlockStoreService(
             IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
+            IPrunedBlockRepository prunedBlockRepository,
             IConsensusManager consensusManager,
             ILoggerFactory loggerFactory,
             INodeLifetime nodeLifetime,
@@ -33,6 +35,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockRepository = blockRepository;
+            this.prunedBlockRepository = prunedBlockRepository;
             this.consensusManager = consensusManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
@@ -42,7 +45,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// <inheritdoc/>
         public void Start()
         {
-            this.PrunedUpToHeaderTip = this.consensusManager.Tip.GetAncestor(this.blockRepository.PrunedTip.Height);
+            this.PrunedUpToHeaderTip = this.consensusManager.Tip.GetAncestor(this.prunedBlockRepository.PrunedTip.Height);
 
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.PruneBlocksAsync)}", async token =>
             {
@@ -55,6 +58,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// <summary>
         /// Delete blocks continuously from the back of the store.
         /// </summary>
+        /// <returns>The awaited task.</returns>
         private async Task PruneBlocksAsync()
         {
             if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.PruneBlockMargin)
@@ -85,7 +89,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
             ChainedHeader prunedTip = chainedHeadersToDelete.First();
 
             await this.blockRepository.DeleteBlocksAsync(chainedHeadersToDelete.Select(c => c.HashBlock).ToList());
-            this.blockRepository.UpdatePrunedTip(prunedTip);
+            this.prunedBlockRepository.UpdatePrunedTip(prunedTip);
 
             this.PrunedUpToHeaderTip = prunedTip;
 

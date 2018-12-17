@@ -18,6 +18,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public interface IBlockRepository : IBlockStore
     {
+        /// <summary> The dbreeze database engine.</summary>
+        DBreezeEngine DBreeze { get; }
+
+        /// <summary>
+        /// Delete blocks and their transactions.
+        /// <para>
+        /// It should be noted that this does not delete the entries from disk (only the references are removed) and
+        /// as such the file size remains the same.
+        /// </para>
+        /// </summary>
+        /// <param name="hashes">List of block hashes to be deleted.</param>
+        /// <returns>The awaited task.</returns>
+        Task DeleteBlocksAsync(List<uint256> hashes);
+
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database.
         /// </summary>
@@ -40,16 +54,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes);
 
         /// <summary>
-        /// Delete blocks and their transactions.
-        /// <para>
-        /// It should be noted that this does not delete the entries from disk (only the references are removed) and
-        /// as such the file size remains the same.
-        /// </para>
-        /// </summary>
-        /// <param name="hashes">List of block hashes to be deleted.</param>
-        Task DeleteBlocksAsync(List<uint256> hashes);
-
-        /// <summary>
         /// Determine if a block already exists
         /// </summary>
         /// <param name="hash">The hash.</param>
@@ -68,62 +72,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="txIndex">Whether to index transactions.</param>
         Task SetTxIndexAsync(bool txIndex);
 
-        /// <summary> 
-        /// The lowest block height that the repository has.
-        /// <para>
-        /// This also indicated where the node has been pruned up to.
-        /// </para>
-        /// </summary>
-        HashHeightPair PrunedTip { get; }
-
-        /// <summary>
-        /// Sets the pruned tip.
-        /// <para> 
-        /// It will be saved once the block database has been compacted on node initialization or shutdown.
-        /// </para>
-        /// </summary>
-        /// <param name="tip">The tip to set.</param>
-        void UpdatePrunedTip(ChainedHeader tip);
-
         /// <summary>Hash and height of the repository's tip.</summary>
         HashHeightPair TipHashAndHeight { get; }
 
         /// <summary> Indicates that the node should store all transaction data in the database.</summary>
         bool TxIndex { get; }
-
-        /// <summary>
-        /// Compacts the block and transaction database by resaving the database file without
-        /// all the deleted references.
-        /// </summary>
-        /// <param name="consensusTip">The current tip of consensus.</param>
-        /// <param name="nodeInitializing">Indicates whether or not this method is called from node startup or not.</param>
-        Task PruneDatabase(ChainedHeader consensusTip, bool nodeInitializing);
     }
 
     public class BlockRepository : IBlockRepository
     {
-        private const string BlockTableName = "Block";
+        internal const string BlockTableName = "Block";
 
-        private const string CommonTableName = "Common";
+        internal const string CommonTableName = "Common";
 
-        private const string TransactionTableName = "Transaction";
+        internal const string TransactionTableName = "Transaction";
 
-        private readonly DBreezeEngine DBreeze;
+        public DBreezeEngine DBreeze { get; }
 
         private readonly ILogger logger;
 
-        private readonly Network network;
-
-        private readonly StoreSettings storeSettings;
-
-        private static readonly byte[] PrunedTipKey = new byte[2];
+        protected readonly Network network;
 
         private static readonly byte[] RepositoryTipKey = new byte[0];
 
         private static readonly byte[] TxIndexKey = new byte[1];
-
-        /// <inheritdoc />
-        public HashHeightPair PrunedTip { get; private set; }
 
         /// <inheritdoc />
         public HashHeightPair TipHashAndHeight { get; private set; }
@@ -131,23 +103,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public bool TxIndex { get; private set; }
 
-        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, StoreSettings storeSettings)
-            : this(network, dataFolder.BlockPath, loggerFactory, storeSettings)
+        public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory)
+            : this(network, dataFolder.BlockPath, loggerFactory)
         {
         }
 
-        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory, StoreSettings storeSettings)
+        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
-            Guard.NotNull(storeSettings, nameof(storeSettings));
 
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.storeSettings = storeSettings;
         }
 
         /// <inheritdoc />
@@ -160,16 +130,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
                     bool doCommit = false;
-
-                    if (this.storeSettings.Prune)
-                    {
-                        if (this.LoadPrunedTip(transaction) == null)
-                        {
-                            this.PrunedTip = new HashHeightPair(genesis.GetHash(), 0);
-                            transaction.Insert(CommonTableName, PrunedTipKey, this.PrunedTip);
-                            doCommit = true;
-                        }
-                    }
 
                     if (this.LoadTipHashAndHeight(transaction) == null)
                     {
@@ -188,127 +148,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             });
 
             return task;
-        }
-
-        /// <inheritdoc />
-        public async Task PruneDatabase(ChainedHeader consensusTip, bool nodeInitializing)
-        {
-            this.logger.LogInformation($"Pruning started.");
-
-            if (nodeInitializing)
-            {
-                if (IsDatabasePruned())
-                    return;
-
-                await this.PrepareDatabaseForPruningAsync(consensusTip);
-            }
-
-            this.CompactDataBase();
-
-            this.logger.LogInformation($"Pruning complete.");
-
-            return;
-        }
-
-        private bool IsDatabasePruned()
-        {
-            if (this.TipHashAndHeight.Height <= this.PrunedTip.Height + this.storeSettings.PruneBlockMargin)
-            {
-                this.logger.LogDebug("(-):true");
-                return true;
-            }
-            else
-            {
-                this.logger.LogDebug("(-):false");
-                return false;
-            }
-        }
-
-        /// <summary>
-        /// Compacts the block and transaction database by recreating the tables without the deleted references.
-        /// </summary>
-        /// <param name="consensusTip">The last fully validated block of the node.</param>
-        private async Task PrepareDatabaseForPruningAsync(ChainedHeader consensusTip)
-        {
-            int upperHeight = this.TipHashAndHeight.Height - this.storeSettings.PruneBlockMargin;
-
-            var toDelete = new List<ChainedHeader>();
-
-            ChainedHeader startFromHeader = consensusTip.GetAncestor(upperHeight);
-            ChainedHeader endAtHeader = consensusTip.GetAncestor(this.PrunedTip.Height);
-
-            this.logger.LogInformation($"Pruning blocks from height {upperHeight} to {endAtHeader.Height}.");
-
-            while (startFromHeader.Previous != null && startFromHeader != endAtHeader)
-            {
-                toDelete.Add(startFromHeader);
-                startFromHeader = startFromHeader.Previous;
-            }
-
-            await this.DeleteBlocksAsync(toDelete.Select(cb => cb.HashBlock).ToList()).ConfigureAwait(false);
-
-            this.UpdatePrunedTip(consensusTip.GetAncestor(upperHeight));
-        }
-
-        private HashHeightPair LoadPrunedTip(DBreeze.Transactions.Transaction dbreezeTransaction)
-        {
-            if (this.PrunedTip == null)
-            {
-                dbreezeTransaction.ValuesLazyLoadingIsOn = false;
-
-                Row<byte[], HashHeightPair> row = dbreezeTransaction.Select<byte[], HashHeightPair>(CommonTableName, PrunedTipKey);
-                if (row.Exists)
-                    this.PrunedTip = row.Value;
-
-                dbreezeTransaction.ValuesLazyLoadingIsOn = true;
-            }
-
-            return this.PrunedTip;
-        }
-
-        /// <summary>
-        /// Compacts the block and transaction database by recreating the tables without the deleted references.
-        /// </summary>
-        private void CompactDataBase()
-        {
-            Task task = Task.Run(() =>
-            {
-                using (DBreeze.Transactions.Transaction dbreezeTransaction = this.DBreeze.GetTransaction())
-                {
-                    dbreezeTransaction.SynchronizeTables(BlockTableName, TransactionTableName);
-
-                    var tempBlocks = dbreezeTransaction.SelectDictionary<byte[], Block>(BlockTableName);
-
-                    if (tempBlocks.Count != 0)
-                    {
-                        this.logger.LogInformation($"{tempBlocks.Count} blocks will be copied to the pruned table.");
-
-                        dbreezeTransaction.RemoveAllKeys(BlockTableName, true);
-                        dbreezeTransaction.InsertDictionary(BlockTableName, tempBlocks, false);
-
-                        var tempTransactions = dbreezeTransaction.SelectDictionary<byte[], Block>(TransactionTableName);
-                        if (tempTransactions.Count != 0)
-                        {
-                            this.logger.LogInformation($"{tempTransactions.Count} transactions will be copied to the pruned table.");
-                            dbreezeTransaction.RemoveAllKeys(TransactionTableName, true);
-                            dbreezeTransaction.InsertDictionary(TransactionTableName, tempTransactions, false);
-                        }
-
-                        // Save the hash and height of where the node was pruned up to.
-                        dbreezeTransaction.Insert(CommonTableName, PrunedTipKey, this.PrunedTip);
-                    }
-
-                    dbreezeTransaction.Commit();
-                }
-
-                return Task.CompletedTask;
-            });
-        }
-
-        /// <inheritdoc />
-        public void UpdatePrunedTip(ChainedHeader tip)
-        {
-            this.PrunedTip = new HashHeightPair(tip);
         }
 
         /// <inheritdoc />
@@ -638,7 +477,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 dbreezeTransaction.RemoveKey<byte[]>(BlockTableName, block.GetHash().ToBytes());
         }
 
-        private List<Block> GetBlocksFromHashes(DBreeze.Transactions.Transaction dbreezeTransaction, List<uint256> hashes)
+        public List<Block> GetBlocksFromHashes(DBreeze.Transactions.Transaction dbreezeTransaction, List<uint256> hashes)
         {
             var results = new Dictionary<uint256, Block>();
 
@@ -701,10 +540,11 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables(BlockTableName, CommonTableName, TransactionTableName);
+                    transaction.SynchronizeTables(BlockRepository.BlockTableName, BlockRepository.CommonTableName, BlockRepository.TransactionTableName);
                     transaction.ValuesLazyLoadingIsOn = false;
 
                     List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
+
                     this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
 
                     transaction.Commit();

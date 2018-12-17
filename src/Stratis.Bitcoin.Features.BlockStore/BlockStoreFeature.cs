@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly ICheckpoints checkpoints;
 
-        private readonly IBlockRepository blockRepository;
+        private readonly IPrunedBlockRepository prunedBlockRepository;
 
         public BlockStoreFeature(
             Network network,
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             INodeStats nodeStats,
             IConsensusManager consensusManager,
             ICheckpoints checkpoints,
-            IBlockRepository blockRepository)
+            IPrunedBlockRepository prunedBlockRepository)
         {
             this.network = network;
             this.chain = chain;
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.chainState = chainState;
             this.consensusManager = consensusManager;
             this.checkpoints = checkpoints;
-            this.blockRepository = blockRepository;
+            this.prunedBlockRepository = prunedBlockRepository;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
@@ -101,7 +101,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.Prune)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.blockRepository.PruneDatabase(this.consensusManager.Tip, true).GetAwaiter().GetResult();
+                this.prunedBlockRepository.InitializeAsync(this.network).GetAwaiter().GetResult();
+                this.prunedBlockRepository.PruneDatabase(this.consensusManager.Tip, true).GetAwaiter().GetResult();
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
@@ -134,7 +135,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.Prune)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.blockRepository.PruneDatabase(this.consensusManager.Tip, false);
+                this.prunedBlockRepository.PruneDatabase(this.consensusManager.Tip, false);
             }
 
             this.logger.LogInformation("Stopping BlockStore.");

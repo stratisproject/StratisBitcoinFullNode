@@ -4,7 +4,6 @@ using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -528,7 +527,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private IBlockRepository SetupRepository(Network main, string dir)
         {
-            var repository = new BlockRepository(main, dir, this.LoggerFactory.Object, new StoreSettings(NodeSettings.Default(this.Network)));
+            var repository = new BlockRepository(main, dir, this.LoggerFactory.Object);
             repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;

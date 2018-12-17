@@ -2,7 +2,6 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -30,7 +29,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         [Fact]
         public void BlockRepositoryPutBatch()
         {
-            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), this.loggerFactory, new StoreSettings(NodeSettings.Default(this.network))))
+            using (var blockRepository = new BlockRepository(this.network, TestBase.CreateDataFolder(this), this.loggerFactory))
             {
                 blockRepository.SetTxIndexAsync(true).Wait();
 

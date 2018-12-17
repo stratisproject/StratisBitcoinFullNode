@@ -14,6 +14,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.LightWallet.Blocks;
 using Stratis.Bitcoin.Features.LightWallet.Broadcasting;
 using Stratis.Bitcoin.Features.Notifications;
@@ -231,6 +232,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<StandardTransactionPolicy>();
 
                         services.AddSingleton<ILightWalletBlockStoreService, LightWalletBlockStoreService>();
+                        services.AddSingleton<IPrunedBlockRepository, PrunedBlockRepository>();
                     });
             });
 
