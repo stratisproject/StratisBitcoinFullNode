@@ -25,26 +25,37 @@ namespace Stratis.BreezeD
 
                 NodeSettings nodeSettings;
 
+                IFullNodeBuilder fullNodeBuilder = null;
+
                 if (isStratis)
                 {
                     nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, agent: "Breeze", args: args)
                     {
                         MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
                     };
+
+                    fullNodeBuilder = new FullNodeBuilder()
+                                    .UseNodeSettings(nodeSettings)
+                                    .UseBlockStore()
+                                    .UsePosConsensus()
+                                    .UseLightWallet()
+                                    .UseBlockNotification()
+                                    .UseTransactionNotification()
+                                    .UseApi();
                 }
                 else
                 {
                     nodeSettings = new NodeSettings(networksSelector: Networks.Bitcoin, agent: "Breeze", args: args);
-                }
 
-                IFullNodeBuilder fullNodeBuilder = new FullNodeBuilder()
-                    .UseNodeSettings(nodeSettings)
-                    .UseBlockStore()
-                    .UsePosConsensus()
-                    .UseLightWallet()
-                    .UseBlockNotification()
-                    .UseTransactionNotification()
-                    .UseApi();
+                    fullNodeBuilder = new FullNodeBuilder()
+                                    .UseNodeSettings(nodeSettings)
+                                    .UseBlockStore()
+                                    .UsePowConsensus()
+                                    .UseLightWallet()
+                                    .UseBlockNotification()
+                                    .UseTransactionNotification()
+                                    .UseApi();
+                }
 
                 IFullNode node = fullNodeBuilder.Build();
 

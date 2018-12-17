@@ -22,11 +22,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Processes a new block.
         /// </summary>
+        /// <param name="block">The block to process.</param>
         void ProcessBlock(Block block);
 
         /// <summary>
         /// Processes a new transaction which is in a pending state (not included in a block).
         /// </summary>
+        /// <param name="transaction">The transaction to process.</param>
         void ProcessTransaction(Transaction transaction);
 
         /// <summary>

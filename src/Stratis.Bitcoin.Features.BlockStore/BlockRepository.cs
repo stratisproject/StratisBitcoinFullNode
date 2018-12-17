@@ -120,10 +120,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private static readonly byte[] TxIndexKey = new byte[1];
 
+        /// <inheritdoc />
         public HashHeightPair PrunedTip { get; private set; }
 
+        /// <inheritdoc />
         public HashHeightPair TipHashAndHeight { get; private set; }
 
+        /// <inheritdoc />
         public bool TxIndex { get; private set; }
 
         public BlockRepository(Network network, DataFolder dataFolder, ILoggerFactory loggerFactory, StoreSettings storeSettings)

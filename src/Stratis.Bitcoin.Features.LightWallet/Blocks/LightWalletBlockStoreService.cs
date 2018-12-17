@@ -9,6 +9,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.LightWallet.Blocks
 {
+    /// <inheritdoc/>
     public sealed class LightWalletBlockStoreService : ILightWalletBlockStoreService
     {
         private IAsyncLoop asyncLoop;
@@ -18,9 +19,11 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         private readonly ILogger logger;
         private readonly INodeLifetime nodeLifetime;
 
+        /// <inheritdoc/>
         public ChainedHeader PrunedUpToHeaderTip { get; private set; }
 
-        private const int MaxBlocksToKeep = 500;
+        /// <summary> The amount of blocks that the node will store on disk.</summary>
+        private const int MaxBlocksToKeep = 1000;
 
         public LightWalletBlockStoreService(
             IAsyncLoopFactory asyncLoopFactory,
@@ -34,9 +37,9 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
             this.consensusManager = consensusManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
-
         }
 
+        /// <inheritdoc/>
         public void Start()
         {
             this.PrunedUpToHeaderTip = this.consensusManager.Tip.GetAncestor(this.blockRepository.PrunedTip.Height);
@@ -50,7 +53,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         }
 
         /// <summary>
-        /// Deletes blocks continuously from the back of the store.
+        /// Delete blocks continuously from the back of the store.
         /// </summary>
         private async Task PruneBlocksAsync()
         {
