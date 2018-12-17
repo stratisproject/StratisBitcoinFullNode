@@ -30,13 +30,13 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
         public CoreNode CreateSidechainNode(Network network)
         {
-            string agentName = $"sidechain{Interlocked.Increment(ref agentCount)}";
+            string agentName = $"sideuser{Interlocked.Increment(ref agentCount)}";
             return this.CreateNode(new SidechainUserNodeRunner(this.GetNextDataFolderName(agentName), agentName, network), "poa.conf");
         }
 
         public CoreNode CreateSidechainFederationNode(Network network, Key key)
         {
-            string agentName = $"sidechain{Interlocked.Increment(ref agentCount)}";
+            string agentName = $"sidefed{Interlocked.Increment(ref agentCount)}";
             string dataFolder = this.GetNextDataFolderName(agentName);
             CoreNode node = this.CreateNode(new SidechainFederationNodeRunner(dataFolder, agentName, network), "poa.conf");
 
@@ -49,7 +49,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
         public CoreNode CreateMainChainFederationNode(Network network)
         {
-            string agentName = $"sidechain{Interlocked.Increment(ref agentCount)}";
+            string agentName = $"mainfed{Interlocked.Increment(ref agentCount)}";
             string dataFolder = this.GetNextDataFolderName(agentName);
             CoreNode node = this.CreateNode(new MainChainFederationNodeRunner(dataFolder, agentName, network), "stratis.conf");
 

@@ -15,68 +15,73 @@ namespace Stratis.FederatedPeg.IntegrationTests
     public class NodeSetupTests
     {
         [Fact]
-        public void NodeSetup()
-        {
-            using (SidechainTestContext context = new SidechainTestContext())
-            {
-                context.StartMainNodes();
-
-                context.MainUser.State.Should().Be(CoreNodeState.Running);
-                context.FedMain1.State.Should().Be(CoreNodeState.Running);
-                context.FedMain2.State.Should().Be(CoreNodeState.Running);
-                context.FedMain3.State.Should().Be(CoreNodeState.Running);
-
-                context.StartSideNodes();
-
-                context.SideUser.State.Should().Be(CoreNodeState.Running);
-                context.FedSide1.State.Should().Be(CoreNodeState.Running);
-                context.FedSide2.State.Should().Be(CoreNodeState.Running);
-                context.FedSide3.State.Should().Be(CoreNodeState.Running);
-            }
-        }
-
-        [Fact(Skip ="Sidechain nodes starting but can't execute endpoints when enabling wallets - make sure sidechains in TestBase are running as normal.")]
-        public void EnableNodeWallets()
+        public void StartBothChainsWithWallets()
         {
             using (SidechainTestContext context = new SidechainTestContext())
             {
                 context.StartAndConnectNodes();
 
-                List<CoreNode> nodesToStart = new List<CoreNode>{ context.FedMain1, context.FedMain2, context.FedMain3, context.FedSide1, context.FedSide2, context.FedSide3};
-
-                context.EnableWallets(nodesToStart);
+                context.EnableSideFedWallets();
+                context.EnableMainFedWallets();
             }
         }
 
         [Fact]
-        public void FundMainChainNode()
+        public void FundMainChain()
         {
             using (SidechainTestContext context = new SidechainTestContext())
             {
                 context.StartMainNodes();
                 context.ConnectMainChainNodes();
+                context.EnableMainFedWallets();
 
-                TestHelper.MineBlocks(context.MainUser, (int)context.MainChainNetwork.Consensus.CoinbaseMaturity + 1);
+                TestHelper.MineBlocks(context.MainUser, (int)context.MainChainNetwork.Consensus.CoinbaseMaturity + (int)context.MainChainNetwork.Consensus.PremineHeight);
                 TestHelper.WaitForNodeToSync(context.MainUser, context.FedMain1, context.FedMain2, context.FedMain3);
-
-                Assert.Equal(context.MainChainNetwork.Consensus.ProofOfWorkReward, context.GetBalance(context.MainUser));
+                Assert.True(context.GetBalance(context.MainUser) > context.MainChainNetwork.Consensus.PremineReward);
             }
         }
         
         [Fact]
-        public void Sidechain_Premine_Received()
+        public void FundSideChain()
         {
             using (SidechainTestContext context = new SidechainTestContext())
             {
-                context.StartSideNodes();
+                context.StartSideNodes(); 
                 context.ConnectSideChainNodes();
+                context.EnableSideFedWallets();
 
                 // Wait for node to reach premine height 
-                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height == context.SideUser.FullNode.Network.Consensus.PremineHeight);
-                TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1);
+                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= context.SideChainNetwork.Consensus.PremineHeight);
+                TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1, context.FedSide2, context.FedSide3);
 
                 // Ensure that coinbase contains premine reward and it goes to the fed.
-                Block block = context.SideUser.FullNode.Chain.Tip.Block;
+                Block block = context.SideUser.FullNode.Chain.GetBlock((int)context.SideChainNetwork.Consensus.PremineHeight).Block;
+                Transaction coinbase = block.Transactions[0];
+                Assert.Single(coinbase.Outputs);
+                Assert.Equal(context.SideChainNetwork.Consensus.PremineReward, coinbase.Outputs[0].Value);
+                Assert.Equal(context.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[0].ScriptPubKey);
+            }
+        }
+
+        [Fact(Skip = "Having issues with static serialization.")]
+        public void End_To_End()
+        {
+            using (SidechainTestContext context = new SidechainTestContext())
+            {
+                // Set everything up
+                context.StartAndConnectNodes();
+                context.EnableSideFedWallets();
+                context.EnableMainFedWallets();
+
+                // Fund a main chain node
+                TestHelper.MineBlocks(context.MainUser, (int)context.MainChainNetwork.Consensus.CoinbaseMaturity + (int)context.MainChainNetwork.Consensus.PremineHeight);
+                TestHelper.WaitForNodeToSync(context.MainUser, context.FedMain1, context.FedMain2, context.FedMain3);
+                Assert.True(context.GetBalance(context.MainUser) > context.MainChainNetwork.Consensus.PremineReward);
+
+                // Let sidechain progress to point where fed has the premine
+                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= context.SideUser.FullNode.Network.Consensus.PremineHeight);
+                TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1, context.FedSide2, context.FedSide3);
+                Block block = context.SideUser.FullNode.Chain.GetBlock((int) context.SideChainNetwork.Consensus.PremineHeight).Block;
                 Transaction coinbase = block.Transactions[0];
                 Assert.Single(coinbase.Outputs);
                 Assert.Equal(context.SideChainNetwork.Consensus.PremineReward, coinbase.Outputs[0].Value);
