@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly ILogger logger;
 
-        protected readonly Network network;
+        private readonly Network network;
 
         private static readonly byte[] RepositoryTipKey = new byte[0];
 
