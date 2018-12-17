@@ -40,17 +40,17 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 Assert.True(context.GetBalance(context.MainUser) > context.MainChainNetwork.Consensus.PremineReward);
             }
         }
-        
+
         [Fact]
         public void FundSideChain()
         {
             using (SidechainTestContext context = new SidechainTestContext())
             {
-                context.StartSideNodes(); 
+                context.StartSideNodes();
                 context.ConnectSideChainNodes();
                 context.EnableSideFedWallets();
 
-                // Wait for node to reach premine height 
+                // Wait for node to reach premine height
                 TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= context.SideChainNetwork.Consensus.PremineHeight);
                 TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1, context.FedSide2, context.FedSide3);
 
