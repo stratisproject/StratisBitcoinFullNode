@@ -1,21 +1,24 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Base
 {
     public class ChainRepositoryTest : TestBase
     {
+        private readonly DBreezeSerializer dBreezeSerializer;
+
         public ChainRepositoryTest() : base(KnownNetworks.StratisRegTest)
         {
+            this.dBreezeSerializer = new DBreezeSerializer();
+            this.dBreezeSerializer.Initialize(this.Network);
         }
 
         [Fact]
@@ -25,7 +28,7 @@ namespace Stratis.Bitcoin.Tests.Base
             var chain = new ConcurrentChain(KnownNetworks.StratisRegTest);
             this.AppendBlock(chain);
 
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            using (var repo = new ChainRepository(dir, new LoggerFactory(), this.dBreezeSerializer))
             {
                 repo.SaveAsync(chain).GetAwaiter().GetResult();
             }
@@ -70,7 +73,7 @@ namespace Stratis.Bitcoin.Tests.Base
                     transaction.Commit();
                 }
             }
-            using (var repo = new ChainRepository(dir, new LoggerFactory()))
+            using (var repo = new ChainRepository(dir, new LoggerFactory(), this.dBreezeSerializer))
             {
                 var testChain = new ConcurrentChain(KnownNetworks.StratisRegTest);
                 testChain.SetTip(repo.LoadAsync(testChain.Genesis).GetAwaiter().GetResult());

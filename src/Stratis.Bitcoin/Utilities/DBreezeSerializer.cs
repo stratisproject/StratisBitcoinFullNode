@@ -19,8 +19,8 @@ namespace Stratis.Bitcoin.Utilities
         public void Initialize(Network network)
         {
             this.Network = network;
-            CustomSerializator.ByteArraySerializator = this.Serializer;
-            CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
+            //CustomSerializator.ByteArraySerializator = this.Serializer;
+            //CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
         }
 
         /// <summary>
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
-        internal byte[] Serializer(object obj)
+        public byte[] Serializer(object obj)
         {
             var serializable = obj as IBitcoinSerializable;
             if (serializable != null)
@@ -83,13 +83,18 @@ namespace Stratis.Bitcoin.Utilities
             return res;
         }
 
+        public T Deserializer<T>(byte[] bytes)
+        {
+            return (T) this.Deserializer(bytes, typeof(T));
+        }
+
         /// <summary>
         /// Deserializes binary data to an object of specific type.
         /// </summary>
         /// <param name="bytes">Binary data representing a serialized object.</param>
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
-        internal object Deserializer(byte[] bytes, Type type)
+        public object Deserializer(byte[] bytes, Type type)
         {
             if (type == typeof(Coins))
             {
