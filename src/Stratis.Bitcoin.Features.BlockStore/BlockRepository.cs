@@ -68,7 +68,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="txIndex">Whether to index transactions.</param>
         Task SetTxIndexAsync(bool txIndex);
 
-        /// <summary>Hash and height indicating where the node's block store has been pruned up to.</summary>
+        /// <summary> 
+        /// The lowest block height that the repository has.
+        /// <para>
+        /// This also indicated where the node has been pruned up to.
+        /// </para>
+        /// </summary>
         HashHeightPair PrunedTip { get; }
 
         /// <summary>
@@ -100,9 +105,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const string BlockTableName = "Block";
 
         private const string CommonTableName = "Common";
-
-        /// <summary> The amount of blocks to keep from the block store's tip.</summary>
-        private const int PruneBlockMargin = 1000;
 
         private const string TransactionTableName = "Transaction";
 
@@ -210,7 +212,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private bool IsDatabasePruned()
         {
-            if (this.TipHashAndHeight.Height <= this.PrunedTip.Height + PruneBlockMargin)
+            if (this.TipHashAndHeight.Height <= this.PrunedTip.Height + this.storeSettings.PruneBlockMargin)
             {
                 this.logger.LogDebug("(-):true");
                 return true;
@@ -228,12 +230,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="consensusTip">The last fully validated block of the node.</param>
         private async Task PrepareDatabaseForPruningAsync(ChainedHeader consensusTip)
         {
-            var upperHeight = this.TipHashAndHeight.Height - PruneBlockMargin;
+            int upperHeight = this.TipHashAndHeight.Height - this.storeSettings.PruneBlockMargin;
 
             var toDelete = new List<ChainedHeader>();
 
-            var startFromHeader = consensusTip.GetAncestor(upperHeight);
-            var endAtHeader = consensusTip.GetAncestor(this.PrunedTip.Height);
+            ChainedHeader startFromHeader = consensusTip.GetAncestor(upperHeight);
+            ChainedHeader endAtHeader = consensusTip.GetAncestor(this.PrunedTip.Height);
 
             this.logger.LogInformation($"Pruning blocks from height {upperHeight} to {endAtHeader.Height}.");
 

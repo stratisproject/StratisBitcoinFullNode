@@ -18,25 +18,25 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         private readonly IConsensusManager consensusManager;
         private readonly ILogger logger;
         private readonly INodeLifetime nodeLifetime;
+        private readonly StoreSettings storeSettings;
 
         /// <inheritdoc/>
         public ChainedHeader PrunedUpToHeaderTip { get; private set; }
-
-        /// <summary> The amount of blocks that the node will store on disk.</summary>
-        private const int MaxBlocksToKeep = 1000;
 
         public LightWalletBlockStoreService(
             IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             IConsensusManager consensusManager,
             ILoggerFactory loggerFactory,
-            INodeLifetime nodeLifetime)
+            INodeLifetime nodeLifetime,
+            StoreSettings storeSettings)
         {
             this.asyncLoopFactory = asyncLoopFactory;
             this.blockRepository = blockRepository;
             this.consensusManager = consensusManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.nodeLifetime = nodeLifetime;
+            this.storeSettings = storeSettings;
         }
 
         /// <inheritdoc/>
@@ -57,16 +57,16 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// </summary>
         private async Task PruneBlocksAsync()
         {
-            if (this.blockRepository.TipHashAndHeight.Height < MaxBlocksToKeep)
+            if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.PruneBlockMargin)
                 return;
 
             if (this.blockRepository.TipHashAndHeight.Height == (this.PrunedUpToHeaderTip?.Height ?? 0))
                 return;
 
-            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + MaxBlocksToKeep))
+            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + this.storeSettings.PruneBlockMargin))
                 return;
 
-            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - MaxBlocksToKeep;
+            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.PruneBlockMargin;
             ChainedHeader startFrom = this.consensusManager.Tip.GetAncestor(heightToPruneFrom);
             if (this.PrunedUpToHeaderTip != null && startFrom == this.PrunedUpToHeaderTip)
                 return;
