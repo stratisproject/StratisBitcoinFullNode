@@ -35,11 +35,13 @@ namespace Stratis.Bitcoin.Tests.Base
             using (var engine = new DBreezeEngine(dir))
             {
                 ChainedHeader tip = null;
-                foreach (Row<int, BlockHeader> row in engine.GetTransaction().SelectForward<int, BlockHeader>("Chain"))
+                foreach (Row<int, byte[]> row in engine.GetTransaction().SelectForward<int, byte[]>("Chain"))
                 {
-                    if (tip != null && row.Value.HashPrevBlock != tip.HashBlock)
+                    var blockHeader = this.dBreezeSerializer.Deserialize<BlockHeader>(row.Value);
+
+                    if (tip != null && blockHeader.HashPrevBlock != tip.HashBlock)
                         break;
-                    tip = new ChainedHeader(row.Value, row.Value.GetHash(), tip);
+                    tip = new ChainedHeader(blockHeader, blockHeader.GetHash(), tip);
                 }
                 Assert.Equal(tip, chain.Tip);
             }
@@ -66,7 +68,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
                     foreach (ChainedHeader block in blocks)
                     {
-                        transaction.Insert<int, BlockHeader>("Chain", block.Height, block.Header);
+                        transaction.Insert("Chain", block.Height, this.dBreezeSerializer.Serialize(block.Header));
                     }
 
                     transaction.Commit();

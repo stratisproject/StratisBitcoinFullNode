@@ -5,12 +5,14 @@ using System.Linq;
 using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Common
 {
     public class TestBase
     {
         public Network Network { get; protected set; }
+        public DBreezeSerializer DBreezeSerializer { get; }
 
         /// <summary>
         /// Initializes logger factory for inherited tests.
@@ -18,6 +20,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
+            this.DBreezeSerializer = new DBreezeSerializer(network);
         }
 
         public static string AssureEmptyDir(string dir)
