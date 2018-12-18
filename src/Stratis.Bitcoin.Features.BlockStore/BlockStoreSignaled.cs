@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 return;
             }
 
-            if (this.storeSettings.Prune != 0)
+            if (this.storeSettings.PruningEnabled)
             {
                 this.logger.LogTrace("(-)[PRUNE]");
                 return;

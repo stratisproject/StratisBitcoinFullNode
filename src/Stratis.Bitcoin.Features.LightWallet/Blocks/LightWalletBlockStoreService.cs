@@ -61,16 +61,16 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// <returns>The awaited task.</returns>
         private async Task PruneBlocksAsync()
         {
-            if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.Prune)
+            if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.AmountOfBlocksToKeep)
                 return;
 
             if (this.blockRepository.TipHashAndHeight.Height == (this.PrunedUpToHeaderTip?.Height ?? 0))
                 return;
 
-            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + this.storeSettings.Prune))
+            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + this.storeSettings.AmountOfBlocksToKeep))
                 return;
 
-            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.Prune;
+            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.AmountOfBlocksToKeep;
             ChainedHeader startFrom = this.chainState.BlockStoreTip.GetAncestor(heightToPruneFrom);
             if (startFrom == null)
             {

@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (highestBlock != null)
             {
-                if (this.storeSettings.Prune == 0)
+                if (!this.storeSettings.PruningEnabled)
                 {
                     var builder = new StringBuilder();
                     builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8));
@@ -100,13 +100,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             this.prunedBlockRepository.InitializeAsync().GetAwaiter().GetResult();
 
-            if (this.storeSettings.Prune == 0 && this.prunedBlockRepository.PrunedTip != null)
+            if (!this.storeSettings.PruningEnabled && this.prunedBlockRepository.PrunedTip != null)
                 throw new BlockStoreException("The node cannot start as it has been previously pruned, please clear the data folders and resync.");
 
-            if (this.storeSettings.Prune != 0)
+            if (this.storeSettings.PruningEnabled)
             {
-                if (this.storeSettings.Prune < this.network.Consensus.MaxReorgLength)
-                    throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.Prune}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
+                if (this.storeSettings.AmountOfBlocksToKeep < this.network.Consensus.MaxReorgLength)
+                    throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.AmountOfBlocksToKeep}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
 
                 this.logger.LogInformation("Pruning BlockStore...");
                 this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, this.network, true).GetAwaiter().GetResult();
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // Signal to peers that this node can serve blocks.
-            this.connectionManager.Parameters.Services = (this.storeSettings.Prune != 0 ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
+            this.connectionManager.Parameters.Services = (this.storeSettings.PruningEnabled ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
 
             // Temporary measure to support asking witness data on BTC.
             // At some point NetworkPeerServices will move to the Network class,
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc />
         public override void Dispose()
         {
-            if (this.storeSettings.Prune != 0)
+            if (this.storeSettings.PruningEnabled)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
                 this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, this.network, false);

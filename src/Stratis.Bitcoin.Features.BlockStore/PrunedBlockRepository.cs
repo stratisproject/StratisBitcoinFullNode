@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private bool IsDatabasePruned()
         {
-            if (this.blockRepository.TipHashAndHeight.Height <= this.PrunedTip.Height + this.storeSettings.Prune)
+            if (this.blockRepository.TipHashAndHeight.Height <= this.PrunedTip.Height + this.storeSettings.AmountOfBlocksToKeep)
             {
                 this.logger.LogDebug("(-):true");
                 return true;
@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <returns>The awaited task.</returns>
         private async Task PrepareDatabaseForCompactingAsync(ChainedHeader blockRepositoryTip)
         {
-            int upperHeight = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.Prune;
+            int upperHeight = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.AmountOfBlocksToKeep;
 
             var toDelete = new List<ChainedHeader>();
 
