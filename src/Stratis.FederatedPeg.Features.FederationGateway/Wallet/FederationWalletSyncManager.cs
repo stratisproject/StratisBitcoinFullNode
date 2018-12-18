@@ -19,7 +19,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         protected readonly ConcurrentChain chain;
 
         protected readonly CoinType coinType;
-        
+
         private readonly ILogger logger;
 
         private readonly IBlockStore blockStore;
@@ -212,7 +212,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         public virtual void ProcessTransaction(Transaction transaction)
         {
             Guard.NotNull(transaction, nameof(transaction));
-            
+
             this.walletManager.ProcessTransaction(transaction);
         }
 
