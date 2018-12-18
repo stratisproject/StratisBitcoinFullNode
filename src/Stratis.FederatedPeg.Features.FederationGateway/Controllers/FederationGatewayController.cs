@@ -18,8 +18,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
     public static class FederationGatewayRouteEndPoint
     {
-        public const string PushMaturedBlocks = "push_matured_blocks";
+        // TODO do we have push mechanism for the block tip? Remove it. We only need pull mechanism. And I hope we don't have push and pull implemented at the same time
         public const string PushCurrentBlockTip = "push_current_block_tip";
+
         public const string GetMaturedBlockDeposits = "get_matured_block_deposits";
         public const string GetInfo = "info";
     }
@@ -35,8 +36,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         private readonly Network network;
 
-        private readonly IMaturedBlockReceiver maturedBlockReceiver;
-
         private readonly ILeaderProvider leaderProvider;
 
         private readonly IMaturedBlocksProvider maturedBlocksProvider;
@@ -48,11 +47,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         private readonly IFederationWalletManager federationWalletManager;
 
         private readonly FederationManager federationManager;
-        
+
         public FederationGatewayController(
             ILoggerFactory loggerFactory,
             Network network,
-            IMaturedBlockReceiver maturedBlockReceiver,
             ILeaderProvider leaderProvider,
             IMaturedBlocksProvider maturedBlocksProvider,
             ILeaderReceiver leaderReceiver,
@@ -62,20 +60,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.maturedBlockReceiver = maturedBlockReceiver;
             this.leaderProvider = leaderProvider;
             this.maturedBlocksProvider = maturedBlocksProvider;
             this.leaderReceiver = leaderReceiver;
             this.federationGatewaySettings = federationGatewaySettings;
             this.federationWalletManager = federationWalletManager;
             this.federationManager = federationManager;
-        }
-
-        [Route(FederationGatewayRouteEndPoint.PushMaturedBlocks)]
-        [HttpPost]
-        public void PushMaturedBlock([FromBody] MaturedBlockDepositsModel maturedBlockDeposits)
-        {
-            this.maturedBlockReceiver.PushMaturedBlockDeposits(new[] { maturedBlockDeposits });
         }
 
         /// <summary>Pushes the current block tip to be used for updating the federated leader in a round robin fashion.</summary>
@@ -126,7 +116,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                List<IMaturedBlockDeposits> deposits = await this.maturedBlocksProvider.GetMaturedDepositsAsync(
+                List<MaturedBlockDepositsModel> deposits = await this.maturedBlocksProvider.GetMaturedDepositsAsync(
                     blockRequest.BlockHeight, blockRequest.MaxBlocksToSend).ConfigureAwait(false);
 
                 return this.Json(deposits);

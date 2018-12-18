@@ -14,7 +14,7 @@ namespace Stratis.FederatedPeg.Tests
             var maturedBlockDeposits = new MaturedBlockRequestModel(TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
             string asJson = maturedBlockDeposits.ToString();
 
-            var reconverted = JsonConvert.DeserializeObject<MaturedBlockRequestModel>(asJson);
+            MaturedBlockRequestModel reconverted = JsonConvert.DeserializeObject<MaturedBlockRequestModel>(asJson);
 
             reconverted.BlockHeight.Should().Be(maturedBlockDeposits.BlockHeight);
             reconverted.MaxBlocksToSend.Should().Be(maturedBlockDeposits.MaxBlocksToSend);

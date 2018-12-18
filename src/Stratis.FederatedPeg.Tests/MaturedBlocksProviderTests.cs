@@ -3,11 +3,13 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
+using NSubstitute.Extensions;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Xunit;
 
@@ -57,18 +59,13 @@ namespace Stratis.FederatedPeg.Tests
 
             this.blockRepository.GetBlocksAsync(Arg.Any<List<uint256>>()).Returns(blocks);
 
+            this.depositExtractor.ExtractBlockDeposits(null).ReturnsForAnyArgs(new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>()));
+
             var maturedBlocksProvider = new MaturedBlocksProvider(this.loggerFactory, this.chain, this.depositExtractor, this.blockRepository, this.consensusManager);
 
-            List<IMaturedBlockDeposits> deposits = maturedBlocksProvider.GetMaturedDepositsAsync(0, 10).GetAwaiter().GetResult();
+            List<MaturedBlockDepositsModel> deposits = maturedBlocksProvider.GetMaturedDepositsAsync(0, 10).GetAwaiter().GetResult();
 
             Assert.Equal(10, deposits.Count);
-        }
-
-        private ChainedHeaderBlock ChainHeaderBlockBuilder(int height = 0, uint256 previous = null)
-        {
-            ChainedHeader chainedHeader = ChainedHeaderBuilder(height);
-
-            return new ChainedHeaderBlock(chainedHeader.Block, chainedHeader);
         }
 
         private ChainedHeader ChainedHeaderBuilder(int height, uint256 previous = null)

@@ -35,8 +35,6 @@ namespace Stratis.FederatedPeg.Tests
 
         private readonly ILogger logger;
 
-        private readonly IMaturedBlockReceiver maturedBlockReceiver;
-
         private readonly ILeaderProvider leaderProvider;
 
         private ConcurrentChain chain;
@@ -60,7 +58,6 @@ namespace Stratis.FederatedPeg.Tests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
-            this.maturedBlockReceiver = Substitute.For<IMaturedBlockReceiver>();
             this.leaderProvider = Substitute.For<ILeaderProvider>();
             this.depositExtractor = Substitute.For<IDepositExtractor>();
             this.leaderReceiver = Substitute.For<ILeaderReceiver>();
@@ -76,7 +73,6 @@ namespace Stratis.FederatedPeg.Tests
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.network,
-                this.maturedBlockReceiver,
                 this.leaderProvider,
                 this.GetMaturedBlocksProvider(),
                 this.leaderReceiver,
@@ -227,27 +223,6 @@ namespace Stratis.FederatedPeg.Tests
         }
 
         [Fact]
-        public void ReceiveMaturedBlock_Should_Call_ReceivedMatureBlockDeposits()
-        {
-            FederationGatewayController controller = this.CreateController();
-
-            HashHeightPair hashHeightPair = TestingValues.GetHashHeightPair();
-            var deposits = new MaturedBlockDepositsModel(new MaturedBlockInfoModel()
-                { BlockHash = hashHeightPair.Hash, BlockHeight = hashHeightPair.Height },
-                new[] { new Deposit(0, Money.COIN * 10000, "TTMM7qGGxD5c77pJ8puBg7sTLAm2zZNBwK",
-                    hashHeightPair.Height, hashHeightPair.Hash) });
-
-            int callCount = 0;
-            this.maturedBlockReceiver.When(x => x.PushMaturedBlockDeposits(Arg.Any<IMaturedBlockDeposits[]>())).Do(info =>
-            {
-                callCount++;
-            });
-
-            controller.PushMaturedBlock(deposits);
-            callCount.Should().Be(1);
-        }
-
-        [Fact]
         public void Call_Sidechain_Gateway_Get_Info()
         {
             string redeemScript = "2 02fad5f3c4fdf4c22e8be4cfda47882fff89aaa0a48c1ccad7fa80dc5fee9ccec3 02503f03243d41c141172465caca2f5cef7524f149e965483be7ce4e44107d7d35 03be943c3a31359cd8e67bedb7122a0898d2c204cf2d0119e923ded58c429ef97c 3 OP_CHECKMULTISIG";
@@ -263,7 +238,6 @@ namespace Stratis.FederatedPeg.Tests
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.network,
-                this.maturedBlockReceiver,
                 this.leaderProvider,
                 this.GetMaturedBlocksProvider(),
                 this.leaderReceiver,
@@ -303,7 +277,6 @@ namespace Stratis.FederatedPeg.Tests
             var controller = new FederationGatewayController(
                 this.loggerFactory,
                 this.network,
-                this.maturedBlockReceiver,
                 this.leaderProvider,
                 this.GetMaturedBlocksProvider(),
                 this.leaderReceiver,

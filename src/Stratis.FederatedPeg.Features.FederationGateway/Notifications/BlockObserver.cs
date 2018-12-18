@@ -79,14 +79,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
                 chainedHeaderBlock.ChainedHeader.Height);
 
             this.withdrawalReceiver.ReceiveWithdrawals(withdrawals);
-
-            IMaturedBlockDeposits maturedBlockDeposits = this.maturedBlocksProvider.ExtractMaturedBlockDeposits(chainedHeaderBlock.ChainedHeader);
-
-            if (maturedBlockDeposits == null)
-                return;
-
-            // TODO remove this ugly cast: (MaturedBlockDepositsModel)maturedBlockDeposits
-            this.federationGatewayClient.PushMaturedBlockAsync((MaturedBlockDepositsModel)maturedBlockDeposits).ConfigureAwait(false).GetAwaiter().GetResult();
         }
     }
 }

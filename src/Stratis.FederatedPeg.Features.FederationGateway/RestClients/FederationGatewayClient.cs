@@ -10,9 +10,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
     /// <summary>Rest client for <see cref="FederationGatewayController"/>.</summary>
     public interface IFederationGatewayClient
     {
-        /// <summary><see cref="FederationGatewayController.PushMaturedBlock"/></summary>
-        Task PushMaturedBlockAsync(MaturedBlockDepositsModel model);
-
         /// <summary><see cref="FederationGatewayController.PushCurrentBlockTip"/></summary>
         Task PushCurrentBlockTipAsync(BlockTipModel model);
 
@@ -26,12 +23,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
         public FederationGatewayClient(ILoggerFactory loggerFactory, IFederationGatewaySettings settings, IHttpClientFactory httpClientFactory)
             : base(loggerFactory, settings, httpClientFactory)
         {
-        }
-
-        /// <inheritdoc />
-        public Task PushMaturedBlockAsync(MaturedBlockDepositsModel model)
-        {
-            return this.SendPostRequestAsync(model, FederationGatewayRouteEndPoint.PushMaturedBlocks);
         }
 
         /// <inheritdoc />

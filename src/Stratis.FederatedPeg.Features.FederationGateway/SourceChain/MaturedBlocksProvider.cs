@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 {
@@ -68,7 +69,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
         }
 
         /// <inheritdoc />
-        public async Task<List<IMaturedBlockDeposits>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
+        public async Task<List<MaturedBlockDepositsModel>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
         {
             int matureHeight = (this.chain.Tip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
 
@@ -84,17 +85,17 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
                 throw new InvalidOperationException($"Block with height {blockHeight} was not found on the block chain.");
             }
 
-            var maturedBlocks = new List<IMaturedBlockDeposits>();
+            var maturedBlocks = new List<MaturedBlockDepositsModel>();
 
             for (int index = 0; index < chainedHeaders.Count; index++)
             {
                 // TODO: ChainedHeaderBlock should be called from consensus manager.
-                IMaturedBlockDeposits maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(new ChainedHeaderBlock(chainedHeaders[index].Block, chainedHeaders[index]));
+                ChainedHeader currentHeader = chainedHeaders[index];
+
+                MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(new ChainedHeaderBlock(currentHeader.Block, currentHeader));
 
                 if (maturedBlockDeposits == null)
-                {
-                    throw new InvalidOperationException($"Unable to get deposits for block at height {chainedHeaders[index].Height}");
-                }
+                    throw new InvalidOperationException($"Unable to get deposits for block at height {currentHeader.Height}");
 
                 maturedBlocks.Add(maturedBlockDeposits);
             }
@@ -122,7 +123,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
         }
 
         /// <inheritdoc />
-        public IMaturedBlockDeposits ExtractMaturedBlockDeposits(ChainedHeader chainedHeader)
+        public MaturedBlockDepositsModel ExtractMaturedBlockDeposits(ChainedHeader chainedHeader)
         {
             return this.depositExtractor.ExtractBlockDeposits(this.GetNewlyMaturedBlock(chainedHeader));
         }

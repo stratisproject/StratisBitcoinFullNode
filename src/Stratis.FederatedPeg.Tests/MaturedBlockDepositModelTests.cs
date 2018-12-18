@@ -13,7 +13,7 @@ namespace Stratis.FederatedPeg.Tests
         [Fact]
         public void ShouldSerialiseAsJson()
         {
-            IMaturedBlockDeposits maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits(3);
+            MaturedBlockDepositsModel maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits(3);
             string asJson = maturedBlockDeposits.ToString();
 
             var reconverted = JsonConvert.DeserializeObject<MaturedBlockDepositsModel>(asJson);
