@@ -83,3 +83,5 @@ dotnet nuget push "src\Stratis.Bitcoin.Features.PoA.IntegrationTests.Common\bin\
 rm "src\FodyNlogAdapter\bin\debug\" -Recurse -Force
 dotnet pack src\FodyNlogAdapter --configuration Debug --include-source --include-symbols 
 dotnet nuget push "src\FodyNlogAdapter\bin\debug\*.symbols.nupkg" --source "https://api.nuget.org/v3/index.json"
+
+PAUSE
