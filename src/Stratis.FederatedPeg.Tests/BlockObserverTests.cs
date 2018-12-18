@@ -80,9 +80,7 @@ namespace Stratis.FederatedPeg.Tests
 
             this.maturedBlocksProvider = new MaturedBlocksProvider(
                 this.loggerFactory,
-                this.chain,
                 this.depositExtractor,
-                Substitute.For<IBlockRepository>(),
                 this.consensusManager);
 
             this.blockObserver = new BlockObserver(
@@ -90,8 +88,7 @@ namespace Stratis.FederatedPeg.Tests
                 this.depositExtractor,
                 this.withdrawalExtractor,
                 this.withdrawalReceiver,
-                this.federationGatewayClient,
-                this.maturedBlocksProvider);
+                this.federationGatewayClient);
         }
 
         [Fact]

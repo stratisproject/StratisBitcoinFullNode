@@ -1,98 +1,64 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Primitives;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 {
+    public interface IMaturedBlocksProvider
+    {
+        /// <summary>
+        /// Retrieves deposits for the indicated blocks from the block repository and throws an error if the blocks are not mature enough.
+        /// </summary>
+        /// <param name="blockHeight">The block height at which to start retrieving blocks.</param>
+        /// <param name="maxBlocks">The number of blocks to retrieve.</param>
+        /// <returns>A list of mature block deposits.</returns>
+        /// <exception cref="InvalidOperationException">Thrown if the blocks are not mature or not found.</exception>
+        Task<List<MaturedBlockDepositsModel>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks);
+    }
+
     public class MaturedBlocksProvider : IMaturedBlocksProvider
     {
-        private readonly ConcurrentChain chain;
         private readonly IDepositExtractor depositExtractor;
-        private readonly IBlockRepository blockRepository;
+
         private readonly IConsensusManager consensusManager;
 
-        public MaturedBlocksProvider(ILoggerFactory loggerFactory,
-            ConcurrentChain chain, IDepositExtractor depositExtractor, IBlockRepository blockRepository, IConsensusManager consensusManager)
+        private readonly ILogger logger;
+
+        public MaturedBlocksProvider(ILoggerFactory loggerFactory, IDepositExtractor depositExtractor, IConsensusManager consensusManager)
         {
-            this.chain = chain;
             this.depositExtractor = depositExtractor;
-            this.blockRepository = blockRepository;
             this.consensusManager = consensusManager;
-        }
 
-        /// <summary>
-        /// Gets all the available chained headers starting at the specified block height up to a maximum number of headers.
-        /// </summary>
-        /// <param name="blockHeight">The block height at which to start.</param>
-        /// <param name="maxHeaders">The maximum number of headers to get.</param>
-        /// <returns>All the available chained headers starting at the specified block height up to the maximum number of headers.</returns>
-        private async Task<List<ChainedHeader>> GetChainedHeadersAsync(int blockHeight, int maxHeaders)
-        {
-            // Pre-load the block data
-            var blockHashes = new List<uint256>();
-            var chainedHeaders = new List<ChainedHeader>();
-            for (; blockHeight <= this.chain.Tip.Height; blockHeight++)
-            {
-                if (maxHeaders-- <= 0)
-                    break;
-
-                ChainedHeader chainedHeader = this.chain.GetBlock(blockHeight);
-
-                if (chainedHeader == null)
-                    break;
-
-                chainedHeaders.Add(chainedHeader);
-                blockHashes.Add(chainedHeader.HashBlock);
-            }
-
-            // // TODO: this should be called from consensus manager.GetBlockData().
-            List<Block> blocks = await this.blockRepository.GetBlocksAsync(blockHashes).ConfigureAwait(false);
-            for (int index = 0; index < blockHashes.Count; index++)
-            {
-                if (blocks[index] == null)
-                {
-                    return chainedHeaders.GetRange(0, index).ToList();
-                }
-
-                chainedHeaders[index].Block = blocks[index];
-            }
-
-            return chainedHeaders;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
         public async Task<List<MaturedBlockDepositsModel>> GetMaturedDepositsAsync(int blockHeight, int maxBlocks)
         {
-            int matureHeight = (this.chain.Tip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
+            ChainedHeader consensusTip = this.consensusManager.Tip;
 
-            if (blockHeight > matureHeight)
+            int matureTipHeight = (consensusTip.Height - (int)this.depositExtractor.MinimumDepositConfirmations);
+
+            if (blockHeight > matureTipHeight)
             {
-                throw new InvalidOperationException($"Block height {blockHeight} submitted is not mature enough. Blocks less than a height of {matureHeight} can be processed.");
-            }
-
-            List<ChainedHeader> chainedHeaders = await this.GetChainedHeadersAsync(blockHeight, Math.Min(maxBlocks, matureHeight - blockHeight + 1));
-
-            if (chainedHeaders.Count == 0)
-            {
-                throw new InvalidOperationException($"Block with height {blockHeight} was not found on the block chain.");
+                throw new InvalidOperationException($"Block height {blockHeight} submitted is not mature enough. Blocks less than a height of {matureTipHeight} can be processed.");
             }
 
             var maturedBlocks = new List<MaturedBlockDepositsModel>();
 
-            for (int index = 0; index < chainedHeaders.Count; index++)
+            for (int i = blockHeight; (i <= matureTipHeight) && (i < blockHeight + maxBlocks); i++)
             {
-                // TODO: ChainedHeaderBlock should be called from consensus manager.
-                ChainedHeader currentHeader = chainedHeaders[index];
+                ChainedHeader currentHeader = consensusTip.GetAncestor(i);
 
-                MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(new ChainedHeaderBlock(currentHeader.Block, currentHeader));
+                ChainedHeaderBlock block = await this.consensusManager.GetBlockDataAsync(currentHeader.HashBlock).ConfigureAwait(false);
+
+                MaturedBlockDepositsModel maturedBlockDeposits = this.depositExtractor.ExtractBlockDeposits(block);
 
                 if (maturedBlockDeposits == null)
                     throw new InvalidOperationException($"Unable to get deposits for block at height {currentHeader.Height}");
@@ -101,31 +67,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
             }
 
             return maturedBlocks;
-        }
-
-        private ChainedHeaderBlock GetNewlyMaturedBlock(ChainedHeader chainedHeader)
-        {
-            int newMaturedHeight = chainedHeader.Height - (int)this.depositExtractor.MinimumDepositConfirmations;
-
-            if (newMaturedHeight < 0) return null;
-
-            // This is not so correct we should be walking back the chained header tree.
-            ChainedHeader newMaturedBlock = this.chain.GetBlock(newMaturedHeight);
-
-            ChainedHeaderBlock chainedHeaderBlock = this.consensusManager.GetBlockDataAsync(newMaturedBlock.HashBlock).GetAwaiter().GetResult();
-
-            if (chainedHeaderBlock?.Block == null)
-            {
-                throw new InvalidOperationException($"Block was not found in store {chainedHeader}");
-            }
-
-            return chainedHeaderBlock;
-        }
-
-        /// <inheritdoc />
-        public MaturedBlockDepositsModel ExtractMaturedBlockDeposits(ChainedHeader chainedHeader)
-        {
-            return this.depositExtractor.ExtractBlockDeposits(this.GetNewlyMaturedBlock(chainedHeader));
         }
     }
 }
