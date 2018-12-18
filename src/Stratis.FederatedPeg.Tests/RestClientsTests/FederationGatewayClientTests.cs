@@ -46,30 +46,8 @@ namespace Stratis.FederatedPeg.Tests.RestClientsTests
         }
 
         [Fact]
-        public async Task PushMaturedBlockAsync_Should_Be_Able_To_Send_IMaturedBlockDepositsAsync()
-        {
-            IMaturedBlockDeposits maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
-
-            await this.createClient().PushMaturedBlockAsync((MaturedBlockDepositsModel)maturedBlockDeposits).ConfigureAwait(false);
-
-            this.logger.Received(0).Log<object>(LogLevel.Error, 0, Arg.Any<object>(), Arg.Any<Exception>(), Arg.Any<Func<object, Exception, string>>());
-        }
-
-        [Fact]
-        public async Task PushMaturedBlockAsync_Should_Log_Error_When_Failing_To_Send_MaturedBlockDepositAsync()
-        {
-            IMaturedBlockDeposits maturedBlockDeposits = TestingValues.GetMaturedBlockDeposits();
-
-            await this.createClient(true).PushMaturedBlockAsync((MaturedBlockDepositsModel)maturedBlockDeposits).ConfigureAwait(false);
-
-            this.logger.Received(1).Log<object>(LogLevel.Error, 0, Arg.Any<object>(), Arg.Is<Exception>(e => e == null), Arg.Any<Func<object, Exception, string>>());
-        }
-
-
-        [Fact]
         public async Task SendBlockTip_Should_Be_Able_To_Send_IBlockTipAsync()
         {
-
             var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
 
             await this.createClient().PushCurrentBlockTipAsync(blockTip).ConfigureAwait(false);
