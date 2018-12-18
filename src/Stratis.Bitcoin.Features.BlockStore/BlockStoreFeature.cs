@@ -123,6 +123,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
 
             // Signal to peers that this node can serve blocks.
+            // TODO: Add NetworkLimited which is what BTC uses for pruned nodes.
             this.connectionManager.Parameters.Services = (this.storeSettings.PruningEnabled ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
 
             // Temporary measure to support asking witness data on BTC.
