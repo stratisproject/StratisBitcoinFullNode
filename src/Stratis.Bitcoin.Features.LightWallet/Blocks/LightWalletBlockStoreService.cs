@@ -72,8 +72,17 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
 
             var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.Prune;
             ChainedHeader startFrom = this.chainState.BlockStoreTip.GetAncestor(heightToPruneFrom);
-            if (this.PrunedUpToHeaderTip != null && startFrom == this.PrunedUpToHeaderTip)
+            if (startFrom == null)
+            {
+                this.logger.LogInformation("Prune aborted, start block at height {0} was not found.", heightToPruneFrom);
                 return;
+            }
+
+            if (this.PrunedUpToHeaderTip != null && startFrom == this.PrunedUpToHeaderTip)
+            {
+                this.logger.LogInformation("Prune aborted, start block at height {0} equals the pruned tip.", heightToPruneFrom);
+                return;
+            }
 
             this.logger.LogInformation("Pruning triggered, delete from {0} to {1}.", heightToPruneFrom, this.PrunedUpToHeaderTip?.Height ?? 0);
 
