@@ -33,15 +33,6 @@ namespace Stratis.FederatedPeg.Tests.Utils
         }
 
         [Fact]
-        public void Generate_PS1_Fragment_With_New_Mnemonics()
-        {
-            this.originalMnemonics = Enumerable.Range(0, this.mnemonics.Count)
-                .Select(_ => new Mnemonic(Wordlist.English, WordCount.Twelve)).ToArray();
-            this.originalPubKeysByMnemonic = this.Mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
-            Generate_PS1_Fragment();
-        }
-
-        [Fact]
         public void Generate_PS1_Fragment()
         {
             this.output.WriteLine(CreatePowershellScript());

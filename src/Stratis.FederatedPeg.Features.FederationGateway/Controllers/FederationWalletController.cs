@@ -19,6 +19,16 @@ using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 {
+    public static class FederationWalletRouteEndPoint
+    {
+        public const string GeneralInfo = "general-info";
+        public const string Balance = "balance";
+        public const string Sync = "sync";
+        public const string ImportKey = "import-key";
+        public const string EnableFederation = "enable-federation";
+        public const string RemoveTransactions = "remove-transactions";
+    }
+
     /// <summary>
     /// Controller providing operations on a wallet.
     /// </summary>
@@ -55,7 +65,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
-        [Route("general-info")]
+        [Route(FederationWalletRouteEndPoint.GeneralInfo)]
         [HttpGet]
         public IActionResult GetGeneralInfo()
         {
@@ -88,7 +98,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             }
         }
 
-        [Route("balance")]
+        [Route(FederationWalletRouteEndPoint.Balance)]
         [HttpGet]
         public IActionResult GetBalance()
         {
@@ -127,7 +137,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// </summary>
         /// <param name="model">The hash of the block from which to start syncing.</param>
         [HttpPost]
-        [Route("sync")]
+        [Route(FederationWalletRouteEndPoint.Sync)]
         public IActionResult Sync([FromBody] HashModel model)
         {
             if (!this.ModelState.IsValid)
@@ -150,7 +160,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// Imports the federation member's mnemonic key.
         /// </summary>
         /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        [Route("import-key")]
+        [Route(FederationWalletRouteEndPoint.ImportKey)]
         [HttpPost]
         public IActionResult ImportMemberKey([FromBody]ImportMemberKeyRequest request)
         {
@@ -179,7 +189,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// </summary>
         /// <param name="request">The password of the federation wallet.</param>
         /// <returns>An <see cref="OkResult"/> object that produces a status code 200 HTTP response.</returns>
-        [Route("enable-federation")]
+        [Route(FederationWalletRouteEndPoint.EnableFederation)]
         [HttpPost]
         public IActionResult EnableFederation([FromBody]EnableFederationRequest request)
         {
@@ -218,7 +228,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         /// <summary>
         /// Remove all transactions from the wallet.
         /// </summary>
-        [Route("remove-transactions")]
+        [Route(FederationWalletRouteEndPoint.RemoveTransactions)]
         [HttpDelete]
         public IActionResult RemoveTransactions([FromQuery]RemoveFederationTransactionsModel request)
         {

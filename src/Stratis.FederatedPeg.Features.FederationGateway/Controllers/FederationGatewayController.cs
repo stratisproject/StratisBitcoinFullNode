@@ -22,10 +22,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         public const string PushCurrentBlockTip = "push_current_block_tip";
         public const string GetMaturedBlockDeposits = "get_matured_block_deposits";
         public const string GetInfo = "info";
-
-        // TODO commented out since those constants are unused. Remove them later or start using.
-        //public const string CreateSessionOnCounterChain = "create-session-oncounterchain";
-        //public const string ProcessSessionOnCounterChain = "process-session-oncounterchain";
     }
 
     /// <summary>

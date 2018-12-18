@@ -16,6 +16,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
@@ -220,11 +221,29 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             benchLog.AppendLine("====== Federation Wallet ======");
 
             (Money ConfirmedAmount, Money UnConfirmedAmount) balances = this.federationWalletManager.GetWallet().GetSpendableAmount();
+            bool isFederationActive = this.federationWalletManager.IsFederationActive();
             benchLog.AppendLine("Federation Wallet: ".PadRight(LoggingConfiguration.ColumnLength)
                                 + " Confirmed balance: " + balances.ConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
                                 + " Unconfirmed balance: " + balances.UnConfirmedAmount.ToString().PadRight(LoggingConfiguration.ColumnLength)
-                                + " Federation Status: " + (this.federationWalletManager.IsFederationActive() ? "Active" : "Inactive"));
+                                + " Federation Status: " + (isFederationActive ? "Active" : "Inactive"));
             benchLog.AppendLine();
+
+            var apiSettings = (ApiSettings)this.fullNode.Services.ServiceProvider.GetService(typeof(ApiSettings));
+            if (!isFederationActive)
+            {
+                var warning = 
+                                                    "=============================================".PadLeft(10,'=')
+                           + Environment.NewLine
+                           + Environment.NewLine +  "Federation node not enabled. You will not be able to sign transactions until you enable it."
+                           + Environment.NewLine + $"If not done previously, please import your private key using "
+                           + Environment.NewLine + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.ImportKey}"
+                           + Environment.NewLine + $"Then enable the wallet using "
+                           + Environment.NewLine + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.EnableFederation}"
+                           + Environment.NewLine
+                           + Environment.NewLine + $"============================================".PadLeft(10, '=')
+                           + Environment.NewLine;
+                benchLog.AppendLine(warning);
+            }
 
             // Display recent withdrawals (if any).
             IWithdrawal[] withdrawals = this.federationWalletManager.GetWithdrawals().Take(5).ToArray();
@@ -255,7 +274,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                 (this.crossChainTransferStore.HasSuspended().ToString(), 0)
             },
             4);
-
+            
             AddBenchmarkLine(benchLog,
                 this.crossChainTransferStore.GetCrossChainTransferStatusCounter().SelectMany(item => new (string, int)[]{
                     (item.Key.ToString()+":", LoggingConfiguration.ColumnLength),

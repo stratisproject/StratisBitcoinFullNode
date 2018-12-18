@@ -18,6 +18,7 @@
     <PackageReference Include="Microsoft.Extensions.Http" Version="2.1.1" />
     <PackageReference Include="Polly" Version="6.1.2" />
     <PackageReference Include="Stratis.Bitcoin" Version="3.0.0.3-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Api" Version="3.0.0.3-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Notifications" Version="3.0.0.3-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="3.0.0.3-beta" />
     <PackageReference Include="Stratis.FodyNlogAdapter" Version="3.0.0.3-beta" />
