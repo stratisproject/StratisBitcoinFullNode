@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public interface IPrunedBlockRepository
     {
         /// <summary>
-        /// INitializes the pruned block repository.
+        /// Initializes the pruned block repository.
         /// </summary>
         /// <returns>The awaited task.</returns>
         Task InitializeAsync();
