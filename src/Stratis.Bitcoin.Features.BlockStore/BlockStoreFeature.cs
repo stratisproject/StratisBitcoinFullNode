@@ -89,8 +89,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (this.storeSettings.Prune == 0)
                 {
                     var builder = new StringBuilder();
-                    builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1));
-                    builder.Append($" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock);
+                    builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8));
+                    builder.Append(" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock);
                     log.AppendLine(builder.ToString());
                 }
             }
