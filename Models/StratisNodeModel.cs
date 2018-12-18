@@ -1,3 +1,5 @@
+using System.Collections.Generic;
+
 namespace Stratis.FederatedSidechains.AdminDashboard.Models
 {
     public class StratisNodeModel
@@ -10,8 +12,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
         public string BlockHash { get; set; }
         public double ConfirmedBalance { get; set; }
         public double UnconfirmedBalance { get; set; }
-        public object Peers { get; set; }
-        public object FederationMembers { get; set; }
+        public List<Peer> Peers { get; set; }
+        public List<Peer> FederationMembers { get; set; }
         public object History { get; set; }
     }
 }

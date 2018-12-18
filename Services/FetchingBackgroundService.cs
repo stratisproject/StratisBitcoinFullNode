@@ -1,5 +1,8 @@
 using System;
+using System.Collections.Generic;
+using System.Net;
 using System.Net.Sockets;
+using System.Text.RegularExpressions;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.SignalR;
@@ -55,6 +58,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             ApiResponse stratisBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/Consensus/getbestblockhash");
             ApiResponse stratisWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, $"/api/Wallet/history?WalletName={walletName}&AccountName=account%200");
             ApiResponse stratisWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, $"/api/Wallet/balance?WalletName={walletName}&AccountName=account%200");
+            ApiResponse stratisFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
             #endregion
 
             #region Sidechain Node
@@ -63,45 +67,62 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
             ApiResponse sidechainBestBlock = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/Consensus/getbestblockhash");
             ApiResponse sidechainWalletHistory = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, $"/api/Wallet/history?WalletName={walletName}&AccountName=account%200");
             ApiResponse sidechainWalletBalances = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, $"/api/FederationWallet/balance");
+            ApiResponse sidechainFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.SidechainNode, "/api/FederationGateway/info");
             #endregion
 
-            var dashboardModel = new DashboardModel
+            var stratisPeers = new List<Peer>();
+            var stratisFederationMembers = new List<Peer>();
+            var sidechainPeers = new List<Peer>();
+            var sidechainFederationMembers = new List<Peer>();
+
+            this.ParsePeers(stratisStatus, stratisFederationInfo, ref stratisPeers, ref stratisFederationMembers);
+            this.ParsePeers(sidechainStatus, sidechainFederationInfo, ref sidechainPeers, ref sidechainFederationMembers);
+
+            var dashboardModel = new DashboardModel();
+            try
             {
-                Status = true,
-                IsCacheBuilt = true,
-                MainchainWalletAddress = "31EBX8oNk6GoPufm755yuFtbBgEPmjPvdK",
-                SidechainWalletAddress = "pTEBX8oNk6GoPufm755yuFtbBgEPmjPvdK ",
-                MiningPublicKeys = new string[] {"02446dfcecfcbef1878d906ffd023258a129e9471dba90a1845f15063397ada335", "02446dfcecfcbef1878d906ffd023258a129e9471dba90a1845f15063397ada335", "02446dfcecfcbef1878d906ffd023258a129e9471dba90a1845f15063397ada335"},
-                StratisNode = new StratisNodeModel
+                dashboardModel = new DashboardModel
                 {
-                    WebAPIUrl = string.Concat(this.defaultEndpointsSettings.StratisNode, "/api"),
-                    SwaggerUrl = string.Concat(this.defaultEndpointsSettings.StratisNode, "/swagger"),
-                    SyncingStatus = stratisStatus.Content.consensusHeight > 0 ? (stratisStatus.Content.blockStoreHeight / stratisStatus.Content.consensusHeight) * 100 : 0,
-                    Peers = stratisStatus.Content.outboundPeers,
-                    BlockHash = stratisBestBlock.Content,
-                    BlockHeight = stratisStatus.Content.blockStoreHeight,
-                    MempoolSize = stratisRawmempool.Content.Count,
-                    FederationMembers = new object[] {},
-                    History = stratisWalletHistory.Content.history[0].transactionsHistory,
-                    ConfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountConfirmed / 100000000,
-                    UnconfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountUnconfirmed / 100000000
-                },  
-                SidechainNode = new SidechainNodelModel
-                {
-                    WebAPIUrl = string.Concat(this.defaultEndpointsSettings.SidechainNode, "/api"),
-                    SwaggerUrl = string.Concat(this.defaultEndpointsSettings.SidechainNode, "/swagger"),
-                    SyncingStatus = sidechainStatus.Content.consensusHeight > 0 ? (sidechainStatus.Content.blockStoreHeight / sidechainStatus.Content.consensusHeight) * 100 : 0,
-                    Peers = sidechainStatus.Content.outboundPeers,
-                    BlockHash = sidechainBestBlock.Content,
-                    BlockHeight = sidechainStatus.Content.blockStoreHeight,
-                    MempoolSize = sidechainRawmempool.Content.Count,
-                    FederationMembers = new object[] {},
-                    History = new object[] {},
-                    ConfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountConfirmed / 100000000,
-                    UnconfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountUnconfirmed / 100000000
-                }
-            };
-            
+                    Status = true,
+                    IsCacheBuilt = true,
+                    MainchainWalletAddress = stratisFederationInfo.Content.multisigAddress,
+                    SidechainWalletAddress = sidechainFederationInfo.Content.multisigAddress,
+                    MiningPublicKeys = stratisFederationInfo.Content.federationMultisigPubKeys,
+                    StratisNode = new StratisNodeModel
+                    {
+                        WebAPIUrl = string.Concat(this.defaultEndpointsSettings.StratisNode, "/api"),
+                        SwaggerUrl = string.Concat(this.defaultEndpointsSettings.StratisNode, "/swagger"),
+                        SyncingStatus = stratisStatus.Content.consensusHeight > 0 ? (stratisStatus.Content.blockStoreHeight / stratisStatus.Content.consensusHeight) * 100 : 0,
+                        Peers = stratisPeers,
+                        FederationMembers = stratisFederationMembers,
+                        BlockHash = stratisBestBlock.Content,
+                        BlockHeight = stratisStatus.Content.blockStoreHeight,
+                        MempoolSize = stratisRawmempool.Content.Count,
+                        History = stratisWalletHistory.Content.history[0].transactionsHistory,
+                        ConfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountConfirmed / 100000000,
+                        UnconfirmedBalance = (double)stratisWalletBalances.Content.balances[0].amountUnconfirmed / 100000000
+                    },  
+                    SidechainNode = new SidechainNodelModel
+                    {
+                        WebAPIUrl = string.Concat(this.defaultEndpointsSettings.SidechainNode, "/api"),
+                        SwaggerUrl = string.Concat(this.defaultEndpointsSettings.SidechainNode, "/swagger"),
+                        SyncingStatus = sidechainStatus.Content.consensusHeight > 0 ? (sidechainStatus.Content.blockStoreHeight / sidechainStatus.Content.consensusHeight) * 100 : 0,
+                        Peers = sidechainPeers,
+                        FederationMembers = sidechainFederationMembers,
+                        BlockHash = sidechainBestBlock.Content,
+                        BlockHeight = sidechainStatus.Content.blockStoreHeight,
+                        MempoolSize = sidechainRawmempool.Content.Count,
+                        History = new object[] {},
+                        ConfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountConfirmed / 100000000,
+                        UnconfirmedBalance = (double)sidechainWalletBalances.Content.balances[0].amountUnconfirmed / 100000000
+                    }
+                };
+            }
+            catch(Exception e)
+            {
+                //ignored
+            }
+
             if(!string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
             {
                 if(JToken.DeepEquals(this.distributedCache.GetString("DashboardData"), JsonConvert.SerializeObject(dashboardModel)) == false)
@@ -110,6 +131,36 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
                 }
             }
             this.distributedCache.SetString("DashboardData", JsonConvert.SerializeObject(dashboardModel));
+        }
+
+        private void ParsePeers(dynamic stratisStatus, dynamic federationInfo, ref List<Peer> peers, ref List<Peer> federationMembers)
+        {
+            foreach(dynamic peer in (JArray) stratisStatus.Content.outboundPeers)
+            {
+                var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
+                var endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
+                var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value), int.Parse(endpointMatches[0].Groups[2].Value));
+                (Convert.ToString(federationInfo.Content.endpoints).Contains($"{endpoint.Address.MapToIPv4().ToString()}:{endpointMatches[0].Groups[2].Value}") ? federationMembers : peers)
+                .Add(new Peer()
+                {
+                    Endpoint = peer.remoteSocketEndpoint,
+                    Height = peer.tipHeight,
+                    Version = peer.version
+                });
+            }
+            foreach(dynamic peer in (JArray) stratisStatus.Content.inboundPeers)
+            {
+                var endpointRegex = new Regex("\\[([A-Za-z0-9:.]*)\\]:([0-9]*)");
+                var endpointMatches = endpointRegex.Matches(Convert.ToString(peer.remoteSocketEndpoint));
+                var endpoint = new IPEndPoint(IPAddress.Parse(endpointMatches[0].Groups[1].Value), int.Parse(endpointMatches[0].Groups[2].Value));
+                (Convert.ToString(federationInfo.Content.endpoints).Contains($"{endpoint.Address.MapToIPv4().ToString()}:{endpointMatches[0].Groups[2].Value}") ? federationMembers : peers)
+                .Add(new Peer()
+                {
+                    Endpoint = peer.remoteSocketEndpoint,
+                    Height = peer.tipHeight,
+                    Version = peer.version
+                });
+            }
         }
 
         private async void DoWorkAsync(object state)
@@ -140,7 +191,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Services
         /// </summary>
         /// <remarks>The ports can be changed in the future</remarks>
         /// <returns>True if the connection are succeed</returns>
-        private bool PerformNodeCheck() => this.PortCheck(37221) && this.PortCheck(38226);
+        private bool PerformNodeCheck() => this.PortCheck(new Uri(this.defaultEndpointsSettings.StratisNode).Port) && this.PortCheck(new Uri(this.defaultEndpointsSettings.SidechainNode).Port);
 
         /// <summary>
         /// Perform a port TCP scan

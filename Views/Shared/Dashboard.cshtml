@@ -3,6 +3,7 @@
 {
    <partial name="Loader" />
 }
+<partial name="Modals" />
 <div id="@(ViewBag.DisplayLoader == true ? "loading-content":"")">
    <div class="row my-2">
       <div class="col-lg-6 col-12">
@@ -52,7 +53,7 @@
                      <li class="col-12 col-xl-6">
                         <ul class="list-inline">
                            <li class="list-inline-item"><strong>Block height :</strong></li>
-                           <li class="list-inline-item"><a href="#">@Model.StratisNode.BlockHeight</a></li>
+                           <li class="list-inline-item">@Model.StratisNode.BlockHeight</li>
                         </ul>
                      </li>
                      <li class="col-12 col-xl-6">
@@ -83,18 +84,18 @@
                   <label class="mt-3"><strong>Peers :</strong></label>
                   <table class="table table-sm table-striped">
                      <tbody>
-                        @foreach(dynamic peer in (JArray) Model.StratisNode.Peers)
+                        @foreach(var peer in Model.StratisNode.Peers)
                         {
                            <tr>
-                              <td class="text-left">@peer.remoteSocketEndpoint</td>
+                              <td class="text-left">@peer.Endpoint</td>
                               <td class="text-center">outbound</td>
-                              <td class="text-center">height:@peer.tipHeight</td>
-                              <td class="text-right">agent:@peer.version</td>
+                              <td class="text-center">height:@peer.Height</td>
+                              <td class="text-right">agent:@peer.Version</td>
                            </tr>
                         }
                      </tbody>
                      <tfoot>
-                        @if(((JArray) Model.StratisNode.Peers).Count == 0)
+                        @if(Model.StratisNode.Peers.Count() == 0)
                         {
                            <tr>
                               <td colspan="4" class="text-center"><em>There no peers to display.</em></td>
@@ -105,18 +106,18 @@
                   <label><strong>Federation members :</strong></label>
                   <table class="table table-sm table-striped">
                      <tbody>
-                        @foreach(dynamic member in (JArray) Model.StratisNode.FederationMembers)
+                        @foreach(var member in Model.StratisNode.FederationMembers)
                         {
                            <tr>
-                              <td class="text-left">@member.remoteSocketEndpoint</td>
+                              <td class="text-left">@member.Endpoint</td>
                               <td class="text-center">outbound</td>
-                              <td class="text-center">height:@member.tipHeight</td>
-                              <td class="text-right">agent:@member.version</td>
+                              <td class="text-center">height:@member.Height</td>
+                              <td class="text-right">agent:@member.Version</td>
                            </tr>
                         }
                      </tbody>
                      <tfoot>
-                        @if(((JArray) Model.StratisNode.FederationMembers).Count == 0)
+                        @if(Model.StratisNode.FederationMembers.Count() == 0)
                         {
                            <tr>
                               <td colspan="4" class="text-center"><em>There no federation member to display.</em></td>
@@ -241,7 +242,7 @@
                      <li class="col-12 col-xl-6">
                         <ul class="list-inline">
                            <li class="list-inline-item"><strong>Block height :</strong></li>
-                           <li class="list-inline-item"><a href="#">@Model.SidechainNode.BlockHeight</a></li>
+                           <li class="list-inline-item">@Model.SidechainNode.BlockHeight</li>
                         </ul>
                      </li>
                      <li class="col-12 col-xl-6">
@@ -272,18 +273,18 @@
                   <label class="mt-3"><strong>Peers :</strong></label>
                   <table class="table table-sm table-striped">
                      <tbody>
-                        @foreach(dynamic peer in (JArray) Model.SidechainNode.Peers)
+                        @foreach(var peer in Model.SidechainNode.Peers)
                         {
                            <tr>
-                              <td class="text-left">@peer.remoteSocketEndpoint</td>
+                              <td class="text-left">@peer.Endpoint</td>
                               <td class="text-center">outbound</td>
-                              <td class="text-center">height:@peer.tipHeight</td>
-                              <td class="text-right">agent:@peer.version</td>
+                              <td class="text-center">height:@peer.Height</td>
+                              <td class="text-right">agent:@peer.Version</td>
                            </tr>
                         }
                      </tbody>
                      <tfoot>
-                        @if(((JArray) Model.SidechainNode.Peers).Count == 0)
+                        @if(Model.SidechainNode.Peers.Count() == 0)
                         {
                            <tr>
                               <td colspan="4" class="text-center"><em>There no peers to display.</em></td>
@@ -294,18 +295,18 @@
                   <label><strong>Federation members :</strong></label>
                   <table class="table table-sm table-striped">
                      <tbody>
-                        @foreach(dynamic member in (JArray) Model.SidechainNode.FederationMembers)
+                        @foreach(var member in Model.SidechainNode.FederationMembers)
                         {
                            <tr>
-                              <td class="text-left">@member.remoteSocketEndpoint</td>
+                              <td class="text-left">@member.Endpoint</td>
                               <td class="text-center">outbound</td>
-                              <td class="text-center">height:@member.tipHeight</td>
-                              <td class="text-right">agent:@member.version</td>
+                              <td class="text-center">height:@member.Height</td>
+                              <td class="text-right">agent:@member.Version</td>
                            </tr>
                         }
                      </tbody>
                      <tfoot>
-                        @if(((JArray) Model.SidechainNode.FederationMembers).Count == 0)
+                        @if(Model.SidechainNode.FederationMembers.Count() == 0)
                         {
                            <tr>
                               <td colspan="4" class="text-center"><em>There no federation member to display.</em></td>
