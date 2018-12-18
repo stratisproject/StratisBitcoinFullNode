@@ -2,6 +2,7 @@ using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Utils
@@ -27,6 +28,7 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
         private const string WalletName = "mywallet";
         private const string WalletPassword = "password";
         private const string WalletPassphrase = "passphrase";
+        private const string WalletAccount = "account 0";
         private const string ConfigSideChain = "sidechain";
         private const string ConfigMainChain = "mainchain";
         private const string ConfigAgentPrefix = "agentprefix";
@@ -74,12 +76,12 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
 
             this.nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this);
 
-            this.MainUser = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.MainUser)).WithWallet(); // TODO: Do we need wallets like this on every node?
-            this.FedMain1 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
+            this.MainUser = this.nodeBuilder.CreateStratisPosNode(this.MainChainNetwork, nameof(this.MainUser)).WithWallet();
+            this.FedMain1 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork).WithWallet();
             this.FedMain2 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
             this.FedMain3 = this.nodeBuilder.CreateMainChainFederationNode(this.MainChainNetwork);
 
-            this.SideUser = this.nodeBuilder.CreateSidechainNode(this.SideChainNetwork);
+            this.SideUser = this.nodeBuilder.CreateSidechainNode(this.SideChainNetwork).WithWallet();
 
             this.FedSide1 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[0]);
             this.FedSide2 = this.nodeBuilder.CreateSidechainFederationNode(this.SideChainNetwork, this.SideChainNetwork.FederationKeys[1]);
@@ -240,8 +242,8 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
                 .PostJsonAsync(new
                 {
                     walletName = WalletName,
-                    accountName = "account 0",
-                    password =  WalletPassphrase,
+                    accountName = WalletAccount,
+                    password =  WalletPassword,
                     opReturnData = sidechainDepositAddress,
                     feeAmount = "0.01",
                     recipients = new[]
@@ -257,14 +259,16 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             string result = await depositTransaction.Content.ReadAsStringAsync();
             WalletBuildTransactionModel walletBuildTxModel = JsonConvert.DeserializeObject<WalletBuildTransactionModel>(result);
 
-            HttpResponseMessage sendTransaction = await $"http://localhost:{node.ApiPort}/api"
+            HttpResponseMessage sendTransactionResponse = await $"http://localhost:{node.ApiPort}/api"
                 .AppendPathSegment("wallet/send-transaction")
                 .PostJsonAsync(new
                 {
                     hex = walletBuildTxModel.Hex
                 });
-
-            // TODO: Check transaction sent without errors
+        }
+        public string GetAddress(CoreNode node)
+        {
+            return node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccount)).Address;
         }
 
         private void ApplyFederationIPs(CoreNode fed1, CoreNode fed2, CoreNode fed3)
@@ -300,6 +304,14 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.AppendToConfig(this.FedMain1, $"{ConfigMainChain}=1");
             this.AppendToConfig(this.FedMain2, $"{ConfigMainChain}=1");
             this.AppendToConfig(this.FedMain3, $"{ConfigMainChain}=1");
+
+            this.AppendToConfig(this.FedSide1, $"mindepositconfirmations=5");
+            this.AppendToConfig(this.FedSide2, $"mindepositconfirmations=5");
+            this.AppendToConfig(this.FedSide3, $"mindepositconfirmations=5");
+
+            this.AppendToConfig(this.FedMain1, $"mindepositconfirmations=5");
+            this.AppendToConfig(this.FedMain2, $"mindepositconfirmations=5");
+            this.AppendToConfig(this.FedMain3, $"mindepositconfirmations=5");
 
             this.AppendToConfig(this.FedSide1, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
             this.AppendToConfig(this.FedSide2, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
