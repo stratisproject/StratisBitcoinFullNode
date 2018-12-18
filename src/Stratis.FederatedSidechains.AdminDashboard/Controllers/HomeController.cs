@@ -1,4 +1,7 @@
-﻿using Microsoft.AspNetCore.Mvc;
+﻿using System;
+using System.Net;
+using System.Threading.Tasks;
+using Microsoft.AspNetCore.Mvc;
 using Microsoft.AspNetCore.SignalR;
 using Microsoft.Extensions.Caching.Distributed;
 using Microsoft.Extensions.Options;
@@ -6,37 +9,49 @@ using Newtonsoft.Json;
 using Stratis.FederatedSidechains.AdminDashboard.Filters;
 using Stratis.FederatedSidechains.AdminDashboard.Hubs;
 using Stratis.FederatedSidechains.AdminDashboard.Models;
+using Stratis.FederatedSidechains.AdminDashboard.Rest;
 using Stratis.FederatedSidechains.AdminDashboard.Settings;
 
 namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
 {
     public class HomeController : Controller
     {
-        private readonly FullNodeSettings fullNodeSettings;
         private readonly IDistributedCache distributedCache;
+        private readonly DefaultEndpointsSettings defaultEndpointsSettings;
         public readonly IHubContext<DataUpdaterHub> updaterHub;
 
-        public HomeController(IDistributedCache distributedCache, IOptions<FullNodeSettings> fullNodeSettings, IHubContext<DataUpdaterHub> hubContext)
+        public HomeController(IDistributedCache distributedCache, IHubContext<DataUpdaterHub> hubContext, IOptions<DefaultEndpointsSettings> defaultEndpointsSettings)
         {
-            this.fullNodeSettings = fullNodeSettings.Value;
             this.distributedCache = distributedCache;
+            this.defaultEndpointsSettings = defaultEndpointsSettings.Value;
             this.updaterHub = hubContext;
         }
 
+        /// <summary>
+        /// Check if the federation is enabled, it's only called from the SignalR event
+        /// </summary>
+        /// <returns>True or False</returns>
         [Ajax]
         [Route("check-federation")]
-        public IActionResult CheckFederation()
+        public async Task<IActionResult> CheckFederationAsync()
         {
-            //TODO: detect if federation is enabled
+            ApiResponse getMainchainFederationInfo = await ApiRequester.GetRequestAsync(this.defaultEndpointsSettings.StratisNode, "/api/FederationGateway/info");
+            if(getMainchainFederationInfo.IsSuccess)
+            {
+                return Json(getMainchainFederationInfo.Content.active);
+            }
             return Json(true);
         }
 
+        /// <summary>
+        /// This is the Index action that return the dashboard if the local cache is built otherwise the initialization page is displayed
+        /// </summary>
         public IActionResult Index()
         {
-            // Checking if the local cache is built otherwise we will display the initialization page
-            if(string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
+            if (string.IsNullOrEmpty(this.distributedCache.GetString("DashboardData")))
             {
                 this.ViewBag.NodeUnavailable = !string.IsNullOrEmpty(this.distributedCache.GetString("NodeUnavailable"));
+                this.ViewBag.Status = "Initialization...";
                 return View("Initialization");
             }
 
@@ -46,9 +61,17 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Controllers
                 dashboardModel.StratisNode.History,
                 dashboardModel.SidechainNode.History
             };
+            this.ViewBag.MainchainMultisigAddress = dashboardModel.MainchainWalletAddress;
+            this.ViewBag.SidechainMultisigAddress = dashboardModel.SidechainWalletAddress;
+            this.ViewBag.MiningPubKeys = dashboardModel.MiningPublicKeys;
+            this.ViewBag.Status = "OK";
+
             return View("Dashboard", dashboardModel);
         }
 
+        /// <summary>
+        /// This action redraw the dashboard with the new cached datas, it's only called from the SignalR event
+        /// </summary>
         [Ajax]
         [Route("update-dashboard")]
         public IActionResult UpdateDashboard()

@@ -20,11 +20,8 @@ namespace Stratis.FederatedSidechains.AdminDashboard
         public void ConfigureServices(IServiceCollection services)
         {
             //TODO: change this
-            services.Configure<FullNodeSettings>(this.Configuration.GetSection("FullNode"));
             services.Configure<DefaultEndpointsSettings>(this.Configuration.GetSection("DefaultEndpoints"));
 
-            services.AddTransient<FullNodeSettings>();
-            
             services.AddDistributedMemoryCache();
 
             services.AddHostedService<FetchingBackgroundService>();
