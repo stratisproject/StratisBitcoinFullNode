@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 if (IsDatabasePruned())
                     return;
 
-                await this.PrepareDatabaseForCompactingAsync(blockRepositoryTip);
+                await this.PrepareDatabaseForCompactingAsync(blockRepositoryTip).ConfigureAwait(false);
             }
 
             this.CompactDataBase();
@@ -93,7 +93,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Compacts the block and transaction database by recreating the tables without the deleted references.
         /// </summary>
         /// <param name="blockRepositoryTip">The last fully validated block of the node.</param>
-        /// <returns>The awaited task.</returns>
         private async Task PrepareDatabaseForCompactingAsync(ChainedHeader blockRepositoryTip)
         {
             int upperHeight = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.AmountOfBlocksToKeep;

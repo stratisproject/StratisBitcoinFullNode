@@ -86,17 +86,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (highestBlock != null)
             {
-                if (!this.storeSettings.PruningEnabled)
-                {
-                    var builder = new StringBuilder();
-                    builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8));
-                    builder.Append(" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock);
-                    log.AppendLine(builder.ToString());
-                }
+                var builder = new StringBuilder();
+                builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8));
+                builder.Append(" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock);
+                log.AppendLine(builder.ToString());
             }
         }
 
-        public override Task InitializeAsync()
+        public override async Task InitializeAsync()
         {
             this.prunedBlockRepository.InitializeAsync().GetAwaiter().GetResult();
 
@@ -109,7 +106,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.AmountOfBlocksToKeep}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
 
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true).GetAwaiter().GetResult();
+                await this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true);
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
@@ -134,7 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
 
-            return Task.CompletedTask;
+            return;
         }
 
         /// <inheritdoc />

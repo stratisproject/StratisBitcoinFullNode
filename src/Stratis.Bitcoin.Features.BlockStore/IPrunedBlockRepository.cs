@@ -12,7 +12,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>
         /// Initializes the pruned block repository.
         /// </summary>
-        /// <returns>The awaited task.</returns>
         Task InitializeAsync();
 
         /// <summary>
@@ -27,11 +26,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <param name="blockStoreTip">The current tip of the store.</param>
         /// <param name="network">The network the node is running on.</param>
         /// <param name="nodeInitializing">Indicates whether or not this method is called from node startup or not.</param>
-        /// <returns>The awaited task.</returns>
         Task PruneAndCompactDatabase(ChainedHeader blockStoreTip, Network network, bool nodeInitializing);
 
         /// <summary> 
-        /// The lowest block height that the repository has.
+        /// The lowest block hash and height that the repository has.
         /// <para>
         /// This also indicated where the node has been pruned up to.
         /// </para>

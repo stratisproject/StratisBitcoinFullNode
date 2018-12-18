@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         private readonly WalletSettings walletSettings;
 
-        private readonly ILightWalletBlockStoreService lightWalletBlockStoreService;
+        private readonly IPruneBlockStoreService lightWalletBlockStoreService;
 
         public LightWalletFeature(
             IWalletSyncManager walletSyncManager,
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             NodeSettings nodeSettings,
             WalletSettings walletSettings,
             INodeStats nodeStats,
-            ILightWalletBlockStoreService lightWalletBlockStoreService)
+            IPruneBlockStoreService lightWalletBlockStoreService)
         {
             this.walletSyncManager = walletSyncManager;
             this.walletManager = walletManager;
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
             this.walletFeePolicy.Start();
 
-            this.lightWalletBlockStoreService.Start();
+            this.lightWalletBlockStoreService.Initialize();
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.broadcasterBehavior);
             return Task.CompletedTask;
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                         services.AddSingleton<IScriptAddressReader, ScriptAddressReader>();
                         services.AddSingleton<StandardTransactionPolicy>();
 
-                        services.AddSingleton<ILightWalletBlockStoreService, LightWalletBlockStoreService>();
+                        services.AddSingleton<IPruneBlockStoreService, PruneBlockStoreService>();
                     });
             });
 

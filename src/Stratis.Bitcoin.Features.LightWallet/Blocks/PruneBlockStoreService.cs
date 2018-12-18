@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.LightWallet.Blocks
 {
     /// <inheritdoc/>
-    public sealed class LightWalletBlockStoreService : ILightWalletBlockStoreService
+    public sealed class PruneBlockStoreService : IPruneBlockStoreService
     {
         private IAsyncLoop asyncLoop;
         private readonly IAsyncLoopFactory asyncLoopFactory;
@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// <inheritdoc/>
         public ChainedHeader PrunedUpToHeaderTip { get; private set; }
 
-        public LightWalletBlockStoreService(
+        public PruneBlockStoreService(
             IAsyncLoopFactory asyncLoopFactory,
             IBlockRepository blockRepository,
             IPrunedBlockRepository prunedBlockRepository,
@@ -43,13 +43,13 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         }
 
         /// <inheritdoc/>
-        public void Start()
+        public void Initialize()
         {
             this.PrunedUpToHeaderTip = this.chainState.BlockStoreTip.GetAncestor(this.prunedBlockRepository.PrunedTip.Height);
 
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.PruneBlocksAsync)}", async token =>
             {
-                await PruneBlocksAsync();
+                await this.PruneBlocksAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpans.TenSeconds);
@@ -58,19 +58,27 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// <summary>
         /// Delete blocks continuously from the back of the store.
         /// </summary>
-        /// <returns>The awaited task.</returns>
         private async Task PruneBlocksAsync()
         {
             if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.AmountOfBlocksToKeep)
+            {
+                this.logger.LogTrace("(-)[BLOCKSTORE_HEIGHT_BELOW_AMOUNTOFBLOCKSTOKEEP]");
                 return;
+            }
 
             if (this.blockRepository.TipHashAndHeight.Height == (this.PrunedUpToHeaderTip?.Height ?? 0))
+            {
+                this.logger.LogTrace("(-)[BLOCKSTORE_HEIGHT_EQUALS_PRUNEDTIP]");
                 return;
+            }
 
             if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + this.storeSettings.AmountOfBlocksToKeep))
+            {
+                this.logger.LogTrace("(-)[BLOCKSTORE_HEIGHT_BELOW_PRUNEDTIP_PLUS_AMOUNTTOKEEP]");
                 return;
+            }
 
-            var heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.AmountOfBlocksToKeep;
+            int heightToPruneFrom = this.blockRepository.TipHashAndHeight.Height - this.storeSettings.AmountOfBlocksToKeep;
             ChainedHeader startFrom = this.chainState.BlockStoreTip.GetAncestor(heightToPruneFrom);
             if (startFrom == null)
             {

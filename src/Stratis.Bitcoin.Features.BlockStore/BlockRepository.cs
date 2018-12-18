@@ -22,14 +22,14 @@ namespace Stratis.Bitcoin.Features.BlockStore
         DBreezeEngine DBreeze { get; }
 
         /// <summary>
-        /// Delete blocks and their transactions.
+        /// Deletes blocks and indexes for transactions that belong to deleted blocks.
         /// <para>
         /// It should be noted that this does not delete the entries from disk (only the references are removed) and
         /// as such the file size remains the same.
         /// </para>
         /// </summary>
-        /// <param name="hashes">List of block hashes to be deleted.</param>
-        /// <returns>The awaited task.</returns>
+        /// <remarks>TODO: This will need to be revisited once DBreeze has been fixed or replaced with a solution that works.</remarks>
+        /// <param name="hashes">List of block hashes to be deleted.</param>        
         Task DeleteBlocksAsync(List<uint256> hashes);
 
         /// <summary>

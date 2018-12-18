@@ -42,6 +42,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void Start_HavingPrunedStoreSetting_ThrowsWalletException()
         {
             this.storeSettings.AmountOfBlocksToKeep = 1;
+            this.storeSettings.PruningEnabled = true;
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
                 this.blockStore.Object, this.storeSettings, this.nodeLifetime.Object);
