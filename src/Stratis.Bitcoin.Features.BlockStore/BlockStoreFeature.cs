@@ -105,6 +105,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (this.storeSettings.Prune != 0)
             {
+                if (this.storeSettings.Prune < this.network.Consensus.MaxReorgLength)
+                    throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.Prune}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
+
                 this.logger.LogInformation("Pruning BlockStore...");
                 this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, this.network, true).GetAwaiter().GetResult();
             }
