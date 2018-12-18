@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        public async Task PruneDatabase(ChainedHeader blockRepositoryTip, Network network, bool nodeInitializing)
+        public async Task PruneAndCompactDatabase(ChainedHeader blockRepositoryTip, Network network, bool nodeInitializing)
         {
             this.logger.LogInformation($"Pruning started.");
 

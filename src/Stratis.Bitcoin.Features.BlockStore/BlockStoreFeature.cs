@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.AmountOfBlocksToKeep}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
 
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, this.network, true).GetAwaiter().GetResult();
+                this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true).GetAwaiter().GetResult();
             }
 
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (this.storeSettings.PruningEnabled)
             {
                 this.logger.LogInformation("Pruning BlockStore...");
-                this.prunedBlockRepository.PruneDatabase(this.chainState.BlockStoreTip, this.network, false);
+                this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, false);
             }
 
             this.logger.LogInformation("Stopping BlockStore.");
