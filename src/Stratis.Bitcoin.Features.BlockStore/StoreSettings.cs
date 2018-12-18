@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.PruningEnabled = this.AmountOfBlocksToKeep != 0;
 
             if (this.PruningEnabled && this.AmountOfBlocksToKeep < this.GetMinPruningAmount())
-                throw new ConfigurationException($"Can't prune more than {this.GetMinPruningAmount()} blocks!");
+                throw new ConfigurationException($"The minimum amount of blocks to keep can't be less than {this.GetMinPruningAmount()}.");
 
             this.TxIndex = config.GetOrDefault<bool>("txindex", false, this.logger);
             this.ReIndex = config.GetOrDefault<bool>("reindex", false, this.logger);
