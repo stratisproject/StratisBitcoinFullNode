@@ -2,7 +2,7 @@
   "profiles": {
     "Stratis.CLI Stratis REST API": {
       "commandName": "Project",
-      "commandLineArgs": "stratis Wallet/files"
+      "commandLineArgs": "stratis getinfo -rpcuser=stratistestuser -rpcpassword=stratistestpassword -rpcconnect=127.0.0.3 -rpcport=26174"
     },
     "Stratis.CLI Stratis RPC": {
       "commandName": "Project",
