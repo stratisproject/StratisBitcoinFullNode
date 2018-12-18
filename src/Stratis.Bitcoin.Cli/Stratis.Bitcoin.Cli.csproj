@@ -7,10 +7,6 @@
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
-  <PropertyGroup> 
-    <RuntimeIdentifiers>win-x64;linux-x64;osx-x64</RuntimeIdentifiers> 
-  </PropertyGroup>
-
   <ItemGroup>
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin.Features.RPC\Stratis.Bitcoin.Features.RPC.csproj" />
