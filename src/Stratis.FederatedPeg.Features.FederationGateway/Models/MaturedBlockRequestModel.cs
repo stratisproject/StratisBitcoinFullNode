@@ -9,7 +9,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
     /// </summary>
     public class MaturedBlockRequestModel : RequestModel, IMaturedBlocksRequestModel
     {
-        public MaturedBlockRequestModel(int blockHeight, int maxBlocksToSend = int.MaxValue)
+        public MaturedBlockRequestModel(int blockHeight, int maxBlocksToSend)
         {
             this.BlockHeight = blockHeight;
             this.MaxBlocksToSend = maxBlocksToSend;
