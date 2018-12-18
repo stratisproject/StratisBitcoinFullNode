@@ -25,6 +25,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
+
+        public string Passphrase { get; set; }
     }
 
     /// <summary>
