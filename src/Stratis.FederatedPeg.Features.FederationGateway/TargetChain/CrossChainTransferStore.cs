@@ -230,12 +230,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 if (partialTransfer.Status != CrossChainTransferStatus.Partial && partialTransfer.Status != CrossChainTransferStatus.FullySigned)
                     continue;
 
-                if (partialTransfer.DepositHeight != null && partialTransfer.DepositHeight >= this.NextMatureDepositHeight)
-                {
-                    //tracker.SetTransferStatus(partialTransfer, CrossChainTransferStatus.Suspended);
-                    continue;
-                }
-
                 List<(Transaction, TransactionData, IWithdrawal)> walletData = this.federationWalletManager.FindWithdrawalTransactions(partialTransfer.DepositTransactionId);
                 if (walletData.Count == 1 && this.ValidateTransaction(walletData[0].Item1))
                 {
@@ -257,6 +251,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                         continue;
                     }
                 }
+
+                // Remove any invalid withdrawal transactions.
+                foreach (IWithdrawal withdrawal in walletData.Select(d => d.Item3))
+                    this.federationWalletManager.RemoveTransientTransactions(withdrawal.DepositId);
 
                 // The chain may have been rewound so that this transaction or its UTXO's have been lost.
                 // Rewind our recorded chain A tip to ensure the transaction is re-built once UTXO's become available.

@@ -74,7 +74,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 uint256.Parse(depositId),
                 transaction.GetHash(),
                 targetAddressOutput.Value,
-                targetAddressOutput.ScriptPubKey.GetScriptAddress(this.network).ToString(),
+                targetAddressOutput.ScriptPubKey.GetDestinationAddress(this.network).ToString(),
                 blockHeight,
                 blockHash);
 
