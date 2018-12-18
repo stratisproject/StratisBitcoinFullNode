@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
 
             var dBreezeSerializer = new DBreezeSerializer(network);
 
-            var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.DateTimeProvider, testChainContext.LoggerFactory, dBreezeSerializer);
+            var blockRepository = new BlockRepository(testChainContext.Network, dataFolder, testChainContext.LoggerFactory, dBreezeSerializer);
 
             var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(testChainContext.ChainState, testChainContext.InitialBlockDownloadState);
 

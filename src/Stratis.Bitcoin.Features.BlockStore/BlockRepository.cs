@@ -18,6 +18,20 @@ namespace Stratis.Bitcoin.Features.BlockStore
     /// </summary>
     public interface IBlockRepository : IBlockStore
     {
+        /// <summary> The dbreeze database engine.</summary>
+        DBreezeEngine DBreeze { get; }
+
+        /// <summary>
+        /// Deletes blocks and indexes for transactions that belong to deleted blocks.
+        /// <para>
+        /// It should be noted that this does not delete the entries from disk (only the references are removed) and
+        /// as such the file size remains the same.
+        /// </para>
+        /// </summary>
+        /// <remarks>TODO: This will need to be revisited once DBreeze has been fixed or replaced with a solution that works.</remarks>
+        /// <param name="hashes">List of block hashes to be deleted.</param>        
+        Task DeleteBlocksAsync(List<uint256> hashes);
+
         /// <summary>
         /// Persist the next block hash and insert new blocks into the database.
         /// </summary>
@@ -61,22 +75,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Hash and height of the repository's tip.</summary>
         HashHeightPair TipHashAndHeight { get; }
 
+        /// <summary> Indicates that the node should store all transaction data in the database.</summary>
         bool TxIndex { get; }
     }
 
     public class BlockRepository : IBlockRepository
     {
-        private const string BlockTableName = "Block";
+        internal const string BlockTableName = "Block";
 
-        private const string TransactionTableName = "Transaction";
+        internal const string CommonTableName = "Common";
 
-        private const string CommonTableName = "Common";
+        internal const string TransactionTableName = "Transaction";
 
-        /// <summary>Instance logger.</summary>
+        public DBreezeEngine DBreeze { get; }
+
         private readonly ILogger logger;
-
-        /// <summary>Access to DBreeze database.</summary>
-        private readonly DBreezeEngine DBreeze;
 
         private readonly Network network;
 
@@ -84,33 +97,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private static readonly byte[] TxIndexKey = new byte[1];
 
+        /// <inheritdoc />
         public HashHeightPair TipHashAndHeight { get; private set; }
 
+        /// <inheritdoc />
         public bool TxIndex { get; private set; }
-
-        /// <summary>Provider of time functions.</summary>
-        private readonly IDateTimeProvider dateTimeProvider;
 
         private readonly DBreezeSerializer dBreezeSerializer;
 
-        public BlockRepository(Network network, DataFolder dataFolder, IDateTimeProvider dateTimeProvider,
+        public BlockRepository(Network network, DataFolder dataFolder,
             ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
-            : this(network, dataFolder.BlockPath, dateTimeProvider, loggerFactory, dBreezeSerializer)
+            : this(network, dataFolder.BlockPath, loggerFactory, dBreezeSerializer)
         {
         }
 
-        public BlockRepository(Network network, string folder, IDateTimeProvider dateTimeProvider,
-            ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
+        public BlockRepository(Network network, string folder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotEmpty(folder, nameof(folder));
 
-            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
             Directory.CreateDirectory(folder);
             this.DBreeze = new DBreezeEngine(folder);
+
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
-            this.dateTimeProvider = dateTimeProvider;
             this.dBreezeSerializer = dBreezeSerializer;
         }
 
@@ -476,7 +486,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 dbreezeTransaction.RemoveKey<byte[]>(BlockTableName, block.GetHash().ToBytes());
         }
 
-        private List<Block> GetBlocksFromHashes(DBreeze.Transactions.Transaction dbreezeTransaction, List<uint256> hashes)
+        public List<Block> GetBlocksFromHashes(DBreeze.Transactions.Transaction dbreezeTransaction, List<uint256> hashes)
         {
             var results = new Dictionary<uint256, Block>();
 
@@ -523,6 +533,29 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
                     this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
                     this.SaveTipHashAndHeight(transaction, newTip);
+                    transaction.Commit();
+                }
+            });
+
+            return task;
+        }
+
+        /// <inheritdoc />
+        public Task DeleteBlocksAsync(List<uint256> hashes)
+        {
+            Guard.NotNull(hashes, nameof(hashes));
+
+            Task task = Task.Run(() =>
+            {
+                using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
+                {
+                    transaction.SynchronizeTables(BlockRepository.BlockTableName, BlockRepository.CommonTableName, BlockRepository.TransactionTableName);
+                    transaction.ValuesLazyLoadingIsOn = false;
+
+                    List<Block> blocks = this.GetBlocksFromHashes(transaction, hashes);
+
+                    this.OnDeleteBlocks(transaction, blocks.Where(b => b != null).ToList());
+
                     transaction.Commit();
                 }
             });

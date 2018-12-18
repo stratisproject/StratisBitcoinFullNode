@@ -35,8 +35,13 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         private readonly ILoggerFactory loggerFactory;
 
-        public BlockNotificationFeature(IBlockNotification blockNotification, IConnectionManager connectionManager,
-            IConsensusManager consensusManager, IChainState chainState, ConcurrentChain chain, ILoggerFactory loggerFactory)
+        public BlockNotificationFeature(
+            IBlockNotification blockNotification,
+            IConnectionManager connectionManager,
+            IConsensusManager consensusManager,
+            IChainState chainState,
+            ConcurrentChain chain,
+            ILoggerFactory loggerFactory)
         {
             this.blockNotification = blockNotification;
             this.connectionManager = connectionManager;

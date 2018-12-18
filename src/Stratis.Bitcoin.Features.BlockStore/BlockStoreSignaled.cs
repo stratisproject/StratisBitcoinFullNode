@@ -65,12 +65,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         protected override void OnNextCore(ChainedHeaderBlock blockPair)
         {
-            if (this.storeSettings.Prune)
-            {
-                this.logger.LogTrace("(-)[PRUNE]");
-                return;
-            }
-
             ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
             {
@@ -88,6 +82,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (isIBD)
             {
                 this.logger.LogTrace("(-)[IBD]");
+                return;
+            }
+
+            if (this.storeSettings.PruningEnabled)
+            {
+                this.logger.LogTrace("(-)[PRUNE]");
                 return;
             }
 
