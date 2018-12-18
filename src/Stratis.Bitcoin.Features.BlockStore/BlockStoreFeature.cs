@@ -168,6 +168,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         services.AddSingleton<IBlockStoreQueue, BlockStoreQueue>().AddSingleton<IBlockStore>(provider => provider.GetService<IBlockStoreQueue>());
                         services.AddSingleton<IBlockRepository, BlockRepository>();
+                        services.AddSingleton<IPrunedBlockRepository, PrunedBlockRepository>();
 
                         if (fullNodeBuilder.Network.Consensus.IsProofOfStake)
                             services.AddSingleton<BlockStoreSignaled, ProvenHeadersBlockStoreSignaled>();
