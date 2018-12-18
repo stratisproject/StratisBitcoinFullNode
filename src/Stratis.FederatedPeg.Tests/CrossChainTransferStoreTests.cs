@@ -20,9 +20,16 @@ using Xunit;
 
 namespace Stratis.FederatedPeg.Tests
 {
+    public class CrossChainTransferStoreStratisTests : CrossChainTransferStoreTests
+    {
+        public CrossChainTransferStoreStratisTests() : base(new StratisRegTest())
+        {
+        }
+    }
+
     public class CrossChainTransferStoreTests : CrossChainTestBase
     {
-        public CrossChainTransferStoreTests() : base()
+        public CrossChainTransferStoreTests(Network network = null) : base(network)
         {
         }
 
@@ -35,7 +42,7 @@ namespace Stratis.FederatedPeg.Tests
             var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
-            this.AppendBlocks(5);
+            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -56,7 +63,7 @@ namespace Stratis.FederatedPeg.Tests
             var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
-            this.AppendBlocks(5);
+            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -70,7 +77,7 @@ namespace Stratis.FederatedPeg.Tests
             }
 
             // Create a new instance of this test that loads from the persistence that we created in the step before.
-            var newTest = new CrossChainTransferStoreTests();
+            var newTest = new CrossChainTransferStoreTests(this.network);
 
             // Force a reorg by creating a new chain that only has genesis in common.
             newTest.Init(dataFolder);
@@ -97,7 +104,7 @@ namespace Stratis.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(5);
+            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
@@ -194,7 +201,7 @@ namespace Stratis.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(5);
+            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
@@ -306,7 +313,7 @@ namespace Stratis.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(5);
+            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -339,14 +346,20 @@ namespace Stratis.FederatedPeg.Tests
 
                 // Create a separate instance to generate another transaction.
                 Transaction transaction2;
-                var newTest = new CrossChainTransferStoreTests();
+                var newTest = new CrossChainTransferStoreTests(this.network);
                 var dataFolder2 = new DataFolder(CreateTestDir(this));
 
                 newTest.federationKeys = this.federationKeys;
                 newTest.SetExtendedKey(1);
                 newTest.Init(dataFolder2);
-                newTest.AddFunding();
-                newTest.AppendBlocks(3);
+
+                // Clone chain
+                for (int i = 1; i <= this.chain.Height; i++)
+                {
+                    ChainedHeader header = this.chain.GetBlock(i);
+                    Block block = this.blockDict[header.HashBlock];
+                    newTest.AppendBlock(block);
+                }
 
                 using (ICrossChainTransferStore crossChainTransferStore2 = newTest.CreateStore())
                 {
@@ -378,61 +391,11 @@ namespace Stratis.FederatedPeg.Tests
 
                 // Should be returned as signed.
                 Transaction signedTransaction = crossChainTransferStore.GetTransactionsByStatusAsync(CrossChainTransferStatus.FullySigned).GetAwaiter().GetResult().Values.SingleOrDefault();
+
                 Assert.NotNull(signedTransaction);
 
                 // Check ths signature.
                 Assert.True(crossChainTransferStore.ValidateTransaction(signedTransaction, true));
-            }
-        }
-
-        /// <summary>
-        /// Tests that the store can recover from the chain and handle a re-org.
-        /// </summary>
-        [Fact]
-        public void StoreRecoversFromChain()
-        {
-            var dataFolder = new DataFolder(CreateTestDir(this));
-
-            this.Init(dataFolder);
-            this.AddFunding();
-            this.AppendBlocks(3);
-
-            Transaction transaction = this.network.CreateTransaction("010000000297faf456cbebc6e612038440370f3e9500040c34a3831a5d613dcbda50fd8a4b00000000b6000047304402205825ad5821a94fa7b5049d35dead43315efbfeb7cf2a4bbbf34db529419703db02200b901fee8d462b396bfea85f7d94172e4c2f0bbfe9880cc420613268bbb0c60801004c69522102eef7619de25578c9717a289d08c61d4598b2bd81d2ee5db3072a07fa2d121e6521027ce19209dd1212a6a4fc2b7ddf678c6dea40b596457f934f73f3dcc5d0d9ee552103093239d5344ddb4c69c46c75bd629519e0b68d2cfc1a86cd63115fd068f202ba53aeffffffff97faf456cbebc6e612038440370f3e9500040c34a3831a5d613dcbda50fd8a4b01000000b6000047304402203b24aedb91d43912da519739a96dff8e0d6600169da2bff72f68f1c92f6a846f022079e6aaf61ea77172c187ffa7dff53e4f8f5d00657a398bca24f1e010ef3ff9ad01004c69522102eef7619de25578c9717a289d08c61d4598b2bd81d2ee5db3072a07fa2d121e6521027ce19209dd1212a6a4fc2b7ddf678c6dea40b596457f934f73f3dcc5d0d9ee552103093239d5344ddb4c69c46c75bd629519e0b68d2cfc1a86cd63115fd068f202ba53aeffffffff03c0878b3b0000000017a91442938bb61378468a38629c4ffa1521759d0283578700a0acb9030000001976a9148b6b8e2cb3d75e538d28fc7f456c4966f880764e88ac0000000000000000226a20000000000000000000000000000000000000000000000000000000000000000000000000");
-            this.AppendBlock(transaction);
-
-            using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
-            {
-                crossChainTransferStore.Initialize();
-                crossChainTransferStore.Start();
-
-                Assert.Equal(this.chain.Tip.HashBlock, crossChainTransferStore.TipHashAndHeight.HashBlock);
-                Assert.Equal(this.chain.Tip.Height, crossChainTransferStore.TipHashAndHeight.Height);
-
-                ICrossChainTransfer transfer = crossChainTransferStore.GetAsync(new uint256[] { 0 }).GetAwaiter().GetResult().SingleOrDefault();
-
-                Assert.NotNull(transfer);
-                Assert.Equal(transaction.GetHash(), transfer.PartialTransaction.GetHash());
-                Assert.Equal(CrossChainTransferStatus.SeenInBlock, transfer.Status);
-
-                // Re-org the chain.
-                this.chain.SetTip(this.chain.Tip.Previous);
-                this.federationWalletManager.UpdateLastBlockSyncedHeight(this.chain.Tip);
-
-                transfer = crossChainTransferStore.GetAsync(new uint256[] { 0 }).GetAwaiter().GetResult().SingleOrDefault();
-
-                // Since the info from chain A has not been recovered yet we expect that
-                // that the transfer is completely removed from the DB - I.e. it has only been "seen"
-                // and had no associated deposit height.
-                Assert.Null(transfer);
-
-                // Restore the chain.
-                AppendBlock(transaction);
-                this.federationWalletManager.UpdateLastBlockSyncedHeight(this.chain.Tip);
-
-                transfer = crossChainTransferStore.GetAsync(new uint256[] { 0 }).GetAwaiter().GetResult().SingleOrDefault();
-
-                // Check that the status reverts for a transaction that is again visible on the chain.
-                Assert.Equal(CrossChainTransferStatus.SeenInBlock, transfer.Status);
             }
         }
 
@@ -446,7 +409,7 @@ namespace Stratis.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(5);
+            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
