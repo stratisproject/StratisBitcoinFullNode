@@ -280,7 +280,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     this.logger.LogTrace("Wallet tip '{0}' is ahead or equal to the new tip '{1}'.", this.walletTip, newTip.HashBlock);
                 }
             }
-            else this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
+            else
+                this.logger.LogTrace("New block follows the previously known block '{0}'.", this.walletTip);
 
             this.walletTip = newTip;
             this.walletManager.ProcessBlock(block, newTip);

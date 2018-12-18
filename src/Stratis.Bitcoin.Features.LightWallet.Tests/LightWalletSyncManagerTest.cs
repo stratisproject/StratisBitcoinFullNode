@@ -515,11 +515,10 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             // set 2nd block as tip
             lightWalletSyncManager.SetWalletTip(this.chain.GetBlock(2));
+
             //process 4th block in the list does not have same prevhash as which is loaded
             Block blockToProcess = blocks[3];
             lightWalletSyncManager.ProcessBlock(blockToProcess);
-
-            this.blockNotification.Verify(b => b.SyncFrom(this.chain.GetBlock(2).HashBlock));
 
             uint256 expectedBlockHash = this.chain.GetBlock(2).Header.GetHash();
             Assert.Equal(expectedBlockHash, lightWalletSyncManager.WalletTip.Header.GetHash());
@@ -579,7 +578,7 @@ namespace Stratis.Bitcoin.Features.LightWallet.Tests
 
             //expect the wallet tip to be set to the fork and the sync to be started from that block.
             Assert.Equal(this.chain.GetBlock(2).HashBlock, lightWalletSyncManager.WalletTip.HashBlock);
-            this.blockNotification.Verify(w => w.SyncFrom(this.chain.GetBlock(2).HashBlock));
+
             // expect no blocks to be processed.
             this.walletManager.Verify(w => w.ProcessBlock(It.IsAny<Block>(), It.IsAny<ChainedHeader>()), Times.Exactly(0));
         }
