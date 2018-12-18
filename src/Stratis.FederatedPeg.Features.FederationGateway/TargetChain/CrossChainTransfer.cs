@@ -195,6 +195,21 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         }
 
         /// <inheritdoc />
+        public int GetSignatureCount(Network network)
+        {
+            Guard.NotNull(this.PartialTransaction, nameof(this.PartialTransaction));
+            Guard.Assert(this.PartialTransaction.Inputs.Any());
+
+            Script scriptSig = this.PartialTransaction.Inputs[0].ScriptSig;
+            if (scriptSig == null)
+                return 0;
+
+            TransactionSignature[] result = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, scriptSig);
+
+            return result?.Length ?? 0;
+        }
+
+        /// <inheritdoc />
         public void CombineSignatures(TransactionBuilder builder, Transaction[] partialTransactions)
         {
             Guard.Assert(this.status == CrossChainTransferStatus.Partial);
