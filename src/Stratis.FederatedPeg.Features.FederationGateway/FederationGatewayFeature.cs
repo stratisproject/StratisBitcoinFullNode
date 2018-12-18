@@ -165,8 +165,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.walletSyncManager.Start();
             this.crossChainTransferStore.Start();
             this.partialTransactionRequester.Start();
-            // TODO investiagte why are we doing this. Looks incorrect.
-            this.maturedBlockRequester.GetMoreBlocksAsync().GetAwaiter().GetResult();
 
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
