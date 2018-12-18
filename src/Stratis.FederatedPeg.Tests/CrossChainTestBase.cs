@@ -46,6 +46,7 @@ namespace Stratis.FederatedPeg.Tests
         protected IAsyncLoopFactory asyncLoopFactory;
         protected INodeLifetime nodeLifetime;
         protected IConnectionManager connectionManager;
+        protected DBreezeSerializer dBreezeSerializer;
         protected Dictionary<uint256, Block> blockDict;
         protected List<Transaction> fundingTransactions;
         protected FederationWallet wallet;
@@ -67,9 +68,6 @@ namespace Stratis.FederatedPeg.Tests
             this.network = FederatedPegNetwork.NetworksSelector.Regtest();
             NetworkRegistration.Register(this.network);
 
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.network);
-
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
             this.asyncLoopFactory = new AsyncLoopFactory(this.loggerFactory);
@@ -84,6 +82,7 @@ namespace Stratis.FederatedPeg.Tests
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
             this.nodeLifetime = new NodeLifetime();
             this.connectionManager = Substitute.For<IConnectionManager>();
+            this.dBreezeSerializer = new DBreezeSerializer(this.network);
 
             this.wallet = null;
             this.federationGatewaySettings = Substitute.For<IFederationGatewaySettings>();
@@ -200,7 +199,7 @@ namespace Stratis.FederatedPeg.Tests
         protected ICrossChainTransferStore CreateStore()
         {
             return new CrossChainTransferStore(this.network, this.dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler);
+                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler, this.dBreezeSerializer);
         }
 
         /// <summary>
