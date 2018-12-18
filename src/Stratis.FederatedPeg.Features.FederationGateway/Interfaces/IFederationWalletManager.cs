@@ -107,7 +107,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </summary>
         /// <param name="password">The user's password.</param>
         /// <param name="mnemonic">The user's mnemonic.</param>
-        void ImportMemberKey(string password, string mnemonic);
+        /// <param name="passphrase">A passphrase used to derive the private key from the mnemonic.</param>
+        void ImportMemberKey(string password, string mnemonic, string passphrase);
 
         /// <summary>
         /// Finds all withdrawal transactions with optional filtering by deposit id or transaction id.

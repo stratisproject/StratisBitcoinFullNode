@@ -174,7 +174,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
             try
             {
-                this.walletManager.ImportMemberKey(request.Password, request.Mnemonic);
+                this.walletManager.ImportMemberKey(request.Password, request.Mnemonic, request.Passphrase);
                 return this.Ok();
             }
             catch (Exception e)

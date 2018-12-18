@@ -1013,7 +1013,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
-        public void ImportMemberKey(string password, string mnemonic)
+        public void ImportMemberKey(string password, string mnemonic, string passphrase)
         {
             Guard.NotEmpty(password, nameof(password));
             Guard.NotEmpty(mnemonic, nameof(mnemonic));
@@ -1022,7 +1022,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             ExtKey extendedKey;
             try
             {
-                extendedKey = HdOperations.GetExtendedKey(mnemonic);
+                extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
             }
             catch (NotSupportedException ex)
             {
