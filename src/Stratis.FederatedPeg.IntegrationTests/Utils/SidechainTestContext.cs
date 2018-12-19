@@ -1,28 +1,27 @@
+using System;
+using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
 using System.Net.Http;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions;
+using Flurl;
+using Flurl.Http;
+using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.Networks;
+using Stratis.FederatedPeg.Features.FederationGateway;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
+using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Utils
 {
-    using System;
-    using System.Collections.Generic;
-    using System.IO;
-    using System.Linq;
-    using System.Net;
-    using FluentAssertions;
-    using Flurl;
-    using Flurl.Http;
-    using NBitcoin;
-    using Stratis.Bitcoin.IntegrationTests.Common;
-    using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-    using Stratis.Bitcoin.Networks;
-    using Stratis.FederatedPeg.Features.FederationGateway;
-    using Stratis.FederatedPeg.Features.FederationGateway.Models;
-    using Stratis.Sidechains.Networks;
-
     public class SidechainTestContext : IDisposable
     {
         private const string WalletName = "mywallet";
@@ -266,6 +265,39 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
                     hex = walletBuildTxModel.Hex
                 });
         }
+
+        public async Task WithdrawToMainChain(CoreNode node, decimal amount, string mainchainWithdrawAddress)
+        {
+            HttpResponseMessage withdrawTransaction = await $"http://localhost:{node.ApiPort}/api"
+                .AppendPathSegment("wallet/build-transaction")
+                .PostJsonAsync(new
+                {
+                    walletName = WalletName,
+                    accountName = WalletAccount,
+                    password = WalletPassword,
+                    opReturnData = mainchainWithdrawAddress,
+                    feeAmount = "0.01",
+                    recipients = new[]
+                    {
+                        new
+                        {
+                            destinationAddress = this.scriptAndAddresses.sidechainMultisigAddress.ToString(),
+                            amount = amount
+                        }
+                    }
+                });
+
+            string result = await withdrawTransaction.Content.ReadAsStringAsync();
+            WalletBuildTransactionModel walletBuildTxModel = JsonConvert.DeserializeObject<WalletBuildTransactionModel>(result);
+
+            HttpResponseMessage sendTransactionResponse = await $"http://localhost:{node.ApiPort}/api"
+                .AppendPathSegment("wallet/send-transaction")
+                .PostJsonAsync(new
+                {
+                    hex = walletBuildTxModel.Hex
+                });
+        }
+
         public string GetAddress(CoreNode node)
         {
             return node.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(WalletName, WalletAccount)).Address;
@@ -312,6 +344,14 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.AppendToConfig(this.FedMain1, $"mindepositconfirmations=5");
             this.AppendToConfig(this.FedMain2, $"mindepositconfirmations=5");
             this.AppendToConfig(this.FedMain3, $"mindepositconfirmations=5");
+
+            this.AppendToConfig(this.FedSide1, $"mincoinmaturity=5");
+            this.AppendToConfig(this.FedSide2, $"mincoinmaturity=5");
+            this.AppendToConfig(this.FedSide3, $"mincoinmaturity=5");
+
+            this.AppendToConfig(this.FedMain1, $"mincoinmaturity=5");
+            this.AppendToConfig(this.FedMain2, $"mincoinmaturity=5");
+            this.AppendToConfig(this.FedMain3, $"mincoinmaturity=5");
 
             this.AppendToConfig(this.FedSide1, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
             this.AppendToConfig(this.FedSide2, $"{FederationGatewaySettings.RedeemScriptParam}={this.scriptAndAddresses.payToMultiSig.ToString()}");
