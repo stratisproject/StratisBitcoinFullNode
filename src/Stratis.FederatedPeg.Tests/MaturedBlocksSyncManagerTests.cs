@@ -38,21 +38,21 @@ namespace Stratis.FederatedPeg.Tests
             var models = new List<MaturedBlockDepositsModel>() { new MaturedBlockDepositsModel(new MaturedBlockInfoModel(), new List<IDeposit>())};
             this.federationGatewayClient.GetMaturedBlockDepositsAsync(null).ReturnsForAnyArgs(Task.FromResult(models));
 
-            bool delayRequired = await this.syncManager.ExposedAskForBlocksAsync();
+            bool delayRequired = await this.syncManager.ExposedSyncBatchOfBlocksAsync();
             // Delay shouldn't be required because not-empty list was provided.
             Assert.False(delayRequired);
 
             // Now provide empty list.
             this.federationGatewayClient.GetMaturedBlockDepositsAsync(null).ReturnsForAnyArgs(Task.FromResult(new List<MaturedBlockDepositsModel>() {}));
 
-            bool delayRequired2 = await this.syncManager.ExposedAskForBlocksAsync();
+            bool delayRequired2 = await this.syncManager.ExposedSyncBatchOfBlocksAsync();
             // Delay is required because empty list was provided.
             Assert.True(delayRequired2);
 
             // Now provide null.
             this.federationGatewayClient.GetMaturedBlockDepositsAsync(null).ReturnsForAnyArgs(Task.FromResult(null as List<MaturedBlockDepositsModel>));
 
-            bool delayRequired3 = await this.syncManager.ExposedAskForBlocksAsync();
+            bool delayRequired3 = await this.syncManager.ExposedSyncBatchOfBlocksAsync();
             // Delay is required because null list was provided.
             Assert.True(delayRequired3);
         }
@@ -65,9 +65,9 @@ namespace Stratis.FederatedPeg.Tests
             {
             }
 
-            public Task<bool> ExposedAskForBlocksAsync()
+            public Task<bool> ExposedSyncBatchOfBlocksAsync()
             {
-                return this.AskForBlocksAsync();
+                return this.SyncBatchOfBlocksAsync();
             }
         }
     }

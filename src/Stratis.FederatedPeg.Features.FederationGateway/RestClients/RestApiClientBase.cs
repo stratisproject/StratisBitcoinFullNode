@@ -35,10 +35,20 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
 
             this.endpointUrl = $"http://localhost:{settings.CounterChainApiPort}/api/FederationGateway";
 
-            this.policy = Policy.Handle<Exception>().WaitAndRetryAsync(retryCount: RetryCount, sleepDurationProvider: attempt => TimeSpan.FromMilliseconds(AttemptDelayMs), onRetry: OnRetry);
+            this.policy = Policy.Handle<Exception>().WaitAndRetryAsync(retryCount: RetryCount, sleepDurationProvider:
+                attemptNumber =>
+                {
+                    // Intervals between new attempts are growing.
+                    int delayMs = AttemptDelayMs;
+
+                    if (attemptNumber > 1)
+                        delayMs *= attemptNumber;
+
+                    return TimeSpan.FromMilliseconds(delayMs);
+                }, onRetry: OnRetry);
         }
 
-        protected async Task<HttpResponseMessage> SendPostRequestAsync<Model>(Model requestModel, string apiMethodName) where Model : class
+        protected async Task<HttpResponseMessage> SendPostRequestAsync<Model>(Model requestModel, string apiMethodName, CancellationToken cancellation) where Model : class
         {
             var publicationUri = new Uri($"{this.endpointUrl}/{apiMethodName}");
 
@@ -53,12 +63,19 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
                     // Retry the following call according to the policy.
                     await this.policy.ExecuteAsync(async token =>
                     {
-                        this.logger.LogDebug("Sending request of type '{0}' to Uri '{1}'.", requestModel.GetType().FullName, publicationUri);
+                        this.logger.LogDebug("Sending request of type '{0}' to Uri '{1}'.",
+                            requestModel.GetType().FullName, publicationUri);
 
-                        response = await client.PostAsync(publicationUri, request).ConfigureAwait(false);
+                        response = await client.PostAsync(publicationUri, request, cancellation).ConfigureAwait(false);
                         this.logger.LogDebug("Response received: {0}", response);
 
-                    }, CancellationToken.None);
+                    }, cancellation);
+                }
+                catch (OperationCanceledException)
+                {
+                    this.logger.LogDebug("Operation canceled.");
+                    this.logger.LogTrace("(-)[CANCELLED]:null");
+                    return null;
                 }
                 catch (Exception ex)
                 {
@@ -72,9 +89,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.RestClients
             return response;
         }
 
-        protected async Task<Response> SendPostRequestAsync<Model, Response>(Model requestModel, string apiMethodName) where Response : class where Model : class
+        protected async Task<Response> SendPostRequestAsync<Model, Response>(Model requestModel, string apiMethodName, CancellationToken cancellation) where Response : class where Model : class
         {
-            HttpResponseMessage response = await this.SendPostRequestAsync(requestModel, apiMethodName).ConfigureAwait(false);
+            HttpResponseMessage response = await this.SendPostRequestAsync(requestModel, apiMethodName, cancellation).ConfigureAwait(false);
 
             // Parse response.
             if ((response != null) && response.IsSuccessStatusCode && (response.Content != null))

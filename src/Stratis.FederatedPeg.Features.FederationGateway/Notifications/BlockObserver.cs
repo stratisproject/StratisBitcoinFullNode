@@ -1,4 +1,6 @@
 ﻿using System.Collections.Generic;
+using System.Threading;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
@@ -6,7 +8,6 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.RestClients;
-using Stratis.FederatedPeg.Features.FederationGateway.SourceChain;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
@@ -28,6 +29,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
 
         private readonly IWithdrawalReceiver withdrawalReceiver;
 
+        private CancellationTokenSource cancellationSource;
+
+        private Task pushBlockTipTask;
+
         /// <summary>
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
@@ -36,7 +41,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         /// <param name="withdrawalExtractor">The component used to extract withdrawals from blocks.</param>
         /// <param name="withdrawalReceiver">The component that receives the withdrawals extracted from blocks.</param>
         /// <param name="federationGatewayClient">Client for federation gateway api.</param>
-        /// <param name="blockTipSender">Service responsible for publishing the block tip.</param>
         public BlockObserver(IFederationWalletSyncManager walletSyncManager,
                              IDepositExtractor depositExtractor,
                              IWithdrawalExtractor withdrawalExtractor,
@@ -54,6 +58,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
             this.depositExtractor = depositExtractor;
             this.withdrawalExtractor = withdrawalExtractor;
             this.withdrawalReceiver = withdrawalReceiver;
+
+            this.cancellationSource = null;
+            this.pushBlockTipTask = null;
         }
 
         /// <summary>
@@ -64,11 +71,27 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Notifications
         {
             this.walletSyncManager.ProcessBlock(chainedHeaderBlock.Block);
 
-            this.federationGatewayClient.PushCurrentBlockTipAsync(
-                new BlockTipModel(
-                    chainedHeaderBlock.ChainedHeader.HashBlock,
-                    chainedHeaderBlock.ChainedHeader.Height,
-                    (int)this.depositExtractor.MinimumDepositConfirmations)).ConfigureAwait(false).GetAwaiter().GetResult();
+            // Cancel previous sending to avoid first sending new tip and then sending older tip.
+            if ((this.pushBlockTipTask != null) && !this.pushBlockTipTask.IsCompleted)
+            {
+                this.cancellationSource.Cancel();
+                this.pushBlockTipTask.GetAwaiter().GetResult();
+
+                this.pushBlockTipTask = null;
+                this.cancellationSource = null;
+            }
+
+            var blockTipModel = new BlockTipModel(chainedHeaderBlock.ChainedHeader.HashBlock,chainedHeaderBlock.ChainedHeader.Height, (int)this.depositExtractor.MinimumDepositConfirmations);
+
+            // There is no reason to wait for the message to be sent.
+            // Awaiting REST API call will only slow this callback.
+            // Callbacks never supposed to do any IO calls or web requests.
+            // Instead we start sending the message and if next block was connected faster than the message was sent we
+            // are canceling it and sending the next tip.
+            // Receiver of this message doesn't care if we are not providing tips for every block we connect,
+            // it just requires to know about out latest state.
+            this.cancellationSource = new CancellationTokenSource();
+            this.pushBlockTipTask = Task.Run(async () => await this.federationGatewayClient.PushCurrentBlockTipAsync(blockTipModel, this.cancellationSource.Token).ConfigureAwait(false));
 
             IReadOnlyList<IWithdrawal> withdrawals = this.withdrawalExtractor.ExtractWithdrawalsFromBlock(
                 chainedHeaderBlock.Block,

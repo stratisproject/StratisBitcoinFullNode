@@ -38,6 +38,10 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <summary>When we are fully synced we stop asking for more blocks for this amount of time.</summary>
         private const int RefreshDelayMs = 10_000;
 
+        /// <summary>Delay between initialization and first request to other node.</summary>
+        /// <remarks>Needed to give other node some time to start before bombing it with requests.</remarks>
+        private const int InitializationDelayMs = 10_000;
+
         public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory)
         {
             this.store = store;
@@ -56,23 +60,35 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         /// <summary>Continuously requests matured blocks from another chain.</summary>
         private async Task RequestMaturedBlocksContinouslyAsync()
         {
-            while (!this.cancellation.IsCancellationRequested)
+            try
             {
-                bool delayRequired = await this.AskForBlocksAsync().ConfigureAwait(false);
+                // Initialization delay.
+                // Give other node some time to start API service.
+                await Task.Delay(InitializationDelayMs, this.cancellation.Token).ConfigureAwait(false);
 
-                if (delayRequired)
+                while (!this.cancellation.IsCancellationRequested)
                 {
-                    // Since we are synced or had a problem syncing there is no need to ask for more blocks right away.
-                    // Therefore awaiting for a delay during which new block might be accepted on the alternative chain
-                    // or alt chain node might be started.
-                    await Task.Delay(RefreshDelayMs).ConfigureAwait(false);
+                    bool delayRequired = await this.SyncBatchOfBlocksAsync(this.cancellation.Token).ConfigureAwait(false);
+
+                    if (delayRequired)
+                    {
+                        // Since we are synced or had a problem syncing there is no need to ask for more blocks right away.
+                        // Therefore awaiting for a delay during which new block might be accepted on the alternative chain
+                        // or alt chain node might be started.
+                        await Task.Delay(RefreshDelayMs, this.cancellation.Token).ConfigureAwait(false);
+                    }
                 }
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("(-)[CANCELLED]");
             }
         }
 
         /// <summary>Asks for blocks from another gateway node and then processes them.</summary>
         /// <returns><c>true</c> if delay between next time we should ask for blocks is required; <c>false</c> otherwise.</returns>
-        protected async Task<bool> AskForBlocksAsync()
+        /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
+        protected async Task<bool> SyncBatchOfBlocksAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             int blocksToRequest = 1;
 
@@ -88,7 +104,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                 nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
 
             // Ask for blocks.
-            IList<MaturedBlockDepositsModel> matureBlockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model).ConfigureAwait(false);
+            IList<MaturedBlockDepositsModel> matureBlockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
 
             bool delayRequired = true;
 
