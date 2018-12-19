@@ -901,26 +901,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             return false;
         }
 
-        /// <summary>
-        /// Identifies the earliest multisig transaction data input associated with a transaction.
-        /// </summary>
-        /// <param name="transaction">The transaction to find the earliest multisig transaction data input for.</param>
-        /// <returns>The earliest multisig transaction data input.</returns>
-        private TransactionData MultiSigInput(Transaction transaction)
-        {
-            foreach (TxIn input in transaction.Inputs)
-            {
-                TransactionData transactionData = this.Wallet.MultiSigAddress.Transactions
-                    .Where(t => t?.SpendingDetails?.TransactionId == transaction.GetHash() && t.Id == input.PrevOut.Hash && t.Index == input.PrevOut.N)
-                    .FirstOrDefault();
-
-                if (transactionData != null)
-                    return transactionData;
-            }
-
-            return null;
-        }
-
         /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader)
         {
