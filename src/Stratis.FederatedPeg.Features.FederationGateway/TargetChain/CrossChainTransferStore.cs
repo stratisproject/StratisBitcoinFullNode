@@ -444,7 +444,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                             continue;
                         }
 
-                        // CanPersistMatureDeposits is a bit slow. Call it only once.
+                        // IsFederationActive is a bit slow. Call it once only.
                         canPersist = canPersist ?? this.federationWalletManager.IsFederationActive();
 
                         if (!(bool)canPersist)
