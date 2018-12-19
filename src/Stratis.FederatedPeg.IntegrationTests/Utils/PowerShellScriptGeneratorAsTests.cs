@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Text;
 using NBitcoin;
 using Stratis.FederatedPeg.IntegrationTests.Utils;
@@ -19,7 +20,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
 
         private Action<string> newLine;
 
-        private Dictionary<Mnemonic, PubKey> PubKeysByMnemonic { get { return originalPubKeysByMnemonic ?? this.pubKeysByMnemonic; }}
+        private Dictionary<Mnemonic, PubKey> PubKeysByMnemonic { get { return originalPubKeysByMnemonic ?? this.pubKeysByMnemonic; } }
 
         private Dictionary<Mnemonic, PubKey> originalPubKeysByMnemonic;
 
@@ -53,7 +54,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             SetConsoleColors();
             StartGatewayDs();
             StartChainsD();
-            ShowRunningNodes();
+            CreateDebuggingDashboard();
             EnableWallets();
 
             return stringBuilder.ToString();
@@ -162,7 +163,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             var stratisDDir = Path.Combine("$git_repos_path", "StratisBitcoinFullNode", "src", "Stratis.StratisD");
             var walletFile = Path.Combine(appDataDir, "StratisNode", "stratis", this.mainchainNetwork.Name, "walletTest1.wallet.json");
             this.newLine("###############################");
-            this.newLine("#    UPDATE THESE 5 VALUES    #");
+            this.newLine("#    UPDATE THESE 8 VALUES    #");
             this.newLine("###############################");
             this.newLine($"$git_repos_path = \"{Path.Combine(Environment.GetEnvironmentVariable("USERPROFILE"), "source", "repos")}\"");
             this.newLine($"$root_datadir = \"{rootDataDir}\"");
@@ -170,6 +171,8 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.newLine($"$path_to_sidechaind = \"{sidechainDDir}\"");
             this.newLine($"$path_to_stratisd = \"{stratisDDir}\"");
             this.newLine($"$path_to_stratis_wallet_with_funds = \"{walletFile}\"");
+            this.newLine($"$dashboard_path = \"$root_datadir.\\dashboard.html\"");
+            this.newLine($"$browser = \"chrome.exe\"");
             this.newLine(Environment.NewLine);
         }
 
@@ -254,43 +257,26 @@ namespace Stratis.FederatedPeg.Tests.Utils
             this.newLine(Environment.NewLine);
         }
 
-
-
         private void CallStartNode(string path, string title, string color, string args, string timeout)
         {
             this.newLine($@"Start-Node -Path {path} -WindowTitle ""{title}"" -ConsoleColor {color} -CmdArgs ""{args}"" -Timeout {timeout}");
         }
 
-
-
         private void CreateHelpers()
         {
+            using (Stream stream = this.GetType().GetTypeInfo().Assembly.GetManifestResourceStream("Stratis.FederatedPeg.IntegrationTests.Resources.HelperMethods.ps1"))
+            using (StreamReader reader = new StreamReader(stream, Encoding.UTF8))
+                this.newLine(reader.ReadToEnd());
 
-            this.newLine(@"
-cls
-
-[System.Collections.ArrayList]$running_nodes = @()
-
-function Start-Node {
-    param( [string]$Path, [string]$WindowTitle, [string]$ConsoleColor, [string]$CmdArgs, [int]$Timeout )
-
-    cd $Path
-    start-process cmd -ArgumentList ""/k title ${WindowTitle} && color ${ConsoleColor} && dotnet run --no-build ${CmdArgs}""
-    $running_nodes.Add(""------------------${WindowTitle}------------------`n${CmdArgs}"")
-    timeout $Timeout
-}
-
-function Show-Running-Nodes {
-    $body = $running_nodes -replace ""`n"",""&echo."" -join ""&echo.&echo.""
-    start-process cmd ""/k title Running Nodes && echo ${body}""
-}
-"
-            );
+            this.newLine(Environment.NewLine);
         }
 
-        private void ShowRunningNodes()
+        private void CreateDebuggingDashboard()
         {
-            this.newLine("Show-Running-Nodes");
+            this.newLine(Environment.NewLine);
+            this.newLine("#Creating Debugging Dashboard and opening it on $browser");
+            this.newLine("Create-Dashboard");
+            this.newLine(Environment.NewLine);
         }
     }
 }
