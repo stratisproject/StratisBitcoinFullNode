@@ -27,6 +27,9 @@ namespace Stratis.BreezeD
 
                 IFullNodeBuilder fullNodeBuilder = null;
 
+                if (!args.Any(a => a.Contains("datadirroot")))
+                    args = args.Concat(new[] { "-datadirroot=StratisBreeze" }).ToArray();
+
                 if (isStratis)
                 {
                     nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, agent: "Breeze", args: args)
@@ -36,12 +39,12 @@ namespace Stratis.BreezeD
 
                     fullNodeBuilder = new FullNodeBuilder()
                                     .UseNodeSettings(nodeSettings)
+                                    .UseApi()
                                     .UseBlockStore()
                                     .UsePosConsensus()
                                     .UseLightWallet()
                                     .UseBlockNotification()
-                                    .UseTransactionNotification()
-                                    .UseApi();
+                                    .UseTransactionNotification();
                 }
                 else
                 {
@@ -49,12 +52,12 @@ namespace Stratis.BreezeD
 
                     fullNodeBuilder = new FullNodeBuilder()
                                     .UseNodeSettings(nodeSettings)
+                                    .UseApi()
                                     .UseBlockStore()
                                     .UsePowConsensus()
                                     .UseLightWallet()
                                     .UseBlockNotification()
-                                    .UseTransactionNotification()
-                                    .UseApi();
+                                    .UseTransactionNotification();
                 }
 
                 IFullNode node = fullNodeBuilder.Build();
