@@ -7,7 +7,7 @@ using Stratis.FederatedPeg.Features.FederationGateway.Models;
 namespace Stratis.FederatedPeg.Features.FederationGateway
 {
     /// <summary>
-    /// This class determines which federated member to select as the next leader based on a change in block hieght.
+    /// This class determines which federated member to select as the next leader based on a change in block height.
     /// </summary>
     public interface ILeaderProvider
     {

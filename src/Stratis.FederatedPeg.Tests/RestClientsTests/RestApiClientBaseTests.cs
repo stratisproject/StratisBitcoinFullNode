@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net;
 using System.Net.Http;
+using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
@@ -52,7 +53,7 @@ namespace Stratis.FederatedPeg.Tests.RestClientsTests
 
         public Task<HttpResponseMessage> CallThatWillAlwaysFail()
         {
-            return this.SendPostRequestAsync("stringModel", "nonExistentAPIMethod");
+            return this.SendPostRequestAsync("stringModel", "nonExistentAPIMethod", CancellationToken.None);
         }
 
         protected override void OnRetry(Exception exception, TimeSpan delay)
