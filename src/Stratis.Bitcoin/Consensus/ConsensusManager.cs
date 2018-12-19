@@ -739,7 +739,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // We failed to jump back on the previous chain after a failed reorg.
             // And we failed to reconnect the old chain, database might be corrupted.
-            this.logger.LogError("A critical error has prevented reconnecting blocks");
+            this.logger.LogError("A critical error has prevented reconnecting blocks, error = {0}", connectBlockResult.Error);
             this.logger.LogTrace("(-)[FAILED_TO_RECONNECT]");
             throw new ConsensusException("A critical error has prevented reconnecting blocks.");
         }
