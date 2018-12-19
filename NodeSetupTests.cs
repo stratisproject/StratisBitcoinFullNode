@@ -1,13 +1,7 @@
-using System.Collections.Generic;
-using System.Linq;
+using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.Features.Wallet.Models;
-using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 using Stratis.FederatedPeg.IntegrationTests.Utils;
 using Xunit;
 
@@ -18,7 +12,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
         [Fact]
         public void StartBothChainsWithWallets()
         {
-            using (SidechainTestContext context = new SidechainTestContext())
+            using (var context = new SidechainTestContext())
             {
                 context.StartAndConnectNodes();
 
@@ -27,10 +21,10 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = "Polly is preventing nodes syncing.")]
+        [Fact]
         public void FundMainChain()
         {
-            using (SidechainTestContext context = new SidechainTestContext())
+            using (var context = new SidechainTestContext())
             {
                 context.StartMainNodes();
                 context.ConnectMainChainNodes();
@@ -42,10 +36,10 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = "Polly is preventing nodes syncing.")]
+        [Fact]
         public void FundSideChain()
         {
-            using (SidechainTestContext context = new SidechainTestContext())
+            using (var context = new SidechainTestContext())
             {
                 context.StartSideNodes();
                 context.ConnectSideChainNodes();
@@ -67,7 +61,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
         [Fact]
         public async Task MainChain_To_SideChain_Transfer_And_Back()
         {
-            using (SidechainTestContext context = new SidechainTestContext())
+            using (var context = new SidechainTestContext())
             {
                 // Set everything up
                 context.StartAndConnectNodes();
@@ -89,21 +83,29 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 Assert.Equal(context.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[0].ScriptPubKey);
 
                 // Send to sidechain
+                decimal transferValueCoins = 25;
+                var transferValue = new Money(transferValueCoins, MoneyUnit.BTC);
                 string sidechainAddress = context.GetAddress(context.SideUser);
-                await context.DepositToSideChain(context.MainUser, 25, sidechainAddress);
+                await context.DepositToSideChain(context.MainUser, transferValueCoins, sidechainAddress);
                 TestHelper.WaitLoop(() => context.FedMain1.CreateRPCClient().GetRawMempool().Length == 1);
                 TestHelper.MineBlocks(context.FedMain1, 15);
 
-                // Sidechain user has balance - transfer complete
-                Assert.Equal(new Money(25, MoneyUnit.BTC), context.GetBalance(context.SideUser));
+                var source = new CancellationTokenSource(15_000);
+                TestHelper.WaitLoop(() => context.GetBalance(context.SideUser) == transferValue, cancellationToken: source.Token);
+
+                // Sidechain user has balance - transfer complete.
+                Assert.Equal(transferValue, context.GetBalance(context.SideUser));
+
+                await Task.Delay(5_000).ConfigureAwait(false);
 
                 // Send funds back to the main chain
                 string mainchainAddress = context.GetAddress(context.MainUser);
                 Money currentMainUserBalance = context.GetBalance(context.MainUser);
+
                 await context.WithdrawToMainChain(context.SideUser, 24, mainchainAddress);
                 int currentSideHeight = context.SideUser.FullNode.Chain.Tip.Height;
                 // Mine just enough to get past min deposit and allow time for fed to work
-                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= currentSideHeight + 7); 
+                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= currentSideHeight + 7);
 
                 // Should unlock funds back on the main chain
                 TestHelper.WaitLoop(() => context.FedMain1.CreateRPCClient().GetRawMempool().Length == 1);
