@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                     this.logger.LogTrace("Wallet tip '{0}' is behind the new tip '{1}'.", this.walletTip, newTip);
 
                     // The wallet is falling behind we need to catch up.
-                    this.logger.LogWarning("New tip '{0}' is too far in advance, put the puller back.", newTip);
+                    this.logger.LogWarning("New tip '{0}' is too far in advance.", newTip);
 
                     CancellationToken token = this.nodeLifetime.ApplicationStopping;
 
