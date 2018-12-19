@@ -124,10 +124,19 @@ namespace FederationSetup
 
         private static void HandleSwitchGenerateFedPublicPrivateKeysCommand(string[] args)
         {
-            if (args.Length != 1)
+            if (args.Length != 1 && args.Length != 2)
                 throw new ArgumentException("Please enter the exact number of argument required.");
 
-            GeneratePublicPrivateKeys();
+            string passphrase = null;
+            if (args.Length == 2)
+            {
+                int index = args[1].IndexOf("-passphrase=");
+                if (index < 0)
+                    throw new ArgumentException("The -passphrase=\"<passphrase>\" argument is missing.");
+                passphrase = args[1].Replace("-passphrase=", string.Empty);
+            }
+
+            GeneratePublicPrivateKeys(passphrase);
             FederationSetup.OutputSuccess();
         }
 
@@ -153,11 +162,11 @@ namespace FederationSetup
             Console.WriteLine(new MultisigAddressCreator().CreateMultisigAddresses(mainChain, sideChain, federatedPublicKeys.Select(f => new PubKey(f)).ToArray(), quorum));
         }
 
-        private static void GeneratePublicPrivateKeys()
+        private static void GeneratePublicPrivateKeys(string passphrase)
         {
             // Generate keys for signing.
             var mnemonicForSigningKey = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            PubKey signingPubKey = mnemonicForSigningKey.DeriveExtKey().PrivateKey.PubKey;
+            PubKey signingPubKey = mnemonicForSigningKey.DeriveExtKey(passphrase).PrivateKey.PubKey;
 
             // Generate keys for migning.
             var tool = new KeyTool(new DataFolder(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)));
@@ -177,6 +186,7 @@ namespace FederationSetup
             Console.WriteLine($"-- Please keep the following 12 words for yourself and note them down in a secure place --");
             Console.WriteLine($"------------------------------------------------------------------------------------------");
             Console.WriteLine($"Your signing mnemonic: {string.Join(" ", mnemonicForSigningKey.Words)}");
+            if(passphrase != null) { Console.WriteLine($"Your passphrase: {passphrase}");}
             Console.WriteLine(Environment.NewLine);
             Console.WriteLine($"------------------------------------------------------------------------------------------------------------");
             Console.WriteLine($"-- Please save the following file in a secure place, you'll need it when the federation has been created. --");
