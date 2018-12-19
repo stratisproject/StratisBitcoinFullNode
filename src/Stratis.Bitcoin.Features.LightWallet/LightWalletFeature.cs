@@ -166,8 +166,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             this.walletSyncManager.Stop();
             this.walletManager.Stop();
 
-            if (this.storeSettings.PruningEnabled)
-                this.lightWalletBlockStoreService.Dispose();
+            this.lightWalletBlockStoreService?.Dispose();
         }
 
         public void AddInlineStats(StringBuilder log)
