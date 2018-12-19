@@ -119,7 +119,8 @@ namespace Stratis.Bitcoin.Controllers
                 Testnet = this.network.IsTest(),
                 RelayFee = this.nodeSettings.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime,
-                CoinTicker = this.network.CoinTicker
+                CoinTicker = this.network.CoinTicker,
+                State = this.fullNode.State.ToString()
             };
 
             // Add the list of features that are enabled.

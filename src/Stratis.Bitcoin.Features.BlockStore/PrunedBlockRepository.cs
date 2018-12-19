@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             var toDelete = new List<ChainedHeader>();
 
-            ChainedHeader startFromHeader = blockRepositoryTip.FindAncestorOrSelf(this.blockRepository.TipHashAndHeight.Hash);
+            ChainedHeader startFromHeader = blockRepositoryTip.GetAncestor(upperHeight);
             ChainedHeader endAtHeader = blockRepositoryTip.FindAncestorOrSelf(this.PrunedTip.Hash);
 
             this.logger.LogInformation($"Pruning blocks from height {upperHeight} to {endAtHeader.Height}.");
@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             await this.blockRepository.DeleteBlocksAsync(toDelete.Select(cb => cb.HashBlock).ToList()).ConfigureAwait(false);
 
-            this.UpdatePrunedTip(blockRepositoryTip.FindAncestorOrSelf(this.blockRepository.TipHashAndHeight.Hash));
+            this.UpdatePrunedTip(blockRepositoryTip.GetAncestor(upperHeight));
         }
 
         private void LoadPrunedTip(DBreeze.Transactions.Transaction dbreezeTransaction)
