@@ -228,9 +228,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                                                     "=============================================".PadLeft(10,'=')
                            + Environment.NewLine
                            + Environment.NewLine +  "Federation node not enabled. You will not be able to sign transactions until you enable it."
-                           + Environment.NewLine + $"If not done previously, please import your private key using "
-                           + Environment.NewLine + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.ImportKey}"
-                           + Environment.NewLine + $"Then enable the wallet using "
+                           + Environment.NewLine + $"If not done previously, please enable your federation node using "
                            + Environment.NewLine + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.EnableFederation}"
                            + Environment.NewLine
                            + Environment.NewLine + $"============================================".PadLeft(10, '=')
