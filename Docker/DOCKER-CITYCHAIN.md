@@ -50,6 +50,16 @@ docker volume create citychain
 docker run -it -p 4333:4333 -p 4334:4334 -p 4335:4335 -p 4336:4336 --mount source=citychain,target=/root/.citychain citychain
 ```
 
+## City Chain (RPC/Exchanges)
+
+```
+docker build . -t citychainrpc
+```
+
+```
+docker run -it -p 4333:4333 -p 4334:4334 -p 4335:4335 citychainrpc
+```
+
 # Extras
 
 ## Run multiple instances as daemons

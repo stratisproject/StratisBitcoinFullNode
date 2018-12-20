@@ -3,17 +3,17 @@
 # Exposes the City Chain daemon as an RPC host that can be called from any other computer (0.0.0.0).
 # Ensure your firewall rules protect this machine.
 # Specify the specific rpcallowip if you can, to lock down the RPC interface.
-# Use the rpcbindip=127.0.0.1 to bind RPC to a single IP, by default all.
+# Use the rpcbind=127.0.0.1 to bind RPC to a single IP, by default all (0.0.0.0).
 # Change the rpcuser and rpcpassword to your own.
 # Change the defaultwalletpassword.
 # Use the addnode to quickly connect to your own internal daemon, if you run public nodes.
 # Change the walletnotify to send requests where you need them to go.
-# Change the RPC port for what port you want to use. Default is 4333.
+# Change the RPC port for what port you want to use. Default is 4334. apiport=4335, port=4333 (P2P), wsport=4336 (Web Socket).
 
 server=1
 txindex=1
 rpcallowip=0.0.0.0
-rpcport=4333
+rpcport=4334
 rpcuser=rpcuser
 rpcpassword=rpcpassword
 defaultwallet=1
