@@ -9,6 +9,7 @@
 # Use the addnode to quickly connect to your own internal daemon, if you run public nodes.
 # Change the walletnotify to send requests where you need them to go.
 # Change the RPC port for what port you want to use. Default is 4334. apiport=4335, port=4333 (P2P), wsport=4336 (Web Socket).
+# Remember to uncomment the walletnotify, if that is to be used. DO NOT encapsulate the whole value in quotation (").
 
 server=1
 txindex=1
@@ -20,4 +21,4 @@ defaultwallet=1
 defaultwalletpassword=default
 addnode=52.175.194.227
 addnode=13.66.158.6
-walletnotify=curl -X POST -d txid="%s" "http://localhost/api/notify"
+#walletnotify=curl -X POST -d txid="%s" "http://localhost/api/notify"
