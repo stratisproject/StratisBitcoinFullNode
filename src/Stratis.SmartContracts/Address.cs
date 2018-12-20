@@ -25,24 +25,21 @@ namespace Stratis.SmartContracts
             this.pn4 = other.pn4;
         }
 
-        internal Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
+        /// <summary>
+        /// Creates a new 160-bit wide Address.
+        /// </summary>
+        /// <param name="pn0">The first 32 bits of the address.</param>
+        /// <param name="pn1">The second 32 bits of the address.</param>
+        /// <param name="pn2">The third 32 bits of the address.</param>
+        /// <param name="pn3">The fourth 32 bits of the address.</param>
+        /// <param name="pn4">The last 32 bits of the address.</param>
+        public Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
         {
             this.pn0 = pn0;
             this.pn1 = pn1;
             this.pn2 = pn2;
             this.pn3 = pn3;
             this.pn4 = pn4;
-        }
-        
-        internal static Address Create(byte[] bytes)
-        {
-            var pn0 = BitConverter.ToUInt32(bytes, 0);
-            var pn1 = BitConverter.ToUInt32(bytes, 4);
-            var pn2 = BitConverter.ToUInt32(bytes, 8);
-            var pn3 = BitConverter.ToUInt32(bytes, 12);
-            var pn4 = BitConverter.ToUInt32(bytes, 16);
-
-            return new Address(pn0, pn1, pn2, pn3, pn4);
         }
 
         public byte[] ToBytes()
