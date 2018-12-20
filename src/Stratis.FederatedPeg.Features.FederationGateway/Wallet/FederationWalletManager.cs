@@ -957,41 +957,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             return wallet;
         }
 
-        /// <summary>
-        /// Updates details of the last block synced in a wallet when the chain of headers finishes downloading.
-        /// </summary>
-        /// <param name="wallets">The wallets to update when the chain has downloaded.</param>
-        /// <param name="date">The creation date of the block with which to update the wallet.</param>
-        private void UpdateWhenChainDownloaded(IEnumerable<FederationWallet> wallets, DateTime date)
-        {
-            this.asyncLoopFactory.RunUntil("WalletManager.DownloadChain", this.nodeLifetime.ApplicationStopping,
-                () => this.chain.IsDownloaded(),
-                () =>
-                {
-                    int heightAtDate = this.chain.GetHeightAtTime(date);
-
-                    // TODO why are we foreaching wallets and doing nothing with each wallet?
-                    foreach (FederationWallet wallet in wallets)
-                    {
-                        this.logger.LogTrace("The chain of headers has finished downloading, updating wallet with height {0}", heightAtDate);
-                        this.UpdateLastBlockSyncedHeight(this.chain.GetBlock(heightAtDate));
-                        this.SaveWallet();
-                    }
-                },
-                (ex) =>
-                {
-                    // in case of an exception while waiting for the chain to be at a certain height, we just cut our losses and
-                    // sync from the current height.
-                    this.logger.LogError($"Exception occurred while waiting for chain to download: {ex.Message}");
-
-                    foreach (FederationWallet wallet in wallets)
-                    {
-                        this.UpdateLastBlockSyncedHeight(this.chain.Tip);
-                    }
-                },
-                TimeSpans.FiveSeconds);
-        }
-
         /// <inheritdoc />
         public void ImportMemberKey(string password, string mnemonic, string passphrase)
         {
