@@ -25,6 +25,14 @@ namespace Stratis.SmartContracts
             this.pn4 = other.pn4;
         }
 
+        /// <summary>
+        /// Creates a new 256-bit wide Address.
+        /// </summary>
+        /// <param name="pn0">The first 32 bytes of the address.</param>
+        /// <param name="pn1">The second 32 bytes of the address.</param>
+        /// <param name="pn2">The third 32 bytes of the address.</param>
+        /// <param name="pn3">The fourth 32 bytes of the address.</param>
+        /// <param name="pn4">The last 32 bytes of the address.</param>
         public Address(uint pn0, uint pn1, uint pn2, uint pn3, uint pn4)
         {
             this.pn0 = pn0;
