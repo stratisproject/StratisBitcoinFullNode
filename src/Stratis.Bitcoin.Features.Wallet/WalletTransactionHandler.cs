@@ -57,6 +57,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
             this.TransactionPolicy = transactionPolicy;
+            
+            foreach (var wallet in this.walletManager.WalletsToUnlock)
+            {
+                this.UnlockWallet(wallet.Account, wallet.Password, wallet.Timeout);
+            }
+        }
+
+        private void UnlockWallet(WalletAccountReference account, string password, int timeout)
+        {
+            // Length of expiry of the unlocking, restricted to max duration.
+            TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, WalletManager.MaxUnlockDurationInSeconds));
+
+            this.CacheSecret(account, password, duration);
         }
 
         /// <inheritdoc />

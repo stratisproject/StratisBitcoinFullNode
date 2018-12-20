@@ -2,9 +2,12 @@
 using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.BuilderExtensions;
+using Stratis.Bitcoin.Features.Wallet.Models;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
 {
+    public delegate void UnlockWalletHandler(WalletAccountReference account, string passphrase, int timeout);
+
     /// <summary>
     /// Interface for a manager providing operations on wallets.
     /// </summary>
@@ -25,6 +28,19 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// The last processed block.
         /// </summary>
         uint256 WalletTipHash { get; set; }
+
+        /// <summary>
+        /// Stores the wallet decryption key in memory for the indicated number of seconds. Issuing the walletpassphrase command while the wallet is already unlocked will set a new unlock time that overrides the old one.
+        /// </summary>
+        /// <param name="account"></param>
+        /// <param name="passphrase"></param>
+        /// <param name="timeout">Timeout in seconds. Maximum is 1073741824.</param>
+        void UnlockWallet(WalletAccountReference account, string passphrase, int timeout);
+
+        /// <summary>
+        /// A list of wallets that should be unlocked on startup.
+        /// </summary>
+        List<WalletToUnlock> WalletsToUnlock { get; }
 
         /// <summary>
         /// Lists all spendable transactions from all accounts in the wallet.
@@ -162,6 +178,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="accountName">The account name.</param>
         /// <returns>Collection of address history and transaction pairs.</returns>
         IEnumerable<AccountHistory> GetHistory(string walletName, string accountName = null);
+
+        IEnumerable<AccountHistory> GetHistoryById(uint256 trxid, string walletName, string accountName = null);
 
         /// <summary>
         /// Gets the history of the transactions in addresses contained in this account.

@@ -3,6 +3,8 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Converters;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonConverters;
 using TracerAttributes;
@@ -637,6 +639,21 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             IEnumerable<HdAddress> addresses = this.GetCombinedAddresses();
             return addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.Id == id));
+        }
+
+        /// <summary>
+        /// Gets a collection of transactions that has a payment with the supplied ID.
+        /// </summary>
+        /// <param name="id"></param>
+        /// <returns></returns>
+        public IEnumerable<TransactionData> GetTransactionsByPaymentTransactionId(uint256 id)
+        {
+            Guard.NotNull(id, nameof(id));
+
+            IEnumerable<HdAddress> addresses = this.GetCombinedAddresses();
+
+            // Get all transactions that has spending details with the supplied transaction id.
+            return addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.SpendingDetails != null)).Where(t => t.SpendingDetails.TransactionId == id);
         }
 
         /// <summary>

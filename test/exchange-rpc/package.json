@@ -1,0 +1,14 @@
+{
+  "name": "city-chain-exchange-rpc",
+  "version": "1.0.0",
+  "description": "",
+  "main": "index.js",
+  "scripts": {
+    "test": "node exchange-rpc.js"
+  },
+  "author": "",
+  "license": "MIT",
+  "dependencies": {
+    "bitcoin-core": "2.0.0"
+  }
+}

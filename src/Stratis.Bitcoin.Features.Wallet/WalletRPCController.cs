@@ -6,9 +6,11 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
+using Stratis.Bitcoin.Features.Wallet.Helpers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
@@ -37,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet transaction handler.</summary>
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
-        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
+        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory, IConsensusManager consensusManager) : base(fullNode: fullNode, consensusManager: consensusManager)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
@@ -55,12 +57,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference account = this.GetAccount();
 
-            // Length of expiry of the unlocking, restricted to max duration.
-            TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, maxDurationInSeconds));
-
             try
             {
-                this.walletTransactionHandler.CacheSecret(account, passphrase, duration);
+                this.walletManager.UnlockWallet(account, passphrase, timeout);
             }
             catch (SecurityException exception)
             {
@@ -172,12 +171,201 @@ namespace Stratis.Bitcoin.Features.Wallet
             return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
         }
 
+        [ActionName("getwalletinfo")]
+        [ActionDescription("Provides information about the wallet.")]
+        public GetWalletInfoModel GetWalletInfo()
+        {
+            var accountReference = this.GetAccount();
+            var account = this.walletManager.GetAccounts(accountReference.WalletName)
+                                            .Where(i => i.Name.Equals(accountReference.AccountName))
+                                            .Single();
+
+            (Money confirmedAmount, Money unconfirmedAmount) = account.GetSpendableAmount();
+
+            var model = new GetWalletInfoModel
+            {
+                Balance = Money.Coins(GetBalance(string.Empty)),
+                WalletName = accountReference.WalletName + ".wallet.json",
+                WalletVersion = 1,
+                UnConfirmedBalance = unconfirmedAmount,
+                ImmatureBalance = Money.Coins(GetBalance(string.Empty, (int)this.FullNode.Network.Consensus.CoinbaseMaturity))
+            };
+
+            return model;
+        }
+
+        private int GetConformationCount(TransactionData transaction)
+        {
+            if (transaction.BlockHeight.HasValue)
+            {
+                var blockCount = this.ConsensusManager?.Tip.Height ?? -1; // TODO: This is available in FullNodeController, should refactor and reuse the logic.
+                return blockCount - transaction.BlockHeight.Value;
+            }
+
+            return -1;
+        }
+
+        private WalletHistoryModel GetHistory(string walletName, string accountName, uint256 trxid)
+        {
+            var model = new WalletHistoryModel();
+
+            // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
+            IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistoryById(trxid, walletName, accountName).ToList();
+
+            foreach (AccountHistory accountHistory in accountsHistory)
+            {
+                var transactionItems = new List<TransactionItemModel>();
+
+                List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).ToList();
+                //items = string.IsNullOrEmpty(request.SearchQuery) ? items.Take(200).ToList() : items;
+
+                // Represents a sublist containing only the transactions that have already been spent.
+                List<FlatHistory> spendingDetails = items.Where(t => t.Transaction.SpendingDetails != null).ToList();
+
+                // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
+                // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
+                List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
+
+                // Represents a sublist of 'change' transactions.
+                List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
+
+                foreach (FlatHistory item in history)
+                {
+                    TransactionData transaction = item.Transaction;
+                    HdAddress address = item.Address;
+
+                    // We don't show in history transactions that are outputs of staking transactions.
+                    if (transaction.IsCoinStake != null && transaction.IsCoinStake.Value && transaction.SpendingDetails == null)
+                    {
+                        continue;
+                    }
+
+                    // First we look for staking transaction as they require special attention.
+                    // A staking transaction spends one of our inputs into 2 outputs, paid to the same address.
+                    if (transaction.SpendingDetails?.IsCoinStake != null && transaction.SpendingDetails.IsCoinStake.Value)
+                    {
+                        // We look for the 2 outputs related to our spending input.
+                        List<FlatHistory> relatedOutputs = items.Where(h => h.Transaction.Id == transaction.SpendingDetails.TransactionId && h.Transaction.IsCoinStake != null && h.Transaction.IsCoinStake.Value).ToList();
+                        if (relatedOutputs.Any())
+                        {
+                            // Add staking transaction details.
+                            // The staked amount is calculated as the difference between the sum of the outputs and the input and should normally be equal to 1.
+                            var stakingItem = new TransactionItemModel
+                            {
+                                Type = TransactionItemType.Staked,
+                                ToAddress = address.Address,
+                                Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
+                                Id = transaction.SpendingDetails.TransactionId,
+                                Timestamp = transaction.SpendingDetails.CreationTime,
+                                ConfirmedInBlock = transaction.SpendingDetails.BlockHeight
+                            };
+
+                            transactionItems.Add(stakingItem);
+                        }
+
+                        // No need for further processing if the transaction itself is the output of a staking transaction.
+                        if (transaction.IsCoinStake != null)
+                        {
+                            continue;
+                        }
+                    }
+
+                    // Create a record for a 'receive' transaction.
+                    if (!address.IsChangeAddress())
+                    {
+                        // Add incoming fund transaction details.
+                        var receivedItem = new TransactionItemModel
+                        {
+                            Type = TransactionItemType.Received,
+                            ToAddress = address.Address,
+                            Amount = transaction.Amount,
+                            Id = transaction.Id,
+                            Timestamp = transaction.CreationTime,
+                            ConfirmedInBlock = transaction.BlockHeight
+                        };
+
+                        transactionItems.Add(receivedItem);
+                    }
+
+                    // If this is a normal transaction (not staking) that has been spent, add outgoing fund transaction details.
+                    if (transaction.SpendingDetails != null && transaction.SpendingDetails.IsCoinStake == null)
+                    {
+                        // Create a record for a 'send' transaction.
+                        uint256 spendingTransactionId = transaction.SpendingDetails.TransactionId;
+                        var sentItem = new TransactionItemModel
+                        {
+                            Type = TransactionItemType.Send,
+                            Id = spendingTransactionId,
+                            Timestamp = transaction.SpendingDetails.CreationTime,
+                            ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                            Amount = Money.Zero
+                        };
+
+                        // If this 'send' transaction has made some external payments, i.e the funds were not sent to another address in the wallet.
+                        if (transaction.SpendingDetails.Payments != null)
+                        {
+                            sentItem.Payments = new List<PaymentDetailModel>();
+                            foreach (PaymentDetails payment in transaction.SpendingDetails.Payments)
+                            {
+                                sentItem.Payments.Add(new PaymentDetailModel
+                                {
+                                    DestinationAddress = payment.DestinationAddress,
+                                    Amount = payment.Amount
+                                });
+
+                                sentItem.Amount += payment.Amount;
+                            }
+                        }
+
+                        // Get the change address for this spending transaction.
+                        FlatHistory changeAddress = allchange.FirstOrDefault(a => a.Transaction.Id == spendingTransactionId);
+
+                        // Find all the spending details containing the spending transaction id and aggregate the sums.
+                        // This is our best shot at finding the total value of inputs for this transaction.
+                        var inputsAmount = new Money(spendingDetails.Where(t => t.Transaction.SpendingDetails.TransactionId == spendingTransactionId).Sum(t => t.Transaction.Amount));
+
+                        // The fee is calculated as follows: funds in utxo - amount spent - amount sent as change.
+                        sentItem.Fee = inputsAmount - sentItem.Amount - (changeAddress == null ? 0 : changeAddress.Transaction.Amount);
+
+                        // Mined/staked coins add more coins to the total out.
+                        // That makes the fee negative. If that's the case ignore the fee.
+                        if (sentItem.Fee < 0)
+                        {
+                            sentItem.Fee = 0;
+                        }
+
+                        if (!transactionItems.Contains(sentItem, new SentTransactionItemModelComparer()))
+                        {
+                            transactionItems.Add(sentItem);
+                        }
+                    }
+                }
+
+                // Sort and filter the history items.
+                List<TransactionItemModel> itemsToInclude = transactionItems.OrderByDescending(t => t.Timestamp).ToList();
+                //.Where(x => string.IsNullOrEmpty(request.SearchQuery) || (x.Id.ToString() == request.SearchQuery || x.ToAddress == request.SearchQuery || x.Payments.Any(p => p.DestinationAddress == request.SearchQuery)))
+                //.Skip(request.Skip ?? 0)
+                //.Take(request.Take ?? transactionItems.Count)
+                //.ToList();
+
+                model.AccountsHistoryModel.Add(new AccountHistoryModel
+                {
+                    TransactionsHistory = itemsToInclude,
+                    Name = accountHistory.Account.Name,
+                    CoinType = CoinType.Stratis,
+                    HdPath = accountHistory.Account.HdPath
+                });
+            }
+
+            return model;
+        }
+
         /// <summary>
-        /// RPC method to return transaction info from the wallet.
+        /// RPC method to return the effect an transaction has on the wallet. It doesn't show the raw Bitcoin transaction itself. Use getrawtransaction for that.
         /// Uses the first wallet and account.
         /// </summary>
         /// <param name="txid">Transaction identifier to find.</param>
-        /// <returns>Transaction information.</returns>
+        /// <returns>Effects the transaction had on the wallet.</returns>
         [ActionName("gettransaction")]
         [ActionDescription("Gets a transaction from the wallet.")]
         public GetTransactionModel GetTransaction(string txid)
@@ -191,33 +379,93 @@ namespace Stratis.Bitcoin.Features.Wallet
                                             .Where(i => i.Name.Equals(accountReference.AccountName))
                                             .Single();
 
-            var transaction = account.GetTransactionsById(trxid)?.Single();
+            // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
+            IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistoryById(trxid, accountReference.WalletName, accountReference.AccountName).ToList();
 
-            if (transaction == null)
-                return null;
-
-            var model = new GetTransactionModel
+            if (!accountsHistory.Any())
             {
-                Amount = transaction.Amount,
-                BlockHash = transaction.BlockHash,
-                TransactionId = transaction.Id,
-                TransactionTime = transaction.CreationTime.ToUnixTimeSeconds(),
-                Details = new List<GetTransactionDetailsModel>(),
-                Hex = transaction.Hex == null ? string.Empty : transaction.Hex
-            };
+                return null; // This transaction is not relevant for our wallet.
+            }
 
-            if (transaction.SpendingDetails?.Payments != null)
+            var accountHistory = accountsHistory.First();
+            var accountHistoryHistory = accountHistory.History.FirstOrDefault();
+            var transaction = accountHistoryHistory.Transaction;
+            var isChangeAddress = accountHistoryHistory.Address.IsChangeAddress();
+
+            var confirmations = GetConformationCount(accountHistoryHistory.Transaction);
+
+            var details = new List<GetTransactionDetailsModel>();
+
+            // Calculate the actual effect on the wallet that this transaction had.
+            Money amount = 0;
+
+            if (isChangeAddress)
             {
-                foreach (var paymentDetail in transaction.SpendingDetails.Payments)
+                // The actual amount of sent amount is accessible on the Payments that exists on the TransactionData that is the source of this
+                // input. So we need to query the history to get that other transaction, so we can parse its Payments, and not those that exists
+                // on the this current transaction.
+                var paymentTransactions = account.GetTransactionsByPaymentTransactionId(trxid);
+
+                foreach (var paymentTransaction in paymentTransactions)
                 {
-                    model.Details.Add(new GetTransactionDetailsModel
+                    // For change address history, the Amount property on the transaction will display the amount that was sent into the change address.
+                    // What we need for this RPC call, is the amount that was "taken out" of the wallet, and that is available in the spending details.
+                    foreach (var payment in paymentTransaction.SpendingDetails.Payments)
                     {
-                        Address = paymentDetail.DestinationAddress,
-                        Category = "send",
-                        Amount = paymentDetail.Amount
+                        // Increase the total amount of change in the wallet if there are multiple payments.
+                        amount += -payment.Amount;
+
+                        details.Add(new GetTransactionDetailsModel
+                        {
+                            Account = string.Empty, // Can be empty string for default account.
+                            Address = payment.DestinationAddress,
+                            Category = "send",
+                            Amount = -payment.Amount
+                        });
+                    }
+                }
+            }
+            else
+            {
+                if (transaction.IsCoinStake.GetValueOrDefault(false))
+                {
+                    // Since this is a coin stake output, we'll hard-code to the ProofOfStakeReward. If this is implemented with a variable
+                    // output, then this will likely result in invalid responses.
+                    amount = this.FullNode.Network.Consensus.ProofOfStakeReward;
+
+                    details.Add(new GetTransactionDetailsModel
+                    {
+                        Account = string.Empty, // Can be empty string for default account.
+                        Address = accountHistoryHistory.Address.Address,
+                        Category = "stake",
+                        Amount = amount
+                    });
+                }
+                else
+                {
+                    amount = transaction.Amount;
+
+                    // For "receive" payments, we can read the actual Amount on the TransactionData instance. This will display the correct change on the wallet.
+                    details.Add(new GetTransactionDetailsModel
+                    {
+                        Account = string.Empty, // Can be empty string for default account.
+                        Address = accountHistoryHistory.Address.Address,
+                        Category = "receive",
+                        Amount = amount
                     });
                 }
             }
+
+            var model = new GetTransactionModel
+            {
+                Amount = amount,
+                BlockHash = transaction.BlockHash,
+                TransactionId = transaction.Id,
+                TransactionTime = transaction.CreationTime.ToUnixTimeSeconds(),
+                Confirmations = confirmations,
+                Details = details,
+                Hex = transaction.Hex == null ? string.Empty : transaction.Hex,
+            };
 
             return model;
         }

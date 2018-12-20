@@ -6,12 +6,14 @@ file for additional setup.
 
 You can build (and run) docker images for City Chain from either distributed releases, or from source code.
 
-The 4 different options are:
+The multiple different options and they are located inside the City.Chain sub-folder:
 
-* City.Chain
-* City.Chain-src
-* City.Chain-TestNet
-* City.Chain-TestNet-src
+* Explorer - Runs MongoDB, Nako block indexer and City Chain daemon.
+* Main - Runs City Chain on the main net.
+* Main-src - Compiles source code and builds City Chain for the main net.
+* RPC - Runs RPC daemon, used by exchanges and others that need RPC interaction.
+* Test - Runs City Chain on the test net.
+* Test-src - Compiles source code and builds City Chain for the test net.
 
 The *-src folders will download latest source code, compile and run. It will generate larger docker images, which
 includes the .NET Core SDK. The *-src option is primarily for developers, or anyone who want to run on an 

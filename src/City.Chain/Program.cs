@@ -65,7 +65,6 @@
 
                 args = args
                     .Append("-apiport=" + apiPort)
-                    .Append("-txindex=1") // Required for History (Block) explorer.
                     .Append("-wsport=" + networkConfiguration.WsPort).ToArray();
 
                 var nodeSettings = new NodeSettings(networksSelector: GetNetwork(chain), protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args, agent: "CityChain")
@@ -117,7 +116,8 @@
                         .UseBlockExplorer()
                         .UsePosConsensus()
                         .UseMempool()
-                        .UseColdStakingWallet()
+                        //.UseColdStakingWallet()
+                        .UseWallet()
                         .AddPowPosMining()
                         .UseApi()
                         .UseApps()

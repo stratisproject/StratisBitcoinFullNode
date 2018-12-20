@@ -3,6 +3,7 @@ using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Runtime.InteropServices;
 using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -11,8 +12,11 @@ using NBitcoin.BuilderExtensions;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Features.Wallet.Shell;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 
@@ -23,6 +27,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
+        // <summary>As per RPC method definition this should be the max allowable expiry duration.</summary>
+        public const int MaxUnlockDurationInSeconds = 1073741824;
+
         /// <summary>Quantity of accounts created in a wallet file when a wallet is restored.</summary>
         private const int WalletRecoveryAccountsCount = 1;
 
@@ -34,6 +41,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
+
+        /// <summary>Name of the default wallet created when -defaultwallet flag is set on startup.</summary>
+        private const string DefaultWalletName = "default";
 
         /// <summary>
         /// A lock object that protects access to the <see cref="Wallet"/>.
@@ -82,6 +92,18 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         public uint256 WalletTipHash { get; set; }
 
+        /// <summary>The default wallet, if enabled.</summary>
+        private WalletAccountReference DefaultWallet { get; set; }
+
+        /// <inheritdoc />
+        public List<WalletToUnlock> WalletsToUnlock { get; private set; }
+
+        /// <summary>The shell command to execute.</summary>
+        private string shellCommand;
+
+        /// <summary>The shell arguments to send to the shell command.</summary>
+        private string shellArguments;
+
         // In order to allow faster look-ups of transactions affecting the wallets' addresses,
         // we keep a couple of objects in memory:
         // 1. the list of unspent outputs for checking whether inputs from a transaction are being spent by our wallet and
@@ -117,6 +139,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.Wallets = new ConcurrentBag<Wallet>();
+            this.WalletsToUnlock = new List<WalletToUnlock>();
 
             this.network = network;
             this.coinType = (CoinType)network.Consensus.CoinType;
@@ -136,8 +159,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.scriptToAddressLookup = this.CreateAddressFromScriptLookup();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
-        }
 
+            if (!string.IsNullOrWhiteSpace(this.walletSettings.WalletNotify))
+            {
+                var cmdArray = this.walletSettings.WalletNotify.Split(' ');
+
+                this.shellCommand = cmdArray.First();
+                this.shellArguments = string.Join(" ", cmdArray.Skip(1));
+            }
+        }
+        
         /// <summary>
         /// Creates the <see cref="ScriptToAddressLookup"/> object to use.
         /// </summary>
@@ -190,6 +221,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.AddAddressesToMaintainBuffer(account, false);
                     this.AddAddressesToMaintainBuffer(account, true);
                 }
+            }
+
+            // If the node was started with -defaultwallet flag, check if it already exists, if not, create one.
+            if (this.walletSettings.DefaultWallet)
+            {
+                CreateDefaultWallet(wallets.Any(w => w.Name == DefaultWalletName));
             }
 
             // Load data in memory for faster lookups.
@@ -265,6 +302,44 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Load(wallet);
 
             return mnemonic;
+        }
+
+        private void CreateDefaultWallet(bool exists)
+        {
+            if (!exists)
+            {
+                var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                CreateWallet(this.walletSettings.DefaultWalletPassword, DefaultWalletName, string.Empty, mnemonic);
+            }
+
+            // Load the wallet from disk after creation, to verify it and also verify that we can decrypt it.
+            LoadWallet(this.walletSettings.DefaultWalletPassword, DefaultWalletName);
+
+            HdAccount account = GetAccounts(DefaultWalletName).FirstOrDefault();
+            var accountRef = new WalletAccountReference(DefaultWalletName, account.Name);
+
+            this.WalletsToUnlock.Add(new WalletToUnlock(accountRef, this.walletSettings.DefaultWalletPassword, MaxUnlockDurationInSeconds));
+        }
+
+        /// <inheritdoc />
+        [NoTrace]
+        public void UnlockWallet(WalletAccountReference account, string passphrase, int timeout)
+        {
+            Guard.NotEmpty(passphrase, nameof(passphrase));
+
+            if (this.unlockHandler == null)
+            {
+                throw new ApplicationException("Unable to unlock wallet, no registered unlock handlers.");
+            }
+            
+            this.unlockHandler(account, passphrase, timeout);
+        }
+
+        private UnlockWalletHandler unlockHandler;
+
+        public void RegisterUnlockHandler(UnlockWalletHandler handler)
+        {
+            this.unlockHandler = handler;
         }
 
         /// <inheritdoc />
@@ -403,7 +478,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(password, nameof(password));
 
             Wallet wallet = this.GetWalletByName(walletName);
-
+            
             if (wallet.IsExtPubKeyWallet)
             {
                 this.logger.LogTrace("(-)[CANNOT_ADD_ACCOUNT_TO_EXTPUBKEY_WALLET]");
@@ -543,7 +618,39 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public (string folderPath, IEnumerable<string>) GetWalletsFiles()
         {
-            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(this.GetWalletFileExtension()));
+            return (this.fileStorage.FolderPath, this.fileStorage.GetFilesNames(GetWalletFileExtension()));
+        }
+
+        /// <inheritdoc />
+        public IEnumerable<AccountHistory> GetHistoryById(uint256 trxid, string walletName, string accountName = null)
+        {
+            Guard.NotEmpty(walletName, nameof(walletName));
+            Guard.NotNull(trxid, nameof(trxid));
+
+            // In order to calculate the fee properly we need to retrieve all the transactions with spending details.
+            Wallet wallet = this.GetWalletByName(walletName);
+
+            var accountsHistory = new List<AccountHistory>();
+
+            lock (this.lockObject)
+            {
+                var accounts = new List<HdAccount>();
+                if (!string.IsNullOrEmpty(accountName))
+                {
+                    accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
+                }
+                else
+                {
+                    accounts.AddRange(wallet.GetAccountsByCoinType(this.coinType));
+                }
+
+                foreach (HdAccount account in accounts)
+                {
+                    accountsHistory.Add(GetHistoryById(account, trxid));
+                }
+            }
+
+            return accountsHistory;
         }
 
         /// <inheritdoc />
@@ -570,7 +677,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (HdAccount account in accounts)
                 {
-                    accountsHistory.Add(this.GetHistory(account));
+                    accountsHistory.Add(GetHistory(account));
                 }
             }
 
@@ -588,6 +695,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                 items = account.GetCombinedAddresses()
                     .Where(a => a.Transactions.Any())
                     .SelectMany(s => s.Transactions.Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
+            }
+
+            return new AccountHistory { Account = account, History = items };
+        }
+
+        /// <inheritdoc />
+        public AccountHistory GetHistoryById(HdAccount account, uint256 trxid)
+        {
+            Guard.NotNull(account, nameof(account));
+            FlatHistory[] items;
+            lock (this.lockObject)
+            {
+                // Get transactions contained in the account.
+                items = account.GetCombinedAddresses()
+                    .Where(a => a.Transactions.Any())
+                    .SelectMany(s => s.Transactions.Where(t => t.Id == trxid).Select(t => new FlatHistory { Address = s, Transaction = t })).ToArray();
             }
 
             return new AccountHistory { Account = account, History = items };
@@ -899,8 +1022,29 @@ namespace Stratis.Bitcoin.Features.Wallet
                     // Check if the outputs contain one of our addresses.
                     if (this.scriptToAddressLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))
                     {
-                        this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
+                        AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundReceivingTrx = true;
+
+                        try
+                        {
+                            // Whenever a new receiving transaction is found, trigger the -walletnotify.
+                            if (!string.IsNullOrWhiteSpace(this.shellCommand))
+                            {
+                                var arguments = this.shellArguments.Replace("%s", transaction.ToString());
+                                this.logger.LogInformation($"-walletnotify running command: {this.shellCommand} {arguments}");
+
+                                var result = ShellHelper.RunCommand(this.shellCommand, arguments);
+
+                                if (!string.IsNullOrWhiteSpace(result))
+                                {
+                                    this.logger.LogError(result);
+                                }
+                            }
+                        }
+                        catch (Exception ex)
+                        {
+                            this.logger.LogError(ex, "Failed to parse and execute on -walletnotify.");
+                        }
                     }
                 }
 
@@ -946,7 +1090,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     this.SaveWallets();
                 }
             }
-            
+
             return foundSendingTrx || foundReceivingTrx;
         }
 
@@ -1255,7 +1399,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Create a folder if none exists and persist the file.
             this.SaveWallet(walletFile);
-            
+
             return walletFile;
         }
 

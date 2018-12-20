@@ -1,27 +1,32 @@
 {
   "profiles": {
     "City.Chain": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-txindex=1"
     },
     "City.Chain (Test)": {
       "commandName": "Project",
-      "commandLineArgs": "-testnet"
+      "commandLineArgs": "-testnet -txindex=1"
     },
-    "City.Chain (Local Data Dir)": {
+    "City.Chain (Test Network with RPC)": {
       "commandName": "Project",
-      "commandLineArgs": "-datadir=citynode"
+      "commandLineArgs": "-testnet -server -rpcallowip=127.0.0.1 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1"
     },
-    "City.Chain (Network with RPC)": {
+    "City.Chain (Local Data)": {
       "commandName": "Project",
-      "commandLineArgs": "-datadir=citynode -server -rpcallowip=0.0.0.0 -rpcpassword=rpcpassword -rpcuser=rpcuser"
-    },
-    "Stratis (Local Data Dir)": {
-      "commandName": "Project",
-      "commandLineArgs": "-datadir=stratisnode -chain=stratis"
+      "commandLineArgs": "-datadir=citynode -txindex=1"
     },
     "City.Chain (Test) (Local Data Dir)": {
       "commandName": "Project",
-      "commandLineArgs": "-datadir=citynode -testnet"
+      "commandLineArgs": "-testnet -datadir=citynode -txindex=1"
+    },
+    "City.Chain (Local Data, Network with RPC)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=citynode -server -rpcallowip=0.0.0.0 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1"
+    },
+    "Stratis (Local Data)": {
+      "commandName": "Project",
+      "commandLineArgs": "-datadir=stratisnode -chain=stratis -txindex=1"
     }
   }
 }

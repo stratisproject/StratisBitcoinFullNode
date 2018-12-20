@@ -7,6 +7,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// <summary>Transaction details model for RPC method gettransaction.</summary>
     public class GetTransactionDetailsModel
     {
+        // Required to be returned according to the Bitcoin developer reference. Can be empty string for default account.
+        [JsonProperty("account")]
+        public string Account { get; set; }
+
         [JsonProperty("address")]
         public string Address { get; set; }
 
@@ -31,6 +35,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [JsonProperty("time")]
         public long? TransactionTime { get; set; }
+
+        [JsonProperty("confirmations")]
+        public int Confirmations { get; set; }
 
         [JsonProperty("details")]
         public List<GetTransactionDetailsModel> Details { get; set; }
