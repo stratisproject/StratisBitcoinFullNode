@@ -97,14 +97,24 @@ function Create-Dashboard {
     </div>
 <script>
 `$(function(){
-	`$('#myTab a').on('click', function (e) {
-		debugger;
-		var id = e.target.id.replace("-tab","");
+	function refreshTab(tab){
+		var id = tab.id.replace("-tab","");
 		`$("#frame-" + id).each(function() {
-			debugger;
 			var src= `$(this).attr('src');
 			`$(this).attr('src',src);
 		});
+	}
+
+	var selectedTab = null;
+	window.setInterval(function(){
+		if(selectedTab!=null){
+			refreshTab(selectedTab);
+		}
+	}, 5000);
+
+	`$('#myTab a').on('click', function (e) {
+		selectedTab = e.target;
+		refreshTab(selectedTab);
 	})
 });
 </script>

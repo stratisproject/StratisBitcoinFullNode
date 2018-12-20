@@ -29,6 +29,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainDnsD", "Stratis.SidechainDnsD\Stratis.SidechainDnsD.csproj", "{C6A25E69-CB21-464D-91D0-9C390849C62E}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.FederatedPeg.IntegrationTests.Tools", "Stratis.FederatedPeg.IntegrationTests.Tools\Stratis.FederatedPeg.IntegrationTests.Tools.csproj", "{7764E567-47B8-481C-A078-7B3E427F217E}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -79,6 +81,10 @@ Global
 		{C6A25E69-CB21-464D-91D0-9C390849C62E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{C6A25E69-CB21-464D-91D0-9C390849C62E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{C6A25E69-CB21-464D-91D0-9C390849C62E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{7764E567-47B8-481C-A078-7B3E427F217E}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{7764E567-47B8-481C-A078-7B3E427F217E}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{7764E567-47B8-481C-A078-7B3E427F217E}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{7764E567-47B8-481C-A078-7B3E427F217E}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -89,6 +95,7 @@ Global
 		{3526B5DB-8E08-445F-9DCE-65566491D94F} = {4B9DEF95-A336-404B-908D-E1BFA1DB2DA9}
 		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 		{A8CA48FA-A725-412D-9EC4-1BA7BA7177B2} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
+		{7764E567-47B8-481C-A078-7B3E427F217E} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {034BDA2C-1CEE-4128-B444-CE1D425CB11C}

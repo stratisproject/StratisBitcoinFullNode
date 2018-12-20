@@ -11,14 +11,6 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <None Remove="Resources\HelperMethods.ps1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <EmbeddedResource Include="Resources\HelperMethods.ps1" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="Flurl" Version="2.8.0" />
     <PackageReference Include="Flurl.Http" Version="2.4.0" />
     <PackageReference Include="NStratis" Version="4.0.0.73" />
