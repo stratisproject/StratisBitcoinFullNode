@@ -33,7 +33,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
         private Task blockRequestingTask;
 
         /// <summary>The maximum amount of blocks to request at a time from alt chain.</summary>
-        private const int MaxBlocksToRequest = 1000;
+        private const int MaxBlocksToRequest = 100;
 
         /// <summary>When we are fully synced we stop asking for more blocks for this amount of time.</summary>
         private const int RefreshDelayMs = 10_000;
