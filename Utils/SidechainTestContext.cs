@@ -4,7 +4,6 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Net.Http;
-using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
 using Flurl;
@@ -200,15 +199,10 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             {
                 CoreNode node = nodes[i];
 
-                $"http://localhost:{node.ApiPort}/api".AppendPathSegment("FederationWallet/import-key").PostJsonAsync(new ImportMemberKeyRequest
-                {
-                    Mnemonic = this.mnemonics[i].ToString(),
-                    Password = "password"
-                }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
-
                 $"http://localhost:{node.ApiPort}/api".AppendPathSegment("FederationWallet/enable-federation").PostJsonAsync(new EnableFederationRequest
                 {
-                    Password = "password"
+                    Password = "password",
+                    Mnemonic = this.mnemonics[i].ToString()
                 }).Result.StatusCode.Should().Be(HttpStatusCode.OK);
             }
         }
