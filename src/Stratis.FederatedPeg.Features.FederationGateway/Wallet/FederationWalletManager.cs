@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Runtime.CompilerServices;
+using System.Security;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -93,6 +94,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
+        /// <summary>Indicates whether the federation is active.</summary>
+        private bool isFederationActive;
+
         public uint256 WalletTipHash { get; set; }
 
         public bool ContainsWallets => throw new NotImplementedException();
@@ -155,6 +159,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.federationGatewaySettings = federationGatewaySettings;
             this.withdrawalExtractor = withdrawalExtractor;
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+            this.isFederationActive = false;
 
             // register events
             if (this.broadcasterManager != null)
@@ -884,24 +889,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
-        public bool IsFederationActive()
-        {
-            // If federation is acive then the extended key in the wallet can be used to derive the public key.
-            FederationWallet wallet = this.Wallet;
-            if (wallet == null || this.Secret == null)
-                return false;
-
-            Key key = wallet.MultiSigAddress.GetPrivateKey(wallet.EncryptedSeed, this.Secret.WalletPassword, this.network);
-
-            if (key.PubKey.ToHex() == this.federationGatewaySettings.PublicKey)
-                return true;
-
-            this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
-
-            return false;
-        }
-
-        /// <inheritdoc />
         public void UpdateLastBlockSyncedHeight(ChainedHeader chainedHeader)
         {
             Guard.NotNull(chainedHeader, nameof(chainedHeader));
@@ -958,35 +945,71 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
-        public void ImportMemberKey(string password, string mnemonic, string passphrase)
+        public void EnableFederation(string password, string mnemonic = null, string passphrase = null)
         {
             Guard.NotEmpty(password, nameof(password));
-            Guard.NotEmpty(mnemonic, nameof(mnemonic));
 
-            // Get the extended key.
-            ExtKey extendedKey;
+            // Protect against de-activation if the federation is already active.
+            if (this.isFederationActive)
+            {
+                this.logger.LogWarning("(-):[FEDERATION_ALREADY_ACTIVE]");
+                return;
+            }
+
+            // Get the key and encrypted seed.
+            Key key = null;
+            string encryptedSeed = this.Wallet.EncryptedSeed;
+
+            if (!string.IsNullOrEmpty(mnemonic))
+            {
+                ExtKey extendedKey;
+                try
+                {
+                    extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
+                }
+                catch (NotSupportedException ex)
+                {
+                    this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
+                    this.logger.LogTrace("(-)[EXCEPTION]");
+
+                    if (ex.Message == "Unknown")
+                        throw new WalletException("Please make sure you enter valid mnemonic words.");
+
+                    throw;
+                }
+
+                // Create a wallet file.
+                key = extendedKey.PrivateKey;
+                encryptedSeed = key.GetEncryptedBitcoinSecret(password, this.network).ToWif();
+            }
+
             try
             {
-                extendedKey = HdOperations.GetExtendedKey(mnemonic, passphrase);
+                if (key == null)
+                    key = Key.Parse(encryptedSeed, password, this.Wallet.Network);
+
+                bool isValidKey = key.PubKey.ToHex() == this.federationGatewaySettings.PublicKey;
+                if (!isValidKey)
+                {
+                    this.logger.LogInformation("The wallet public key {0} does not match the federation member's public key {1}", key.PubKey.ToHex(), this.federationGatewaySettings.PublicKey);
+                    return;
+                }
+
+                this.Secret = new WalletSecret() { WalletPassword = password };
+                this.Wallet.EncryptedSeed = encryptedSeed;
+                this.SaveWallet();
+
+                this.isFederationActive = isValidKey;
             }
-            catch (NotSupportedException ex)
+            catch (Exception ex)
             {
-                this.logger.LogTrace("Exception occurred: {0}", ex.ToString());
-                this.logger.LogTrace("(-)[EXCEPTION]");
-
-                if (ex.Message == "Unknown")
-                    throw new WalletException("Please make sure you enter valid mnemonic words.");
-
-                throw;
+                throw new SecurityException(ex.Message);
             }
+        }
 
-            // Create a wallet file.
-            string encryptedSeed = extendedKey.PrivateKey.GetEncryptedBitcoinSecret(password, this.network).ToWif();
-
-            this.Wallet.EncryptedSeed = encryptedSeed;
-            this.SaveWallet();
-
-            this.logger.LogTrace("(-)");
+        public bool IsFederationActive()
+        {
+            return this.isFederationActive;
         }
 
         public FederationWallet GetWallet()

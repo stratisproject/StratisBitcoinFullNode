@@ -195,6 +195,11 @@ namespace Stratis.FederatedPeg.Tests
             this.wallet.EncryptedSeed = encryptedSeed;
 
             this.federationWalletManager.Secret = new WalletSecret() { WalletPassword = walletPassword };
+
+            System.Reflection.FieldInfo prop = this.federationWalletManager.GetType().GetField("isFederationActive",
+                System.Reflection.BindingFlags.NonPublic | System.Reflection.BindingFlags.Instance);
+
+            prop.SetValue(this.federationWalletManager, true);
         }
 
         protected ICrossChainTransferStore CreateStore()

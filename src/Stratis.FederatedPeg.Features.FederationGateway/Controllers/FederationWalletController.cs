@@ -24,7 +24,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         public const string GeneralInfo = "general-info";
         public const string Balance = "balance";
         public const string Sync = "sync";
-        public const string ImportKey = "import-key";
         public const string EnableFederation = "enable-federation";
         public const string RemoveTransactions = "remove-transactions";
     }
@@ -157,34 +156,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
         }
 
         /// <summary>
-        /// Imports the federation member's mnemonic key.
-        /// </summary>
-        /// <param name="request">The object containing the parameters used to recover a wallet.</param>
-        [Route(FederationWalletRouteEndPoint.ImportKey)]
-        [HttpPost]
-        public IActionResult ImportMemberKey([FromBody]ImportMemberKeyRequest request)
-        {
-            Guard.NotNull(request, nameof(request));
-
-            // checks the request is valid
-            if (!this.ModelState.IsValid)
-            {
-                return BuildErrorResponse(this.ModelState);
-            }
-
-            try
-            {
-                this.walletManager.ImportMemberKey(request.Password, request.Mnemonic, request.Passphrase);
-                return this.Ok();
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        /// <summary>
         /// Provide the federation wallet's credentials so that it can sign transactions.
         /// </summary>
         /// <param name="request">The password of the federation wallet.</param>
@@ -203,19 +174,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Formatting error", string.Join(Environment.NewLine, errors));
                 }
 
-                FederationWallet wallet = this.walletManager.GetWallet();
+                this.walletManager.EnableFederation(request.Password, request.Mnemonic, request.Passphrase);
 
-                // Check the password
-                try
-                {
-                    Key.Parse(wallet.EncryptedSeed, request.Password, wallet.Network);
-                }
-                catch (Exception ex)
-                {
-                    throw new SecurityException(ex.Message);
-                }
-
-                this.walletManager.Secret = new WalletSecret() { WalletPassword = request.Password };
                 return this.Ok();
             }
             catch (Exception e)

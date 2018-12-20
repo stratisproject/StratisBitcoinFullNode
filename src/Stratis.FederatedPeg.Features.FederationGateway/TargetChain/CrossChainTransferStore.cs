@@ -430,8 +430,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 
                     this.Synchronize();
 
-                    bool? canPersist = null;
-
                     foreach (MaturedBlockDepositsModel maturedDeposit in maturedBlockDeposits)
                     {
                         if (maturedDeposit.BlockInfo.BlockHeight != this.NextMatureDepositHeight)
@@ -444,12 +442,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                             continue;
                         }
 
-                        // IsFederationActive is a bit slow. Call it once only.
-                        canPersist = canPersist ?? this.federationWalletManager.IsFederationActive();
-
-                        if (!(bool)canPersist)
+                        if (!this.federationWalletManager.IsFederationActive())
                         {
-                            this.logger.LogError("The store can't persist mature deposits at the moment.");
+                            this.logger.LogError("The store can't persist mature deposits while the federation is inactive.");
                             continue;
                         }
 
