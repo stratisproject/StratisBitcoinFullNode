@@ -60,9 +60,8 @@ namespace Stratis.FederatedPeg.Tests.RestClientsTests
         {
             var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
 
-            await this.createClient(true).PushCurrentBlockTipAsync(blockTip).ConfigureAwait(false);
-
-            this.logger.Received(1).Log<object>(LogLevel.Error, 0, Arg.Any<object>(), Arg.Is<Exception>(e => e == null), Arg.Any<Func<object, Exception, string>>());
+            HttpResponseMessage result = await this.createClient(true).PushCurrentBlockTipAsync(blockTip).ConfigureAwait(false);
+            Assert.False(result.IsSuccessStatusCode);
         }
 
         /// <inheritdoc />

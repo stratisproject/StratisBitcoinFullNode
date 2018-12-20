@@ -27,7 +27,7 @@ namespace Stratis.FederatedPeg.Tests.Utils
             object sendCall = httpMessageHandler.Protected("SendAsync", Arg.Any<HttpRequestMessage>(), Arg.Any<CancellationToken>());
 
             if (failingClient)
-                sendCall.ThrowsForAnyArgs(new Exception("failed"));
+                sendCall.ThrowsForAnyArgs(new HttpRequestException("failed"));
             else
                 sendCall.Returns(Task.FromResult(new HttpResponseMessage(HttpStatusCode.OK)));
 
