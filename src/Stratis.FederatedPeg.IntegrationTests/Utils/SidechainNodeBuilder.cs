@@ -34,11 +34,11 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             return this.CreateNode(new SidechainUserNodeRunner(this.GetNextDataFolderName(agentName), agentName, network), "poa.conf");
         }
 
-        public CoreNode CreateSidechainFederationNode(Network network, Key key)
+        public CoreNode CreateSidechainFederationNode(Network network, Key key, bool testingFederation = true)
         {
             string agentName = $"sidefed{Interlocked.Increment(ref agentCount)}";
             string dataFolder = this.GetNextDataFolderName(agentName);
-            CoreNode node = this.CreateNode(new SidechainFederationNodeRunner(dataFolder, agentName, network), "poa.conf");
+            CoreNode node = this.CreateNode(new SidechainFederationNodeRunner(dataFolder, agentName, network, testingFederation), "poa.conf");
 
             var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
             var tool = new KeyTool(settings.DataFolder);
