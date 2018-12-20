@@ -17,7 +17,7 @@
     <PackageReference Include="Stratis.Bitcoin.Features.MemoryPool" Version="3.0.0.3-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Miner" Version="3.0.0.3-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.PoA" Version="3.0.0.3-beta" />
-    <PackageReference Include="Stratis.Bitcoin.Features.SmartContracts" Version="0.0.4-beta" />
+    <PackageReference Include="Stratis.Bitcoin.Features.SmartContracts" Version="0.0.5-beta" />
     <PackageReference Include="Stratis.Bitcoin.Features.Wallet" Version="3.0.0.3-beta" />
   </ItemGroup>
 
