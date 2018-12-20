@@ -534,7 +534,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public string OpReturnData { get; set; }
 
         /// <summary>
-        /// Optional amount to add to the OP_RETURN transaction output to pass the stratisX standardness (dust) check.
+        /// Optional amount to add to the OP_RETURN transaction output.
         /// </summary>
         public Money OpReturnAmount { get; set; }
 
