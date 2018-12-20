@@ -202,7 +202,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 .BeEmpty("because opReturnData is null");
         }
 
-
         [Fact]
         public void BuildTransaction_When_OpReturnData_Is_Neither_Null_Nor_Empty_Should_Add_Extra_Output_With_Data()
         {
@@ -222,7 +221,30 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             ops.Count().Should().Be(2);
             ops.First().Code.Should().Be(OpcodeType.OP_RETURN);
             ops.Last().PushData.Should().BeEquivalentTo(expectedBytes);
+        }
 
+        [Fact]
+        public void BuildTransaction_When_OpReturnAmount_Is_Populated_Should_Add_Extra_Output_With_Data_And_Amount()
+        {
+            WalletTransactionHandlerTestContext testContext = SetupWallet();
+
+            string opReturnData = "some extra transaction info";
+            byte[] expectedBytes = Encoding.UTF8.GetBytes(opReturnData);
+
+            TransactionBuildContext context = CreateContext(this.Network, testContext.WalletReference, "password", testContext.DestinationKeys.PubKey.ScriptPubKey, new Money(7500), FeeType.Low, 0, opReturnData);
+
+            context.OpReturnAmount = Money.Coins(0.0001m);
+
+            Transaction transactionResult = testContext.WalletTransactionHandler.BuildTransaction(context);
+
+            IEnumerable<TxOut> unspendableOutputs = transactionResult.Outputs.Where(o => o.ScriptPubKey.IsUnspendable).ToList();
+            unspendableOutputs.Count().Should().Be(1);
+            unspendableOutputs.Single().Value.Should().Be(Money.Coins(0.0001m));
+
+            IEnumerable<Op> ops = unspendableOutputs.Single().ScriptPubKey.ToOps();
+            ops.Count().Should().Be(2);
+            ops.First().Code.Should().Be(OpcodeType.OP_RETURN);
+            ops.Last().PushData.Should().BeEquivalentTo(expectedBytes);
         }
 
         [Fact]

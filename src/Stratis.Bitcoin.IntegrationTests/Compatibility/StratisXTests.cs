@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
@@ -10,6 +12,8 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
@@ -180,6 +184,79 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 // Sanity check - mempools should both become empty.
                 TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
                 TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+            }
+        }
+
+        /// <summary>
+        /// This test is necessary because X regards nulldata transactions as non-standard if they have a value of zero assigned.
+        /// </summary>
+        [Retry]
+        public void SBFNCreatesOpReturnTransaction_XSyncs()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // TODO: Add the necessary executables for Linux & OSX
+                return;
+            }
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var network = new StratisRegTest();
+
+                CoreNode stratisXNode = builder.CreateStratisXNode(version: "2.0.0.5").Start();
+
+                // We do not want the datetime provider to be substituted,
+                // so a custom builder callback has to be used.
+                var callback = new Action<IFullNodeBuilder>(build => build
+                    .UseBlockStore()
+                    .UsePosConsensus()
+                    .UseMempool()
+                    .UseWallet()
+                    .AddPowPosMining()
+                    .AddRPC()
+                    .UseTestChainedHeaderTree()
+                    .MockIBD());
+
+                CoreNode stratisNode = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
+
+                RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
+                RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
+
+                stratisXRpc.AddNode(stratisNode.Endpoint, false);
+                stratisNodeRpc.AddNode(stratisXNode.Endpoint, false);
+
+                TestHelper.MineBlocks(stratisNode, 11);
+
+                // It takes a reasonable amount of time for blocks to be generated without
+                // the datetime provider substitution.
+                var longCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(15)).Token;
+                var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+
+                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: longCancellationToken);
+
+                // Send transaction to arbitrary address from SBFN side.
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+                //stratisNodeRpc.WalletPassphrase("password", 60);
+
+                var transactionBuildContext = new TransactionBuildContext(stratisNode.FullNode.Network)
+                {
+                    AccountReference = new WalletAccountReference("mywallet", "account 0"),
+                    MinConfirmations = 1,
+                    OpReturnData = "test",
+                    OpReturnAmount = Money.Coins(0.01m),
+                    WalletPassword = "password",
+                    Recipients = new List<Recipient>() { new Recipient() { Amount = Money.Coins(1), ScriptPubKey = aliceAddress.ScriptPubKey } }
+                };
+
+                var transaction = stratisNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+
+                stratisNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+
+                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+
+                // Transaction should percolate through to X's mempool.
+                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
             }
         }
 
