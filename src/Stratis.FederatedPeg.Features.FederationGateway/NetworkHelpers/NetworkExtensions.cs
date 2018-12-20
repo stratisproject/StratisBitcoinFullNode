@@ -32,9 +32,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers
             if (network.Name.ToLower() == MainChainNames[0]) return FederatedPegNetwork.NetworksSelector.Mainnet();
             if (network.Name.ToLower() == MainChainNames[1]) return FederatedPegNetwork.NetworksSelector.Testnet();
             if (network.Name.ToLower() == MainChainNames[2]) return FederatedPegNetwork.NetworksSelector.Regtest();
-            if (network.Name.ToLower() == FederatedPegNetwork.MainNetworkName.ToLower()) return new StratisMain();
-            if (network.Name.ToLower() == FederatedPegNetwork.TestNetworkName.ToLower()) return new StratisTest();
-            if (network.Name.ToLower() == FederatedPegNetwork.RegTestNetworkName.ToLower()) return new StratisRegTest();
+            if (network.Name.ToLower() == FederatedPegNetwork.NetworksSelector.Mainnet().Name.ToLower()) return new StratisMain();
+            if (network.Name.ToLower() == FederatedPegNetwork.NetworksSelector.Testnet().Name.ToLower()) return new StratisTest();
+            if (network.Name.ToLower() == FederatedPegNetwork.NetworksSelector.Regtest().Name.ToLower()) return new StratisRegTest();
             throw new System.ArgumentException("Unknown network.");
         }
     }

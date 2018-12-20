@@ -27,8 +27,8 @@ namespace Stratis.Sidechains.Networks
 
         internal FederatedPegRegTest()
         {
-            this.Name = FederatedPegNetwork.RegTestNetworkName;
-            this.CoinTicker = FederatedPegNetwork.TestCoinSymbol;
+            this.Name = "FederatedPegRegTest";
+            this.CoinTicker = "TFPG";
             this.Magic = 0x522357C;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
@@ -51,7 +51,8 @@ namespace Stratis.Sidechains.Networks
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            string coinbaseText = "https://news.bitcoin.com/markets-update-cryptocurrencies-shed-billions-in-bloody-sell-off/";
+            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 
