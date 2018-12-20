@@ -19,13 +19,10 @@ namespace Stratis.Sidechains.Networks
         /// <summary> The default name used for the federated peg configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "fedpeg.conf";
 
-        // public IList<Mnemonic> FederationMnemonics { get; }
-        public IList<Key> FederationKeys { get; private set; }
-
         internal FederatedPegTest()
         {
-            this.Name = FederatedPegNetwork.TestNetworkName;
-            this.CoinTicker = FederatedPegNetwork.TestCoinSymbol;
+            this.Name = "FederatedPegTest";
+            this.CoinTicker = "TFPG";
             this.Magic = 0x522357B;
             this.DefaultPort = 26179;
             this.DefaultMaxOutboundConnections = 16;
@@ -47,8 +44,9 @@ namespace Stratis.Sidechains.Networks
             this.GenesisBits = new Target(new uint256("0000ffff00000000000000000000000000000000000000000000000000000000"));
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
-            
-            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+
+            string coinbaseText = "https://news.bitcoin.com/markets-update-cryptocurrencies-shed-billions-in-bloody-sell-off/";
+            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 

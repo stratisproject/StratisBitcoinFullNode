@@ -13,24 +13,40 @@ namespace Stratis.Sidechains.Networks
     /// </summary>
     public class FederatedPegMain : PoANetwork
     {
-        public List<PubKey> FederationPubKeys { get; private set; }
+        /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
+        private const string NetworkRootFolderName = "fedpeg";
+
+        /// <summary> The default name used for the federated peg configuration file. </summary>
+        private const string NetworkDefaultConfigFilename = "fedpeg.conf";
 
         internal FederatedPegMain()
         {
-            this.Name = FederatedPegNetwork.MainNetworkName;
-            this.CoinTicker = FederatedPegNetwork.CoinSymbol;
+            this.Name = "FederatedPegMain";
+            this.CoinTicker = "FPG";
             this.Magic = 0x522357A;
+            this.DefaultPort = 16179;
+            this.DefaultMaxOutboundConnections = 16;
+            this.DefaultMaxInboundConnections = 109;
+            this.RPCPort = 16175;
+            this.MaxTipAge = 2 * 60 * 60;
+            this.MinTxFee = 10000;
+            this.FallbackFee = 10000;
+            this.MinRelayTxFee = 10000;
+            this.RootFolderName = NetworkRootFolderName;
+            this.DefaultConfigFilename = NetworkDefaultConfigFilename;
+            this.MaxTimeOffsetSeconds = 25 * 60;
 
             var consensusFactory = new SmartContractPoAConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1513622125;
-            this.GenesisNonce = 1560058197;
-            this.GenesisBits = 402691653;
+            this.GenesisTime = 1545310504;
+            this.GenesisNonce = 761900;
+            this.GenesisBits = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
-            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
+            string coinbaseText = "https://www.abc.net.au/news/science/2018-12-07/encryption-bill-australian-technology-industry-fuming-mad/10589962";
+            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 
@@ -77,10 +93,10 @@ namespace Stratis.Sidechains.Networks
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 0, // No max reorg limit on PoA networks.
                 defaultAssumeValid: null,
-                maxMoney: Money.Coins(20_000_000),
+                maxMoney: Money.Coins(100_000_000),
                 coinbaseMaturity: 1,
                 premineHeight: 2,
-                premineReward: Money.Coins(20_000_000),
+                premineReward: Money.Coins(100_000_000),
                 proofOfWorkReward: Money.Coins(0),
                 powTargetTimespan: TimeSpan.FromDays(14), // two weeks
                 powTargetSpacing: TimeSpan.FromMinutes(1),
@@ -120,7 +136,8 @@ namespace Stratis.Sidechains.Networks
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
 
-            // TODO: Do we need Asserts for block hash
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000004b5e1be2efc806c0e779550e05fa11f4902063f87cc273959fadc5ca579"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x55168c43e5b997b99192af9819297efb43bedfdd698f29c6a2c22dfc671cc0fb"));
         }
     }
 }
