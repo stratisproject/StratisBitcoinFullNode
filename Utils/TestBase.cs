@@ -40,19 +40,10 @@ namespace Stratis.FederatedPeg.IntegrationTests.Utils
             this.mnemonics = this.sidechainNetwork.FederationMnemonics;
             this.pubKeysByMnemonic = this.mnemonics.ToDictionary(m => m, m => m.DeriveExtKey().PrivateKey.PubKey);
 
-            this.scriptAndAddresses = this.GenerateScriptAndAddresses(this.mainchainNetwork, this.sidechainNetwork, 2, this.pubKeysByMnemonic);
+            this.scriptAndAddresses = FederatedPegTestHelper.GenerateScriptAndAddresses(this.mainchainNetwork, this.sidechainNetwork, 2, this.pubKeysByMnemonic);
 
             this.federationMemberIndexes = Enumerable.Range(0, this.pubKeysByMnemonic.Count).ToList();
             this.chains = new[] { "mainchain", "sidechain" }.ToList();
-        }
-
-        protected (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress)
-            GenerateScriptAndAddresses(Network mainchainNetwork, Network sidechainNetwork, int quorum, Dictionary<Mnemonic, PubKey> pubKeysByMnemonic)
-        {
-            Script payToMultiSig = PayToMultiSigTemplate.Instance.GenerateScriptPubKey(quorum, pubKeysByMnemonic.Values.ToArray());
-            BitcoinAddress sidechainMultisigAddress = payToMultiSig.Hash.GetAddress(sidechainNetwork);
-            BitcoinAddress mainchainMultisigAddress = payToMultiSig.Hash.GetAddress(mainchainNetwork);
-            return (payToMultiSig, sidechainMultisigAddress, mainchainMultisigAddress);
         }
     }
 }

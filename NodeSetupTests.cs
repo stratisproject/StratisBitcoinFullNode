@@ -32,7 +32,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 TestHelper.MineBlocks(context.MainUser, (int)context.MainChainNetwork.Consensus.CoinbaseMaturity + (int)context.MainChainNetwork.Consensus.PremineHeight);
                 TestHelper.WaitForNodeToSync(context.MainUser, context.FedMain1, context.FedMain2, context.FedMain3);
-                Assert.True(context.GetBalance(context.MainUser) > context.MainChainNetwork.Consensus.PremineReward);
+                Assert.True(context.MainUser.GetBalance() > context.MainChainNetwork.Consensus.PremineReward);
             }
         }
 
@@ -71,7 +71,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 // Fund a main chain node
                 TestHelper.MineBlocks(context.MainUser, (int)context.MainChainNetwork.Consensus.CoinbaseMaturity + (int)context.MainChainNetwork.Consensus.PremineHeight);
                 TestHelper.WaitForNodeToSync(context.MainUser, context.FedMain1);
-                Assert.True(context.GetBalance(context.MainUser) > context.MainChainNetwork.Consensus.PremineReward);
+                Assert.True(context.MainUser.GetBalance() > context.MainChainNetwork.Consensus.PremineReward);
 
                 // Let sidechain progress to point where fed has the premine
                 TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= context.SideUser.FullNode.Network.Consensus.PremineHeight);
@@ -85,22 +85,22 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 // Send to sidechain
                 decimal transferValueCoins = 25;
                 var transferValue = new Money(transferValueCoins, MoneyUnit.BTC);
-                string sidechainAddress = context.GetAddress(context.SideUser);
+                string sidechainAddress = context.SideUser.GetUnusedAddress();
                 await context.DepositToSideChain(context.MainUser, transferValueCoins, sidechainAddress);
                 TestHelper.WaitLoop(() => context.FedMain1.CreateRPCClient().GetRawMempool().Length == 1);
                 TestHelper.MineBlocks(context.FedMain1, 15);
 
                 var source = new CancellationTokenSource(15_000);
-                TestHelper.WaitLoop(() => context.GetBalance(context.SideUser) == transferValue, cancellationToken: source.Token);
+                TestHelper.WaitLoop(() => context.SideUser.GetBalance() == transferValue, cancellationToken: source.Token);
 
                 // Sidechain user has balance - transfer complete.
-                Assert.Equal(transferValue, context.GetBalance(context.SideUser));
+                Assert.Equal(transferValue, context.SideUser.GetBalance());
 
                 await Task.Delay(5_000).ConfigureAwait(false);
 
                 // Send funds back to the main chain
-                string mainchainAddress = context.GetAddress(context.MainUser);
-                Money currentMainUserBalance = context.GetBalance(context.MainUser);
+                string mainchainAddress = context.MainUser.GetUnusedAddress();
+                Money currentMainUserBalance = context.MainUser.GetBalance();
 
                 await context.WithdrawToMainChain(context.SideUser, 24, mainchainAddress);
                 int currentSideHeight = context.SideUser.FullNode.Chain.Tip.Height;
@@ -110,7 +110,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
                 // Should unlock funds back on the main chain
                 TestHelper.WaitLoop(() => context.FedMain1.CreateRPCClient().GetRawMempool().Length == 1);
                 TestHelper.MineBlocks(context.FedMain1, 1);
-                Assert.Equal(currentMainUserBalance + new Money(24, MoneyUnit.BTC), context.GetBalance(context.MainUser));
+                Assert.Equal(currentMainUserBalance + new Money(24, MoneyUnit.BTC), context.MainUser.GetBalance());
             }
         }
     }

@@ -39,6 +39,12 @@
   </ItemGroup>
 
   <ItemGroup>
+    <Compile Update="SmartContracts\BasicTransfer.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
+  <ItemGroup>
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
