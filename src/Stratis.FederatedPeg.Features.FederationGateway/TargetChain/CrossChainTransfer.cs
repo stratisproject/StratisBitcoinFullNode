@@ -204,9 +204,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
             if (scriptSig == null)
                 return 0;
 
+            // Remove the script from the end.
+            scriptSig = new Script(scriptSig.ToOps().SkipLast(1));
+
             TransactionSignature[] result = PayToMultiSigTemplate.Instance.ExtractScriptSigParameters(network, scriptSig);
 
-            return result?.Length ?? 0;
+            return result?.Count(s => s != null) ?? 0;
         }
 
         /// <inheritdoc />
