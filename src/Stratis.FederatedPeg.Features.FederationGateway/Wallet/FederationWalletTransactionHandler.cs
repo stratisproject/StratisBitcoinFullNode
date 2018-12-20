@@ -46,8 +46,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
 
         private readonly IWalletFeePolicy walletFeePolicy;
 
-        private readonly CoinType coinType;
-
         private readonly ILogger logger;
 
         private readonly Network network;
@@ -68,7 +66,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.network = network;
-            this.coinType = (CoinType)network.Consensus.CoinType;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
@@ -299,15 +296,24 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         private void AddFee(TransactionBuildContext context)
         {
             Money fee;
+            Money minTrxFee = new Money(this.network.MinTxFee, MoneyUnit.Satoshi);
 
             // If the fee hasn't been set manually, calculate it based on the fee type that was chosen.
             if (context.TransactionFee == null)
             {
                 FeeRate feeRate = context.OverrideFeeRate ?? this.walletFeePolicy.GetFeeRate(context.FeeType.ToConfirmations());
                 fee = context.TransactionBuilder.EstimateFees(feeRate);
+
+                // Make sure that the fee is at least the minimum transaction fee.
+                fee = Math.Max(fee, minTrxFee);
             }
             else
             {
+                if (context.TransactionFee < minTrxFee)
+                {
+                    throw new WalletException($"Not enough fees. The minimum fee is {minTrxFee}.");
+                }
+
                 fee = context.TransactionFee;
             }
 
