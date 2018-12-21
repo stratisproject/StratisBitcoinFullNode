@@ -37,6 +37,8 @@ using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 using Stratis.FederatedPeg.Features.FederationGateway.RestClients;
 using Stratis.Bitcoin.Features.MemoryPool;
+using System.Collections.Generic;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 [assembly: InternalsVisibleTo("Stratis.FederatedPeg.Features.FederationGateway.Tests")]
 [assembly: InternalsVisibleTo("Stratis.FederatedPeg.IntegrationTests")]
@@ -88,6 +90,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IMaturedBlocksSyncManager maturedBlocksSyncManager;
 
+        private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
+
         private readonly ILogger logger;
 
         public FederationGatewayFeature(
@@ -108,7 +112,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             IPartialTransactionRequester partialTransactionRequester,
             IFederationGatewayClient federationGatewayClient,
             MempoolManager mempoolManager,
-            IMaturedBlocksSyncManager maturedBlocksSyncManager)
+            IMaturedBlocksSyncManager maturedBlocksSyncManager,
+            IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
             this.loggerFactory = loggerFactory;
             this.signals = signals;
@@ -127,6 +132,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.federationGatewayClient = federationGatewayClient;
             this.mempoolManager = mempoolManager;
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
+            this.withdrawalHistoryProvider = withdrawalHistoryProvider;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -221,45 +227,26 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                                 + " Federation Status: " + (isFederationActive ? "Active" : "Inactive"));
             benchLog.AppendLine();
 
-            var apiSettings = (ApiSettings)this.fullNode.Services.ServiceProvider.GetService(typeof(ApiSettings));
             if (!isFederationActive)
             {
-                var warning =
-                                                    "=============================================".PadLeft(10,'=')
-                           + Environment.NewLine
-                           + Environment.NewLine +  "Federation node not enabled. You will not be able to sign transactions until you enable it."
-                           + Environment.NewLine + $"If not done previously, please enable your federation node using "
-                           + Environment.NewLine + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.EnableFederation}"
-                           + Environment.NewLine
-                           + Environment.NewLine + $"============================================".PadLeft(10, '=')
-                           + Environment.NewLine;
-                benchLog.AppendLine(warning);
+                var apiSettings = (ApiSettings)this.fullNode.Services.ServiceProvider.GetService(typeof(ApiSettings));
+
+                benchLog.AppendLine("".PadRight(59, '=') + " W A R N I N G " + "".PadRight(59, '='));
+                benchLog.AppendLine();
+                benchLog.AppendLine("This federation node is not enabled. You will not be able to store or participate in signing of transactions until you enable it.");
+                benchLog.AppendLine("If not done previously, please enable your federation node using " + $"{apiSettings.ApiUri}/api/FederationWallet/{FederationWalletRouteEndPoint.EnableFederation}.");
+                benchLog.AppendLine();
+                benchLog.AppendLine("".PadRight(133, '='));
+                benchLog.AppendLine();
             }
 
             // Display recent withdrawals (if any).
-            IWithdrawal[] withdrawals = this.federationWalletManager.GetWithdrawals().Take(5).ToArray();
-            if (withdrawals.Length > 0)
+            List<WithdrawalModel> withdrawals = this.withdrawalHistoryProvider.GetHistory(5);
+            if (withdrawals.Count > 0)
             {
-                benchLog.AppendLine("-- Recent Withdrawals --");
-                ICrossChainTransfer[] transfers = this.crossChainTransferStore.GetAsync(withdrawals.Select(w => w.DepositId).ToArray()).GetAwaiter().GetResult().ToArray();
-                for (int i = 0; i < withdrawals.Length; i++)
-                {
-                    ICrossChainTransfer transfer = transfers[i];
-                    IWithdrawal withdrawal = withdrawals[i];
-                    string line = withdrawal.GetInfo() + " Status=" + transfer?.Status;
-                    switch (transfer?.Status)
-                    {
-                        case CrossChainTransferStatus.FullySigned:
-                            if (this.mempoolManager.InfoAsync(withdrawal.Id).GetAwaiter().GetResult() != null)
-                                line += "+InMempool";
-                            break;
-                        case CrossChainTransferStatus.Partial:
-                            line += " (" + transfer.GetSignatureCount(this.network) + "/" + this.federationGatewaySettings.MultiSigM + ")";
-                            break;
-                    }
-
-                    benchLog.AppendLine(line);
-                }
+                benchLog.AppendLine("--- Recent Withdrawals ---");
+                foreach (WithdrawalModel withdrawal in withdrawals)
+                    benchLog.AppendLine(withdrawal.ToString());
                 benchLog.AppendLine();
             }
 
@@ -340,6 +327,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
+                        services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
                     });
             });
             return fullNodeBuilder;
