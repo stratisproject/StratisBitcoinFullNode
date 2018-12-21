@@ -8,10 +8,18 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Module
     {
         public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
         {
-            IEnumerable<TypeDefinition> types = module.GetContractTypes();
+            List<TypeDefinition> types = module.GetContractTypes().ToList();
+
+            // Must always be at least one contract
+            if (types.Count == 0)
+            {
+                return new[] {
+                    new ContractToDeployValidationResult()
+                };
+            }
 
             // Must either be one contract
-            if (types.Count() == 1)
+            if (types.Count == 1)
                 return Enumerable.Empty<ValidationResult>();
 
             // OR only one contract with Deploy Attribute
