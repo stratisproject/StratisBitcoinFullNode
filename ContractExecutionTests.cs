@@ -78,13 +78,13 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
                 // SC tx reaches node mempool
                 TestHelper.WaitLoop(() => fed1.CreateRPCClient().GetRawMempool().Length == 1);
-                
-                //currentHeight = user1.FullNode.Chain.Height;
-                //TestHelper.WaitLoop(() => user1.FullNode.Chain.Height > currentHeight + 2);
 
-                //// Did code save?
-                //Assert.NotNull(user1.QueryContractCode(newContractAddress, network));
-                //Assert.NotNull(fed1.QueryContractCode(newContractAddress, network));
+                currentHeight = user1.FullNode.Chain.Height;
+                TestHelper.WaitLoop(() => user1.FullNode.Chain.Height > currentHeight + 2);
+
+                // Did code save?
+                Assert.NotNull(user1.QueryContractCode(newContractAddress, network));
+                Assert.NotNull(fed1.QueryContractCode(newContractAddress, network));
             }
         }
 
