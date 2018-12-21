@@ -90,6 +90,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
 
         private readonly IMaturedBlocksSyncManager maturedBlocksSyncManager;
 
+        private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
+
         private readonly ILogger logger;
 
         public FederationGatewayFeature(
@@ -110,7 +112,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             IPartialTransactionRequester partialTransactionRequester,
             IFederationGatewayClient federationGatewayClient,
             MempoolManager mempoolManager,
-            IMaturedBlocksSyncManager maturedBlocksSyncManager)
+            IMaturedBlocksSyncManager maturedBlocksSyncManager,
+            IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
             this.loggerFactory = loggerFactory;
             this.signals = signals;
@@ -129,6 +132,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             this.federationGatewayClient = federationGatewayClient;
             this.mempoolManager = mempoolManager;
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
+            this.withdrawalHistoryProvider = withdrawalHistoryProvider;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
@@ -237,7 +241,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
             }
 
             // Display recent withdrawals (if any).
-            List<WithdrawalModel> withdrawals = this.federationWalletManager.GetHistory(5);
+            List<WithdrawalModel> withdrawals = this.withdrawalHistoryProvider.GetHistory(5);
             if (withdrawals.Count > 0)
             {
                 benchLog.AppendLine("--- Recent Withdrawals ---");
@@ -323,6 +327,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway
                         services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
                         services.AddSingleton<IMaturedBlocksSyncManager, MaturedBlocksSyncManager>();
+                        services.AddSingleton<IWithdrawalHistoryProvider, WithdrawalHistoryProvider>();
                     });
             });
             return fullNodeBuilder;
