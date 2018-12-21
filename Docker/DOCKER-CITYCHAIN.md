@@ -52,6 +52,8 @@ docker run -it -p 4333:4333 -p 4334:4334 -p 4335:4335 -p 4336:4336 --mount sourc
 
 ## City Chain (RPC/Exchanges)
 
+Build your own image:
+
 ```
 docker build . -t citychainrpc
 ```
@@ -59,6 +61,8 @@ docker build . -t citychainrpc
 ```
 docker run -it -p 4333:4333 -p 4334:4334 -p 4335:4335 citychainrpc
 ```
+
+Alternatively you can use the docker-compose.yml (within the RPC folder) and simply configure with command parameters
 
 # Extras
 

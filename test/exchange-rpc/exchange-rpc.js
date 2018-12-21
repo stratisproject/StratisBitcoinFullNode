@@ -2,7 +2,7 @@ const Client = require('bitcoin-core');
 
 const client = new Client({
     host: 'localhost',
-    port: 24334,
+    port: 4334,
     username: 'rpcuser',
     password: 'rpcpassword'
 });
