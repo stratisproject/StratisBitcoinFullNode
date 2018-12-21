@@ -22,7 +22,7 @@
     },
     "City.Chain (Local Data, Network with RPC)": {
       "commandName": "Project",
-      "commandLineArgs": "-datadir=citynode -server -rpcallowip=0.0.0.0 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1"
+      "commandLineArgs": "-datadir=citynode -server -rpcallowip=0.0.0.0 -rpcpassword=rpcpassword -rpcuser=rpcuser -txindex=1 -defaultwallet=1"
     },
     "Stratis (Local Data)": {
       "commandName": "Project",
