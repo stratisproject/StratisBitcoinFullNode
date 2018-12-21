@@ -1028,7 +1028,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
                     depositIds.UnionWith(this.depositsIdsByStatus[status]);
 
                 uint256[] partialTransferHashes = depositIds.ToArray();
-                ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).ToArray();
+                ICrossChainTransfer[] partialTransfers = this.Get(partialTransferHashes).Where(t => t != null).ToArray();
 
                 if (validate)
                 {
