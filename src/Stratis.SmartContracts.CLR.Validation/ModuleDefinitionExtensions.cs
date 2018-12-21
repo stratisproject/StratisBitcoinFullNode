@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.CLR.Validation
     /// Util holds types which we need to ignore when retrieving types from module.
     /// These types are added by the compiler / framework and not the developer.
     /// </summary>
-    public static class TypesToIgnoreUtil
+    public static class ModuleDefinitionExtensions
     {
         public static readonly HashSet<string> Ignore = new HashSet<string>
         {
@@ -21,6 +21,7 @@ namespace Stratis.SmartContracts.CLR.Validation
         /// </summary>
         public static IEnumerable<TypeDefinition> GetContractTypes(this ModuleDefinition moduleDefinition)
         {
+            
             return moduleDefinition.Types.Where(x => !Ignore.Contains(x.FullName));
         }
     }
