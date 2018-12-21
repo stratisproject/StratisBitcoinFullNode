@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
             this.ValidateModule(results, module);
 
-            IEnumerable<TypeDefinition> contractTypes = module.GetDevelopedTypes();
+            IEnumerable<TypeDefinition> contractTypes = module.GetContractTypes();
 
             foreach (TypeDefinition contractType in contractTypes)
             {
