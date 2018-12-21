@@ -23,6 +23,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     {
         public const string GeneralInfo = "general-info";
         public const string Balance = "balance";
+        public const string History = "history";
         public const string Sync = "sync";
         public const string EnableFederation = "enable-federation";
         public const string RemoveTransactions = "remove-transactions";
@@ -44,6 +45,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         private readonly ConcurrentChain chain;
 
+        private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -54,11 +57,13 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
-            IDateTimeProvider dateTimeProvider)
+            IDateTimeProvider dateTimeProvider,
+            IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
             this.connectionManager = connectionManager;
+            this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -122,6 +127,29 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                 model.AccountsBalances.Add(balance);
 
                 return this.Json(model);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        [Route(FederationWalletRouteEndPoint.History)]
+        [HttpGet]
+        public IActionResult GetHistory([FromQuery] int maxEntriesToReturn)
+        {
+            try
+            {
+                FederationWallet wallet = this.walletManager.GetWallet();
+                if (wallet == null)
+                {
+                    return this.NotFound("No federation wallet found.");
+                }
+
+                List<WithdrawalModel> result = this.withdrawalHistoryProvider.GetHistory(maxEntriesToReturn);
+
+                return this.Json(result);
             }
             catch (Exception e)
             {
