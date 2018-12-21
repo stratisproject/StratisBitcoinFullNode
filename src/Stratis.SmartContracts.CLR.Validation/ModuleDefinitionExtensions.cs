@@ -17,7 +17,7 @@ namespace Stratis.SmartContracts.CLR.Validation
         {            
             return moduleDefinition.Types
                 .Where(x => x.BaseType != null)
-                .Where(x => x.IsClass)
+                .Where(x => x.IsClass && !x.IsAbstract)
                 .Where(x => x.BaseType.FullName == InheritsSmartContractValidator.SmartContractType);
         }
     }
