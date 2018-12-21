@@ -29,7 +29,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedSidechains
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SidechainDnsD", "Stratis.SidechainDnsD\Stratis.SidechainDnsD.csproj", "{C6A25E69-CB21-464D-91D0-9C390849C62E}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.FederatedPeg.IntegrationTests.Tools", "Stratis.FederatedPeg.IntegrationTests.Tools\Stratis.FederatedPeg.IntegrationTests.Tools.csproj", "{7764E567-47B8-481C-A078-7B3E427F217E}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.IntegrationTests.Tools", "Stratis.FederatedPeg.IntegrationTests.Tools\Stratis.FederatedPeg.IntegrationTests.Tools.csproj", "{7764E567-47B8-481C-A078-7B3E427F217E}"
+EndProject
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XUnitRetry", "XUnitRetry\XUnitRetry.csproj", "{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -85,6 +87,10 @@ Global
 		{7764E567-47B8-481C-A078-7B3E427F217E}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{7764E567-47B8-481C-A078-7B3E427F217E}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{7764E567-47B8-481C-A078-7B3E427F217E}.Release|Any CPU.Build.0 = Release|Any CPU
+		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -96,6 +102,7 @@ Global
 		{3D106928-3A8E-4EB1-9F9A-45856DBAA16B} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 		{A8CA48FA-A725-412D-9EC4-1BA7BA7177B2} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 		{7764E567-47B8-481C-A078-7B3E427F217E} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
+		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {034BDA2C-1CEE-4128-B444-CE1D425CB11C}
