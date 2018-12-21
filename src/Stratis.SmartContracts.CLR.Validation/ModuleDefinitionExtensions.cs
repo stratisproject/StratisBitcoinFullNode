@@ -14,10 +14,10 @@ namespace Stratis.SmartContracts.CLR.Validation
         /// Get the 'real' types from the module. i.e. not added by the compiler or framework.
         /// </summary>
         public static IEnumerable<TypeDefinition> GetContractTypes(this ModuleDefinition moduleDefinition)
-        {
-            
+        {            
             return moduleDefinition.Types
                 .Where(x => x.BaseType != null)
+                .Where(x => x.IsClass)
                 .Where(x => x.BaseType.FullName == InheritsSmartContractValidator.SmartContractType);
         }
     }
