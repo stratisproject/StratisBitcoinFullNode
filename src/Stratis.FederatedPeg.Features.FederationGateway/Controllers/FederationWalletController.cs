@@ -45,8 +45,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
 
         private readonly ConcurrentChain chain;
 
-        private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -57,13 +55,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
             IConnectionManager connectionManager,
             Network network,
             ConcurrentChain chain,
-            IDateTimeProvider dateTimeProvider,
-            IWithdrawalHistoryProvider withdrawalHistoryProvider)
+            IDateTimeProvider dateTimeProvider)
         {
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
             this.connectionManager = connectionManager;
-            this.withdrawalHistoryProvider = withdrawalHistoryProvider;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.chain = chain;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -147,7 +143,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                     return this.NotFound("No federation wallet found.");
                 }
 
-                List<WithdrawalModel> result = this.withdrawalHistoryProvider.GetHistory(maxEntriesToReturn);
+                List<WithdrawalModel> result = this.walletManager.GetHistory(maxEntriesToReturn);
 
                 return this.Json(result);
             }

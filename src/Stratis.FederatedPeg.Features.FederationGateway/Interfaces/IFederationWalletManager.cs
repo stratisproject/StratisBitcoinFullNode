@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using NBitcoin;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.Wallet;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
@@ -149,5 +150,12 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Interfaces
         /// </summary>
         /// <returns>An enumeration of IWithdrawal objects.</returns>
         IEnumerable<IWithdrawal> GetWithdrawals();
+
+        /// <summary>
+        /// Get the history of withdrawals and statuses.
+        /// </summary>
+        /// <param name="maximumEntriesToReturn">The maximum number of entries to return.</param>
+        /// <returns>A <see cref="WithdrawalModel"/> object containing a history of withdrawals and statuses.</returns>
+        List<WithdrawalModel> GetHistory(int maximumEntriesToReturn);
     }
 }

@@ -176,7 +176,8 @@ namespace Stratis.FederatedPeg.Tests
                 new NodeLifetime(),
                 this.dateTimeProvider,
                 this.federationGatewaySettings,
-                this.withdrawalExtractor);
+                this.withdrawalExtractor,
+                Substitute.For<ICrossChainTransferStore>());
 
             // Starts and creates the wallet.
             this.federationWalletManager.Start();

@@ -8,11 +8,13 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
+using Stratis.FederatedPeg.Features.FederationGateway.Models;
 using Stratis.FederatedPeg.Features.FederationGateway.TargetChain;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.FederationWallet.Tests")]
@@ -91,6 +93,11 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         /// <summary>The broadcast manager.</summary>
         private readonly IBroadcasterManager broadcasterManager;
 
+        /// <summary>The cross-chain transfer store.</summary>
+        private readonly ICrossChainTransferStore crossChainTransferStore;
+
+        private readonly MempoolManager mempoolManager;
+
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
 
@@ -132,7 +139,9 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             IDateTimeProvider dateTimeProvider,
             IFederationGatewaySettings federationGatewaySettings,
             IWithdrawalExtractor withdrawalExtractor,
-            IBroadcasterManager broadcasterManager = null) // no need to know about transactions the node broadcasted
+            ICrossChainTransferStore crossChainTransferStore,
+            MempoolManager mempoolManager = null,                       // Not required for store tests.
+            IBroadcasterManager broadcasterManager = null)              // No need to know about transactions the node broadcasted.
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(network, nameof(network));
@@ -143,6 +152,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
             Guard.NotNull(federationGatewaySettings, nameof(federationGatewaySettings));
             Guard.NotNull(withdrawalExtractor, nameof(withdrawalExtractor));
+            Guard.NotNull(crossChainTransferStore, nameof(crossChainTransferStore));
 
             this.lockObject = new object();
 
@@ -158,6 +168,8 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             this.dateTimeProvider = dateTimeProvider;
             this.federationGatewaySettings = federationGatewaySettings;
             this.withdrawalExtractor = withdrawalExtractor;
+            this.crossChainTransferStore = crossChainTransferStore;
+            this.mempoolManager = mempoolManager;
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
             this.isFederationActive = false;
 
@@ -215,16 +227,41 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
         }
 
         /// <inheritdoc />
-        public IEnumerable<FlatHistory> GetHistory()
+        public List<WithdrawalModel> GetHistory(int maximumEntriesToReturn)
         {
-            FlatHistory[] items = null;
-            lock (this.lockObject)
+            Guard.NotNull(this.mempoolManager, nameof(this.mempoolManager));
+            Guard.NotNull(this.crossChainTransferStore, nameof(this.crossChainTransferStore));
+
+            var result = new List<WithdrawalModel>();
+            IWithdrawal[] withdrawals = this.GetWithdrawals().Take(maximumEntriesToReturn).ToArray();
+
+            if (withdrawals.Length > 0)
             {
-                // Get transactions contained in the wallet.
-                items = this.Wallet.MultiSigAddress.Transactions.Select(t => new FlatHistory { Address = this.Wallet.MultiSigAddress, Transaction = t }).ToArray();
+                ICrossChainTransfer[] transfers = this.crossChainTransferStore.GetAsync(withdrawals.Select(w => w.DepositId).ToArray()).GetAwaiter().GetResult().ToArray();
+
+                for (int i = 0; i < withdrawals.Length; i++)
+                {
+                    ICrossChainTransfer transfer = transfers[i];
+                    var model = new WithdrawalModel();
+                    model.withdrawal = withdrawals[i];
+                    string status = transfer?.Status.ToString();
+                    switch (transfer?.Status)
+                    {
+                        case CrossChainTransferStatus.FullySigned:
+                            if (this.mempoolManager.InfoAsync(model.withdrawal.Id).GetAwaiter().GetResult() != null)
+                                status += "+InMempool";
+                            break;
+                        case CrossChainTransferStatus.Partial:
+                            status += " (" + transfer.GetSignatureCount(this.network) + "/" + this.federationGatewaySettings.MultiSigM + ")";
+                            break;
+                    }
+
+                    model.TransferStatus = status;
+                    result.Add(model);
+                }
             }
 
-            return items;
+            return result;
         }
 
         /// <inheritdoc />
