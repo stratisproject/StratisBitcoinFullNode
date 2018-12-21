@@ -24,11 +24,12 @@ namespace Stratis.SmartContracts.CLR.Validation
 
             this.ValidateModule(results, module);
 
-            IEnumerable<TypeDefinition> contractTypes = module.GetContractTypes();
+            // Use GetTypes to ensure we retrieve all nested types as well
+            IEnumerable<TypeDefinition> types = module.GetTypes();
 
-            foreach (TypeDefinition contractType in contractTypes)
+            foreach (TypeDefinition type in types)
             {
-                results.AddRange(this.typePolicyValidator.Validate(contractType));
+                results.AddRange(this.typePolicyValidator.Validate(type));
             }
             
             return results;
