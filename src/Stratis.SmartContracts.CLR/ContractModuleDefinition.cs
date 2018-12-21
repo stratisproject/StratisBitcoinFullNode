@@ -38,8 +38,6 @@ namespace Stratis.SmartContracts.CLR
                         ? this.ContractTypes.First()
                         : this.ContractTypes.FirstOrDefault(x =>
                             x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(DeployAttribute).Name));
-
-                    this.contractType = this.contractType ?? this.ContractTypes.FirstOrDefault();
                 }
 
                 return this.contractType;
