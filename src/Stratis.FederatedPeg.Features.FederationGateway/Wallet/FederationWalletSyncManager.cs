@@ -60,7 +60,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Wallet
             // if the wallet falls behind the block puller.
             // To support pruning the wallet will need to be
             // able to download blocks from peers to catch up.
-            if (this.storeSettings.Prune)
+            if (this.storeSettings.PruningEnabled)
                 throw new WalletException("Wallet can not yet run on a pruned node");
 
             this.logger.LogInformation("WalletSyncManager initialized. Wallet at block {0}.", this.walletManager.LastBlockHeight());
