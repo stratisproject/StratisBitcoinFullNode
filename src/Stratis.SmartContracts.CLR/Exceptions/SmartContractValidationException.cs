@@ -16,7 +16,7 @@ namespace Stratis.SmartContracts.CLR.Exceptions
         {
             get
             {
-                return base.Message + "\n" + string.Join('\n', this.Errors.Select(x=> x.Message));
+                return base.Message + Environment.NewLine + string.Join(Environment.NewLine, this.Errors.Select(x=> x.Message));
             }
         }
         public IEnumerable<ValidationResult> Errors;
