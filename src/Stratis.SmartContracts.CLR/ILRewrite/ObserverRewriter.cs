@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         {
             Guid id = Guid.NewGuid();
 
-            FieldDefinition observerInstanceField = GetObserverInstance(module, id);
+            (FieldDefinition observerInstanceField, TypeDefinition observerType) = GetObserverInstance(module, id);
             var observer = new ObserverReferences(observerInstanceField, module);
 
             foreach (TypeDefinition type in module.GetTypes())
@@ -46,6 +46,8 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
 
             ObserverInstances.Set(id, this.observerToInject);
 
+            module.Types.Add(observerType);
+
             return module;
         }
 
@@ -53,7 +55,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         /// Inserts a static type into the module which gives access to an instance of <see cref="Observer"/>.
         /// Because this is injected per module, it counts as a separate type and will not be a shared static.
         /// </summary>
-        private FieldDefinition GetObserverInstance(ModuleDefinition module, Guid id)
+        private (FieldDefinition, TypeDefinition) GetObserverInstance(ModuleDefinition module, Guid id)
         {
             // Add new type that can't be instantiated
             var instanceType = new TypeDefinition(
@@ -83,8 +85,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             il.Emit(OpCodes.Ret);
             instanceType.Methods.Add(constructor);
 
-            module.Types.Add(instanceType);
-            return instanceField;
+            return (instanceField, instanceType);
         }
 
         private void RewriteType(TypeDefinition type, ObserverReferences observer)
@@ -101,9 +102,6 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         /// </summary>
         private void RewriteMethod(MethodDefinition methodDefinition, ObserverReferences observer)
         {
-            if (methodDefinition.DeclaringType == observer.InstanceField.DeclaringType)
-                return; // don't inject on our injected type.
-
             if (!methodDefinition.HasBody || methodDefinition.Body.Instructions.Count == 0)
                 return; // don't inject on method without a Body 
 
