@@ -3,7 +3,6 @@ using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.SmartContracts.CLR.Validation.Policy;
 using Stratis.SmartContracts.CLR.Validation.Validators;
-using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 
 namespace Stratis.SmartContracts.CLR.Validation
 {
@@ -67,7 +66,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
         public ValidationPolicy NestedTypeDefValidator(ITypeDefinitionValidator validator)
         {
-            this.typeDefValidators.Add((NestedTypePolicy.Validate, new NestedValidator(validator), t => true));
+            this.typeDefValidators.Add((NestedTypePolicy.Validate, validator, t => t.IsNested));
             return this;
         }
 
