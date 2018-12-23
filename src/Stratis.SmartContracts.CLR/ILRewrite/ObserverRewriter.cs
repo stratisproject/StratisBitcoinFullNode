@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             FieldDefinition observerInstanceField = GetObserverInstance(module, id);
             var observer = new ObserverReferences(observerInstanceField, module);
 
-            foreach (TypeDefinition type in module.Types)
+            foreach (TypeDefinition type in module.GetTypes())
             {
                 RewriteType(type, observer);
             }
