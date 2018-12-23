@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.SmartContracts.CLR.Validation.Policy;
 using Stratis.SmartContracts.CLR.Validation.Validators;
@@ -19,7 +20,7 @@ namespace Stratis.SmartContracts.CLR.Validation
     {
         private readonly List<IModuleDefinitionValidator> moduleDefValidators = new List<IModuleDefinitionValidator>();
 
-        private readonly List<(NestedTypePolicy, ITypeDefinitionValidator)> typeDefValidators = new List<(NestedTypePolicy, ITypeDefinitionValidator)>();
+        private readonly List<(NestedTypePolicy, ITypeDefinitionValidator, Func<TypeDefinition, bool>)> typeDefValidators = new List<(NestedTypePolicy, ITypeDefinitionValidator, Func<TypeDefinition, bool>)>();
 
         private readonly List<IFieldDefinitionValidator> fieldDefValidators = new List<IFieldDefinitionValidator>();
 
@@ -53,17 +54,24 @@ namespace Stratis.SmartContracts.CLR.Validation
 
         public ValidationPolicy TypeDefValidator(ITypeDefinitionValidator validator, NestedTypePolicy nestedTypePolicy = NestedTypePolicy.Validate)
         {
-            this.typeDefValidators.Add((nestedTypePolicy, validator));
+            this.typeDefValidators.Add((nestedTypePolicy, validator, t => true));
             return this;
         }
+
+        public ValidationPolicy TypeDefValidator(ITypeDefinitionValidator validator, Func<TypeDefinition, bool> filter, NestedTypePolicy nestedTypePolicy = NestedTypePolicy.Validate)
+        {
+            this.typeDefValidators.Add((nestedTypePolicy, validator, filter));
+            return this;
+        }
+
 
         public ValidationPolicy NestedTypeDefValidator(ITypeDefinitionValidator validator)
         {
-            this.typeDefValidators.Add((NestedTypePolicy.Validate, new NestedValidator(validator)));
+            this.typeDefValidators.Add((NestedTypePolicy.Validate, new NestedValidator(validator), t => true));
             return this;
         }
 
-        public IEnumerable<(NestedTypePolicy, ITypeDefinitionValidator)> TypeDefValidators =>
+        public IEnumerable<(NestedTypePolicy, ITypeDefinitionValidator, Func<TypeDefinition, bool>)> TypeDefValidators =>
             this.typeDefValidators;
 
         public ValidationPolicy FieldDefValidator(IFieldDefinitionValidator validator)
