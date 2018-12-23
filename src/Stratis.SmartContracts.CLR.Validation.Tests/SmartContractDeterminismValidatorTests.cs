@@ -732,8 +732,8 @@ public class Test2 : SmartContract {
             var moduleType = moduleDefinition.GetType("<Module>");
             moduleDefinition.Types.Remove(moduleType);
 
-            var trickyType = moduleDefinition.GetType("Test2");
-            trickyType.Name = "<Module>";
+            var internalType = moduleDefinition.GetType("Test2");
+            internalType.Name = "<Module>";
 
             SmartContractValidationResult result = new SmartContractValidator().Validate(moduleDefinition);
 
