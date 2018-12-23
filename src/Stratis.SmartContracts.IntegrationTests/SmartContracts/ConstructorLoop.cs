@@ -5,7 +5,8 @@ public class ConstructorLoop : SmartContract
 {
     public ConstructorLoop(ISmartContractState state) : base(state)
     {
-        Create<Other>();
+        // This will only allow contract creation to happen if the inner call does run out of gas.
+        Assert(!Create<Other>().Success);
     }
 }
 
