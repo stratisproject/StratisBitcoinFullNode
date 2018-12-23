@@ -4,10 +4,6 @@ using Mono.Cecil;
 
 namespace Stratis.SmartContracts.CLR.Validation
 {
-    /// <summary>
-    /// Util holds types which we need to ignore when retrieving types from module.
-    /// These types are added by the compiler / framework and not the developer.
-    /// </summary>
     public static class ModuleDefinitionExtensions
     {
         /// <summary>
