@@ -146,10 +146,8 @@ namespace Stratis.SmartContracts.CLR.Validation
             if (!this.policy.TypeDefValidators.Any()) 
                 return;
 
-            foreach (var (nestedPolicy, validator, shouldValidateTypeFilter) in this.policy.TypeDefValidators)
+            foreach (var (validator, shouldValidateTypeFilter) in this.policy.TypeDefValidators)
             {
-                if (type.IsNested && nestedPolicy == NestedTypePolicy.Ignore) continue;
-
                 if (shouldValidateTypeFilter(type))
                 {
                     results.AddRange(validator.Validate(type));
