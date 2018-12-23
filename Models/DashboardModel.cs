@@ -4,7 +4,7 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Models
 {
     public class DashboardModel
     {
-        public bool IsCacheBuilt { get; set; } = false;
+        public bool IsCacheBuilt { get; set; }
         public bool Status { get; set; }
         public string MainchainWalletAddress { get; set; }
         public string SidechainWalletAddress { get; set; }

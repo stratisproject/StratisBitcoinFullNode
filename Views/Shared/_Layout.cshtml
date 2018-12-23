@@ -4,10 +4,15 @@
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1.0" />
     <title>Stratis Federated Sidechains Dashboard</title>
-    <link href="~/css/default.css" rel="stylesheet" />
-     <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.min.css" />
-     <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
-	<link rel="icon" type="image/svg" href="~/images/logo.svg" />
+    <environment include="Development">
+      <link href="~/css/default.css" rel="stylesheet" />
+    </environment>
+    <environment exclude="Development">
+      <link href="~/css/default.min.css" rel="stylesheet" />
+    </environment>
+    <link rel="stylesheet" type="text/css" href="~/lib/node-snackbar/dist/snackbar.min.css" />
+    <link rel="stylesheet" type="text/css" href="~/lib/nprogress/nprogress.css" />
+    <link rel="icon" type="image/svg" href="~/images/logo.svg" />
 </head>
 <body>
   <div class="modal fade" data-keyboard="false" data-backdrop="static" id="miningPublicKeys" tabindex="-1" role="dialog" aria-labelledby="miningPublicKeys" aria-hidden="true">
@@ -21,14 +26,18 @@
         </div>
         <div class="modal-body">
           <ul class="list-unstyled align-items-center flex-column d-flex">
-            @foreach(var miningPubKey in (ViewBag.MiningPubKeys ?? (new string[] {""})))
+            @foreach(var miningPubKey in (ViewBag.MiningPubKeys ?? (new string[] {})))
             {
               <li class="py-2">
                 <code>@miningPubKey</code>
-                <a href="#" class="text-primary ml-2">Copy</a>
+                <a href="#" class="text-primary ml-2 copy-clipboard">Copy</a>
               </li>
             }
           </ul>
+          @if(ViewBag.MiningPubKeys == null)
+          {
+            <p class="text-center text-muted"><em>Missing Mining Public Keys</em></p>
+          }
         </div>
         <div class="modal-footer">
           <button type="button" class="btn btn-outline-secondary mx-auto" data-dismiss="modal">Close</button>
@@ -37,11 +46,11 @@
     </div>
   </div>
   <nav class="navbar navbar-dark bg-purple fixed-top">
-    <a class="navbar-brand mr-4" href="#">
-      <img src="~/images/logo_white.svg" width="30" height="30" class="d-inline-block align-top" alt="">
+    <a class="navbar-brand mr-4" href="https://stratisplatform.com/" target="_blank">
+      <img src="~/images/logo_white.svg" width="30" height="30" class="d-inline-block align-top" alt="Stratis" />
     </a>
     <div class="navbar-text text-white">Federation members dashboard for Apex</div>
-    <span class="badge badge-purple ml-auto">Status @(ViewBag.Status ?? "Warning")</span>
+    <span class="badge badge-purple ml-auto">Status: <span class="status">@(ViewBag.Status ?? "Warning")</span></span>
   </nav>
   <nav class="navbar navbar-light bg-white py-1 fixed-top d-flex align-items-center" style="margin-top:56px;">
     <div class="navbar-text d-inline">
@@ -53,15 +62,11 @@
     <div class="navbar-text d-inline">
       <ul class="list-inline mb-0 ml-5 ml-md-2 d-flex align-items-center">
         <li class="list-inline-item text-dark">Apex wallet address</li>
-        <li class="list-inline-item text-truncate">@(ViewBag.SidechainMultisigAddress ?? "Not Running")
-          <a href="#">
-            <i class="material-icons">file_copy</i>
-          </a>
-        </li>
+        <li class="list-inline-item text-truncate">@(ViewBag.SidechainMultisigAddress ?? "Not Running")</li>
       </ul>
     </div>
     <div class="navbar-text ml-auto">
-      <a data-toggle="modal" data-target="#miningPublicKeys" class="d-flex align-items-center"> Mining public keys <i class="material-icons md-18 ml-2">open_in_new</i></a>
+      <a data-toggle="modal" data-target="#miningPublicKeys" class="d-flex align-items-center"> Mining Public keys <i class="material-icons md-18 ml-2">open_in_new</i></a>
     </div>
   </nav>
   <section class="container-fluid marginTop" id="container">

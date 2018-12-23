@@ -61,8 +61,6 @@
         </div>
     </div>
 </div>
-
-<!-- SIDECHAIN MODALS -->
 <div class="modal fade" data-keyboard="false" data-backdrop="static" id="sidechainResyncCrosschain" tabindex="-1" role="dialog" aria-labelledby="resyncCrosschain" aria-hidden="true">
     <div class="modal-dialog modal-dialog-centered modal-sm" role="document">
     <div class="modal-content">
@@ -126,4 +124,93 @@
         </div>
     </div>
 </div>
-<!-- SIDECHAINS MODALS -->
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="stratisHistory" tabindex="-1" role="dialog" aria-labelledby="stratisHistory" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">History</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm my-3">
+                    <thead>
+                        <tr>
+                            <th class="text-center" scope="col">Status</th>
+                            <th class="text-center" scope="col">Destination</th>
+                            <th class="text-center" scope="col">Tx ID</th>
+                            <th class="text-center" scope="col">Confirmed in block</th>
+                            <th class="text-center" scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(dynamic transaction in (JArray)ViewBag.History[0])
+                        {
+                            <tr>
+                                <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                                <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
+                                <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                                <td class="text-center">@transaction.withdrawal.blockNumber</td>
+                                <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.StratisTicker</td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if(((JArray)ViewBag.History[0]).Count == 0)
+                    {
+                        <tfoot>
+                            <tr>
+                                <td colspan="6" class="text-center"><em>There no transaction to display.</em></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
+<div class="modal fade" data-keyboard="false" data-backdrop="static" id="sidechainHistory" tabindex="-1" role="dialog" aria-labelledby="sidechainHistory" aria-hidden="true">
+    <div class="modal-dialog modal-lg modal-dialog-centered" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title" id="">History</h5>
+                <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                    <span aria-hidden="true">&times;</span>
+                </button>
+            </div>
+            <div class="modal-body">
+                <table class="table table-sm my-3">
+                    <thead>
+                        <tr>
+                            <th class="text-center" scope="col">Status</th>
+                            <th class="text-center" scope="col">Destination</th>
+                            <th class="text-center" scope="col">Tx ID</th>
+                            <th class="text-center" scope="col">Confirmed in block</th>
+                            <th class="text-center" scope="col">Amount</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @foreach(dynamic transaction in (JArray)ViewBag.History[1])
+                        {
+                            <tr>
+                            <td class="text-center"><i class="material-icons text-green md-18">check_circle</i></td>
+                            <td class="text-center text-truncate"><code>@(transaction.withdrawal.targetAddress)</code></td>
+                            <td class="text-left text-truncate" style="max-width: 110px;"><a href="https://chainz.cryptoid.info/strat/tx.dws?@(transaction.id).htm" target="_blank">@transaction.withdrawal.id</a></td>
+                            <td class="text-center">@transaction.withdrawal.blockNumber</td>
+                            <td class="text-right">@(((double)transaction.withdrawal.amount/100000000).ToString("N8")) @ViewBag.SidechainTicker</td>
+                            </tr>
+                        }
+                    </tbody>
+                    @if(((JArray)ViewBag.History[1]).Count == 0)
+                    {
+                        <tfoot>
+                            <tr>
+                            <td colspan="6" class="text-center"><em>There no transaction to display.</em></td>
+                            </tr>
+                        </tfoot>
+                    }
+                </table>
+            </div>
+        </div>
+    </div>
+</div>
