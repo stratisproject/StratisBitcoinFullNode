@@ -14,16 +14,16 @@ namespace Stratis.Sidechains.Networks
     public class FederatedPegMain : PoANetwork
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
-        private const string NetworkRootFolderName = "fedpeg";
+        private const string NetworkRootFolderName = "cirrus";
 
         /// <summary> The default name used for the federated peg configuration file. </summary>
-        private const string NetworkDefaultConfigFilename = "fedpeg.conf";
+        private const string NetworkDefaultConfigFilename = "cirrus.conf";
 
         internal FederatedPegMain()
         {
-            this.Name = "FederatedPegMain";
-            this.CoinTicker = "FPG";
-            this.Magic = 0x522357A;
+            this.Name = "CirrusMain";
+            this.CoinTicker = "CRS";
+            this.Magic = 0x522357A0;
             this.DefaultPort = 16179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
@@ -50,12 +50,18 @@ namespace Stratis.Sidechains.Networks
 
             this.Genesis = genesisBlock;
 
-            //todo : replace dummy values before release
+            // Configure federation public keys used to sign blocks.
+            // Keep in mind that order in which keys are added to this list is important
+            // and should be the same for all nodes operating on this network.
             var federationPubKeys = new List<PubKey>
             {
-                new PubKey("02eef7619de25578c9717a289d08c61d4598b2bd81d2ee5db3072a07fa2d121e65"),
-                new PubKey("027ce19209dd1212a6a4fc2b7ddf678c6dea40b596457f934f73f3dcc5d0d9ee55"),
-                new PubKey("03093239d5344ddb4c69c46c75bd629519e0b68d2cfc1a86cd63115fd068f202ba"),
+                new PubKey("036317d97f911ce899fd0a360866d19f2dca5252c7960d4652d814ab155a8342de"),
+                new PubKey("02a08d72d47b3103261163c15aa2f6b0d007e1872ad9f5fddbfbd27bdb738156e9"),
+                new PubKey("03634c79d4e8e915cfb9f7bbef57bed32d715150836b7845b1a14c93670d816ab6"),
+                new PubKey("02062601ddfdb2208c1d074f1019fe6bc582ff9a0956a9cbe03f19af04b94f831b"),
+                new PubKey("03c36d4fd9a7f949df8ccd2b173e5cb8a5f77a8ad270d37b509314123b225afdfd"),
+                new PubKey("0254c4944820c49f8d595aa78bfce771453558dd159fd5eee8fac097fc3ac17c1b"),
+                new PubKey("03dad9bf0493560203ed6a1089749d140fa33d83aa15fcc8b22a108511389bdcef")
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -80,7 +86,7 @@ namespace Stratis.Sidechains.Networks
             this.Consensus = new Consensus(
                 consensusFactory: consensusFactory,
                 consensusOptions: consensusOptions,
-                coinType: 400,
+                coinType: 401,
                 hashGenesisBlock: genesisBlock.GetHash(),
                 subsidyHalvingInterval: 210000,
                 majorityEnforceBlockUpgrade: 750,
@@ -113,8 +119,8 @@ namespace Stratis.Sidechains.Networks
 
             // Same as current smart contracts test networks to keep tests working
             this.Base58Prefixes = new byte[12][];
-            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 35 }; // F
-            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 95 }; // f
+            this.Base58Prefixes[(int)Base58Type.PUBKEY_ADDRESS] = new byte[] { 28 }; // C
+            this.Base58Prefixes[(int)Base58Type.SCRIPT_ADDRESS] = new byte[] { 88 }; // c
             this.Base58Prefixes[(int)Base58Type.SECRET_KEY] = new byte[] { (239) };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_NO_EC] = new byte[] { 0x01, 0x42 };
             this.Base58Prefixes[(int)Base58Type.ENCRYPTED_SECRET_KEY_EC] = new byte[] { 0x01, 0x43 };
