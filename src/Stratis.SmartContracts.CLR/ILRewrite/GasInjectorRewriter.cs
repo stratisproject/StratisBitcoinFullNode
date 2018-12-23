@@ -28,23 +28,29 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
             {
                 Instruction instruction = methodDefinition.Body.Instructions[position];
 
+                bool added = false;
+
+                // Start of a new segment. End last segment and start new one with this as the first instruction
+                if (branchTos.Contains(instruction))
+                {
+                    if (codeSegment.Instructions.Any())
+                        segments.Add(codeSegment);
+                    codeSegment = new CodeSegment(methodDefinition);
+                    codeSegment.Instructions.Add(instruction);
+                    added = true;
+                }
+
                 // End of a segment. Add this as the last instruction and move onwards with a new segment
                 if (branches.Contains(instruction))
                 {
                     codeSegment.Instructions.Add(instruction);
                     segments.Add(codeSegment);
                     codeSegment = new CodeSegment(methodDefinition);
+                    added = true;
                 }
-                // Start of a new segment. End last segment and start new one with this as the first instruction
-                else if (branchTos.Contains(instruction))
-                {
-                    if (codeSegment.Instructions.Any())
-                        segments.Add(codeSegment);
-                    codeSegment = new CodeSegment(methodDefinition);
-                    codeSegment.Instructions.Add(instruction);
-                }
+
                 // Just an in-between instruction. Add to current segment.
-                else
+                if (!added)
                 {
                     codeSegment.Instructions.Add(instruction);
                 }
