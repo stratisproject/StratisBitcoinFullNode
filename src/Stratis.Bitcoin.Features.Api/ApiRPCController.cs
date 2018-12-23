@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Net.Http;
 using System.Net.Http.Headers;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Controllers;
@@ -52,20 +53,23 @@ namespace Stratis.Bitcoin.Features.Api
                     }
                     else
                     {
+                        // Convert request from base64 to JSON to pass to Api.
+                        var requestJson = Encoding.UTF8.GetString(Convert.FromBase64String(request));
+                        StringContent content = new StringContent(requestJson, UTF8Encoding.UTF8, "application/json");
                         if (verb.Equals("POST", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            HttpResponseMessage postResponse = await client.PostAsJsonAsync<string>(url, request);
+                            HttpResponseMessage postResponse = await client.PostAsync(url, content);
                             response = postResponse.Content.ReadAsStringAsync().Result;
                         }
                         else if (verb.Equals("PUT", StringComparison.InvariantCultureIgnoreCase))
                         {
-                            HttpResponseMessage postResponse = await client.PutAsJsonAsync<string>(url, request);
+                            HttpResponseMessage postResponse = await client.PutAsync(url, content);
                             response = postResponse.Content.ReadAsStringAsync().Result;
                         }
                     }
                     return response;
                 }
-                catch(Exception ex)
+                catch (Exception ex)
                 {
                     throw new RPCServerException(RPC.RPCErrorCode.RPC_INVALID_REQUEST, ex.Message);
                 }
