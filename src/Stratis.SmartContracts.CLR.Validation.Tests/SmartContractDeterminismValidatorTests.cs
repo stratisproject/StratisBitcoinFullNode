@@ -1,11 +1,10 @@
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
 using Stratis.SmartContracts.CLR.Validation.Validators.Module;
 using Stratis.SmartContracts.CLR.Validation.Validators.Type;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Validation.Tests
@@ -653,6 +652,30 @@ public class Test : SmartContract
         }
 
         [Fact]
+        public void SmartContractValidator_Dont_Allow_No_Contracts()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test
+{
+    public Test(ISmartContractState state) {}
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decompilation = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
+        }
+
+        [Fact]
         public void SmartContractValidator_Should_Not_Allow_Optional_Params()
         {
             const string source = @"
@@ -674,6 +697,49 @@ public class Test : SmartContract
 
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e is MethodParamValidator.MethodParamValidationResult);
+        }
+
+        [Fact]
+        public void SmartContractValidator_Should_Validate_Internal_Types()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+[Deploy]
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state): base(state) 
+    {
+        Create<Test2>();
+    }
+}
+
+public class Test2 : SmartContract {
+    public Test2(ISmartContractState state): base(state) {
+        PersistentState.SetString(""dt"", DateTime.Now.ToString());
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decompilation = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var moduleDefinition = decompilation.ModuleDefinition;
+
+            var moduleType = moduleDefinition.GetType("<Module>");
+            moduleDefinition.Types.Remove(moduleType);
+
+            var internalType = moduleDefinition.GetType("Test2");
+            internalType.Name = "<Module>";
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(moduleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+            Assert.True(result.Errors.All(e => e is WhitelistValidator.WhitelistValidationResult));
         }
     }
 }
