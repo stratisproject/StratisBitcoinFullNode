@@ -24,8 +24,8 @@ namespace Stratis.SmartContracts.CLR.Validation
 
             this.ValidateModule(results, module);
 
-            // Use GetTypes to ensure we retrieve all nested types as well
-            IEnumerable<TypeDefinition> types = module.GetTypes();
+            // Use Types so that we do not return nested types. The TypePolicyValidator will enumerate nested types.
+            IEnumerable<TypeDefinition> types = module.Types;
 
             foreach (TypeDefinition type in types)
             {
