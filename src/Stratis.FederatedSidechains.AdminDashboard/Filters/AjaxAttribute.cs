@@ -6,8 +6,6 @@ namespace Stratis.FederatedSidechains.AdminDashboard.Filters
 {
     public class AjaxAttribute : ActionMethodSelectorAttribute
     {
-        public string HttpVerb { get; set; }
-
         public override bool IsValidForRequest(RouteContext routeContext, ActionDescriptor action)
         {
             return routeContext.HttpContext.Request.Headers["X-Requested-With"].Equals("XMLHttpRequest");
