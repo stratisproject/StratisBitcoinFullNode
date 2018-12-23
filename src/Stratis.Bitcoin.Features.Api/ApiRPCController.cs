@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Api
                 client.DefaultRequestHeaders.Accept.Clear();
                 client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
 
-                var url = $"{this.apiSettings.ApiUri.AbsoluteUri}/api/{command}";
+                var url = $"{this.apiSettings.ApiUri.AbsoluteUri}api/{command}";
 
                 if (verb?.Equals("GET", StringComparison.InvariantCultureIgnoreCase) ?? true)
                 {
