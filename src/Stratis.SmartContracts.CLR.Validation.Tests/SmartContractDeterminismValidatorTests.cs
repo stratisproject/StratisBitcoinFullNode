@@ -698,5 +698,48 @@ public class Test : SmartContract
             Assert.False(result.IsValid);
             Assert.Contains(result.Errors, e => e is MethodParamValidator.MethodParamValidationResult);
         }
+
+        [Fact]
+        public void SmartContractValidator_Should_Validate_Internal_Types()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+[Deploy]
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state): base(state) 
+    {
+        Create<Test2>();
+    }
+}
+
+public class Test2 : SmartContract {
+    public Test2(ISmartContractState state): base(state) {
+        PersistentState.SetString(""dt"", DateTime.Now.ToString());
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decompilation = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var moduleDefinition = decompilation.ModuleDefinition;
+
+            var moduleType = moduleDefinition.GetType("<Module>");
+            moduleDefinition.Types.Remove(moduleType);
+
+            var trickyType = moduleDefinition.GetType("Test2");
+            trickyType.Name = "<Module>";
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(moduleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+            Assert.True(result.Errors.All(e => e is WhitelistValidator.WhitelistValidationResult));
+        }
     }
 }
