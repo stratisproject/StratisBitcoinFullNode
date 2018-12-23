@@ -4,11 +4,10 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using Mono.Cecil;
-using Stratis.SmartContracts.CLR.Validation;
-using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -40,8 +39,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         [Fact]
         public void SmartContract_ValidateFormat_HasSingleConstructorSuccess()
-        {            
-            IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(SingleConstructorModuleDefinition.ContractType);
+        {
+            IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(SingleConstructorModuleDefinition.ModuleDefinition.GetType("SingleConstructor"));
             
             Assert.Empty(validationResult);
         }
@@ -49,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_ValidateFormat_HasMultipleConstructorsFails()
         {
-            IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(MultipleConstructorModuleDefinition.ContractType);
+            IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(MultipleConstructorModuleDefinition.ModuleDefinition.GetType("MultipleConstructor"));
 
             Assert.Single(validationResult);
             Assert.Equal(SingleConstructorValidator.SingleConstructorError, validationResult.Single().Message);
@@ -58,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_ValidateFormat_HasInvalidFirstParamFails()
         {
-            bool validationResult = ConstructorParamValidator.Validate(InvalidParamModuleDefinition.ContractType);
+            bool validationResult = ConstructorParamValidator.Validate(InvalidParamModuleDefinition.ModuleDefinition.GetType("InvalidParam"));
             
             Assert.True(validationResult);
         }
@@ -291,8 +290,7 @@ public class Test2 {
 
             var result = validator.Validate(decomp.ModuleDefinition);
 
-            Assert.False(result.IsValid);
-            Assert.Equal(2, result.Errors.Count());
+            Assert.True(result.IsValid);
         }
 
         [Fact]
