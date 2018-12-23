@@ -14,7 +14,7 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Module
             if (types.Count == 0)
             {
                 return new[] {
-                    new ContractToDeployValidationResult()
+                    new ContractToDeployValidationResult("Assembly must contain at least one contract type.")
                 };
             }
 
@@ -28,13 +28,13 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Module
 
             // Otherwise it's a problem
             return new[] {
-                new ContractToDeployValidationResult() 
+                new ContractToDeployValidationResult("Assembly must contain one contract with the Deploy attribute.") 
             };
         }
 
         public class ContractToDeployValidationResult : ModuleDefinitionValidationResult
         {
-            public ContractToDeployValidationResult() : base("Assembly must contain one contract with the Deploy attribute.")
+            public ContractToDeployValidationResult(string message) : base(message)
             {
             }
         }
