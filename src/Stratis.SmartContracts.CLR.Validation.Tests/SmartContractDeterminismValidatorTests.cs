@@ -1,11 +1,10 @@
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
 using Stratis.SmartContracts.CLR.Validation.Validators.Module;
 using Stratis.SmartContracts.CLR.Validation.Validators.Type;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Validation.Tests
@@ -649,6 +648,30 @@ public class Test : SmartContract
 
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
+            Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
+        }
+
+        [Fact]
+        public void SmartContractValidator_Dont_Allow_No_Contracts()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test
+{
+    public Test(ISmartContractState state) {}
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decompilation = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.False(result.IsValid);
             Assert.IsType<ContractToDeployValidator.ContractToDeployValidationResult>(result.Errors.Single());
         }
 
