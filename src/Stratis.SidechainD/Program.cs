@@ -54,12 +54,12 @@ namespace Stratis.SidechainD
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
                 .UseBlockStore()
+                .UseMempool()
                 .AddSmartContracts()
                 .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
                 .UseReflectionExecutor()
-                .UseMempool()
                 .UseApi()
                 .AddRPC()
                 .Build();
