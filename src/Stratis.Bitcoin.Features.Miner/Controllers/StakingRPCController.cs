@@ -49,11 +49,23 @@ namespace Stratis.Bitcoin.Features.Miner.Controllers
         }
 
         /// <summary>
+        /// Stops staking.
+        /// </summary>
+        /// <returns>true.</returns>
+        [ActionName("stopstaking")]
+        [ActionDescription("Stops staking.")]
+        public bool StopStaking()
+        {
+            this.fullNode.NodeFeature<MiningFeature>(true).StopStaking();
+            return true;
+        }
+
+        /// <summary>
         /// Starts staking a wallet.
         /// </summary>
         /// <param name="walletName">The name of the wallet.</param>
         /// <param name="walletPassword">The password of the wallet.</param>
-        /// <returns></returns>
+        /// <returns>true.</returns>
         [ActionName("startstaking")]
         [ActionDescription("Starts staking a wallet.")]
         public bool StartStaking(string walletName, string walletPassword)

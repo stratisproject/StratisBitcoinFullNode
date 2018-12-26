@@ -5,7 +5,6 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Stratis.Bitcoin.Controllers;
-using Stratis.Bitcoin.Features.RPC.Exceptions;
 
 namespace Stratis.Bitcoin.Features.Api
 {
@@ -24,11 +23,11 @@ namespace Stratis.Bitcoin.Features.Api
         /// <summary>
         /// Forward API request from RPC to API.
         /// </summary>
-        /// <param name="verb">GET, POST, PUT</param>
+        /// <param name="verb">GET, POST, PUT, DELETE</param>
         /// <param name="command">Command endpoint.</param>
-        /// <param name="request">if get then get parameters (if any), if post/put then Json request</param>
-        /// <example>CallApiAsync("POST", "wallet/load", "{param:1, param:2}");</example>
-        /// <example>CallApiAsync("GET", "wallet/general-info", "&name=default"</example>
+        /// <param name="request">if GET/DELETE then url parameters (if any), if POST/PUT then Json request encoded as Base64.</param>
+        /// <example>CallApiAsync("POST", "wallet/load", "e3BhcmFtOjEsIHBhcmFtOjJ9");</example>
+        /// <example>CallApiAsync("GET", "wallet/general-info", "?name=default&param2=3"</example>
         /// <returns>Json response.</returns>
         [ActionName("callapi")]
         [ActionDescription("Forwards request to swagger api for processing.")]
@@ -44,35 +43,35 @@ namespace Stratis.Bitcoin.Features.Api
 
                 var url = $"{this.apiSettings.ApiUri.AbsoluteUri}api/{command}";
 
-                try
+                if (verb?.Equals("GET", StringComparison.InvariantCultureIgnoreCase) ?? true)
                 {
-                    if (verb?.Equals("GET", StringComparison.InvariantCultureIgnoreCase) ?? true)
-                    {
-                        url += request;
-                        response = await client.GetStringAsync(url);
-                    }
-                    else
-                    {
-                        // Convert request from base64 to JSON to pass to Api.
-                        var requestJson = Encoding.UTF8.GetString(Convert.FromBase64String(request));
-                        StringContent content = new StringContent(requestJson, UTF8Encoding.UTF8, "application/json");
-                        if (verb.Equals("POST", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            HttpResponseMessage postResponse = await client.PostAsync(url, content);
-                            response = postResponse.Content.ReadAsStringAsync().Result;
-                        }
-                        else if (verb.Equals("PUT", StringComparison.InvariantCultureIgnoreCase))
-                        {
-                            HttpResponseMessage postResponse = await client.PutAsync(url, content);
-                            response = postResponse.Content.ReadAsStringAsync().Result;
-                        }
-                    }
-                    return response;
+                    url += request;
+                    response = await client.GetStringAsync(url);
                 }
-                catch (Exception ex)
+                else if (verb.Equals("DELETE", StringComparison.InvariantCultureIgnoreCase))
                 {
-                    throw new RPCServerException(RPC.RPCErrorCode.RPC_INVALID_REQUEST, ex.Message);
+                    url += request;
+                    HttpResponseMessage deleteResponse = await client.DeleteAsync(url);
+                    response = deleteResponse.Content.ReadAsStringAsync().Result;
                 }
+                else
+                {
+                    // Convert request from base64 to JSON to pass to Api.
+                    var requestJson = Encoding.UTF8.GetString(Convert.FromBase64String(request));
+                    StringContent content = new StringContent(requestJson, UTF8Encoding.UTF8, "application/json");
+                    if (verb.Equals("POST", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        HttpResponseMessage postResponse = await client.PostAsync(url, content);
+                        response = postResponse.Content.ReadAsStringAsync().Result;
+                    }
+                    else if (verb.Equals("PUT", StringComparison.InvariantCultureIgnoreCase))
+                    {
+                        HttpResponseMessage postResponse = await client.PutAsync(url, content);
+                        response = postResponse.Content.ReadAsStringAsync().Result;
+                    }
+                }
+
+                return response;
             }
         }
     }
