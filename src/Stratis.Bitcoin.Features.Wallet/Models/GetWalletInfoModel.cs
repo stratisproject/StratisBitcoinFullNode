@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
@@ -16,12 +17,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public int WalletVersion { get; set; }
 
         [JsonProperty("balance")]
+        [JsonConverter(typeof(MoneyInCoinsJsonConverter))]
         public Money Balance { get; set; }
 
         [JsonProperty("unconfirmed_balance")]
+        [JsonConverter(typeof(MoneyInCoinsJsonConverter))]
         public Money UnConfirmedBalance { get; set; }
 
         [JsonProperty("immature_balance")]
+        [JsonConverter(typeof(MoneyInCoinsJsonConverter))]
         public Money ImmatureBalance { get; set; }
     }
 }
