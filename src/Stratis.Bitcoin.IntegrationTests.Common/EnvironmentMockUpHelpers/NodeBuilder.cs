@@ -1,7 +1,9 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
+using System.Reflection;
 using System.Runtime.CompilerServices;
 using System.Runtime.InteropServices;
 using NBitcoin;
@@ -248,6 +250,23 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             }
 
             return this;
+        }
+
+        /// <summary>
+        /// Runs the testing dashboard using the built nodes.
+        /// </summary>
+        public void RunDashboard()
+        {
+            string binPath = Path.GetDirectoryName(Assembly.GetEntryAssembly().Location);
+            string queryString = string.Join("&", this.Nodes.Select(node => $"agent={node.runner.Agent}&port={node.ApiPort}"));
+            string dashboardUrl = Path.Combine(binPath, "Resources", "test-dashboard.html");
+
+            var process = new Process();
+            process.StartInfo.CreateNoWindow = false;
+            process.StartInfo.UseShellExecute = true;
+            process.StartInfo.FileName = "chrome.exe";
+            process.StartInfo.Arguments = $"file://{dashboardUrl}?{queryString}";
+            process.Start();
         }
     }
 }

@@ -27,6 +27,16 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\test-dashboard.html" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <Content Include="Resources\test-dashboard.html">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Flurl" Version="2.8.0" />
     <PackageReference Include="Flurl.Http" Version="2.4.0" />
     <PackageReference Include="NSubstitute" Version="3.1.0" />

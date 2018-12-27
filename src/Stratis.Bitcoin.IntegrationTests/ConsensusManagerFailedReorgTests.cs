@@ -14,11 +14,14 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         private readonly Network posNetwork;
         private readonly Network powNetwork;
+        private readonly bool runDashboard;
 
-        public ConsensusManagerFailedReorgTests()
+        public ConsensusManagerFailedReorgTests(bool runDashboard = false)
         {
             this.posNetwork = new StratisRegTest();
             this.powNetwork = new BitcoinRegTest();
+
+            this.runDashboard = runDashboard;
         }
 
         [Fact]
@@ -49,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 = invalid
                 TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
-                // On mining the following will happen: 
+                // On mining the following will happen:
                 // Reorg from blocks 9 to 5.
                 // Connect blocks 5 to 10
                 // Block 8 fails.
@@ -96,9 +99,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
                 var syncerNetwork = new ConsensusManagerTests.BitcoinOverrideRegTest();
 
-                var minerA = builder.CreateStratisPowNode(syncerNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).WithDummyWallet().Start();
-                var minerC = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(syncerNetwork, "minerA").WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "minerB").WithDummyWallet().Start();
+                var minerC = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "minerC").WithDummyWallet().Start();
+
+                if(this.runDashboard)
+                    builder.RunDashboard();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 15);
@@ -107,7 +113,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.ConnectAndSync(minerA, minerB, minerC);
                 TestHelper.DisconnectAll(minerA, minerB, minerC);
 
-                // Miner A continues to mine to height 9
+                // Miner A continues to mine to height 20
                 TestHelper.MineBlocks(minerA, 5);
                 Assert.True(minerA.FullNode.Chain.Height == 20);
 
@@ -118,7 +124,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(minerC.FullNode.Chain.Height == 22);
 
 
-                // Inject a rule that will fail at block 15 of the new chain.
+                // Inject a rule that will fail at block 19 of the new chain.
                 var engine = minerA.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidationAtAttempt(19, 2));
                 engine.Register();
@@ -127,7 +133,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Connect(minerA, minerC);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));
-                TestHelper.WaitLoop(() => minerC.FullNode.ConsensusManager().Tip.Height == 22);
+                TestHelper.WaitLoop(() =>
+                {
+                    return
+                        minerA.FullNode.ConsensusManager().Tip.Height == 22
+                        && minerB.FullNode.ConsensusManager().Tip.Height == 22
+                        && minerC.FullNode.ConsensusManager().Tip.Height == 22
+                    ;
+                });
             }
         }
 
@@ -160,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 = invalid
                 TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
-                // Reconnect minerA to minerB causing the following to happen: 
+                // Reconnect minerA to minerB causing the following to happen:
                 // Reorg from blocks 9 to 5.
                 // Connect blocks 5 to 10
                 // Block 8 fails.
@@ -210,7 +223,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 = invalid
                 TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
-                // Reconnect syncer to minerB causing the following to happen: 
+                // Reconnect syncer to minerB causing the following to happen:
                 // Reorg from blocks 9 to 5.
                 // Connect blocks 5 to 10
                 // Block 8 fails.
@@ -300,7 +313,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         /// <summary>
         /// The chain that will be reconnected to has 4 blocks and 4 headers from fork point:
-        /// 
+        ///
         /// 6 -> Full Block
         /// 7 -> Full Block
         /// 8 -> Full Block
