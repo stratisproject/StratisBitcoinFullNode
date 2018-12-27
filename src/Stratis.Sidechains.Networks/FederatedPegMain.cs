@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
@@ -140,7 +141,9 @@ namespace Stratis.Sidechains.Networks
             this.Checkpoints = new Dictionary<int, CheckpointInfo>();
 
             this.DNSSeeds = new List<DNSSeedData>();
-            this.SeedNodes = new List<NetworkAddress>();
+
+            string[] seedNodes = { "40.112.89.58", "137.117.243.54", "51.140.255.152", "40.89.158.103", "40.89.158.153", "13.66.214.36", "23.101.147.254" };
+            this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000004b5e1be2efc806c0e779550e05fa11f4902063f87cc273959fadc5ca579"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x55168c43e5b997b99192af9819297efb43bedfdd698f29c6a2c22dfc671cc0fb"));
