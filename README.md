@@ -3,138 +3,97 @@
 | [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedWindowsContainer-CI?branchName=master)](https://dev.azure.com/StratisProject/FederatedSidechains/_build?definitionId=1) | [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedmacOS-CI?branchName=master)](https://dev.azure.com/StratisProject/FederatedSidechains/_build?definitionId=3) | [![Build Status](https://dev.azure.com/StratisProject/FederatedSidechains/_apis/build/status/FederatedSidechains-.NET-HostedUbuntu1604-CI?branchName=master)](https://dev.azure.com/StratisProject/FederatedSidechains/_build?definitionId=2)
 
 
-Stratis Federated Sidechains - Testnet Alpha Release
+Stratis Federated Sidechains
 ============================
 https://stratisplatform.com
 
-Welcome to the Stratis Federated Sidechains Alpha.  This release introduces our Federated Gateway technology running a new sidechain, the Apex blockchain, on testnet. We also introduce newly extended wallet functionality that allows cross-chain transactions: Deposits and Withdrawals to and from the Sidechain.
 
-In this alpha, advanced users can create their own new sidechain network, with their own coin, and fund it via with TSTRAT through their own federation. However, a great way to get started is to try our pre-setup Apex network which has everything you need to try out the end product.  You can setup two wallets, a Stratis Mainchain wallet and a Apex Sidechain wallet and perform cross-chain Deposits and Withdrawals.
+# Get Started with Cirrus
+The below steps will guide you through the following.
 
-## Setting up your Mainchain and Sidechain Wallets
+ - Clone the FederatedSidechains Repository
+ - Run a node on the Stratis Sidechain (Cirrus)
+ - Create a Wallet via the API
+ - Retreive an Address via the API
+ - How to get funds
+ 
+ For simplicity, PowerShell commands have been provided for each section.
 
-In this section we will first setup a TSTRAT wallet and fund it with testnet STRAT from our faucet.  Then we will setup the sidechain TAPEX wallet.  We'll them enable these wallets for cross-chain transactions and perform a deposit and a withdrawal to and from the Apex Sidechain.
+ ## Step 1 - Clone FederatedSidechains Repository
 
-#### Cloning the code
+To begin, we first need to define the location that the Stratis FederatedSidechains repository will be cloned to, this can be done by executing the below script-block. The example below will utilize the logged-on user's desktop directory.
 
-1. Navigate to a folder on your computer. Such as a folder called 'Stratis.Sidechains'.
-2. Clone the following repositories:
+    $CloneDirectory = "$env:USERPROFILE\Desktop\FederatedSidechains"
 
-```
-git clone http://github.com/stratisproject/federatedsidechains
-git clone http://github.com/stratisproject/fullnodeui -b sidechains-ui
-git clone http://github.com/stratisproject/stratisbitcoinfullnode
-```
+We then need to define the repository that you will clone.
 
-#### Running the blockchains
+    $RepositoryURL = "https://github.com/stratisproject/FederatedSidechains.git"
 
-3. Create two folders for your sidechain and mainchain data.  Such as 'Mainchain' and 'Sidechain'.
-4. Navigate to StratisBitcoinFullNode\src\Stratis.StratisD and start the full node as a normal stratis node.
+Now we can clone the repository using Git. 
 
-```
-dotnet run -testnet -datadir=<full path to Mainchain folder you created in Step 3>
-```
-5. Navigate to FederatedSidechains\src\Stratis.SidechainD and start the sidechain node.
-
-```
-dotnet run -testnet -datadir=<full path to Sidechain folder you created in Step 3>
-```
-
-#### Running the wallets
-
-6. Navigate to FullNodeUI\FullNode.UI and issue the following commands.
-
-```
-npm install
-npm run testnet
-```
-
-7. In a new console navigate again to FullNodeUI\FullNode.UI and issue the following command:
-
-```
-npm run testnet:sidechain
-```
-
-#### Funding your mainchain wallet
-
-You now have a mainchain and a sidechain wallet running.  You can use the stratis testnet faucet, faucet.stratisplatform.com to get testnet coins for your wallet.  Send these coins to your TSTRAT wallet (get a receive address from the wallet receive functionality). Wait for the inbound transaction to confirm.
-
-#### Enabling CrossChain Transactions
-
-Once you have received your testnet coins we can enable the cross-chain transaction features in the mainchain wallet.  This can be done via the setting command.
-
-#### Perform a Deposit to Sidechain
-
-In this step we will perform a 'Deposit to Sidechain'.  This will send TSTRAT across to the sidechain.
-
-Press the Cross-Chain command that is located next to the send and receive buttons on the TSTRAT mainchain wallet main page. Enter an amount, the federation address and the destination address where you want the newly received TAPEX to be received.
-
-Mainchain Federation Address: 2N3UFTMd9ywUSqd12FkBPmYwEebxbGA8rQy  (if you are on the stratis Apex testnet).
-Sidechain Destination Address: this is an address you can get from your TAPEX wallet by using the 'Receive' feature to generate the address.
-
-For information, when you perform a cross-chain transfer such as a Deposit to Sidechain, you are infact not sending any coins across to the destination chain. Instead they are locked up on the mainchain by the federation who, in turn, releases the same amount of coins from a store they control on the sidechain. Therefore, a pair of transaction are performed that create the illusion of a cross-chain transaction.
-
-Wait several minutes and the amount you sent will appear in your sidechain wallet.
-
-#### Perform a Withdrawal from Sidechain
-
-Repeat the procedure described for a deposit to perform the symmetrical withdrawal transaction from Apex back to Stratis.  The Sidechain Federation address for the Apex testnet network is: pFmbfn5PtgsEENzBKbsDTeS5vkc52bBftL. 
-
-Congratulations you have funded your sidechain from the Stratis network.
+    Start-Process "git.exe" -ArgumentList "clone $RepositoryURL $CloneDirectory"
 
 
-## Running a sidechain gateway
 
-In order to be a federation gateway member, you will need to be running two nodes with the _FederationGateway_ feature activated, one would be running on the mainchain network, and the other one on the sidechain network.
-As a first step make sure you have prepared 2 configuration files, they should look like that, showing an port for the node's API, and a _counterchainapiport_ to connect to the node running on the other chain of the gateway, a list of IP addresses used within the federation, and a multisig redeem script (here we show a 2 of 3 multisig for instance) :
+## Step 2 - Run the Sidechain Node
 
-```sh
-####Sidechain Federation Settings####
-apiport=38226
-counterchainapiport=38202
-federationips=104.211.178.243,51.144.35.218,65.52.5.149
-redeemscript=2 026ebcbf6bfe7ce1d957adbef8ab2b66c788656f35896a170257d6838bda70b95c 02a97b7d0fad7ea10f456311dcd496ae9293952d4c5f2ebdfc32624195fde14687 02e9d3cd0c2fa501957149ff9d21150f3901e6ece0e3fe3007f2372720c84e3ee1 3 OP_CHECKMULTISIG
-publickey=02a97b7d0fad7ea10f456311dcd496ae9293952d4c5f2ebdfc32624195fde14687
-# the next part is only needed when starting the federation node connected to the ApexNetwork
-# it is used to specify that Federation will mine and put the reward in its Multisig wallet
-mine=1
-mineaddress=pFmbfn5PtgsEENzBKbsDTeS5vkc52bBftL
-```
+To run a Cirrus Node we simply need to run the Stratis.SideChainD project. This can be achieved by running the below PowerShell script-block.
 
-Then you will have to start two deamons and connect them, here is how you can do that :
+    Set-Location "$CloneDirectory\src\Stratis.SidechainD"
+    Start-Process "dotnet.exe" -ArgumentList "run"
 
-#### sidechain deamon startup 
-```sh
-md %AppData%\Roaming\StratisNode\apex\Test\
-copy apex.gateway.conf %AppData%\Roaming\StratisNode\apex\Test\
-dotnet Stratis.FederationGatewayD.dll -sidechain -conf="apex.gateway.conf"
-```
-#### mainchain deamon startup 
-```sh
-md %AppData%\Roaming\StratisNode\apex\StratisTest\
-copy stratis.gateway.conf %AppData%\Roaming\StratisNode\apex\StratisTest\
-dotnet Stratis.FederationGatewayD.dll -mainchain -conf="stratis.gateway.conf"
-```
+In addition, we can run the below PowerShell script-block that will wait for the Sidechain Node API to become available and then present it to you in Internet Explorer.
 
-### Enabling the multisig wallet
+    While (!(Get-NetTCPConnection -LocalPort "38225" -ErrorAction SilentlyContinue)) {
+        Write-Host "Waiting for node to become available..." -ForegroundColor Yellow
+        Start-Sleep 10}
+        Start-Process "iexplore.exe" -ArgumentList "http://localhost:38225/swagger/index.html"
+   
 
-1) The first time you start your federation nodes, you will have to import your private keys to build the wallet file.
-This can be done via the swagger API like this:
+## Step 3 - Create a Wallet
 
-![ScreenShot](assets/import-key-small.png)
+Now you are running a node, you will now need to create a wallet that will be used to store funds on the Cirrus Sidechain. This can be done interactively via the Swagger API that we opened previously, alternatively, this can be done via PowerShell.
 
-This first step is only needed the first time you start the node. 
+The below PowerShell script-block with generate your unique mnemonic words.
 
-2) The second step is to pass in your password to enable signing the transactions with the key previously imported key.
-Once again you can do this using the swagger API.
+    $Mnemonic = Invoke-WebRequest -Uri "http://localhost:38225/api/Wallet/mnemonic?language=english&wordCount=12" | Select-Object -ExpandProperty Content
+    $Mnemonic = $Mnemonic -replace '["]',''
+    $Mnemonic
+    
+**Important: Please be sure to keep note of your mnemonic words**
 
-![ScreenShot](assets/enable-federation-small.png)
+Now we have a set of unique mnemonic words, we can create a wallet. 
 
-You need to pass in the same password as in the above step, which is used to encrypt you imported key.
-This step will be needed everytime you restart the node
+    $WalletName = Read-Host -Prompt "What do you want to call the wallet?"
+    $WalletPassphrase = Read-Host -Prompt "Please enter a Passphrase to secure the private key"
+    $WalletPassword = Read-Host -Prompt "Please enter a Password to secure the wallet"
+    $Params = @{"mnemonic" = $Mnemonic; "password" = $WalletPassword; "passphrase" = $WalletPassword; "name" = "$WalletName"}
+    Invoke-WebRequest -Uri http://localhost:38225/api/Wallet/create -Method post -Body ($Params|ConvertTo-Json) -ContentType "application/json"
 
-_Tip: it is important that you go through this process for the 2 nodes your federation gateway is running. The default addresses for the APIs are_
-* http://localhost:38221/swagger/#/
-* http://localhost:38201/swagger/#/
+We now have now created a wallet. 
 
-You should now be ready to go!
+**Important: Please be sure to keep note of your mnemonic words, passphrase and password. These will be needed to recover a wallet in the event of a disaster.**
+
+## Step 4 - Obtain an Address
+
+In order to receive funds in your newly created wallet, you will need to obtain an address that is unique to your wallet. You can do this by executing the below PowerShell script-block.
+
+    $Address = Invoke-WebRequest -Uri "http://localhost:38225/api/Wallet/unusedaddress?WalletName=$WalletName&AccountName=account%200" | Select-Object -ExpandProperty Content
+    $Address = $Address -replace '["]',''
+    $Address
+
+## Step 5 - How to get funds?
+
+The token issued on the Cirrus Sidechain is CRS. These are pegged to the Stratis Mainnet Chain and are valued at a 1:1 ratio. i.e. 1 STRAT is equal to 1 CRS. 
+
+Transferring STRAT to the Cirrus Sidechain can be achieved by further interacting with the API, however, it will be introduced as a feature in an upcoming version of Stratis Core, allowing for seamless transfers from one chain to another within the UI of Stratis Core. 
+
+For the Cirrus Sidechain, Stratis has set aside an amount of CRS that it will distribute to anyone wanting to deploy Smart Contracts on the Cirrus Sidechain. CRS tokens hold a value, as they are pegged to the STRAT token, as a result, CRS will be distributed at the discretion of Stratis.
+
+To get your hands on some CRS and start deploying Smart Contracts in C#, head over to our Discord channel where there will be plenty of people whom are able to send some CRS to your newly created Cirrus Wallet.
+
+[Discord](https://discordapp.com/invite/9tDyfZs)
+
+For more information on how to deploy a Smart Contract in C#, head over to the Stratis Academy.
+
+[Stratis Academy - Smart Contracts in C#](https://academy.stratisplatform.com/SmartContracts/smart-contracts-introduction.html)
