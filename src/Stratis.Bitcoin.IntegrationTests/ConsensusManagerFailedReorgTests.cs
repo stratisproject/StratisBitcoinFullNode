@@ -125,22 +125,15 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 
                 // Inject a rule that will fail at block 19 of the new chain.
-                //var engine = minerA.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                //syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidationAtAttempt(19, 2));
-                //engine.Register();
+                var engine = minerA.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
+                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidationAtAttempt(19, 2));
+                engine.Register();
 
                 TestHelper.Connect(minerA, minerB);
                 TestHelper.Connect(minerA, minerC);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));
-                TestHelper.WaitLoop(() =>
-                {
-                    return
-                        minerA.FullNode.ConsensusManager().Tip.Height == 22
-                        && minerB.FullNode.ConsensusManager().Tip.Height == 22
-                        && minerC.FullNode.ConsensusManager().Tip.Height == 22
-                    ;
-                });
+                TestHelper.WaitLoop(() => minerC.FullNode.ConsensusManager().Tip.Height == 22);
             }
         }
 
