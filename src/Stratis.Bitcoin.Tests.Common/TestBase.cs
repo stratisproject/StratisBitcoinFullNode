@@ -122,6 +122,7 @@ namespace Stratis.Bitcoin.Tests.Common
             {
                 Transaction trx = this.Network.CreateTransaction();
 
+                // Coinbase
                 block.AddTransaction(this.Network.CreateTransaction());
 
                 trx.AddInput(new TxIn(Script.Empty));
@@ -140,17 +141,35 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public ProvenBlockHeader CreateNewProvenBlockHeaderMock(PosBlock posBlock = null)
         {
-            PosBlock block = posBlock == null ? CreatePosBlockMock() : posBlock;
+            PosBlock block = posBlock == null ? CreatePosBlock() : posBlock;
             ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
             return provenBlockHeader;
         }
 
-        public PosBlock CreatePosBlockMock()
+        /// <summary>
+        /// Creates a list of Proof of Stake blocks.
+        /// </summary>
+        /// <param name="amount">The amount of blocks to create.</param>
+        public List<Block> CreatePosBlocks(int amount)
+        {
+            var blocks = new List<Block>();
+            for (int i = 0; i < amount; i++)
+            {
+                PosBlock block = this.CreatePosBlock();
+                block.Header.HashPrevBlock = blocks.LastOrDefault()?.GetHash() ?? this.Network.GenesisHash;
+                blocks.Add(block);
+            }
+
+            return blocks;
+        }
+
+        public PosBlock CreatePosBlock()
         {
             // Create coinstake Tx.
             Transaction previousTx = this.Network.CreateTransaction();
             previousTx.AddOutput(new TxOut());
+
             Transaction coinstakeTx = this.Network.CreateTransaction();
             coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
             coinstakeTx.AddOutput(new TxOut(50, new Script()));
@@ -173,14 +192,18 @@ namespace Stratis.Bitcoin.Tests.Common
             return block;
         }
 
+        /// <summary>
+        /// Builds a chain of proven headers.
+        /// </summary>
+        /// <param name="blockCount">The amount of blocks to chain.</param>
         /// <returns>Tip of a created chain of headers.</returns>
-        public ChainedHeader BuildChainWithProvenHeaders(int blockCount)
+        public ChainedHeader BuildProvenHeaderChain(int blockCount)
         {
             ChainedHeader currentHeader = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
 
             for (int i = 1; i < blockCount; i++)
             {
-                PosBlock block = this.CreatePosBlockMock();
+                PosBlock block = this.CreatePosBlock();
                 ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
                 header.Nonce = RandomUtils.GetUInt32();
@@ -191,6 +214,27 @@ namespace Stratis.Bitcoin.Tests.Common
                 currentHeader = new ChainedHeader(header, header.GetHash(), i);
 
                 currentHeader.SetPrivatePropertyValue("Previous", prevHeader);
+                prevHeader.Next.Add(currentHeader);
+            }
+
+            return currentHeader;
+        }
+
+        public ChainedHeader BuildProvenHeaderChainFromBlocks(List<Block> posBlocks)
+        {
+            ChainedHeader currentHeader = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
+
+            foreach (PosBlock posBlock in posBlocks)
+            {
+                ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
+
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = currentHeader.HashBlock;
+                header.Bits = Target.Difficulty1;
+
+                ChainedHeader prevHeader = currentHeader;
+                currentHeader = new ChainedHeader(header, header.GetHash(), prevHeader);
+
                 prevHeader.Next.Add(currentHeader);
             }
 
