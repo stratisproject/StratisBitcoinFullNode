@@ -12,6 +12,8 @@ namespace Stratis.Bitcoin.IntegrationTests
     {
         public static void Main(string[] args)
         {
+            new ConsensusManagerFailedReorgTests().TwoConsecutive_ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_Connected();
+            return;
             RunAllTestsOf<WalletTests>();
             RunAllTestsOf<NodeSyncTests>();
         }

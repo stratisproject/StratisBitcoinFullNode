@@ -1,4 +1,7 @@
-﻿using NBitcoin;
+﻿using System.Threading.Tasks;
+using NBitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.TestNetworks;
@@ -56,6 +59,78 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 10);
             }
         }
+
+        public class FailValidationAtAttempt : FullValidationConsensusRule
+        {
+            private readonly int failheight;
+            private int failAtAttempt;
+            private int runCount;
+
+            public FailValidationAtAttempt(int failheight, int failAtAttempt)
+            {
+                this.failheight = failheight;
+                this.failAtAttempt = failAtAttempt;
+            }
+
+            public override Task RunAsync(RuleContext context)
+            {
+                if (context.ValidationContext.ChainedHeaderToValidate.Height == this.failheight)
+                {
+                    this.runCount += 1;
+
+                    if (this.runCount == this.failAtAttempt)
+                    {
+                        throw new ConsensusErrorException(new ConsensusError("error", "error"));
+                    }
+                }
+
+                return Task.CompletedTask;
+            }
+        }
+
+        [Fact]
+        public void TwoConsecutive_ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_Connected()
+        {
+            using (var builder = NodeBuilder.Create(this))
+            {
+                var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
+                var syncerNetwork = new ConsensusManagerTests.BitcoinOverrideRegTest();
+
+                var minerA = builder.CreateStratisPowNode(syncerNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).WithDummyWallet().Start();
+                var minerC = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).WithDummyWallet().Start();
+
+                // MinerA mines 5 blocks
+                TestHelper.MineBlocks(minerA, 15);
+
+                // MinerB and MinerC syncs with MinerA
+                TestHelper.ConnectAndSync(minerA, minerB, minerC);
+                TestHelper.DisconnectAll(minerA, minerB, minerC);
+
+                // Miner A continues to mine to height 9
+                TestHelper.MineBlocks(minerA, 5);
+                Assert.True(minerA.FullNode.Chain.Height == 20);
+
+                TestHelper.MineBlocks(minerB, 6);
+                Assert.True(minerB.FullNode.Chain.Height == 21);
+
+                TestHelper.MineBlocks(minerC, 7);
+                Assert.True(minerC.FullNode.Chain.Height == 22);
+
+
+                // Inject a rule that will fail at block 15 of the new chain.
+                var engine = minerA.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
+                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidationAtAttempt(19, 2));
+                engine.Register();
+
+                TestHelper.Connect(minerA, minerB);
+                TestHelper.Connect(minerA, minerC);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));
+                TestHelper.WaitLoop(() => minerC.FullNode.ConsensusManager().Tip.Height == 22);
+            }
+        }
+
 
         [Fact]
         public void ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_Disconnected()
