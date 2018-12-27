@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
             ProvenBlockHeader provenBlockHeaderIn = CreateNewProvenBlockHeaderMock();
 
             var blockHashHeightPair = new HashHeightPair(provenBlockHeaderIn.GetHash(), 0);
-            var items = new SortedDictionary<int, ProvenBlockHeader>() { {0, provenBlockHeaderIn} };
+            var items = new SortedDictionary<int, ProvenBlockHeader>() { { 0, provenBlockHeaderIn } };
 
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
             {
@@ -80,11 +80,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             string folder = CreateTestDir(this);
 
-            PosBlock posBlock = CreatePosBlockMock();
+            PosBlock posBlock = CreatePosBlock();
             ProvenBlockHeader header1 = CreateNewProvenBlockHeaderMock(posBlock);
             ProvenBlockHeader header2 = CreateNewProvenBlockHeaderMock(posBlock);
 
-            var items = new SortedDictionary<int, ProvenBlockHeader>(){ {0, header1}, {1, header2} };
+            var items = new SortedDictionary<int, ProvenBlockHeader>() { { 0, header1 }, { 1, header2 } };
 
             // Put the items in the repository.
             using (IProvenBlockHeaderRepository repo = this.SetupRepository(this.Network, folder))
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         {
             string folder = CreateTestDir(this);
 
-            PosBlock posBlock = CreatePosBlockMock();
+            PosBlock posBlock = CreatePosBlock();
             var headers = new SortedDictionary<int, ProvenBlockHeader>();
 
             for (int i = 0; i < 10; i++)
