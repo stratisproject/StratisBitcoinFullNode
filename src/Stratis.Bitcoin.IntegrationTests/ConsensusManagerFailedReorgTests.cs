@@ -94,7 +94,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void TwoConsecutive_ReorgChain_FailsFullValidation_Reconnect_OldChain_Nodes_Connected()
         {
-            using (var builder = NodeBuilder.Create(this))
+            using (var builder = NodeBuilder.Create(this).WithLogsEnabled())
             {
                 var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
                 var syncerNetwork = new ConsensusManagerTests.BitcoinOverrideRegTest();
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "minerB").WithDummyWallet().Start();
                 var minerC = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork, "minerC").WithDummyWallet().Start();
 
-                if(this.runDashboard)
+                if (this.runDashboard)
                     builder.RunDashboard();
 
                 // MinerA mines 5 blocks
@@ -125,9 +125,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
 
                 // Inject a rule that will fail at block 19 of the new chain.
-                var engine = minerA.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidationAtAttempt(19, 2));
-                engine.Register();
+                //var engine = minerA.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
+                //syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidationAtAttempt(19, 2));
+                //engine.Register();
 
                 TestHelper.Connect(minerA, minerB);
                 TestHelper.Connect(minerA, minerC);
