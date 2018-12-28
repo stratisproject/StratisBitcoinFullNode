@@ -104,6 +104,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
             }
+            catch (NotEnoughFundsException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_INSUFFICIENT_FUNDS, exception.Message);
+            }
         }
 
         /// <summary>
@@ -182,13 +186,16 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             (Money confirmedAmount, Money unconfirmedAmount) = account.GetSpendableAmount();
 
+            var balance = Money.Coins(GetBalance(string.Empty));
+            var immature = Money.Coins(balance.ToDecimal(MoneyUnit.BTC) - GetBalance(string.Empty, (int)this.FullNode.Network.Consensus.CoinbaseMaturity)); // Balance - Balance(AtHeight)
+
             var model = new GetWalletInfoModel
             {
-                Balance = Money.Coins(GetBalance(string.Empty)),
+                Balance = balance,
                 WalletName = accountReference.WalletName + ".wallet.json",
                 WalletVersion = 1,
                 UnConfirmedBalance = unconfirmedAmount,
-                ImmatureBalance = Money.Coins(GetBalance(string.Empty, (int)this.FullNode.Network.Consensus.CoinbaseMaturity))
+                ImmatureBalance = immature
             };
 
             return model;

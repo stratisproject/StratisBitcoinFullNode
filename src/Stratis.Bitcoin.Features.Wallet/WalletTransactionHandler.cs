@@ -279,12 +279,17 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
             {
                 privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
-                this.privateKeyCache.Set(cacheKey, secretValue, new TimeSpan(0, 5, 0));
+
+                // Get the existing unlock options if they exists. This ensures that the wallet stays unlocked the time that was specified.
+                var unlockOptions = this.walletManager.WalletsToUnlock.FirstOrDefault(w => w.Account.WalletName == wallet.Name);
+                var duration = unlockOptions != null ? new TimeSpan(0, 0, Math.Min(unlockOptions.Timeout, WalletManager.MaxUnlockDurationInSeconds)) : new TimeSpan(0, 5, 0);
+
+                this.privateKeyCache.Set(cacheKey, secretValue, duration);
             }
             else
             {
                 if (string.IsNullOrEmpty(context.WalletPassword))
-                    return;
+                    throw new SecurityException("Wallet needs to be unlocked before sending, or the unlock period has expired.");
 
                 privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
                 this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
@@ -348,7 +353,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             long balance = context.UnspentOutputs.Sum(t => t.Transaction.Amount);
             long totalToSend = context.Recipients.Sum(s => s.Amount);
             if (balance < totalToSend)
-                throw new WalletException("Not enough funds.");
+            {
+                throw new NotEnoughFundsException("Not enough funds to cover the target", null, Money.FromUnit(totalToSend - balance, MoneyUnit.Satoshi));
+            }
 
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
