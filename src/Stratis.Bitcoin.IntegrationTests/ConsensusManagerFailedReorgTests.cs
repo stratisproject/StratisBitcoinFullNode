@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -133,6 +134,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Connect(minerA, minerC);
 
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(minerA, minerB));
+                Task.Delay(TimeSpan.FromSeconds(5)).GetAwaiter().GetResult();
                 TestHelper.WaitLoop(() => minerC.FullNode.ConsensusManager().Tip.Height == 22);
             }
         }

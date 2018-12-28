@@ -27,10 +27,14 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <None Remove="Resources\NLog.config" />
     <None Remove="Resources\test-dashboard.html" />
   </ItemGroup>
 
   <ItemGroup>
+    <Content Include="Resources\NLog.config">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Content>
     <Content Include="Resources\test-dashboard.html">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
