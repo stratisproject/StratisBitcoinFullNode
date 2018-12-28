@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
@@ -18,6 +19,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Category { get; set; }
 
         [JsonProperty("amount")]
+        [JsonConverter(typeof(MoneyInCoinsJsonConverter))]
         public Money Amount { get; set; }
     }
 
@@ -25,6 +27,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     public class GetTransactionModel
     {
         [JsonProperty("amount")]
+        [JsonConverter(typeof(MoneyInCoinsJsonConverter))]
         public Money Amount { get; set; }
 
         [JsonProperty("blockhash")]
