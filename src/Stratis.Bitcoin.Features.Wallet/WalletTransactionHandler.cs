@@ -261,9 +261,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             else
             {
-                if (string.IsNullOrEmpty(context.WalletPassword))
-                    return;
-
                 privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
                 this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
             }
