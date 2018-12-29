@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Threading;
 using FluentAssertions;
 using NBitcoin;
@@ -168,17 +169,70 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var aliceAddress = alice.GetAddress();
 
                 // Not unlocked case.
-                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+                Action action = () => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
+                action.Should().Throw<RPCException>()
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED); 
 
                 // Unlock and lock case.
                 rpcClient.WalletPassphrase("password", 60);
                 rpcClient.SendCommand(RPCOperations.walletlock);
-                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+                action = () => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
+                action.Should().Throw<RPCException>()
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED);
 
                 // Unlock timesout case.
-                rpcClient.WalletPassphrase("password", 5);
-                Thread.Sleep(120 * 1000); // 2 minutes.
-                Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+                rpcClient.WalletPassphrase("password", 10);
+                Thread.Sleep(30 * 1000); // 30 seconds.
+                action = () => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
+                action.Should().Throw<RPCException>()
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED);
+            }
+        }
+
+        [Fact(Skip = "This test takes a really long time to run because it tests a specific case. So only run explicitly.")]
+        public void TestRpcSendToAddressSpendRefreshesTimeout()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                int blocksMined = (int)network.Consensus.CoinbaseMaturity + 1;
+                TestHelper.MineBlocks(node, blocksMined);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksMined);
+
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+
+                // Unlock for 10 minutes.
+                rpcClient.WalletPassphrase("password", 10 * 60);
+
+                // Sending should reset the lock timeout for another 10 minutes
+                rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)).Should().NotBeNull();
+
+                // Mine that transaction.
+                TestHelper.MineBlocks(node, 1);
+                blocksMined++;
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksMined);
+
+                // Wait 6 minutes and then send another transaction, should still be unlocked.
+                Thread.Sleep(6 * 60 * 1000);
+
+                var bob = new Key().GetBitcoinSecret(network);
+                var bobAddress = bob.GetAddress();
+                rpcClient.SendToAddress(bobAddress, Money.Coins(1.0m)).Should().NotBeNull();
+
+                // Mine that transaction.
+                TestHelper.MineBlocks(node, 1);
+                blocksMined++;
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksMined);
+
+                // Now wait 11 minutes so the wallet should be back locked and a transaction should fail.
+                Thread.Sleep(11 * 60 * 1000);
+                Action action = () => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
+                action.Should().Throw<RPCException>()
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED);
             }
         }
     }

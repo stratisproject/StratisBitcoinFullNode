@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
+        private readonly Dictionary<string, TimeSpan> privateKeyCacheTimeout;
+
         protected readonly StandardTransactionPolicy TransactionPolicy;
 
         private readonly IWalletManager walletManager;
@@ -56,6 +58,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletFeePolicy = walletFeePolicy;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
+            this.privateKeyCacheTimeout = new Dictionary<string, TimeSpan>();
             this.TransactionPolicy = transactionPolicy;
         }
 
@@ -198,11 +201,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
             {
                 this.privateKeyCache.Set(cacheKey, secretValue, duration);
+                this.privateKeyCacheTimeout.AddOrReplace(cacheKey, duration);
             }
             else
             {
                 Key privateKey = Key.Parse(wallet.EncryptedSeed, walletPassword, wallet.Network);
                 this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), duration);
+                this.privateKeyCacheTimeout.AddOrReplace(cacheKey, duration);
             }
         }
 
@@ -214,6 +219,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
             string cacheKey = wallet.EncryptedSeed;
             this.privateKeyCache.Remove(cacheKey);
+            this.privateKeyCacheTimeout.Remove(cacheKey);
         }
 
         /// <summary>
@@ -257,12 +263,24 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
             {
                 privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
-                this.privateKeyCache.Set(cacheKey, secretValue, new TimeSpan(0, 5, 0));
+                TimeSpan duration;
+                if (!this.privateKeyCacheTimeout.TryGetValue(cacheKey, out duration))
+                {
+                    // if for some reason we can't find the previous duration then use 5 minutes.
+                    duration = new TimeSpan(0, 5, 0);
+                }
+
+                this.privateKeyCache.Set(cacheKey, secretValue, duration);
+                this.privateKeyCacheTimeout.AddOrReplace(cacheKey, duration);
             }
             else
             {
                 privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
-                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
+
+                // Wallet unlocked with password gets a 5 minute duration.
+                TimeSpan duration = new TimeSpan(0, 5, 0); 
+                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), duration);
+                this.privateKeyCacheTimeout.AddOrReplace(cacheKey, duration);
             }
 
             var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
