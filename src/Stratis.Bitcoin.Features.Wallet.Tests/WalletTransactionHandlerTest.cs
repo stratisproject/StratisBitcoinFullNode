@@ -622,6 +622,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 FeeType = feeType,
                 OpReturnData = opReturnData,
                 WalletPassword = password,
+                Sign = !string.IsNullOrEmpty(password),
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList()
             };
         }
