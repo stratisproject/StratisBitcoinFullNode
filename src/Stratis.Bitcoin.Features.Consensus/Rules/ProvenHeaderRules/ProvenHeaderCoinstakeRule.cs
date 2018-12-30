@@ -293,7 +293,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             if (header.Coinstake.IsCoinStake)
             {
                 this.Logger.LogTrace("Found coinstake checking kernal hash.");
-                this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                var validKernel = this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                if (!validKernel)
+                {
+                    ConsensusErrors.StakeHashInvalidTarget.Throw();
+                }
             }
 
             this.ComputeNextStakeModifier(header, chainedHeader, previousStakeModifier);
