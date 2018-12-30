@@ -15,6 +15,8 @@ namespace Stratis.Bitcoin.Networks
             this.AdditionalNames = new List<string> { "test" };
             this.Magic = 0x0709110B;
             this.DefaultPort = 18333;
+            this.DefaultMaxOutboundConnections = 8;
+            this.DefaultMaxInboundConnections = 117;
             this.RPCPort = 18332;
             this.CoinTicker = "TBTC";
 

@@ -19,14 +19,6 @@ namespace Stratis.Bitcoin.Interfaces
         Task<ProvenBlockHeader> GetAsync(int blockHeight);
 
         /// <summary>
-        /// Retrieves <see cref="ProvenBlockHeader"/> items.
-        /// </summary>
-        /// <param name="fromBlockHeight"> Block height to start querying from.</param>
-        /// <param name="toBlockHeight"> Block height to stop querying to.</param>
-        /// <returns> A dictionary of <see cref="ProvenBlockHeader"/> items by block height key.</returns>
-        Task<List<ProvenBlockHeader>> GetAsync(int fromBlockHeight, int toBlockHeight);
-
-        /// <summary>
         /// Height of the block which is currently the tip of the <see cref="ProvenBlockHeader"/>.
         /// </summary>
         HashHeightPair TipHashHeight { get; }

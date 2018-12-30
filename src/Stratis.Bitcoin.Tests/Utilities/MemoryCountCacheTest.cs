@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             var cache = new MemoryCountCache<int, string>(maxItemsCount);
 
-            for (int i = 0; i < maxItemsCount*2; i++)
+            for (int i = 0; i < maxItemsCount * 2; i++)
             {
                 cache.AddOrUpdate(i, RandomUtils.GetInt32().ToString());
             }
@@ -22,6 +22,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
+        [Trait("Unstable", "True")]
         public void CacheKeepsMostRecentlyAddedItemsNoneWereUsed()
         {
             int maxItemsCount = 10;

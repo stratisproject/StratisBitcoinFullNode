@@ -140,11 +140,6 @@
         public const int MaxMerkleProofSerializedSize = 512;
 
         /// <summary>
-        /// Gets proven headers activation height.
-        /// </summary>
-        public int ProvenHeadersActivationHeight { get; }
-
-        /// <summary>
         /// Initializes the default values.
         /// </summary>
         public PosConsensusOptions()
@@ -162,10 +157,8 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost,
-            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost) : base(maxBlockBaseSize, maxBlockWeight, maxBlockSerializedSize, witnessScaleFactor, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
-            this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
 
         /// <summary>
@@ -176,10 +169,9 @@
             int maxStandardVersion,
             int maxStandardTxWeight,
             int maxBlockSigopsCost,
-            int maxStandardTxSigopsCost,
-            int provenHeadersActivationHeight) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
+            int maxStandardTxSigopsCost
+            ) : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
-            this.ProvenHeadersActivationHeight = provenHeadersActivationHeight;
         }
 
         /// <summary>

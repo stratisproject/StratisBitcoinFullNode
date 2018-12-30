@@ -24,6 +24,18 @@ namespace NBitcoin
     }
 
     /// <summary>
+    /// A coin selector that selects all the coins passed by default.
+    /// Useful when a user wants a specific set of coins to be spent.
+    /// </summary>
+    public class AllCoinsSelector : ICoinSelector
+    {
+        public IEnumerable<ICoin> Select(IEnumerable<ICoin> coins, IMoney target)
+        {
+            return coins;
+        }
+    }
+
+    /// <summary>
     /// Algorithm implemented by bitcoin core https://github.com/bitcoin/bitcoin/blob/master/src/wallet.cpp#L1276
     /// Minimize the change
     /// </summary>
@@ -626,6 +638,13 @@ namespace NBitcoin
             return this;
         }
 
+        private uint? _TimeStamp;
+        public TransactionBuilder SetTimeStamp(uint timeStamp)
+        {
+            this._TimeStamp = timeStamp;
+            return this;
+        }
+
         private List<Key> _Keys = new List<Key>();
 
         public TransactionBuilder AddKeys(params ISecret[] keys)
@@ -1098,7 +1117,10 @@ namespace NBitcoin
             if(this._LockTime != null)
                 ctx.Transaction.LockTime = this._LockTime.Value;
 
-            foreach(BuilderGroup group in this._BuilderGroups)
+            if (this._TimeStamp != null)
+                ctx.Transaction.Time = this._TimeStamp.Value;
+
+            foreach (BuilderGroup group in this._BuilderGroups)
             {
                 ctx.Group = group;
                 ctx.AdditionalBuilders.Clear();

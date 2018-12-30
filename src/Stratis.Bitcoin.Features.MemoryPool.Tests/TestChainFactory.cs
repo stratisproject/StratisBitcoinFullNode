@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
                 outputs.Add(output);
             }
 
-            await inMemoryCoinView.SaveChangesAsync(outputs, new List<TxOut[]>(), chain.GetBlock(0).HashBlock, chain.GetBlock(1).HashBlock);
+            await inMemoryCoinView.SaveChangesAsync(outputs, new List<TxOut[]>(), chain.GetBlock(0).HashBlock, chain.GetBlock(1).HashBlock, chain.GetBlock(0).Height);
 
             return new TestChainContext { MempoolValidator = mempoolValidator, SrcTxs = srcTxs };
         }

@@ -80,6 +80,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly CancellationTokenSource cancellation;
 
+        /// <inheritdoc/>
+        public ChainedHeader BlockStoreCacheTip { get; private set; }
+
         public BlockStoreQueue(
             ConcurrentChain chain,
             IChainState chainState,
@@ -161,6 +164,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 this.logger.LogTrace("(-)[INITIALIZATION_ERROR]");
                 throw new BlockStoreException("Block store initialized after consensus!");
             }
+
+            this.BlockStoreCacheTip = initializationTip;
 
             // Start dequeuing.
             this.currentBatchSizeBytes = 0;
@@ -305,6 +310,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     this.pendingBlocksCache.Add(chainedHeaderBlock.ChainedHeader.HashBlock, chainedHeaderBlock);
                     this.logger.LogTrace("Block '{0}' was re-added to pending.", chainedHeaderBlock.ChainedHeader);
                 }
+
+                this.BlockStoreCacheTip = chainedHeaderBlock.ChainedHeader;
             }
 
             this.blocksQueue.Enqueue(chainedHeaderBlock);
@@ -392,6 +399,21 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     // Start timer if it is not started already.
                     timerTask = timerTask ?? Task.Delay(BatchMaxSaveIntervalSeconds * 1000, this.cancellation.Token);
                 }
+            }
+
+            await this.FlushAllCollectionsAsync();
+        }
+
+        /// <summary>
+        /// Ensures that any blocks queued in <see cref="blocksQueue"/> gets added to <see cref="batch"/>
+        /// so that it can be persisted on dispose.
+        /// </summary>
+        private async Task FlushAllCollectionsAsync()
+        {
+            ChainedHeaderBlock chainedHeaderBlock = null;
+            while (this.blocksQueue.TryDequeue(out chainedHeaderBlock))
+            {
+                this.batch.Add(chainedHeaderBlock);
             }
 
             if (this.batch.Count != 0)

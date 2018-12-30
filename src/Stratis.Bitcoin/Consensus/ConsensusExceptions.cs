@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Consensus
     {
         public ConsensusError ConsensusError { get; }
 
-        public ConsensusRuleException(ConsensusError consensusError) : base()
+        public ConsensusRuleException(ConsensusError consensusError) : base(consensusError.ToString())
         {
             this.ConsensusError = consensusError;
         }

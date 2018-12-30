@@ -107,6 +107,16 @@ namespace NBitcoin
         public int DefaultPort { get; protected set; }
 
         /// <summary>
+        /// The default maximum number of outbound connections a node on this network will form.
+        /// </summary>
+        public int DefaultMaxOutboundConnections { get; protected set; }
+
+        /// <summary>
+        /// The default maximum number of inbound connections a node on this network will accept.
+        /// </summary>
+        public int DefaultMaxInboundConnections { get; protected set; }
+
+        /// <summary>
         /// The consensus for this network.
         /// </summary>
         public IConsensus Consensus { get; protected set; }

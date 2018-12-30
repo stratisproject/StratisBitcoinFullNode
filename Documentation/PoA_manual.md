@@ -4,11 +4,11 @@
 
 ### Step 1: Creating new projects
 
-Clone Stratis FN (https://github.com/stratisproject/StratisBitcoinFullNode.git). 
+Clone Stratis FN (https://github.com/stratisproject/StratisBitcoinFullNode.git).
 
-Open the solution and add new .net core console application project. It will be a daemon for your new network. Let's call it MyPoAChainD. 
+Open the solution and add new .NET Core console application project. It will be a daemon for your new network. Let's call it MyPoAChainD.
 
-Reference following projects: 
+Reference following projects:
 
 ```
 Stratis.Bitcoin.Features.Api
@@ -27,11 +27,11 @@ Stratis.Bitcoin
 
 Enable latest C# features by going to MyPoAChainD's properties => Build => Advanced... => Language Version  and select `C# latest minor version (latest)`.
 
-Open `Program.cs` and copy there everything from `Stratis.PoAChainD.Program.cs`, don't forget to change namespace. 
+Open `Program.cs` and copy there everything from `Stratis.PoAChainD.Program.cs`, don't forget to change namespace.
 
 
 
-Change startup project to `MyPoAChainD` and hit F5. Node should start and you will see console output similar to the following: 
+Change startup project to `MyPoAChainD` and hit F5. Node should start and you will see console output similar to the following:
 
 ```
 info: Stratis.Bitcoin.FullNode[0]
@@ -70,21 +70,21 @@ Now you will need to create a new library project where you will add network and
 
 ### Step 2: Federation keys generation and network setup
 
-First you will need to generate keys for federation members. It is strongly advised that each federation member generates a key on his own and then shares public key with someone who is setting the network up. 
+First you will need to generate keys for federation members. It is strongly advised that each federation member generates a key on his own and then shares public key with someone who is setting the network up.
 
 To generate a key you should run `dotnet exec MyPoAChainD.dll -generateKeyPair`
 
-After executing this command you should see similar output: 
+After executing this command you should see similar output:
 
 ```
 Federation key pair was generated and saved to C:\Users\user\AppData\Roaming\StratisNode\poa\PoAMain\federationKey.dat.
 Make sure to back it up!
 Your public key is 03a9295049f537e0a3c90dd644e5309f56c3dd1a378c2b5e3f25238dc46c6eb5fc.
 
-Press eny key to exit...
+Press any key to exit...
 ```
 
-Navigate to directory given in output and backup your key. Share public key with one who set's up the node. 
+Navigate to directory given in output and backup your key. Share public key with one who set's up the node.
 
 
 
@@ -92,7 +92,7 @@ Now let's create a network class named `MyPoANetwork.cs`. Inherit your class fro
 
 
 
-Modify messageStart, GenesisTime (it should be equal to the time at which you are creating the network), federationPublicKeys (insert there keys collected from federation members), targetSpacingSeconds (this is the target delay between blocks), premineReward, base58 prefixes and data in genesis transaction. Also you can potentially modify other things if you know exactly what are the consequences of such modifications. 
+Modify messageStart, GenesisTime (it should be equal to the time at which you are creating the network), federationPublicKeys (insert there keys collected from federation members), targetSpacingSeconds (this is the target delay between blocks), premineReward, base58 prefixes and data in genesis transaction. Also you can potentially modify other things if you know exactly what are the consequences of such modifications.
 
 In `MyPoAChainD.Program.cs` instantiate your network instead of `PoANetwork`.
 
@@ -100,7 +100,7 @@ Run the node in debugger and copy new values for `Consensus.HashGenesisBlock` an
 
 
 
-Now run the node and you will see similar output after running it for a few seconds: 
+Now run the node and you will see similar output after running it for a few seconds:
 
 ```
 info: Stratis.Bitcoin.FullNode[0]
@@ -117,7 +117,7 @@ info: Stratis.Bitcoin.FullNode[0]
 
       ======Block Puller======
       Blocks being downloaded: 0
-      Queueued downloads: 0
+      Queued downloads: 0
       Average block size: 0 KB
       Total download speed: 0 KB/sec
       Average time to download a block: NaN ms
@@ -136,9 +136,9 @@ info: Stratis.Bitcoin.FullNode[0]
 
 
 
-Stop the node and add (if it's not already there) `federationKey.dat` file to node folder. 
+Stop the node and add (if it's not already there) `federationKey.dat` file to node folder.
 
-Run the node and make sure you see similar output: 
+Run the node and make sure you see similar output:
 
 ```
 info: Stratis.Bitcoin.Features.PoA.FederationManager[0]
@@ -147,7 +147,7 @@ info: Stratis.Bitcoin.Features.PoA.FederationManager[0]
 
 
 
-Now wait a bit till you see 
+Now wait a bit until you see
 
 ```
 info: Stratis.Bitcoin.Features.PoA.PoAMiner[0]
@@ -156,17 +156,17 @@ info: Stratis.Bitcoin.Features.PoA.PoAMiner[0]
       <<==============================================================>>
 ```
 
-to make sure that you are mining. 
+to make sure that you are mining.
 
 
 
 ### Step 3: wallet creation and premine
 
-When block at height `cosnesususOptions.premineHeight` is generated it will contain premine reward. 
+When block at height `cosnesususOptions.premineHeight` is generated it will contain a premine reward.
 
-Before you've generated such a block you need to create wallet. To do so start the node without mining (just move `federationKey.dat` somewhere) to avoid mining premine block before you have the wallet. 
+Before you've generated such a block you need to create wallet. To do so start the node without mining (just move `federationKey.dat` somewhere) to avoid mining a premine block before you have the wallet.
 
-At node's startup you will see similar line: 
+At node's startup you will see similar line:
 
 ```
 API starting on URL 'http://localhost:37220/'
@@ -174,7 +174,7 @@ API starting on URL 'http://localhost:37220/'
 
 Open in your browser: `http://localhost:37220/swagger/index.html`
 
-Navigate to `Wallet` section and execute create command. Example of input parameters: 
+Navigate to `Wallet` section and execute create command. Example of input parameters:
 
 ```
 {
@@ -186,7 +186,7 @@ Navigate to `Wallet` section and execute create command. Example of input parame
 
 
 
-After doing that you should see in console periodic log: 
+After doing that you should see in console periodic log:
 
 ```
       ======Wallets======
@@ -197,7 +197,7 @@ Now stop the node and start it with mining enabled.
 
 
 
-Wait before enough blocks are mined and make sure your wallet now has access to premine funds:
+Wait before enough blocks are mined and make sure your wallet now has access to the premine funds:
 
 ```
       ======Wallets======
@@ -209,4 +209,3 @@ Wait before enough blocks are mined and make sure your wallet now has access to 
 
 
 Congrats, you've created a new blockchain of your own!
-

@@ -6,6 +6,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Validators;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
@@ -131,7 +132,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="block">The block.</param>
         /// <returns>Newly created and connected chained header for the specified block.</returns>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        ChainedHeader CreateChainedHeaderWithBlock(Block block);
+        ChainedHeader CreateChainedHeaderOfMinedBlock(Block block);
 
         /// <summary>
         /// Get the block and its chained header if it exists.
@@ -153,7 +154,7 @@ namespace Stratis.Bitcoin.Consensus
     }
 
     /// <inheritdoc />
-    public sealed class ChainedHeaderTree : IChainedHeaderTree
+    public class ChainedHeaderTree : IChainedHeaderTree
     {
         private readonly Network network;
         private readonly IHeaderValidator headerValidator;
@@ -627,24 +628,32 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             uint256 lastHash = headers.Last().GetHash();
-
-            List<ChainedHeader> newChainedHeaders = null;
-
-            if (!this.chainedHeadersByHash.ContainsKey(lastHash))
-                newChainedHeaders = this.CreateNewHeaders(headers);
-            else
-                this.logger.LogTrace("No new headers presented.");
-
-            this.AddOrReplacePeerTip(networkPeerId, lastHash);
-
-            if (newChainedHeaders == null)
+            if (this.chainedHeadersByHash.ContainsKey(lastHash))
             {
+                this.AddOrReplacePeerTip(networkPeerId, lastHash);
+
                 this.logger.LogTrace("(-)[NO_NEW_HEADERS]");
                 return new ConnectNewHeadersResult() { Consumed = this.chainedHeadersByHash[lastHash] };
             }
 
+            List<ChainedHeader> newChainedHeaders = this.CreateNewHeaders(headers, out bool insufficientInfo);
+
+            if (insufficientInfo)
+            {
+                this.logger.LogTrace("(-)[INSUFF_INFO]");
+                return new ConnectNewHeadersResult() {Consumed = null};
+            }
+
+            if (newChainedHeaders == null)
+            {
+                this.logger.LogTrace("(-)[NEW_HEADERS_NOT_CONNECTED]:null");
+                return null;
+            }
+
             ChainedHeader earliestNewHeader = newChainedHeaders.First();
             ChainedHeader latestNewHeader = newChainedHeaders.Last();
+
+            this.AddOrReplacePeerTip(networkPeerId, latestNewHeader.HashBlock);
 
             ConnectNewHeadersResult connectNewHeadersResult = null;
 
@@ -926,9 +935,15 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
-        public ChainedHeader CreateChainedHeaderWithBlock(Block block)
+        public ChainedHeader CreateChainedHeaderOfMinedBlock(Block block)
         {
-            this.CreateNewHeaders(new List<BlockHeader>() { block.Header });
+            BlockHeader headerToBeCreated = block.Header;
+            if (block is PosBlock posBlock)
+            {
+                headerToBeCreated = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
+            }
+
+            this.CreateNewHeaders(new List<BlockHeader>() { headerToBeCreated }, out bool _);
 
             ChainedHeader chainedHeader = this.GetChainedHeader(block.GetHash());
 
@@ -948,12 +963,15 @@ namespace Stratis.Bitcoin.Consensus
         /// <para>When headers are connected the next pointers of their previous headers are updated.</para>
         /// </remarks>
         /// <param name="headers">The new headers that should be connected to a chain.</param>
+        /// <param name="insufficientInfo"><c>true</c> if there wasn't enough data to validate even the first header of all presented.</param>
         /// <returns>A list of newly created chained headers or <c>null</c> if no new headers were found.</returns>
         /// <exception cref="MaxReorgViolationException">Thrown in case maximum reorganization rule is violated.</exception>
         /// <exception cref="ConnectHeaderException">Thrown if it wasn't possible to connect the first new header.</exception>
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers)
+        private List<ChainedHeader> CreateNewHeaders(List<BlockHeader> headers, out bool insufficientInfo)
         {
+            insufficientInfo = false;
+
             if (!this.TryFindNewHeaderIndex(headers, out int newHeaderIndex))
             {
                 this.logger.LogTrace("(-)[NO_NEW_HEADERS_FOUND]:null");
@@ -968,47 +986,57 @@ namespace Stratis.Bitcoin.Consensus
                 throw new ConnectHeaderException();
             }
 
-            var newChainedHeaders = new List<ChainedHeader>();
+            List<ChainedHeader> newChainedHeaders = null;
 
-            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
-            newChainedHeaders.Add(newChainedHeader);
-            newHeaderIndex++;
+            ChainedHeader newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, out insufficientInfo);
 
-            this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
-
-            try
+            if (newChainedHeader != null)
             {
-                this.CheckMaxReorgRuleViolated(newChainedHeader);
+                newChainedHeaders = new List<ChainedHeader>();
+                newChainedHeaders.Add(newChainedHeader);
+                newHeaderIndex++;
 
-                previousChainedHeader = newChainedHeader;
+                this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
 
-                for (; newHeaderIndex < headers.Count; newHeaderIndex++)
+                try
                 {
-                    newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader);
-                    newChainedHeaders.Add(newChainedHeader);
-                    this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
+                    this.CheckMaxReorgRuleViolated(newChainedHeader);
 
                     previousChainedHeader = newChainedHeader;
-                }
-            }
-            catch
-            {
-                // Undo changes to the tree. This is necessary because the peer claim wasn't set to the last header yet.
-                // So in case of peer disconnection this branch wouldn't be removed.
-                // Also not removing this unclaimed branch will allow other peers to present headers on top of invalid chain without us recognizing it.
-                this.RemoveUnclaimedBranch(newChainedHeader);
 
-                this.logger.LogTrace("(-)[VALIDATION_FAILED]");
-                throw;
+                    for (; newHeaderIndex < headers.Count; newHeaderIndex++)
+                    {
+                        newChainedHeader = this.CreateAndValidateNewChainedHeader(headers[newHeaderIndex], previousChainedHeader, out bool _);
+
+                        if (newChainedHeader == null)
+                            break;
+
+                        newChainedHeaders.Add(newChainedHeader);
+                        this.logger.LogTrace("New chained header was added to the tree '{0}'.", newChainedHeader);
+
+                        previousChainedHeader = newChainedHeader;
+                    }
+                }
+                catch
+                {
+                    // Undo changes to the tree. This is necessary because the peer claim wasn't set to the last header yet.
+                    // So in case of peer disconnection this branch wouldn't be removed.
+                    // Also not removing this unclaimed branch will allow other peers to present headers on top of invalid chain without us recognizing it.
+                    this.RemoveUnclaimedBranch(newChainedHeader);
+
+                    this.logger.LogTrace("(-)[VALIDATION_FAILED]");
+                    throw;
+                }
             }
 
             return newChainedHeaders;
         }
 
         /// <exception cref="ConsensusErrorException">Thrown if header validation failed.</exception>
-        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader)
+        private ChainedHeader CreateAndValidateNewChainedHeader(BlockHeader currentBlockHeader, ChainedHeader previousChainedHeader, out bool insufficientHeaderInformation)
         {
             uint256 newHeaderHash = currentBlockHeader.GetHash();
+            insufficientHeaderInformation = false;
 
             if (this.invalidHashesStore.IsInvalid(newHeaderHash))
             {
@@ -1022,6 +1050,14 @@ namespace Stratis.Bitcoin.Consensus
 
             if (result.Error != null)
             {
+                if (result.InsufficientHeaderInformation)
+                {
+                    insufficientHeaderInformation = true;
+
+                    this.logger.LogTrace("(-)[INSUFFICIENT_HEADER_INFORMATION]");
+                    return null;
+                }
+
                 this.logger.LogTrace("(-)[INVALID_HEADER]");
                 throw new ConsensusRuleException(result.Error);
             }

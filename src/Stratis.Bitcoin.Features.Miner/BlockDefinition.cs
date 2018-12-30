@@ -476,11 +476,18 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
             if (this.BlockWeight + this.Network.Consensus.Options.WitnessScaleFactor * packageSize >= this.Options.BlockMaxWeight)
+            {
+                this.logger.LogTrace("(-)[MAX_WEIGHT_REACHED]:false");
                 return false;
+            }
 
             if (this.BlockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Options.MaxBlockSigopsCost)
+            {
+                this.logger.LogTrace("(-)[MAX_SIGOPS_REACHED]:false");
                 return false;
+            }
 
+            this.logger.LogTrace("(-):true");
             return true;
         }
 
@@ -541,6 +548,7 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         modEntry = new TxMemPoolModifiedEntry(desc);
                         mapModifiedTx.Add(desc.TransactionHash, modEntry);
+                        this.logger.LogDebug("Added transaction '{0}' to the block template because it's a required ancestor for '{1}'.", desc.TransactionHash, setEntry.TransactionHash);
                     }
 
                     modEntry.SizeWithAncestors -= setEntry.GetTxSize();

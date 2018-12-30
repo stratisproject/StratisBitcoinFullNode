@@ -215,24 +215,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
-        /// <summary>
-        /// Initializes a new instance of the <see cref="PosMinting"/> class.
-        /// </summary>
-        /// <param name="consensusManager">Consumes incoming blocks, validates and executes them.</param>
-        /// <param name="chain">Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</param>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="dateTimeProvider">Provides date time functionality.</param>
-        /// <param name="initialBlockDownloadState">Provider of IBD state.</param>
-        /// <param name="nodeLifetime">Global application life cycle control - triggers when application shuts down.</param>
-        /// <param name="coinView">Consensus' view of UTXO set.</param>
-        /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
-        /// <param name="stakeValidator">Provides functionality for checking validity of PoS blocks.</param>
-        /// <param name="mempoolLock">A lock for managing asynchronous access to memory pool.</param>
-        /// <param name="mempool">Memory pool of pending transactions.</param>
-        /// <param name="walletManager">A manager providing operations on wallets.</param>
-        /// <param name="asyncLoopFactory">Factory for creating background async loop tasks.</param>
-        /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
-        /// <param name="loggerFactory">Factory for creating loggers.</param>
         public PosMinting(
             IBlockProvider blockProvider,
             IConsensusManager consensusManager,
@@ -325,6 +307,14 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     // but it should not halted the staking operation.
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                     this.rpcGetStakingInfoModel.Errors = cee.Message;
+                }
+                catch (ConsensusException ce)
+                {
+                    // All consensus exceptions should be ignored. It means that the miner
+                    // run into problems while constructing block or verifying it
+                    // but it should not halted the staking operation.
+                    this.logger.LogDebug("Consensus exception occurred in miner loop: {0}", ce.ToString());
+                    this.rpcGetStakingInfoModel.Errors = ce.Message;
                 }
                 catch (Exception ex)
                 {
@@ -441,7 +431,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             List<UnspentOutputReference> spendableTransactions = this.walletManager
                 .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1).ToList();
 
-            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
 
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
@@ -572,7 +562,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     {
                         if (block.Transactions[i].Time > block.Header.Time)
                         {
-                            this.logger.LogTrace("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
+                            this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
                             block.Transactions.Remove(block.Transactions[i]);
                         }
                     }
