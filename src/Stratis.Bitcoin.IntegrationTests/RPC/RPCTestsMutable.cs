@@ -235,5 +235,29 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                     .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED);
             }
         }
+
+        [Fact]
+        public void TestRpcSendToAddressInsufficientFunds()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                int blocksMined = (int)network.Consensus.CoinbaseMaturity + 1;
+                TestHelper.MineBlocks(node, blocksMined);
+                TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksMined);
+
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+
+                rpcClient.WalletPassphrase("password", 30);
+                Action action = () => rpcClient.SendToAddress(aliceAddress, Money.Coins(10000.0m));
+                action.Should().Throw<RPCException>()
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_ERROR);
+            }
+        }
+
     }
 }
