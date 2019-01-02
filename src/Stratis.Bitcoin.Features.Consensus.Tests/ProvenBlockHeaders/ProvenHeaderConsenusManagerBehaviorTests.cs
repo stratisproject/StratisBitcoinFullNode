@@ -77,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact]
         public void ConstructProvenHeaderPayload_Consecutive_Headers()
         {
-            var provenHeaderChain = BuildChainWithProvenHeaders(10);
+            var provenHeaderChain = BuildProvenHeaderChain(10);
 
             var chain = new ConcurrentChain(this.Network, provenHeaderChain);
 
