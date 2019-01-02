@@ -205,7 +205,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
-            this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, txIn.PrevOut, transaction.Time);
+            if (!this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, txIn.PrevOut, transaction.Time))
+            {
+                this.logger.LogTrace("(-)[INVALID_STAKE_HASH_TARGET]");
+                ConsensusErrors.StakeHashInvalidTarget.Throw();
+            }
         }
 
         /// <inheritdoc/>
@@ -262,8 +266,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public bool CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins,
-            OutPoint prevout, uint transactionTime)
+        public bool CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins, OutPoint prevout, uint transactionTime)
         {
             if (transactionTime < stakingCoins.Time)
             {

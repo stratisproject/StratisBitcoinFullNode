@@ -298,6 +298,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
                 if (!validKernel)
                 {
+                    this.Logger.LogTrace("(-)[INVALID_STAKE_HASH_TARGET]");
                     ConsensusErrors.StakeHashInvalidTarget.Throw();
                 }
             }
