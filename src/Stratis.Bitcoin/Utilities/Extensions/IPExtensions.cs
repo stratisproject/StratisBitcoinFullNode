@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using System.Net.Sockets;
 using NBitcoin;
@@ -61,6 +63,31 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         public static IPEndPoint ToIPEndPoint(this string ipAddress, int port)
         {
             return Utils.ParseIpEndpoint(ipAddress, port);
+        }
+
+        /// <summary>
+        /// This method will try to map an white-bind endpoint to a list of already bound endpoints.
+        /// </summary>
+        /// <remarks>
+        /// The method will try to compare a local endpoint to the port of the white-bind endpoint, and if found will return the local endpoint that matches.
+        /// Otherwise try to compare by a match of the entire endpoint.
+        /// </remarks>
+        public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkEndpoints, out IPEndPoint localEndpoint)
+        {
+            IEnumerable<IPEndPoint> localEndpoints = networkEndpoints.Where(x => x.Address.IsLocal());
+
+            foreach (IPEndPoint ipEndPoint in localEndpoints)
+            {
+                if (ipEndPoint.Port == whiteBindEndpoint.Port)
+                {
+                    localEndpoint = ipEndPoint;
+                    return true;
+                }
+            }
+
+            localEndpoint = networkEndpoints.FirstOrDefault(e => e.Equals(whiteBindEndpoint));
+
+            return localEndpoint != null;
         }
     }
 }

@@ -67,10 +67,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.Port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort, this.logger);
+
             try
             {
-                this.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
+                this.Listen.AddRange(config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
             }
             catch (FormatException)
             {
@@ -79,24 +79,24 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                string[] whitebindEndpoints = config.GetAll("whitebind", this.logger);
+                IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
 
                 List<IPEndPoint> networkEndpoints = this.Listen.Select(x => x.Endpoint).ToList();
 
-                foreach (string whiteBindEndpointString in whitebindEndpoints)
+                foreach (IPEndPoint whiteBindEndpoint in whitebindEndpoints)
                 {
-                    var nodeServerWhiteBindEndpoint = whiteBindEndpointString.ToIPEndPoint(this.Port);
-
-                    if (nodeServerWhiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
+                    if (whiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
                     {
-                        // Whitelist whitebind endpoint if we are currently listening to it.
+                        // White-list white-bind endpoint if we are currently listening to it.
                         NodeServerEndpoint listenToThisEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
-                        if (listenToThisEndpoint != null) listenToThisEndpoint.Whitelisted = true;
+
+                        if (listenToThisEndpoint != null)
+                            listenToThisEndpoint.Whitelisted = true;
                     }
                     else
                     {
                         // Add to list of network interfaces if we are not.
-                        this.Listen.Add(new NodeServerEndpoint(whiteBindEndpointString.ToIPEndPoint(this.Port), true));
+                        this.Listen.Add(new NodeServerEndpoint(whiteBindEndpoint, true));
                     }
                 }
             }
@@ -108,6 +108,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
             if (this.Listen.Count == 0)
             {
                 this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
+            }
+            else
+            {
+                var ports = this.Listen.Select(l => l.Endpoint.Port).ToList();
+
+                if (ports.Count != ports.Distinct().Count())
+                {
+                    throw new ConfigurationException("Invalid attempt to bind the same port twice");
+                }
             }
 
             try
@@ -266,24 +275,5 @@ namespace Stratis.Bitcoin.Configuration.Settings
         [Obsolete("Internal use only")]
         /// <summary><c>true</c> if this instance is gateway; otherwise, <c>false</c>. Internal use only.</summary>
         public bool IsGateway { get; set; }
-    }
-
-    public static class ConnectionManagerSettingsExtensions
-    {
-        /// <summary>
-        /// Endpoint A can be mapped to endpoint B.
-        /// </summary>
-        public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkInterfacesTheNodeShouldListenOn, out IPEndPoint localEndpoint)
-        {
-            localEndpoint = networkInterfacesTheNodeShouldListenOn.FirstOrDefault(x => x.Address.IsLocal() && !x.Address.Equals(IPAddress.Any));
-
-            if (localEndpoint?.Port == whiteBindEndpoint.Port)
-            {
-                return true;
-            }
-
-            localEndpoint = networkInterfacesTheNodeShouldListenOn.FirstOrDefault(e => e.Equals(whiteBindEndpoint));
-            return localEndpoint != null;
-        }
     }
 }
