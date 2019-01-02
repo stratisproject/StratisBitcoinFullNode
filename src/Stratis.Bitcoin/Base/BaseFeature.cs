@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -84,9 +82,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
-        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
-        private readonly DBreezeSerializer dbreezeSerializer;
-
         /// <summary>Manager of node's network peers.</summary>
         private IPeerAddressManager peerAddressManager;
 
@@ -105,6 +100,8 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc cref="Network"/>
         private readonly Network network;
 
+        private readonly IProvenBlockHeaderStore provenBlockHeaderStore;
+
         private readonly IConsensusManager consensusManager;
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IBlockPuller blockPuller;
@@ -116,8 +113,7 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc cref="IPartialValidator"/>
         private readonly IPartialValidator partialValidator;
 
-        public BaseFeature(
-            NodeSettings nodeSettings,
+        public BaseFeature(NodeSettings nodeSettings,
             DataFolder dataFolder,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
@@ -128,7 +124,6 @@ namespace Stratis.Bitcoin.Base
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
-            DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
@@ -138,7 +133,8 @@ namespace Stratis.Bitcoin.Base
             IPartialValidator partialValidator,
             IBlockPuller blockPuller,
             IBlockStore blockStore,
-            Network network)
+            Network network,
+            IProvenBlockHeaderStore provenBlockHeaderStore = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
             this.chainRepository = Guard.NotNull(chainRepository, nameof(chainRepository));
@@ -153,6 +149,7 @@ namespace Stratis.Bitcoin.Base
             this.blockPuller = blockPuller;
             this.blockStore = blockStore;
             this.network = network;
+            this.provenBlockHeaderStore = provenBlockHeaderStore;
             this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
 
@@ -164,16 +161,22 @@ namespace Stratis.Bitcoin.Base
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
-            this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
-            this.dbreezeSerializer.Initialize(this.chain.Network);
-
             await this.StartChainAsync().ConfigureAwait(false);
+
+            if (this.provenBlockHeaderStore != null)
+            {
+                // If we find at this point that proven header store is behind chain we can rewind chain (this will cause a ripple effect and rewind block store and consensus)
+                // This problem should go away once we implement a component to keep all tips up to date
+                // https://github.com/stratisproject/StratisBitcoinFullNode/issues/2503
+                ChainedHeader initializedAt = await this.provenBlockHeaderStore.InitializeAsync(this.chain.Tip);
+                this.chain.SetTip(initializedAt);
+            }
 
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
             connectionParameters.IsRelay = this.connectionManager.ConnectionSettings.RelayTxes;
@@ -237,7 +240,10 @@ namespace Stratis.Bitcoin.Base
 
             this.flushChainLoop = this.asyncLoopFactory.Run("FlushChain", async token =>
             {
-                await this.chainRepository.SaveAsync(this.chain);
+                await this.chainRepository.SaveAsync(this.chain).ConfigureAwait(false);
+
+                if (this.provenBlockHeaderStore != null)
+                    await this.provenBlockHeaderStore.SaveAsync().ConfigureAwait(false);
             },
             this.nodeLifetime.ApplicationStopping,
             repeatEvery: TimeSpan.FromMinutes(1.0),
@@ -251,7 +257,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartAddressManager(NetworkPeerConnectionParameters connectionParameters)
         {
-            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.loggerFactory);
+            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.peerBanning, this.loggerFactory);
             connectionParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
             if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))
@@ -302,9 +308,14 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogInformation("Saving chain repository.");
             this.chainRepository.SaveAsync(this.chain).GetAwaiter().GetResult();
-
-            this.logger.LogInformation("Disposing chain repository.");
             this.chainRepository.Dispose();
+
+            if (this.provenBlockHeaderStore != null)
+            {
+                this.logger.LogInformation("Saving proven header store.");
+                this.provenBlockHeaderStore.SaveAsync().GetAwaiter().GetResult();
+                this.provenBlockHeaderStore.Dispose();
+            }
 
             this.logger.LogInformation("Disposing finalized block info repository.");
             this.finalizedBlockInfoRepository.Dispose();

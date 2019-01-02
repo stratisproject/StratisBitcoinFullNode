@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.SmartContracts.Core
 {
@@ -8,7 +7,6 @@ namespace Stratis.SmartContracts.Core
         public static bool IsSmartContractExec(this Script script)
         {
             return script.IsSmartContractCall() || script.IsSmartContractCreate();
-
         }
 
         public static bool IsSmartContractCall(this Script script)
@@ -19,7 +17,6 @@ namespace Stratis.SmartContracts.Core
         public static bool IsSmartContractCreate(this Script script)
         {
             return TestFirstByte(script, (byte)ScOpcodeType.OP_CREATECONTRACT);
-
         }
 
         public static bool IsSmartContractSpend(this Script script)

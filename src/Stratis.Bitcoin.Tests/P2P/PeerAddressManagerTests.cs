@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(0, savedPeer.ConnectionAttempts);
             Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Null(savedPeer.LastConnectionHandshake);
-            Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+            Assert.Equal("::ffff:127.0.0.1", savedPeer.Loopback.ToString());
         }
 
         [Fact]
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(0, savedPeer.ConnectionAttempts);
             Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Equal(applicableDate, savedPeer.LastConnectionHandshake.Value.Date);
-            Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+            Assert.Equal("::ffff:127.0.0.1", savedPeer.Loopback.ToString());
         }
 
         [Fact]
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Equal(applicableDate, savedPeer.LastConnectionSuccess.Value.Date);
             Assert.Equal(applicableDate, savedPeer.LastConnectionHandshake.Value.Date);
             Assert.Equal(applicableDate, savedPeer.LastSeen.Value.Date);
-            Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+            Assert.Equal("::ffff:127.0.0.1", savedPeer.Loopback.ToString());
         }
 
         [Fact]
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Null(savedPeer.LastConnectionSuccess);
             Assert.Null(savedPeer.LastConnectionHandshake);
             Assert.Null(savedPeer.LastSeen);
-            Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+            Assert.Equal("::ffff:127.0.0.1", savedPeer.Loopback.ToString());
         }
 
         [Fact]
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             Assert.Null(savedPeer.LastConnectionSuccess);
             Assert.Null(savedPeer.LastConnectionHandshake);
             Assert.Null(savedPeer.LastSeen);
-            Assert.Equal("127.0.0.1", savedPeer.Loopback.ToString());
+            Assert.Equal("::ffff:127.0.0.1", savedPeer.Loopback.ToString());
         }
 
         [Fact]
@@ -178,14 +178,14 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var source = new IPEndPoint(IPAddress.Parse("124.54.54.2"), 22);
 
-            var ipV4Addresses = new []
+            var ipV4Addresses = new[]
             {
                 IPAddress.Parse("21.23.0.1"),
                 IPAddress.Parse("143.12.0.1"),
                 IPAddress.Parse("99.87.44.1"),
                 IPAddress.Parse("192.168.0.1"),
             };
-            var ipV4Endpoints = ipV4Addresses.Select((a,i) => new IPEndPoint(a, i)).ToArray();
+            var ipV4Endpoints = ipV4Addresses.Select((a, i) => new IPEndPoint(a, i)).ToArray();
 
             var addressManager = new PeerAddressManager(DateTimeProvider.Default, peerFolder, this.LoggerFactory.Object, new SelfEndpointTracker(this.LoggerFactory.Object));
             addressManager.AddPeers(ipV4Endpoints, source.Address);

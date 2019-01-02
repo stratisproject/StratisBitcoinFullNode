@@ -10,10 +10,12 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class ConsensusManagerFailedReorgTests
     {
         private readonly Network posNetwork;
+        private readonly Network powNetwork;
 
         public ConsensusManagerFailedReorgTests()
         {
             this.posNetwork = new StratisRegTest();
+            this.powNetwork = new BitcoinRegTest();
         }
 
         [Fact]
@@ -21,10 +23,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
+                var bitcoinNoValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(bitcoinNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -60,10 +62,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
+                var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -101,11 +103,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
+                var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPosNode(this.posNetwork).Start();
-                var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork).Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -154,10 +156,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
+                var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -189,10 +191,10 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
+                var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -238,11 +240,11 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (var builder = NodeBuilder.Create(this))
             {
-                var stratisNoValidationRulesNetwork = new StratisRegTestNoValidationRules();
+                var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPosNode(new StratisRegTest()).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPosNode(new StratisRegTest()).WithDummyWallet().Start();
-                var minerC = builder.CreateStratisPosNode(stratisNoValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerC = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
 
                 // MinerA mines 5 blocks
                 TestHelper.MineBlocks(minerA, 5);
@@ -255,9 +257,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // MinerA continues to mine to height 9
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerC.FullNode.ConsensusManager().Tip.Height == 5);
+                TestHelper.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 9, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 9, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 5, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
 
                 // MinerB continues to mine to block 13 without block propogation
                 TestHelper.DisableBlockPropagation(minerB, minerA);
@@ -278,9 +280,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerC));
 
                 // This will cause the reorg chain to fail at block 8 and roll back any changes.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 9));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 13));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerC, 10));
+                TestHelper.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 9, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 13, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 10, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
             }
         }
     }

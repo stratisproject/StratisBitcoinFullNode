@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore.Controllers;
+using Stratis.Bitcoin.Features.BlockStore.Pruning;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
@@ -44,6 +45,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly IConsensusManager consensusManager;
 
+        private readonly ICheckpoints checkpoints;
+
+        private readonly IPrunedBlockRepository prunedBlockRepository;
+
         public BlockStoreFeature(
             Network network,
             ConcurrentChain chain,
@@ -55,7 +60,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IChainState chainState,
             IBlockStoreQueue blockStoreQueue,
             INodeStats nodeStats,
-            IConsensusManager consensusManager)
+            IConsensusManager consensusManager,
+            ICheckpoints checkpoints,
+            IPrunedBlockRepository prunedBlockRepository)
         {
             this.network = network;
             this.chain = chain;
@@ -68,6 +75,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.storeSettings = storeSettings;
             this.chainState = chainState;
             this.consensusManager = consensusManager;
+            this.checkpoints = checkpoints;
+            this.prunedBlockRepository = prunedBlockRepository;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 900);
         }
@@ -78,36 +87,63 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             if (highestBlock != null)
             {
-                string logString = $"BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8) +
-                             $" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock;
-
-                log.AppendLine(logString);
+                var builder = new StringBuilder();
+                builder.Append("BlockStore.Height: ".PadRight(LoggingConfiguration.ColumnLength + 1) + highestBlock.Height.ToString().PadRight(8));
+                builder.Append(" BlockStore.Hash: ".PadRight(LoggingConfiguration.ColumnLength - 1) + highestBlock.HashBlock);
+                log.AppendLine(builder.ToString());
             }
         }
 
-        public override Task InitializeAsync()
+        public override async Task InitializeAsync()
         {
+            this.prunedBlockRepository.InitializeAsync().GetAwaiter().GetResult();
+
+            if (!this.storeSettings.PruningEnabled && this.prunedBlockRepository.PrunedTip != null)
+                throw new BlockStoreException("The node cannot start as it has been previously pruned, please clear the data folders and resync.");
+
+            if (this.storeSettings.PruningEnabled)
+            {
+                if (this.storeSettings.AmountOfBlocksToKeep < this.network.Consensus.MaxReorgLength)
+                    throw new BlockStoreException($"The amount of blocks to prune [{this.storeSettings.AmountOfBlocksToKeep}] (blocks to keep) cannot be less than the node's max reorg length of {this.network.Consensus.MaxReorgLength}.");
+
+                this.logger.LogInformation("Pruning BlockStore...");
+                await this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, true);
+            }
+
             // Use ProvenHeadersBlockStoreBehavior for PoS Networks
             if (this.network.Consensus.IsProofOfStake)
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue));
             }
             else
             {
-                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager));
+                this.connectionManager.Parameters.TemplateBehaviors.Add(new BlockStoreBehavior(this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.blockStoreQueue));
             }
 
             // Signal to peers that this node can serve blocks.
-            this.connectionManager.Parameters.Services = (this.storeSettings.Prune ? NetworkPeerServices.Nothing : NetworkPeerServices.Network) | NetworkPeerServices.NODE_WITNESS;
+            // TODO: Add NetworkLimited which is what BTC uses for pruned nodes.
+            this.connectionManager.Parameters.Services = (this.storeSettings.PruningEnabled ? NetworkPeerServices.Nothing : NetworkPeerServices.Network);
+
+            // Temporary measure to support asking witness data on BTC.
+            // At some point NetworkPeerServices will move to the Network class,
+            // Then this values should be taken from there.
+            if (!this.network.Consensus.IsProofOfStake)
+                this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
 
             this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
 
-            return Task.CompletedTask;
+            return;
         }
 
         /// <inheritdoc />
         public override void Dispose()
         {
+            if (this.storeSettings.PruningEnabled)
+            {
+                this.logger.LogInformation("Pruning BlockStore...");
+                this.prunedBlockRepository.PruneAndCompactDatabase(this.chainState.BlockStoreTip, this.network, false);
+            }
+
             this.logger.LogInformation("Stopping BlockStore.");
 
             this.blockStoreSignaled.Dispose();
@@ -131,7 +167,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
                     {
                         services.AddSingleton<IBlockStoreQueue, BlockStoreQueue>().AddSingleton<IBlockStore>(provider => provider.GetService<IBlockStoreQueue>());
                         services.AddSingleton<IBlockRepository, BlockRepository>();
-                        services.AddSingleton<BlockStoreSignaled>();
+                        services.AddSingleton<IPrunedBlockRepository, PrunedBlockRepository>();
+
+                        if (fullNodeBuilder.Network.Consensus.IsProofOfStake)
+                            services.AddSingleton<BlockStoreSignaled, ProvenHeadersBlockStoreSignaled>();
+                        else
+                            services.AddSingleton<BlockStoreSignaled>();
+
                         services.AddSingleton<StoreSettings>();
                         services.AddSingleton<BlockStoreController>();
                         services.AddSingleton<IBlockStoreQueueFlushCondition, BlockStoreQueueFlushCondition>();

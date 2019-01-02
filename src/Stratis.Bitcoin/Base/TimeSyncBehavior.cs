@@ -10,6 +10,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Base
 {
@@ -348,7 +349,7 @@ namespace Stratis.Bitcoin.Base
                         + "=============================================================================" + Environment.NewLine,
                         this.network.MaxTimeOffsetSeconds);
                 }
-                
+
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,
@@ -396,18 +397,21 @@ namespace Stratis.Bitcoin.Base
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             var res = new TimeSyncBehavior(this.state, this.dateTimeProvider, this.loggerFactory);

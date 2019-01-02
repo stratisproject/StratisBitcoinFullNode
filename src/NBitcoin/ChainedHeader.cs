@@ -653,5 +653,15 @@ namespace NBitcoin
         {
             return n & (n - 1);
         }
+
+        /// <summary>
+        /// Replace the <see cref="BlockHeader"/> with a new provided header.
+        /// </summary>
+        /// <param name="newHeader">The new header to set.</param>
+        /// <remarks>Use this method very carefully because it could cause race conditions if used at the wrong moment.</remarks>
+        public void SetHeader(BlockHeader newHeader)
+        {
+            this.Header = newHeader;
+        }
     }
 }

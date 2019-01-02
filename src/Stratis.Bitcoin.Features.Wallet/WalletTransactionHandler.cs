@@ -192,11 +192,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
             Guard.NotNull(duration, nameof(duration));
 
-            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);  
+            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
             string cacheKey = wallet.EncryptedSeed;
 
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
-            { 
+            {
                 this.privateKeyCache.Set(cacheKey, secretValue, duration);
             }
             else
@@ -225,6 +225,12 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(context.Recipients, nameof(context.Recipients));
             Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
+
+            // If inputs are selected by the user, we just choose them all.
+            if (context.SelectedInputs != null && context.SelectedInputs.Any())
+            {
+                context.TransactionBuilder.CoinSelector = new AllCoinsSelector();
+            }
 
             this.AddRecipients(context);
             this.AddOpReturnOutput(context);
@@ -312,7 +318,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
-            if (context.SelectedInputs.Any())
+            if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the
                 // current transaction. At this point we check the given
@@ -345,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 // If threshold is reached and the total value is above the target
                 // then its safe to stop adding UTXOs to the coin list.
-                // The primery goal is to reduce the time it takes to build a trx
+                // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
                 if (index > SendCountThresholdLimit && sum > totalToSend)
                     break;
@@ -386,15 +392,24 @@ namespace Stratis.Bitcoin.Features.Wallet
         protected void AddFee(TransactionBuildContext context)
         {
             Money fee;
+            Money minTrxFee = new Money(this.network.MinTxFee, MoneyUnit.Satoshi);
 
             // If the fee hasn't been set manually, calculate it based on the fee type that was chosen.
             if (context.TransactionFee == null)
             {
                 FeeRate feeRate = context.OverrideFeeRate ?? this.walletFeePolicy.GetFeeRate(context.FeeType.ToConfirmations());
                 fee = context.TransactionBuilder.EstimateFees(feeRate);
+
+                // Make sure that the fee is at least the minimum transaction fee.
+                fee = Math.Max(fee, minTrxFee);
             }
             else
             {
+                if (context.TransactionFee < minTrxFee)
+                {
+                    throw new WalletException($"Not enough fees. The minimun fee is {minTrxFee}.");
+                }
+
                 fee = context.TransactionFee;
             }
 
@@ -412,7 +427,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
-            context.TransactionBuilder.Send(opReturnScript, Money.Zero);
+            context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
         }
     }
 
@@ -514,9 +529,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool Shuffle { get; set; }
 
         /// <summary>
-        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
+        /// Optional data to be added as an extra OP_RETURN transaction output.
         /// </summary>
         public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// Optional amount to add to the OP_RETURN transaction output.
+        /// </summary>
+        public Money OpReturnAmount { get; set; }
 
         /// <summary>
         /// Whether the transaction should be signed or not.

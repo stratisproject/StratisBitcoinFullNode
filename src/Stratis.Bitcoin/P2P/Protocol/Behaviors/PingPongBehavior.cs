@@ -3,6 +3,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 {
@@ -93,6 +94,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             this.PingInterval = TimeSpan.FromMinutes(2.0);
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             if ((this.AttachedPeer.PeerVersion != null) && !this.PingVersion()) // If not handshaked, still attach (the callback will also check version).
@@ -134,7 +136,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
 
                     this.currentPing = new PingPayload();
                     this.dateSent = DateTimeOffset.UtcNow;
-                    peer.SendMessageAsync(this.currentPing).GetAwaiter().GetResult();
+                    peer.SendMessage(this.currentPing);
                     this.pingTimeoutTimer = new Timer(this.PingTimeout, this.currentPing, (int)this.TimeoutInterval.TotalMilliseconds, Timeout.Infinite);
                 }
                 catch (OperationCanceledException)
@@ -212,6 +214,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             }
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             if (this.callbacksRegistered)
@@ -231,6 +234,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Behaviors
             base.Dispose();
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new PingPongBehavior();

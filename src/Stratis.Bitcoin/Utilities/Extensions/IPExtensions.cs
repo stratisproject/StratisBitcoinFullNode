@@ -24,7 +24,14 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         [NoTrace]
         public static bool Match(this IPEndPoint endPoint, IPEndPoint matchWith)
         {
-            return endPoint.MapToIpv6().Address.ToString() == matchWith.MapToIpv6().Address.ToString() && endPoint.Port == matchWith.Port;
+            return endPoint.MatchIpOnly(matchWith) && endPoint.Port == matchWith.Port;
+        }
+
+        /// <summary>Match the IP address only (the port is ignored).</summary>
+        [NoTrace]
+        public static bool MatchIpOnly(this IPEndPoint endPoint, IPEndPoint matchWith)
+        {
+            return endPoint.MapToIpv6().Address.ToString() == matchWith.MapToIpv6().Address.ToString();
         }
 
         /// <summary>

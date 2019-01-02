@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
@@ -69,7 +70,8 @@ namespace Stratis.Bitcoin.Features.Dns.Tests
             {
                 IChainState chainState = new Mock<IChainState>().Object;
                 IPeerBanning peerBanning = new Mock<IPeerBanning>().Object;
-                return new UnreliablePeerBehavior(KnownNetworks.StratisMain, chainState, this.loggerFactory.Object, peerBanning, this.nodeSettings);
+                Checkpoints checkpoints = new Checkpoints();
+                return new UnreliablePeerBehavior(KnownNetworks.StratisMain, chainState, this.loggerFactory.Object, peerBanning, this.nodeSettings, checkpoints);
             }
         }
 

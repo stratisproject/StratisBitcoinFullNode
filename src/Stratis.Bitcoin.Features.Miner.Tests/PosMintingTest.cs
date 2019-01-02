@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         [Fact]
         public async Task GenerateBlocksAsync_does_not_use_small_coins()
         {
-            var walletSecret = new WalletSecret(){WalletName = "wallet", WalletPassword = "password"};
+            var walletSecret = new WalletSecret() { WalletName = "wallet", WalletPassword = "password" };
             var wallet = new Wallet.Wallet()
             {
                 Network = this.network

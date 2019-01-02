@@ -1,5 +1,5 @@
 ﻿using System.ComponentModel.DataAnnotations;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {

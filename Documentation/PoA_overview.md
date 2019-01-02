@@ -25,7 +25,7 @@ Each of federation members generate a key pair and exchange their public keys. P
 Order in which they can mine a block is predefined on the sidechain setup.
 
 Federation members mine the blocks in predefined order and sign mined blocks with their keys. They include only those transactions that they consider to be valid.
-If one of the federation members don't mine a block when it's his turn, the member after him will wait `targetSpacing` seconds and will mine the block. There are no subsidy for mining the blocks.
+If one of the federation members don't mine a block when it's his turn, the member after him will wait `targetSpacing` seconds and will mine the block. There is no subsidy for mining the blocks.
 
 All nodes on the network are validating blocks and transactions normally.
 
@@ -33,16 +33,16 @@ However PoA approach allows light wallet to be created easily in a way that ligh
 
 
 
-##### Example 
+##### Example
 
 We have 3 federation members: A,B,C
 `-` equals to `targetSpacing` seconds passed:
 
-Normal scenario is: 
+Normal scenario is:
 
 `A-B-C-A-B-C-A-B...`
 
-In case B is offline: 
+In case B is offline:
 `A--C-A--C-A--C-A...`
 
 
@@ -58,8 +58,8 @@ A-B-C--B-C--B-C--B-C
       A---A---A---A
 ```
 
- 
 
-A's chain will always be shorter in terms of chainwork so all the nodes on the network will prefer the best chain which is maintained by B and C. 
 
-Security model of this sidechain design relies on 51% of miners being honest. As long as it's true fake chain will always have less chainwork.
+A's chain will always be shorter in terms of chainwork so all the nodes on the network will prefer the best chain which is maintained by B and C.
+
+The security model of this sidechain design relies on 51% of miners being honest. As long as it's true fake chains will always have less chainwork.

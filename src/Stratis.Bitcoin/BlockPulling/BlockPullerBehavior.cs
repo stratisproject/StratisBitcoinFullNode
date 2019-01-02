@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.BlockPulling
 {
@@ -94,19 +95,14 @@ namespace Stratis.Bitcoin.BlockPulling
         /// <summary>Time when the last block was delivered.</summary>
         private DateTime? lastDeliveryTime;
 
-        /// <inheritdoc cref="ILoggerFactory"/>
         private readonly ILoggerFactory loggerFactory;
 
-        /// <inheritdoc cref="ILogger"/>
         private readonly ILogger logger;
 
-        /// <inheritdoc cref="IBlockPuller"/>
         private readonly IBlockPuller blockPuller;
 
-        /// <inheritdoc cref="IInitialBlockDownloadState"/>
         private readonly IInitialBlockDownloadState ibdState;
 
-        /// <inheritdoc cref="IDateTimeProvider"/>
         private readonly IDateTimeProvider dateTimeProvider;
 
         public BlockPullerBehavior(IBlockPuller blockPuller, IInitialBlockDownloadState ibdState, IDateTimeProvider dateTimeProvider, ILoggerFactory loggerFactory)
@@ -240,18 +236,21 @@ namespace Stratis.Bitcoin.BlockPulling
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new BlockPullerBehavior(this.blockPuller, this.ibdState, this.dateTimeProvider, this.loggerFactory);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);

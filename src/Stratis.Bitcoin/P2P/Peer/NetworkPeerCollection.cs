@@ -12,12 +12,12 @@ namespace Stratis.Bitcoin.P2P.Peer
     {
         public bool Added { get; private set; }
 
-        public INetworkPeer peer { get; private set; }
+        public INetworkPeer Peer { get; private set; }
 
         public NetworkPeerEventArgs(INetworkPeer peer, bool added)
         {
             this.Added = added;
-            this.peer = peer;
+            this.Peer = peer;
         }
     }
 
@@ -25,14 +25,19 @@ namespace Stratis.Bitcoin.P2P.Peer
     {
         INetworkPeer FindByEndpoint(IPEndPoint endpoint);
 
-        INetworkPeer FindByIp(IPAddress ip);
+        /// <summary>
+        /// Returns all connected peers from a given IP address (the port is irrelevant).
+        /// </summary>
+        /// <param name="ip">The IP address to filter on.</param>
+        /// <returns>The set of connected peers that matched the given IP address.</returns>
+        List<INetworkPeer> FindByIp(IPAddress ip);
 
         INetworkPeer FindLocal();
     }
 
     public class NetworkPeerCollection : IEnumerable<INetworkPeer>, IReadOnlyNetworkPeerCollection
     {
-        private ConcurrentHashSet<INetworkPeer> networkPeers;
+        private readonly ConcurrentHashSet<INetworkPeer> networkPeers;
 
         public int Count
         {
@@ -83,7 +88,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         public INetworkPeer FindLocal()
         {
-            return this.FindByIp(IPAddress.Loopback);
+            return this.FindByIp(IPAddress.Loopback).FirstOrDefault();
         }
 
         public INetworkPeer FindById(int peerId)
@@ -91,10 +96,10 @@ namespace Stratis.Bitcoin.P2P.Peer
             return this.networkPeers.FirstOrDefault(n => n.Connection.Id == peerId);
         }
 
-        public INetworkPeer FindByIp(IPAddress ip)
+        public List<INetworkPeer> FindByIp(IPAddress ip)
         {
             ip = ip.EnsureIPv6();
-            return this.networkPeers.FirstOrDefault(n => Match(ip, null, n));
+            return this.networkPeers.Where(n => Match(ip, null, n)).ToList();
         }
 
         public INetworkPeer FindByEndpoint(IPEndPoint endpoint)

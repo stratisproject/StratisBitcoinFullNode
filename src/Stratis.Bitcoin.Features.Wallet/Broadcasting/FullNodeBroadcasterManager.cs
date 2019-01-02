@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
             if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction).ConfigureAwait(false))
             {
-                string errorMessage = string.Empty;
+                string errorMessage = "Failed";
 
                 if (state.Error?.ConsensusError != null)
                 {

@@ -1,14 +1,13 @@
-﻿using System;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.P2P.Peer;
-using Stratis.Bitcoin.P2P.Protocol;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
@@ -16,76 +15,32 @@ namespace Stratis.Bitcoin.Features.BlockStore
     public class ProvenHeadersBlockStoreBehavior : BlockStoreBehavior
     {
         private readonly Network network;
+        private readonly ICheckpoints checkpoints;
 
-        /// <summary>
-        /// Gets or sets the height from which start serving Proven Headers, if > 0.
-        /// </summary>
-        public int AnnounceProvenHeadersFromHeight { get; set; }
-
-        public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager)
-            : base(chain, chainState, loggerFactory, consensusManager)
+        public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints, IBlockStoreQueue blockStoreQueue)
+            : base(chain, chainState, loggerFactory, consensusManager, blockStoreQueue)
         {
             this.network = Guard.NotNull(network, nameof(network));
-        }
-
-        /// <inheritdoc />
-        protected override async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
-        {
-            switch (message.Message.Payload)
-            {
-                case SendProvenHeadersPayload sendProvenHeadersPayload:
-                    await this.ProcessSendProvenHeadersPayload(sendProvenHeadersPayload);
-                    break;
-
-                default:
-                    await base.ProcessMessageAsync(peer, message).ConfigureAwait(false); ;
-                    break;
-            }
-        }
-
-        private Task ProcessSendProvenHeadersPayload(SendProvenHeadersPayload sendProvenHeadersPayload)
-        {
-            this.PreferHeaders = true;
-
-            var provenHeadersActivationHeight = (this.network.Consensus.Options as PosConsensusOptions).ProvenHeadersActivationHeight;
-            // Ensures we don't announce ProvenHeaders before ProvenHeadersActivationHeight.
-            this.AnnounceProvenHeadersFromHeight = Math.Max(provenHeadersActivationHeight, sendProvenHeadersPayload.RequireFromHeight);
-
-            return Task.CompletedTask;
+            this.checkpoints = Guard.NotNull(checkpoints, nameof(checkpoints));
         }
 
         /// <inheritdoc />
         /// <returns>The <see cref="HeadersPayload"/> instance to announce to the peer, or <see cref="ProvenHeadersPayload"/> if the peers requires it.</returns>
-        protected override Payload BuildAnnouncedHeaderPayload(int blockstoreTipHeight, params BlockHeader[] headers)
+        protected override Payload BuildHeadersAnnouncePayload(IEnumerable<BlockHeader> headers)
         {
-            if (this.AnnounceProvenHeadersFromHeight > 0 && blockstoreTipHeight >= this.AnnounceProvenHeadersFromHeight)
-            {
-                ProvenHeadersPayload provenHeadersPayload = new ProvenHeadersPayload();
-                foreach (var header in headers)
-                {
-                    // When announcing proven headers we will always announce headers that we received form peers,
-                    // this means the BlockHeader must already be of type ProvenBlockHeader.
-                    ProvenBlockHeader provenBlockHeader = header as ProvenBlockHeader;
+            // Sanity check. That should never happen.
+            if (!headers.All(x => x is ProvenBlockHeader))
+                throw new BlockStoreException("BlockHeader is expected to be a ProvenBlockHeader");
 
-                    if (provenBlockHeader == null)
-                    {
-                        throw new BlockStoreException("BlockHeader is expected to be a ProvenBlockHeader");
-                    }
+            var provenHeadersPayload = new ProvenHeadersPayload(headers.Cast<ProvenBlockHeader>().ToArray());
 
-                    provenHeadersPayload.Headers.Add(provenBlockHeader);
-                }
-
-                return provenHeadersPayload;
-            }
-            else
-            {
-                return base.BuildAnnouncedHeaderPayload(blockstoreTipHeight, headers);
-            }
+            return provenHeadersPayload;
         }
 
+        [NoTrace]
         public override object Clone()
         {
-            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager)
+            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload
@@ -93,6 +48,5 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             return res;
         }
-
     }
 }

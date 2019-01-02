@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             ThresholdState?[] threshold;
             if (!this.cache.TryGetValue(hash, out threshold))
             {
-                threshold = new ThresholdState?[ArraySize];
+                threshold = new ThresholdState?[this.ArraySize];
                 this.cache.Add(hash, threshold);
             }
 

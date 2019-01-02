@@ -1,4 +1,6 @@
-﻿using System.Threading.Tasks;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -13,8 +15,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     public class AllowedScriptTypeRule : PartialValidationConsensusRule, ISmartContractMempoolRule
     {
-        // TODO: Sidechains will need to allow their script type in here.
-
         public override Task RunAsync(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
@@ -62,7 +62,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (PayToPubkeyHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
                 return;
 
-            new ConsensusError("disallowed-output-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
+            // For cross-chain transfers
+            if (PayToScriptHashTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                return;
+
+            // For cross-chain transfers
+            if (PayToMultiSigTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                return;
+
+            // For cross-chain transfers
+            if (TxNullDataTemplate.Instance.CheckScriptPubKey(output.ScriptPubKey))
+                return;
+
+            new ConsensusError("disallowed-output-script", "Only the following script types are allowed on smart contracts network: P2PKH, P2SH, P2MultiSig, OP_RETURN and smart contracts").Throw();
         }
 
         private void CheckInput(TxIn input)
@@ -77,7 +89,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (PayToPubkeyTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
                 return;
 
-            new ConsensusError("disallowed-input-script", "Only P2PKH and smart contract scripts are allowed.").Throw();
+            if (PayToScriptHashTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
+                return;
+
+            // For cross-chain transfers
+            if (PayToMultiSigTemplate.Instance.CheckScriptSig(this.Parent.Network, input.ScriptSig, null))
+                return;
+
+            new ConsensusError("disallowed-input-script", "Only the following script types are allowed on smart contracts network: P2PKH, P2SH, P2MultiSig, OP_RETURN and smart contracts").Throw();
         }
     }
 }

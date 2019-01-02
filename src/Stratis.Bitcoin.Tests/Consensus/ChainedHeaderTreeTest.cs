@@ -1361,22 +1361,25 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void ChainOfHeaders_CallPartialValidationSucceededOnBlockBeyondConsensusTip_FullValidationIsRequired()
         {
             // Chain header tree setup.
-            const int initialChainSize = 1;
-            TestContext testContext = new TestContextBuilder().WithInitialChain(initialChainSize).Build();
-            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
-            ChainedHeader initialChainTip = testContext.InitialChainTip;
+            TestContext testContext = new TestContextBuilder().Build();
 
-            const int chainExtension = 1;
-            ChainedHeader chainTip = testContext.ExtendAChain(chainExtension, initialChainTip);
+            var initialTip = testContext.ExtendAChain(1);
+
+            ChainedHeaderTree chainedHeaderTree = testContext.ChainedHeaderTree;
+            chainedHeaderTree.Initialize(initialTip);
+
+            ChainedHeader chainTip = testContext.ExtendAChain(1, initialTip);
             List<BlockHeader> listOfChainHeaders = testContext.ChainedHeaderToList(chainTip, 1);
 
             // Chain is 2 blocks long: h1=h2.
-            chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+            ConnectNewHeadersResult result = chainedHeaderTree.ConnectNewHeaders(1, listOfChainHeaders);
+            result.Consumed.Block = chainTip.Block;
+            Assert.NotNull(result.Consumed.Block);
 
             // Call PartialValidationSucceeded on h2.
-            chainedHeaderTree.PartialValidationSucceeded(chainTip, out bool fullValidationRequired);
+            chainedHeaderTree.PartialValidationSucceeded(result.Consumed, out bool fullValidationRequired);
 
-            chainTip.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
+            result.Consumed.BlockValidationState.Should().Be(ValidationState.PartiallyValidated);
 
             fullValidationRequired.Should().BeTrue();
         }

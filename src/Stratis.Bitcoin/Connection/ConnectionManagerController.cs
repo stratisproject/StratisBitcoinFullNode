@@ -110,13 +110,13 @@ namespace Stratis.Bitcoin.Connection
                         Address = peer.RemoteSocketEndpoint.ToString()
                     };
 
-                    if (peer.MyVersion != null)
+                    if (peer.PeerVersion != null)
                     {
-                        peerNode.LocalAddress = peer.MyVersion.AddressReceiver?.ToString();
-                        peerNode.Services = ((ulong)peer.MyVersion.Services).ToString("X");
-                        peerNode.Version = (uint)peer.MyVersion.Version;
-                        peerNode.SubVersion = peer.MyVersion.UserAgent;
-                        peerNode.StartingHeight = peer.MyVersion.StartHeight;
+                        peerNode.LocalAddress = peer.PeerVersion.AddressReceiver?.ToString();
+                        peerNode.Services = ((ulong)peer.PeerVersion.Services).ToString("X");
+                        peerNode.Version = (uint)peer.PeerVersion.Version;
+                        peerNode.SubVersion = peer.PeerVersion.UserAgent;
+                        peerNode.StartingHeight = peer.PeerVersion.StartHeight;
                     }
 
                     var connectionManagerBehavior = peer.Behavior<IConnectionManagerBehavior>();

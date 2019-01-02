@@ -18,24 +18,25 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken));
 
         /// <summary>
-        /// Persists changes to the coinview (with the tip hash <paramref name="oldBlockHash"/>) when a new block
-        /// (hash <paramref name="nextBlockHash"/>) is added and becomes the new tip of the coinview.
+        /// Persists changes to the coinview (with the tip hash <paramref name="oldBlockHash" />) when a new block
+        /// (hash <paramref name="nextBlockHash" />) is added and becomes the new tip of the coinview.
         /// <para>
-        /// This method is provided (in <paramref name="unspentOutputs"/> parameter) with information about all
+        /// This method is provided (in <paramref name="unspentOutputs" /> parameter) with information about all
         /// transactions that are either new or were changed in the new block. It is also provided with information
-        /// (in <see cref="originalOutputs"/>) about the previous state of those transactions (if any),
-        /// which is used for <see cref="RewindAsync"/> operation.
+        /// (in <see cref="originalOutputs" />) about the previous state of those transactions (if any),
+        /// which is used for <see cref="RewindAsync" /> operation.
         /// </para>
         /// </summary>
         /// <param name="unspentOutputs">Information about the changes between the old block and the new block. An item in this list represents a list of all outputs
         /// for a specific transaction. If a specific output was spent, the output is <c>null</c>.</param>
-        /// <param name="originalOutputs">Information about the previous state of outputs of transactions inside <paramref name="unspentOutputs"/>. If an item here is <c>null</c>,
+        /// <param name="originalOutputs">Information about the previous state of outputs of transactions inside <paramref name="unspentOutputs" />. If an item here is <c>null</c>,
         /// it means that the ouputs are newly created in the new block. If it is not <c>null</c>, it holds information about which outputs of the transaction were previously spent
         /// and which were not.</param>
         /// <param name="oldBlockHash">Block hash of the current tip of the coinview.</param>
         /// <param name="nextBlockHash">Block hash of the tip of the coinview after the change is applied.</param>
+        /// <param name="height">The height of the block.</param>
         /// <param name="rewindDataList">List of rewind data items to be persisted. This should only be used when calling <see cref="DBreezeCoinView.SaveChangesAsync" />.</param>
-        Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, List<RewindData> rewindDataList = null);
+        Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null);
 
         /// <summary>
         /// Obtains information about unspent outputs for specific transactions and also retrieves information about the coinview's tip.
@@ -59,5 +60,11 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// </summary>
         /// <returns>Hash of the block header which is now the tip of the rewound coinview.</returns>
         Task<uint256> RewindAsync();
+
+        /// <summary>
+        /// Gets the rewind data by block height.
+        /// </summary>
+        /// <param name="height">The height of the block.</param>
+        Task<RewindData> GetRewindData(int height);
     }
 }
