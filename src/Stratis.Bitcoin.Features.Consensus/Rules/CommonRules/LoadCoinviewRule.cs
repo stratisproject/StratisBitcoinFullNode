@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // unless the coinview treashold is reached.
             this.Logger.LogTrace("Saving coinview changes.");
             var utxoRuleContext = context as UtxoRuleContext;
-            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(this.PowParent.UtxoSet), null, oldBlockHash, nextBlockHash, height).ConfigureAwait(false);
+            await this.PowParent.UtxoSet.SaveChangesAsync(utxoRuleContext.UnspentOutputSet.GetCoins(), null, oldBlockHash, nextBlockHash, height).ConfigureAwait(false);
 
             // Use the default flush condition to decide if flush is required (currently set to every 60 seconds)
             if (this.PowParent.UtxoSet is CachedCoinView cachedCoinView)

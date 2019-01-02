@@ -11,7 +11,6 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.RPC.Controllers;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
@@ -693,7 +692,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 return null;
             }
 
-            public INetworkPeer FindByIp(IPAddress ip)
+            public List<INetworkPeer> FindByIp(IPAddress ip)
             {
                 return null;
             }

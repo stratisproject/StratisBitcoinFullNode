@@ -63,34 +63,28 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Specification of network services that the peer must provide.</summary>
         public NetworkPeerServices RequiredServices { get; set; }
 
-        /// <summary><c>true</c> to require the peer to support SPV, <c>false</c> otherwise.</summary>
-        public bool SupportSPV { get; set; }
-
         /// <summary>
         /// Checks a version payload from a peer against the requirements.
         /// </summary>
         /// <param name="version">Version payload to check.</param>
+        /// <param name="reason">The reason the check failed.</param>
         /// <returns><c>true</c> if the version payload satisfies the protocol requirements, <c>false</c> otherwise.</returns>
-        public virtual bool Check(VersionPayload version)
+        public virtual bool Check(VersionPayload version, out string reason)
         {
+            reason = string.Empty;
             if (this.MinVersion != null)
             {
                 if (version.Version < this.MinVersion.Value)
+                {
+                    reason = "peer version is too low";
                     return false;
+                }
             }
 
             if ((this.RequiredServices & version.Services) != this.RequiredServices)
             {
+                reason = "network service not supported";
                 return false;
-            }
-
-            if (this.SupportSPV)
-            {
-                if (version.Version < ProtocolVersion.MEMPOOL_GD_VERSION)
-                    return false;
-
-                if ((ProtocolVersion.NO_BLOOM_VERSION <= version.Version) && ((version.Services & NetworkPeerServices.NODE_BLOOM) == 0))
-                    return false;
             }
 
             return true;
@@ -255,6 +249,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
         private readonly Action<IPEndPoint, Payload> onSendingMessage;
 
+        /// <summary>A queue for sending payload messages to peers.</summary>
+        private readonly AsyncQueue<Payload> asyncQueue;
+
         /// <summary>
         /// Initializes parts of the object that are common for both inbound and outbound peers.
         /// </summary>
@@ -301,6 +298,8 @@ namespace Stratis.Bitcoin.P2P.Peer
             this.StateChanged = new AsyncExecutionEvent<INetworkPeer, NetworkPeerState>();
             this.onDisconnected = onDisconnected;
             this.onSendingMessage = onSendingMessage;
+
+            this.asyncQueue = new AsyncQueue<Payload>(this.SendMessageHandledAsync);
         }
 
         /// <summary>
@@ -534,7 +533,9 @@ namespace Stratis.Bitcoin.P2P.Peer
             switch (this.State)
             {
                 case NetworkPeerState.Connected:
-                    if (this.Inbound) await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
+                    if (this.Inbound)
+                        await this.ProcessInitialVersionPayloadAsync(version, cancellation).ConfigureAwait(false);
+
                     break;
 
                 case NetworkPeerState.HandShaked:
@@ -632,6 +633,42 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
+        public void SendMessage(Payload payload)
+        {
+            Guard.NotNull(payload, nameof(payload));
+
+            if (!this.IsConnected)
+            {
+                this.logger.LogTrace("(-)[NOT_CONNECTED]");
+                throw new OperationCanceledException("The peer has been disconnected");
+            }
+
+            this.asyncQueue.Enqueue(payload);
+        }
+
+        /// <summary>
+        /// This is used by the asyncQueue to send payloads messages to peers under a separate thread.
+        /// If a message is sent inside the state change even and the send fails this could cause a deadlock,
+        /// to avoid that if there is any danger of a deadlock it better to use the SendMessage method and go via the queue.
+        /// </summary>
+        private async Task SendMessageHandledAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
+        {
+            try
+            {
+                await this.SendMessageAsync(payload, cancellation);
+            }
+            catch (OperationCanceledException)
+            {
+                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerEndPoint);
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogError("Exception occurred while connecting to peer '{0}': {1}", this.PeerEndPoint, ex is SocketException ? ex.Message : ex.ToString());
+                throw;
+            }
+        }
+
+        /// <inheritdoc/>
         public async Task SendMessageAsync(Payload payload, CancellationToken cancellation = default(CancellationToken))
         {
             Guard.NotNull(payload, nameof(payload));
@@ -692,10 +729,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 return;
                             }
 
-                            if (!requirements.Check(versionPayload))
+                            if (!requirements.Check(versionPayload, out string reason))
                             {
                                 this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
-                                this.Disconnect("The peer does not support the required services requirement");
+                                this.Disconnect("The peer does not support the required services requirement, reason: " + reason);
                                 return;
                             }
 
@@ -833,6 +870,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
+            this.asyncQueue.Dispose();
             this.Connection.Dispose();
 
             this.MessageReceived.Dispose();

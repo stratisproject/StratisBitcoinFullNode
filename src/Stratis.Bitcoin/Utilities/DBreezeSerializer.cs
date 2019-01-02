@@ -11,24 +11,19 @@ namespace Stratis.Bitcoin.Utilities
     /// </summary>
     public class DBreezeSerializer
     {
-        public Network Network { get; private set; }
-
-        /// <summary>
-        /// Initializes custom serializers for DBreeze engine.
-        /// </summary>
-        public void Initialize(Network network)
+        public DBreezeSerializer(Network network)
         {
             this.Network = network;
-            CustomSerializator.ByteArraySerializator = this.Serializer;
-            CustomSerializator.ByteArrayDeSerializator = this.Deserializer;
         }
+
+        public Network Network { get; }
 
         /// <summary>
         /// Serializes object to a binary data format.
         /// </summary>
         /// <param name="obj">Object to be serialized.</param>
         /// <returns>Binary data representing the serialized object.</returns>
-        internal byte[] Serializer(object obj)
+        public byte[] Serialize(object obj)
         {
             var serializable = obj as IBitcoinSerializable;
             if (serializable != null)
@@ -53,7 +48,7 @@ namespace Stratis.Bitcoin.Utilities
                 int itemIndex = 0;
                 foreach (object arrayObject in arr)
                 {
-                    byte[] serializedObject = this.Serializer(arrayObject);
+                    byte[] serializedObject = this.Serialize(arrayObject);
                     serializedItems[itemIndex] = serializedObject;
                     itemIndex++;
                 }
@@ -83,13 +78,18 @@ namespace Stratis.Bitcoin.Utilities
             return res;
         }
 
+        public T Deserialize<T>(byte[] bytes)
+        {
+            return (T) this.Deserialize(bytes, typeof(T));
+        }
+
         /// <summary>
         /// Deserializes binary data to an object of specific type.
         /// </summary>
         /// <param name="bytes">Binary data representing a serialized object.</param>
         /// <param name="type">Type of the serialized object.</param>
         /// <returns>Deserialized object.</returns>
-        internal object Deserializer(byte[] bytes, Type type)
+        public object Deserialize(byte[] bytes, Type type)
         {
             if (type == typeof(Coins))
             {

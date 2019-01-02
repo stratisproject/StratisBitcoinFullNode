@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         {
         }
 
-        public HeadersPayload(params BlockHeader[] headers)
+        public HeadersPayload(IEnumerable<BlockHeader> headers)
         {
             this.Headers.AddRange(headers);
         }

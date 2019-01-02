@@ -16,10 +16,12 @@ namespace Stratis.Bitcoin.IntegrationTests
     public class NodeSyncTests
     {
         private readonly Network powNetwork;
+        private readonly Network posNetwork;
 
         public NodeSyncTests()
         {
             this.powNetwork = new BitcoinRegTest();
+            this.posNetwork = new StratisRegTest();
         }
 
         private class StratisRegTestMaxReorg : StratisRegTest
@@ -64,7 +66,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void NodesCanConnectToEachOthers()
+        public void Pow_NodesCanConnectToEachOthers()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -88,7 +90,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanStratisSyncFromCore()
+        public void Pow_CanStratisSyncFromCore()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -106,7 +108,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanStratisSyncFromStratis()
+        public void Pow_CanStratisSyncFromStratis()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -129,7 +131,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         [Fact]
-        public void CanCoreSyncFromStratis()
+        public void Pow_CanCoreSyncFromStratis()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -149,16 +151,16 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
+        [Fact]
         [Trait("Unstable", "True")]
-        public void Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
+        public void Pos_Given_NodesAreSynced_When_ABigReorgHappens_Then_TheReorgIsIgnored()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var stratisRegTestMaxReorg = new StratisRegTestMaxReorg();
-                CoreNode stratisMiner = builder.CreateStratisPosNode(stratisRegTestMaxReorg).WithDummyWallet().Start();
-                CoreNode stratisSyncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg).Start();
-                CoreNode stratisReorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg).WithDummyWallet().Start();
+                CoreNode stratisMiner = builder.CreateStratisPosNode(stratisRegTestMaxReorg, nameof(stratisMiner)).WithDummyWallet().Start();
+                CoreNode stratisSyncer = builder.CreateStratisPosNode(stratisRegTestMaxReorg, nameof(stratisSyncer)).Start();
+                CoreNode stratisReorg = builder.CreateStratisPosNode(stratisRegTestMaxReorg, nameof(stratisReorg)).WithDummyWallet().Start();
 
                 TestHelper.MineBlocks(stratisMiner, 1);
 
@@ -173,7 +175,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(stratisMiner, 11);
                 TestHelper.MineBlocks(stratisReorg, 12);
 
-                // make sure the nodes are actually on different chains.
+                // Make sure the nodes are actually on different chains.
                 Assert.NotEqual(stratisMiner.FullNode.Chain.GetBlock(2).HashBlock, stratisReorg.FullNode.Chain.GetBlock(2).HashBlock);
 
                 TestHelper.ConnectAndSync(stratisSyncer, stratisMiner);
@@ -211,7 +213,8 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </summary>
         /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
         [Fact]
-        public void PullerVsMinerRaceCondition()
+        [Trait("Unstable", "True")]
+        public void Pos_PullerVsMinerRaceCondition()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -262,9 +265,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// </para>
         /// </summary>
         [Fact]
-        public void MiningNodeWithOneConnection_AlwaysSynced()
+        public void Pow_MiningNodeWithOneConnection_AlwaysSynced()
         {
-            string testFolderPath = Path.Combine(this.GetType().Name, nameof(MiningNodeWithOneConnection_AlwaysSynced));
+            string testFolderPath = Path.Combine(this.GetType().Name, nameof(Pow_MiningNodeWithOneConnection_AlwaysSynced));
 
             using (NodeBuilder nodeBuilder = NodeBuilder.Create(testFolderPath))
             {
@@ -299,6 +302,36 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(connectorNode, 1);
 
                 TestHelper.WaitForNodeToSync(nodes.ToArray());
+            }
+        }
+
+        [Fact]
+        [Trait("Unstable", "True")]
+        public void Pos_NodesCanConnect_AndSync_AndMineBlocks()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
+                var minerB = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
+                var syncer = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
+
+                // MinerA mines to height 1.
+                TestHelper.MineBlocks(minerA, 1);
+
+                // Sync the network to height 1.
+                TestHelper.ConnectAndSync(syncer, minerA);
+
+                // MinerA mines to height 2.
+                TestHelper.MineBlocks(minerA, 1);
+
+                // Sync minerB to height 2.
+                TestHelper.ConnectAndSync(syncer, minerB);
+
+                // MinerB mines to height 3.
+                TestHelper.MineBlocks(minerB, 1);
+
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
             }
         }
     }

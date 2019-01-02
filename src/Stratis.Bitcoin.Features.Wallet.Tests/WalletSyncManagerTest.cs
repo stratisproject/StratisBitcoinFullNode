@@ -41,7 +41,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Start_HavingPrunedStoreSetting_ThrowsWalletException()
         {
-            this.storeSettings.Prune = true;
+            this.storeSettings.AmountOfBlocksToKeep = 1;
+            this.storeSettings.PruningEnabled = true;
 
             var walletSyncManager = new WalletSyncManager(this.LoggerFactory.Object, this.walletManager.Object, this.chain, KnownNetworks.StratisMain,
                 this.blockStore.Object, this.storeSettings, this.nodeLifetime.Object);
@@ -55,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Start_BlockOnChain_DoesNotReorgWalletManager()
         {
-            this.storeSettings.Prune = false;
+            this.storeSettings.AmountOfBlocksToKeep = 0;
             this.chain = WalletTestsHelpers.PrepareChainWithBlock();
             this.walletManager.Setup(w => w.WalletTipHash)
                 .Returns(this.chain.Tip.Header.GetHash());
@@ -72,7 +73,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         [Fact]
         public void Start_BlockNotChain_ReorgsWalletManagerUsingWallet()
         {
-            this.storeSettings.Prune = false;
+            this.storeSettings.AmountOfBlocksToKeep = 0;
             this.chain = WalletTestsHelpers.GenerateChainWithHeight(5, KnownNetworks.StratisMain);
             this.walletManager.SetupGet(w => w.WalletTipHash)
                 .Returns(new uint256(125)); // try to load non-existing block to get chain to return null.

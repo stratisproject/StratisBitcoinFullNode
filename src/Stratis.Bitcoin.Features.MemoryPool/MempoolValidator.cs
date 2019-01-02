@@ -713,7 +713,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     context.State.MissingInputs = true;
                     this.logger.LogTrace("(-)[FAIL_MISSING_INPUTS]");
-                    context.State.Fail(new MempoolError()).Throw(); // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
+                    context.State.Fail(MempoolErrors.MissingInputs).Throw(); // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
                 }
             }
 

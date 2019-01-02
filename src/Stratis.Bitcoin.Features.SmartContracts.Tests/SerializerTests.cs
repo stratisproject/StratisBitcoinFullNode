@@ -1,7 +1,7 @@
 ﻿using System;
 using Moq;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

@@ -12,6 +12,7 @@ namespace Stratis.Bitcoin.Tests.Common
     public class TestBase
     {
         public Network Network { get; protected set; }
+        public DBreezeSerializer DBreezeSerializer { get; }
 
         /// <summary>
         /// Initializes logger factory for inherited tests.
@@ -19,8 +20,7 @@ namespace Stratis.Bitcoin.Tests.Common
         public TestBase(Network network)
         {
             this.Network = network;
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.Network);
+            this.DBreezeSerializer = new DBreezeSerializer(network);
         }
 
         public static string AssureEmptyDir(string dir)
@@ -122,6 +122,7 @@ namespace Stratis.Bitcoin.Tests.Common
             {
                 Transaction trx = this.Network.CreateTransaction();
 
+                // Coinbase
                 block.AddTransaction(this.Network.CreateTransaction());
 
                 trx.AddInput(new TxIn(Script.Empty));
@@ -140,17 +141,35 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public ProvenBlockHeader CreateNewProvenBlockHeaderMock(PosBlock posBlock = null)
         {
-            PosBlock block = posBlock == null ? CreatePosBlockMock() : posBlock;
+            PosBlock block = posBlock == null ? CreatePosBlock() : posBlock;
             ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
             return provenBlockHeader;
         }
 
-        public PosBlock CreatePosBlockMock()
+        /// <summary>
+        /// Creates a list of Proof of Stake blocks.
+        /// </summary>
+        /// <param name="amount">The amount of blocks to create.</param>
+        public List<Block> CreatePosBlocks(int amount)
+        {
+            var blocks = new List<Block>();
+            for (int i = 0; i < amount; i++)
+            {
+                PosBlock block = this.CreatePosBlock();
+                block.Header.HashPrevBlock = blocks.LastOrDefault()?.GetHash() ?? this.Network.GenesisHash;
+                blocks.Add(block);
+            }
+
+            return blocks;
+        }
+
+        public PosBlock CreatePosBlock()
         {
             // Create coinstake Tx.
             Transaction previousTx = this.Network.CreateTransaction();
             previousTx.AddOutput(new TxOut());
+
             Transaction coinstakeTx = this.Network.CreateTransaction();
             coinstakeTx.AddOutput(new TxOut(0, Script.Empty));
             coinstakeTx.AddOutput(new TxOut(50, new Script()));
@@ -173,40 +192,69 @@ namespace Stratis.Bitcoin.Tests.Common
             return block;
         }
 
-        public (ChainedHeader chainedHeader, List<ProvenBlockHeader> provenBlockHeaders) BuildChainWithProvenHeaders(int blockCount, Network network, bool addNext = false)
+        /// <summary>
+        /// Builds a chain of proven headers.
+        /// </summary>
+        /// <param name="blockCount">The amount of blocks to chain.</param>
+        /// <returns>Tip of a created chain of headers.</returns>
+        public ChainedHeader BuildProvenHeaderChain(int blockCount)
         {
-            Guard.Assert(blockCount > 0);
+            ChainedHeader currentHeader = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
 
-            var provenBlockHeaders = new List<ProvenBlockHeader>();
-
-            ChainedHeader chainedHeader = null;
-            ChainedHeader previousChainHeader = null;
-
-            for (int i = 0; i < blockCount; i++)
+            for (int i = 1; i < blockCount; i++)
             {
-                PosBlock block = CreatePosBlockMock();
+                PosBlock block = this.CreatePosBlock();
                 ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
                 header.Nonce = RandomUtils.GetUInt32();
-                header.HashPrevBlock = i > 0 ? chainedHeader.HashBlock : null;
+                header.HashPrevBlock = currentHeader.HashBlock;
                 header.Bits = Target.Difficulty1;
 
-                chainedHeader = new ChainedHeader(header, header.GetHash(), i);
+                ChainedHeader prevHeader = currentHeader;
+                currentHeader = new ChainedHeader(header, header.GetHash(), i);
 
-                if (previousChainHeader != null)
-                {
-                    chainedHeader.SetPrivatePropertyValue("Previous", previousChainHeader);
-
-                    if (addNext)
-                        chainedHeader.Previous.Next.Add(chainedHeader);
-                }
-
-                previousChainHeader = chainedHeader;
-
-                provenBlockHeaders.Add(header);
+                currentHeader.SetPrivatePropertyValue("Previous", prevHeader);
+                prevHeader.Next.Add(currentHeader);
             }
 
-            return (chainedHeader, provenBlockHeaders);
+            return currentHeader;
+        }
+
+        public ChainedHeader BuildProvenHeaderChainFromBlocks(List<Block> posBlocks)
+        {
+            ChainedHeader currentHeader = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
+
+            foreach (PosBlock posBlock in posBlocks)
+            {
+                ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(posBlock);
+
+                header.Nonce = RandomUtils.GetUInt32();
+                header.HashPrevBlock = currentHeader.HashBlock;
+                header.Bits = Target.Difficulty1;
+
+                ChainedHeader prevHeader = currentHeader;
+                currentHeader = new ChainedHeader(header, header.GetHash(), prevHeader);
+
+                prevHeader.Next.Add(currentHeader);
+            }
+
+            return currentHeader;
+        }
+
+        public SortedDictionary<int, ProvenBlockHeader> ConvertToDictionaryOfProvenHeaders(ChainedHeader tip)
+        {
+            var headers = new SortedDictionary<int, ProvenBlockHeader>();
+
+            ChainedHeader currentHeader = tip;
+
+            while (currentHeader.Height != 0)
+            {
+                headers.Add(currentHeader.Height, currentHeader.Header as ProvenBlockHeader);
+
+                currentHeader = currentHeader.Previous;
+            }
+
+            return headers;
         }
     }
 }

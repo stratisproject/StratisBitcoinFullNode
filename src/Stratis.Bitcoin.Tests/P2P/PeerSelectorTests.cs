@@ -541,7 +541,7 @@ namespace Stratis.Bitcoin.Tests.P2P
         }
 
         /// <summary>
-        /// Ensures that a particular peer is returned from the attempted peers 
+        /// Ensures that a particular peer is returned from the attempted peers
         /// set and ignores banned peers.
         /// <para>
         /// Scenario:
@@ -742,7 +742,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             Assert.Equal(otherPeerAddress, peers.Single());
 
-            // Note: This for loop is because Random is currently a hard dependency rather than using dependency inversion. 
+            // Note: This for loop is because Random is currently a hard dependency rather than using dependency inversion.
             // It is not 100% safe without mocking random, so a workaround of 20 attempts used for now.
             for (int i = 0; i < 20; i++)
             {
@@ -761,7 +761,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
             DateTime handshakeAttempt = DateTime.UtcNow.AddSeconds(-80);
 
-            PeerAddress peer = peerAddressManager.Peers[0];
+            PeerAddress peer = peerAddressManager.Peers.First();
 
             // Peer selected after one handshake failure.
             peer.SetHandshakeAttempted(handshakeAttempt);
@@ -790,7 +790,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
             DateTime handshakeAttempt = DateTime.UtcNow.AddSeconds(-80);
 
-            PeerAddress peer = peerAddressManager.Peers[0];
+            PeerAddress peer = peerAddressManager.Peers.First();
 
             // Peer selected after one handshake failure.
             peer.SetHandshakeAttempted(handshakeAttempt.AddHours(-(PeerAddress.AttempThresholdHours + 4)));
@@ -819,7 +819,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
             DateTime handshakeAttempt = DateTime.UtcNow.AddSeconds(-80);
 
-            PeerAddress peer = peerAddressManager.Peers[0];
+            PeerAddress peer = peerAddressManager.Peers.First();
 
             // Peer selected after one handshake failure.
             peer.SetHandshakeAttempted(handshakeAttempt);
@@ -848,7 +848,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             peerAddressManager.PeerConnected(new IPEndPoint(ipAddress, 80), DateTime.UtcNow.AddSeconds(-80));
             DateTime firstHandshakeAttemptTime = DateTime.UtcNow.AddSeconds(-80);
 
-            PeerAddress peer = peerAddressManager.Peers[0];
+            PeerAddress peer = peerAddressManager.Peers.First();
 
             // Peer selected after one handshake failure.
             peer.SetHandshakeAttempted(firstHandshakeAttemptTime);

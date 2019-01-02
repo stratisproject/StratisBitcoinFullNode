@@ -225,6 +225,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         public string OpReturnData { get; set; }
 
+        [MoneyFormat(isRequired: false, ErrorMessage = "The op return amount is not in the correct format.")]
+        public string OpReturnAmount { get; set; }
+
         /// <inheritdoc />
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
         {

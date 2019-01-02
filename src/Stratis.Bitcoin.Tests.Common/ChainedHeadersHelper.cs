@@ -58,5 +58,11 @@ namespace Stratis.Bitcoin.Tests.Common
         {
             return new ChainedHeader(KnownNetworks.StratisMain.GetGenesis().Header, KnownNetworks.StratisMain.GenesisHash, 0);
         }
+
+        /// <summary>Creates genesis header for provided network.</summary>
+        public static ChainedHeader CreateGenesisChainedHeader(Network network)
+        {
+            return new ChainedHeader(network.GetGenesis().Header, network.GenesisHash, 0);
+        }
     }
 }

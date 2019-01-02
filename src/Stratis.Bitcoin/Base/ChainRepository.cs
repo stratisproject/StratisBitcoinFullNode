@@ -24,6 +24,8 @@ namespace Stratis.Bitcoin.Base
 
     public class ChainRepository : IChainRepository
     {
+        private readonly DBreezeSerializer dBreezeSerializer;
+
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -32,8 +34,9 @@ namespace Stratis.Bitcoin.Base
 
         private BlockLocator locator;
 
-        public ChainRepository(string folder, ILoggerFactory loggerFactory)
+        public ChainRepository(string folder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
         {
+            this.dBreezeSerializer = dBreezeSerializer;
             Guard.NotEmpty(folder, nameof(folder));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
 
@@ -43,8 +46,8 @@ namespace Stratis.Bitcoin.Base
             this.dbreeze = new DBreezeEngine(folder);
         }
 
-        public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory)
-            : this(dataFolder.ChainPath, loggerFactory)
+        public ChainRepository(DataFolder dataFolder, ILoggerFactory loggerFactory, DBreezeSerializer dBreezeSerializer)
+            : this(dataFolder.ChainPath, loggerFactory, dBreezeSerializer)
         {
         }
 
@@ -57,21 +60,22 @@ namespace Stratis.Bitcoin.Base
                 {
                     transaction.ValuesLazyLoadingIsOn = false;
                     ChainedHeader tip = null;
-                    Row<int, BlockHeader> firstRow = transaction.Select<int, BlockHeader>("Chain", 0);
+                    Row<int, byte[]> firstRow = transaction.Select<int, byte[]>("Chain", 0);
 
                     if (!firstRow.Exists)
                         return genesisHeader;
 
-                    BlockHeader previousHeader = firstRow.Value;
+                    BlockHeader previousHeader = this.dBreezeSerializer.Deserialize<BlockHeader>(firstRow.Value);
                     Guard.Assert(previousHeader.GetHash() == genesisHeader.HashBlock); // can't swap networks
 
-                    foreach (Row<int, BlockHeader> row in transaction.SelectForwardSkip<int, BlockHeader>("Chain", 1))
+                    foreach (Row<int, byte[]> row in transaction.SelectForwardSkip<int, byte[]>("Chain", 1))
                     {
                         if ((tip != null) && (previousHeader.HashPrevBlock != tip.HashBlock))
                             break;
 
-                        tip = new ChainedHeader(previousHeader, row.Value.HashPrevBlock, tip);
-                        previousHeader = row.Value;
+                        BlockHeader blockHeader = this.dBreezeSerializer.Deserialize<BlockHeader>(row.Value);
+                        tip = new ChainedHeader(previousHeader, blockHeader.HashPrevBlock, tip);
+                        previousHeader = blockHeader;
                     }
 
                     if (previousHeader != null)
@@ -112,7 +116,22 @@ namespace Stratis.Bitcoin.Base
                     IOrderedEnumerable<ChainedHeader> orderedChainedHeaders = headers.OrderBy(b => b.Height);
                     foreach (ChainedHeader block in orderedChainedHeaders)
                     {
-                        transaction.Insert("Chain", block.Height, block.Header);
+                        BlockHeader header = block.Header;
+                        if (header is ProvenBlockHeader)
+                        {
+                            // copy the header parameters, untill we dont make PH a normal header we store it in its own repo.
+                            BlockHeader newHeader = chain.Network.Consensus.ConsensusFactory.CreateBlockHeader();
+                            newHeader.Bits = header.Bits;
+                            newHeader.Time = header.Time;
+                            newHeader.Nonce = header.Nonce;
+                            newHeader.Version = header.Version;
+                            newHeader.HashMerkleRoot = header.HashMerkleRoot;
+                            newHeader.HashPrevBlock = header.HashPrevBlock;
+
+                            header = newHeader;
+                        }
+
+                        transaction.Insert("Chain", block.Height, this.dBreezeSerializer.Serialize(header));
                     }
 
                     this.locator = tip.GetLocator();

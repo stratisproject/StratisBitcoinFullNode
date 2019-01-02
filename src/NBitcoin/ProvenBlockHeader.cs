@@ -1,5 +1,4 @@
 ﻿using System;
-using NBitcoin.Crypto;
 
 namespace NBitcoin
 {
@@ -100,7 +99,7 @@ namespace NBitcoin
             this.Version = block.Header.Version;
 
             this.signature = block.BlockSignature;
-            this.coinstake = block.Transactions[1];
+            this.coinstake = block.GetProtocolTransaction();
             this.merkleProof = new MerkleBlock(block, new[] { this.coinstake.GetHash() }).PartialMerkleTree;
         }
 
@@ -108,14 +107,18 @@ namespace NBitcoin
         public override void ReadWrite(BitcoinStream stream)
         {
             base.ReadWrite(stream);
+            long prev = stream.ProcessedBytes;
+
             stream.ReadWrite(ref this.merkleProof);
-            this.MerkleProofSize = stream.ProcessedBytes - Size;
+            this.MerkleProofSize = stream.ProcessedBytes - prev;
 
+            prev = stream.ProcessedBytes;
             stream.ReadWrite(ref this.signature);
-            this.SignatureSize = stream.ProcessedBytes - Size - this.MerkleProofSize;
+            this.SignatureSize = stream.ProcessedBytes - prev;
 
+            prev = stream.ProcessedBytes;
             stream.ReadWrite(ref this.coinstake);
-            this.CoinstakeSize = stream.ProcessedBytes - Size - this.MerkleProofSize - this.SignatureSize;
+            this.CoinstakeSize = stream.ProcessedBytes - prev;
         }
 
         /// <inheritdoc />

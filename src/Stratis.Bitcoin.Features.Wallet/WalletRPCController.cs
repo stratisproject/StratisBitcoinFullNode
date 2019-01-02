@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
+using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -219,6 +220,45 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             return model;
+        }
+
+        [ActionName("listunspent")]
+        [ActionDescription("Returns an array of unspent transaction outputs belonging to this wallet.")]
+        public UnspentCoinModel[] ListUnspent(int minConfirmations = 1, int maxConfirmations = 9999999, string addressesJson = null)
+        {
+            List<BitcoinAddress> addresses = new List<BitcoinAddress>();
+            if (!string.IsNullOrEmpty(addressesJson))
+            {
+                JsonConvert.DeserializeObject<List<string>>(addressesJson).ForEach(i => addresses.Add(BitcoinAddress.Create(i, this.fullNode.Network)));
+            }
+            var accountReference = this.GetAccount();
+            IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(accountReference, minConfirmations);
+
+            var unspentCoins = new List<UnspentCoinModel>();
+            foreach (var spendableTx in spendableTransactions)
+            {               
+                if (spendableTx.Confirmations <= maxConfirmations)
+                {
+                    if (!addresses.Any() || addresses.Contains(BitcoinAddress.Create(spendableTx.Address.Address, this.fullNode.Network)))
+                    {
+                        unspentCoins.Add(new UnspentCoinModel()
+                        {
+                            Account = accountReference.AccountName,
+                            Address = spendableTx.Address.Address,
+                            Id = spendableTx.Transaction.Id,
+                            Index = spendableTx.Transaction.Index,
+                            Amount = spendableTx.Transaction.Amount,
+                            ScriptPubKeyHex = spendableTx.Transaction.ScriptPubKey.ToHex(),
+                            RedeemScriptHex = null, // TODO: Currently don't support P2SH wallet addresses, review if we do.
+                            Confirmations = spendableTx.Confirmations,
+                            IsSpendable = spendableTx.Transaction.IsSpendable(),
+                            IsSolvable = spendableTx.Transaction.IsSpendable() // If it's spendable we assume it's solvable.
+                            });
+                    }
+                }
+            }
+
+            return unspentCoins.ToArray();
         }
 
         private WalletAccountReference GetAccount()

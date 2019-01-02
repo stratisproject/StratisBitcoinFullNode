@@ -83,6 +83,25 @@ namespace Stratis.Bitcoin.Consensus
             return checkpoints.Count > 0 ? checkpoints.Keys.Last() : 0;
         }
 
+        /// <summary>
+        /// Gets the last checkpoint.
+        /// </summary>
+        /// <returns>Last <see cref="CheckpointInfo"/> or null.</returns>
+        public CheckpointInfo GetLastCheckpoint(out int height)
+        {
+            var checkpoints = this.GetCheckpoints();
+            if (checkpoints.Count == 0)
+            {
+                height = 0;
+                return null;
+            }
+            else
+            {
+                height = checkpoints.Keys.Max();
+                return checkpoints[height];
+            }
+        }
+
         /// <inheritdoc />
         public bool CheckHardened(int height, uint256 hash)
         {

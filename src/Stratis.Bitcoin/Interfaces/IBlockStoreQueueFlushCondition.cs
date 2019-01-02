@@ -8,7 +8,7 @@
         /// <summary>
         /// Should block store flush to disk.
         /// <para>
-        /// This is usually performed by checking <see cref="Base.IChainState.IsAtBestChainTip"/>.
+        /// If consensus tip in IBD or store tip is a distance of more then 5 blocks from consensus tip this will return <c>false</c>.
         /// </para>
         /// </summary>
         bool ShouldFlush { get; }

@@ -54,6 +54,7 @@
 
         public static readonly ConsensusError NonCoinstake = new ConsensusError("non-coinstake", "non-coinstake");
         public static readonly ConsensusError ReadTxPrevFailed = new ConsensusError("read-txPrev-failed", "read txPrev failed");
+        public static readonly ConsensusError ReadTxPrevFailedInsufficient = new ConsensusError("read-txPrev-failed-insufficient", "read txPrev failed insufficient information");
         public static readonly ConsensusError InvalidStakeDepth = new ConsensusError("invalid-stake-depth", "tried to stake at depth");
         public static readonly ConsensusError StakeTimeViolation = new ConsensusError("stake-time-violation", "stake time violation");
         public static readonly ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");
@@ -80,6 +81,8 @@
         public static readonly ConsensusError BadProvenHeaderSignatureSize = new ConsensusError("proven-header-signature-size", "proven header's signature size must be less than 80 bytes");
         public static readonly ConsensusError BadTransactionCoinstakeSpending = new ConsensusError("bad-txns-spend-of-coinstake", "coinstake is already spent");
         public static readonly ConsensusError UtxoNotFoundInRewindData = new ConsensusError("utxo-not-found-in-rewind-data", "utxo not found in rewind data");
+        public static readonly ConsensusError InvalidPreviousProvenHeader = new ConsensusError("proven-header-invalid-previous-header", "previous header in chain is expected to be of proven header type");
+        public static readonly ConsensusError InvalidPreviousProvenHeaderStakeModifier = new ConsensusError("proven-header-invalid-previous-header-stack-modifier", "previous proven header's StackModifier is null");
 
         public static readonly ConsensusError BadColdstakeAmount = new ConsensusError("bad-coldstake-amount", "coldstake is negative");
         public static readonly ConsensusError BadColdstakeInputs = new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");

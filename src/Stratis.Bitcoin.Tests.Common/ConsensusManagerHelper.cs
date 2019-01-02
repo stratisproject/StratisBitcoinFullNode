@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Tests.Common
             IRuleRegistration ruleRegistration = null,
             ConsensusRuleEngine consensusRules = null)
         {
-            string[] param = dataDir == null ? new string[]{} : new string[] { $"-datadir={dataDir}" };
+            string[] param = dataDir == null ? new string[] { } : new string[] { $"-datadir={dataDir}" };
 
             var nodeSettings = new NodeSettings(network, args: param);
 

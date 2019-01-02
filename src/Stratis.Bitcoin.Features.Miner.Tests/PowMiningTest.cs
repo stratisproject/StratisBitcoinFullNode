@@ -36,7 +36,6 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private readonly MinerSettings minerSettings;
         private readonly Network network;
         private readonly Mock<INodeLifetime> nodeLifetime;
-
         public PowMiningTest(PowMiningTestFixture fixture)
         {
             this.fixture = fixture;
@@ -342,7 +341,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
 
             PowMining miner = this.CreateProofOfWorkMiner(blockBuilder.Object);
 
-            // We instruct pass GenerateBlocks to mine 2 valid blocks i.e. it will stop once it has 
+            // We instruct pass GenerateBlocks to mine 2 valid blocks i.e. it will stop once it has
             // mined 2 blocks that pass consensus.
             List<uint256> blockHashes = miner.GenerateBlocks(this.fixture.ReserveScript, 2, uint.MaxValue);
 

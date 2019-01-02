@@ -70,6 +70,11 @@ namespace Stratis.SmartContracts.Core.Receipts
         public bool Success { get; }
 
         /// <summary>
+        /// The result of the execution, serialized as a string.
+        /// </summary>
+        public string Result { get; }
+
+        /// <summary>
         /// If execution didn't complete successfully, the error will be stored here. 
         /// Could be an exception that occurred inside a contract or a message (e.g. method not found.)
         /// </summary>
@@ -80,17 +85,17 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// <summary>
         /// Creates receipt with both consensus and storage fields and generates bloom.
         /// </summary>
-        public Receipt(
-            uint256 postState,
+        public Receipt(uint256 postState,
             ulong gasUsed,
             Log[] logs,
             uint256 transactionHash,
-            uint160 from, 
-            uint160 to, 
+            uint160 from,
+            uint160 to,
             uint160 newContractAddress,
             bool success,
+            string result,
             string errorMessage) 
-            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success, errorMessage)
+            : this(postState, gasUsed, logs, BuildBloom(logs), transactionHash, null, from, to, newContractAddress, success, result, errorMessage)
         { }
 
         /// <summary>
@@ -100,7 +105,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint256 postState,
             ulong gasUsed,
             Log[] logs)
-            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false, null)
+            : this(postState, gasUsed, logs, BuildBloom(logs), null, null, null, null, null, false, null, null)
         { }
 
         /// <summary>
@@ -111,11 +116,10 @@ namespace Stratis.SmartContracts.Core.Receipts
             ulong gasUsed,
             Log[] logs,
             Bloom bloom) 
-            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false, null)
+            : this(postState, gasUsed, logs, bloom, null, null, null, null, null, false, null, null)
         { }
 
-        private Receipt(
-            uint256 postState,
+        private Receipt(uint256 postState,
             ulong gasUsed,
             Log[] logs,
             Bloom bloom,
@@ -125,6 +129,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             uint160 to,
             uint160 newContractAddress,
             bool success,
+            string result,
             string errorMessage)
         {
             this.PostState = postState;
@@ -137,6 +142,7 @@ namespace Stratis.SmartContracts.Core.Receipts
             this.To = to;
             this.NewContractAddress = newContractAddress;
             this.Success = success;
+            this.Result = result;
             this.ErrorMessage = errorMessage;
         }
 
@@ -225,7 +231,8 @@ namespace Stratis.SmartContracts.Core.Receipts
                 innerList[7].RLPData != null ? new uint160(innerList[7].RLPData) : null,
                 innerList[8].RLPData != null ? new uint160(innerList[8].RLPData) : null,
                 BitConverter.ToBoolean(innerList[9].RLPData),
-                innerList[10].RLPData != null ? Encoding.UTF8.GetString(innerList[10].RLPData) : null
+                innerList[10].RLPData != null ? Encoding.UTF8.GetString(innerList[10].RLPData) : null,
+                innerList[11].RLPData != null ? Encoding.UTF8.GetString(innerList[11].RLPData) : null
             );
 
             return receipt;
@@ -249,6 +256,7 @@ namespace Stratis.SmartContracts.Core.Receipts
                 RLP.EncodeElement(this.To?.ToBytes()),
                 RLP.EncodeElement(this.NewContractAddress?.ToBytes()),
                 RLP.EncodeElement(BitConverter.GetBytes(this.Success)),
+                RLP.EncodeElement(Encoding.UTF8.GetBytes(this.Result ?? "")),
                 RLP.EncodeElement(Encoding.UTF8.GetBytes(this.ErrorMessage ?? ""))
             );
         }

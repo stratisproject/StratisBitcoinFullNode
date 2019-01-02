@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.Networks
             this.Name = "StratisMain";
             this.Magic = magic;
             this.DefaultPort = 16178;
+            this.DefaultMaxOutboundConnections = 16;
+            this.DefaultMaxInboundConnections = 109;
             this.RPCPort = 16174;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
@@ -66,8 +68,7 @@ namespace Stratis.Bitcoin.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5,
-                provenHeadersActivationHeight: 20_000_000 // TODO: Set it to the real value once it is known.
+                maxStandardTxSigopsCost: 20_000 / 5
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -161,7 +162,8 @@ namespace Stratis.Bitcoin.Networks
                 { 700000, new CheckpointInfo(new uint256("0x782b2506bb67bb448ff56aa946f7aad6b63a6b27d8c5818725a56b568f25b9ce"), new uint256("0xf23dc64b130d80790a83a86913f619afaeef10e1fd24e4b42af9387ec935edd6")) },
                 { 750000, new CheckpointInfo(new uint256("0x4db98bd41a2f9ee845cc89ac03109686f615f4d0dcd81e0488005c1616fa692c"), new uint256("0x9f620af75bc27a0e4b503deaf7f052ba112a49bb74fb6446350642bc2ac9d93b")) },
                 { 800000, new CheckpointInfo(new uint256("0x161da1d97d35d6897dbdae110617bb839805f8b02d33ac23d227a87cacbfac78"), new uint256("0xe95049a313345f26bfa90094ceb6400f43359fc43fc5f1471918d98bc4ab3bac")) },
-                { 850000, new CheckpointInfo(new uint256("0xc3a249b01795b22858aa00fd0973471fcd769a14f4f9cf0abe6651ac3e6ade19"), new uint256("0x5de8766ed4cfcc3ce9d74f38196596c6f91b9ff62cbd20abbfa991dca54d2bd4")) }
+                { 850000, new CheckpointInfo(new uint256("0xc3a249b01795b22858aa00fd0973471fcd769a14f4f9cf0abe6651ac3e6ade19"), new uint256("0x5de8766ed4cfcc3ce9d74f38196596c6f91b9ff62cbd20abbfa991dca54d2bd4")) },
+                { 1000000, new CheckpointInfo(new uint256("0x3cdd812d9a7e249e7ad825cb372fbb0889f5b515a4a924a4aa3281d8e334d559"), new uint256("0x36a51839ceb5866b3251c9e5e0049a0209fe0b1861b2ada118fe00a8cacf62df")) }
             };
 
             var encoder = new Bech32Encoder("bc");
@@ -171,13 +173,13 @@ namespace Stratis.Bitcoin.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-                new DNSSeedData("seednode1.stratisplatform.com", "seednode1.stratisplatform.com"),
-                new DNSSeedData("seednode2.stratis.cloud", "seednode2.stratis.cloud"),
-                new DNSSeedData("seednode3.stratisplatform.com", "seednode3.stratisplatform.com"),
-                new DNSSeedData("seednode4.stratis.cloud", "seednode4.stratis.cloud")
+                new DNSSeedData("mainnet1.stratisplatform.com", "mainnet1.stratisplatform.com"),
+                new DNSSeedData("mainnet2.stratisnetwork.com", "mainnet2.stratisnetwork.com"),
+                new DNSSeedData("mainnet3.stratisplatform.com", "mainnet3.stratisplatform.com"),
+                new DNSSeedData("mainnet4.stratisnetwork.com", "mainnet4.stratisnetwork.com")
             };
 
-            string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79" };
+            string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79", "13.78.39.87", "23.102.35.247" };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));

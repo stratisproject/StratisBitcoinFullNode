@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Interfaces;
+﻿using Stratis.Bitcoin.Interfaces;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -10,7 +6,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     {
         public string GetVersion()
         {
-            return "0.11.0";
+            return "0.13.0";
         }
     }
 }

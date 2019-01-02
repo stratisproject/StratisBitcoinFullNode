@@ -2,6 +2,7 @@
 using Microsoft.Extensions.DependencyInjection;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -51,6 +52,27 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                             services.Remove(ibdService);
                             services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadStateMock>();
                         }
+                    });
+                }
+            });
+
+            return fullNodeBuilder;
+        }
+
+        public static IFullNodeBuilder UseTestChainedHeaderTree(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                foreach (IFeatureRegistration feature in features.FeatureRegistrations)
+                {
+                    feature.FeatureServices(services =>
+                    {
+                        // Get default CHT implementation and replace it with the test implementation.
+                        ServiceDescriptor cht = services.FirstOrDefault(x => x.ServiceType == typeof(IChainedHeaderTree));
+
+                        services.Remove(cht);
+                        services.AddSingleton<IChainedHeaderTree, TestChainedHeaderTree>()
+                            .AddSingleton<TestChainedHeaderTree>(provider => provider.GetService<IChainedHeaderTree>() as TestChainedHeaderTree);
                     });
                 }
             });
