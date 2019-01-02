@@ -65,6 +65,12 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="client">Initialized and possibly connected TCP client to the peer.</param>
         /// <param name="processMessageAsync">Callback to be called when a new message arrives from the peer.</param>
         NetworkPeerConnection CreateNetworkPeerConnection(INetworkPeer peer, TcpClient client, ProcessMessageAsync<IncomingMessage> processMessageAsync);
+
+        /// <summary>
+        /// Registers a callback that will be passed to all created peers. It gets called prior to sending messages to the peer.
+        /// </summary>
+        /// <param name="callback">The callback to be used by each peer.</param>
+        void RegisterOnSendingMessageCallback(Action<IPEndPoint, Payload> callback);
     }
 
     /// <summary>
@@ -98,6 +104,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
         /// <summary>Configuration related to incoming and outgoing connections.</summary>
         private readonly ConnectionManagerSettings connectionManagerSettings;
+
+        /// <summary>Callback that is invoked just before a message is to be sent to a peer, or <c>null</c> when nothing needs to be called.</summary>
+        private Action<IPEndPoint, Payload> onSendingMessage;
 
         /// <summary>
         /// Initializes a new instance of the factory.
@@ -142,7 +151,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, onDisconnected);
+            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, onDisconnected, this.onSendingMessage);
 
             networkPeerDisposer?.AddPeer(peer);
 
@@ -184,7 +193,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, this.selfEndpointTracker, onDisconnected);
+            var peer = new NetworkPeer(peerEndPoint, this.network, parameters, this, this.dateTimeProvider, this.loggerFactory, this.selfEndpointTracker, onDisconnected, this.onSendingMessage);
 
             try
             {
@@ -219,6 +228,12 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             int id = Interlocked.Increment(ref this.lastClientId);
             return new NetworkPeerConnection(this.network, peer, client, id, processMessageAsync, this.dateTimeProvider, this.loggerFactory, this.payloadProvider);
+        }
+
+        /// <inheritdoc/>
+        public void RegisterOnSendingMessageCallback(Action<IPEndPoint, Payload> callback)
+        {
+            this.onSendingMessage = callback;
         }
     }
 }

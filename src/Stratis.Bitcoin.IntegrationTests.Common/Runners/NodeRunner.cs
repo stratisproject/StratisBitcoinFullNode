@@ -9,6 +9,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
     {
         public readonly string DataFolder;
 
+        public readonly string Agent;
+
         public bool IsDisposed
         {
             get
@@ -17,6 +19,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             }
         }
 
+        public bool EnablePeerDiscovery { get; internal set; }
         public FullNode FullNode { get; set; }
         public Func<ChainedHeaderBlock, bool> InterceptorDisconnect { get; internal set; }
         public Func<ChainedHeaderBlock, bool> InterceptorConnect { get; internal set; }
@@ -24,9 +27,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public bool OverrideDateTimeProvider { get; internal set; }
         public Action<IServiceCollection> ServiceToOverride { get; internal set; }
 
-        protected NodeRunner(string dataDir)
+        protected NodeRunner(string dataDir, string agent)
         {
             this.DataFolder = dataDir;
+            this.Agent = agent;
         }
 
         public abstract void BuildNode();

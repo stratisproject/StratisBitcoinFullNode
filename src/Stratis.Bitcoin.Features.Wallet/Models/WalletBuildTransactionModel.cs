@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Utilities.JsonConverters;
 
 namespace Stratis.Bitcoin.Features.Wallet.Models
 {
@@ -12,6 +13,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string Hex { get; set; }
 
         [JsonProperty(PropertyName = "transactionId")]
+        [JsonConverter(typeof(UInt256JsonConverter))]
         public uint256 TransactionId { get; set; }
     }
 }

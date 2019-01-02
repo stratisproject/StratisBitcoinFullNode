@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         /// <param name="item">If the function succeeds, this is filled with the dequeued item.</param>
         /// <returns><c>true</c> if an item was dequeued, <c>false</c> if the queue was empty.</returns>
-        private bool TryDequeue(out T item)
+        public bool TryDequeue(out T item)
         {
             item = default(T);
             lock (this.lockObject)

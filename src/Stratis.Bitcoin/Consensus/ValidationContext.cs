@@ -50,5 +50,8 @@ namespace Stratis.Bitcoin.Consensus
         /// to inability to validate the block properly. Set to <c>null</c> otherwise.
         /// </remarks>
         public NetworkPeerServices? MissingServices { get; set; }
+
+        /// <summary>Gets or sets flag indicating if we do not have enough information to validate UTOX.</summary>
+        public bool InsufficientHeaderInformation { get; set; }
     }
 }

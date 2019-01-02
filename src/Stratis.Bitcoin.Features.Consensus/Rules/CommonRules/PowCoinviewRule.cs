@@ -60,6 +60,28 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             return subsidy;
         }
 
+        /// <inheritdoc />
+        protected override bool IsTxFinal(Transaction transaction, RuleContext context)
+        {
+            if (transaction.IsCoinBase)
+                return true;
+
+            ChainedHeader index = context.ValidationContext.ChainedHeaderToValidate;
+
+            UnspentOutputSet view = (context as UtxoRuleContext).UnspentOutputSet;
+
+            var prevheights = new int[transaction.Inputs.Count];
+            // Check that transaction is BIP68 final.
+            // BIP68 lock checks (as opposed to nLockTime checks) must
+            // be in ConnectBlock because they require the UTXO set.
+            for (int i = 0; i < transaction.Inputs.Count; i++)
+            {
+                prevheights[i] = (int)view.AccessCoins(transaction.Inputs[i].PrevOut.Hash).Height;
+            }
+
+            return transaction.CheckSequenceLocks(prevheights, index, context.Flags.LockTimeFlags);
+        }
+
         /// <inheritdoc/>
         public override void CheckMaturity(UnspentOutputs coins, int spendHeight)
         {

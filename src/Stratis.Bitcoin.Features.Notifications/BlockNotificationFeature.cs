@@ -16,9 +16,9 @@ using Stratis.Bitcoin.P2P.Peer;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
-    // =================================================================
-    // TODO: This class is broken and the logic needs to be redesigned, this effects light wallet.
-    // =================================================================
+    /// =================================================================
+    /// TODO: This class is broken and the logic needs to be redesigned, this effects light wallet.
+    /// =================================================================
     /// <summary>
     /// Feature enabling the broadcasting of blocks.
     /// </summary>
@@ -27,6 +27,7 @@ namespace Stratis.Bitcoin.Features.Notifications
         private readonly IBlockNotification blockNotification;
 
         private readonly IConnectionManager connectionManager;
+
         private readonly IConsensusManager consensusManager;
 
         private readonly IChainState chainState;
@@ -35,8 +36,13 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         private readonly ILoggerFactory loggerFactory;
 
-        public BlockNotificationFeature(IBlockNotification blockNotification, IConnectionManager connectionManager,
-            IConsensusManager consensusManager, IChainState chainState, ConcurrentChain chain, ILoggerFactory loggerFactory)
+        public BlockNotificationFeature(
+            IBlockNotification blockNotification,
+            IConnectionManager connectionManager,
+            IConsensusManager consensusManager,
+            IChainState chainState,
+            ConcurrentChain chain,
+            ILoggerFactory loggerFactory)
         {
             this.blockNotification = blockNotification;
             this.connectionManager = connectionManager;
@@ -49,7 +55,6 @@ namespace Stratis.Bitcoin.Features.Notifications
         public override Task InitializeAsync()
         {
             NetworkPeerConnectionParameters connectionParameters = this.connectionManager.Parameters;
-            //connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.loggerFactory));
 
             this.blockNotification.Start();
             this.chainState.ConsensusTip = this.chain.Tip;
@@ -78,7 +83,6 @@ namespace Stratis.Bitcoin.Features.Notifications
                 .FeatureServices(services =>
                 {
                     services.AddSingleton<IBlockNotification, BlockNotification>();
-                    //services.AddSingleton<LookaheadBlockPuller>().AddSingleton<ILookaheadBlockPuller, LookaheadBlockPuller>(provider => provider.GetService<LookaheadBlockPuller>());
                     services.AddSingleton<NotificationsController>();
                 });
             });

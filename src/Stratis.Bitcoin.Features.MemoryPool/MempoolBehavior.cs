@@ -11,6 +11,8 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
@@ -118,20 +120,23 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public long LastMempoolReq { get; private set; }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
-            this.isPeerWhitelistedForRelay = this.AttachedPeer.Behavior<IConnectionManagerBehavior>().Whitelisted && this.mempoolManager.mempoolSettings.WhiteListRelay;
+            this.isPeerWhitelistedForRelay = this.AttachedPeer.IsWhitelisted() && this.mempoolManager.mempoolSettings.WhiteListRelay;
             this.isBlocksOnlyMode = !this.connectionManager.ConnectionSettings.RelayTxes && !this.isPeerWhitelistedForRelay;
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new MempoolBehavior(this.validator, this.mempoolManager, this.orphans, this.connectionManager, this.initialBlockDownloadState, this.signals, this.loggerFactory, this.network);

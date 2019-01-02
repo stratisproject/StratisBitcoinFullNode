@@ -8,6 +8,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 {
@@ -34,6 +35,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         }
 
         /// <inheritdoc />
+        [NoTrace]
         public override object Clone()
         {
             return new BroadcasterBehavior(this.broadcasterManager, this.logger);
@@ -117,12 +119,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceivedAsync);
         }
 
         /// <inheritdoc />
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);

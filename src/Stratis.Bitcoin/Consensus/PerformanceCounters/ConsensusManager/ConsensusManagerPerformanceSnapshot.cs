@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 {
@@ -23,6 +24,7 @@ namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
             this.BlockConnectedSignal = new ExecutionsCountAndDelay();
         }
 
+        [NoTrace]
         public override string ToString()
         {
             var builder = new StringBuilder();

@@ -872,8 +872,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                // Check the outputs.
-                foreach (TxOut utxo in transaction.Outputs)
+                // Check the outputs, ignoring the ones with a 0 amount.
+                foreach (TxOut utxo in transaction.Outputs.Where(o => o.Value != Money.Zero))
                 {
                     // Check if the outputs contain one of our addresses.
                     if (this.scriptToAddressLookup.TryGetValue(utxo.ScriptPubKey, out HdAddress _))

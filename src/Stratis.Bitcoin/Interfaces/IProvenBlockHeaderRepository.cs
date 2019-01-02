@@ -22,6 +22,6 @@ namespace Stratis.Bitcoin.Interfaces
         /// <param name="provenBlockHeaders">List of <see cref="ProvenBlockHeader"/> items.</param>
         /// <param name="newTip">Block hash and height tip.</param>
         /// <returns><c>true</c> when a <see cref="ProvenBlockHeader"/> is saved to disk, otherwise <c>false</c>.</returns>
-        Task PutAsync(List<ProvenBlockHeader> provenBlockHeaders, HashHeightPair newTip);
+        Task PutAsync(SortedDictionary<int, ProvenBlockHeader> provenBlockHeaders, HashHeightPair newTip);
     }
 }

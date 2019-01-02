@@ -8,12 +8,14 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
@@ -22,12 +24,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
     /// </summary>
     public sealed class SmartContractPosConsensusRuleEngine : PosConsensusRuleEngine, ISmartContractCoinviewRule
     {
+        public ICallDataSerializer CallDataSerializer { get; private set; }
         public IContractExecutorFactory ExecutorFactory { get; private set; }
         public IStateRepositoryRoot OriginalStateRoot { get; private set; }
         public IReceiptRepository ReceiptRepository { get; private set; }
         public ISenderRetriever SenderRetriever { get; private set; }
 
         public SmartContractPosConsensusRuleEngine(
+            ICallDataSerializer callDataSerializer,
             ConcurrentChain chain,
             ICheckpoints checkpoints,
             ConsensusSettings consensusSettings,
@@ -44,9 +48,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             ICoinView utxoSet,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
-            INodeStats nodeStats)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats)
+            INodeStats nodeStats,
+            IRewindDataIndexCache rewindDataIndexCache)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache)
         {
+            this.CallDataSerializer = callDataSerializer;
             this.ExecutorFactory = executorFactory;
             this.OriginalStateRoot = originalStateRoot;
             this.ReceiptRepository = receiptRepository;

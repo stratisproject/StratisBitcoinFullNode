@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -12,15 +11,12 @@ using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Tests.Wallet.Common;
-using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Serialization;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
@@ -34,6 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
         private readonly Network network;
         private readonly Mock<IReceiptRepository> receiptRepository;
         private readonly Mock<IWalletManager> walletManager;
+        private Mock<ISmartContractTransactionService> smartContractTransactionService;
 
         public SmartContractWalletControllerTest()
         {
@@ -44,6 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             this.network = new SmartContractsRegTest();
             this.receiptRepository = new Mock<IReceiptRepository>();
             this.walletManager = new Mock<IWalletManager>();
+            this.smartContractTransactionService = new Mock<ISmartContractTransactionService>();
         }
 
         [Fact]
@@ -94,7 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             this.walletManager.Setup(w => w.GetAccounts(walletName)).Returns(new List<HdAccount> {account});
 
             this.receiptRepository.Setup(x => x.Retrieve(It.IsAny<uint256>()))
-                .Returns(new Receipt(null, 0, new Log[0], null, null, null, uint160.Zero, true, null));
+                .Returns(new Receipt(null, 0, new Log[0], null, null, null, uint160.Zero, true, null, null));
             this.callDataSerializer.Setup(x => x.Deserialize(It.IsAny<byte[]>()))
                 .Returns(Result.Ok(new ContractTxData(0, 0, (Gas) 0, new uint160(0), null, null)));
 
@@ -105,7 +103,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
                 this.loggerFactory.Object,
                 this.network,
                 this.receiptRepository.Object,
-                this.walletManager.Object);
+                this.walletManager.Object,
+                this.smartContractTransactionService.Object);
 
             IActionResult result = controller.GetHistory(walletName, address.Address);
 
@@ -120,15 +119,59 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
             ContractTransactionItem resultingCreate = model.ElementAt(0);
             Assert.Equal(ContractTransactionItemType.ContractCreate, resultingCreate.Type);
             Assert.Equal(createTransaction.SpendingDetails.TransactionId, resultingCreate.Hash);
-            Assert.Equal(createTransaction.SpendingDetails.Payments.First().Amount.ToUnit(MoneyUnit.BTC), resultingCreate.Amount);
+            Assert.Equal(createTransaction.SpendingDetails.Payments.First().Amount.ToUnit(MoneyUnit.Satoshi), resultingCreate.Amount);
             Assert.Equal(uint160.Zero.ToBase58Address(this.network), resultingCreate.To);
-            Assert.Equal((uint)createTransaction.SpendingDetails.BlockHeight, resultingCreate.BlockHeight);
+            Assert.Equal(createTransaction.SpendingDetails.BlockHeight, resultingCreate.BlockHeight);
 
             Assert.Equal(ContractTransactionItemType.Received, resultingTransaction.Type);
             Assert.Equal(address.Address, resultingTransaction.To);
             Assert.Equal(normalTransaction.Id, resultingTransaction.Hash);
-            Assert.Equal(normalTransaction.Amount.ToUnit(MoneyUnit.BTC), resultingTransaction.Amount);
-            Assert.Equal((uint)1, resultingTransaction.BlockHeight);
+            Assert.Equal(normalTransaction.Amount.ToUnit(MoneyUnit.Satoshi), resultingTransaction.Amount);
+            Assert.Equal(1, resultingTransaction.BlockHeight);
+        }
+
+        [Fact]
+        public void ReceivedType_Is_Receive()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = false;
+            transactionData.Index = 1;
+
+            Assert.Equal(ContractTransactionItemType.Received, SmartContractWalletController.ReceivedTransactionType(transactionData));
+        }
+
+        [Fact]
+        public void ReceivedType_Is_Receive_Null_Coinbase()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = null;
+
+            // Should be true for all indexes
+            for (var i = 0; i < 10; i++)
+            {
+                transactionData.Index = i;
+                Assert.Equal(ContractTransactionItemType.Received, SmartContractWalletController.ReceivedTransactionType(transactionData));
+            }
+        }
+
+        [Fact]
+        public void ReceivedType_Is_GasRefund()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = true;
+            transactionData.Index = 1;
+
+            Assert.Equal(ContractTransactionItemType.GasRefund, SmartContractWalletController.ReceivedTransactionType(transactionData));
+        }
+
+        [Fact]
+        public void ReceivedType_Is_MiningReward()
+        {
+            var transactionData = new TransactionData();
+            transactionData.IsCoinBase = true;
+            transactionData.Index = 0;
+
+            Assert.Equal(ContractTransactionItemType.Staked, SmartContractWalletController.ReceivedTransactionType(transactionData));
         }
     }
 }

@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Concurrent;
+using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -44,6 +45,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             get { return this.connectedPeers.Count; }
         }
 
+        /// <summary>Gets the connected inbound peers count.</summary>
+        public int ConnectedInboundPeersCount
+        {
+            get { return this.connectedPeers.Count(p => p.Value.Inbound); }
+        }
+
         /// <summary>
         /// Initializes a new instance of the <see cref="NetworkPeerDisposer" /> class.
         /// </summary>
@@ -71,7 +78,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             peer.Dispose();
 
             this.connectedPeers.TryRemove(peer.Connection.Id, out INetworkPeer unused);
-            
+
             return Task.CompletedTask;
         }
 

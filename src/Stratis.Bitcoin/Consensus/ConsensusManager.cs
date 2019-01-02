@@ -225,6 +225,18 @@ namespace Stratis.Bitcoin.Consensus
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
 
+                if (connectNewHeadersResult == null)
+                {
+                    this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
+                    return null;
+                }
+
+                if (connectNewHeadersResult.Consumed == null)
+                {
+                    this.logger.LogTrace("(-)[NOTHING_CONSUMED]");
+                    return connectNewHeadersResult;
+                }
+
                 this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
@@ -271,7 +283,7 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // This might throw ConsensusErrorException but we don't wanna catch it because miner will catch it.
-                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderWithBlock(block);
+                    chainedHeader = this.chainedHeaderTree.CreateChainedHeaderOfMinedBlock(block);
                 }
 
                 validationContext = await this.partialValidator.ValidateAsync(chainedHeader, block).ConfigureAwait(false);
@@ -310,7 +322,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", validationContext.Error.Message);
                     this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]");
-                    throw new ConsensusException(validationContext.Error.Message);
+                    throw new ConsensusException(validationContext.Error.ToString());
                 }
             }
 
@@ -376,6 +388,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private async Task OnPartialValidationCompletedCallbackAsync(ValidationContext validationContext)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             if (validationContext.Error == null)
             {
                 await this.OnPartialValidationSucceededAsync(validationContext.ChainedHeaderToValidate).ConfigureAwait(false);
@@ -512,7 +530,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (peerId == null)
                     continue;
 
-                if (connectNewHeadersResult == null)
+                if (connectNewHeadersResult?.DownloadTo == null)
                 {
                     this.logger.LogTrace("No new blocks to download were presented by peer ID {0}.", peerId);
                     continue;
@@ -749,7 +767,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // We failed to jump back on the previous chain after a failed reorg.
             // And we failed to reconnect the old chain, database might be corrupted.
-            this.logger.LogError("A critical error has prevented reconnecting blocks");
+            this.logger.LogError("A critical error has prevented reconnecting blocks, error = {0}", connectBlockResult.Error);
             this.logger.LogTrace("(-)[FAILED_TO_RECONNECT]");
             throw new ConsensusException("A critical error has prevented reconnecting blocks.");
         }
@@ -969,6 +987,12 @@ namespace Stratis.Bitcoin.Consensus
 
         private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
+            if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
+            {
+                this.logger.LogTrace("(-)[NODE_DISPOSED]");
+                return;
+            }
+
             ChainedHeader chainedHeader = null;
 
             lock (this.peerLock)
@@ -1258,6 +1282,8 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
+                if (this.isIbd) log.AppendLine("IBD Stage");
+
                 string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
                 string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);

@@ -97,6 +97,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <param name="value">Argument value.</param>
         private void Add(string key, string value)
         {
+            key = key.ToLowerInvariant();
+
             if (!this.args.TryGetValue(key, out List<string> list))
             {
                 list = new List<string>();
@@ -127,6 +129,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Values for the specified argument.</returns>
         public string[] GetAll(string key, ILogger logger = null)
         {
+            key = key.ToLowerInvariant();
+
             // Get the values with the - prefix.
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
                 values = new List<string>();
@@ -147,6 +151,8 @@ namespace Stratis.Bitcoin.Configuration
         /// <returns>Value of the argument or a default value if no value was set.</returns>
         public T GetOrDefault<T>(string key, T defaultValue, ILogger logger = null)
         {
+            key = key.ToLowerInvariant();
+
             if (!this.args.TryGetValue($"-{key}", out List<string> values))
             {
                 logger?.LogDebug("Default value '{0}' was selected for the key '{1}'.", defaultValue, key);

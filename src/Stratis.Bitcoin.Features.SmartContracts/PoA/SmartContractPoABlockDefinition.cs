@@ -25,14 +25,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             ICoinView coinView,
             IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
-            IContractExecutorFactory executorFactory, 
+            IContractExecutorFactory executorFactory,
             ILoggerFactory loggerFactory,
-            ITxMempool mempool, 
+            ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
             Network network,
             ISenderRetriever senderRetriever,
-            IStateRepositoryRoot stateRoot) 
-            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, new MinerSettings(NodeSettings.Default(network)), network, senderRetriever, stateRoot)
+            IStateRepositoryRoot stateRoot,
+            NodeSettings nodeSettings)
+            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool,
+                mempoolLock, new MinerSettings(nodeSettings), network, senderRetriever, stateRoot)
         {
             // TODO: Fix gross MinerSettings injection ^^
         }

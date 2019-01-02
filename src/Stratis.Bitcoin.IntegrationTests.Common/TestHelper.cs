@@ -23,9 +23,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
     {
         public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
         {
-            cancellationToken = cancellationToken == default(CancellationToken)
-                ? new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token
-                : cancellationToken;
+            if (cancellationToken == default(CancellationToken))
+            {
+                cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token;
+            }
 
             while (!act())
             {
@@ -37,6 +38,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 catch (OperationCanceledException e)
                 {
                     Assert.False(true, $"{failureReason}{Environment.NewLine}{e.Message}");
+                }
+            }
+        }
+
+        public static void WaitLoopMessage(Func<(bool success, string message)> act)
+        {
+            var cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token;
+
+            var (success, message) = act();
+
+            while (!success)
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(1000);
+
+                    (success, message) = act();
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message}");
                 }
             }
         }
@@ -110,13 +133,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <returns>Returns <c>true</c> if the node is synced at a given height.</returns>
         public static bool IsNodeSyncedAtHeight(CoreNode node, int height)
         {
-            if (IsNodeSynced(node))
-            {
-                WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
-                return true;
-            }
-
-            return false;
+            WaitLoop(() => node.FullNode.ConsensusManager().Tip.Height == height);
+            return true;
         }
 
         public static void TriggerSync(CoreNode node)
@@ -127,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeConnected(CoreNode node)
         {
-            return node.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.IsConnected);
+            return node.FullNode.ConnectionManager.ConnectedPeers.Any();
         }
 
         public static void WaitForNodeToSync(params CoreNode[] nodes)
@@ -277,6 +295,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
 
+        /// <summary>
+        /// Disconnects a node from all connections and waits until the operation completes.
+        /// </summary>
+        /// <param name="nodes">The nodes that will be disconnected.</param>
+        public static void DisconnectAll(params CoreNode[] nodes)
+        {
+            foreach (var node in nodes)
+            {
+                foreach (var peer in node.FullNode.ConnectionManager.ConnectedPeers.ToList())
+                {
+                    node.CreateRPCClient().RemoveNode(peer.PeerEndPoint);
+                }
+
+                WaitLoop(() => node.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 0);
+            }
+
+            foreach (var node in nodes)
+            {
+                WaitLoop(() => !IsNodeConnected(node));
+            }
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -316,8 +356,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="connectToNode">The node that will be connected to.</param>
         public static void Connect(CoreNode thisNode, CoreNode connectToNode)
         {
-            thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
-            WaitLoop(() => IsNodeConnectedTo(thisNode, connectToNode));
+            var cancellation = new CancellationTokenSource();
+            cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+
+            WaitLoop(() =>
+            {
+                try
+                {
+                    if (IsNodeConnectedTo(thisNode, connectToNode))
+                        return true;
+                    thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+                    return true;
+                }
+                catch (Exception) { }
+
+                return false;
+            }, retryDelayInMiliseconds: 5000, cancellationToken: cancellation.Token);
         }
 
         /// <summary>
@@ -355,11 +409,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             if (thisNode.runner is BitcoinCoreRunner)
             {
-                var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
-                return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
+                return IsBitcoinCoreConnectedTo(thisNode, isConnectedToNode);
             }
             else
-                return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint));
+            {
+                if (thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint)))
+                    return true;
+
+                // The peer might be connected via an inbound connection.
+                if (isConnectedToNode.runner is BitcoinCoreRunner)
+                    return IsBitcoinCoreConnectedTo(isConnectedToNode, thisNode);
+                else
+                    return isConnectedToNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(thisNode.Endpoint));
+            }
+        }
+
+        private static bool IsBitcoinCoreConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            if (!(thisNode.runner is BitcoinCoreRunner))
+                throw new ArgumentException($"{0} is not a bitcoin core node.");
+
+            var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
+            return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
         }
 
         /// <summary>

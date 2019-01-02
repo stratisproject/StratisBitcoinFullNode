@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
         /// <inheritdoc />
         public override void ReadWriteCore(BitcoinStream stream)
         {
+            stream.ConsensusFactory = new ProvenHeaderConsensusFactory();
             stream.ReadWrite(ref this.headers);
         }
     }

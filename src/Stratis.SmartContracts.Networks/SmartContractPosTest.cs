@@ -4,7 +4,6 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
-using Stratis.Bitcoin.Networks.Deployments;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Networks
@@ -18,6 +17,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
             this.Magic = 0x0709110F; // Incremented 09/08
             this.DefaultPort = 18333;
+            this.DefaultMaxOutboundConnections = 16;
+            this.DefaultMaxInboundConnections = 109;
             this.RPCPort = 18332;
             this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;
@@ -37,8 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
                 maxStandardVersion: 2,
                 maxStandardTxWeight: 100_000,
                 maxBlockSigopsCost: 20_000,
-                maxStandardTxSigopsCost: 20_000 / 5,
-                provenHeadersActivationHeight: 10_000_000 // TODO: Set it to the real value once it is known.
+                maxStandardTxSigopsCost: 20_000 / 5
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

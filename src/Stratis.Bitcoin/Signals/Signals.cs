@@ -72,26 +72,26 @@ namespace Stratis.Bitcoin.Signals
             Guard.NotNull(blockDisonnectedSignaler, nameof(blockDisonnectedSignaler));
             Guard.NotNull(transactionSignaler, nameof(transactionSignaler));
 
-            this.blocksConnected = blockConnectedSignaler;
-            this.blocksDisconnected = blockDisonnectedSignaler;
-            this.transactions = transactionSignaler;
+            this.BlocksConnected = blockConnectedSignaler;
+            this.BlocksDisconnected = blockDisonnectedSignaler;
+            this.Transactions = transactionSignaler;
         }
 
         /// <summary>Signaler providing notifications about newly available blocks to its subscribers.</summary>
-        private ISignaler<ChainedHeaderBlock> blocksConnected { get; }
+        private ISignaler<ChainedHeaderBlock> BlocksConnected { get; }
 
         /// <summary>Signaler providing notifications about blocks being disconnected to its subscribers.</summary>
-        private ISignaler<ChainedHeaderBlock> blocksDisconnected { get; }
+        private ISignaler<ChainedHeaderBlock> BlocksDisconnected { get; }
 
         /// <summary>Signaler providing notifications about newly available transactions to its subscribers.</summary>
-        private ISignaler<Transaction> transactions { get; }
+        private ISignaler<Transaction> Transactions { get; }
 
         /// <inheritdoc />
         public void SignalBlockConnected(ChainedHeaderBlock chainedHeaderBlock)
         {
             Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
-            this.blocksConnected.Broadcast(chainedHeaderBlock);
+            this.BlocksConnected.Broadcast(chainedHeaderBlock);
         }
 
         /// <inheritdoc />
@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Signals
         {
             Guard.NotNull(chainedHeaderBlock, nameof(chainedHeaderBlock));
 
-            this.blocksDisconnected.Broadcast(chainedHeaderBlock);
+            this.BlocksDisconnected.Broadcast(chainedHeaderBlock);
         }
 
         /// <inheritdoc />
@@ -107,7 +107,7 @@ namespace Stratis.Bitcoin.Signals
         {
             Guard.NotNull(trx, nameof(trx));
 
-            this.transactions.Broadcast(trx);
+            this.Transactions.Broadcast(trx);
         }
 
         /// <inheritdoc />
@@ -115,7 +115,7 @@ namespace Stratis.Bitcoin.Signals
         {
             Guard.NotNull(observer, nameof(observer));
 
-            return this.blocksConnected.Subscribe(observer);
+            return this.BlocksConnected.Subscribe(observer);
         }
 
         /// <inheritdoc />
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Signals
         {
             Guard.NotNull(observer, nameof(observer));
 
-            return this.blocksDisconnected.Subscribe(observer);
+            return this.BlocksDisconnected.Subscribe(observer);
         }
 
         /// <inheritdoc />
@@ -131,7 +131,7 @@ namespace Stratis.Bitcoin.Signals
         {
             Guard.NotNull(observer, nameof(observer));
 
-            return this.transactions.Subscribe(observer);
+            return this.Transactions.Subscribe(observer);
         }
     }
 }

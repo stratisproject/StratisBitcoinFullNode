@@ -69,5 +69,8 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>The current transaction relay fee.</summary>
         [JsonConverter(typeof(BtcDecimalJsonConverter))]
         public decimal RelayFee { get; set; }
+
+        /// <summary>Returns the status of the node.</summary>
+        public string State { get; set; }
     }
 }

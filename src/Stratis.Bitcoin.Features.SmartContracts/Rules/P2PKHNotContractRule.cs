@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Used to check that people don't try and send funds to contracts via P2PKH.
     /// </summary>
-    public class P2PKHNotContractRule : PartialValidationConsensusRule, ISmartContractMempoolRule
+    public class P2PKHNotContractRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
         protected ISmartContractCoinviewRule ContractCoinviewRule { get; private set; }
 

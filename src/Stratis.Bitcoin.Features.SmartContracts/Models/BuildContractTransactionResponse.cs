@@ -1,7 +1,5 @@
 ﻿using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {

@@ -1,5 +1,4 @@
-﻿using System.Linq;
-using NBitcoin;
+﻿using NBitcoin;
 
 namespace Stratis.SmartContracts.Core
 {
