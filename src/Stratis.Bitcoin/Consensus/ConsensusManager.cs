@@ -27,11 +27,11 @@ namespace Stratis.Bitcoin.Consensus
         /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
         /// not yet validated or included to the consensus chain.
         /// </summary>
-        protected long MaxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
+        private long maxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
 
         /// <summary>Queue consumption threshold in bytes.</summary>
         /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
-        private long ConsumptionThresholdBytes { get { return this.MaxUnconsumedBlocksDataBytes / 10; } }
+        private long ConsumptionThresholdBytes => this.maxUnconsumedBlocksDataBytes / 10;
 
         /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
         private const int MaxBlocksToAskFromPuller = 10000;
@@ -65,15 +65,15 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public IConsensusRuleEngine ConsensusRules { get; private set; }
 
-        protected readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> CallbacksByBlocksRequestedHash;
+        private readonly Dictionary<uint256, List<OnBlockDownloadedCallback>> callbacksByBlocksRequestedHash;
 
         /// <summary>Peers mapped by their ID.</summary>
         /// <remarks>This object has to be protected by <see cref="peerLock"/>.</remarks>
-        protected readonly Dictionary<int, INetworkPeer> PeersByPeerId;
+        private readonly Dictionary<int, INetworkPeer> peersByPeerId;
 
         private readonly Queue<BlockDownloadRequest> toDownloadQueue;
 
-        /// <summary>Protects access to the <see cref="blockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="ExpectedBlockSizes"/> and <see cref="ExpectedBlockDataBytes"/>.</summary>
+        /// <summary>Protects access to the <see cref="blockPuller"/>, <see cref="chainedHeaderTree"/>, <see cref="expectedBlockSizes"/> and <see cref="expectedBlockDataBytes"/>.</summary>
         private readonly object peerLock;
 
         private readonly IInitialBlockDownloadState ibdState;
@@ -82,9 +82,9 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly AsyncLock reorgLock;
 
-        protected long ExpectedBlockDataBytes;
+        private long expectedBlockDataBytes;
 
-        protected readonly Dictionary<uint256, long> ExpectedBlockSizes;
+        private readonly Dictionary<uint256, long> expectedBlockSizes;
 
         private readonly ConcurrentChain chain;
 
@@ -151,11 +151,11 @@ namespace Stratis.Bitcoin.Consensus
             this.peerLock = new object();
             this.reorgLock = new AsyncLock();
             this.blockRequestedLock = new object();
-            this.ExpectedBlockDataBytes = 0;
-            this.ExpectedBlockSizes = new Dictionary<uint256, long>();
+            this.expectedBlockDataBytes = 0;
+            this.expectedBlockSizes = new Dictionary<uint256, long>();
 
-            this.CallbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
-            this.PeersByPeerId = new Dictionary<int, INetworkPeer>();
+            this.callbacksByBlocksRequestedHash = new Dictionary<uint256, List<OnBlockDownloadedCallback>>();
+            this.peersByPeerId = new Dictionary<int, INetworkPeer>();
             this.toDownloadQueue = new Queue<BlockDownloadRequest>();
             this.performanceCounter = new ConsensusManagerPerformanceCounter();
             this.ibdState = ibdState;
@@ -229,9 +229,9 @@ namespace Stratis.Bitcoin.Consensus
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
 
-                if (!this.PeersByPeerId.ContainsKey(peerId))
+                if (!this.peersByPeerId.ContainsKey(peerId))
                 {
-                    this.PeersByPeerId.Add(peerId, peer);
+                    this.peersByPeerId.Add(peerId, peer);
                     this.logger.LogTrace("New peer with ID {0} was added.", peerId);
                 }
             }
@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="peerId">The peer that was disconnected.</param>
         private void PeerDisconnectedLocked(int peerId)
         {
-            bool removed = this.PeersByPeerId.Remove(peerId);
+            bool removed = this.peersByPeerId.Remove(peerId);
 
             if (removed)
             {
@@ -401,7 +401,7 @@ namespace Stratis.Bitcoin.Consensus
 
                     foreach (int peerId in peerIdsToBan)
                     {
-                        if (this.PeersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                        if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
                             peersToBan.Add(peer);
                     }
                 }
@@ -450,7 +450,7 @@ namespace Stratis.Bitcoin.Consensus
                         {
                             foreach (int peerId in connectBlocksResult.PeersToBan)
                             {
-                                if (this.PeersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                                if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
                                     peersToBan.Add(peer);
                             }
                         }
@@ -497,7 +497,7 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                foreach (INetworkPeer peer in this.PeersByPeerId.Values)
+                foreach (INetworkPeer peer in this.peersByPeerId.Values)
                     behaviors.Add(peer.Behavior<ConsensusManagerBehavior>());
             }
 
@@ -767,7 +767,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 foreach (int peerId in peerIds)
                 {
-                    if (this.PeersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                    if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
                     {
                         this.logger.LogTrace("Resyncing peer ID {0}.", peerId);
 
@@ -900,7 +900,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// Request a list of block headers to download their respective blocks.
         /// If <paramref name="chainedHeaders"/> is not an array of consecutive headers it will be split to batches of consecutive header requests.
-        /// Callbacks of all entries are added to <see cref="CallbacksByBlocksRequestedHash"/>. If a block header was already requested
+        /// Callbacks of all entries are added to <see cref="callbacksByBlocksRequestedHash"/>. If a block header was already requested
         /// to download and not delivered yet, it will not be requested again, instead just it's callback will be called when the block arrives.
         /// </summary>
         /// <param name="chainedHeaders">Array of chained headers to download.</param>
@@ -916,12 +916,12 @@ namespace Stratis.Bitcoin.Consensus
             {
                 foreach (ChainedHeader chainedHeader in chainedHeaders)
                 {
-                    bool blockAlreadyAsked = this.CallbacksByBlocksRequestedHash.TryGetValue(chainedHeader.HashBlock, out List<OnBlockDownloadedCallback> callbacks);
+                    bool blockAlreadyAsked = this.callbacksByBlocksRequestedHash.TryGetValue(chainedHeader.HashBlock, out List<OnBlockDownloadedCallback> callbacks);
 
                     if (!blockAlreadyAsked)
                     {
                         callbacks = new List<OnBlockDownloadedCallback>();
-                        this.CallbacksByBlocksRequestedHash.Add(chainedHeader.HashBlock, callbacks);
+                        this.callbacksByBlocksRequestedHash.Add(chainedHeader.HashBlock, callbacks);
                     }
                     else
                     {
@@ -973,11 +973,11 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.peerLock)
             {
-                if (this.ExpectedBlockSizes.TryGetValue(blockHash, out long expectedSize))
+                if (this.expectedBlockSizes.TryGetValue(blockHash, out long expectedSize))
                 {
-                    this.ExpectedBlockDataBytes -= expectedSize;
-                    this.ExpectedBlockSizes.Remove(blockHash);
-                    this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.ExpectedBlockDataBytes, this.ExpectedBlockSizes.Count);
+                    this.expectedBlockDataBytes -= expectedSize;
+                    this.expectedBlockSizes.Remove(blockHash);
+                    this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
                 }
                 else
                 {
@@ -995,7 +995,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         lock (this.blockRequestedLock)
                         {
-                            this.CallbacksByBlocksRequestedHash.Remove(blockHash);
+                            this.callbacksByBlocksRequestedHash.Remove(blockHash);
                         }
 
                         this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
@@ -1017,7 +1017,7 @@ namespace Stratis.Bitcoin.Consensus
                     // When integrity validation fails we want to ban only the particular peer that provided the invalid block.
                     // Integrity validation failing for this block doesn't automatically make other blocks with the same hash invalid,
                     // therefore banning other peers that claim to be on a chain that contains a block with the same hash is not required.
-                    if (this.PeersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
+                    if (this.peersByPeerId.TryGetValue(peerId, out INetworkPeer peer))
                         this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, result.BanDurationSeconds, $"Integrity validation failed: {result.Error.Message}");
 
                     lock (this.peerLock)
@@ -1035,8 +1035,8 @@ namespace Stratis.Bitcoin.Consensus
 
             lock (this.blockRequestedLock)
             {
-                if (this.CallbacksByBlocksRequestedHash.TryGetValue(blockHash, out listOfCallbacks))
-                    this.CallbacksByBlocksRequestedHash.Remove(blockHash);
+                if (this.callbacksByBlocksRequestedHash.TryGetValue(blockHash, out listOfCallbacks))
+                    this.callbacksByBlocksRequestedHash.Remove(blockHash);
             }
 
             if (listOfCallbacks != null)
@@ -1141,7 +1141,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             while (this.toDownloadQueue.Count > 0)
             {
-                int awaitingBlocksCount = this.ExpectedBlockSizes.Count;
+                int awaitingBlocksCount = this.expectedBlockSizes.Count;
 
                 int freeSlots = MaxBlocksToAskFromPuller - awaitingBlocksCount;
                 this.logger.LogTrace("{0} slots are available.", freeSlots);
@@ -1152,7 +1152,7 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
-                long freeBytes = this.MaxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.ExpectedBlockDataBytes;
+                long freeBytes = this.maxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.expectedBlockDataBytes;
                 this.logger.LogTrace("{0} bytes worth of blocks is available for download.", freeBytes);
 
                 if (freeBytes <= this.ConsumptionThresholdBytes)
@@ -1197,11 +1197,11 @@ namespace Stratis.Bitcoin.Consensus
                 this.blockPuller.RequestBlocksDownload(request.BlocksToDownload);
 
                 foreach (ChainedHeader chainedHeader in request.BlocksToDownload)
-                    this.ExpectedBlockSizes.Add(chainedHeader.HashBlock, avgSize);
+                    this.expectedBlockSizes.Add(chainedHeader.HashBlock, avgSize);
 
-                this.ExpectedBlockDataBytes += request.BlocksToDownload.Count * avgSize;
+                this.expectedBlockDataBytes += request.BlocksToDownload.Count * avgSize;
 
-                this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.ExpectedBlockDataBytes, this.ExpectedBlockSizes.Count);
+                this.logger.LogTrace("Expected block data bytes was set to {0} and we are expecting {1} blocks to be delivered.", this.expectedBlockDataBytes, this.expectedBlockSizes.Count);
             }
         }
 
@@ -1261,9 +1261,9 @@ namespace Stratis.Bitcoin.Consensus
                 string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
                 string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
-                string maxUnconsumedBytes = this.FormatBigNumber(MaxUnconsumedBlocksDataBytes);
+                string maxUnconsumedBytes = this.FormatBigNumber(this.maxUnconsumedBlocksDataBytes);
 
-                double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.MaxUnconsumedBlocksDataBytes) * 100, 2);
+                double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.maxUnconsumedBlocksDataBytes) * 100, 2);
 
                 log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
             }

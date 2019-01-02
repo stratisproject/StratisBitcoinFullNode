@@ -16,85 +16,65 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Tests.Consensus
 {
-    public class TestConsensusManager : ConsensusManager
+    public class TestConsensusManager
     {
-        public TestConsensusManager(
-            IChainedHeaderTree chainedHeaderTree,
-            Network network,
-            ILoggerFactory loggerFactory,
-            IChainState chainState,
-            IIntegrityValidator integrityValidator,
-            IPartialValidator partialValidator,
-            IFullValidator fullValidator,
-            IConsensusRuleEngine consensusRules,
-            IFinalizedBlockInfoRepository finalizedBlockInfo,
-            ISignals signals,
-            IPeerBanning peerBanning,
-            IInitialBlockDownloadState ibdState,
-            ConcurrentChain chain,
-            IBlockPuller blockPuller,
-            IBlockStore blockStore,
-            IConnectionManager connectionManager,
-            INodeStats nodeStats,
-            INodeLifetime nodeLifetime) : base 
-            (chainedHeaderTree, network, loggerFactory, chainState, integrityValidator, partialValidator, fullValidator, 
-                consensusRules, finalizedBlockInfo, signals, peerBanning, ibdState, chain, blockPuller, blockStore, connectionManager, nodeStats, nodeLifetime)
+        public readonly ConsensusManager ConsensusManager;
+
+        public TestConsensusManager(ConsensusManager consensusManager)
         {
-
+            this.ConsensusManager = consensusManager;
         }
-
 
         public bool PeerIsKnown(int peerId)
         {
-            return base.PeersByPeerId.ContainsKey(peerId);
+            return this.ConsensusManager.GetPeersByPeerId().ContainsKey(peerId);
         }
-
 
         public long GetExpectedBlockDataBytes()
         {
-            return base.ExpectedBlockDataBytes;
+            return this.ConsensusManager.GetExpectedBlockDataBytesValue();
         }
 
         public void SetExpectedBlockDataBytes(long val)
         {
-            base.ExpectedBlockDataBytes = val;
+            this.ConsensusManager.SetExpectedBlockDataBytesValue(val);
         }
 
         public Dictionary<uint256, long> GetExpectedBlockSizes()
         {
-            return base.ExpectedBlockSizes;
+            return this.ConsensusManager.GetExpectedBlockSizesValue();
         }
 
         public void SetMaxUnconsumedBlocksDataBytes(long newSize)
         {
-            base.MaxUnconsumedBlocksDataBytes = newSize;
+            this.ConsensusManager.SetMaxUnconsumedBlocksDataBytesValue(newSize);
         }
 
         public void SetupCallbackByBlocksRequestedHash(uint256 hash, params OnBlockDownloadedCallback[] callbacks)
         {
-            if (base.CallbacksByBlocksRequestedHash.ContainsKey(hash))
+            if (this.ConsensusManager.GetCallbacksByBlocksRequestedHash().ContainsKey(hash))
             {
-                base.CallbacksByBlocksRequestedHash[hash] = callbacks.ToList();
+                this.ConsensusManager.GetCallbacksByBlocksRequestedHash()[hash] = callbacks.ToList();
             }
             else
             {
-                base.CallbacksByBlocksRequestedHash.Add(hash, callbacks.ToList());
+                this.ConsensusManager.GetCallbacksByBlocksRequestedHash().Add(hash, callbacks.ToList());
             }
         }
 
         public bool CallbacksByBlocksRequestedHashContainsKeyForHash(uint256 hash)
         {
-            return base.CallbacksByBlocksRequestedHash.ContainsKey(hash);
+            return this.ConsensusManager.GetCallbacksByBlocksRequestedHash().ContainsKey(hash);
         }
 
         public void AddExpectedBlockSize(uint256 key, long size)
         {
-            base.ExpectedBlockSizes.Add(key, size);
+            this.ConsensusManager.GetExpectedBlockSizesValue().Add(key, size);
         }
 
         public void ClearExpectedBlockSizes()
         {
-            base.ExpectedBlockSizes.Clear();
+            this.ConsensusManager.GetExpectedBlockSizesValue().Clear();
         }
     }
 }

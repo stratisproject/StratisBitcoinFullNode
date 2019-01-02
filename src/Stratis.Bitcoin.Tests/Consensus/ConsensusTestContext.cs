@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public readonly Mock<IBlockPuller> BlockPuller;
         public readonly Mock<IBlockStore> BlockStore;
         private Mock<ICheckpoints> checkpoints = new Mock<ICheckpoints>();
-        public TestConsensusManager ConsensusManager;
+        public TestConsensusManager TestConsensusManager;
         public Mock<IFinalizedBlockInfoRepository> FinalizedBlockMock = new Mock<IFinalizedBlockInfoRepository>();
         public readonly Mock<IInitialBlockDownloadState> ibdState = new Mock<IInitialBlockDownloadState>();
         internal ChainedHeader InitialChainTip;
@@ -154,10 +154,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.IntegrityValidator.Setup(i => i.VerifyBlockIntegrity(It.IsAny<ChainedHeader>(), It.IsAny<Block>()))
                 .Returns(new ValidationContext());
 
-            this.ConsensusManager = new TestConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
+            ConsensusManager consensusManager = new ConsensusManager(tree, this.Network, this.loggerFactory, this.ChainState.Object, this.IntegrityValidator.Object,
                 this.PartialValidator.Object, this.FullValidator.Object, this.consensusRules,
                 this.FinalizedBlockMock.Object, new Stratis.Bitcoin.Signals.Signals(), this.peerBanning, this.ibd.Object, this.chain,
                 this.BlockPuller.Object, this.BlockStore.Object, this.connectionManager, this.nodeStats, this.nodeLifetime);
+
+            this.TestConsensusManager = new TestConsensusManager(consensusManager);
         }
 
         public Block CreateBlock(ChainedHeader previous)
@@ -326,7 +328,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         internal void AssertExpectedBlockSizesEmpty()
         {
-            Assert.Empty(this.ConsensusManager.GetExpectedBlockSizes());
+            Assert.Empty(this.TestConsensusManager.GetExpectedBlockSizes());
         }
 
 
