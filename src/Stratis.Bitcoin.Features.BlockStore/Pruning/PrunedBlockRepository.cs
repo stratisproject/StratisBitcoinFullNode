@@ -6,7 +6,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.BlockStore
+namespace Stratis.Bitcoin.Features.BlockStore.Pruning
 {
     /// <inheritdoc />
     public class PrunedBlockRepository : IPrunedBlockRepository

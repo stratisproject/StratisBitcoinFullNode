@@ -1,7 +1,8 @@
 ﻿using System;
+using System.Threading.Tasks;
 using NBitcoin;
 
-namespace Stratis.Bitcoin.Features.LightWallet.Blocks
+namespace Stratis.Bitcoin.Features.BlockStore.Pruning
 {
     /// <summary>
     /// This service starts an async loop task that periodically deletes from the blockstore.
@@ -27,5 +28,10 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
         /// Starts an async loop task that periodically deletes from the blockstore.
         /// </summary>
         void Initialize();
+
+        /// <summary>
+        /// Delete blocks continuously from the back of the store.
+        /// </summary>
+        Task PruneBlocksAsync();
     }
 }

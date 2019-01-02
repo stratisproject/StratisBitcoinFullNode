@@ -4,10 +4,9 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.LightWallet.Blocks
+namespace Stratis.Bitcoin.Features.BlockStore.Pruning
 {
     /// <inheritdoc/>
     public sealed class PruneBlockStoreService : IPruneBlockStoreService
@@ -55,26 +54,27 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
             repeatEvery: TimeSpans.TenSeconds);
         }
 
-        /// <summary>
-        /// Delete blocks continuously from the back of the store.
-        /// </summary>
-        private async Task PruneBlocksAsync()
+        /// <inheritdoc/>
+        public async Task PruneBlocksAsync()
         {
+            if (this.PrunedUpToHeaderTip == null)
+                throw new BlockStoreException($"{nameof(this.PrunedUpToHeaderTip)} has not been set, please call initialize first.");
+
             if (this.blockRepository.TipHashAndHeight.Height < this.storeSettings.AmountOfBlocksToKeep)
             {
-                this.logger.LogTrace("(-)[BLOCKSTORE_HEIGHT_BELOW_AMOUNTOFBLOCKSTOKEEP]");
+                this.logger.LogTrace("(-)[PRUNE_ABORTED_BLOCKSTORE_TIP_BELOW_AMOUNTOFBLOCKSTOKEEP]");
                 return;
             }
 
-            if (this.blockRepository.TipHashAndHeight.Height == (this.PrunedUpToHeaderTip?.Height ?? 0))
+            if (this.blockRepository.TipHashAndHeight.Height == this.PrunedUpToHeaderTip.Height)
             {
-                this.logger.LogTrace("(-)[BLOCKSTORE_HEIGHT_EQUALS_PRUNEDTIP]");
+                this.logger.LogTrace("(-)[PRUNE_ABORTED_BLOCKSTORE_TIP_EQUALS_PRUNEDTIP]");
                 return;
             }
 
-            if (this.blockRepository.TipHashAndHeight.Height < (this.PrunedUpToHeaderTip?.Height ?? 0 + this.storeSettings.AmountOfBlocksToKeep))
+            if (this.blockRepository.TipHashAndHeight.Height <= (this.PrunedUpToHeaderTip.Height + this.storeSettings.AmountOfBlocksToKeep))
             {
-                this.logger.LogTrace("(-)[BLOCKSTORE_HEIGHT_BELOW_PRUNEDTIP_PLUS_AMOUNTTOKEEP]");
+                this.logger.LogTrace("(-)[PRUNE_ABORTED_BLOCKSTORE_TIP_BELOW_OR_EQUAL_THRESHOLD]");
                 return;
             }
 
@@ -82,17 +82,11 @@ namespace Stratis.Bitcoin.Features.LightWallet.Blocks
             ChainedHeader startFrom = this.chainState.BlockStoreTip.GetAncestor(heightToPruneFrom);
             if (startFrom == null)
             {
-                this.logger.LogInformation("Prune aborted, start block at height {0} was not found.", heightToPruneFrom);
+                this.logger.LogInformation("(-)[PRUNE_ABORTED_START_BLOCK_NOT_FOUND]{0}:{1}", nameof(heightToPruneFrom), heightToPruneFrom);
                 return;
             }
 
-            if (this.PrunedUpToHeaderTip != null && startFrom == this.PrunedUpToHeaderTip)
-            {
-                this.logger.LogInformation("Prune aborted, start block at height {0} equals the pruned tip.", heightToPruneFrom);
-                return;
-            }
-
-            this.logger.LogInformation("Pruning triggered, delete from {0} to {1}.", heightToPruneFrom, this.PrunedUpToHeaderTip?.Height ?? 0);
+            this.logger.LogInformation("Pruning triggered, delete from {0} to {1}.", heightToPruneFrom, this.PrunedUpToHeaderTip.Height);
 
             var chainedHeadersToDelete = new List<ChainedHeader>();
             while (startFrom.Previous != null && this.PrunedUpToHeaderTip != startFrom)
