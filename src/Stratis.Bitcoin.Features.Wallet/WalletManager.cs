@@ -840,13 +840,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                bool walletUpdated = false;
+                bool trxFoundInBlock = false;
                 foreach (Transaction transaction in block.Transactions)
                 {
                     bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
                     if (trxFound)
                     {
-                        walletUpdated = true;
+                        trxFoundInBlock = true;
                     }
                 }
 
@@ -855,9 +855,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // as if the node is stopped, on re-opening it will start updating from the previous height.
                 this.UpdateLastBlockSyncedHeight(chainedHeader);
 
-                if (walletUpdated)
+                if (trxFoundInBlock)
                 {
-                    this.SaveWallets();
+                    this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).", chainedHeader);
                 }
             }
         }
@@ -880,6 +880,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundReceivingTrx = true;
+                        this.logger.LogDebug("Transaction '{0}' contained funds received by the user's wallet(s).", hash);
                     }
                 }
 
@@ -913,19 +914,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
                     foundSendingTrx = true;
+                    this.logger.LogDebug("Transaction '{0}' contained funds sent by the user's wallet(s).", hash);
                 }
             }
 
-            // Figure out what to do when this transaction is found to affect the wallet.
-            if (foundSendingTrx || foundReceivingTrx)
-            {
-                // Save the wallet when the transaction was not included in a block.
-                if (blockHeight == null)
-                {
-                    this.SaveWallets();
-                }
-            }
-            
             return foundSendingTrx || foundReceivingTrx;
         }
 
