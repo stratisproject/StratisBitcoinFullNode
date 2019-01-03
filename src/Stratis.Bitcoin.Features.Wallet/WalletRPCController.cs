@@ -304,14 +304,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (recipients.Any(r => r.ScriptPubKey == recipientAddress))
                     throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, string.Format("Invalid parameter, duplicated address: {0}.", recipientAddress));
 
-                var amount = Money.Coins(address.Value);
-                if (amount <= 0)
-                    throw new RPCServerException(RPCErrorCode.RPC_TYPE_ERROR, "Invalid amount to send.");
-
                 var recipient = new Recipient
                 {
                     ScriptPubKey = recipientAddress,
-                    Amount = amount,
+                    Amount = Money.Coins(address.Value),
                     SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.fullNode.Network))
                 };
 
