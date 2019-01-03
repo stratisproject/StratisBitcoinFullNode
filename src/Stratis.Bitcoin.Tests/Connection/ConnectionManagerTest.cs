@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Connection
             var connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
             var networkEndpoints = connectionManagerSettings.Listen.Select(x => x.Endpoint).ToList();
 
-            // IPV4: 127.0.0.1:16178 != 0.0.0.0:16178
+            // IPV4: 127.0.0.1:16178 == 0.0.0.0:16178 (both are considered local endpoints)
             endpointA = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 16178);
             endpointB = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 16178);
             networkEndpoints = new List<IPEndPoint>() { endpointB};
