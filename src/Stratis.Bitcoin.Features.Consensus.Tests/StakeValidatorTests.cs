@@ -838,9 +838,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             UnspentOutputs stakingCoins = new UnspentOutputs(15, transaction);
             var outpoint = new OutPoint(transaction, 1);
 
-            var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), 0, uint256.Zero, stakingCoins, outpoint, transactionTime));
+            var result = this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), 0, uint256.Zero, stakingCoins, outpoint, transactionTime);
 
-            Assert.Equal(ConsensusErrors.StakeHashInvalidTarget.Code, exception.ConsensusError.Code);
+            Assert.False(result);
         }
 
         [Fact]
