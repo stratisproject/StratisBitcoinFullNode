@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                     if (nodeToDisconnect != null)
                     {
                         this.logger.LogDebug("Disconnecting legacy peer ({0}). Can't serve Proven Header.", nodeToDisconnect.PeerEndPoint);
-                        peer.Disconnect("Reserving connection slot for a Proven Header enabled peer.");
+                        nodeToDisconnect.Disconnect("Reserving connection slot for a Proven Header enabled peer.");
                     }
                 }
                 else
