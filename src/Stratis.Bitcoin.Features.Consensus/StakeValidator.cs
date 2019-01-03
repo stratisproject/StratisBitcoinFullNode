@@ -213,7 +213,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.InvalidStakeDepth.Throw();
             }
 
-            this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, txIn.PrevOut, transaction.Time);
+            if (!this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, txIn.PrevOut, transaction.Time))
+            {
+                this.logger.LogTrace("(-)[INVALID_STAKE_HASH_TARGET]");
+                ConsensusErrors.StakeHashInvalidTarget.Throw();
+            }
         }
 
         /// <inheritdoc/>
@@ -236,7 +240,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc/>
-        public void CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
+        public bool CheckKernel(PosRuleContext context, ChainedHeader prevChainedHeader, uint headerBits, long transactionTime, OutPoint prevout)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(prevout, nameof(prevout));
@@ -276,12 +280,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 ConsensusErrors.BadStakeBlock.Throw();
             }
 
-            this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, prevout, (uint)transactionTime);
+            return this.CheckStakeKernelHash(context, headerBits, prevBlockStake.StakeModifierV2, prevUtxo, prevout, (uint)transactionTime);
         }
 
         /// <inheritdoc/>
-        public void CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins,
-            OutPoint prevout, uint transactionTime)
+        public bool CheckStakeKernelHash(PosRuleContext context, uint headerBits, uint256 prevStakeModifier, UnspentOutputs stakingCoins, OutPoint prevout, uint transactionTime)
         {
             Guard.NotNull(context, nameof(context));
             Guard.NotNull(prevout, nameof(prevout));
@@ -330,8 +333,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (hashProofOfStakeTarget.CompareTo(weightedTarget) > 0)
             {
                 this.logger.LogTrace("(-)[TARGET_MISSED]");
-                ConsensusErrors.StakeHashInvalidTarget.Throw();
+                return false;
             }
+
+            return true;
         }
 
         /// <inheritdoc/>
