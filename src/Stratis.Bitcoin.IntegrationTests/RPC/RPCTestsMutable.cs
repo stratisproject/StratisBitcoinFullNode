@@ -108,12 +108,12 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var minerAddress = BitcoinAddress.Create(node.MinerHDAddress.Address, network);
 
                 // validate existing address and minconf
-                var coins = rpcClient.ListUnspent((int)network.Consensus.CoinbaseMaturity+2, 99999, minerAddress);
+                var coins = rpcClient.ListUnspent((int)network.Consensus.CoinbaseMaturity + 2, 99999, minerAddress);
                 coins.Should().NotBeNull();
                 coins.Length.Should().Be(numCoins - 1);
 
                 // validate unknown address
-                var unknownAddress = new Key().GetBitcoinSecret(network).GetAddress();                
+                var unknownAddress = new Key().GetBitcoinSecret(network).GetAddress();
                 coins = rpcClient.ListUnspent(1, 99999, unknownAddress);
                 coins.Should().NotBeNull();
                 coins.Should().BeEmpty();
@@ -197,17 +197,15 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpcClient.WalletPassphrase("password", 60);
 
                 // Test with empty list of addresses
-                Dictionary<string, decimal> addresses = new Dictionary<string, decimal>(); 
+                var addresses = new Dictionary<string, decimal>();
                 var addressesJson = JsonConvert.SerializeObject(addresses);
                 Action action = () => rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
-                action.Should().Throw<RPCException>()
-                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_PARAMETER);
+                action.Should().Throw<RPCException>().Which.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_PARAMETER);
 
                 // Test with malformed Json.
                 addressesJson = "[\"address\"";
                 action = () => rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
-                action.Should().Throw<RPCException>()
-                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_PARSE_ERROR); 
+                action.Should().Throw<RPCException>().Which.RPCCode.Should().Be(RPCErrorCode.RPC_PARSE_ERROR);
             }
         }
 
@@ -239,16 +237,16 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 addresses.Add(bobAddress.ToString(), coinsForBob);
                 var addressesJson = JsonConvert.SerializeObject(addresses);
                 var response = rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
-                var txid = new uint256(response.ResultString);                
+                var txid = new uint256(response.ResultString);
 
                 // Check the hash calculated correctly.               
                 var tx = rpcClient.GetRawTransaction(txid);
-                txid.Should().Be(tx.GetHash());                
+                txid.Should().Be(tx.GetHash());
 
                 // Check the output is the right amount.
                 var aliceCoins = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == aliceAddress.ScriptPubKey);
                 aliceCoins.Amount.Should().Be(Money.Coins(coinsForAlice));
-                
+
                 var bobCoins = tx.Outputs.AsCoins().First(c => c.ScriptPubKey == bobAddress.ScriptPubKey);
                 bobCoins.Amount.Should().Be(Money.Coins(coinsForBob));
 

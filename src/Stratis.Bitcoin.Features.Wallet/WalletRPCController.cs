@@ -1,11 +1,12 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Security;
-using System.Collections.Generic;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
@@ -13,7 +14,6 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
-using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -82,11 +82,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Sends money to an address. Requires wallet to be unlocked using walletpassphrase.")]
         public async Task<uint256> SendToAddressAsync(BitcoinAddress address, decimal amount, string commentTx, string commentDest)
         {
-            WalletAccountReference account = this.GetAccount(); 
+            WalletAccountReference account = this.GetAccount();
             TransactionBuildContext context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = this.GetAccount(),
-                Recipients = new [] {new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList()
+                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList()
             };
 
             try
@@ -120,10 +120,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
             uint256 hash = transaction.GetHash();
-            
+
             return hash;
         }
-             
+
         /// <summary>
         /// RPC method that gets a new address for receiving payments.
         /// Uses the first wallet and account.
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
             HdAddress hdAddress = this.walletManager.GetUnusedAddress(this.GetAccount());
             string base58Address = hdAddress.Address;
-            
+
             return new NewAddressModel(base58Address);
         }
 
@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Total spendable balance of the wallet.</returns>
         [ActionName("getbalance")]
         [ActionDescription("Gets wallets spendable balance.")]
-        public decimal GetBalance(string accountName, int minConfirmations=0)
+        public decimal GetBalance(string accountName, int minConfirmations = 0)
         {
             if (!string.IsNullOrEmpty(accountName) && !accountName.Equals("*"))
                 throw new RPCServerException(RPCErrorCode.RPC_METHOD_DEPRECATED, "Account has been deprecated, must be excluded or set to \"*\"");
@@ -236,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             var unspentCoins = new List<UnspentCoinModel>();
             foreach (var spendableTx in spendableTransactions)
-            {               
+            {
                 if (spendableTx.Confirmations <= maxConfirmations)
                 {
                     if (!addresses.Any() || addresses.Contains(BitcoinAddress.Create(spendableTx.Address.Address, this.fullNode.Network)))
@@ -253,7 +253,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                             Confirmations = spendableTx.Confirmations,
                             IsSpendable = spendableTx.Transaction.IsSpendable(),
                             IsSolvable = spendableTx.Transaction.IsSpendable() // If it's spendable we assume it's solvable.
-                            });
+                        });
                     }
                 }
             }
@@ -265,72 +265,100 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Creates and broadcasts a transaction which sends outputs to multiple addresses.")]
         public async Task<uint256> SendManyAsync(string fromAccount, string addressesJson, int minConf = 1, string comment = null, string subtractFeeFromJson = null, bool isReplaceable = false, int? confTarget = null, string estimateMode = "UNSET")
         {
-            IEnumerable<Recipient> recipients = null;
+            if (string.IsNullOrEmpty(addressesJson))
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, "No valid output addresses specified.");
 
+            var addresses = new Dictionary<string, decimal>();
             try
             {
-                // Optional list of addresses to subtract fees from.
-                IEnumerable<BitcoinAddress> subtractFeeFromAddresses = null;
-                if (!string.IsNullOrEmpty(subtractFeeFromJson))
-                {
-                    subtractFeeFromAddresses = JsonConvert.DeserializeObject<List<string>>(subtractFeeFromJson).Select(i => BitcoinAddress.Create(i, this.fullNode.Network));
-                }
-
                 // Outputs addresses are keyvalue pairs of address, amount. Translate to Receipient list.
-                if (!string.IsNullOrEmpty(addressesJson))
-                {
-                    recipients = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(addressesJson).Select(address => new Recipient
-                    {
-                        ScriptPubKey = BitcoinAddress.Create(address.Key, this.fullNode.Network).ScriptPubKey,
-                        Amount = Money.Coins(address.Value),
-                        SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.fullNode.Network))
-                    });
-                }
+                addresses = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(addressesJson);
             }
             catch (JsonSerializationException ex)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_PARSE_ERROR, ex.Message);
             }
 
-            if (recipients == null || !recipients.Any())
-            {
+            if (addresses.Count == 0)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, "No valid output addresses specified.");
+
+            // Optional list of addresses to subtract fees from.
+            IEnumerable<BitcoinAddress> subtractFeeFromAddresses = null;
+            if (!string.IsNullOrEmpty(subtractFeeFromJson))
+            {
+                try
+                {
+                    subtractFeeFromAddresses = JsonConvert.DeserializeObject<List<string>>(subtractFeeFromJson).Select(i => BitcoinAddress.Create(i, this.fullNode.Network));
+                }
+                catch (JsonSerializationException ex)
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_PARSE_ERROR, ex.Message);
+                }
+            }
+
+            var recipients = new List<Recipient>();
+            foreach (var address in addresses)
+            {
+                // Check for duplicate recipients
+                var recipientAddress = BitcoinAddress.Create(address.Key, this.fullNode.Network).ScriptPubKey;
+                if (recipients.Any(r => r.ScriptPubKey == recipientAddress))
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, string.Format("Invalid parameter, duplicated address: {0}.", recipientAddress));
+
+                var amount = Money.Coins(address.Value);
+                if (amount <= 0)
+                    throw new RPCServerException(RPCErrorCode.RPC_TYPE_ERROR, "Invalid amount to send.");
+
+                var recipient = new Recipient
+                {
+                    ScriptPubKey = recipientAddress,
+                    Amount = amount,
+                    SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.fullNode.Network))
+                };
+
+                recipients.Add(recipient);
             }
 
             var accountReference = this.GetAccount();
+            var spendable = this.walletManager.GetSpendableTransactionsInAccount(accountReference, minConf);
+            if (recipients.Sum(r => r.Amount) > spendable.Sum(x => x.Transaction.Amount))
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_INSUFFICIENT_FUNDS, "Wallet has insufficient funds.");
+
             var context = new TransactionBuildContext(this.fullNode.Network)
             {
-                AccountReference = accountReference,                
+                AccountReference = accountReference,
                 MinConfirmations = minConf,
                 Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.                
-                Recipients = recipients.ToList()                
+                Recipients = recipients
             };
 
             // Set fee type for transaction build context.
             context.FeeType = FeeType.Medium;
+
             if (estimateMode.Equals("ECONOMICAL", StringComparison.InvariantCultureIgnoreCase))
                 context.FeeType = FeeType.Low;
+
             else if (estimateMode.Equals("CONSERVATIVE", StringComparison.InvariantCultureIgnoreCase))
                 context.FeeType = FeeType.High;
 
             try
-            { 
+            {
                 // Log warnings for currently unsupported parameters.
                 if (!string.IsNullOrEmpty(comment))
                     this.logger.LogWarning("'comment' parameter is currently unsupported. Ignored.");
+
                 if (isReplaceable)
                     this.logger.LogWarning("'replaceable' parameter is currently unsupported. Ignored.");
+
                 if (confTarget != null)
                     this.logger.LogWarning("'conf_target' parameter is currently unsupported. Ignored.");
 
-                // Build and broadcast the transaction.
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
                 await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
                 return transaction.GetHash();
             }
             catch (WalletException exception)
-            {                
+            {
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
             }
             catch (NotImplementedException exception)
@@ -345,7 +373,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
             if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
+
             HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
+
             return new WalletAccountReference(walletName, account.Name);
         }
     }
