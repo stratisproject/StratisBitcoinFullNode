@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Networks
             this.NodeDefaults = new NodeDefaults(
                 maxOutboundConnections: 8,
                 maxInboundConnections: 117,
-                requireStandardTransactions: true
+                acceptNonStandardTransactions: false
                 );
             this.RPCPort = 8332;
             this.MaxTimeOffsetSeconds = BitcoinMaxTimeOffsetSeconds;

@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.NodeDefaults = new NodeDefaults(
                 maxOutboundConnections: 16,
                 maxInboundConnections: 109,
-                requireStandardTransactions: false
+                acceptNonStandardTransactions: true
             );
             this.RPCPort = 18332;
             this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;

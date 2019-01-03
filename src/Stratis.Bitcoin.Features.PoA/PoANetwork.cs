@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.NodeDefaults = new NodeDefaults(
                 maxOutboundConnections: 16,
                 maxInboundConnections: 109,
-                requireStandardTransactions: true
+                acceptNonStandardTransactions: false
                 );
             this.RPCPort = 16474;
             this.MaxTipAge = 2 * 60 * 60;

@@ -25,16 +25,16 @@ namespace NBitcoin
         /// <summary>
         /// The default setting for whether nodes on this network accept transactions that are not of a 'standard' type.
         /// </summary>
-        public bool RequireStandardTransactions { get; }
+        public bool AcceptNonStandardTransactions { get; }
 
         public NodeDefaults(
             int maxOutboundConnections,
             int maxInboundConnections,
-            bool requireStandardTransactions)
+            bool acceptNonStandardTransactions)
         {
             this.MaxOutboundConnections = maxOutboundConnections;
             this.MaxInboundConnections = maxInboundConnections;
-            this.RequireStandardTransactions = requireStandardTransactions;
+            this.AcceptNonStandardTransactions = acceptNonStandardTransactions;
         }
     }
 }

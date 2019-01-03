@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
-            // TODO: This can be removed as soon as the Cirrus network sets RequireStandardTransactions to false in NodeDefaults.
+            // TODO: This can be removed as soon as the Cirrus network sets AcceptNonStandardTransactions to true in NodeDefaults.
             mempoolSettings.RequireStandard = false;
 
             this.callDataSerializer = callDataSerializer;
