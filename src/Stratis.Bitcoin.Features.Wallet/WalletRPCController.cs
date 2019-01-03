@@ -265,32 +265,39 @@ namespace Stratis.Bitcoin.Features.Wallet
         [ActionDescription("Creates and broadcasts a transaction which sends outputs to multiple addresses.")]
         public async Task<uint256> SendManyAsync(string fromAccount, string addressesJson, int minConf = 1, string comment = null, string subtractFeeFromJson = null, bool isReplaceable = false, int? confTarget = null, string estimateMode = "UNSET")
         {
-            var accountReference = this.GetAccount();
-           
-            // Optional list of addresses to subtract fees from.
-            IEnumerable<BitcoinAddress> subtractFeeFromAddresses = null;            
-            if (!string.IsNullOrEmpty(subtractFeeFromJson))
-            {
-                subtractFeeFromAddresses = JsonConvert.DeserializeObject<List<string>>(subtractFeeFromJson).Select(i => BitcoinAddress.Create(i, this.fullNode.Network));
-            }
-
-            // Outputs addresses are keyvalue pairs of address, amount. Translate to Receipient list.
             IEnumerable<Recipient> recipients = null;
-            if (!string.IsNullOrEmpty(addressesJson))
+
+            try
             {
-                recipients = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(addressesJson).Select(address => new Recipient
+                // Optional list of addresses to subtract fees from.
+                IEnumerable<BitcoinAddress> subtractFeeFromAddresses = null;
+                if (!string.IsNullOrEmpty(subtractFeeFromJson))
                 {
-                    ScriptPubKey = BitcoinAddress.Create(address.Key, this.fullNode.Network).ScriptPubKey,
-                    Amount = Money.Coins(address.Value),
-                    SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.fullNode.Network))
-                });
+                    subtractFeeFromAddresses = JsonConvert.DeserializeObject<List<string>>(subtractFeeFromJson).Select(i => BitcoinAddress.Create(i, this.fullNode.Network));
+                }
+
+                // Outputs addresses are keyvalue pairs of address, amount. Translate to Receipient list.
+                if (!string.IsNullOrEmpty(addressesJson))
+                {
+                    recipients = JsonConvert.DeserializeObject<Dictionary<string, decimal>>(addressesJson).Select(address => new Recipient
+                    {
+                        ScriptPubKey = BitcoinAddress.Create(address.Key, this.fullNode.Network).ScriptPubKey,
+                        Amount = Money.Coins(address.Value),
+                        SubtractFeeFromAmount = subtractFeeFromAddresses == null ? false : subtractFeeFromAddresses.Contains(BitcoinAddress.Create(address.Key, this.fullNode.Network))
+                    });
+                }
+            }
+            catch (JsonSerializationException ex)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_PARSE_ERROR, ex.Message);
             }
 
             if (recipients == null || !recipients.Any())
             {
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_PARAMETER, "No valid output addresses specified.");
             }
-          
+
+            var accountReference = this.GetAccount();
             var context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = accountReference,                
@@ -325,7 +332,11 @@ namespace Stratis.Bitcoin.Features.Wallet
             catch (WalletException exception)
             {                
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
-            }          
+            }
+            catch (NotImplementedException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_MISC_ERROR, exception.Message);
+            }
         }
 
         private WalletAccountReference GetAccount()

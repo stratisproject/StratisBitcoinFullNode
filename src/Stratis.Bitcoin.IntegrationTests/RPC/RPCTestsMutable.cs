@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading;
 using FluentAssertions;
@@ -181,6 +182,32 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 rpcClient.WalletPassphrase("password", 5);
                 Thread.Sleep(120 * 1000); // 2 minutes.
                 Assert.Throws<RPCException>(() => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)));
+            }
+        }
+
+        [Fact]
+        public void TestRpcSendManyWithInvalidParametersFails()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(network).WithWallet().Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+                rpcClient.WalletPassphrase("password", 60);
+
+                // Test with empty list of addresses
+                Dictionary<string, decimal> addresses = new Dictionary<string, decimal>(); 
+                var addressesJson = JsonConvert.SerializeObject(addresses);
+                Action action = () => rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
+                action.Should().Throw<RPCException>()
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_PARAMETER);
+
+                // Test with malformed Json.
+                addressesJson = "[\"address\"";
+                action = () => rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
+                action.Should().Throw<RPCException>()
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_PARSE_ERROR); 
             }
         }
 
