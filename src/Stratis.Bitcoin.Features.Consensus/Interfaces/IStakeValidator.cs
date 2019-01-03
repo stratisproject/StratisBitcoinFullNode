@@ -140,5 +140,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="targetDepth">The target depth.</param>
         /// <returns><c>true</c> if the coins were spent within N blocks from <see cref="referenceChainedHeader"/>, <c>false</c> otherwise.</returns>
         bool IsConfirmedInNPrevBlocks(UnspentOutputs coins, ChainedHeader referenceChainedHeader, long targetDepth);
+
+        /// <summary>
+        /// Gets the required target depth according to the previous chained header and the consensus options.
+        /// </summary>
+        /// <param name="prevChainedHeader">Previous chained block.</param>
+        /// <returns>A value indicating the required target depth in number of blocks.</returns>
+        long GetTargetDepthRequired(ChainedHeader prevChainedHeader);
     }
 }
