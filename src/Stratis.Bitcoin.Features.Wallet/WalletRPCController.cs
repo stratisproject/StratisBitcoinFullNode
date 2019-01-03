@@ -319,9 +319,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             var accountReference = this.GetAccount();
-            var spendable = this.walletManager.GetSpendableTransactionsInAccount(accountReference, minConf);
-            if (recipients.Sum(r => r.Amount) > spendable.Sum(x => x.Transaction.Amount))
-                throw new RPCServerException(RPCErrorCode.RPC_WALLET_INSUFFICIENT_FUNDS, "Wallet has insufficient funds.");
 
             var context = new TransactionBuildContext(this.fullNode.Network)
             {
