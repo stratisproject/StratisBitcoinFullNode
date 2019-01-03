@@ -121,8 +121,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
-            this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
-            this.MaxInboundConnections = config.GetOrDefault<int>("maxinboundconnections", nodeSettings.Network.DefaultMaxInboundConnections, this.logger);
+            this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.NodeDefaults.MaxOutboundConnections, this.logger);
+            this.MaxInboundConnections = config.GetOrDefault<int>("maxinboundconnections", nodeSettings.Network.NodeDefaults.MaxInboundConnections, this.logger);
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
@@ -160,9 +160,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#externalip=<ip>");
             builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"#bantime=<number>");
-            builder.AppendLine($"#The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"#The maximum number of outbound connections. Default {network.NodeDefaults.MaxOutboundConnections}.");
             builder.AppendLine($"#maxoutboundconnections=<number>");
-            builder.AppendLine($"#The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
+            builder.AppendLine($"#The maximum number of inbound connections. Default {network.NodeDefaults.MaxInboundConnections}.");
             builder.AppendLine($"#maxinboundconnections=<number>");
             builder.AppendLine($"#Sync with peers. Default 1.");
             builder.AppendLine($"#synctime=1");
@@ -193,8 +193,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
-            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
-            builder.AppendLine($"-maxinboundconnections=<number>  The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
+            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.NodeDefaults.MaxOutboundConnections}.");
+            builder.AppendLine($"-maxinboundconnections=<number>  The maximum number of inbound connections. Default {network.NodeDefaults.MaxInboundConnections}.");
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");

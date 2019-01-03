@@ -37,8 +37,11 @@ namespace Stratis.Bitcoin.Networks
             this.Name = "StratisMain";
             this.Magic = magic;
             this.DefaultPort = 16178;
-            this.DefaultMaxOutboundConnections = 16;
-            this.DefaultMaxInboundConnections = 109;
+            this.NodeDefaults = new NodeDefaults(
+                maxOutboundConnections: 16,
+                maxInboundConnections: 109,
+                requireStandardTransactions: true
+            );
             this.RPCPort = 16174;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;

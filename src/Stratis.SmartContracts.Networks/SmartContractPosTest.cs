@@ -17,8 +17,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
             this.DefaultConfigFilename = SmartContractNetwork.StratisDefaultConfigFilename;
             this.Magic = 0x0709110F; // Incremented 09/08
             this.DefaultPort = 18333;
-            this.DefaultMaxOutboundConnections = 16;
-            this.DefaultMaxInboundConnections = 109;
+            this.NodeDefaults = new NodeDefaults(
+                maxOutboundConnections: 16,
+                maxInboundConnections: 109,
+                requireStandardTransactions: false
+            );
             this.RPCPort = 18332;
             this.MaxTipAge = SmartContractNetwork.BitcoinDefaultMaxTipAgeInSeconds;
             this.MinTxFee = 1000;

@@ -36,8 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
-            // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
-            // TODO: Remove ASAP. Ensure RequireStandard isn't used on SC mainnets, or the StandardScripts check is modular.
+            // TODO: This can be removed as soon as the Cirrus network sets RequireStandardTransactions to false in NodeDefaults.
             mempoolSettings.RequireStandard = false;
 
             this.callDataSerializer = callDataSerializer;

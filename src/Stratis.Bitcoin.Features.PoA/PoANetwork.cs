@@ -40,8 +40,11 @@ namespace Stratis.Bitcoin.Features.PoA
             this.Name = "PoAMain";
             this.Magic = magic;
             this.DefaultPort = 16438;
-            this.DefaultMaxOutboundConnections = 16;
-            this.DefaultMaxInboundConnections = 109;
+            this.NodeDefaults = new NodeDefaults(
+                maxOutboundConnections: 16,
+                maxInboundConnections: 109,
+                requireStandardTransactions: true
+                );
             this.RPCPort = 16474;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
