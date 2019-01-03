@@ -544,7 +544,7 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     this.logger.LogDebug("Sending getheaders payload with first hash: '{0}'.", getHeadersPayload.BlockLocator.Blocks.First());
 
-                    await peer.SendMessageAsync(getHeadersPayload).ConfigureAwait(false);
+                    peer.SendMessage(getHeadersPayload);
                 }
                 catch (OperationCanceledException)
                 {

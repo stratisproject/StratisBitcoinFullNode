@@ -4,6 +4,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -16,8 +17,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Network network;
         private readonly ICheckpoints checkpoints;
 
-        public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints)
-            : base(chain, chainState, loggerFactory, consensusManager)
+        public ProvenHeadersBlockStoreBehavior(Network network, ConcurrentChain chain, IChainState chainState, ILoggerFactory loggerFactory, IConsensusManager consensusManager, ICheckpoints checkpoints, IBlockStoreQueue blockStoreQueue)
+            : base(chain, chainState, loggerFactory, consensusManager, blockStoreQueue)
         {
             this.network = Guard.NotNull(network, nameof(network));
             this.checkpoints = Guard.NotNull(checkpoints, nameof(checkpoints));
@@ -39,7 +40,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         [NoTrace]
         public override object Clone()
         {
-            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints)
+            var res = new ProvenHeadersBlockStoreBehavior(this.network, this.chain, this.chainState, this.loggerFactory, this.consensusManager, this.checkpoints, this.blockStoreQueue)
             {
                 CanRespondToGetBlocksPayload = this.CanRespondToGetBlocksPayload,
                 CanRespondToGetDataPayload = this.CanRespondToGetDataPayload

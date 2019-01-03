@@ -72,6 +72,8 @@ namespace NBitcoin
             byte[] val = bytes.SafeSubarray(0, Math.Min(bytes.Length, 3));
             Array.Reverse(val);
             byte exp = (byte)(bytes.Length);
+            if (exp == 1 && bytes[0] == 0)
+                exp = 0;
             int missing = 4 - val.Length;
             if(missing > 0)
                 val = val.Concat(new byte[missing]).ToArray();
@@ -111,8 +113,6 @@ namespace NBitcoin
                 return this._Difficulty.Value;
             }
         }
-
-
 
         public override bool Equals(object obj)
         {

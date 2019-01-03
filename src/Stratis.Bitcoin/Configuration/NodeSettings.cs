@@ -51,6 +51,9 @@ namespace Stratis.Bitcoin.Configuration
         /// <summary>Path to the data directory. This value is read-only and is set in the constructor's args.</summary>
         public string DataDir { get; private set; }
 
+        /// <summary>Path to the root data directory. This value is read-only and is set in the constructor's args.</summary>
+        public string DataDirRoot { get; private set; }
+
         /// <summary>Path to the configuration file. This value is read-only and is set in the constructor's args.</summary>
         public string ConfigurationFile { get; private set; }
 
@@ -122,6 +125,7 @@ namespace Stratis.Bitcoin.Configuration
             // but both the data directory and the configuration file path may be changed using the -datadir and -conf command-line arguments.
             this.ConfigurationFile = this.ConfigReader.GetOrDefault<string>("conf", null, this.Logger)?.NormalizeDirectorySeparator();
             this.DataDir = this.ConfigReader.GetOrDefault<string>("datadir", null, this.Logger)?.NormalizeDirectorySeparator();
+            this.DataDirRoot = this.ConfigReader.GetOrDefault<string>("datadirroot", "StratisNode", this.Logger);
 
             // If the configuration file is relative then assume it is relative to the data folder and combine the paths.
             if (this.DataDir != null && this.ConfigurationFile != null)
@@ -168,7 +172,7 @@ namespace Stratis.Bitcoin.Configuration
             if (this.DataDir == null)
             {
                 // Create the data directories if they don't exist.
-                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine("StratisNode", this.Network.RootFolderName), this.Network);
+                this.DataDir = this.CreateDefaultDataDirectories(Path.Combine(this.DataDirRoot, this.Network.RootFolderName), this.Network);
             }
             else
             {

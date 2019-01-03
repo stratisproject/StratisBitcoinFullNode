@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
         public IEnumerable<ValidationResult> Validate(TypeDefinition type)
         {
-            if (SmartContractType != type.BaseType.FullName)
+            if (type.BaseType == null || SmartContractType != type.BaseType.FullName)
             {
                 return new [] {
                     new TypeDefinitionValidationResult("Contract must implement the SmartContract class.")
