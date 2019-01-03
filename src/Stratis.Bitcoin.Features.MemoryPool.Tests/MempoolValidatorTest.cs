@@ -25,7 +25,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -184,7 +184,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             var network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -502,7 +502,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             var network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -531,7 +531,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             var network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -563,7 +563,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             var network = KnownNetworks.StratisMain;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -596,7 +596,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -637,7 +637,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -669,7 +669,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -707,7 +707,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -743,7 +743,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -768,7 +768,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -794,7 +794,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -823,7 +823,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -860,7 +860,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             var network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -888,7 +888,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -923,7 +923,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             var network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -953,7 +953,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -983,7 +983,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1033,7 +1033,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1070,7 +1070,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1102,7 +1102,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1136,7 +1136,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1165,7 +1165,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1245,7 +1245,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1305,7 +1305,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1464,7 +1464,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1533,7 +1533,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1569,7 +1569,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
@@ -1622,7 +1622,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
             string dataDir = GetTestDirectoryPath(this);
 
-            // Run mempool tests on mainnet so that RequireStandardTransactions flag is set in the mempool settings.
+            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
             Network network = KnownNetworks.Main;
             var minerSecret = new BitcoinSecret(new Key(), network);
             ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
