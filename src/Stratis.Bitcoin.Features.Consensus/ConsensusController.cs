@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -45,6 +49,36 @@ namespace Stratis.Bitcoin.Features.Consensus
             return this.ChainState.ConsensusTip?.HashBlock;
         }
 
+        /// <summary>
+        /// Get the threshold states of softforks currently being deployed.
+        /// Allowable states are: Defined, Started, LockedIn, Failed, Active.
+        /// </summary>
+        /// <returns>Json formatted type with Deployment Index <see cref="int"/>, 
+        /// State Value <see cref="ThresholdState"/>, human readable Threshold State <see cref="string"/>
+        /// Returns <see cref="IActionResult"/> formatted error if fails.
+        /// </returns>.
+        [Route("api/[controller]/getdeploymentflags")]
+        [HttpGet]
+        public IActionResult GetDeploymentFlags()
+        {
+            try
+            { 
+                var rule = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>();
+                ThresholdState[] states = rule.Parent.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
+                var result = states.Select((s, n) => new {
+                    DeploymentIndex = n,
+                    StateValue = s,
+                    ThresholdState = ((ThresholdState)s).ToString()
+                });
+                return this.Json(result);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+        
         /// <summary>
         /// Get the hash of the block at the consensus tip.
         /// API wrapper of RPC call.
