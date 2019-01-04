@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
@@ -214,7 +215,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var blocks = new List<Block>();
             Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
             BlockHeader blockHeader = block.Header;
-            blockHeader.Bits = new Target(12);
+            blockHeader.Bits = new Target(12);           
             Transaction transaction = this.Network.CreateTransaction();
             transaction.Version = 32;
             block.Transactions.Add(transaction);
@@ -224,10 +225,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             blocks.Add(block);
 
             Block block2 = this.Network.Consensus.ConsensusFactory.CreateBlock();
+            block2.Header.Nonce = 11;
             transaction = this.Network.CreateTransaction();
             transaction.Version = 15;
             block2.Transactions.Add(transaction);
-            blocks.Add(block2);
+            blocks.Add(block2); 
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -252,12 +254,13 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Dictionary<byte[], byte[]> transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
                 Assert.Equal(new HashHeightPair(nextBlockHash, 100), this.DBreezeSerializer.Deserialize<HashHeightPair>(blockHashKeyRow.Value));
-                Assert.Single(blockDict);
-                Assert.Single(transDict);
+      
+                Assert.Equal(2, blockDict.Count);
+                Assert.Equal(3, transDict.Count);
 
                 foreach (KeyValuePair<byte[], byte[]> item in blockDict)
                 {
-                    Block bl = blocks.First(b => b.GetHash() == new uint256(item.Key));
+                    Block bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
                     Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, this.Network).Header.GetHash());
                 }
 
