@@ -65,12 +65,12 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
         protected abstract bool IsCacheFull(CacheItem item);
 
-        /// <summary>And item was added to the cache.</summary>
+        /// <summary>An item was added to the cache.</summary>
         protected virtual void ItemAddedLocked(CacheItem item)
         {
         }
 
-        /// <summary>And item was removed from the cache.</summary>
+        /// <summary>An item was removed from the cache.</summary>
         protected virtual void ItemRemovedLocked(CacheItem item)
         {
         }
