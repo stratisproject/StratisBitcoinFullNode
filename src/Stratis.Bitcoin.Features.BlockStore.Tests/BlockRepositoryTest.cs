@@ -252,12 +252,12 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Dictionary<byte[], byte[]> transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
                 Assert.Equal(new HashHeightPair(nextBlockHash, 100), this.DBreezeSerializer.Deserialize<HashHeightPair>(blockHashKeyRow.Value));
-                Assert.Equal(2, blockDict.Count);
-                Assert.Equal(3, transDict.Count);
+                Assert.Single(blockDict);
+                Assert.Single(transDict);
 
                 foreach (KeyValuePair<byte[], byte[]> item in blockDict)
                 {
-                    Block bl = blocks.Single(b => b.GetHash() == new uint256(item.Key));
+                    Block bl = blocks.First(b => b.GetHash() == new uint256(item.Key));
                     Assert.Equal(bl.Header.GetHash(), Block.Load(item.Value, this.Network).Header.GetHash());
                 }
 
