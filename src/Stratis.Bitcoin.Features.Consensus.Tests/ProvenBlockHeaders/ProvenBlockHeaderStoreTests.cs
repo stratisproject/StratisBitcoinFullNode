@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact]
         public async Task InitialiseStoreToGenesisChainHeaderAsync()
         {
-            var genesis = this.BuildChainWithProvenHeaders(1);
+            var genesis = this.BuildProvenHeaderChain(1);
 
             await this.provenBlockHeaderStore.InitializeAsync(genesis).ConfigureAwait(false);
 
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task AddToPending_Adds_To_CacheAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync(this.BuildChainWithProvenHeaders(1)).ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(this.BuildProvenHeaderChain(1)).ConfigureAwait(false);
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task AddToPending_Adds_To_Cache_Then_Save_To_DiskAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1)).ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildProvenHeaderChain(1)).ConfigureAwait(false);
 
             // Add to pending (add to internal cache).
             var inHeader = CreateNewProvenBlockHeaderMock();
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task Add_2k_ProvenHeaders_ToPending_CacheAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1)).ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildProvenHeaderChain(1)).ConfigureAwait(false);
 
             ProvenBlockHeader inHeader = null;
 
@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         public async Task Add_2k_ProvenHeaders_To_PendingBatch_Then_Save_Then_PendingBatch_Should_Be_EmptyAsync()
         {
             // Initialise store.
-            await this.provenBlockHeaderStore.InitializeAsync(BuildChainWithProvenHeaders(1)).ConfigureAwait(false);
+            await this.provenBlockHeaderStore.InitializeAsync(BuildProvenHeaderChain(1)).ConfigureAwait(false);
 
             ProvenBlockHeader inHeader = null;
 
@@ -271,7 +271,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         [Fact]
         public async Task AddToPending_Store_TipHash_Is_The_Same_As_ChainHeaderTipAsync()
         {
-            var chainWithHeaders = BuildChainWithProvenHeaders(3);
+            var chainWithHeaders = BuildProvenHeaderChain(3);
             SortedDictionary<int, ProvenBlockHeader> provenBlockheaders = this.ConvertToDictionaryOfProvenHeaders(chainWithHeaders);
 
             // Persist current chain.

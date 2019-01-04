@@ -375,7 +375,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [IsBitcoinAddress()]
         public string Address { get; set; }
     }
-    
+
+    /// <summary>
     /// Model object to use as input to the Api request for getting the spendable transactions in an account.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
@@ -388,9 +389,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public string AccountName { get; set; }
 
         /// <summary>
-        /// The min number of confirmations required. 
-        /// To allow unconfirmed transactions, set this value to 0. 
+        /// The min number of confirmations required.
+        /// To allow unconfirmed transactions, set this value to 0.
         /// </summary>
         public int MinConfirmations { get; set; }
+    }
+
+    public class SplitCoinsRequest : RequestModel
+    {
+        [Required(ErrorMessage = "The name of the wallet is missing.")]
+        public string WalletName { get; set; }
+
+        [Required(ErrorMessage = "The name of the account is missing.")]
+        public string AccountName { get; set; }
+
+        [Required(ErrorMessage = "A password is required.")]
+        public string WalletPassword { get; set; }
+
+        /// <summary>The amount that will be sent.</summary>
+        [Required(ErrorMessage = "An amount is required.")]
+        [MoneyFormat(ErrorMessage = "The amount is not in the correct format.")]
+        public string TotalAmountToSplit { get; set; }
+
+        [Required]
+        public int UtxosCount { get; set; }
     }
 }
