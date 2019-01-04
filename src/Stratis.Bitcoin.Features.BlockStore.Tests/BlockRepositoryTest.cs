@@ -224,6 +224,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             blocks.Add(block);
 
             Block block2 = this.Network.Consensus.ConsensusFactory.CreateBlock();
+            block2.Header.Nonce = 11;
             transaction = this.Network.CreateTransaction();
             transaction.Version = 15;
             block2.Transactions.Add(transaction);
