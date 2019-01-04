@@ -22,6 +22,9 @@ namespace Stratis.Bitcoin.Utilities
             }
         }
 
+        /// <summary>Gets max size in bytes that can be stored in the cache.</summary>
+        public long MaxSize => this.maxSize;
+
         /// <summary>
         /// Initializes a new instance of the <see cref="MemoryCountCache{TKey, TValue}"/> class.
         /// </summary>
@@ -45,7 +48,7 @@ namespace Stratis.Bitcoin.Utilities
             base.AddOrUpdate(item);
         }
 
-        protected override bool IsCacheFull(CacheItem item)
+        protected override bool IsCacheFullLocked(CacheItem item)
         {
             return this.TotalSize > (this.maxSize - item.Size);
         }

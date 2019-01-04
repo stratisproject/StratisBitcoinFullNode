@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Determine whether the cache has reached its limit.</summary>
         /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
-        protected abstract bool IsCacheFull(CacheItem item);
+        protected abstract bool IsCacheFullLocked(CacheItem item);
 
         /// <summary>An item was added to the cache.</summary>
         protected virtual void ItemAddedLocked(CacheItem item)
@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Utilities
                 }
                 else
                 {
-                    while (this.IsCacheFull(item))
+                    while (this.IsCacheFullLocked(item))
                     {
                         // Remove the item that was not used for the longest time.
                         LinkedListNode<CacheItem> lastNode = this.keys.First;

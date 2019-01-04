@@ -273,6 +273,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
+            if(this.TipHashHeight == null)
+                return;
+
             long totalBytes = 0;
             int count = 0;
 
@@ -282,16 +285,15 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 count = this.PendingBatch.Count;
             }
 
-            if (totalBytes == 0) return;
+            decimal totalCacheInMb = Convert.ToDecimal(this.Cache.TotalSize / Math.Pow(2, 20));
+            decimal totalMaxCacheInMb = Convert.ToDecimal(this.Cache.MaxSize / Math.Pow(2, 20));
+            decimal totalBatchInMb = Convert.ToDecimal(totalBytes / Math.Pow(2, 20));
 
-            decimal totalInMB = Convert.ToDecimal(totalBytes / Math.Pow(2, 20));
+            log.AppendLine();
+            log.AppendLine("======ProvenBlockHeaderStore======");
+            log.AppendLine($"Batch Size: {Math.Round(totalBatchInMb, 2)} Mb ({count} headers)");
+            log.AppendLine($"Cache Size: {Math.Round(totalCacheInMb, 2)}/{Math.Round(totalMaxCacheInMb, 2)} MB");
 
-            if ((this.TipHashHeight != null) && (totalBytes > 0))
-            {
-                log.AppendLine();
-                log.AppendLine("======ProvenBlockHeaderStore======");
-                log.AppendLine($"Batch Size: {Math.Round(totalInMB, 2)} Mb ({count} headers)");
-            }
         }
 
         /// <inheritdoc />
