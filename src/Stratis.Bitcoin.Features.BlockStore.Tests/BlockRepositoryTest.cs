@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
@@ -215,7 +214,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             var blocks = new List<Block>();
             Block block = this.Network.Consensus.ConsensusFactory.CreateBlock();
             BlockHeader blockHeader = block.Header;
-            blockHeader.Bits = new Target(12);           
+            blockHeader.Bits = new Target(12);
             Transaction transaction = this.Network.CreateTransaction();
             transaction.Version = 32;
             block.Transactions.Add(transaction);
@@ -253,8 +252,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Dictionary<byte[], byte[]> blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
                 Dictionary<byte[], byte[]> transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
-                Assert.Equal(new HashHeightPair(nextBlockHash, 100), this.DBreezeSerializer.Deserialize<HashHeightPair>(blockHashKeyRow.Value));
-      
+                Assert.Equal(new HashHeightPair(nextBlockHash, 100), this.DBreezeSerializer.Deserialize<HashHeightPair>(blockHashKeyRow.Value));     
                 Assert.Equal(2, blockDict.Count);
                 Assert.Equal(3, transDict.Count);
 
