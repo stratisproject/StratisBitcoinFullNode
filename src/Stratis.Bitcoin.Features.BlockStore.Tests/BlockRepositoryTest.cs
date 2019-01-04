@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             transaction = this.Network.CreateTransaction();
             transaction.Version = 15;
             block2.Transactions.Add(transaction);
-            blocks.Add(block2); 
+            blocks.Add(block2);
 
             using (var engine = new DBreezeEngine(dir))
             {
@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Dictionary<byte[], byte[]> blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
                 Dictionary<byte[], byte[]> transDict = trans.SelectDictionary<byte[], byte[]>("Transaction");
 
-                Assert.Equal(new HashHeightPair(nextBlockHash, 100), this.DBreezeSerializer.Deserialize<HashHeightPair>(blockHashKeyRow.Value));     
+                Assert.Equal(new HashHeightPair(nextBlockHash, 100), this.DBreezeSerializer.Deserialize<HashHeightPair>(blockHashKeyRow.Value));
                 Assert.Equal(2, blockDict.Count);
                 Assert.Equal(3, transDict.Count);
 
