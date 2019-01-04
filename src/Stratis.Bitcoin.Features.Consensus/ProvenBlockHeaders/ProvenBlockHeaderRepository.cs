@@ -140,6 +140,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public Task PutAsync(SortedDictionary<int, ProvenBlockHeader> headers, HashHeightPair newTip)
         {
+            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(newTip), newTip);
+
             Guard.NotNull(headers, nameof(headers));
             Guard.NotNull(newTip, nameof(newTip));
 
@@ -147,7 +149,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.GetHash()))
             {
-                this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
+                this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]{0}:{1},{2}:{3})", nameof(newTip), newTip, nameof(this.provenBlockHeaderTip), this.provenBlockHeaderTip);
 
                 throw new ProvenBlockHeaderException("Invalid new tip hash, tip hash has not changed.");
             }
