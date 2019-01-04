@@ -69,11 +69,11 @@ namespace NBitcoin.Tests
             Action createProvenHeader = () => ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(null);
             createProvenHeader.Should().Throw<ArgumentNullException>();
         }
-        
+
         [Fact]
         public void WhenCreatingNewProvenHeaderMerkleProofIsCorrectlyCreated()
         {
-            PosBlock block = this.CreatePosBlockMock();
+            PosBlock block = this.CreatePosBlock();
 
             // Add 20 more transactions.
             for (int i = 0; i < 20; i++)

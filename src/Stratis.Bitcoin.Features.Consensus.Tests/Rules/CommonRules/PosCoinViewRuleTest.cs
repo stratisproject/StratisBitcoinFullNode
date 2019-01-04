@@ -83,6 +83,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             this.stakeValidator.Setup(s => s.VerifySignature(It.IsAny<UnspentOutputs>(), It.IsAny<Transaction>(),0, It.IsAny<ScriptVerify>()))
                 .Returns(true);
 
+            // Skip validation of stake kernel
+            this.stakeValidator.Setup(s => s.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>()))
+                .Returns(true);
+
             // Since we are mocking the stakechain ensure that the Get returns a BlockStake. Otherwise this results in "previous stake is not found".
             this.stakeChain.Setup(d => d.Get(It.IsAny<uint256>())).Returns(new BlockStake()
             {

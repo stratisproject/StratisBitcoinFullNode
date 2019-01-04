@@ -18,12 +18,12 @@ namespace Stratis.SmartContracts.CLR
 
         public static Address ToAddress(this uint160 address)
         {
-            return Address.Create(address.ToBytes());
+            return CreateAddress(address.ToBytes());
         }
 
         public static Address ToAddress(this string address, Network network)
         {
-            return Address.Create(address.ToUint160(network).ToBytes());
+            return CreateAddress(address.ToUint160(network).ToBytes());
         }
 
         public static Address ToAddress(this byte[] bytes)
@@ -31,19 +31,30 @@ namespace Stratis.SmartContracts.CLR
             if (bytes.Length != Address.Width)
                 throw new ArgumentOutOfRangeException(nameof(bytes), "Address must be 20 bytes wide");
 
-            return Address.Create(bytes);
+            return CreateAddress(bytes);
         }
 
         public static Address HexToAddress(this string hexString)
         {
             // uint160 only parses a big-endian hex string
             var result = Extensions.HexStringToBytes(hexString);
-            return Address.Create(result);
+            return CreateAddress(result);
         }
 
         public static string ToBase58Address(this uint160 address, Network network)
         {
             return new BitcoinPubKeyAddress(new KeyId(address), network).ToString();
+        }
+
+        private static Address CreateAddress(byte[] bytes)
+        {
+            var pn0 = BitConverter.ToUInt32(bytes, 0);
+            var pn1 = BitConverter.ToUInt32(bytes, 4);
+            var pn2 = BitConverter.ToUInt32(bytes, 8);
+            var pn3 = BitConverter.ToUInt32(bytes, 12);
+            var pn4 = BitConverter.ToUInt32(bytes, 16);
+
+            return new Address(pn0, pn1, pn2, pn3, pn4);
         }
     }
 }

@@ -1,12 +1,12 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
 using Stratis.SmartContracts.CLR.Validation.Validators.Instruction;
 using Stratis.SmartContracts.CLR.Validation.Validators.Method;
 using Stratis.SmartContracts.CLR.Validation.Validators.Type;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -978,6 +978,64 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             IContractModuleDefinition moduleDefinition = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_TwoTypes_Valid()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state) : base(state) {}
+}
+
+
+public class Test2 {
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_TwoTypes_Invalid()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state) : base(state) {}
+}
+
+
+public class Test2 {
+    public Test2() {
+        var dt = DateTime.Now;
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
         }
     }
 }
