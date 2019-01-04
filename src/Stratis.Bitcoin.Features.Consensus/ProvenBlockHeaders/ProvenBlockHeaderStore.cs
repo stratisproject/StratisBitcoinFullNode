@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void AddToPendingBatch(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip)
         {
-            this.logger.LogTrace("({0}:{1},{2}:{3})", nameof(provenBlockHeader), provenBlockHeader, nameof(newTip), newTip);
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(provenBlockHeader), provenBlockHeader, nameof(newTip), newTip);
 
             lock (this.lockObject)
             {
