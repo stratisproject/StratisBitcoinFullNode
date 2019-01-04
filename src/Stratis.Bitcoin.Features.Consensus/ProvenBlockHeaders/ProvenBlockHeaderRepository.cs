@@ -147,7 +147,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             if ((this.provenBlockHeaderTip != null) && (newTip.Hash == this.provenBlockHeaderTip.GetHash()))
             {
-                this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
+                this.logger.LogTrace("Block hash mismatch {0}:'{1}',{2}:'{3}')", nameof(newTip), newTip, nameof(this.provenBlockHeaderTip), this.provenBlockHeaderTip);
+                this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH])");
 
                 throw new ProvenBlockHeaderException("Invalid new tip hash, tip hash has not changed.");
             }

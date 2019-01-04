@@ -188,6 +188,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void AddToPendingBatch(ProvenBlockHeader provenBlockHeader, HashHeightPair newTip)
         {
+            this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(provenBlockHeader), provenBlockHeader, nameof(newTip), newTip);
+
             lock (this.lockObject)
             {
                 // If an item is already there this means a reorg happened.
@@ -273,7 +275,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         [NoTrace]
         private void AddComponentStats(StringBuilder log)
         {
-            if(this.TipHashHeight == null)
+            if (this.TipHashHeight == null)
                 return;
 
             long totalBytes = 0;
