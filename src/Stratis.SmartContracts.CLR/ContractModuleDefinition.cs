@@ -2,9 +2,9 @@
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
-using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
+using Stratis.SmartContracts.CLR.Validation;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public sealed class ContractModuleDefinition : IContractModuleDefinition
     {
-        private List<TypeDefinition> developedTypes;
+        private List<TypeDefinition> contractTypes;
 
         private TypeDefinition contractType;
         private readonly MemoryStream stream;
@@ -25,7 +25,7 @@ namespace Stratis.SmartContracts.CLR
         }
 
         /// <inheritdoc />
-        public List<TypeDefinition> DevelopedTypes => this.developedTypes ?? (this.developedTypes = this.ModuleDefinition.GetDevelopedTypes().ToList());
+        public List<TypeDefinition> ContractTypes => this.contractTypes ?? (this.contractTypes = this.ModuleDefinition.GetContractTypes().ToList());
 
         /// <inheritdoc />
         public TypeDefinition ContractType
@@ -34,12 +34,10 @@ namespace Stratis.SmartContracts.CLR
             {
                 if (this.contractType == null)
                 {
-                    this.contractType = this.DevelopedTypes.Count == 1
-                        ? this.DevelopedTypes.First()
-                        : this.DevelopedTypes.FirstOrDefault(x =>
+                    this.contractType = this.ContractTypes.Count == 1
+                        ? this.ContractTypes.First()
+                        : this.ContractTypes.FirstOrDefault(x =>
                             x.CustomAttributes.Any(y => y.AttributeType.Name == typeof(DeployAttribute).Name));
-
-                    this.contractType = this.contractType ?? this.DevelopedTypes.FirstOrDefault();
                 }
 
                 return this.contractType;
@@ -74,7 +72,7 @@ namespace Stratis.SmartContracts.CLR
 
         public string GetPropertyGetterMethodName(string typeName, string propertyName)
         {
-            return this.DevelopedTypes
+            return this.ContractTypes
                        .FirstOrDefault(t => t.Name == typeName)
                        ?.Properties
                        .FirstOrDefault(p => p.Name == propertyName)

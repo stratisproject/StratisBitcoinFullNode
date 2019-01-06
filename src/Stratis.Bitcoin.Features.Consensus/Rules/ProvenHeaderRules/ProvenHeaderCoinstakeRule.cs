@@ -241,6 +241,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             if (previousProvenHeader != null)
             {
+                if (previousProvenHeader.StakeModifierV2 == null)
+                {
+                    this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
+                    ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
+                }
+
                 //Stake modifier acquired from prev PH.
                 this.Logger.LogTrace("(-)[PREV_PH]");
                 return previousProvenHeader.StakeModifierV2;
@@ -284,16 +290,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             uint256 previousStakeModifier = this.GetPreviousStakeModifier(chainedHeader);
 
-            if (previousStakeModifier == null)
-            {
-                this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
-                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
-            }
-
             if (header.Coinstake.IsCoinStake)
             {
                 this.Logger.LogTrace("Found coinstake checking kernal hash.");
-                this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                var validKernel = this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                if (!validKernel)
+                {
+                    this.Logger.LogTrace("(-)[INVALID_STAKE_HASH_TARGET]");
+                    ConsensusErrors.StakeHashInvalidTarget.Throw();
+                }
             }
 
             this.ComputeNextStakeModifier(header, chainedHeader, previousStakeModifier);

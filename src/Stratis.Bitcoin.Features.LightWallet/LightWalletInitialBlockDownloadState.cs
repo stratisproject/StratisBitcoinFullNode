@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
     /// </summary>
     public class LightWalletInitialBlockDownloadState : IInitialBlockDownloadState
     {
-        private bool isInInitialBlockDownload;
+        private readonly bool isInInitialBlockDownload;
 
         public LightWalletInitialBlockDownloadState()
         {

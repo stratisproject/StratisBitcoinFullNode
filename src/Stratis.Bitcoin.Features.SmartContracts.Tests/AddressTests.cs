@@ -1,9 +1,8 @@
 ﻿using System.Linq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
@@ -28,9 +27,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             0x04, 0x40, 0x05, 0x50, 0x06, 0x60, 0x07, 0x70, 0x08, 0x80
         };
 
-        private static Address address0 = Address.Create(address0Bytes);
-        private static Address address1 = Address.Create(address1Bytes);
-        private static Address address2 = Address.Create(address2Bytes);
+        private static Address address0 = address0Bytes.ToAddress();
+        private static Address address1 = address1Bytes.ToAddress();
+        private static Address address2 = address2Bytes.ToAddress();
 
         [Fact]
         public void Create_Address_Success()

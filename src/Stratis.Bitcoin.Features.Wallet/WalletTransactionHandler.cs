@@ -427,7 +427,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
-            context.TransactionBuilder.Send(opReturnScript, Money.Zero);
+            context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
         }
     }
 
@@ -529,9 +529,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool Shuffle { get; set; }
 
         /// <summary>
-        /// Optional data to be added as an extra OP_RETURN transaction output with Money.Zero value.
+        /// Optional data to be added as an extra OP_RETURN transaction output.
         /// </summary>
         public string OpReturnData { get; set; }
+
+        /// <summary>
+        /// Optional amount to add to the OP_RETURN transaction output.
+        /// </summary>
+        public Money OpReturnAmount { get; set; }
 
         /// <summary>
         /// Whether the transaction should be signed or not.
