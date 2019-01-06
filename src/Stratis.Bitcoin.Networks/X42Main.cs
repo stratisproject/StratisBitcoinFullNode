@@ -151,7 +151,8 @@ namespace Stratis.Bitcoin.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-                new DNSSeedData("seednode2.x42.tech", "seednode2.x42.tech"),
+                new DNSSeedData("mainnet1.x42seed.host", "mainnet1.x42seed.host"),
+                new DNSSeedData("mainnetnode1.x42seed.host", "mainnetnode1.x42seed.host"),
                 new DNSSeedData("tech.x42.cloud", "tech.x42.cloud"),
             };
 
