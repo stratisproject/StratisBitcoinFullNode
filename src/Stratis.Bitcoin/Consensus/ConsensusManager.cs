@@ -1016,24 +1016,16 @@ namespace Stratis.Bitcoin.Consensus
                     throw new InvalidOperationException("Unsolicited block");
                 }
 
-                if (block != null)
+                chainedHeader = this.chainedHeaderTree.GetChainedHeader(blockHash);
+                if (chainedHeader == null)
                 {
-                    chainedHeader = this.chainedHeaderTree.GetChainedHeader(blockHash);
-
-                    if (chainedHeader == null)
+                    lock (this.blockRequestedLock)
                     {
-                        lock (this.blockRequestedLock)
-                        {
-                            this.callbacksByBlocksRequestedHash.Remove(blockHash);
-                        }
-
-                        this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
-                        return;
+                        this.callbacksByBlocksRequestedHash.Remove(blockHash);
                     }
-                }
-                else
-                {
-                    this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
+
+                    this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
+                    return;
                 }
             }
 
@@ -1058,6 +1050,10 @@ namespace Stratis.Bitcoin.Consensus
                     this.logger.LogTrace("(-)[INTEGRITY_VERIFICATION_FAILED]");
                     return;
                 }
+            }
+            else
+            {
+                this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
             }
 
             List<OnBlockDownloadedCallback> listOfCallbacks = null;
