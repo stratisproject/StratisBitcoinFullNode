@@ -177,6 +177,21 @@ namespace Stratis.Bitcoin.Base.Deployments
             return state;
         }
 
+        public object EnrichStatesWithBlockMetrics(ThresholdState[] thresholdStates)
+        {
+            return thresholdStates.Select((s, n) => new
+            {
+                DeploymentIndex = n,
+                blocksDefined = this.cache.Values.Where(x => x[n] != null).Count(x => x[n].Value.Equals(ThresholdState.Defined)),
+                blocksStarted = this.cache.Values.Where(x => x[n] != null).Count(x => x[n].Value.Equals(ThresholdState.Started)),
+                blocksLockedIn = this.cache.Values.Where(x => x[n] != null).Count(x => x[n].Value.Equals(ThresholdState.LockedIn)),
+                blocksFailed = this.cache.Values.Where(x => x[n] != null).Count(x => x[n].Value.Equals(ThresholdState.Failed)),
+                blocksActive = this.cache.Values.Where(x => x[n] != null).Count(x => x[n].Value.Equals(ThresholdState.Active)),
+                StateValue = s,
+                ThresholdState = ((ThresholdState)s).ToString()
+            });
+        }
+
         /// <summary>
         /// Gets the activation state within a given block of a specific BIP9 deployment.
         /// </summary>

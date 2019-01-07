@@ -62,15 +62,15 @@ namespace Stratis.Bitcoin.Features.Consensus
         public IActionResult GetDeploymentFlags()
         {
             try
-            { 
-                var rule = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>();
-                ThresholdState[] states = rule.Parent.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
-                var result = states.Select((s, n) => new {
-                    DeploymentIndex = n,
-                    StateValue = s,
-                    ThresholdState = ((ThresholdState)s).ToString()
-                });
-                return this.Json(result);
+            {
+               var rule = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>();
+               
+               // Ensure threshold conditions cached.
+               ThresholdState[] thresholdStates = rule.Parent.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
+
+               object metrics = rule.Parent.NodeDeployments.BIP9.EnrichStatesWithBlockMetrics(thresholdStates);
+
+               return this.Json(metrics);
             }
             catch (Exception e)
             {
