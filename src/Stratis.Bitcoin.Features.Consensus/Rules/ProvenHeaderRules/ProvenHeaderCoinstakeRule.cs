@@ -241,6 +241,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             if (previousProvenHeader != null)
             {
+                if (previousProvenHeader.StakeModifierV2 == null)
+                {
+                    this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
+                    ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
+                }
+
                 //Stake modifier acquired from prev PH.
                 this.Logger.LogTrace("(-)[PREV_PH]");
                 return previousProvenHeader.StakeModifierV2;
@@ -283,12 +289,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             uint headerBits = chainedHeader.Header.Bits.ToCompact();
 
             uint256 previousStakeModifier = this.GetPreviousStakeModifier(chainedHeader);
-
-            if (previousStakeModifier == null)
-            {
-                this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
-                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
-            }
 
             if (header.Coinstake.IsCoinStake)
             {

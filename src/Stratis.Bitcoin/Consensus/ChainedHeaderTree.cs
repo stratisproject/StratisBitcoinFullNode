@@ -6,7 +6,6 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
@@ -641,7 +640,7 @@ namespace Stratis.Bitcoin.Consensus
             if (insufficientInfo)
             {
                 this.logger.LogTrace("(-)[INSUFF_INFO]");
-                return new ConnectNewHeadersResult() {Consumed = null};
+                return new ConnectNewHeadersResult() { Consumed = null };
             }
 
             if (newChainedHeaders == null)
