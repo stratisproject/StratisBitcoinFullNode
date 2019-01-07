@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
@@ -12,11 +13,14 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <summary>Memory pool validator for validating transactions.</summary>
         private readonly IMempoolValidator mempoolValidator;
 
-        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base(connectionManager)
+        private readonly ISignals signals;
+
+        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator, ISignals signals) : base(connectionManager)
         {
             Guard.NotNull(mempoolValidator, nameof(mempoolValidator));
 
             this.mempoolValidator = mempoolValidator;
+            this.signals = signals;
         }
 
         /// <inheritdoc />
@@ -45,7 +49,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 this.AddOrUpdate(transaction, State.CantBroadcast, errorMessage);
             }
             else
+            {
                 await this.PropagateTransactionToPeersAsync(transaction, this.connectionManager.ConnectedPeers.ToList()).ConfigureAwait(false);
+
+                this.signals.SignalTransaction(transaction);
+            }
         }
     }
 }
