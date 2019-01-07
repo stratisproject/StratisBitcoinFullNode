@@ -6,14 +6,13 @@ using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
@@ -274,6 +273,45 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             Assert.True(this.gasMeter.GasConsumed > 0);
         }
 
+        [Fact]
+        public void TestGasInjector_NestedType_GasInjectionSucceeds()
+        {
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(@"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state): base(state) {
+        var other = new Other.NestedOther();
+        other.Loop();
+    }
+}
+
+public static class Other
+{
+    public struct NestedOther {
+        public void Loop() { while(true) {}}
+    }
+}
+");
+            Assert.True(compilationResult.Success);
+
+            byte[] originalAssemblyBytes = compilationResult.Compilation;
+
+            IContractModuleDefinition module = this.moduleReader.Read(originalAssemblyBytes).Value;
+
+            module.Rewrite(this.rewriter);
+
+            CSharpFunctionalExtensions.Result<IContractAssembly> assembly = this.assemblyLoader.Load(module.ToByteCode());
+
+            IContract contract = Contract.CreateUninitialized(assembly.Value.GetType(module.ContractType.Name), this.state, null);
+
+            IContractInvocationResult result = contract.InvokeConstructor(null);
+
+            Assert.False(result.IsSuccess);
+            Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
+        }
 
         [Fact]
         public void Test_MemoryLimit_Small_Allocations_Pass()

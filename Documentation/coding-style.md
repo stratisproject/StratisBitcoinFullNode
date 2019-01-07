@@ -45,7 +45,7 @@ The general rules:
       }
       [EMPTY LINE HERE]
       //more code here...
-   ```   
+   ```
 
    And this is correct:
    ```
@@ -58,7 +58,7 @@ The general rules:
       }
       [EMPTY LINE HERE]
       //more code here...
-   ```   
+   ```
 19. We declare only one type per file.  
     A few exceptions exist, which are permitted, although not enforced:
     - inclusion of small POCO classes if they're closely related in functionality (like API model classes)
@@ -75,6 +75,8 @@ The general rules:
 	if (x.Value > 5 && y) // parentheses needed to avoid confusion
 	bool q = (x.Value > 5); // parentheses unnecessary
 	```
+
+24. We don't expose internal logic of the class (methods, fields, properties) just in order to test them. Find a way to expose them that doesn't requires access modifier changes in production code. If the method\field\property is not used or not expected to be used by any other component it shouldn't be public.
 
 We have provided a Visual Studio 2017 EditorConfig file (`.editorconfig`) at the root of the full node repository, enabling C# auto-formatting and warnings conforming to some of the above guidelines.
 

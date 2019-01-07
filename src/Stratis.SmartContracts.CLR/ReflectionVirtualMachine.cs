@@ -61,7 +61,6 @@ namespace Stratis.SmartContracts.CLR
                 if (!validation.IsValid)
                 {
                     this.logger.LogTrace("(-)[CONTRACT_VALIDATION_FAILED]");
-                    // TODO: List errors by string.
                     return VmExecutionResult.Fail(VmExecutionErrorKind.ValidationFailed, new SmartContractValidationException(validation.Errors).ToString());
                 }
 
