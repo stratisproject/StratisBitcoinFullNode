@@ -30,7 +30,7 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
     /// API used to communicate across to the counter chain.
     /// </summary>
     [Route("api/[controller]")]
-    public class FederationGatewayController : Controller
+    public class FederationGatewayController : ControllerBase
     {
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -163,18 +163,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.Controllers
                 this.logger.LogTrace("Exception thrown calling /api/FederationGateway/{0}: {1}.", FederationGatewayRouteEndPoint.GetInfo, e.Message);
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
-        }
-
-        /// <summary>
-        /// Builds an <see cref="IActionResult"/> containing errors contained in the <see cref="ControllerBase.ModelState"/>.
-        /// </summary>
-        /// <returns>A result containing the errors.</returns>
-        private static IActionResult BuildErrorResponse(ModelStateDictionary modelState)
-        {
-            List<ModelError> errors = modelState.Values.SelectMany(e => e.Errors).ToList();
-            return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest,
-                string.Join(Environment.NewLine, errors.Select(m => m.ErrorMessage)),
-                string.Join(Environment.NewLine, errors.Select(m => m.Exception?.Message)));
         }
     }
 }
