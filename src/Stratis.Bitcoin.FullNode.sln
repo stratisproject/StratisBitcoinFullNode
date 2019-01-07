@@ -103,8 +103,6 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Sm
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.StratisSmartContractsD", "Stratis.StratisSmartContractsD\Stratis.StratisSmartContractsD.csproj", "{59067644-24F7-437A-9C4D-2A7AD431C5F9}"
 EndProject
-Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts", "Stratis.SmartContracts\Stratis.SmartContracts.csproj", "{47C00BFF-45C3-4478-8D95-E948CFA0FE7A}"
-EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core", "Stratis.SmartContracts.Core\Stratis.SmartContracts.Core.csproj", "{979B426B-1083-48EC-902D-462DEE8127F8}"
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.CLR.Validation", "Stratis.SmartContracts.CLR.Validation\Stratis.SmartContracts.CLR.Validation.csproj", "{143DEC12-3B3E-421A-A724-D00BE552D546}"
@@ -164,7 +162,7 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Po
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Standards", "Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj", "{41687AC1-D6A0-4921-ACB1-B3DC18FDBB52}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.RuntimeObserver", "Stratis.SmartContracts.RuntimeObserver\Stratis.SmartContracts.RuntimeObserver.csproj", "{8FEFF18B-3546-4237-8FD1-9F184BC7B4C7}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.RuntimeObserver", "Stratis.SmartContracts.RuntimeObserver\Stratis.SmartContracts.RuntimeObserver.csproj", "{8FEFF18B-3546-4237-8FD1-9F184BC7B4C7}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
@@ -324,10 +322,6 @@ Global
 		{59067644-24F7-437A-9C4D-2A7AD431C5F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{59067644-24F7-437A-9C4D-2A7AD431C5F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{59067644-24F7-437A-9C4D-2A7AD431C5F9}.Release|Any CPU.Build.0 = Release|Any CPU
-		{47C00BFF-45C3-4478-8D95-E948CFA0FE7A}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
-		{47C00BFF-45C3-4478-8D95-E948CFA0FE7A}.Debug|Any CPU.Build.0 = Debug|Any CPU
-		{47C00BFF-45C3-4478-8D95-E948CFA0FE7A}.Release|Any CPU.ActiveCfg = Release|Any CPU
-		{47C00BFF-45C3-4478-8D95-E948CFA0FE7A}.Release|Any CPU.Build.0 = Release|Any CPU
 		{979B426B-1083-48EC-902D-462DEE8127F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
 		{979B426B-1083-48EC-902D-462DEE8127F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{979B426B-1083-48EC-902D-462DEE8127F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
@@ -468,7 +462,6 @@ Global
 		{B20B4F10-E43C-4BCC-B30C-856234BEA09F} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
 		{8434A954-52E4-4C8E-81F6-502CA828507B} = {15D29FFD-6142-4DC5-AFFD-10BA0CA55C45}
 		{38F19BA9-EA00-4EB5-952A-0FAF43FFAA3D} = {EAE139C2-B19C-4905-9117-8A4068ABD3D2}
-		{47C00BFF-45C3-4478-8D95-E948CFA0FE7A} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{979B426B-1083-48EC-902D-462DEE8127F8} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{143DEC12-3B3E-421A-A724-D00BE552D546} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
 		{246B2AEE-EC8B-4BCA-A6AC-959F5651AE4F} = {1B9A916F-DDAC-4675-B424-EDEDC1A58231}
