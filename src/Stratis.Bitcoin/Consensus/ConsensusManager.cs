@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -366,10 +365,16 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private void ProcessDownloadedBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
-            if (chainedHeaderBlock == null)
+            if (chainedHeaderBlock.Block == null)
             {
+                this.logger.LogWarning("Downloading block for '{0}' failed, attempting again...", chainedHeaderBlock.ChainedHeader);
+
+                // The download failed, so enqueue it for download again.
+                this.DownloadBlocks(new[] { chainedHeaderBlock.ChainedHeader }, this.ProcessDownloadedBlock);
+
                 // Peers failed to deliver the block.
                 this.logger.LogTrace("(-)[DOWNLOAD_FAILED]");
+
                 return;
             }
 
@@ -1065,10 +1070,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (listOfCallbacks != null)
             {
-                ChainedHeaderBlock chainedHeaderBlock = null;
-
-                if (block != null)
-                    chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
+                var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
 
                 this.logger.LogTrace("Calling {0} callbacks for block '{1}'.", listOfCallbacks.Count, chainedHeader);
                 foreach (OnBlockDownloadedCallback blockDownloadedCallback in listOfCallbacks)
