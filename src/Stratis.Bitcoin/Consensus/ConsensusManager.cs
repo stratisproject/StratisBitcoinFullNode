@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
         /// not yet validated or included to the consensus chain.
         /// </summary>
-        public long MaxUnconsumedBlocksDataBytes { get; private set; }
+        private long MaxUnconsumedBlocksDataBytes { get; set; }
 
         /// <summary>Queue consumption threshold in bytes.</summary>
         /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
