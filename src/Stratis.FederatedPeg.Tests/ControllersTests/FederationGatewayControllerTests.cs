@@ -24,7 +24,7 @@ using Stratis.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
-namespace Stratis.FederatedPeg.Tests
+namespace Stratis.FederatedPeg.Tests.ControllersTests
 {
     public class FederationGatewayControllerTests
     {
