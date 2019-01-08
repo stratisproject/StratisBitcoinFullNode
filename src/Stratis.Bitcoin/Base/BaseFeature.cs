@@ -23,6 +23,8 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests.Common")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests.Common")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
 

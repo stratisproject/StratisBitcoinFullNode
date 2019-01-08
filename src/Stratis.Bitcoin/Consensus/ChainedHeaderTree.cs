@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Consensus
     /// This class is not thread safe and it the role of the component that uses this class to prevent race conditions.
     /// </para>
     /// </remarks>
-    public interface IChainedHeaderTree
+    internal interface IChainedHeaderTree
     {
         /// <summary>
         /// Total size of unconsumed blocks data in bytes.
@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Consensus
     }
 
     /// <inheritdoc />
-    public class ChainedHeaderTree : IChainedHeaderTree
+    internal class ChainedHeaderTree : IChainedHeaderTree
     {
         private readonly Network network;
         private readonly IHeaderValidator headerValidator;
