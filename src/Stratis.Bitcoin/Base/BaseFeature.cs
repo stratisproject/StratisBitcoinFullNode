@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -84,9 +82,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
-        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
-        private readonly DBreezeSerializer dbreezeSerializer;
-
         /// <summary>Manager of node's network peers.</summary>
         private IPeerAddressManager peerAddressManager;
 
@@ -118,8 +113,7 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc cref="IPartialValidator"/>
         private readonly IPartialValidator partialValidator;
 
-        public BaseFeature(
-            NodeSettings nodeSettings,
+        public BaseFeature(NodeSettings nodeSettings,
             DataFolder dataFolder,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
@@ -130,7 +124,6 @@ namespace Stratis.Bitcoin.Base
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
-            DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
@@ -168,15 +161,12 @@ namespace Stratis.Bitcoin.Base
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
-            this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
-            this.dbreezeSerializer.Initialize(this.chain.Network);
-
             await this.StartChainAsync().ConfigureAwait(false);
 
             if (this.provenBlockHeaderStore != null)
@@ -267,7 +257,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartAddressManager(NetworkPeerConnectionParameters connectionParameters)
         {
-            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.loggerFactory);
+            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.peerBanning, this.loggerFactory);
             connectionParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
             if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))

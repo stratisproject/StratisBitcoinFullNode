@@ -1,14 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Local;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Local;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 
@@ -153,7 +152,7 @@ namespace Stratis.SmartContracts.Test
             }
 
             string[] stringParameters = parameters.Select(this.GetSerializedStringForObject).ToArray();
-            return this.FirstNode.CallContractMethodLocally(methodName, contractAddress, amount, stringParameters, gasLimit, gasPrice, feeAmount, from);
+            return this.FirstNode.CallContractMethodLocally(methodName, contractAddress, amount, stringParameters, gasLimit, gasPrice, from);
         }
 
         private string GetSerializedStringForObject(object toSerialize)

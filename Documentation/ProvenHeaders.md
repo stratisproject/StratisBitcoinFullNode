@@ -50,7 +50,7 @@ New type of network messages needs to be introduced to allow syncing using prove
 
  `coinstakeAge` is a consensus constant that specifies how old (confirmation-wise) a UTXO has to be in order to be allowed to be used as a coinstake's kernel.
 
-This means that if we are synced up to the block of height `x` and we receive a proven header that represents a block within the range from `x + 1` to `x + coinstakeAge` then we have enough data to validate the coinstake's kernel because a valid kernel couldn't have been originated in a block with height greater than `coinstakeAge`.
+This means that if we are synced up to the block of height `x` and we receive a proven header that represents a block within the range from `x + 1` to `x + coinstakeAge` then we have enough data to validate the coinstake's kernel because a valid kernel couldn't have been originated in a block with height greater than `x`.
 
 It's important to mention that other coinstake transaction data may be fake (non-kernel inputs, fees claimed) but we don't care about this since this data is not related to the chain work.
 

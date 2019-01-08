@@ -257,9 +257,9 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // MinerA continues to mine to height 9
                 TestHelper.MineBlocks(minerA, 4);
-                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 9);
-                TestHelper.WaitLoop(() => minerC.FullNode.ConsensusManager().Tip.Height == 5);
+                TestHelper.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 9, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 9, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 5, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
 
                 // MinerB continues to mine to block 13 without block propogation
                 TestHelper.DisableBlockPropagation(minerB, minerA);
@@ -280,9 +280,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerC));
 
                 // This will cause the reorg chain to fail at block 8 and roll back any changes.
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 9));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerB, 13));
-                TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerC, 10));
+                TestHelper.WaitLoopMessage(() => { return (minerA.FullNode.ConsensusManager().Tip.Height == 9, minerA.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerB.FullNode.ConsensusManager().Tip.Height == 13, minerB.FullNode.ConsensusManager().Tip.Height.ToString()); });
+                TestHelper.WaitLoopMessage(() => { return (minerC.FullNode.ConsensusManager().Tip.Height == 10, minerC.FullNode.ConsensusManager().Tip.Height.ToString()); });
             }
         }
     }

@@ -18,7 +18,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Number of seconds to keep misbehaving peers from reconnecting (Default 24-hour ban).</summary>
         public const int DefaultMisbehavingBantimeSeconds = 24 * 60 * 60;
         public const int DefaultMisbehavingBantimeSecondsTestnet = 10 * 60;
-        public const int DefaultMaxOutboundConnections = 8;
 
         /// <summary>Maximum number of AgentPrefix characters to use in the Agent value.</summary>
         private const int MaximumAgentPrefixLength = 10;
@@ -68,10 +67,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.Port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort, this.logger);
+
             try
             {
-                this.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
+                this.Listen.AddRange(config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
             }
             catch (FormatException)
             {
@@ -80,8 +79,26 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.Listen.AddRange(config.GetAll("whitebind", this.logger)
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), true)));
+                IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
+
+                List<IPEndPoint> networkEndpoints = this.Listen.Select(x => x.Endpoint).ToList();
+
+                foreach (IPEndPoint whiteBindEndpoint in whitebindEndpoints)
+                {
+                    if (whiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
+                    {
+                        // White-list white-bind endpoint if we are currently listening to it.
+                        NodeServerEndpoint listenToThisEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
+
+                        if (listenToThisEndpoint != null)
+                            listenToThisEndpoint.Whitelisted = true;
+                    }
+                    else
+                    {
+                        // Add to list of network interfaces if we are not.
+                        this.Listen.Add(new NodeServerEndpoint(whiteBindEndpoint, true));
+                    }
+                }
             }
             catch (FormatException)
             {
@@ -91,6 +108,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
             if (this.Listen.Count == 0)
             {
                 this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
+            }
+            else
+            {
+                var ports = this.Listen.Select(l => l.Endpoint.Port).ToList();
+
+                if (ports.Count != ports.Distinct().Count())
+                {
+                    throw new ConfigurationException("Invalid attempt to bind the same port twice");
+                }
             }
 
             try
@@ -122,7 +148,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
-            this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", ConnectionManagerSettings.DefaultMaxOutboundConnections, this.logger);
+            this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
+            this.MaxInboundConnections = config.GetOrDefault<int>("maxinboundconnections", nodeSettings.Network.DefaultMaxInboundConnections, this.logger);
             this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
@@ -134,6 +161,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.Agent = string.IsNullOrEmpty(agentPrefix) ? nodeSettings.Agent : $"{agentPrefix}-{nodeSettings.Agent}";
             this.logger.LogDebug("Agent set to '{0}'.", this.Agent);
+
+            this.IsGateway = config.GetOrDefault<bool>("gateway", false, this.logger);
         }
 
         /// <summary>
@@ -152,14 +181,16 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#addnode=<ip:port>");
             builder.AppendLine($"#Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
             builder.AppendLine($"#whitebind=<ip:port>");
-            builder.AppendLine($"#Specify your own public address.");
-            builder.AppendLine($"#whitelist=<ip:port>");
             builder.AppendLine($"#Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
+            builder.AppendLine($"#whitelist=<ip:port>");
+            builder.AppendLine($"#Specify your own public address.");
             builder.AppendLine($"#externalip=<ip>");
             builder.AppendLine($"#Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
             builder.AppendLine($"#bantime=<number>");
-            builder.AppendLine($"#The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"#The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
             builder.AppendLine($"#maxoutboundconnections=<number>");
+            builder.AppendLine($"#The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
+            builder.AppendLine($"#maxinboundconnections=<number>");
             builder.AppendLine($"#Sync with peers. Default 1.");
             builder.AppendLine($"#synctime=1");
             builder.AppendLine($"#An optional prefix for the node's user agent shared with peers. Truncated if over { MaximumAgentPrefixLength } characters.");
@@ -189,7 +220,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"-whitelist=<ip:port>      Whitelist peers having the given IP:port address, both inbound or outbound. Can be specified multiple times.");
             builder.AppendLine($"-externalip=<ip>          Specify your own public address.");
             builder.AppendLine($"-bantime=<number>         Number of seconds to keep misbehaving peers from reconnecting. Default {ConnectionManagerSettings.DefaultMisbehavingBantimeSeconds}.");
-            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {ConnectionManagerSettings.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"-maxoutboundconnections=<number> The maximum number of outbound connections. Default {network.DefaultMaxOutboundConnections}.");
+            builder.AppendLine($"-maxinboundconnections=<number>  The maximum number of inbound connections. Default {network.DefaultMaxInboundConnections}.");
             builder.AppendLine($"-synctime=<0 or 1>        Sync with peers. Default 1.");
             builder.AppendLine($"-agentprefix=<string>     An optional prefix for the node's user agent that will be shared with peers in the version handshake.");
             builder.AppendLine($"-blocksonly=<0 or 1>      Enable bandwidth saving setting to send and received confirmed blocks only. Defaults to { DefaultBlocksOnly }.");
@@ -219,6 +251,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Maximum number of outbound connections.</summary>
         public int MaxOutboundConnections { get; internal set; }
 
+        /// <summary>Maximum number of inbound connections.</summary>
+        public int MaxInboundConnections { get; internal set; }
+
         /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
         public int BurstModeTargetConnections { get; internal set; }
 
@@ -236,5 +271,9 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
         /// <summary>List of white listed IP endpoint. The node will flags peers that connects to the node, or that the node connects to, as whitelisted.</summary>
         public List<IPEndPoint> Whitelist { get; set; }
+
+        [Obsolete("Internal use only")]
+        /// <summary><c>true</c> if this instance is gateway; otherwise, <c>false</c>. Internal use only.</summary>
+        public bool IsGateway { get; set; }
     }
 }

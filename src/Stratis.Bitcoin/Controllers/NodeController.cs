@@ -119,7 +119,8 @@ namespace Stratis.Bitcoin.Controllers
                 Testnet = this.network.IsTest(),
                 RelayFee = this.nodeSettings.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime,
-                CoinTicker = this.network.CoinTicker
+                CoinTicker = this.network.CoinTicker,
+                State = this.fullNode.State.ToString()
             };
 
             // Add the list of features that are enabled.
@@ -142,7 +143,7 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     Version = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]",
                     RemoteSocketEndpoint = peer.RemoteSocketEndpoint.ToString(),
-                    TipHeight = chainHeadersBehavior.ExpectedPeerTip != null ? chainHeadersBehavior.ExpectedPeerTip.Height : peer.PeerVersion?.StartHeight ?? -1,
+                    TipHeight = chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height : peer.PeerVersion?.StartHeight ?? -1,
                     IsInbound = peer.Inbound
                 };
 

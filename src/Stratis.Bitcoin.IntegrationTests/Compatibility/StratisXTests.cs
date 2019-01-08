@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
@@ -10,6 +12,8 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Controllers;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
@@ -61,7 +65,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// Tests whether a quantity of blocks mined on X are
         /// correctly synced to an SBFN node.
         /// </summary>
-        [Fact]
+        [Retry]
         public void XMinesBlocks_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -70,12 +74,27 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 return;
             }
 
-            using (NodeBuilder builder = NodeBuilder.Create(this))
+            using (NodeBuilder builder = NodeBuilder.Create(this).WithLogsEnabled())
             {
                 var network = new StratisRegTest();
 
                 CoreNode stratisXNode = builder.CreateStratisXNode(version: "2.0.0.5").Start();
-                CoreNode stratisNode = builder.CreateStratisPosNode(network).WithWallet().Start();
+
+                var callback = new Action<IFullNodeBuilder>(build => build
+                    .UseBlockStore()
+                    .UsePosConsensus()
+                    .UseMempool()
+                    .UseWallet()
+                    .AddPowPosMining()
+                    .AddRPC());
+
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", stratisXNode.Endpoint.ToString());
+                config.Add("gateway", "1");
+
+                CoreNode stratisNode = builder
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
+                    .WithWallet().Start();
 
                 RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
@@ -125,6 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .UseWallet()
                     .AddPowPosMining()
                     .AddRPC()
+                    .UseTestChainedHeaderTree()
                     .MockIBD());
 
                 CoreNode stratisNode = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
@@ -167,7 +187,80 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
             }
         }
 
-        [Fact]
+        /// <summary>
+        /// This test is necessary because X regards nulldata transactions as non-standard if they have a value of zero assigned.
+        /// </summary>
+        [Retry]
+        public void SBFNCreatesOpReturnTransaction_XSyncs()
+        {
+            if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
+            {
+                // TODO: Add the necessary executables for Linux & OSX
+                return;
+            }
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var network = new StratisRegTest();
+
+                CoreNode stratisXNode = builder.CreateStratisXNode(version: "2.0.0.5").Start();
+
+                // We do not want the datetime provider to be substituted,
+                // so a custom builder callback has to be used.
+                var callback = new Action<IFullNodeBuilder>(build => build
+                    .UseBlockStore()
+                    .UsePosConsensus()
+                    .UseMempool()
+                    .UseWallet()
+                    .AddPowPosMining()
+                    .AddRPC()
+                    .UseTestChainedHeaderTree()
+                    .MockIBD());
+
+                CoreNode stratisNode = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
+
+                RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
+                RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
+
+                stratisXRpc.AddNode(stratisNode.Endpoint, false);
+                stratisNodeRpc.AddNode(stratisXNode.Endpoint, false);
+
+                TestHelper.MineBlocks(stratisNode, 11);
+
+                // It takes a reasonable amount of time for blocks to be generated without
+                // the datetime provider substitution.
+                var longCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(15)).Token;
+                var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+
+                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: longCancellationToken);
+
+                // Send transaction to arbitrary address from SBFN side.
+                var alice = new Key().GetBitcoinSecret(network);
+                var aliceAddress = alice.GetAddress();
+                //stratisNodeRpc.WalletPassphrase("password", 60);
+
+                var transactionBuildContext = new TransactionBuildContext(stratisNode.FullNode.Network)
+                {
+                    AccountReference = new WalletAccountReference("mywallet", "account 0"),
+                    MinConfirmations = 1,
+                    OpReturnData = "test",
+                    OpReturnAmount = Money.Coins(0.01m),
+                    WalletPassword = "password",
+                    Recipients = new List<Recipient>() { new Recipient() { Amount = Money.Coins(1), ScriptPubKey = aliceAddress.ScriptPubKey } }
+                };
+
+                var transaction = stratisNode.FullNode.WalletTransactionHandler().BuildTransaction(transactionBuildContext);
+
+                stratisNode.FullNode.NodeService<WalletController>().SendTransaction(new SendTransactionRequest(transaction.ToHex()));
+
+                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+
+                // Transaction should percolate through to X's mempool.
+                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+            }
+        }
+
+        [Retry]
         public void XMinesTransaction_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -190,7 +283,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .AddPowPosMining()
                     .AddRPC());
 
-                CoreNode stratisNode = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", stratisXNode.Endpoint.ToString());
+                config.Add("gateway", "1");
+
+                CoreNode stratisNode = builder
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
+                    .WithWallet().Start();
 
                 RPCClient stratisXRpc = stratisXNode.CreateRPCClient();
                 RPCClient stratisNodeRpc = stratisNode.CreateRPCClient();
@@ -204,7 +303,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 // Without this there seems to be a race condition between the blocks all getting generated and SBFN syncing high enough to fall through the getbestblockhash check.
                 TestHelper.WaitLoop(() => stratisXRpc.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
-                
+
                 TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
                 // Send transaction to arbitrary address from X side.
@@ -237,6 +336,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// S2 and X3 should get the transaction in their mempools.
         /// </summary>
         [Fact]
+        [Trait("Unstable", "True")]
         public void Transaction_CreatedByXNode_TraversesSBFN_ReachesSecondXNode()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -259,7 +359,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .AddPowPosMining()
                     .AddRPC());
 
-                CoreNode sbfnNode2 = builder.CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION).WithWallet().Start();
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", xNode1.Endpoint.ToString());
+                config.Add("gateway", "1");
+
+                CoreNode sbfnNode2 = builder
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
+                    .WithWallet().Start();
 
                 CoreNode xNode3 = builder.CreateStratisXNode(version: "2.0.0.5").Start();
 
@@ -276,7 +382,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
 
                 TestHelper.WaitLoop(() => xRpc1.GetBlockCount() >= 11, cancellationToken: shortCancellationToken);
-                
+
                 TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == sbfnRpc2.GetBestBlockHash(), cancellationToken: shortCancellationToken);
                 TestHelper.WaitLoop(() => xRpc1.GetBestBlockHash() == xRpc3.GetBestBlockHash(), cancellationToken: shortCancellationToken);
 
@@ -301,6 +407,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// All mempools should be empty at the end.
         /// </summary>
         [Fact]
+        [Trait("Unstable", "True")]
         public void Transaction_TraversesNodes_AndIsMined_AndNodesSync()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -323,8 +430,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                     .AddPowPosMining()
                     .AddRPC());
 
+                var config = new NodeConfigParameters();
+                config.Add("whitelist", xNode1.Endpoint.ToString());
+                config.Add("gateway", "1");
+
                 CoreNode sbfnNode2 = builder
-                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION)
+                    .CreateCustomNode(callback, network, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, minProtocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, configParameters: config)
                     .WithWallet().Start();
 
                 CoreNode xNode3 = builder.CreateStratisXNode(version: "2.0.0.5").Start();

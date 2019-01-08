@@ -1,6 +1,7 @@
 ﻿using System;
 using System.IO;
 using FluentAssertions;
+using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Features.Api;
@@ -12,13 +13,20 @@ using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests
 {
     public class CustomNodeBuilderTests
     {
+        private readonly Network network;
+
+        public CustomNodeBuilderTests()
+        {
+            this.network = new BitcoinRegTest();
+        }
+
         [Retry(1)]
         public void CanOverrideOnlyApiPort()
         {
@@ -36,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
                     ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
@@ -74,7 +82,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
                     ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
@@ -110,7 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
                     ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);
 
                 coreNode.Start();
@@ -141,7 +149,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .UseApi()
                         .MockIBD());
 
-                var coreNode = nodeBuilder.CreateCustomNode(buildAction, KnownNetworks.RegTest,
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
                     ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);
 
                 coreNode.Start();

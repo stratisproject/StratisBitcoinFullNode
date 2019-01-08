@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 {
     public static class WalletExtensions
     {
-        private const int MinConfirmationsAllChecks = 1;
+        private const int MinConfirmationsAllChecks = 0;
 
         public static List<OutPoint> GetSpendableInputsForAddress(this IWalletManager walletManager, string walletName, string address)
         {

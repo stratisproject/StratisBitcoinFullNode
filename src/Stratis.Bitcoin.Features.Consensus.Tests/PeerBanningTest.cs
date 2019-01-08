@@ -363,12 +363,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void PeerBanning_SavingAndLoading_BannedPeerToAddressManager()
         {
-            var dataFolder = CreateDataFolder(this);
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             peerBanning.BanAndDisconnectPeer(endpoint, connectionManagerSettings.BanTimeSeconds, nameof(PeerBanningTest));
 
             peerAddressManager.SavePeers();
-            peerAddressManager.Peers.Clear();
+            peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
             peerAddressManager.LoadPeers();
 
             PeerAddress peer = peerAddressManager.FindPeer(endpoint);
@@ -400,12 +400,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
         [Fact]
         public void PeerBanning_Resetting_Expired_BannedPeer()
         {
-            var dataFolder = CreateDataFolder(this);
+            DataFolder dataFolder = CreateDataFolder(this);
 
             var loggerFactory = new ExtendedLoggerFactory();
             loggerFactory.AddConsoleWithFilters();
 
-            var ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
+            IPAddress ipAddress = IPAddress.Parse("::ffff:192.168.0.1");
             var endpoint = new IPEndPoint(ipAddress, 80);
 
             var peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
@@ -429,7 +429,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests
             // Wait one second for ban to expire.
             Thread.Sleep(1000);
 
-            peerAddressManager.Peers.Clear();
+            peerAddressManager = new PeerAddressManager(DateTimeProvider.Default, dataFolder, loggerFactory, new Mock<ISelfEndpointTracker>().Object);
             peerAddressManager.LoadPeers();
 
             PeerAddress peer = peerAddressManager.FindPeer(endpoint);

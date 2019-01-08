@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
 
@@ -56,19 +57,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         public override void Run(RuleContext context)
         {
             if (context.SkipValidation)
+            {
+                this.Logger.LogTrace("(-)[VALIDATION_SKIPPED]");
                 return;
+            }
 
             Guard.NotNull(context.ValidationContext.ChainedHeaderToValidate, nameof(context.ValidationContext.ChainedHeaderToValidate));
 
             ChainedHeader chainedHeader = context.ValidationContext.ChainedHeaderToValidate;
 
             if (!this.IsProvenHeaderActivated(chainedHeader.Height))
+            {
+                this.Logger.LogTrace("(-)[PH_NOT_ACTIVATED]");
                 return;
+            }
 
             if (!this.IsProvenHeader(chainedHeader.Header))
             {
                 // We skip validation if the header is a regular header
                 // This is to allow white-listed peers to sync using regular headers.
+                this.Logger.LogTrace("(-)[NOT_A_PROVEN_HEADER]");
                 return;
             }
 

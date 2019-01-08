@@ -308,6 +308,14 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     this.logger.LogDebug("Consensus error exception occurred in miner loop: {0}", cee.ToString());
                     this.rpcGetStakingInfoModel.Errors = cee.Message;
                 }
+                catch (ConsensusException ce)
+                {
+                    // All consensus exceptions should be ignored. It means that the miner
+                    // run into problems while constructing block or verifying it
+                    // but it should not halted the staking operation.
+                    this.logger.LogDebug("Consensus exception occurred in miner loop: {0}", ce.ToString());
+                    this.rpcGetStakingInfoModel.Errors = ce.Message;
+                }
                 catch (Exception ex)
                 {
                     this.logger.LogError("Exception: {0}", ex);
@@ -423,7 +431,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             List<UnspentOutputReference> spendableTransactions = this.walletManager
                 .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1).ToList();
 
-            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
 
             foreach (UnspentOutputReference outputReference in spendableTransactions)
             {
@@ -554,7 +562,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     {
                         if (block.Transactions[i].Time > block.Header.Time)
                         {
-                            this.logger.LogTrace("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
+                            this.logger.LogDebug("Removing transaction with timestamp {0} as it is greater than coinstake transaction timestamp {1}.", block.Transactions[i].Time, block.Header.Time);
                             block.Transactions.Remove(block.Transactions[i]);
                         }
                     }
@@ -804,7 +812,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
                         var contextInformation = new PosRuleContext(BlockStake.Load(block));
 
-                        this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+                        var validKernel = this.stakeValidator.CheckKernel(contextInformation, chainTip, block.Header.Bits, txTime, prevoutStake);
+
+                        if (!validKernel)
+                        {
+                            continue;
+                        }
 
                         if (context.Result.SetKernelFoundIndex(context.Index))
                         {
@@ -847,9 +860,6 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     catch (ConsensusErrorException cex)
                     {
                         context.Logger.LogTrace("Checking kernel failed with exception: {0}.", cex.Message);
-                        if (cex.ConsensusError == ConsensusErrors.StakeHashInvalidTarget)
-                            continue;
-
                         stopWork = true;
                     }
 

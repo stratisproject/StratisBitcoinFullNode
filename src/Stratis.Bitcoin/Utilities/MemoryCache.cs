@@ -63,7 +63,17 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>Determine whether the cache has reached its limit.</summary>
         /// <returns><c>true</c> if cache contains the item, <c>false</c> otherwise.</returns>
-        protected abstract bool IsCacheFull(CacheItem item);
+        protected abstract bool IsCacheFullLocked(CacheItem item);
+
+        /// <summary>An item was added to the cache.</summary>
+        protected virtual void ItemAddedLocked(CacheItem item)
+        {
+        }
+
+        /// <summary>An item was removed from the cache.</summary>
+        protected virtual void ItemRemovedLocked(CacheItem item)
+        {
+        }
 
         /// <summary>Gets the count of the current items for diagnostic purposes.</summary>
         public int Count
@@ -92,24 +102,21 @@ namespace Stratis.Bitcoin.Utilities
                 }
                 else
                 {
-                    if (this.IsCacheFull(item))
+                    while (this.IsCacheFullLocked(item))
                     {
                         // Remove the item that was not used for the longest time.
                         LinkedListNode<CacheItem> lastNode = this.keys.First;
                         this.cache.Remove(lastNode.Value.Key);
                         this.keys.RemoveFirst();
 
-                        if (item.Size > 0)
-                            this.totalSize -= lastNode.Value.Size;
+                        this.ItemRemovedLocked(lastNode.Value);
                     }
 
                     node = new LinkedListNode<CacheItem>(item);
                     node.Value.Size = item.Size;
 
                     this.cache.Add(item.Key, node);
-
-                    if (item.Size > 0)
-                        this.totalSize += item.Size;
+                    this.ItemAddedLocked(item);
                 }
 
                 this.keys.AddLast(node);
@@ -128,8 +135,7 @@ namespace Stratis.Bitcoin.Utilities
                 {
                     this.cache.Remove(node.Value.Key);
                     this.keys.Remove(node);
-
-                    this.totalSize -= node.Value.Size;
+                    this.ItemRemovedLocked(node.Value);
                 }
             }
         }

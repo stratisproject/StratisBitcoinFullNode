@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.Tests.Common
         private readonly IDateTimeProvider dateTimeProvider;
 
         public SmartContractPoARunner(string dataDir, Network network, TargetSpacingDateTimeProvider timeProvider)
-            : base(dataDir)
+            : base(dataDir, null)
         {
             this.Network = network;
             this.dateTimeProvider = timeProvider;

@@ -1,15 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Threading.Tasks;
-using DBreeze.Utils;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
-using NBitcoin.OpenAsset;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
@@ -947,8 +943,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             // CheckMempoolCoinView !context.View.HaveCoins(txin.PrevOut.Hash)
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
             Assert.False(isSuccess, "Transaction with invalid input should not have been accepted.");
-            Assert.Null(state.Error.Code); // No specific error set for this case, only the MissingInputs flag.
-            Assert.Equal(0, state.Error.RejectCode);
+            Assert.Equal("bad-txns-inputs-missing", state.Error.Code);
+            Assert.Equal(16, state.Error.RejectCode);
             Assert.True(state.MissingInputs);
         }
 

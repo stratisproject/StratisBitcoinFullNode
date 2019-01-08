@@ -22,7 +22,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         public ProvenHeadersBlockStoreSignaled(
             Network network,
             IBlockStoreQueue blockStoreQueue,
-            ConcurrentChain chain,
             StoreSettings storeSettings,
             IChainState chainState,
             IConnectionManager connection,
@@ -30,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             IProvenBlockHeaderStore provenBlockHeaderStore)
-            : base(blockStoreQueue, chain, storeSettings, chainState, connection, nodeLifetime, loggerFactory, initialBlockDownloadState)
+            : base(blockStoreQueue, storeSettings, chainState, connection, nodeLifetime, loggerFactory, initialBlockDownloadState)
         {
             this.network = Guard.NotNull(network, nameof(network));
             this.provenBlockHeaderStore = Guard.NotNull(provenBlockHeaderStore, nameof(provenBlockHeaderStore));

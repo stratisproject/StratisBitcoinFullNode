@@ -28,19 +28,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <summary>Provides functionality for checking validity of PoS blocks.</summary>
         public IStakeValidator StakeValidator { get; }
 
-        public IRewindDataIndexStore RewindDataIndexStore { get; }
+        public IRewindDataIndexCache RewindDataIndexCache { get; }
 
         /// <summary>
         /// Initializes an instance of the object.
         /// </summary>
         public PosConsensusRuleEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments,
             ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IStakeChain stakeChain, IStakeValidator stakeValidator, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexStore rewindDataIndexStore)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRewindDataIndexCache rewindDataIndexCache)
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
             this.StakeChain = stakeChain;
             this.StakeValidator = stakeValidator;
-            this.RewindDataIndexStore = rewindDataIndexStore;
+            this.RewindDataIndexCache = rewindDataIndexCache;
         }
 
         /// <inheritdoc />
@@ -57,7 +57,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
             await this.StakeChain.LoadAsync().ConfigureAwait(false);
 
-            await this.RewindDataIndexStore.InitializeAsync(this.Network.Consensus, chainTip, this.UtxoSet).ConfigureAwait(false);
+            // A temporary hack until tip manage will be introduced.
+            var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
+            uint256 hash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            ChainedHeader tip = chainTip.FindAncestorOrSelf(hash);
+
+            await this.RewindDataIndexCache.InitializeAsync(tip.Height, this.UtxoSet).ConfigureAwait(false);
         }
     }
 }

@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Utilities;
 namespace Stratis.Bitcoin.Features.Notifications
 {
     /// <summary>
-    /// Class used to broadcast about new transactions.
+    /// Class used to broadcast new transactions.
     /// </summary>
     public class TransactionNotification
     {

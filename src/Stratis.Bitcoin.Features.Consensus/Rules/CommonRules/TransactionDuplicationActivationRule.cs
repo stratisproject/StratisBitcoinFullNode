@@ -34,6 +34,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                         UnspentOutputs coins = view.AccessCoins(tx.GetHash());
                         if ((coins != null) && !coins.IsPrunable)
                         {
+                            this.Logger.LogTrace("Transaction '{0}' already found in store", tx.GetHash());
                             this.Logger.LogTrace("(-)[BAD_TX_BIP_30]");
                             ConsensusErrors.BadTransactionBIP30.Throw();
                         }
