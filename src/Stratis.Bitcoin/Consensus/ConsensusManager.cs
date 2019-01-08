@@ -1045,6 +1045,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.logger.LogWarning("Downloading block for '{0}' failed, it will be enqueued again.", chainedHeader);
                 this.DownloadBlocks(new[] { chainedHeader }, this.ProcessDownloadedBlock);
+                return;
             }
 
             if (block != null)
