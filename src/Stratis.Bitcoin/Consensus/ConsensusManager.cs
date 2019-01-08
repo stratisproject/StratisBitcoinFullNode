@@ -367,14 +367,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             if (chainedHeaderBlock.Block == null)
             {
-                this.logger.LogWarning("Downloading block for '{0}' failed, attempting again...", chainedHeaderBlock.ChainedHeader);
-
-                // The download failed, so enqueue it for download again.
-                this.DownloadBlocks(new[] { chainedHeaderBlock.ChainedHeader }, this.ProcessDownloadedBlock);
-
-                // Peers failed to deliver the block.
-                this.logger.LogTrace("(-)[DOWNLOAD_FAILED]");
-
+                this.logger.LogTrace("(-)[DOWNLOAD_FAILED_NO_PEERS_CLAIMED_BLOCK]:'{0}'", chainedHeaderBlock.ChainedHeader);
                 return;
             }
 
@@ -999,6 +992,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             ChainedHeader chainedHeader = null;
+            bool reassignDownload = false;
 
             lock (this.peerLock)
             {
@@ -1027,6 +1021,30 @@ namespace Stratis.Bitcoin.Consensus
                     this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
                     return;
                 }
+
+                if (block == null)
+                {
+                    // A race conditions exists where if we attempted a download of a block but all the peers disconnected and then a peer presented the header
+                    // again, we dont re-download the block.
+                    if (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired)
+                    {
+                        // We need to remove the current callback so that it can be re-assigned for download.
+                        lock (this.blockRequestedLock)
+                        {
+                            this.callbacksByBlocksRequestedHash.Remove(blockHash);
+                        }
+
+                        reassignDownload = true;
+                    }
+                    else
+                        this.logger.LogTrace("(-)[CHAINEDHEADER_INVALID_BLOCK_AVAILABILITY_STATE]:{0}", chainedHeader.BlockDataAvailability);
+                }
+            }
+
+            if (reassignDownload)
+            {
+                this.logger.LogWarning("Downloading block for '{0}' failed, it will be enqueued again.", chainedHeader);
+                this.DownloadBlocks(new[] { chainedHeader }, this.ProcessDownloadedBlock);
             }
 
             if (block != null)
