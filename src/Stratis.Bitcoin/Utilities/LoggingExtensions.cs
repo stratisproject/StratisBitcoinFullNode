@@ -1,10 +1,12 @@
 ﻿using Microsoft.Extensions.Logging;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Utilities
 {
     /// <summary>
     /// Extension methods for classes and interfaces related to logging.
     /// </summary>
+    [NoTrace]
     public static class LoggingExtensions
     {
         /// <summary>
