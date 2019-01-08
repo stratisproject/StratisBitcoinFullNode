@@ -7,7 +7,7 @@
     <OutputType>Library</OutputType>
     <PackageId>Stratis.Bitcoin.Api</PackageId>
     <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
-    <VersionPrefix>3.</VersionPrefix>
+    <VersionPrefix>3</VersionPrefix>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>

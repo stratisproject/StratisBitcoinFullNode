@@ -3,7 +3,7 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
-	<VersionPrefix>0.</VersionPrefix>
+	<VersionPrefix>0</VersionPrefix>
   </PropertyGroup>
 
   <ItemGroup>

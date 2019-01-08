@@ -4,10 +4,7 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.ColdStaking</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.ColdStaking</PackageId>
-    <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>
-    <GenerateAssemblyCompanyAttribute>false</GenerateAssemblyCompanyAttribute>
-    <GenerateAssemblyProductAttribute>false</GenerateAssemblyProductAttribute>
-    <VersionPrefix>1.</VersionPrefix>
+    <VersionPrefix>1</VersionPrefix>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
