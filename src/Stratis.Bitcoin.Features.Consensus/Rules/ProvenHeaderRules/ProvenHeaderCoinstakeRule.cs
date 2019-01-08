@@ -330,7 +330,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header)
         {
-            if (!PosBlockSignatureRule.CheckPOSSignature(header.Signature, header.GetHash(), header.Coinstake, this.Logger))
+            var consensusRules = (PosConsensusRuleEngine)this.Parent;
+            if (!consensusRules.StakeValidator.CheckPOSSignature(header.Signature, header.GetHash(), header.Coinstake))
             {
                 this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
