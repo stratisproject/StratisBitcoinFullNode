@@ -13,14 +13,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
         /// <summary>Memory pool validator for validating transactions.</summary>
         private readonly IMempoolValidator mempoolValidator;
 
-        private readonly ISignals signals;
-
-        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator, ISignals signals) : base(connectionManager)
+        public FullNodeBroadcasterManager(IConnectionManager connectionManager, IMempoolValidator mempoolValidator) : base(connectionManager)
         {
             Guard.NotNull(mempoolValidator, nameof(mempoolValidator));
 
             this.mempoolValidator = mempoolValidator;
-            this.signals = signals;
         }
 
         /// <inheritdoc />
@@ -51,8 +48,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
             else
             {
                 await this.PropagateTransactionToPeersAsync(transaction, this.connectionManager.ConnectedPeers.ToList()).ConfigureAwait(false);
-
-                this.signals.SignalTransaction(transaction);
             }
         }
     }
