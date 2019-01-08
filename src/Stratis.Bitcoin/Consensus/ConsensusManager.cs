@@ -27,11 +27,11 @@ namespace Stratis.Bitcoin.Consensus
         /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
         /// not yet validated or included to the consensus chain.
         /// </summary>
-        private long MaxUnconsumedBlocksDataBytes { get; set; }
+        private long maxUnconsumedBlocksDataBytes { get; set; }
 
         /// <summary>Queue consumption threshold in bytes.</summary>
         /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
-        private long ConsumptionThresholdBytes => this.MaxUnconsumedBlocksDataBytes / 10;
+        private long ConsumptionThresholdBytes => this.maxUnconsumedBlocksDataBytes / 10;
 
         /// <summary>The maximum amount of blocks that can be assigned to <see cref="IBlockPuller"/> at the same time.</summary>
         private const int MaxBlocksToAskFromPuller = 10000;
@@ -163,7 +163,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.blockPuller = blockPuller;
 
-            this.MaxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
+            this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
@@ -1179,7 +1179,7 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
 
-                long freeBytes = this.MaxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.expectedBlockDataBytes;
+                long freeBytes = this.maxUnconsumedBlocksDataBytes - this.chainedHeaderTree.UnconsumedBlocksDataBytes - this.expectedBlockDataBytes;
                 this.logger.LogTrace("{0} bytes worth of blocks is available for download.", freeBytes);
 
                 if (freeBytes <= this.ConsumptionThresholdBytes)
@@ -1290,9 +1290,9 @@ namespace Stratis.Bitcoin.Consensus
                 string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
                 string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
-                string maxUnconsumedBytes = this.FormatBigNumber(this.MaxUnconsumedBlocksDataBytes);
+                string maxUnconsumedBytes = this.FormatBigNumber(this.maxUnconsumedBlocksDataBytes);
 
-                double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.MaxUnconsumedBlocksDataBytes) * 100, 2);
+                double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.maxUnconsumedBlocksDataBytes) * 100, 2);
 
                 log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
             }
