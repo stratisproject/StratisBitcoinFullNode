@@ -177,6 +177,11 @@ namespace Stratis.Bitcoin.Base.Deployments
             return state;
         }
 
+        /// <summary>
+        /// Enriches the activation states with the count of blocks in each state.
+        /// </summary>
+        /// <param name="thresholdStates">Array of activation states.</param>
+        /// <returns>Activation states enumerated by deployment index with block counts.</returns>
         public object EnrichStatesWithBlockMetrics(ThresholdState[] thresholdStates)
         {
             return thresholdStates.Select((s, n) => new
