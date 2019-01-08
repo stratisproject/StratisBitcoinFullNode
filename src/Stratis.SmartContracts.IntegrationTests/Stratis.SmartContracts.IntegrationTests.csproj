@@ -35,6 +35,7 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
+    <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
   </ItemGroup>
 
   <ItemGroup>
