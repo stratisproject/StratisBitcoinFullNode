@@ -3,8 +3,9 @@ services:
   nako:
     container_name: city-nako
     networks: 
-        - city
-    image: coinvault/nako:core
+        nakonet:
+            ipv4_address: 172.16.10.100
+    image: coinvault/nako
     command: city
     ports: 
         - 9019:9000
@@ -14,17 +15,23 @@ services:
   client:
     container_name: city-client
     networks: 
-        - city
+        nakonet:
+            ipv4_address: 172.16.10.101
     image: citychain/citychain
-    command: ["-server=1", "-rpcallowip=0.0.0.0", "-rpcport=5000", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-rpcthreads=300", "-txindex=1"]
+    command: ["-server=1", "-rpcallowip=172.16.10.100", "-rpcbind=172.16.10.101", "-rpcport=5000", "-rpcuser=rpcuser", "-rpcpassword=rpcpassword", "-rpcthreads=300", "-txindex=1"]
     ports: 
         - 5019:5000
         - 4333:4333
   mongo:
     container_name: city-mongo
     networks: 
-        - city
+        nakonet:
+            ipv4_address: 172.16.10.102
     image: mongo:3.2
 networks:
-    city:
-      driver: bridge
+  nakonet:
+    driver: bridge
+    ipam:
+      driver: default
+      config:
+        - subnet: 172.16.10.0/24
