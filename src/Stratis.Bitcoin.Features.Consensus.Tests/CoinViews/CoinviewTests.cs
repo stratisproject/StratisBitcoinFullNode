@@ -86,6 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             {
                 uint256 txId = outPoints[this.random.Next(0, outPoints.Count)].Hash;
                 List<OutPoint> txPoints = outPoints.Where(x => x.Hash == txId).ToList();
+                this.Shuffle(txPoints);
                 List<OutPoint> txPointsToSpend = txPoints.Take(txPoints.Count / 2).ToList();
 
                 // First spend in cached coinview
@@ -114,18 +115,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             Assert.Equal(tipAfterOriginalCoinsCreation, await this.cachedCoinView.GetTipHashAsync());
 
-            // Verify that snapshot is equal to current state of coinview.
-            uint256[] allTxIds = copyOfOriginalOutPoints.Select(x => x.Hash).Distinct().ToArray();
-            FetchCoinsResponse result = await this.cachedCoinView.FetchCoinsAsync(allTxIds);
-            List<OutPoint> availableOutPoints = this.ConvertToListOfOutputPoints(result.UnspentOutputs.ToList());
-
-            Assert.Equal(copyOfOriginalOutPoints.Count, availableOutPoints.Count);
-
-            foreach (OutPoint referenceOutPoint in copyOfOriginalOutPoints)
-            {
-                Assert.Contains(referenceOutPoint, availableOutPoints);
-            }
-
             await this.ValidateCoinviewIntegrityAsync(copyOfOriginalOutPoints);
         }
 
@@ -149,7 +138,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             return outPoints;
         }
 
-        private UnspentOutputs CreateOutputs(int height, int outputsCount = 10)
+        private UnspentOutputs CreateOutputs(int height, int outputsCount = 20)
         {
             var tx = new Transaction();
             tx.Time = RandomUtils.GetUInt32();
@@ -198,17 +187,36 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 // Check expected coins are present.
                 foreach (uint availableIndex in availableIndexes)
                 {
-                    if (outputsArray[availableIndex] == null)
-                    {
-                        // TODO
-                    }
-
-
                     Assert.NotNull(outputsArray[availableIndex]);
                 }
 
                 // Check unexpected coins are not present.
                 Assert.Equal(availableIndexes.Count, outputsArray.Count(x => x != null));
+            }
+
+            // Verify that snapshot is equal to current state of coinview.
+            uint256[] allTxIds = expectedAvailableOutPoints.Select(x => x.Hash).Distinct().ToArray();
+            FetchCoinsResponse result2 = await this.cachedCoinView.FetchCoinsAsync(allTxIds);
+            List<OutPoint> availableOutPoints = this.ConvertToListOfOutputPoints(result2.UnspentOutputs.ToList());
+
+            Assert.Equal(expectedAvailableOutPoints.Count, availableOutPoints.Count);
+
+            foreach (OutPoint referenceOutPoint in expectedAvailableOutPoints)
+            {
+                Assert.Contains(referenceOutPoint, availableOutPoints);
+            }
+        }
+
+        private void Shuffle<T>(IList<T> list)
+        {
+            int n = list.Count;
+            while (n > 1)
+            {
+                n--;
+                int k = this.random.Next(n + 1);
+                T value = list[k];
+                list[k] = list[n];
+                list[n] = value;
             }
         }
     }
