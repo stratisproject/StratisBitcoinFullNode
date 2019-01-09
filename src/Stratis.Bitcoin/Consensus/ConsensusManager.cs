@@ -1038,7 +1038,7 @@ namespace Stratis.Bitcoin.Consensus
                         reassignDownload = true;
                     }
                     else
-                        this.logger.LogTrace("(-)[CHAINEDHEADER_INVALID_BLOCK_AVAILABILITY_STATE]:{0}", chainedHeader.BlockDataAvailability);
+                        this.logger.LogTrace("Block download failed but will not be reassigned as it's state is {0}", chainedHeader.BlockDataAvailability);
                 }
             }
 
