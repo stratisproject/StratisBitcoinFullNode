@@ -342,8 +342,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 sum += item.Transaction.Amount;
                 index++;
 
-                // If threshold is reached and the total value is above the target
-                // then its safe to stop adding UTXOs to the coin list.
+                // If the total value is above the target
+                // then it's safe to stop adding UTXOs to the coin list.
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
                 if (sum > totalToSend)
