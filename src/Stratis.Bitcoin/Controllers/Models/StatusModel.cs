@@ -72,5 +72,8 @@ namespace Stratis.Bitcoin.Controllers.Models
 
         /// <summary>Returns the status of the node.</summary>
         public string State { get; set; }
+
+        /// <summary>Returns a message indicating the state or current operation of consensus.</summary>
+        public string ConsensusStatusMessage { get; set; }
     }
 }

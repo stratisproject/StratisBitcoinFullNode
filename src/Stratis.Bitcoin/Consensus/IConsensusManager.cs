@@ -18,6 +18,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>The collection of rules.</summary>
         IConsensusRuleEngine ConsensusRules { get; }
 
+        /// <summary>Returns a message indicating the state or current operation of consensus.</summary>
+        string StatusMessage { get; set; }
+
         /// <summary>
         /// Set the tip of <see cref="ConsensusManager"/>, if the given <paramref name="chainTip"/> is not equal to <see cref="Tip"/>
         /// then rewind consensus until a common header is found.

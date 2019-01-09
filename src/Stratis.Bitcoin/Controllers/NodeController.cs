@@ -64,14 +64,22 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory,
-            IDateTimeProvider dateTimeProvider, IChainState chainState,
-            NodeSettings nodeSettings, IConnectionManager connectionManager,
-            ConcurrentChain chain, Network network, IPooledTransaction pooledTransaction = null,
+        private readonly IConsensusManager consensusManager;
+
+        public NodeController(IFullNode fullNode,
+            ILoggerFactory loggerFactory,
+            IDateTimeProvider dateTimeProvider,
+            IChainState chainState,
+            NodeSettings nodeSettings,
+            IConnectionManager connectionManager,
+            ConcurrentChain chain,
+            Network network,
+            IPooledTransaction pooledTransaction = null,
             IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
-            IBlockStore blockStore = null)
+            IBlockStore blockStore = null,
+            IConsensusManager consensusManager = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
@@ -95,6 +103,7 @@ namespace Stratis.Bitcoin.Controllers
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
             this.blockStore = blockStore;
+            this.consensusManager = consensusManager;
         }
 
         /// <summary>
@@ -120,7 +129,8 @@ namespace Stratis.Bitcoin.Controllers
                 RelayFee = this.nodeSettings.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
                 RunningTime = this.dateTimeProvider.GetUtcNow() - this.fullNode.StartTime,
                 CoinTicker = this.network.CoinTicker,
-                State = this.fullNode.State.ToString()
+                State = this.fullNode.State.ToString(),
+                ConsensusStatusMessage = this.consensusManager.StatusMessage
             };
 
             // Add the list of features that are enabled.

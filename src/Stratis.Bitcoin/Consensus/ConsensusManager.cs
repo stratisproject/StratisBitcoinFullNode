@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -168,6 +167,9 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <inheritdoc />
+        public string StatusMessage { get; set; }
+
+        /// <inheritdoc />
         /// <remarks>
         /// If <see cref="blockStore"/> is not <c>null</c> (block store is available) then all block headers in
         /// <see cref="chainedHeaderTree"/> will be marked as their block data is available.
@@ -191,9 +193,13 @@ namespace Stratis.Bitcoin.Consensus
                 pendingTip = chainTip.FindAncestorOrSelf(consensusTipHash);
 
                 if ((pendingTip != null) && (this.chainState.BlockStoreTip.Height >= pendingTip.Height))
+                {
+                    this.StatusMessage = null;
                     break;
+                }
 
                 this.logger.LogInformation("Consensus at height {0} is ahead of the block store at height {1}, rewinding consensus.", pendingTip, this.chainState.BlockStoreTip);
+                this.StatusMessage = string.Join("Rewinding consensus from height {0} to {1}.", pendingTip.Height, this.chainState.BlockStoreTip.Height);
 
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
