@@ -80,6 +80,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             // Copy of current state to later rewind and verify against it.
             List<OutPoint> copyOfOriginalOutPoints = new List<OutPoint>(outPoints);
 
+            List<OutPoint> copyAfterHalfOfAdditions = new List<OutPoint>();
+            uint256 coinviewTipAfterHalf = null;
+
             int addChangesTimes = 500;
             // Spend some coins in the next N saves.
             for (int i = 0; i < addChangesTimes; ++i)
@@ -106,12 +109,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 await this.SaveChangesAsync(new List<UnspentOutputs>() { coins }, new List<TxOut[]>() { unchangedClone.Outputs }, currentHeight + 1);
 
                 currentHeight++;
+
+                if (i == addChangesTimes / 2)
+                {
+                    copyAfterHalfOfAdditions = new List<OutPoint>(outPoints);
+                    coinviewTipAfterHalf = await this.cachedCoinView.GetTipHashAsync();
+                }
             }
 
             await this.ValidateCoinviewIntegrityAsync(outPoints);
 
-            for (int i=0; i < addChangesTimes; i++)
+            for (int i = 0; i < addChangesTimes; i++)
+            {
                 await this.cachedCoinView.RewindAsync();
+
+                uint256 currentTip = await this.cachedCoinView.GetTipHashAsync();
+
+                if (currentTip == coinviewTipAfterHalf)
+                    await this.ValidateCoinviewIntegrityAsync(copyAfterHalfOfAdditions);
+            }
 
             Assert.Equal(tipAfterOriginalCoinsCreation, await this.cachedCoinView.GetTipHashAsync());
 
