@@ -1,14 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading.Tasks;
 using Moq;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus.Validators;
-using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Consensus
@@ -363,9 +359,15 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.True(callback1Called);
             Assert.True(callback2Called);
             Assert.True(callback3Called);
-            Assert.Null(calledWith1);
-            Assert.Null(calledWith2);
-            Assert.Null(calledWith3);
+
+            Assert.NotNull(calledWith1);
+            Assert.Equal(additionalHeaders, calledWith1.ChainedHeader);
+
+            Assert.NotNull(calledWith2);
+            Assert.Equal(additionalHeaders, calledWith2.ChainedHeader);
+
+            Assert.NotNull(calledWith3);
+            Assert.Equal(additionalHeaders.Previous, calledWith3.ChainedHeader);
         }
 
         [Fact]
@@ -483,7 +485,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetOrDownloadBlocksAsync_ChainedHeaderBlockInCTWithBlock_CallsBlockDownloadedCallbackForBlock_BlockNotDownloaded()
         {
-            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip : true);
+            TestContext builder = GetBuildTestContext(10, useCheckpoints: false, initializeWithChainTip: true);
 
             var callbackCalled = false;
             ChainedHeaderBlock calledWith = null;
