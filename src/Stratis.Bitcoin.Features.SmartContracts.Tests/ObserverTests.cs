@@ -4,7 +4,6 @@ using System.Linq;
 using Mono.Cecil;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
@@ -13,6 +12,7 @@ using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 

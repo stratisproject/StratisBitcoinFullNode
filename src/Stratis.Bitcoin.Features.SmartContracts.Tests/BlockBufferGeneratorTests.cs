@@ -1,6 +1,6 @@
 ﻿using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
+using Stratis.SmartContracts.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
