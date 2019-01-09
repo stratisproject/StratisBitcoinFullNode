@@ -97,9 +97,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             ProvenBlockHeader newProvenHeader = ((PosConsensusFactory)this.network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
-            // Calculate the PH size.
-            newProvenHeader.ToBytes(this.network.Consensus.ConsensusFactory);
-
             uint256 provenHeaderHash = newProvenHeader.GetHash();
             this.provenBlockHeaderStore.AddToPendingBatch(newProvenHeader, new HashHeightPair(provenHeaderHash, blockHeight));
 
