@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private class DownloadedCallbacks
         {
-            /// <summary>The consensus code has requested this block as well, invoke the method <see cref="ProcessDownloadedBlock"/> when block is delivered.</summary>
+            /// <summary>The consensus code has requested this block, invoke the method <see cref="ProcessDownloadedBlock"/> when block is delivered.</summary>
             public bool ConsensusRequested { get; set; }
 
             /// <summary>List of delegates to call when block is delivered.</summary>
@@ -551,7 +551,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             foreach (ConnectNewHeadersResult newHeaders in blocksToDownload)
-                this.DownloadBlocks(newHeaders.ToArray(), this.ProcessDownloadedBlock);
+                this.DownloadBlocks(newHeaders.ToArray());
         }
 
         /// <summary>Attempt to switch to new chain, which may require rewinding blocks from the current chain.</summary>
@@ -1066,7 +1066,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (reassignDownload)
             {
-                this.DownloadBlocks(new[] { chainedHeader }, this.ProcessDownloadedBlock);
+                this.DownloadBlocks(new[] { chainedHeader });
                 this.logger.LogWarning("Downloading block for '{0}' failed, it will be enqueued again.", chainedHeader);
                 this.logger.LogTrace("(-)[BLOCK_DOWNLOAD_FAILED_REASSIGNED]");
                 return;
