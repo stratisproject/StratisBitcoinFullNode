@@ -1,6 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Text;
+using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -28,6 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         private readonly StakeChainStore stakeChainStore;
         private readonly IRewindDataIndexCache rewindDataIndexCache;
         private readonly CachedCoinView cachedCoinView;
+        private readonly Random random;
 
         public CoinviewTests()
         {
@@ -49,13 +50,166 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             this.cachedCoinView = new CachedCoinView(this.dbreezeCoinview, this.dateTimeProvider, this.loggerFactory, this.nodeStats, this.stakeChainStore, this.rewindDataIndexCache);
 
             this.rewindDataIndexCache.InitializeAsync(this.concurrentChain.Height, this.cachedCoinView);
+
+            this.random = new Random();
+
+            ChainedHeader newTip = ChainedHeadersHelper.CreateConsecutiveHeaders(1000, this.concurrentChain.Tip, true, null, this.network).Last();
+            this.concurrentChain.SetTip(newTip);
         }
 
         [Fact]
-        public async Task DoSmth()
+        public async Task TestRewindAsync()
         {
             uint256 tip = await this.cachedCoinView.GetTipHashAsync();
-            Assert.Equal(this.concurrentChain.Tip.HashBlock, tip);
+            Assert.Equal(this.concurrentChain.Genesis.HashBlock, tip);
+
+            int currentHeight = 0;
+
+            // Create a lot of new coins.
+            List<UnspentOutputs> outputsList = this.CreateOutputsList(currentHeight + 1, 100);
+            await this.SaveChangesAsync(outputsList, new List<TxOut[]>(), currentHeight + 1);
+            currentHeight++;
+
+            await this.cachedCoinView.FlushAsync(true);
+
+            uint256 tipAfterOriginalCoinsCreation = await this.cachedCoinView.GetTipHashAsync();
+
+            // Collection that will be used as a coinview that we will update in parallel. Needed to verify that actual coinview is ok.
+            List<OutPoint> outPoints = this.ConvertToListOfOutputPoints(outputsList);
+
+            // Copy of current state to later rewind and verify against it.
+            List<OutPoint> copyOfOriginalOutPoints = new List<OutPoint>(outPoints);
+
+            int addChangesTimes = 500;
+            // Spend some coins in the next N saves.
+            for (int i = 0; i < addChangesTimes; ++i)
+            {
+                uint256 txId = outPoints[this.random.Next(0, outPoints.Count)].Hash;
+                List<OutPoint> txPoints = outPoints.Where(x => x.Hash == txId).ToList();
+                List<OutPoint> txPointsToSpend = txPoints.Take(txPoints.Count / 2).ToList();
+
+                // First spend in cached coinview
+                FetchCoinsResponse response = await this.cachedCoinView.FetchCoinsAsync(new[] {txId});
+                Assert.Single(response.UnspentOutputs);
+
+                UnspentOutputs coins = response.UnspentOutputs[0];
+                UnspentOutputs unchangedClone = coins.Clone();
+
+                foreach (OutPoint outPointToSpend in txPointsToSpend)
+                    coins.Spend(outPointToSpend.N);
+
+                // Spend from outPoints.
+                outPoints.RemoveAll(x => txPointsToSpend.Contains(x));
+
+                // Save coinview
+                await this.SaveChangesAsync(new List<UnspentOutputs>() { coins }, new List<TxOut[]>() { unchangedClone.Outputs }, currentHeight + 1);
+
+                currentHeight++;
+            }
+
+            await this.ValidateCoinviewIntegrityAsync(outPoints);
+
+            for (int i=0; i < addChangesTimes; i++)
+                await this.cachedCoinView.RewindAsync();
+
+            Assert.Equal(tipAfterOriginalCoinsCreation, await this.cachedCoinView.GetTipHashAsync());
+
+            // Verify that snapshot is equal to current state of coinview.
+            uint256[] allTxIds = copyOfOriginalOutPoints.Select(x => x.Hash).Distinct().ToArray();
+            FetchCoinsResponse result = await this.cachedCoinView.FetchCoinsAsync(allTxIds);
+            List<OutPoint> availableOutPoints = this.ConvertToListOfOutputPoints(result.UnspentOutputs.ToList());
+
+            Assert.Equal(copyOfOriginalOutPoints.Count, availableOutPoints.Count);
+
+            foreach (OutPoint referenceOutPoint in copyOfOriginalOutPoints)
+            {
+                Assert.Contains(referenceOutPoint, availableOutPoints);
+            }
+
+            await this.ValidateCoinviewIntegrityAsync(copyOfOriginalOutPoints);
+        }
+
+        private List<OutPoint> ConvertToListOfOutputPoints(List<UnspentOutputs> outputsList)
+        {
+            var outPoints = new List<OutPoint>();
+
+            foreach (UnspentOutputs output in outputsList)
+            {
+                for (int i = 0; i < output.Outputs.Length; i++)
+                {
+                    if (output.Outputs[i] == null)
+                        continue;
+
+                    var point = new OutPoint(output.TransactionId, i);
+
+                    outPoints.Add(point);
+                }
+            }
+
+            return outPoints;
+        }
+
+        private UnspentOutputs CreateOutputs(int height, int outputsCount = 10)
+        {
+            var tx = new Transaction();
+            tx.Time = RandomUtils.GetUInt32();
+
+            for (int i = 0; i < outputsCount; i++)
+            {
+                var money = new Money(this.random.Next(1_000, 1_000_000));
+
+                tx.AddOutput(money, Script.Empty);
+            }
+
+            var outputs = new UnspentOutputs((uint)height, tx);
+            return outputs;
+        }
+
+        private List<UnspentOutputs> CreateOutputsList(int height, int itemsCount = 10)
+        {
+            var list = new List<UnspentOutputs>();
+
+            for (int i = 0; i < itemsCount; i++)
+            {
+                list.Add(this.CreateOutputs(height));
+            }
+
+            return list;
+        }
+
+        private async Task SaveChangesAsync(List<UnspentOutputs> unspent, List<TxOut[]> original, int height)
+        {
+            ChainedHeader current = this.concurrentChain.Tip.GetAncestor(height);
+            ChainedHeader previous = current.Previous;
+
+            await this.cachedCoinView.SaveChangesAsync(unspent, original, previous.HashBlock, current.HashBlock, height);
+        }
+
+        private async Task ValidateCoinviewIntegrityAsync(List<OutPoint> expectedAvailableOutPoints)
+        {
+            foreach (IGrouping<uint256, OutPoint> outPointsGroup in expectedAvailableOutPoints.GroupBy(x => x.Hash))
+            {
+                uint256 txId = outPointsGroup.Key;
+                List<uint> availableIndexes = outPointsGroup.Select(x => x.N).ToList();
+
+                FetchCoinsResponse result = await this.cachedCoinView.FetchCoinsAsync(new[] {txId});
+                TxOut[] outputsArray = result.UnspentOutputs[0].Outputs;
+
+                // Check expected coins are present.
+                foreach (uint availableIndex in availableIndexes)
+                {
+                    if (outputsArray[availableIndex] == null)
+                    {
+                        // TODO
+                    }
+
+
+                    Assert.NotNull(outputsArray[availableIndex]);
+                }
+
+                // Check unexpected coins are not present.
+                Assert.Equal(availableIndexes.Count, outputsArray.Count(x => x != null));
+            }
         }
     }
 }
