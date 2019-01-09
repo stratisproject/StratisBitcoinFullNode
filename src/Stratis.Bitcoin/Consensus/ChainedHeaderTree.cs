@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Consensus
             this.AddOrReplacePeerTip(LocalPeerId, consensusTip.HashBlock);
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public ChainedHeaderBlock GetChainedHeaderBlock(uint256 blockHash)
         {
             ChainedHeaderBlock chainedHeaderBlock = null;
@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.Consensus
             return chainedHeaderBlock;
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public ChainedHeader GetChainedHeader(uint256 blockHash)
         {
             if (this.chainedHeadersByHash.TryGetValue(blockHash, out ChainedHeader chainedHeader))
@@ -290,7 +290,7 @@ namespace Stratis.Bitcoin.Consensus
             return this.chainedHeadersByHash[consensusTipHash];
         }
 
-        // <inheritdoc />
+        /// <inheritdoc />
         public void PeerDisconnected(int networkPeerId)
         {
             if (!this.peerTipsByPeerId.TryGetValue(networkPeerId, out uint256 peerTipHash))

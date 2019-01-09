@@ -983,6 +983,7 @@ namespace Stratis.Bitcoin.Consensus
             }
         }
 
+        /// <summary>Method that is provided as a callback to <see cref="IBlockPuller"/>.</summary>
         private void BlockDownloaded(uint256 blockHash, Block block, int peerId)
         {
             if (this.nodeLifetime.ApplicationStopping.IsCancellationRequested)
@@ -1124,7 +1125,7 @@ namespace Stratis.Bitcoin.Consensus
             if (blocksToDownload.Count != 0)
             {
                 this.logger.LogTrace("Asking block puller for {0} blocks.", blocksToDownload.Count);
-                this.DownloadBlocks(blocksToDownload.ToArray(), this.ProcessDownloadedBlock);
+                this.DownloadBlocks(blocksToDownload.ToArray(), onBlockDownloadedCallback);
             }
         }
 
