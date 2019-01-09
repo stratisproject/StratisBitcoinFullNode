@@ -1249,7 +1249,7 @@ namespace Stratis.Bitcoin.Consensus
                     request = blockPullerRequest;
                 }
 
-                //this.blockPuller.RequestBlocksDownload(request.BlocksToDownload);
+                this.blockPuller.RequestBlocksDownload(request.BlocksToDownload);
 
                 foreach (ChainedHeader chainedHeader in request.BlocksToDownload)
                     this.expectedBlockSizes.Add(chainedHeader.HashBlock, avgSize);
