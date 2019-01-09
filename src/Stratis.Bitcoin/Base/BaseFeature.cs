@@ -386,6 +386,10 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ISelfEndpointTracker, SelfEndpointTracker>();
 
                     // Consensus
+                    // Consensus manager is created like that to prevent DI resolving consensus manager from another
+                    // feature since it will cause an exception due to CM's constructor being internal. This is done
+                    // in order to prevent access to CM creation and CHT usage from another features. CHT is supposed
+                    // to be used only by CM and no other component.
                     services.AddSingleton<IConsensusManager>(provider => new ConsensusManager(
                         chainedHeaderTree: provider.GetService<IChainedHeaderTree>(),
                         network: provider.GetService<Network>(),
