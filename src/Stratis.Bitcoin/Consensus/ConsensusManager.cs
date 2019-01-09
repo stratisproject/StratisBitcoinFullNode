@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -378,10 +377,9 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         private void ProcessDownloadedBlock(ChainedHeaderBlock chainedHeaderBlock)
         {
-            if (chainedHeaderBlock == null)
+            if (chainedHeaderBlock.Block == null)
             {
-                // Peers failed to deliver the block.
-                this.logger.LogTrace("(-)[DOWNLOAD_FAILED]");
+                this.logger.LogTrace("(-)[DOWNLOAD_FAILED_NO_PEERS_CLAIMED_BLOCK]:'{0}'", chainedHeaderBlock.ChainedHeader);
                 return;
             }
 
@@ -1017,6 +1015,7 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             ChainedHeader chainedHeader = null;
+            bool reassignDownload = false;
 
             lock (this.peerLock)
             {
@@ -1034,25 +1033,43 @@ namespace Stratis.Bitcoin.Consensus
                     throw new InvalidOperationException("Unsolicited block");
                 }
 
-                if (block != null)
+                chainedHeader = this.chainedHeaderTree.GetChainedHeader(blockHash);
+                if (chainedHeader == null)
                 {
-                    chainedHeader = this.chainedHeaderTree.GetChainedHeader(blockHash);
-
-                    if (chainedHeader == null)
+                    lock (this.blockRequestedLock)
                     {
+                        this.callbacksByBlocksRequestedHash.Remove(blockHash);
+                    }
+
+                    this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
+                    return;
+                }
+
+                if (block == null)
+                {
+                    // A race conditions exists where if we attempted a download of a block but all the peers disconnected and then a peer presented the header
+                    // again, we dont re-download the block.
+                    if (chainedHeader.BlockDataAvailability == BlockDataAvailabilityState.BlockRequired)
+                    {
+                        // We need to remove the current callback so that it can be re-assigned for download.
                         lock (this.blockRequestedLock)
                         {
                             this.callbacksByBlocksRequestedHash.Remove(blockHash);
                         }
 
-                        this.logger.LogTrace("(-)[CHAINED_HEADER_NOT_FOUND]");
-                        return;
+                        reassignDownload = true;
                     }
+                    else
+                        this.logger.LogTrace("Block download failed but will not be reassigned as it's state is {0}", chainedHeader.BlockDataAvailability);
                 }
-                else
-                {
-                    this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
-                }
+            }
+
+            if (reassignDownload)
+            {
+                this.DownloadBlocks(new[] { chainedHeader }, this.ProcessDownloadedBlock);
+                this.logger.LogWarning("Downloading block for '{0}' failed, it will be enqueued again.", chainedHeader);
+                this.logger.LogTrace("(-)[BLOCK_DOWNLOAD_FAILED_REASSIGNED]");
+                return;
             }
 
             if (block != null)
@@ -1077,6 +1094,10 @@ namespace Stratis.Bitcoin.Consensus
                     return;
                 }
             }
+            else
+            {
+                this.logger.LogDebug("Block '{0}' failed to be delivered.", blockHash);
+            }
 
             DownloadedCallbacks downloadedCallbacks = null;
 
@@ -1088,10 +1109,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (downloadedCallbacks != null)
             {
-                ChainedHeaderBlock chainedHeaderBlock = null;
-
-                if (block != null)
-                    chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
+                var chainedHeaderBlock = new ChainedHeaderBlock(block, chainedHeader);
 
                 if (downloadedCallbacks.ConsensusRequested)
                 {

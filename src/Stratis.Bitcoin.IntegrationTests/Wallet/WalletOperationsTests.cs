@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
-          
+
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
             {
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Check the mnemonic returned.
             response.Split(" ").Length.Should().Be(12);
             Wordlist.AutoDetectLanguage(response).Should().Be(Language.English);
-            
+
             // Check a wallet file has been created.
             string walletFolderPath = this.fixture.Node.FullNode.DataFolder.WalletPath;
             string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
@@ -229,7 +229,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
             string mnemonic = new Mnemonic(Wordlist.ChineseTraditional , WordCount.Twelve).ToString();
-            
+
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
             {
@@ -488,7 +488,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
             string secondWalletPath = Path.Combine(walletsFolderPath, $"{secondWalletName}.wallet.json");
             File.Exists(secondWalletPath).Should().BeFalse();
-            
+
             // Check the error message.
             var exception = act.Should().Throw<FlurlHttpException>().Which;
             var response = exception.Call.Response;
@@ -738,7 +738,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Name = walletName,
                 Passphrase = "passphrase",
                 Password = "123456",
-                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString()
+                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString(),
+                CreationDate = DateTime.Parse("2018-1-1")
             });
 
             // Assert.
@@ -782,7 +783,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Name = walletName,
                 Passphrase = "",
                 Password = "123456",
-                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString()
+                Mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve).ToString(),
+                CreationDate = DateTime.Parse("2018-1-1")
             });
 
             // Assert.
@@ -837,7 +839,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Name = secondWalletName,
                 Passphrase = "passphrase",
                 Password = "123456",
-                Mnemonic = mnemonic
+                Mnemonic = mnemonic,
+                CreationDate = DateTime.Parse("2018-1-1")
             }).ReceiveString();
 
 

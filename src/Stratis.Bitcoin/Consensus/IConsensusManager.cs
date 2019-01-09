@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Consensus
     }
 
     /// <summary>
-    /// A delegate that is used to send callbacks when a block is downloaded from the of queued requests to downloading blocks.
+    /// A delegate that is used to send callbacks when a block is downloaded from the queued requests to downloading blocks.
     /// </summary>
     /// <param name="chainedHeaderBlock">The pair of the block and its chained header.</param>
     public delegate void OnBlockDownloadedCallback(ChainedHeaderBlock chainedHeaderBlock);
