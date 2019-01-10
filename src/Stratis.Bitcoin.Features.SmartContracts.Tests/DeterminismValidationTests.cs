@@ -1065,7 +1065,7 @@ public class Test : SmartContract
     public string SumStr() 
     {
         var summation = """";
-		var strings = new [] { ""1"",""2"",""3"",""4"",""5"",""6"",""7"",""8"",""9"",""10""};
+        var strings = new [] { ""1"",""2"",""3"",""4"",""5"",""6"",""7"",""8"",""9"",""10""};
         foreach (var i in strings)
         {
             summation += i;
@@ -1349,6 +1349,6 @@ public class Test : SmartContract
             Assert.False(result.IsValid);
             Assert.True(result.Errors.All(e => e is MethodParamValidator.MethodParamValidationResult));
             Assert.Contains(result.Errors, e => e.Message.Contains("ISmartContractState"));
-        }        
+        }
     }
 }
