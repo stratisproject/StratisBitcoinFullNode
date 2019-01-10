@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Features.SmartContracts.PoW;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.Tests.Common
 {
@@ -25,17 +26,8 @@ namespace Stratis.SmartContracts.Tests.Common
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
-            this.FullNode = (FullNode)new FullNodeBuilder()
-                .UseNodeSettings(settings)
-                .UseBlockStore()
-                .UseMempool()
-                .AddRPC()
-                .AddSmartContracts()
-                .UseSmartContractPowConsensus()
-                .UseSmartContractWallet()
-                .UseSmartContractPowMining()
-                .UseReflectionExecutor()
-                .MockIBD()
+            IFullNodeBuilder builder = NetworkNodes.GetPoWSmartContractNodeBuilder(settings);
+            this.FullNode = (FullNode) builder.MockIBD()
                 .UseTestChainedHeaderTree()
                 .Build();
         }

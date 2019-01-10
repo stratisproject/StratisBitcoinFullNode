@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading.Tasks;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -28,20 +29,8 @@ namespace Stratis.StratisSmartContractsD
             try
             {
                 NodeSettings nodeSettings = new NodeSettings(new SmartContractsPoATest(), ProtocolVersion.ALT_PROTOCOL_VERSION, "StratisSC", args: args);
-
-                Bitcoin.IFullNode node = new FullNodeBuilder()
-                    .UseNodeSettings(nodeSettings)
-                    .UseBlockStore()
-                    .AddRPC()
-                        .AddSmartContracts()
-                        .UseSmartContractPoAConsensus()
-                        .UseSmartContractPoAMining()
-                        .UseSmartContractWallet()
-                        .UseReflectionExecutor()
-                    .UseApi()
-                    .UseMempool()
-                    .Build();
-
+                IFullNodeBuilder builder = NetworkNodes.GetPoASmartContractNodeBuilder(nodeSettings);
+                IFullNode node = builder.Build();
                 await node.RunAsync();
             }
             catch (Exception ex)

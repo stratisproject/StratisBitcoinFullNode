@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 
 namespace Stratis.SmartContracts.Tests.Common
@@ -29,19 +30,9 @@ namespace Stratis.SmartContracts.Tests.Common
         public override void BuildNode()
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=poa.conf", "-datadir=" + this.DataFolder });
-
-            this.FullNode = (FullNode)new FullNodeBuilder()
-                .UseNodeSettings(settings)
-                .UseBlockStore()
-                .UseMempool()
-                .AddRPC()
-                .AddSmartContracts()
-                .UseSmartContractPoAConsensus()
-                .UseSmartContractPoAMining()
-                .UseSmartContractWallet()
-                .UseReflectionExecutor()
+            IFullNodeBuilder builder = NetworkNodes.GetPoASmartContractNodeBuilder(settings);
+            this.FullNode = (FullNode)builder.MockIBD()
                 .ReplaceTimeProvider(this.dateTimeProvider)
-                .MockIBD()
                 .Build();
         }
     }
