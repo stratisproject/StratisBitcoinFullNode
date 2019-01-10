@@ -428,16 +428,18 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         internal async Task<List<UtxoStakeDescription>> GetUtxoStakeDescriptionsAsync(WalletSecret walletSecret, CancellationToken cancellationToken)
         {
             var utxoStakeDescriptions = new List<UtxoStakeDescription>();
-            List<UnspentOutputReference> spendableTransactions = this.walletManager
-                .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1).ToList();
+            List<UnspentOutputReference> stakableUtxos = this.walletManager
+                .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1)
+                .Where(utxo => utxo.Transaction.Amount >= this.MinimumStakingCoinValue) // exclude dust from stake process
+                .ToList();
 
-            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
+            FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(stakableUtxos.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
             Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
             fetchedCoinSet = null; // allow GC to collect as soon as possible.
 
-            for (int i = 0; i < spendableTransactions.Count; i++)
+            for (int i = 0; i < stakableUtxos.Count; i++)
             {
-                UnspentOutputReference outputReference = spendableTransactions[i];
+                UnspentOutputReference stakableUtxo = stakableUtxos[i];
 
                 if (cancellationToken.IsCancellationRequested)
                 {
@@ -445,12 +447,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     throw new OperationCanceledException(cancellationToken);
                 }
 
-                UnspentOutputs coinSet = utxoByTransaction.TryGet(outputReference.Transaction.Id);
-                if ((coinSet == null) || (outputReference.Transaction.Index >= coinSet.Outputs.Length))
+                UnspentOutputs coinSet = utxoByTransaction.TryGet(stakableUtxo.Transaction.Id);
+                if ((coinSet == null) || (stakableUtxo.Transaction.Index >= coinSet.Outputs.Length))
                     continue;
 
-                TxOut utxo = coinSet.Outputs[outputReference.Transaction.Index];
-                if ((utxo == null) || (utxo.Value < MinimumStakingCoinValue))
+                TxOut utxo = coinSet.Outputs[stakableUtxo.Transaction.Index];
+                if ((utxo == null) || (utxo.Value < this.MinimumStakingCoinValue))
                     continue;
 
                 uint256 hashBlock = this.chain.GetBlock((int)coinSet.Height)?.HashBlock;
@@ -460,8 +462,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 var utxoStakeDescription = new UtxoStakeDescription
                 {
                     TxOut = utxo,
-                    OutPoint = new OutPoint(coinSet.TransactionId, outputReference.Transaction.Index),
-                    Address = outputReference.Address,
+                    OutPoint = new OutPoint(coinSet.TransactionId, stakableUtxo.Transaction.Index),
+                    Address = stakableUtxo.Address,
                     HashBlock = hashBlock,
                     UtxoSet = coinSet,
                     Secret = walletSecret // Temporary.
