@@ -311,6 +311,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
+            bool onlySelectedInputs = false;
+
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the
@@ -330,6 +332,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
                     }
+
+                    onlySelectedInputs = true;
                 }
             }
 
@@ -346,7 +350,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // then it's safe to stop adding UTXOs to the coin list.
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
-                if (sum > totalToSend)
+                // If we are only adding selected inputs then add them all.
+                if (sum > totalToSend && !onlySelectedInputs)
                     break;
             }
 
