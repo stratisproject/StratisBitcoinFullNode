@@ -348,7 +348,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 .OrderByDescending(a => a.Confirmations > 0)
                 .ThenByDescending(a => a.Transaction.Amount))
             {
-                if (context.SelectedInputs.Contains(item.ToOutPoint()))
+                if (context.SelectedInputs?.Contains(item.ToOutPoint()) ?? false)
                     continue;
 
                 // If the total value is above the target
