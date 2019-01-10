@@ -311,6 +311,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
+            Money sum = 0;
+            var coins = new List<Coin>();
+
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the
@@ -331,28 +334,32 @@ namespace Stratis.Bitcoin.Features.Wallet
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
                     }
                 }
+
+                foreach (OutPoint outPoint in context.SelectedInputs)
+                {
+                    UnspentOutputReference item = availableHashList[outPoint];
+
+                    coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+                    sum += item.Transaction.Amount;
+                }
             }
 
-            Money sum = 0;
-            int index = 0;
-            var coins = new List<Coin>();
-
             foreach (UnspentOutputReference item in context.UnspentOutputs
-                .OrderByDescending(a => context.SelectedInputs?.Contains(a.ToOutPoint()))
-                .ThenByDescending(a => a.Confirmations > 0)
+                .OrderByDescending(a => a.Confirmations > 0)
                 .ThenByDescending(a => a.Transaction.Amount))
             {
-                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
-                sum += item.Transaction.Amount;
-                index++;
+                if (context.SelectedInputs.Contains(item.ToOutPoint()))
+                    continue;
 
                 // If the total value is above the target
                 // then it's safe to stop adding UTXOs to the coin list.
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
-                // Selected inputs are added first. Ensure that they are all added.
-                if (sum > totalToSend && index >= (context?.SelectedInputs.Count ?? 0))
+                if (sum > totalToSend)
                     break;
+
+                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+                sum += item.Transaction.Amount;
             }
 
             // All the UTXOs are added to the builder without filtering.
