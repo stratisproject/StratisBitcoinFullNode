@@ -177,9 +177,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                 }
 
                 this.Set(indexPrev?.HashBlock, deployment, state = stateNext);
-
-                // FAZZ
-                this.SetEnhanced(indexPrev?.HashBlock, deployment, state = stateNext, indexPrev.GetMedianTimePast(), timeTimeout, timeStart, threshold, voteCount);
+                this.SetEnhanced(indexPrev?.HashBlock, deployment, state = stateNext, indexPrev.GetMedianTimePast(), voteCount);
             }
 
           return state;
@@ -197,12 +195,15 @@ namespace Stratis.Bitcoin.Base.Deployments
             public int blocksFailed { get; }
             public int blocksActive { get; }
             public DateTimeOffset? offset { get; }
+            public DateTimeOffset? timeStart { get; }
+            public DateTimeOffset? timeTimeOut { get; }
+            public int threshold { get; }
             public int votes { get; }
             public ThresholdState StateValue { get; }
             public string ThresholdState { get; }
 
             public EnrichedActivationStateModel(int deploymentIndex, int blocksDefined, int blocksStarted, int blocksLockedIn,
-                int blocksFailed, int blocksActive, DateTimeOffset? offset, int votes, ThresholdState stateValue, string thresholdState)
+                int blocksFailed, int blocksActive, DateTimeOffset? offset, DateTimeOffset? timeStart, DateTimeOffset? timeTimeOut, int threshold, int votes, ThresholdState stateValue, string thresholdState)
             {
                 this.DeploymentIndex = deploymentIndex;
                 this.blocksDefined = blocksDefined;
@@ -211,7 +212,10 @@ namespace Stratis.Bitcoin.Base.Deployments
                 this.blocksFailed = blocksFailed;
                 this.blocksActive = blocksActive;
                 this.offset = offset;
+                this.timeStart = timeStart;
+                this.timeTimeOut = timeTimeOut;
                 this.votes = votes;
+                this.threshold = threshold;
                 this.StateValue = stateValue;
                 this.ThresholdState = thresholdState;
             }
@@ -267,9 +271,12 @@ namespace Stratis.Bitcoin.Base.Deployments
                 activeStateCount = this.enhancedCache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Active));
 
                 int maxVotes = this.enhancedCache.Values.Max(x => x[thresholdStateIndex].Votes);
+                int threshold = this.consensus.RuleChangeActivationThreshold;
+                DateTimeOffset? timeStart = this.consensus.BIP9Deployments[thresholdStateIndex]?.StartTime;
+                DateTimeOffset? timeTimeout = this.consensus.BIP9Deployments[thresholdStateIndex]?.Timeout;
                 DateTimeOffset maxTimePast = this.enhancedCache.Values.Max(x => x[thresholdStateIndex].TimePast);
 
-                EnrichedActivationStateModel row = new EnrichedActivationStateModel(thresholdStateIndex, definedStateCount, startedStateCount, lockInStateCount, failedStateCount, activeStateCount, maxTimePast, maxVotes, thresholdStates[thresholdStateIndex], ((ThresholdState) thresholdStates[thresholdStateIndex]).ToString());
+                EnrichedActivationStateModel row = new EnrichedActivationStateModel(thresholdStateIndex, definedStateCount, startedStateCount, lockInStateCount, failedStateCount, activeStateCount, maxTimePast, timeStart, timeTimeout, threshold, maxVotes, thresholdStates[thresholdStateIndex], ((ThresholdState) thresholdStates[thresholdStateIndex]).ToString());
                 list.Add(row);
             }
 
@@ -294,7 +301,6 @@ namespace Stratis.Bitcoin.Base.Deployments
             return threshold[deployment].Value;
         }
 
-        // FAZZ
         private ThresholdState? GetEnhanced(uint256 hash, int deployment)
         {
             if (hash == null)
@@ -327,8 +333,7 @@ namespace Stratis.Bitcoin.Base.Deployments
             threshold[deployment] = state;
         }
 
-        // FAZZ
-        private void SetEnhanced(uint256 hash, int deployment, ThresholdState state, DateTimeOffset medianTimePast, DateTimeOffset? timeOut, DateTimeOffset? timeStart, int threshold, int voteCount)
+        private void SetEnhanced(uint256 hash, int deployment, ThresholdState state, DateTimeOffset medianTimePast, int voteCount)
         {
             if (hash == null)
                 return;
@@ -347,9 +352,6 @@ namespace Stratis.Bitcoin.Base.Deployments
 
             enhancedThreshold[deployment].ThresholdState = state;
             enhancedThreshold[deployment].TimePast = medianTimePast;
-            enhancedThreshold[deployment].TimeOut = timeOut;
-            enhancedThreshold[deployment].TimeStart = timeStart;
-            enhancedThreshold[deployment].Threshold = threshold;
             enhancedThreshold[deployment].Votes = voteCount;
         }
 
