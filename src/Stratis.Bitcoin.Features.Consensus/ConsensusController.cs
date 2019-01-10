@@ -57,9 +57,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// State Value <see cref="ThresholdState"/>, human readable Threshold State <see cref="string"/>
         /// Returns <see cref="IActionResult"/> formatted error if fails.
         /// </returns>.
-        [Route("api/[controller]/getdeploymentflags")]
+        [Route("api/[controller]/deploymentflags")]
         [HttpGet]
-        public IActionResult GetDeploymentFlags()
+        public IActionResult DeploymentFlags()
         {
             try
             {
