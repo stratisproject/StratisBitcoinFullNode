@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
@@ -164,10 +165,10 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         {
             var request = new BuildCreateContractTransactionRequest
             {
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 AccountName = this.AccountName,
                 ContractCode = contractCode.ToHexString(),
-                FeeAmount = feeAmount.ToString(),
+                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 Parameters = parameters,
@@ -211,9 +212,9 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             var request = new BuildCallContractTransactionRequest
             {
                 AccountName = this.AccountName,
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 ContractAddress = contractAddress,
-                FeeAmount = feeAmount.ToString(),
+                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 MethodName = methodName,
@@ -237,7 +238,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         {
             var request = new LocalCallContractRequest
             {
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 ContractAddress = contractAddress,
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
