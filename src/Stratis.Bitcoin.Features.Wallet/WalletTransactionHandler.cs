@@ -350,7 +350,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // then it's safe to stop adding UTXOs to the coin list.
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
-                // If we are only adding selected inputs then add them all.
+                // Selected inputs are added first. Ensure that they are all added.
                 if (sum > totalToSend && index >= (context?.SelectedInputs.Count ?? 0))
                     break;
             }
