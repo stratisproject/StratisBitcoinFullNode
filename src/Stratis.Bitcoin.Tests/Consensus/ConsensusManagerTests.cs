@@ -348,8 +348,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             builder.TestConsensusManager.SetupCallbackByBlocksRequestedHash(additionalHeaders.Previous.HashBlock, callback3);
 
             // call for both blocks.
-            builder.blockPullerBlockDownloadCallback(additionalHeaders.Previous.HashBlock, null, peer.Object.Connection.Id);
-            builder.blockPullerBlockDownloadCallback(additionalHeaders.HashBlock, null, peer.Object.Connection.Id);
+            var block = new Block();
+            block.ToBytes();
+            builder.blockPullerBlockDownloadCallback(additionalHeaders.Previous.HashBlock, block, peer.Object.Connection.Id);
+            builder.blockPullerBlockDownloadCallback(additionalHeaders.HashBlock, block, peer.Object.Connection.Id);
 
             Assert.False(builder.TestConsensusManager.CallbacksByBlocksRequestedHashContainsKeyForHash(additionalHeaders.HashBlock));
             Assert.False(builder.TestConsensusManager.CallbacksByBlocksRequestedHashContainsKeyForHash(additionalHeaders.Previous.HashBlock));

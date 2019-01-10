@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>
         /// A container of call backs used by the download processes.
         /// </summary>
-        private class DownloadedCallbacks
+        internal class DownloadedCallbacks
         {
             /// <summary>The consensus code has requested this block, invoke the method <see cref="ProcessDownloadedBlock"/> when block is delivered.</summary>
             public bool ConsensusRequested { get; set; }
