@@ -301,6 +301,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public void Dispose()
         {
+            this.provenBlockHeaderRepository.Dispose();
         }
     }
 }
