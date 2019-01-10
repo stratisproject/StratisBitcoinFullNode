@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                 this.Set(indexPrev?.HashBlock, deployment, state = stateNext);
 
                 // FAZZ
-                this.SetEnhanced(indexPrev?.HashBlock, deployment, state = stateNext, indexPrev.GetMedianTimePast(), voteCount);
+                this.SetEnhanced(indexPrev?.HashBlock, deployment, state = stateNext, indexPrev.GetMedianTimePast(), timeTimeout, timeStart, threshold, voteCount);
             }
 
           return state;
@@ -221,12 +221,18 @@ namespace Stratis.Bitcoin.Base.Deployments
         {
             public ThresholdState? ThresholdState { get; set; }
             public DateTimeOffset TimePast { get; set; }
+            public DateTimeOffset? TimeOut { get; set; }
+            public DateTimeOffset? TimeStart { get; set; }
+            public int Threshold { get; set; }
             public int Votes { get; set; }
 
-            public EnhancedThresholdState(ThresholdState? thresholdState, DateTimeOffset timePast, int votes)
+            public EnhancedThresholdState(ThresholdState? thresholdState, DateTimeOffset timePast, DateTimeOffset? timeOut, DateTimeOffset? timeStart, int threshold, int votes)
             {
                 this.ThresholdState = thresholdState;
                 this.TimePast = timePast;
+                this.TimeOut = timeOut;
+                this.TimeStart = timeStart;
+                this.Threshold = threshold;
                 this.Votes = votes;
             }
 
@@ -322,7 +328,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         }
 
         // FAZZ
-        private void SetEnhanced(uint256 hash, int deployment, ThresholdState state, DateTimeOffset medianTimePast, int voteCount)
+        private void SetEnhanced(uint256 hash, int deployment, ThresholdState state, DateTimeOffset medianTimePast, DateTimeOffset? timeOut, DateTimeOffset? timeStart, int threshold, int voteCount)
         {
             if (hash == null)
                 return;
@@ -341,6 +347,9 @@ namespace Stratis.Bitcoin.Base.Deployments
 
             enhancedThreshold[deployment].ThresholdState = state;
             enhancedThreshold[deployment].TimePast = medianTimePast;
+            enhancedThreshold[deployment].TimeOut = timeOut;
+            enhancedThreshold[deployment].TimeStart = timeStart;
+            enhancedThreshold[deployment].Threshold = threshold;
             enhancedThreshold[deployment].Votes = voteCount;
         }
 
