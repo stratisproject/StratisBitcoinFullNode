@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         }
 
         /// <inheritdoc />
-        public bool CheckPOSSignature(BlockSignature signature, uint256 blockHash, Transaction coinStake)
+        public bool CheckStakeSignature(BlockSignature signature, uint256 blockHash, Transaction coinStake)
         {
             if (signature.IsEmpty())
             {
@@ -447,7 +447,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             // This allows to not pollute UTXO set with useless outputs e.g. in case of multisig staking.
 
             List<Op> ops = txout.ScriptPubKey.ToOps().ToList();
-            if (!ops.Any()) // script.GetOp(pc, opcode, vchPushValue))
+            if (!ops.Any())
             {
                 this.logger.LogTrace("(-)[NO_OPS]:false");
                 return false;

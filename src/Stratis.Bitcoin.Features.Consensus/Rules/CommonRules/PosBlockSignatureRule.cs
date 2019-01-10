@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
 
             var consensusRules = (PosConsensusRuleEngine)this.Parent;
-            return consensusRules.StakeValidator.CheckPOSSignature(block.BlockSignature, block.GetHash(), block.Transactions[1]);
+            return consensusRules.StakeValidator.CheckStakeSignature(block.BlockSignature, block.GetHash(), block.Transactions[1]);
         }
     }
 }

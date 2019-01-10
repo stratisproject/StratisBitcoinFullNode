@@ -224,10 +224,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.rewindDataIndexStore = new Mock<IRewindDataIndexCache>();
             this.consensusRules = InitializeConsensusRules();
 
-            this.stakeValidator.Setup(s => s.CheckPOSSignature(It.IsAny<BlockSignature>(), It.IsAny<uint256>(), It.IsAny<Transaction>()))
+            this.stakeValidator.Setup(s => s.CheckStakeSignature(It.IsAny<BlockSignature>(), It.IsAny<uint256>(), It.IsAny<Transaction>()))
                 .Returns((BlockSignature signature, uint256 blockHash, Transaction coinstakeTx) => {
                     var validator = new StakeValidator(this.network, this.stakeChain.Object, this.concurrentChain, this.coinView.Object, this.loggerFactory.Object);
-                    return validator.CheckPOSSignature(signature, blockHash, coinstakeTx);
+                    return validator.CheckStakeSignature(signature, blockHash, coinstakeTx);
                 });
         }
 

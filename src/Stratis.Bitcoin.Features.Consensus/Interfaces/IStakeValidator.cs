@@ -155,6 +155,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="blockHash">The block hash.</param>
         /// <param name="coinStake">The coinstake transaction.</param>
         /// <returns><c>True</c> if passes validation, and <c>false</c> otherwise.</returns>
-        bool CheckPOSSignature(BlockSignature signature, uint256 blockHash, Transaction coinStake);
+        bool CheckStakeSignature(BlockSignature signature, uint256 blockHash, Transaction coinStake);
     }
 }
