@@ -432,17 +432,20 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 .GetSpendableTransactionsInWalletForStaking(walletSecret.WalletName, 1).ToList();
 
             FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(spendableTransactions.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
+            Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
+            fetchedCoinSet = null; // allow GC to collect as soon as possible.
 
-            foreach (UnspentOutputReference outputReference in spendableTransactions)
+            for (int i = 0; i < spendableTransactions.Count; i++)
             {
+                UnspentOutputReference outputReference = spendableTransactions[i];
+
                 if (cancellationToken.IsCancellationRequested)
                 {
                     this.logger.LogTrace("(-)[CANCELLATION]");
                     throw new OperationCanceledException(cancellationToken);
                 }
 
-                UnspentOutputs coinSet = fetchedCoinSet.UnspentOutputs
-                    .FirstOrDefault(f => f?.TransactionId == outputReference.Transaction.Id);
+                UnspentOutputs coinSet = utxoByTransaction.TryGet(outputReference.Transaction.Id);
                 if ((coinSet == null) || (outputReference.Transaction.Index >= coinSet.Outputs.Length))
                     continue;
 
@@ -654,11 +657,12 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 cwc.utxoStakeDescriptions.AddRange(stakingUtxoDescriptions.GetRange(coinIndex, stakingUtxoCount));
                 coinIndex += stakingUtxoCount;
                 workerContexts[workerIndex] = cwc;
-
-                workers[workerIndex] = Task.Run(() => this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval));
             }
 
-            await Task.WhenAll(workers).ConfigureAwait(false);
+            await Task.Run(() => Parallel.ForEach(workerContexts, cwc =>
+            {
+                this.CoinstakeWorker(cwc, chainTip, block, minimalAllowedTime, searchInterval);
+            }));
 
             if (workersResult.KernelFoundIndex == CoinstakeWorkerResult.KernelNotFound)
             {
