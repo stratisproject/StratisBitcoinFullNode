@@ -311,8 +311,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
-            bool onlySelectedInputs = false;
-
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the
@@ -332,15 +330,17 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (!context.SelectedInputs.Contains(unspentOutputsItem.Key))
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
                     }
-
-                    onlySelectedInputs = true;
                 }
             }
 
             Money sum = 0;
             int index = 0;
             var coins = new List<Coin>();
-            foreach (UnspentOutputReference item in context.UnspentOutputs.OrderByDescending(a => a.Confirmations > 0).ThenByDescending(a => a.Transaction.Amount))
+
+            foreach (UnspentOutputReference item in context.UnspentOutputs
+                .OrderByDescending(a => context.SelectedInputs?.Contains(a.ToOutPoint()))
+                .ThenByDescending(a => a.Confirmations > 0)
+                .ThenByDescending(a => a.Transaction.Amount))
             {
                 coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
                 sum += item.Transaction.Amount;
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
                 // If we are only adding selected inputs then add them all.
-                if (sum > totalToSend && !onlySelectedInputs)
+                if (sum > totalToSend && index >= (context?.SelectedInputs.Count ?? 0))
                     break;
             }
 
