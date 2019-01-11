@@ -483,5 +483,40 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 Assert.Equal("tx-size", entry.ErrorMessage);
             }
         }
+
+        [Fact]
+        public void Mempool_SendTransactionWithEarlyTimestamp_ShouldRejectByMempool()
+        {
+            var network = KnownNetworks.StratisRegTest;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode stratisSender = builder.CreateStratisPosNode(network).WithWallet().Start();
+
+                int maturity = (int)network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(stratisSender, maturity + 5);
+
+                // Send coins to the receiver
+                var context = WalletTests.CreateContext(network, new WalletAccountReference(WalletName, Account), Password, new Key().PubKey.GetAddress(network).ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1);
+
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+                // Use timestamp value that is definitely earlier than the input's timestamp
+                trx.Time = 1;
+
+                // Sign trx again after mutating timestamp
+                trx = context.TransactionBuilder.SignTransaction(trx);
+
+                // Enable standard policy relay.
+                stratisSender.FullNode.NodeService<MempoolSettings>().RequireStandard = true;
+
+                var broadcaster = stratisSender.FullNode.NodeService<IBroadcasterManager>();
+
+                broadcaster.BroadcastTransactionAsync(trx).GetAwaiter().GetResult();
+                var entry = broadcaster.GetTransaction(trx.GetHash());
+
+                Assert.Equal("timestamp earlier than input", entry.ErrorMessage);
+            }
+        }
     }
 }
