@@ -407,7 +407,8 @@ namespace Stratis.Bitcoin.Base
                         blockStore: provider.GetService<IBlockStore>(),
                         connectionManager: provider.GetService<IConnectionManager>(),
                         nodeStats: provider.GetService<INodeStats>(),
-                        nodeLifetime: provider.GetService<INodeLifetime>()
+                        nodeLifetime: provider.GetService<INodeLifetime>(),
+                        consensusSettings: provider.GetService<ConsensusSettings>()
                         ));
                     services.AddSingleton<IChainedHeaderTree, ChainedHeaderTree>();
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
