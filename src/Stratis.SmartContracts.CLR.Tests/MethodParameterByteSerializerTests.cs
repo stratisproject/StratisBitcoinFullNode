@@ -3,13 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NBitcoin;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class MethodParameterByteSerializerTests
     {
@@ -44,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Single comparative case for a sample byte vs. string encoded method params array
             var stringSerializer = new MethodParameterStringSerializer(Network);
 
-            var parameters = GetData(0).SelectMany(o => o).ToArray();
+            var parameters = Enumerable.SelectMany<object[], object>(GetData(0), o => o).ToArray();
 
             var serializedBytes = this.Serializer.Serialize(parameters);
             var s = stringSerializer.Serialize(parameters);
@@ -56,7 +54,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void Roundtrip_Serialize_Multiple_Params()
         {
-            object[] methodParameters = GetData(0).SelectMany(o => o).ToArray();
+            object[] methodParameters = Enumerable.SelectMany<object[], object>(GetData(0), o => o).ToArray();
 
             var serialized = this.Serializer.Serialize(methodParameters);
 

@@ -3,14 +3,11 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class MethodParameterStringSerializerTests
     {

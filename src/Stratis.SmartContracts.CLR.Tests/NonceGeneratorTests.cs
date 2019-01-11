@@ -1,7 +1,6 @@
-﻿using Stratis.SmartContracts.CLR;
-using Xunit;
+﻿using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class NonceGeneratorTests
     {
