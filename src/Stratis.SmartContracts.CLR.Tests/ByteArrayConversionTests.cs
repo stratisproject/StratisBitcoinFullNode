@@ -2,7 +2,7 @@
 using Stratis.SmartContracts.Core;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ByteArrayConversionTests
     {

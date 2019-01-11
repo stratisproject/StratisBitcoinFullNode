@@ -1,14 +1,11 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using System.Collections.Generic;
 using Mono.Cecil;
 using Stratis.SmartContracts.CLR.Exceptions;
-using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
 using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Validation.Tests
 {
     public class SmartContractValidationExceptionTests
     {

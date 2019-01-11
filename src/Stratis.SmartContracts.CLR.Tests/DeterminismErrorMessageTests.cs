@@ -1,12 +1,11 @@
 ﻿using System.Linq;
 using Microsoft.CodeAnalysis;
+using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public sealed class DeterminismErrorMessageTests
     {
