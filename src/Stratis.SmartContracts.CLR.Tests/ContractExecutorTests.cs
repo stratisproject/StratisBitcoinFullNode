@@ -2,19 +2,17 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Patricia;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.CLR.Validation;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public sealed class ContractExecutorTests
     {

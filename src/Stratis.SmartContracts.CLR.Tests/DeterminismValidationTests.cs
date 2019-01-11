@@ -1,6 +1,5 @@
 using System.Linq;
 using Microsoft.CodeAnalysis;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
@@ -9,7 +8,7 @@ using Stratis.SmartContracts.CLR.Validation.Validators.Method;
 using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     /// <summary>
     /// In the long run, it would be great if there is a way for us to run through all possible types and methods

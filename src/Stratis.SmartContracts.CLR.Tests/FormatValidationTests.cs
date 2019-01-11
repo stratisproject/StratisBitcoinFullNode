@@ -4,13 +4,12 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Microsoft.CodeAnalysis.CSharp;
 using Microsoft.CodeAnalysis.Emit;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class FormatValidationTests
     {
@@ -50,8 +49,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             IEnumerable<ValidationResult> validationResult = SingleConstructorValidator.Validate(MultipleConstructorModuleDefinition.ModuleDefinition.GetType("MultipleConstructor"));
 
-            Assert.Single(validationResult);
-            Assert.Equal(SingleConstructorValidator.SingleConstructorError, validationResult.Single().Message);
+            Assert.Single<ValidationResult>(validationResult);
+            Assert.Equal((string) SingleConstructorValidator.SingleConstructorError, (string) validationResult.Single().Message);
         }
 
         [Fact]
@@ -425,10 +424,10 @@ public class Test : SmartContract
         {
             SyntaxTree syntaxTree = CSharpSyntaxTree.ParseText(source);
 
-            var references = GetReferences().ToList();
+            var references = Enumerable.ToList<MetadataReference>(GetReferences());
             
             if (additionalReferencePaths != null)
-                references.AddRange(additionalReferencePaths.Select(path => MetadataReference.CreateFromFile(path)));
+                references.AddRange(Enumerable.Select<string, PortableExecutableReference>(additionalReferencePaths, path => MetadataReference.CreateFromFile(path)));
 
             CSharpCompilation compilation = CSharpCompilation.Create(
                 "smartContract",
