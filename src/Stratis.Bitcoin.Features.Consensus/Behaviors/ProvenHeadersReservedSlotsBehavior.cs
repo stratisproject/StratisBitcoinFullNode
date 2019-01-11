@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// <summary>
         /// The minimum peers supporting Proven Headers that we require to be connected to us.
         /// </summary>
-        private const int MinimumRequiredPeerSupportingPH = 2;
+        private const int MinimumRequiredPeerSupportingPH = 3;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
