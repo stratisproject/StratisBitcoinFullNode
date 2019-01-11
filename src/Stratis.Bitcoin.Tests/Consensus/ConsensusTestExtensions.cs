@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
         public static void SetMaxUnconsumedBlocksDataBytesValue(this ConsensusManager consensusManager, long val)
         {
-            consensusManager.SetPrivateVariableValue("maxUnconsumedBlocksDataBytes", val);
+            consensusManager.SetPrivatePropertyValue("maxUnconsumedBlocksDataBytes", val);
         }
 
         public static Dictionary<uint256, long> GetExpectedBlockSizesValue(this ConsensusManager consensusManager)
