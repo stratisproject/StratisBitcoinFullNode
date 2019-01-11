@@ -1,18 +1,12 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 using Newtonsoft.Json;
-using Newtonsoft.Json.Serialization;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ContractParametersJsonResolverTests
     {
