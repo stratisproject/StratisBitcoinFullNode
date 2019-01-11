@@ -1122,7 +1122,7 @@ public class Test : SmartContract
             Assert.False(result.IsValid);
         }
 
-                [Fact]
+        [Fact]
         public void Validate_PublicPartial_Class()
         {
             var adjustedSource = @"
