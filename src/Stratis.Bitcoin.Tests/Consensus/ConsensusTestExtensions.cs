@@ -29,9 +29,9 @@ namespace Stratis.Bitcoin.Tests.Consensus
             return chainedHeaderTree.GetChainedHeadersByHash()[chainedHeaderTree.GetPeerTipsByPeerId()[peer]];
         }
 
-        public static Dictionary<uint256, List<OnBlockDownloadedCallback>> GetCallbacksByBlocksRequestedHash(this ConsensusManager consensusManager)
+        public static Dictionary<uint256, ConsensusManager.DownloadedCallbacks> GetCallbacksByBlocksRequestedHash(this ConsensusManager consensusManager)
         {
-            return consensusManager.GetMemberValue("callbacksByBlocksRequestedHash") as Dictionary<uint256, List<OnBlockDownloadedCallback>>;
+            return consensusManager.GetMemberValue("callbacksByBlocksRequestedHash") as Dictionary<uint256, ConsensusManager.DownloadedCallbacks>;
         }
 
         public static Dictionary<int, INetworkPeer> GetPeersByPeerId(this ConsensusManager consensusManager)
@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             return consensusManager.GetMemberValue("expectedBlockSizes") as Dictionary<uint256, long>;
         }
-        
+
         public static ChainedHeader[] ToArray(this ChainedHeader chainedHeader, int headersToTake)
         {
             var headers = new ChainedHeader[headersToTake];
