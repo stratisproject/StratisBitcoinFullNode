@@ -198,6 +198,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             return this;
         }
 
+        public CoreNode WithReadyBlockchainData(string readyDataName)
+        {
+            // Extract the zipped blockchain data to the node's DataFolder.
+            ZipFile.ExtractToDirectory(Path.GetFullPath(readyDataName), this.DataFolder, true);
+
+            return this;
+        }
+
         public RPCClient CreateRPCClient()
         {
             return new RPCClient(this.GetRPCAuth(), new Uri("http://127.0.0.1:" + this.RpcPort + "/"), this.FullNode?.Network ?? KnownNetworks.RegTest);

@@ -11,6 +11,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -314,8 +315,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 // Arrange.
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
-                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
-                TestHelper.MineBlocks(miningNode, 150);
+                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
                 TestHelper.ConnectAndSync(node, miningNode);
@@ -350,11 +350,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 // Arrange.
                 // Create a sending and a receiving node.
-                CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
-                CoreNode receivingNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
-
-                // Mine a few blocks to fund the sending node and connect the nodes.
-                TestHelper.MineBlocks(sendingNode, 150);
+                CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
+                CoreNode receivingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Listener).Start();
                 TestHelper.ConnectAndSync(sendingNode, receivingNode);
 
                 // Check balances.
