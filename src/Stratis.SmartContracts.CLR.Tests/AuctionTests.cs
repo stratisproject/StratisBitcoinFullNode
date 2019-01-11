@@ -1,13 +1,10 @@
 ﻿using System;
 using System.Collections.Generic;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class AuctionTests
     {
@@ -25,14 +22,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var block = new TestBlock
             {
-                Coinbase = TestAddress,
+                Coinbase = this.TestAddress,
                 Number = 1
             };
             var message = new TestMessage
             {
-                ContractAddress = TestAddress,
+                ContractAddress = this.TestAddress,
                 GasLimit = (Gas)GasLimit,
-                Sender = TestAddress,
+                Sender = this.TestAddress,
                 Value = Value
             };
             var getBalance = new Func<ulong>(() => Balance);
@@ -55,10 +52,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void TestCreation()
         {
             const ulong duration = 20;
-            var contract = new Auction(smartContractState, duration);
-            Assert.Equal(TestAddress, smartContractState.PersistentState.GetAddress("Owner"));
-            Assert.False(smartContractState.PersistentState.GetBool("HasEnded"));
-            Assert.Equal(duration + smartContractState.Block.Number, smartContractState.PersistentState.GetUInt64("EndBlock"));
+            var contract = new Auction(this.smartContractState, duration);
+            Assert.Equal(this.TestAddress, this.smartContractState.PersistentState.GetAddress("Owner"));
+            Assert.False(this.smartContractState.PersistentState.GetBool("HasEnded"));
+            Assert.Equal(duration + this.smartContractState.Block.Number, this.smartContractState.PersistentState.GetUInt64("EndBlock"));
         }
 
         [Fact]
@@ -67,13 +64,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             const ulong duration = 20;
             var contract = new Auction(this.smartContractState, duration);
 
-            ((TestMessage)smartContractState.Message).Value = 100;
-            Assert.Equal(default(Address), smartContractState.PersistentState.GetAddress("HighestBidder"));
-            Assert.Equal(0uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
+            ((TestMessage)this.smartContractState.Message).Value = 100;
+            Assert.Equal(default(Address), this.smartContractState.PersistentState.GetAddress("HighestBidder"));
+            Assert.Equal(0uL, this.smartContractState.PersistentState.GetUInt64("HighestBid"));
 
             contract.Bid();
-            Assert.Equal(TestAddress, smartContractState.PersistentState.GetAddress("HighestBidder"));
-            Assert.Equal(100uL, smartContractState.PersistentState.GetUInt64("HighestBid"));
+            Assert.Equal(this.TestAddress, this.smartContractState.PersistentState.GetAddress("HighestBidder"));
+            Assert.Equal(100uL, this.smartContractState.PersistentState.GetUInt64("HighestBid"));
 
             ((TestMessage)this.smartContractState.Message).Value = 90;
             Assert.ThrowsAny<Exception>(() => contract.Bid());

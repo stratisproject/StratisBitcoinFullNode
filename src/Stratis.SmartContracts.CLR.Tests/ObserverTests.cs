@@ -1,11 +1,7 @@
-﻿using System;
-using System.IO;
-using System.Linq;
+﻿using System.Linq;
 using Mono.Cecil;
 using Moq;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.ILRewrite;
@@ -16,7 +12,7 @@ using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ObserverTests
     {
@@ -109,14 +105,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var block = new TestBlock
             {
-                Coinbase = TestAddress,
+                Coinbase = this.TestAddress,
                 Number = 1
             };
             var message = new TestMessage  
             {
-                ContractAddress = TestAddress,
+                ContractAddress = this.TestAddress,
                 GasLimit = (Gas)GasLimit,
-                Sender = TestAddress,
+                Sender = this.TestAddress,
                 Value = Value
             };
             var getBalance = new Func<ulong>(() => Balance);
@@ -124,10 +120,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var network = new SmartContractsRegTest();
             var serializer = new ContractPrimitiveSerializer(network);
             this.state = new SmartContractState(
-                new Stratis.SmartContracts.Block(1, TestAddress),
-                new Message(TestAddress, TestAddress, 0),
+                new Stratis.SmartContracts.Block(1, this.TestAddress),
+                new Message(this.TestAddress, this.TestAddress, 0),
                 new PersistentState(new MeteredPersistenceStrategy(this.repository, this.gasMeter, new BasicKeyEncodingStrategy()),
-                    context.Serializer, TestAddress.ToUint160()),
+                    context.Serializer, this.TestAddress.ToUint160()),
                 context.Serializer,
                 this.gasMeter,
                 new ContractLogHolder(),

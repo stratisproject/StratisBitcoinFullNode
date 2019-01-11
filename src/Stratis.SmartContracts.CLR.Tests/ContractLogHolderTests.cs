@@ -2,16 +2,13 @@
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ContractLogHolderTests
     {
@@ -49,21 +46,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // First log has 3 topics, for name and 2 fields.
             Assert.Equal(contractAddress1, logs[0].Address);
             Assert.Equal(3, logs[0].Topics.Count);
-            Assert.Equal(nameof(Example1), Encoding.UTF8.GetString(logs[0].Topics[0]));
-            Assert.Equal(log1.Name, Encoding.UTF8.GetString(logs[0].Topics[1]));
+            Assert.Equal((string) nameof(Example1), (string) Encoding.UTF8.GetString(logs[0].Topics[0]));
+            Assert.Equal(log1.Name, (string) Encoding.UTF8.GetString(logs[0].Topics[1]));
             Assert.Equal(log1.Amount, BitConverter.ToUInt32(logs[0].Topics[2]));
 
             // Second log has 3 topics, for name and 2 fields.
             Assert.Equal(contractAddress1, logs[1].Address);
             Assert.Equal(3, logs[1].Topics.Count);
-            Assert.Equal(nameof(Example1), Encoding.UTF8.GetString(logs[1].Topics[0]));
-            Assert.Equal(log2.Name, Encoding.UTF8.GetString(logs[1].Topics[1]));
+            Assert.Equal((string) nameof(Example1), (string) Encoding.UTF8.GetString(logs[1].Topics[0]));
+            Assert.Equal(log2.Name, (string) Encoding.UTF8.GetString(logs[1].Topics[1]));
             Assert.Equal(log2.Amount, BitConverter.ToUInt32(logs[1].Topics[2]));
 
             // Third log has 3 topics, for name and 2 indexed fields - message is not included.
             Assert.Equal(contractAddress2, logs[2].Address);
             Assert.Equal(3, logs[2].Topics.Count);
-            Assert.Equal(nameof(Example2), Encoding.UTF8.GetString(logs[2].Topics[0]));
+            Assert.Equal((string) nameof(Example2), (string) Encoding.UTF8.GetString(logs[2].Topics[0]));
             Assert.Equal(log3.Address, new uint160(logs[2].Topics[1]).ToAddress());
             Assert.Equal(log3.Id, BitConverter.ToInt32(logs[2].Topics[2]));
         }
