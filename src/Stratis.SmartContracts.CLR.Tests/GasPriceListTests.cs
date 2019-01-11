@@ -2,11 +2,9 @@
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class GasPriceListTests
     {
