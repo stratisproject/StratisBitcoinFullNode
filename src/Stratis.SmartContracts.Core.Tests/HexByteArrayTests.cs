@@ -1,11 +1,8 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using DBreeze.Utils;
-using Stratis.SmartContracts.Core;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.Core.Tests
 {
     public class HexByteArrayTests
     {

@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Core.Receipts;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Receipts
+namespace Stratis.SmartContracts.Core.Tests.Receipts
 {
     public class PersistentReceiptRepositoryTests
     {

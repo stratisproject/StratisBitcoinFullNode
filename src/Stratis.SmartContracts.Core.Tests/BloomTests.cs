@@ -2,11 +2,10 @@
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.Core.Tests
 {
     public class BloomTests
     {
@@ -49,12 +48,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var bloom = new Bloom();
             bloom.Add(testValue1.HexToByteArray());
             bloom.Add(testValue2.HexToByteArray());
-            Assert.Equal(expectedBloom, bloom.ToString());
+            Assert.Equal(expectedBloom, (string) bloom.ToString());
 
-            Assert.True(bloom.Test(testValue1.HexToByteArray()));
-            Assert.True(bloom.Test(testValue2.HexToByteArray()));
-            Assert.False(bloom.Test("1001".HexToByteArray()));
-            Assert.True(bloom.Test(testValue1.HexToByteArray()));
+            Assert.True((bool) bloom.Test(testValue1.HexToByteArray()));
+            Assert.True((bool) bloom.Test(testValue2.HexToByteArray()));
+            Assert.False((bool) bloom.Test("1001".HexToByteArray()));
+            Assert.True((bool) bloom.Test(testValue1.HexToByteArray()));
         }
 
         [Fact]
@@ -91,8 +90,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             // Check that all in bloom match, and all not in bloom don't match.
             for(int i = 0; i< numberToGen; i++)
             {
-                Assert.False(bloom.Test(notContainedInBloom[i]));
-                Assert.True(bloom.Test(containedInBloom[i]));
+                Assert.False((bool) bloom.Test(notContainedInBloom[i]));
+                Assert.True((bool) bloom.Test(containedInBloom[i]));
             }
         }
 
@@ -121,19 +120,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var receipt = new Receipt(new uint256(0), 0, new Log[] { log1, log2 });
 
-            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic1")));
-            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic2")));
-            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic3")));
-            Assert.True(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic4")));
-            Assert.True(receipt.Bloom.Test(new uint160(12345).ToBytes()));
-            Assert.True(receipt.Bloom.Test(new uint160(123456).ToBytes()));
+            Assert.True((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic1")));
+            Assert.True((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic2")));
+            Assert.True((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic3")));
+            Assert.True((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic4")));
+            Assert.True((bool) receipt.Bloom.Test(new uint160(12345).ToBytes()));
+            Assert.True((bool) receipt.Bloom.Test(new uint160(123456).ToBytes()));
 
-            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic5")));
-            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic6")));
-            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic7")));
-            Assert.False(receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic8")));
-            Assert.False(receipt.Bloom.Test(new uint160(11111).ToBytes()));
-            Assert.False(receipt.Bloom.Test(new uint160(1234567).ToBytes()));
+            Assert.False((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic5")));
+            Assert.False((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic6")));
+            Assert.False((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic7")));
+            Assert.False((bool) receipt.Bloom.Test(Encoding.UTF8.GetBytes("Topic8")));
+            Assert.False((bool) receipt.Bloom.Test(new uint160(11111).ToBytes()));
+            Assert.False((bool) receipt.Bloom.Test(new uint160(1234567).ToBytes()));
         }
     }
 }

@@ -2,13 +2,11 @@
 using DBreeze;
 using NBitcoin;
 using Stratis.Patricia;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Xunit;
 using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.Core.Tests
 {
     public class StateRepositoryTests
     {

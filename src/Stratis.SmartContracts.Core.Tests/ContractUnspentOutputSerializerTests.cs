@@ -4,7 +4,7 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.Core.Tests
 {
     public class ContractUnspentOutputSerializerTests
     {

@@ -4,7 +4,7 @@ using Stratis.SmartContracts.Core.State;
 using Xunit;
 using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.Core.Tests
 {
     public class WriteCacheTest
     {
