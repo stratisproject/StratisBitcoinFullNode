@@ -8,6 +8,8 @@ services:
     image: coinvault/nako
     command: city
     ports: 
+        - 80:9000
+        - 443:9000
         - 9019:9000
     depends_on:
         - mongo
