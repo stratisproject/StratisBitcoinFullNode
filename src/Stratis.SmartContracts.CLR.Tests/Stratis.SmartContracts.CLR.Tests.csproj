@@ -17,4 +17,13 @@
     <ProjectReference Include="..\Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj" />
   </ItemGroup>
 
+  <ItemGroup>
+    <Compile Update="SmartContracts\MultipleFiles1.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\MultipleFiles2.cs">
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+    </Compile>
+  </ItemGroup>
+
 </Project>

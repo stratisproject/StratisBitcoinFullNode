@@ -1,11 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ContractCompilerTests
     {
@@ -45,7 +44,22 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         [Fact]
         public void SmartContract_Compiler_FailsOnImplicitInvalidAssemblyReference()
         {
-            ContractCompilationResult result = ContractCompiler.CompileFile("SmartContracts/InvalidImplicitAssembly.cs");
+            ContractCompilationResult result = ContractCompiler.Compile(@"
+using System.Linq;
+using Stratis.SmartContracts;
+
+public class InvalidImplicitAssembly : SmartContract
+{
+    public InvalidImplicitAssembly(ISmartContractState state) : base(state)
+    {
+    }
+
+    public void Test()
+    {
+        new string[] { }.ToList().Sort();
+    }
+}
+");
             Assert.False(result.Success);
         }
 
