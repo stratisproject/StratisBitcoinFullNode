@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Consensus.Validators;
 namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 {
     /// <summary>Test-only implementation of <see cref="TestChainedHeaderTree"/> that exposes inner structures.</summary>
-    public class TestChainedHeaderTree : ChainedHeaderTree
+    internal class TestChainedHeaderTree : ChainedHeaderTree
     {
         public TestChainedHeaderTree(
             Network network,
