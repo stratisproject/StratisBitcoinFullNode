@@ -4,7 +4,7 @@ using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Loader;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Loader
+namespace Stratis.SmartContracts.CLR.Tests.Loader
 {
     public class ContractAssemblyLoaderTests
     {
@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Loader
 
         public ContractAssemblyLoaderTests()
         {
-            this.compilation = ContractCompiler.CompileFile(Contract);
+            this.compilation = ContractCompiler.CompileFile(this.Contract);
             this.loader = new ContractAssemblyLoader();
         }
 

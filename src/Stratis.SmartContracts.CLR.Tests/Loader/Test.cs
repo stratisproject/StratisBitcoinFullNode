@@ -1,6 +1,4 @@
-﻿using Stratis.SmartContracts;
-
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Loader
+﻿namespace Stratis.SmartContracts.CLR.Tests.Loader
 {
     public class Test : SmartContract
     {
