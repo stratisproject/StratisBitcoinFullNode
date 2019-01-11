@@ -2,12 +2,10 @@
 using System.Collections.Generic;
 using Moq;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Exceptions;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ContractTests
     {
@@ -245,7 +243,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var smartContractState = this.instance.GetBaseTypePrivateFieldValue("state");
 
             Assert.NotNull(smartContractState);
-            Assert.Equal(this.state, smartContractState);
+            Assert.Equal<object>(this.state, smartContractState);
         }
 
         [Fact]
@@ -355,7 +353,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var smartContractState = receiveInstance.GetBaseTypePrivateFieldValue("state");
 
             Assert.NotNull(smartContractState);
-            Assert.Equal(this.state, smartContractState);
+            Assert.Equal<object>(this.state, smartContractState);
         }
 
         [Fact]

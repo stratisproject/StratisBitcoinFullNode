@@ -1,6 +1,6 @@
 ﻿using System.Reflection;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public static class ReflectionExtensions
     {

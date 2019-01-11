@@ -3,8 +3,6 @@ using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
@@ -12,7 +10,7 @@ using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ExecutorFixture
     {
@@ -44,8 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.ContractStateRoot = new Mock<IStateRepositoryRoot>();
 
             var transferProcessor = new Mock<IContractTransferProcessor>();
-            transferProcessor
-                .Setup(t => t.Process(
+            transferProcessor.Setup<Transaction>(t => t.Process(
                     It.IsAny<IStateRepository>(),
                     It.IsAny<uint160>(),
                     It.IsAny<IContractTransactionContext>(),
@@ -70,7 +67,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             var state = new Mock<IState>();
             state.Setup(s => s.ContractState).Returns(this.ContractStateRoot.Object);
-            state.SetupGet(p => p.InternalTransfers).Returns(new List<TransferInfo>().AsReadOnly());
+            state.SetupGet(p => p.InternalTransfers).Returns((IReadOnlyList<TransferInfo>) new List<TransferInfo>().AsReadOnly());
             var snapshot = new Mock<IState>();
             snapshot.SetupGet(p => p.InternalTransfers).Returns(new List<TransferInfo>().AsReadOnly());
             snapshot.Setup(s => s.ContractState).Returns(Mock.Of<IStateRepository>());

@@ -1,11 +1,8 @@
 ﻿using Moq;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.CLR;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class InternalExecutorSpecification
     {

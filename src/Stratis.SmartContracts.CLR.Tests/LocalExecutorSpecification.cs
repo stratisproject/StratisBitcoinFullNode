@@ -1,12 +1,13 @@
+using System.Collections.Generic;
 using Moq;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Local;
+using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class LocalExecutorSpecification
     {
@@ -68,10 +69,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Null(result.ErrorMessage);
             Assert.False(result.Revert);
-            Assert.Equal(fixture.State.Object.InternalTransfers, result.InternalTransfers);
+            Assert.Equal<IReadOnlyList<TransferInfo>>(fixture.State.Object.InternalTransfers, result.InternalTransfers);
             Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
             Assert.Equal(stateTransitionResult.Success.ExecutionResult, result.Return);
-            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
+            Assert.Equal<IList<Log>>(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
         }
 
         [Fact]
@@ -129,10 +130,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
             Assert.Equal(stateTransitionResult.Error.VmError, result.ErrorMessage);
             Assert.True(result.Revert);
-            Assert.Equal(fixture.State.Object.InternalTransfers, result.InternalTransfers);
+            Assert.Equal<IReadOnlyList<TransferInfo>>(fixture.State.Object.InternalTransfers, result.InternalTransfers);
             Assert.Equal(stateTransitionResult.GasConsumed, result.GasConsumed);
             Assert.Null(result.Return);
-            Assert.Equal(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
+            Assert.Equal<IList<Log>>(fixture.State.Object.GetLogs(fixture.ContractPrimitiveSerializer.Object), result.Logs);
         }
     }
 }

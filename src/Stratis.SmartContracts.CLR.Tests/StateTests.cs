@@ -2,13 +2,12 @@
 using System.Collections.Generic;
 using Moq;
 using NBitcoin;
+using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.ContractLogging;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class StateTests
     {
@@ -23,8 +22,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             this.contractStateRoot.Setup(c => c.StartTracking())
                 .Returns(this.trackedState.Object);
             this.contractLogHolder = new Mock<IContractLogHolder>();
-            this.contractLogHolder.Setup(l => l.GetRawLogs())
-                .Returns(new List<RawLog>());
+            this.contractLogHolder.Setup(l => l.GetRawLogs()).Returns((IList<RawLog>) new List<RawLog>());
         }
 
         [Fact]

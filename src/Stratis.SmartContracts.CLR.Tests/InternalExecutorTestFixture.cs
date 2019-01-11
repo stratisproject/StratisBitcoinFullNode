@@ -1,11 +1,8 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.CLR;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class InternalExecutorTestFixture
     {
@@ -16,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                 (l => l.CreateLogger(It.IsAny<string>()) == logger.Object);
 
             this.Snapshot = Mock.Of<IState>();
-            
+
             var state = new Mock<IState>();
             state.Setup(s => s.Snapshot()).Returns(this.Snapshot);
 
