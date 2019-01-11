@@ -6,7 +6,6 @@
     <TargetFramework>netstandard2.0</TargetFramework>
     <AssemblyName>Stratis.Bitcoin</AssemblyName>
     <PackageId>Stratis.Bitcoin</PackageId>
-    <VersionPrefix>3</VersionPrefix>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <CodeAnalysisRuleSet>..\Stratis.ruleset</CodeAnalysisRuleSet>
     <Copyright>Copyright ©  2016</Copyright>
@@ -15,7 +14,13 @@
     <RepositoryUrl>https://github.com/stratisproject/StratisBitcoinFullNode</RepositoryUrl>
     <RepositoryType>github</RepositoryType>
   </PropertyGroup>
-
+  
+  <PropertyGroup Condition=" '$(Version)' == '' ">
+    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">3.0.4</VersionPrefix>
+    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
+    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
+  </PropertyGroup>
+   
   <ItemGroup>
     <AdditionalFiles Include="..\stylecop.json" />
   </ItemGroup>

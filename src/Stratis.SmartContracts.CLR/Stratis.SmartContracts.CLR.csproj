@@ -3,9 +3,12 @@
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
-	<AssemblyVersion>0.0.6.0</AssemblyVersion>
-	<FileVersion>0.0.6.0</FileVersion>
-	<VersionPrefix>0</VersionPrefix>
+  </PropertyGroup>
+    
+  <PropertyGroup Condition=" '$(Version)' == '' ">
+    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.0.6</VersionPrefix>
+    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
+    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
   </PropertyGroup>
 
   <ItemGroup>

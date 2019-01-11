@@ -7,7 +7,6 @@
     <OutputType>Library</OutputType>
     <PackageId>Stratis.Bitcoin.Api</PackageId>
     <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
-    <VersionPrefix>3</VersionPrefix>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
     <ApplicationIcon />
     <OutputTypeEx>library</OutputTypeEx>
@@ -15,6 +14,12 @@
     <!-- Force packing of a web project https://github.com/aspnet/websdk/issues/228 -->
     <IsPackable>true</IsPackable>
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition=" '$(Version)' == '' ">
+    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">3.0.4</VersionPrefix>
+    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
+    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
