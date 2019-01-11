@@ -1,10 +1,9 @@
 ﻿using System;
 using Moq;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR.Serialization;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class SerializerTests
     {
@@ -34,9 +33,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var result = this.serializer.Serialize(val);
 
             Assert.Null(result);
-            this.contractPrimitiveSerializer.Verify(s => s.Serialize(val), Times.Never);
+            this.contractPrimitiveSerializer.Verify<byte[]>(s => s.Serialize(val), Times.Never);
         }
-        
+
         [Fact]
         public void Deserialize_Null_Bool_Returns_Default()
         {
@@ -212,8 +211,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var item1Bytes = BitConverter.GetBytes(example.Item1);
             var item2Bytes = BitConverter.GetBytes(example.Item2);
             var item3Bytes = new byte[0];
-            this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item1)).Returns(item1Bytes);
-            this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item2)).Returns(item2Bytes);
+            this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item1)).Returns((byte[]) item1Bytes);
+            this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item2)).Returns((byte[]) item2Bytes);
             this.contractPrimitiveSerializer.Setup(p => p.Serialize(example.Item3)).Returns(item3Bytes);
 
             this.contractPrimitiveSerializer.Setup(p => p.Deserialize(typeof(int), item1Bytes)).Returns(example.Item1);
@@ -239,7 +238,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var deserialized = this.serializer.ToStruct<Example>(new byte[0]);
 
-            this.contractPrimitiveSerializer.Verify(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
+            this.contractPrimitiveSerializer.Verify<object>(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
             Assert.Equal(default(Example), deserialized);
         }
 
@@ -250,7 +249,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var deserialized = this.serializer.ToStruct<Example>(new byte[] { 0x00, 0xFF, 0xAA });
 
             // The contract primitive serializer should not be called.
-            this.contractPrimitiveSerializer.Verify(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
+            this.contractPrimitiveSerializer.Verify<object>(s => s.Deserialize(It.IsAny<Type>(), It.IsAny<byte[]>()), Times.Never);
             Assert.Equal(default(Example), deserialized);
         }
     }
