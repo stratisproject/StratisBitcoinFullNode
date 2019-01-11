@@ -1,12 +1,7 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
+﻿using NBitcoin;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class AddressTests
     {

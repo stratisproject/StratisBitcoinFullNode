@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Logs
+namespace Stratis.SmartContracts.CLR.Tests.Logs
 {
     public class RawLogTests
     {
@@ -37,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Logs
             var log = rawLog.ToLog(serializer);
 
             Assert.Equal(3, log.Topics.Count);
-            Assert.Equal(nameof(Example), Encoding.UTF8.GetString(log.Topics[0]));
+            Assert.Equal((string) nameof(Example), (string) Encoding.UTF8.GetString(log.Topics[0]));
 
             // Check that null has been serialized correctly
             Assert.Equal(new byte[0], log.Topics[1]);
