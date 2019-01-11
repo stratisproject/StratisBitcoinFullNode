@@ -1,9 +1,7 @@
-﻿using Mono.Cecil;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.Compilation;
+﻿using Stratis.SmartContracts.CLR.Compilation;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class ContractModuleDefinitionTests
     {
@@ -11,7 +9,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 
         public ContractModuleDefinitionTests()
         {
-            this.contractCode = ContractCompiler.CompileFile("SmartContracts/Auction.cs").Compilation;           
+            this.contractCode = ContractCompiler.Compile(@"
+using Stratis.SmartContracts;
+
+public class ModuleDefinitionTest : SmartContract
+{
+    public Address Owner { get; set; }
+
+    public ModuleDefinitionTest(ISmartContractState smartContractState): base(smartContractState)
+    {
+    }
+}
+").Compilation;           
         }
 
         [Fact]
@@ -19,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var readResult = ContractDecompiler.GetModuleDefinition(this.contractCode);
             var contractModule = readResult.Value;
-            var methodName = contractModule.GetPropertyGetterMethodName("Auction", "Owner");
+            var methodName = contractModule.GetPropertyGetterMethodName("ModuleDefinitionTest", "Owner");
             Assert.Equal("get_Owner", methodName);
         }
 
@@ -37,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         {
             var readResult = ContractDecompiler.GetModuleDefinition(this.contractCode);
             var contractModule = readResult.Value;
-            var methodName = contractModule.GetPropertyGetterMethodName("Auction", "DoesntExist");
+            var methodName = contractModule.GetPropertyGetterMethodName("ModuleDefinitionTest", "DoesntExist");
             Assert.Null(methodName);
         }
     }
