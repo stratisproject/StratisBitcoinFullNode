@@ -7,6 +7,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.BlockPulling;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager;
 using Stratis.Bitcoin.Consensus.ValidationResults;
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Maximum memory in bytes that can be taken by the blocks that were downloaded but
         /// not yet validated or included to the consensus chain.
         /// </summary>
-        private long maxUnconsumedBlocksDataBytes = 200 * 1024 * 1024;
+        private long maxUnconsumedBlocksDataBytes { get; set; }
 
         /// <summary>Queue consumption threshold in bytes.</summary>
         /// <remarks><see cref="toDownloadQueue"/> consumption will start if only we have more than this value of free memory.</remarks>
@@ -121,7 +122,8 @@ namespace Stratis.Bitcoin.Consensus
             IBlockStore blockStore,
             IConnectionManager connectionManager,
             INodeStats nodeStats,
-            INodeLifetime nodeLifetime)
+            INodeLifetime nodeLifetime,
+            ConsensusSettings consensusSettings)
         {
             Guard.NotNull(chainedHeaderTree, nameof(chainedHeaderTree));
             Guard.NotNull(network, nameof(network));
@@ -172,6 +174,8 @@ namespace Stratis.Bitcoin.Consensus
             this.ibdState = ibdState;
 
             this.blockPuller = blockPuller;
+
+            this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
