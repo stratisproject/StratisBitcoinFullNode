@@ -1,13 +1,10 @@
-﻿using Stratis.SmartContracts;
-using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.Exceptions;
+﻿using Stratis.SmartContracts.CLR.Exceptions;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public class GasMeterTests
     {
-
         [Fact]
         public void SmartContracts_GasMeter_NewHasCorrectInitialGas()
         {
