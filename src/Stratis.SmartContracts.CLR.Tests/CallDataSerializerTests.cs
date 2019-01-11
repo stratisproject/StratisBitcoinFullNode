@@ -1,13 +1,11 @@
 ﻿using System.Linq;
 using System.Text;
-using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
 using Xunit;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Tests
+namespace Stratis.SmartContracts.CLR.Tests
 {
     public sealed class CallDataSerializerTests
     {
@@ -30,15 +28,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
                     }
                 }"
             );
-            
+
             var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractExecutionCode);
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
-            Assert.True(callDataResult.IsSuccess);
+            Assert.True((bool) callDataResult.IsSuccess);
             Assert.Equal(1, callData.VmVersion);
             Assert.Equal((byte)ScOpcodeType.OP_CREATECONTRACT, callData.OpCodeType);
-            Assert.Equal(contractExecutionCode, callData.ContractExecutionCode);
+            Assert.Equal<byte[]>(contractExecutionCode, callData.ContractExecutionCode);
             Assert.Equal((Gas)1, callData.GasPrice);
             Assert.Equal((Gas)5000, callData.GasLimit);
         }
@@ -75,9 +73,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
-            Assert.True(callDataResult.IsSuccess);
+            Assert.True((bool) callDataResult.IsSuccess);
             Assert.Equal(contractTxData.VmVersion, callData.VmVersion);
-            Assert.Equal(contractTxData.OpCodeType, callData.OpCodeType);            
+            Assert.Equal(contractTxData.OpCodeType, callData.OpCodeType);
             Assert.Equal(contractTxData.ContractExecutionCode, callData.ContractExecutionCode);
             Assert.Equal(methodParameters.Length, callData.MethodParameters.Length);
 
@@ -108,7 +106,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
-            Assert.True(callDataResult.IsSuccess);
+            Assert.True((bool) callDataResult.IsSuccess);
             Assert.Equal(contractTxData.VmVersion, callData.VmVersion);
             Assert.Equal(contractTxData.OpCodeType, callData.OpCodeType);
             Assert.Equal(contractTxData.ContractAddress, callData.ContractAddress);
@@ -137,7 +135,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
-            Assert.True(callDataResult.IsSuccess);
+            Assert.True((bool) callDataResult.IsSuccess);
 
             Assert.NotNull(callData.MethodParameters[0]);
             Assert.Equal(methodParameters[0], callData.MethodParameters[0]);
