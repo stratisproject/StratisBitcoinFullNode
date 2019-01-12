@@ -10,6 +10,15 @@ namespace NBitcoin
     /// </summary>
     public class StandardScriptsRegistry : IStandardScriptsRegistry
     {
+        /// <summary>
+        /// Registers a new standard script template if it does not exist yet based on <see cref="ScriptTemplate.Type"/>.
+        /// </summary>
+        /// <param name="scriptTemplate">The standard script template to register.</param>
+        public virtual void RegisterStandardScriptTemplate(ScriptTemplate scriptTemplate)
+        {
+            StandardScripts.RegisterStandardScriptTemplate(scriptTemplate);
+        }
+
         public virtual bool IsStandardTransaction(Transaction tx, Network network)
         {
             return StandardScripts.IsStandardTransaction(tx, network);

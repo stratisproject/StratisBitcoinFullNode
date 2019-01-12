@@ -25,6 +25,12 @@ namespace NBitcoin
             PayToWitTemplate.Instance
         };
 
+        public override void RegisterStandardScriptTemplate(ScriptTemplate scriptTemplate)
+        {
+            if (!this.standardTemplates.Any(template => (template.Type == scriptTemplate.Type)))
+                this.standardTemplates.Add(scriptTemplate);
+        }
+
         public override bool IsStandardTransaction(Transaction tx, Network network)
         {
             return base.IsStandardTransaction(tx, network);
