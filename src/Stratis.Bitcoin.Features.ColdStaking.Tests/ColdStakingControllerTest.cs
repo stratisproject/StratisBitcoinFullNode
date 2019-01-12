@@ -154,8 +154,9 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             // Create mempool validator.
             var mempoolLock = new MempoolSchedulerLock();
+            var standardScripts = new StandardScriptsRegistry();
             var mempoolValidator = new MempoolValidator(this.txMemPool, mempoolLock, this.dateTimeProvider, this.mempoolSettings, this.concurrentChain,
-                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine);
+                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine, standardScripts);
 
             // Create mempool manager.
             var mempoolPersistence = new Mock<IMempoolPersistence>();
