@@ -1,10 +1,9 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
+using NBitcoin;
 using NBitcoin.BitcoinCore;
 
-namespace NBitcoin
+namespace Stratis.Bitcoin.Features.PoA.Policies
 {
     /// <summary>
     /// PoA-specific standard transaction definitions.
@@ -23,6 +22,14 @@ namespace NBitcoin
             new TxNullDataTemplate(MaxOpReturnRelay),
             PayToWitTemplate.Instance
         };
+
+        public override void RegisterStandardScriptTemplate(ScriptTemplate scriptTemplate)
+        {
+            if (!this.standardTemplates.Any(template => (template.Type == scriptTemplate.Type)))
+            {
+                this.standardTemplates.Add(scriptTemplate);
+            }
+        }
 
         public override bool IsStandardTransaction(Transaction tx, Network network)
         {

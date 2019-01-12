@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Features.PoA.Policies;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
