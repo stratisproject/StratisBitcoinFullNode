@@ -120,6 +120,8 @@ namespace Stratis.Bitcoin.Networks
 
             this.SeedNodes = new List<NetworkAddress>();
 
+            this.StandardScriptsRegistry = new BitcoinStandardScriptsRegistry();
+
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x000000000933ea01ad0ee984209779baaec3ced90fa3f408719526f8d77f4943"));
         }
     }
