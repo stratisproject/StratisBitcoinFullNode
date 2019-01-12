@@ -5,7 +5,7 @@ services:
     networks: 
         nakonet:
             ipv4_address: 172.16.10.100
-    image: coinvault/nako
+    image: coinvault/nako:core
     command: city
     ports: 
         - 80:9000
