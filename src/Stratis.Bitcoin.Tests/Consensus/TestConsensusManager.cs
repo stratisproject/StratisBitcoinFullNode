@@ -54,11 +54,16 @@ namespace Stratis.Bitcoin.Tests.Consensus
         {
             if (this.ConsensusManager.GetCallbacksByBlocksRequestedHash().ContainsKey(hash))
             {
-                this.ConsensusManager.GetCallbacksByBlocksRequestedHash()[hash] = callbacks.ToList();
+                ConsensusManager.DownloadedCallbacks callbacksItem = this.ConsensusManager.GetCallbacksByBlocksRequestedHash()[hash];
+
+                if (callbacksItem.Callbacks == null)
+                    this.ConsensusManager.GetCallbacksByBlocksRequestedHash()[hash].Callbacks = callbacks.ToList();
+                else
+                    this.ConsensusManager.GetCallbacksByBlocksRequestedHash()[hash].Callbacks.AddRange(callbacks);
             }
             else
             {
-                this.ConsensusManager.GetCallbacksByBlocksRequestedHash().Add(hash, callbacks.ToList());
+                this.ConsensusManager.GetCallbacksByBlocksRequestedHash().Add(hash, new ConsensusManager.DownloadedCallbacks() { Callbacks = callbacks.ToList() });
             }
         }
 

@@ -6,8 +6,8 @@ using System.Text;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.SmartContracts.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Models

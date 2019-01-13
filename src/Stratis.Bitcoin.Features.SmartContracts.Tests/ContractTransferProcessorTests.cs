@@ -4,12 +4,12 @@ using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.ResultProcessors;
+using Stratis.SmartContracts.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

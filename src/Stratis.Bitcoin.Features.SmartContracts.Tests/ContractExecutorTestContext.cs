@@ -1,7 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.CLR.Validation;
@@ -9,6 +8,7 @@ using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests
 {

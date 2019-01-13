@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration.Logging;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.ResultProcessors;
+using Stratis.SmartContracts.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests

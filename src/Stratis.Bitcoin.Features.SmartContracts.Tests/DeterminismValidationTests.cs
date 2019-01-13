@@ -1,3 +1,4 @@
+using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
 using Stratis.SmartContracts.CLR;
@@ -1036,6 +1037,166 @@ public class Test2 {
 
             Assert.False(result.IsValid);
             Assert.NotEmpty(result.Errors);
+        }
+
+        [Fact]
+        public void Validate_Determinism_ForEach()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state) : base(state) {}
+
+    public int Sum() 
+    {
+        var summation = 0;
+
+        foreach(var i in new [] { 1,2,3,4,5,6,7,8,9,10})
+        {
+            summation += 1;
+        }
+
+        return summation;
+    }
+
+    public string SumStr() 
+    {
+        var summation = """";
+		var strings = new [] { ""1"",""2"",""3"",""4"",""5"",""6"",""7"",""8"",""9"",""10""};
+        foreach (var i in strings)
+        {
+            summation += i;
+        }
+
+        return summation;
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_Determinism_Generator()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+using System.Collections.Generic;
+
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state) : base(state) {}
+
+    public IEnumerable<int> Sum() 
+    {
+        var summation = 0;
+
+        foreach(var i in new [] { 1,2,3,4,5,6,7,8,9,10})
+        {
+            summation += 1;
+        }
+
+        yield return summation;
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_PublicPartial_Class()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+public partial class Test : SmartContract
+{
+    public Test(ISmartContractState state)
+        : base(state)
+    {
+    }
+
+    public void Method1() {}
+}
+
+public partial class Test : SmartContract
+{
+    public void Method2() {}
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            var contractModule = new ContractModuleDefinition(decomp.ModuleDefinition, new MemoryStream());
+            Assert.True(result.IsValid);
+            Assert.Contains(contractModule.ContractType.Methods, m => m.Name == "Method1");
+            Assert.Contains(contractModule.ContractType.Methods, m => m.Name == "Method2");
+        }
+
+        [Fact]
+        public void Validate_PublicPartial_Struct()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state)
+        : base(state)
+    {
+        var s = new ImageLedgerEntry();
+    }
+}
+
+    public partial struct ImageLedgerEntry  
+    {
+        private string _imageName;
+        private byte[] _imageContent;
+    }
+
+    public partial struct ImageLedgerEntry  
+    {
+        private int _imageVersion;
+    }
+";
+
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+            var fields = decomp.ModuleDefinition.Types.First(t => t.Name == "ImageLedgerEntry").Fields;
+            Assert.Contains(fields, m => m.Name == "_imageVersion");
+            Assert.Contains(fields, m => m.Name == "_imageName");
+            Assert.Contains(fields, m => m.Name == "_imageContent");
         }
     }
 }
