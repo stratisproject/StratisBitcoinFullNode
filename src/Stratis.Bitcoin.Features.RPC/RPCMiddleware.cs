@@ -1,6 +1,9 @@
 ﻿using System;
+using System.IO;
+using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
+using Microsoft.AspNetCore.Http.Features;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using NBitcoin.DataEncoders;
@@ -20,7 +23,9 @@ namespace Stratis.Bitcoin.Features.RPC
 
         private readonly ILogger logger;
 
-        public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory)
+        private readonly IHttpContextFactory httpContextFactory;
+
+        public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory, IHttpContextFactory httpContextFactory)
         {
             Guard.NotNull(next, nameof(next));
             Guard.NotNull(authorization, nameof(authorization));
@@ -28,6 +33,7 @@ namespace Stratis.Bitcoin.Features.RPC
             this.next = next;
             this.authorization = authorization;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.httpContextFactory = httpContextFactory;
         }
 
         public async Task InvokeAsync(HttpContext httpContext)
@@ -42,7 +48,26 @@ namespace Stratis.Bitcoin.Features.RPC
             Exception ex = null;
             try
             {
-                await this.next.Invoke(httpContext);
+                var memoryStream = new MemoryStream();
+                await httpContext.Request.Body.CopyToAsync(memoryStream);
+                httpContext.Request.Body = memoryStream;
+                memoryStream.Position = 0;
+
+                var token = JToken.Load(new JsonTextReader(new StreamReader(memoryStream)));
+                if (token is JArray)
+                {
+                    // Batch request, invoke each request and accumulate responses.
+                    await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
+                }
+                else if (token is JObject)
+                {
+                    // Single request, invoke the request.
+                    await this.next.Invoke(httpContext);
+                }
+                else
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_DESERIALIZATION_ERROR, "Invalid JSon request.");
+                }
             }
             catch (Exception exx)
             {
@@ -87,6 +112,55 @@ namespace Stratis.Bitcoin.Features.RPC
                 this.logger.LogError(new EventId(0), ex, "Internal error while calling RPC Method");
                 await httpContext.Response.WriteAsync(response.ToString(Formatting.Indented));
             }
+        }
+
+        /// <summary>
+        /// Invokes batch request.
+        /// </summary>
+        /// <param name="httpContext">Source batch request context.</param>
+        /// <param name="requests">Array of requests.</param>
+        private async Task InvokeAsyncBatchAsync(HttpContext httpContext, JArray requests)
+        {
+            JArray responses = new JArray();
+            foreach (JObject requestObj in requests)
+            {
+                var contextFeatures = new FeatureCollection(httpContext.Features);
+
+                StringBuilder requestStringBuilder = new StringBuilder();
+                await requestObj.WriteToAsync(new JsonTextWriter(new StringWriter(requestStringBuilder)));
+                var requestFeature = new HttpRequestFeature()
+                {
+                    Body = new MemoryStream(Encoding.UTF8.GetBytes(requestStringBuilder.ToString())),
+                    Headers = httpContext.Request.Headers,
+                    Method = httpContext.Request.Method,
+                    Protocol = httpContext.Request.Protocol,
+                    Scheme = httpContext.Request.Scheme,
+                    QueryString = httpContext.Request.QueryString.Value
+                };
+                contextFeatures.Set<IHttpRequestFeature>(requestFeature);
+
+                var responseMemoryStream = new MemoryStream();
+                var responseFeature = new HttpResponseFeature()
+                {
+                    Body = responseMemoryStream
+                };
+                contextFeatures.Set<IHttpResponseFeature>(responseFeature);
+
+                contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
+
+                var context = this.httpContextFactory.Create(contextFeatures);
+                await this.next.Invoke(context).ConfigureAwait(false);
+
+                responseMemoryStream.Position = 0;
+                var response = await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
+                responses.Add(response);
+            }
+
+            // Update the response with the array of responses.
+            StringBuilder responsesStringBuilder = new StringBuilder();
+            await responses.WriteToAsync(new JsonTextWriter(new StringWriter(responsesStringBuilder)));
+            var responsesMemoryStream = new MemoryStream(Encoding.UTF8.GetBytes(responsesStringBuilder.ToString()));
+            await responsesMemoryStream.CopyToAsync(httpContext.Response.Body);
         }
 
         private bool IsDependencyFailure(Exception ex)
