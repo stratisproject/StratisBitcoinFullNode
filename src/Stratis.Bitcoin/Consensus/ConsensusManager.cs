@@ -175,7 +175,7 @@ namespace Stratis.Bitcoin.Consensus
 
             this.blockPuller = blockPuller;
 
-            this.maxUnconsumedBlocksDataBytes = consensusSettings.MaxBlockMemoryInMB * 1024 * 1024;
+            this.maxUnconsumedBlocksDataBytes = (consensusSettings.MaxBlockMemoryInMB * 1024 * 1024) / MemorySizeFactor.BlockSizeFactor;
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);

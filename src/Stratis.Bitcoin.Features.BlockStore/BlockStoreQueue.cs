@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private const int BatchMaxSaveIntervalSeconds = 37;
 
         /// <summary>Maximum number of bytes the batch can hold until the downloaded blocks are stored to the disk.</summary>
-        internal const int BatchThresholdSizeBytes = 5 * 1000 * 1000;
+        internal const int BatchThresholdSizeBytes = (5 * 1000 * 1000) / MemorySizeFactor.BlockSizeFactor;
 
         /// <summary>The current batch size in bytes.</summary>
         private long currentBatchSizeBytes;
