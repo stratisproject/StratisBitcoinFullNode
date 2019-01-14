@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             else
                 settings = new NodeSettings(this.Network, this.protocolVersion, this.Agent, argsAsStringArray) { MinProtocolVersion = this.minProtocolVersion };
 
-            IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(settings);
+            IFullNodeBuilder builder = new FullNodeBuilder().UseNodeSettings(settings).UseBaseFeature();
 
             this.callback(builder);
 

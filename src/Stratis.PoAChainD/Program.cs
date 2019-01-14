@@ -3,6 +3,7 @@ using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -35,6 +36,7 @@ namespace Stratis.PoAChainD
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseApi()
+                    .UseBaseFeature()
                     .UseBlockStore()
                     .UsePoAConsensus()
                     .UseMempool()

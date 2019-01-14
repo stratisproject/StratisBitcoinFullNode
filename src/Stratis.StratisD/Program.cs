@@ -2,6 +2,7 @@ using System;
 using System.Threading.Tasks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -31,6 +32,7 @@ namespace Stratis.StratisD
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
                     .UseApi()
+                    .UseBaseFeature()
                     .UseBlockStore()
                     .UsePosConsensus()
                     .UseMempool()

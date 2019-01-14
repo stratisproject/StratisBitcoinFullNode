@@ -33,13 +33,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
             var builder = new FullNodeBuilder()
                             .UseNodeSettings(settings)
+                            .UseApi()
+                            .UseBaseFeature()
                             .UseBlockStore()
                             .UsePowConsensus()
                             .UseMempool()
                             .AddMining()
                             .UseWallet()
                             .AddRPC()
-                            .UseApi()
                             .UseTestChainedHeaderTree()
                             .MockIBD();
 

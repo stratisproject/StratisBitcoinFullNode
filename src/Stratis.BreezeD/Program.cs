@@ -3,6 +3,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -40,6 +41,7 @@ namespace Stratis.BreezeD
                     fullNodeBuilder = new FullNodeBuilder()
                                     .UseNodeSettings(nodeSettings)
                                     .UseApi()
+                                    .UseBaseFeature()
                                     .UseBlockStore()
                                     .UsePosConsensus()
                                     .UseLightWallet()
@@ -53,6 +55,7 @@ namespace Stratis.BreezeD
                     fullNodeBuilder = new FullNodeBuilder()
                                     .UseNodeSettings(nodeSettings)
                                     .UseApi()
+                                    .UseBaseFeature()
                                     .UseBlockStore()
                                     .UsePowConsensus()
                                     .UseLightWallet()

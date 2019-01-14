@@ -5,7 +5,6 @@ using Microsoft.AspNetCore.Hosting;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 
@@ -144,7 +143,7 @@ namespace Stratis.Bitcoin.Features.Api
                     });
             });
 
-            return fullNodeBuilder.UseBaseFeature();
+            return fullNodeBuilder;
         }
     }
 }

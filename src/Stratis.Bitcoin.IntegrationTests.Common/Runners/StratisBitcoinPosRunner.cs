@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -28,13 +29,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
             var builder = new FullNodeBuilder()
                 .UseNodeSettings(settings)
+                .UseApi()
+                .UseBaseFeature()
                 .UseBlockStore()
                 .UsePosConsensus()
                 .UseMempool()
                 .UseWallet()
                 .AddPowPosMining()
                 .AddRPC()
-                .UseApi()
                 .UseTestChainedHeaderTree()
                 .MockIBD();
 
@@ -69,6 +71,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             var nodeSettings = new NodeSettings(networksSelector: Networks.Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: new string[] { $"-datadir={dataDir}", $"-stake={(staking ? 1 : 0)}", "-walletname=dummy", "-walletpassword=dummy" });
             var fullNodeBuilder = new FullNodeBuilder(nodeSettings);
             IFullNode fullNode = fullNodeBuilder
+                                .UseBaseFeature()
                                 .UseBlockStore()
                                 .UsePosConsensus()
                                 .UseMempool()
