@@ -147,5 +147,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Interfaces
         /// <param name="prevChainedHeader">Previous chained block.</param>
         /// <returns>A value indicating the required target depth in number of blocks.</returns>
         long GetTargetDepthRequired(ChainedHeader prevChainedHeader);
+
+        /// <summary>
+        /// Validates the POS Block Signature.
+        /// </summary>
+        /// <param name="signature">The signature to validate.</param>
+        /// <param name="blockHash">The block hash.</param>
+        /// <param name="coinStake">The coinstake transaction.</param>
+        /// <returns><c>True</c> if passes validation, and <c>false</c> otherwise.</returns>
+        bool CheckStakeSignature(BlockSignature signature, uint256 blockHash, Transaction coinStake);
     }
 }
