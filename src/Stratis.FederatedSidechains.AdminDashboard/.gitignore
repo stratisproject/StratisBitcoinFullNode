@@ -4,3 +4,7 @@ wwwroot/lib
 .vscode
 .vs
 .idea
+
+Properties/launchSettings.json
+wwwroot/css/*.min.css
+wwwroot/js/*.min.js
