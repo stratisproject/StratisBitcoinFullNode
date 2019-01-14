@@ -7,9 +7,17 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 {
-    /// <summary>
-    /// Block tip Hash, Height and MatureConfirmation model.
-    /// </summary>
+    public interface IBlockTip
+    {
+        [JsonConverter(typeof(UInt256JsonConverter))]
+        uint256 Hash { get; }
+
+        int Height { get; }
+
+        int MatureConfirmations { get; }
+    }
+
+    /// <summary>Block tip Hash, Height and MatureConfirmation model.</summary>
     public class BlockTipModel : RequestModel, IBlockTip
     {
         public BlockTipModel(uint256 hash, int height, int matureConfirmations)

@@ -17,8 +17,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
 
         private readonly Script depositScript;
 
-        private readonly ConcurrentChain chain;
-
         public uint MinimumDepositConfirmations { get; private set; }
 
         public DepositExtractor(
@@ -34,7 +32,6 @@ namespace Stratis.FederatedPeg.Features.FederationGateway.SourceChain
                 federationGatewaySettings?.MultiSigAddress?.ScriptPubKey;
             this.opReturnDataReader = opReturnDataReader;
             this.MinimumDepositConfirmations = federationGatewaySettings.MinimumDepositConfirmations;
-            this.chain = fullNode.NodeService<ConcurrentChain>();
         }
 
         /// <inheritdoc />

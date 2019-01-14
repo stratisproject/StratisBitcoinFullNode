@@ -12,6 +12,28 @@ using Stratis.FederatedPeg.Features.FederationGateway.NetworkHelpers;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
+    /// <summary>
+    /// Requests partial transactions from the peers and calls <see cref="ICrossChainTransferStore.MergeTransactionSignaturesAsync".
+    /// </summary>
+    public interface IPartialTransactionRequester
+    {
+        /// <summary>
+        /// Broadcast the partial transaction request to federation members.
+        /// </summary>
+        /// <param name="payload">The payload to broadcast.</param>
+        Task BroadcastAsync(RequestPartialTransactionPayload payload);
+
+        /// <summary>
+        /// Starts the broadcasting of partial transaction requests.
+        /// </summary>
+        void Start();
+
+        /// <summary>
+        /// Stops the broadcasting of partial transaction requests.
+        /// </summary>
+        void Stop();
+    }
+
     /// <inheritdoc />
     public class PartialTransactionRequester : IPartialTransactionRequester
     {

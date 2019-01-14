@@ -7,6 +7,11 @@ using Stratis.FederatedPeg.Features.FederationGateway.Models;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.TargetChain
 {
+    public interface IWithdrawalHistoryProvider
+    {
+        List<WithdrawalModel> GetHistory(int maximumEntriesToReturn);
+    }
+
     public class WithdrawalHistoryProvider : IWithdrawalHistoryProvider
     {
         private readonly Network network;

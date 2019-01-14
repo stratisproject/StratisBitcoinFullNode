@@ -4,6 +4,12 @@ using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
 
 namespace Stratis.FederatedPeg.Features.FederationGateway.Models
 {
+    public interface IMaturedBlocksRequestModel
+    {
+        int MaxBlocksToSend { get; set; }
+        int BlockHeight { get; set; }
+    }
+
     /// <summary>
     /// This is used when requesting blocks from chain A.
     /// </summary>
