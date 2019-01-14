@@ -1345,6 +1345,11 @@ namespace Stratis.Bitcoin.Consensus
                 double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.maxUnconsumedBlocksDataBytes) * 100, 2);
 
                 log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
+
+                int pendingDownloadCount = this.callbacksByBlocksRequestedHash.Count;
+                int currentlyDownloadingCount = this.expectedBlockSizes.Count;
+
+                log.AppendLine($"Downloading blocks: {currentlyDownloadingCount} queued out of {pendingDownloadCount} pending");
             }
         }
 
