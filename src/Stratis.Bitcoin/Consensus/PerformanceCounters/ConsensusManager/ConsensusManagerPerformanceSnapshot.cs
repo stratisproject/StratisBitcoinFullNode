@@ -1,12 +1,13 @@
 ﻿using System;
 using System.Text;
 using System.Threading;
+using Stratis.Bitcoin.Utilities.Statistics;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus.PerformanceCounters.ConsensusManager
 {
     /// <summary>Snapshot of <see cref="ConsensusManager"/> performance.</summary>
-    public class ConsensusManagerPerformanceSnapshot
+    public class ConsensusManagerPerformanceSnapshot : INodeBenchmark
     {
         public ExecutionsCountAndDelay TotalConnectionTime { get; }
 

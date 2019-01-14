@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Globalization;
 using System.Linq;
 using System.Text;
+using Stratis.Bitcoin.Utilities.Statistics;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -17,12 +18,16 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>Collects inline stats and then feature stats.</summary>
         string GetStats();
 
+        /// <summary>Registers a func that returns an <see cref="INodeBenchmark"/> instance.</summary>
+        void RegisterBenchmark(Func<INodeBenchmark> benchmark);
+
         /// <summary>Collects benchmark stats.</summary>
         string GetBenchmark();
     }
 
     public class NodeStats : INodeStats
     {
+        private readonly List<Func<INodeBenchmark>> nodeBenchmarks;
         private List<StatsItem> stats;
 
         /// <summary>Protects access to <see cref="stats"/>.</summary>
@@ -35,6 +40,7 @@ namespace Stratis.Bitcoin.Utilities
             this.locker = new object();
             this.dateTimeProvider = dateTimeProvider;
 
+            this.nodeBenchmarks = new List<Func<INodeBenchmark>>();
             this.stats = new List<StatsItem>();
         }
 
@@ -52,6 +58,20 @@ namespace Stratis.Bitcoin.Utilities
 
                 this.stats = this.stats.OrderByDescending(x => x.Priority).ToList();
             }
+        }
+
+        /// <inheritdoc />
+        public string GetBenchmark()
+        {
+            var benchmarkBuilder = new StringBuilder();
+
+            lock (this.locker)
+            {
+                foreach (Func<INodeBenchmark> actionPriority in this.nodeBenchmarks)
+                    benchmarkBuilder.AppendLine(actionPriority().ToString());
+            }
+
+            return benchmarkBuilder.ToString();
         }
 
         /// <inheritdoc />
@@ -75,17 +95,9 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <inheritdoc />
-        public string GetBenchmark()
+        public void RegisterBenchmark(Func<INodeBenchmark> nodeBenchmark)
         {
-            var statsBuilder = new StringBuilder();
-
-            lock (this.locker)
-            {
-                foreach (StatsItem actionPriority in this.stats.Where(x => x.StatsType == StatsType.Benchmark))
-                    actionPriority.AppendStatsAction(statsBuilder);
-            }
-
-            return statsBuilder.ToString();
+            this.nodeBenchmarks.Add(nodeBenchmark);
         }
 
         private struct StatsItem

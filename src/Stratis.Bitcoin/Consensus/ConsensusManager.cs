@@ -17,6 +17,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Statistics;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -179,7 +180,7 @@ namespace Stratis.Bitcoin.Consensus
 
             nodeStats.RegisterStats(this.AddInlineStats, StatsType.Inline, 1000);
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1000);
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 1000);
+            nodeStats.RegisterBenchmark(this.AddBenchStats);
         }
 
         /// <inheritdoc />
@@ -966,8 +967,8 @@ namespace Stratis.Bitcoin.Consensus
                     }
                     else
                     {
-                       if (downloadedCallbacks.Callbacks == null)
-                           downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
+                        if (downloadedCallbacks.Callbacks == null)
+                            downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
 
                         downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
                     }
@@ -1323,9 +1324,9 @@ namespace Stratis.Bitcoin.Consensus
             log.AppendLine(consensusLog);
         }
 
-        private void AddBenchStats(StringBuilder benchLog)
+        private INodeBenchmark AddBenchStats()
         {
-            benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
+            return this.performanceCounter.TakeSnapshot();
         }
 
         private void AddComponentStats(StringBuilder log)

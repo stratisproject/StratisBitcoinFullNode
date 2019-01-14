@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -11,6 +10,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.PerformanceCounters.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Statistics;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Consensus
             this.partialValidationRules = new List<PartialValidationConsensusRule>();
             this.fullValidationRules = new List<FullValidationConsensusRule>();
 
-            nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
+            nodeStats.RegisterBenchmark(this.AddBenchStats);
         }
 
         /// <inheritdoc />
@@ -316,9 +316,9 @@ namespace Stratis.Bitcoin.Consensus
             return rule as T;
         }
 
-        private void AddBenchStats(StringBuilder benchLog)
+        private INodeBenchmark AddBenchStats()
         {
-            benchLog.AppendLine(this.performanceCounter.TakeSnapshot().ToString());
+            return this.performanceCounter.TakeSnapshot();
         }
     }
 
