@@ -6929,3 +6929,8 @@ a.text-purple:hover, a.text-purple:focus {
     transform: rotateZ(360deg) rotateX(66deg) rotateZ(360deg);
   }
 }
+
+i[role="copy"]
+{
+  cursor: pointer;
+}

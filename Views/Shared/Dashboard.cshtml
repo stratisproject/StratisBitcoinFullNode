@@ -60,8 +60,9 @@
                         <ul class="list-inline d-flex align-itmes-center">
                            <li class="list-inline-item"><strong>Block hash :</strong></li>
                            <li class="list-inline-item text-truncate" style="max-width: 150px;">
-                              <a href="https://chainz.cryptoid.info/strat/block.dws?@(Model.StratisNode.BlockHash).htm" target="_blank">@Model.StratisNode.BlockHash</a>
+                              <a href="https://chainz.cryptoid.info/strat/block.dws?@(Model.StratisNode.BlockHash).htm" id="stratisBlockHash" target="_blank">@Model.StratisNode.BlockHash</a>
                            </li>
+                           <li class="list-inline-item"><i role="copy" data-id="stratisBlockHash" data-message="Block hash successfully copied to clipboard" class="far fa-copy"></i></li>
                         </ul>
                      </li>
                   </ul>
@@ -226,8 +227,9 @@
                         <ul class="list-inline d-flex align-itmes-center">
                            <li class="list-inline-item"><strong>Block hash :</strong></li>
                            <li class="list-inline-item text-truncate" style="max-width: 150px;">
-                              <a href="https://chainz.cryptoid.info/strat/block.dws?@(Model.SidechainNode.BlockHash).htm" target="_blank">@Model.SidechainNode.BlockHash</a>
+                              <a href="https://chainz.cryptoid.info/strat/block.dws?@(Model.SidechainNode.BlockHash).htm" id="sidechainBlockHash" target="_blank">@Model.SidechainNode.BlockHash</a>
                            </li>
+                           <li class="list-inline-item"><i role="copy" data-id="sidechainBlockHash" data-message="Block hash successfully copied to clipboard" class="far fa-copy"></i></li>
                         </ul>
                      </li>
                   </ul>

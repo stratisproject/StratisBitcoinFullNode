@@ -1,3 +1,18 @@
+// Register click-to-clipboard event
+$(document).on("click", '[role="copy"]', function()
+{
+    var tempField = document.createElement("textarea");
+    tempField.value = $("#" + $(this).attr("data-id")).text();
+    $(this).parent().append(tempField);
+    tempField.select();
+    document.execCommand("copy");
+    tempField.remove();
+    if($(this).attr("data-message") != null)
+    {
+        Snackbar.show({text: $(this).attr("data-message"), pos: "bottom-center", showAction: true});
+    }
+});
+
 $(document).ready(function()
 {
     var CacheIsDifferent = false;
