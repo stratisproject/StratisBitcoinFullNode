@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Builder;
+﻿using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.RPC;
@@ -22,6 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             IFullNode node = new FullNodeBuilder()
                 .UseNodeSettings(nodeSettings)
+                .UseBaseFeature()
                 .UsePowConsensus()
                 .AddRPC()
                 .Build();
