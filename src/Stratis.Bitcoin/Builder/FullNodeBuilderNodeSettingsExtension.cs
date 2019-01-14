@@ -1,5 +1,4 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 
 namespace Stratis.Bitcoin.Builder
@@ -27,7 +26,7 @@ namespace Stratis.Bitcoin.Builder
                 service.AddSingleton(nodeBuilder.Network);
             });
 
-            return builder.UseBaseFeature();
+            return builder;
         }
 
         /// <summary>

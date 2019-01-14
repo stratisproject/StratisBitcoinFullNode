@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Controllers
                 Agent = this.connectionManager.ConnectionSettings.Agent,
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
-                ConsensusHeight = this.chainState.ConsensusTip.Height,
+                ConsensusHeight = this.chainState.ConsensusTip != null ? this.chainState.ConsensusTip.Height : 0,
                 DataDirectoryPath = this.nodeSettings.DataDir,
                 Testnet = this.network.IsTest(),
                 RelayFee = this.nodeSettings.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,

@@ -1,5 +1,4 @@
 ﻿using System;
-using System.IO;
 using System.Text;
 using System.Threading.Tasks;
 using NBitcoin;
@@ -35,11 +34,11 @@ namespace Stratis.PoAChainD
 
                 IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
+                    .UseApi()
                     .UseBlockStore()
                     .UsePoAConsensus()
                     .UseMempool()
                     .UseWallet()
-                    .UseApi()
                     .UseApps()
                     .AddRPC()
                     .Build();

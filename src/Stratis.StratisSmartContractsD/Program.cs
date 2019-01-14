@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
-using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Networks;
@@ -31,6 +30,7 @@ namespace Stratis.StratisSmartContractsD
 
                 Bitcoin.IFullNode node = new FullNodeBuilder()
                     .UseNodeSettings(nodeSettings)
+                    .UseApi()
                     .UseBlockStore()
                     .AddRPC()
                         .AddSmartContracts()
@@ -38,7 +38,6 @@ namespace Stratis.StratisSmartContractsD
                         .UseSmartContractPoAMining()
                         .UseSmartContractWallet()
                         .UseReflectionExecutor()
-                    .UseApi()
                     .UseMempool()
                     .Build();
 

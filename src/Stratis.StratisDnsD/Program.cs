@@ -31,7 +31,7 @@ namespace Stratis.StratisDnsD
         {
             try
             {
-                var nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion:ProtocolVersion.PROVEN_HEADER_VERSION, args:args)
+                var nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
                 {
                     MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
                 };
@@ -48,12 +48,12 @@ namespace Stratis.StratisDnsD
                     // Build the Dns full node.
                     node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
+                        .UseApi()
                         .UseBlockStore()
                         .UsePosConsensus()
                         .UseMempool()
                         .UseWallet()
                         .AddPowPosMining()
-                        .UseApi()
                         .AddRPC()
                         .UseDns()
                         .Build();
@@ -63,8 +63,8 @@ namespace Stratis.StratisDnsD
                     // Build the Dns node.
                     node = new FullNodeBuilder()
                         .UseNodeSettings(nodeSettings)
-                        .UsePosConsensus()
                         .UseApi()
+                        .UsePosConsensus()
                         .AddRPC()
                         .UseDns()
                         .Build();
