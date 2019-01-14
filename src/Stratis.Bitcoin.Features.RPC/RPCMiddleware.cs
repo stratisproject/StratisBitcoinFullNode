@@ -45,7 +45,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 httpContext.Response.StatusCode = StatusCodes.Status401Unauthorized;
                 return;
             }
-            Exception ex = null;
+
+            JToken token = null;
             try
             {
                 var memoryStream = new MemoryStream();
@@ -53,20 +54,26 @@ namespace Stratis.Bitcoin.Features.RPC
                 httpContext.Request.Body = memoryStream;
                 memoryStream.Position = 0;
 
-                var token = JToken.Load(new JsonTextReader(new StreamReader(memoryStream)));
+                token = JToken.Load(new JsonTextReader(new StreamReader(memoryStream)));
+                httpContext.Request.Body.Position = 0;
+            }
+            catch (JsonException)
+            {
+                token = null;
+            }
+
+            Exception ex = null;
+            try
+            {               
                 if (token is JArray)
                 {
                     // Batch request, invoke each request and accumulate responses.
                     await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
                 }
-                else if (token is JObject)
+                else
                 {
                     // Single request, invoke the request.
                     await this.next.Invoke(httpContext);
-                }
-                else
-                {
-                    throw new RPCServerException(RPCErrorCode.RPC_DESERIALIZATION_ERROR, "Invalid JSon request.");
                 }
             }
             catch (Exception exx)
