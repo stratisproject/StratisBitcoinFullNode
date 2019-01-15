@@ -1,10 +1,9 @@
-﻿using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
@@ -137,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 TxOut utxo = null;
                 if (txIn.PrevOut.N < prevUtxo.Outputs.Length)
                 {
-                    // Check that the size of the outs collection is the same as the expected position of the UTXO 
+                    // Check that the size of the outs collection is the same as the expected position of the UTXO
                     // Note the collection will not always represent the original size of the transaction unspent
                     // outputs because when we store outputs do disk the last spent items are removed from the collection.
                     utxo = prevUtxo.Outputs[txIn.PrevOut.N];
@@ -331,13 +330,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header)
         {
-            Script script = header.Coinstake.Outputs[1].ScriptPubKey;
-            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
-
-            var signature = new ECDSASignature(header.Signature.Signature);
-            uint256 headerHash = header.GetHash();
-
-            if (!pubKey.Verify(headerHash, signature))
+            var consensusRules = (PosConsensusRuleEngine)this.Parent;
+            if (!consensusRules.StakeValidator.CheckStakeSignature(header.Signature, header.GetHash(), header.Coinstake))
             {
                 this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
