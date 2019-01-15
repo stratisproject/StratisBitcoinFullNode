@@ -1065,7 +1065,7 @@ public class Test : SmartContract
     public string SumStr() 
     {
         var summation = """";
-		var strings = new [] { ""1"",""2"",""3"",""4"",""5"",""6"",""7"",""8"",""9"",""10""};
+        var strings = new [] { ""1"",""2"",""3"",""4"",""5"",""6"",""7"",""8"",""9"",""10""};
         foreach (var i in strings)
         {
             summation += i;
@@ -1197,6 +1197,158 @@ public class Test : SmartContract
             Assert.Contains(fields, m => m.Name == "_imageVersion");
             Assert.Contains(fields, m => m.Name == "_imageName");
             Assert.Contains(fields, m => m.Name == "_imageContent");
+        }
+
+        [Fact]
+        public void Validate_StaticField()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+public class Test : SmartContract
+{
+    static string AStaticString = ""Test"";
+
+    public Test(ISmartContractState state)
+        : base(state)
+    {
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+        }
+
+        [Fact]
+        public void Validate_NestedStaticField()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state)
+        : base(state)
+    {
+    }
+
+    public struct Nested
+    {
+            static string AStaticString = ""Test"";
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+        }
+
+        [Fact]
+        public void Validate_StaticMethod()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+public class Test : SmartContract
+{
+    static string AStaticMethod() {
+        return ""Test"";
+    }
+    
+
+    public Test(ISmartContractState state)
+        : base(state)
+    {
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.True(result.IsValid);
+        }
+
+        [Fact]
+        public void Validate_StaticGenericMethod()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+public class Test : SmartContract
+{
+    static string AStaticGenericMethod<T>() {
+        return ""Test"";
+    }
+    
+
+    public Test(ISmartContractState state)
+        : base(state)
+    {
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+        }
+
+        [Fact]
+        public void Validate_StaticMethodParams()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+public class Test : SmartContract
+{
+    static string AStaticMethod(ISmartContractState disallowedParam) {
+        return ""Test"";
+    }
+    
+
+    public Test(ISmartContractState state)
+        : base(state)
+    {
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var result = this.validator.Validate(decomp.ModuleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.True(result.Errors.All(e => e is MethodParamValidator.MethodParamValidationResult));
+            Assert.Contains(result.Errors, e => e.Message.Contains("ISmartContractState"));
         }
     }
 }
