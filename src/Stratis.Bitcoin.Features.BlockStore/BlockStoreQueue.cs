@@ -177,8 +177,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             lock (this.blocksCacheLock)
             {
-                foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
+                // The result is meaningless unless its selected from the current chain.
+                for (ChainedHeader chainedHeader = this.chain.Tip; chainedHeader != null; chainedHeader = chainedHeader.Previous)
                 {
+                    if (!this.pendingBlocksCache.TryGetValue(chainedHeader.HashBlock, out ChainedHeaderBlock chainedHeaderBlock))
+                        break;
+
                     Transaction tx = chainedHeaderBlock.Block.Transactions.FirstOrDefault(x => x.GetHash() == trxid);
 
                     if (tx != null)
@@ -197,8 +201,12 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             lock (this.blocksCacheLock)
             {
-                foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)
+                // The result is meaningless unless its selected from the current chain.
+                for (ChainedHeader chainedHeader = this.chain.Tip; chainedHeader != null; chainedHeader = chainedHeader.Previous)
                 {
+                    if (!this.pendingBlocksCache.TryGetValue(chainedHeader.HashBlock, out ChainedHeaderBlock chainedHeaderBlock))
+                        break;
+
                     bool exists = chainedHeaderBlock.Block.Transactions.Any(x => x.GetHash() == trxid);
 
                     if (exists)
