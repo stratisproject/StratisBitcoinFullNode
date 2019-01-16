@@ -40,17 +40,6 @@ namespace NBitcoin
             this.header = blockHeader;
         }
 
-        [Obsolete("Should use Block.Load outside of ConsensusFactories")]
-        public Block(byte[] bytes, ConsensusFactory consensusFactory)
-        {
-            var stream = new BitcoinStream(bytes)
-            {
-                ConsensusFactory = consensusFactory
-            };
-
-            this.ReadWrite(stream);
-        }
-
         public virtual void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.header);
