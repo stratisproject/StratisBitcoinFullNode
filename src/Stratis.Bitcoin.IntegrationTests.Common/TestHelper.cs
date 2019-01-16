@@ -42,6 +42,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
         }
 
+        public static void WaitLoopMessage(Func<(bool success, string message)> act)
+        {
+            var cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token;
+
+            var (success, message) = act();
+
+            while (!success)
+            {
+                try
+                {
+                    cancellationToken.ThrowIfCancellationRequested();
+                    Thread.Sleep(1000);
+
+                    (success, message) = act();
+                }
+                catch (OperationCanceledException e)
+                {
+                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message}");
+                }
+            }
+        }
+
         public static bool AreNodesSynced(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
         {
             if (node1.runner is BitcoinCoreRunner || node2.runner is BitcoinCoreRunner)
@@ -123,7 +145,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
         public static bool IsNodeConnected(CoreNode node)
         {
-            return node.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.IsConnected);
+            return node.FullNode.ConnectionManager.ConnectedPeers.Any();
         }
 
         public static void WaitForNodeToSync(params CoreNode[] nodes)
@@ -148,14 +170,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0", string miningAddress = null)
         {
             Guard.NotNull(node, nameof(node));
 
             if (numberOfBlocks == 0)
                 throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            SetMinerSecret(node, walletName, walletPassword, accountName);
+            SetMinerSecret(node, walletName, walletPassword, accountName, miningAddress);
 
             var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
@@ -166,15 +188,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return (node.MinerHDAddress, blockHashes);
         }
 
-        public static void SetMinerSecret(CoreNode coreNode, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
+        public static void SetMinerSecret(CoreNode coreNode, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0", string miningAddress = null)
         {
             if (coreNode.MinerSecret == null)
             {
-                HdAddress unusedAddress = coreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-                coreNode.MinerHDAddress = unusedAddress;
+                HdAddress address;
+                if (!string.IsNullOrEmpty(miningAddress))
+                {
+                    address = coreNode.FullNode.WalletManager().GetAccounts(walletName).Single(a => a.Name == accountName).GetCombinedAddresses().Single(add => add.Address == miningAddress);
+                }
+                else
+                {
+                    address = coreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                }
+                
+                coreNode.MinerHDAddress = address;
 
                 Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);
-                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
                 coreNode.SetMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
             }
         }
@@ -273,6 +304,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             WaitLoop(() => !IsNodeConnectedTo(thisNode, nodeToDisconnect));
         }
 
+        /// <summary>
+        /// Disconnects a node from all connections and waits until the operation completes.
+        /// </summary>
+        /// <param name="nodes">The nodes that will be disconnected.</param>
+        public static void DisconnectAll(params CoreNode[] nodes)
+        {
+            foreach (var node in nodes)
+            {
+                foreach (var peer in node.FullNode.ConnectionManager.ConnectedPeers.ToList())
+                {
+                    node.CreateRPCClient().RemoveNode(peer.PeerEndPoint);
+                }
+
+                WaitLoop(() => node.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 0);
+            }
+
+            foreach (var node in nodes)
+            {
+                WaitLoop(() => !IsNodeConnected(node));
+            }
+        }
+
         private class TransactionNode
         {
             public uint256 Hash = null;
@@ -312,8 +365,22 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="connectToNode">The node that will be connected to.</param>
         public static void Connect(CoreNode thisNode, CoreNode connectToNode)
         {
-            thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
-            WaitLoop(() => IsNodeConnectedTo(thisNode, connectToNode));
+            var cancellation = new CancellationTokenSource();
+            cancellation.CancelAfter(TimeSpan.FromSeconds(30));
+
+            WaitLoop(() =>
+            {
+                try
+                {
+                    if (IsNodeConnectedTo(thisNode, connectToNode))
+                        return true;
+                    thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+                    return true;
+                }
+                catch (Exception) { }
+
+                return false;
+            }, retryDelayInMiliseconds: 5000, cancellationToken: cancellation.Token);
         }
 
         /// <summary>
@@ -351,11 +418,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         {
             if (thisNode.runner is BitcoinCoreRunner)
             {
-                var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
-                return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
+                return IsBitcoinCoreConnectedTo(thisNode, isConnectedToNode);
             }
             else
-                return thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint));
+            {
+                if (thisNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(isConnectedToNode.Endpoint)))
+                    return true;
+
+                // The peer might be connected via an inbound connection.
+                if (isConnectedToNode.runner is BitcoinCoreRunner)
+                    return IsBitcoinCoreConnectedTo(isConnectedToNode, thisNode);
+                else
+                    return isConnectedToNode.FullNode.ConnectionManager.ConnectedPeers.Any(p => p.PeerEndPoint.Match(thisNode.Endpoint));
+            }
+        }
+
+        private static bool IsBitcoinCoreConnectedTo(CoreNode thisNode, CoreNode isConnectedToNode)
+        {
+            if (!(thisNode.runner is BitcoinCoreRunner))
+                throw new ArgumentException($"{0} is not a bitcoin core node.");
+
+            var thisNodePeers = thisNode.CreateRPCClient().GetPeersInfo();
+            return thisNodePeers.Any(p => p.Address.Match(isConnectedToNode.Endpoint));
         }
 
         /// <summary>

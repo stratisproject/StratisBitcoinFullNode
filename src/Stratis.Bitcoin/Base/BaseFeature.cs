@@ -1,8 +1,6 @@
 using System;
-using System.Collections.Generic;
 using System.IO;
 using System.Runtime.CompilerServices;
-using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.Logging;
@@ -25,6 +23,8 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests.Common")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests.Common")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
 
@@ -84,9 +84,6 @@ namespace Stratis.Bitcoin.Base
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
-        /// <summary>Provider of binary (de)serialization for data stored in the database.</summary>
-        private readonly DBreezeSerializer dbreezeSerializer;
-
         /// <summary>Manager of node's network peers.</summary>
         private IPeerAddressManager peerAddressManager;
 
@@ -120,8 +117,7 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc cref="IPartialValidator"/>
         private readonly IPartialValidator partialValidator;
 
-        public BaseFeature(
-            NodeSettings nodeSettings,
+        public BaseFeature(NodeSettings nodeSettings,
             DataFolder dataFolder,
             INodeLifetime nodeLifetime,
             ConcurrentChain chain,
@@ -132,7 +128,6 @@ namespace Stratis.Bitcoin.Base
             IDateTimeProvider dateTimeProvider,
             IAsyncLoopFactory asyncLoopFactory,
             ITimeSyncBehaviorState timeSyncBehaviorState,
-            DBreezeSerializer dbreezeSerializer,
             ILoggerFactory loggerFactory,
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
@@ -174,17 +169,19 @@ namespace Stratis.Bitcoin.Base
             this.asyncLoopFactory = asyncLoopFactory;
             this.timeSyncBehaviorState = timeSyncBehaviorState;
             this.loggerFactory = loggerFactory;
-            this.dbreezeSerializer = dbreezeSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
+<<<<<<< HEAD
             this.dbreezeSerializer.Initialize(this.chain.Network);
 
             // TODO rewrite chain starting logic. Tips manager should be used.
 
+=======
+>>>>>>> master
             await this.StartChainAsync().ConfigureAwait(false);
 
             if (this.provenBlockHeaderStore != null)
@@ -275,7 +272,7 @@ namespace Stratis.Bitcoin.Base
         /// </summary>
         private void StartAddressManager(NetworkPeerConnectionParameters connectionParameters)
         {
-            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.loggerFactory);
+            var addressManagerBehaviour = new PeerAddressManagerBehaviour(this.dateTimeProvider, this.peerAddressManager, this.peerBanning, this.loggerFactory);
             connectionParameters.TemplateBehaviors.Add(addressManagerBehaviour);
 
             if (File.Exists(Path.Combine(this.dataFolder.AddressManagerFilePath, PeerAddressManager.PeerFileName)))
@@ -406,7 +403,30 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ISelfEndpointTracker, SelfEndpointTracker>();
 
                     // Consensus
-                    services.AddSingleton<IConsensusManager, ConsensusManager>();
+                    // Consensus manager is created like that due to CM's constructor being internal. This is done
+                    // in order to prevent access to CM creation and CHT usage from another features. CHT is supposed
+                    // to be used only by CM and no other component.
+                    services.AddSingleton<IConsensusManager>(provider => new ConsensusManager(
+                        chainedHeaderTree: provider.GetService<IChainedHeaderTree>(),
+                        network: provider.GetService<Network>(),
+                        loggerFactory: provider.GetService<ILoggerFactory>(),
+                        chainState: provider.GetService<IChainState>(),
+                        integrityValidator: provider.GetService<IIntegrityValidator>(),
+                        partialValidator: provider.GetService<IPartialValidator>(),
+                        fullValidator: provider.GetService<IFullValidator>(),
+                        consensusRules: provider.GetService<IConsensusRuleEngine>(),
+                        finalizedBlockInfo: provider.GetService<IFinalizedBlockInfoRepository>(),
+                        signals: provider.GetService<ISignals>(),
+                        peerBanning: provider.GetService<IPeerBanning>(),
+                        ibdState: provider.GetService<IInitialBlockDownloadState>(),
+                        chain: provider.GetService<ConcurrentChain>(),
+                        blockPuller: provider.GetService<IBlockPuller>(),
+                        blockStore: provider.GetService<IBlockStore>(),
+                        connectionManager: provider.GetService<IConnectionManager>(),
+                        nodeStats: provider.GetService<INodeStats>(),
+                        nodeLifetime: provider.GetService<INodeLifetime>(),
+                        consensusSettings: provider.GetService<ConsensusSettings>()
+                        ));
                     services.AddSingleton<IChainedHeaderTree, ChainedHeaderTree>();
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();

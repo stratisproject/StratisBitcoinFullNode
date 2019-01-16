@@ -54,7 +54,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void GetMiningTimestamp()
         {
-            var tool = new KeyTool(null);
+            var tool = new KeyTool(new DataFolder(string.Empty));
             Key key = tool.GeneratePrivateKey();
             this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey});
 

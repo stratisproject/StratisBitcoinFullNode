@@ -1,17 +1,13 @@
 ﻿using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
-using ICSharpCode.Decompiler;
-using ICSharpCode.Decompiler.CSharp;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
-using Mono.Cecil;
 using NBitcoin;
-using Stratis.Bitcoin.Consensus;
+using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
@@ -21,13 +17,14 @@ using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Decompilation;
+using Stratis.SmartContracts.CLR.Local;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.Executor.Reflection.Local;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 {
@@ -43,6 +40,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         private readonly IBroadcasterManager broadcasterManager;
         private readonly IBlockStore blockStore;
         private readonly ConcurrentChain chain;
+        private readonly CSharpContractDecompiler contractDecompiler;
         private readonly ILogger logger;
         private readonly Network network;
         private readonly IStateRepositoryRoot stateRoot;
@@ -55,7 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         public SmartContractsController(IBroadcasterManager broadcasterManager,
             IBlockStore blockStore,
             ConcurrentChain chain,
-            IConsensusManager consensus,
+            CSharpContractDecompiler contractDecompiler,
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             Network network,
@@ -67,6 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             ISmartContractTransactionService smartContractTransactionService)
         {
             this.stateRoot = stateRoot;
+            this.contractDecompiler = contractDecompiler;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.chain = chain;
@@ -94,20 +93,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 });
             }
 
-            using (var memStream = new MemoryStream(contractCode))
+            Result<string> sourceResult = this.contractDecompiler.GetSource(contractCode);
+
+            return Json(new GetCodeResponse
             {
-                var modDefinition = ModuleDefinition.ReadModule(memStream);
-                var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
-                // TODO: Update decompiler to display all code, not just this rando FirstOrDefault (given we now allow multiple types)
-                string cSharp = decompiler.DecompileAsString(modDefinition.Types.FirstOrDefault(x => x.FullName != "<Module>"));
-                
-                return Json(new GetCodeResponse
-                {
-                    Message = string.Format("Contract execution code retrieved at {0}", address),
-                    Bytecode = contractCode.ToHexString(),
-                    CSharp = cSharp
-                });
-            }
+                Message = string.Format("Contract execution code retrieved at {0}", address),
+                Bytecode = contractCode.ToHexString(),
+                CSharp = sourceResult.IsSuccess ? sourceResult.Value : sourceResult.Error // Show the source, or the reason why the source couldn't be retrieved.
+            });
         }
 
         [Route("balance")]
@@ -278,7 +271,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         [Route("local-call")]
         [HttpPost]
-        public IActionResult LocalCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
+        public IActionResult LocalCallSmartContractTransaction([FromBody] LocalCallContractRequest request)
         {
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
@@ -286,26 +279,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             // Rewrite the method name to a property name
             this.RewritePropertyGetterName(request);
 
-            BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
+            try
+            {
+                ContractTxData txData = this.smartContractTransactionService.BuildLocalCallTxData(request);
 
-            Transaction transaction = this.network.CreateTransaction(response.Hex);
-            
-            var transactionContext = new ContractTransactionContext(
-                (ulong) this.chain.Height,
-                uint160.Zero,
-                0, // Safe to set this to 0 here, it's only used for the refund which we do not create when executing locally
-                request.Sender.ToUint160(this.network),
-                transaction);
+                ILocalExecutionResult result = this.localExecutor.Execute(
+                    (ulong)this.chain.Height,
+                    request.Sender?.ToUint160(this.network) ?? new uint160(),
+                    string.IsNullOrWhiteSpace(request.Amount) ? (Money) request.Amount : 0,
+                    txData);
 
-            ILocalExecutionResult result = this.localExecutor.Execute(transactionContext);           
-
-            return Json(result);
+                return Json(result, new JsonSerializerSettings
+                {
+                    ContractResolver = new ContractParametersContractResolver(this.network)
+                });
+            }
+            catch (MethodParameterStringSerializerException e)
+            {
+                return Json(ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message,
+                    "Error deserializing method parameters"));
+            }
         }
 
         /// <summary>
         /// If the call is to a property, rewrites the method name to the getter method's name.
         /// </summary>
-        private void RewritePropertyGetterName(BuildCallContractTransactionRequest request)
+        private void RewritePropertyGetterName(LocalCallContractRequest request)
         {
             // Don't rewrite if there are params
             if (request.Parameters != null && request.Parameters.Any())

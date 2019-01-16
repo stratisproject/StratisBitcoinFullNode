@@ -41,7 +41,7 @@ namespace NBitcoin
             if(feePaid.Satoshi < 0)
                 throw new ArgumentOutOfRangeException("feePaid");
             if(size > 0)
-                this._FeePerK = feePaid * 1000 / size;
+                this._FeePerK = (long)(feePaid.Satoshi / (decimal)size * 1000);
             else
                 this._FeePerK = 0;
         }
@@ -90,8 +90,8 @@ namespace NBitcoin
 
         public int CompareTo(FeeRate other)
         {
-            return other == null 
-                ? 1 
+            return other == null
+                ? 1
                 : this._FeePerK.CompareTo(other._FeePerK);
         }
 
@@ -173,8 +173,8 @@ namespace NBitcoin
                 throw new ArgumentNullException("left");
             if (right == null)
                 throw new ArgumentNullException("right");
-            return left <= right 
-                ? left 
+            return left <= right
+                ? left
                 : right;
         }
 

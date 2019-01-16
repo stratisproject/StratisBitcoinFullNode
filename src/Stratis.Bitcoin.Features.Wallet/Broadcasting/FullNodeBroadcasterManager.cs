@@ -3,6 +3,7 @@ using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
@@ -31,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
 
             if (!await this.mempoolValidator.AcceptToMemoryPool(state, transaction).ConfigureAwait(false))
             {
-                string errorMessage = string.Empty;
+                string errorMessage = "Failed";
 
                 if (state.Error?.ConsensusError != null)
                 {
@@ -45,7 +46,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Broadcasting
                 this.AddOrUpdate(transaction, State.CantBroadcast, errorMessage);
             }
             else
+            {
                 await this.PropagateTransactionToPeersAsync(transaction, this.connectionManager.ConnectedPeers.ToList()).ConfigureAwait(false);
+            }
         }
     }
 }

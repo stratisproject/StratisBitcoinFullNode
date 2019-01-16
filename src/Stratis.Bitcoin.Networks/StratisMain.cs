@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.Networks
             this.Name = "StratisMain";
             this.Magic = magic;
             this.DefaultPort = 16178;
+            this.DefaultMaxOutboundConnections = 16;
+            this.DefaultMaxInboundConnections = 109;
             this.RPCPort = 16174;
             this.MaxTipAge = 2 * 60 * 60;
             this.MinTxFee = 10000;
@@ -171,13 +173,13 @@ namespace Stratis.Bitcoin.Networks
 
             this.DNSSeeds = new List<DNSSeedData>
             {
-                new DNSSeedData("seednode1.stratisplatform.com", "seednode1.stratisplatform.com"),
-                new DNSSeedData("seednode2.stratis.cloud", "seednode2.stratis.cloud"),
-                new DNSSeedData("seednode3.stratisplatform.com", "seednode3.stratisplatform.com"),
-                new DNSSeedData("seednode4.stratis.cloud", "seednode4.stratis.cloud")
+                new DNSSeedData("mainnet1.stratisplatform.com", "mainnet1.stratisplatform.com"),
+                new DNSSeedData("mainnet2.stratisnetwork.com", "mainnet2.stratisnetwork.com"),
+                new DNSSeedData("mainnet3.stratisplatform.com", "mainnet3.stratisplatform.com"),
+                new DNSSeedData("mainnet4.stratisnetwork.com", "mainnet4.stratisnetwork.com")
             };
 
-            string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79" };
+            string[] seedNodes = { "101.200.198.155", "103.24.76.21", "104.172.24.79", "13.78.39.87", "23.102.35.247" };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0000066e91e46e5a264d42c89e1204963b2ee6be230b443e9159020539d972af"));

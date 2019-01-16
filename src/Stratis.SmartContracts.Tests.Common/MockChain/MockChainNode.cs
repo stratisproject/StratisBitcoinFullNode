@@ -1,5 +1,5 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
+using System.Globalization;
 using System.Linq;
 using System.Text;
 using CSharpFunctionalExtensions;
@@ -17,10 +17,10 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Local;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
@@ -165,10 +165,10 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         {
             var request = new BuildCreateContractTransactionRequest
             {
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 AccountName = this.AccountName,
                 ContractCode = contractCode.ToHexString(),
-                FeeAmount = feeAmount.ToString(),
+                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 Parameters = parameters,
@@ -212,9 +212,9 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             var request = new BuildCallContractTransactionRequest
             {
                 AccountName = this.AccountName,
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 ContractAddress = contractAddress,
-                FeeAmount = feeAmount.ToString(),
+                FeeAmount = feeAmount.ToString(CultureInfo.InvariantCulture),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 MethodName = methodName,
@@ -234,22 +234,17 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            double feeAmount = 0.01,
             string sender = null)
         {
-            var request = new BuildCallContractTransactionRequest
+            var request = new LocalCallContractRequest
             {
-                AccountName = this.AccountName,
-                Amount = amount.ToString(),
+                Amount = amount.ToString(CultureInfo.InvariantCulture),
                 ContractAddress = contractAddress,
-                FeeAmount = feeAmount.ToString(),
                 GasLimit = gasLimit,
                 GasPrice = gasPrice,
                 MethodName = methodName,
                 Parameters = parameters,
-                Password = this.Password,
-                Sender = sender ?? this.MinerAddress.Address,
-                WalletName = this.WalletName
+                Sender = sender ?? this.MinerAddress.Address
             };
             JsonResult response = (JsonResult)this.smartContractsController.LocalCallSmartContractTransaction(request);
             return (ILocalExecutionResult) response.Value;

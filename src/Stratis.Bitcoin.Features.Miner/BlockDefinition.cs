@@ -3,7 +3,6 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -415,7 +414,7 @@ namespace Stratis.Bitcoin.Features.Miner
                 long nNoLimit = long.MaxValue;
                 string dummy;
 
-                this.MempoolLock.ReadAsync(() =>  this.Mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false)).ConfigureAwait(false).GetAwaiter().GetResult();
+                this.MempoolLock.ReadAsync(() => this.Mempool.CalculateMemPoolAncestors(iter, ancestors, nNoLimit, nNoLimit, nNoLimit, nNoLimit, out dummy, false)).ConfigureAwait(false).GetAwaiter().GetResult();
 
                 this.OnlyUnconfirmed(ancestors);
                 ancestors.Add(iter);
@@ -476,11 +475,18 @@ namespace Stratis.Bitcoin.Features.Miner
         {
             // TODO: Switch to weight-based accounting for packages instead of vsize-based accounting.
             if (this.BlockWeight + this.Network.Consensus.Options.WitnessScaleFactor * packageSize >= this.Options.BlockMaxWeight)
+            {
+                this.logger.LogTrace("(-)[MAX_WEIGHT_REACHED]:false");
                 return false;
+            }
 
             if (this.BlockSigOpsCost + packageSigOpsCost >= this.Network.Consensus.Options.MaxBlockSigopsCost)
+            {
+                this.logger.LogTrace("(-)[MAX_SIGOPS_REACHED]:false");
                 return false;
+            }
 
+            this.logger.LogTrace("(-):true");
             return true;
         }
 
@@ -526,10 +532,23 @@ namespace Stratis.Bitcoin.Features.Miner
         private int UpdatePackagesForAdded(TxMempool.SetEntries alreadyAdded, Dictionary<uint256, TxMemPoolModifiedEntry> mapModifiedTx)
         {
             int descendantsUpdated = 0;
-            foreach (TxMempoolEntry setEntry in alreadyAdded)
+
+            foreach (TxMempoolEntry addedEntry in alreadyAdded)
             {
                 var setEntries = new TxMempool.SetEntries();
-                this.MempoolLock.ReadAsync(() => this.Mempool.CalculateDescendants(setEntry, setEntries)).GetAwaiter().GetResult();
+
+                this.MempoolLock.ReadAsync(() =>
+                {
+                    if (!this.Mempool.MapTx.ContainsKey(addedEntry.TransactionHash))
+                    {
+                        this.logger.LogWarning("{0} is not present in {1} any longer, skipping.", addedEntry.TransactionHash, nameof(this.Mempool.MapTx));
+                        return;
+                    }
+
+                    this.Mempool.CalculateDescendants(addedEntry, setEntries);
+
+                }).GetAwaiter().GetResult();
+
                 foreach (TxMempoolEntry desc in setEntries)
                 {
                     if (alreadyAdded.Contains(desc))
@@ -541,11 +560,12 @@ namespace Stratis.Bitcoin.Features.Miner
                     {
                         modEntry = new TxMemPoolModifiedEntry(desc);
                         mapModifiedTx.Add(desc.TransactionHash, modEntry);
+                        this.logger.LogDebug("Added transaction '{0}' to the block template because it's a required ancestor for '{1}'.", desc.TransactionHash, addedEntry.TransactionHash);
                     }
 
-                    modEntry.SizeWithAncestors -= setEntry.GetTxSize();
-                    modEntry.ModFeesWithAncestors -= setEntry.ModifiedFee;
-                    modEntry.SigOpCostWithAncestors -= setEntry.SigOpCost;
+                    modEntry.SizeWithAncestors -= addedEntry.GetTxSize();
+                    modEntry.ModFeesWithAncestors -= addedEntry.ModifiedFee;
+                    modEntry.SigOpCostWithAncestors -= addedEntry.SigOpCost;
                 }
             }
 

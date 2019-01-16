@@ -6,9 +6,9 @@ using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.SmartContracts;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -17,7 +17,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     /// </summary>
     public class SmartContractTransactionService : ISmartContractTransactionService
     {
-        private const int MinConfirmationsAllChecks = 1;
+        private const int MinConfirmationsAllChecks = 0;
+
+        private const string SenderNoBalanceError = "The 'Sender' address you're trying to spend from doesn't have a balance available to spend. Please check the address and try again.";
         private readonly Network network;
         private readonly IWalletManager walletManager;
         private readonly IWalletTransactionHandler walletTransactionHandler;
@@ -47,8 +49,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0)
-                return BuildCallContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
+            if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
+                return BuildCallContractTransactionResponse.Failed(SenderNoBalanceError);
 
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
@@ -58,8 +60,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
+                try
+                {
+                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
+                }
+                catch (MethodParameterStringSerializerException exception)
+                {
+                    return BuildCallContractTransactionResponse.Failed(exception.Message);
+                }
             }
             else
             {
@@ -100,8 +109,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         public BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request)
         {
             AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0)
-                return BuildCreateContractTransactionResponse.Failed($"The 'Sender' address you're trying to spend from doesn't have a confirmed balance. Current unconfirmed balance: {addressBalance.AmountUnconfirmed}. Please check the 'Sender' address.");
+            if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
+                return BuildCreateContractTransactionResponse.Failed(SenderNoBalanceError);
 
             var selectedInputs = new List<OutPoint>();
             selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
@@ -109,8 +118,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ContractTxData txData;
             if (request.Parameters != null && request.Parameters.Any())
             {
-                var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
+                try
+                {
+                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
+                }
+                catch (MethodParameterStringSerializerException exception)
+                {
+                    return BuildCreateContractTransactionResponse.Failed(exception.Message);
+                }
             }
             else
             {
@@ -150,5 +166,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return BuildCreateContractTransactionResponse.Failed(exception.Message);
             }
         }
+
+        public ContractTxData BuildLocalCallTxData(LocalCallContractRequest request)
+        {
+            uint160 contractAddress = request.ContractAddress.ToUint160(this.network);
+
+            if (request.Parameters != null && request.Parameters.Any())
+            {
+                object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+
+                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);                
+            }
+
+            return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName);
+        }
+
     }
 }

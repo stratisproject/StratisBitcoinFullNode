@@ -638,6 +638,13 @@ namespace NBitcoin
             return this;
         }
 
+        private uint? _TimeStamp;
+        public TransactionBuilder SetTimeStamp(uint timeStamp)
+        {
+            this._TimeStamp = timeStamp;
+            return this;
+        }
+
         private List<Key> _Keys = new List<Key>();
 
         public TransactionBuilder AddKeys(params ISecret[] keys)
@@ -1110,7 +1117,10 @@ namespace NBitcoin
             if(this._LockTime != null)
                 ctx.Transaction.LockTime = this._LockTime.Value;
 
-            foreach(BuilderGroup group in this._BuilderGroups)
+            if (this._TimeStamp != null)
+                ctx.Transaction.Time = this._TimeStamp.Value;
+
+            foreach (BuilderGroup group in this._BuilderGroups)
             {
                 ctx.Group = group;
                 ctx.AdditionalBuilders.Clear();

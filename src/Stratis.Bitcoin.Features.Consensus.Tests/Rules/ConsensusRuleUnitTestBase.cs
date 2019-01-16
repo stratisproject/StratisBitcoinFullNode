@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
         protected Mock<ICoinView> coinView;
-        protected Mock<IRewindDataIndexStore> rewindDataIndexStore;
+        protected Mock<IRewindDataIndexCache> rewindDataIndexStore;
 
         public PosConsensusRuleUnitTestBase() : base(KnownNetworks.StratisTest)
         {
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
             this.coinView = new Mock<ICoinView>();
-            this.rewindDataIndexStore = new Mock<IRewindDataIndexStore>();
+            this.rewindDataIndexStore = new Mock<IRewindDataIndexCache>();
         }
 
         protected T CreateRule<T>() where T : ConsensusRuleBase, new()
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IStakeValidator> stakeValidator;
         protected Mock<IBlockPuller> lookaheadBlockPuller;
         protected Mock<ICoinView> coinView;
-        protected Mock<IRewindDataIndexStore> rewindDataIndexStore;
+        protected Mock<IRewindDataIndexCache> rewindDataIndexStore;
 
         public TestPosConsensusRulesUnitTestBase() : base(KnownNetworks.StratisTest)
         {
@@ -221,8 +221,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.stakeValidator = new Mock<IStakeValidator>();
             this.lookaheadBlockPuller = new Mock<IBlockPuller>();
             this.coinView = new Mock<ICoinView>();
-            this.rewindDataIndexStore = new Mock<IRewindDataIndexStore>();
+            this.rewindDataIndexStore = new Mock<IRewindDataIndexCache>();
             this.consensusRules = InitializeConsensusRules();
+
+            this.stakeValidator.Setup(s => s.CheckStakeSignature(It.IsAny<BlockSignature>(), It.IsAny<uint256>(), It.IsAny<Transaction>()))
+                .Returns((BlockSignature signature, uint256 blockHash, Transaction coinstakeTx) => {
+                    var validator = new StakeValidator(this.network, this.stakeChain.Object, this.concurrentChain, this.coinView.Object, this.loggerFactory.Object);
+                    return validator.CheckStakeSignature(signature, blockHash, coinstakeTx);
+                });
         }
 
         public override TestPosConsensusRules InitializeConsensusRules()

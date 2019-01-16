@@ -54,6 +54,7 @@
 
         public static readonly ConsensusError NonCoinstake = new ConsensusError("non-coinstake", "non-coinstake");
         public static readonly ConsensusError ReadTxPrevFailed = new ConsensusError("read-txPrev-failed", "read txPrev failed");
+        public static readonly ConsensusError ReadTxPrevFailedInsufficient = new ConsensusError("read-txPrev-failed-insufficient", "read txPrev failed insufficient information");
         public static readonly ConsensusError InvalidStakeDepth = new ConsensusError("invalid-stake-depth", "tried to stake at depth");
         public static readonly ConsensusError StakeTimeViolation = new ConsensusError("stake-time-violation", "stake time violation");
         public static readonly ConsensusError BadStakeBlock = new ConsensusError("bad-stake-block", "bad stake block");

@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
+using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner.Controllers;
@@ -17,7 +18,6 @@ using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Mining;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Miner.Tests")]
@@ -29,6 +29,8 @@ namespace Stratis.Bitcoin.Features.Miner
     /// </summary>
     public class MiningFeature : FullNodeFeature
     {
+        private readonly ConnectionManagerSettings connectionManagerSettings;
+
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         private readonly Network network;
 
@@ -50,17 +52,8 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <summary>State of time synchronization feature that stores collected data samples.</summary>
         private readonly ITimeSyncBehaviorState timeSyncBehaviorState;
 
-        /// <summary>
-        /// Initializes the instance of the object.
-        /// </summary>
-        /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
-        /// <param name="minerSettings">Settings relevant to mining or staking.</param>
-        /// <param name="nodeSettings">The node's configuration settings.</param>
-        /// <param name="loggerFactory">Factory to be used to create logger for the node.</param>
-        /// <param name="timeSyncBehaviorState">State of time synchronization feature that stores collected data samples.</param>
-        /// <param name="powMining">POW miner.</param>
-        /// <param name="posMinting">POS staker.</param>
         public MiningFeature(
+            ConnectionManagerSettings connectionManagerSettings,
             Network network,
             MinerSettings minerSettings,
             NodeSettings nodeSettings,
@@ -69,6 +62,7 @@ namespace Stratis.Bitcoin.Features.Miner
             IPowMining powMining,
             IPosMinting posMinting = null)
         {
+            this.connectionManagerSettings = connectionManagerSettings;
             this.network = network;
             this.minerSettings = minerSettings;
             this.nodeSettings = nodeSettings;
@@ -151,6 +145,9 @@ namespace Stratis.Bitcoin.Features.Miner
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
+            if ((this.minerSettings.Mine || this.minerSettings.Stake) && this.connectionManagerSettings.IsGateway)
+                throw new ConfigurationException("The node cannot be configured as a gateway and mine or stake at the same time.");
+
             if (this.minerSettings.Mine)
             {
                 string mineToAddress = this.minerSettings.MineAddress;
@@ -192,8 +189,8 @@ namespace Stratis.Bitcoin.Features.Miner
             if (this.minerSettings.Mine || this.minerSettings.Stake)
             {
                 services.Features.EnsureFeature<BlockStoreFeature>();
-                var blockSettings = services.ServiceProvider.GetService<StoreSettings>();
-                if (blockSettings.Prune)
+                var storeSettings = services.ServiceProvider.GetService<StoreSettings>();
+                if (storeSettings.PruningEnabled)
                     throw new ConfigurationException("BlockStore prune mode is incompatible with mining and staking.");
             }
         }
@@ -208,7 +205,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Adds a mining feature to the node being initialized.
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
-        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
         /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddMining(this IFullNodeBuilder fullNodeBuilder)
         {
@@ -239,7 +235,6 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Adds POW and POS miner components to the node, so that it can mine or stake.
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
-        /// <param name="setup">Callback routine to be called when miner settings are loaded.</param>
         /// <returns>The full node builder, enriched with the new component.</returns>
         public static IFullNodeBuilder AddPowPosMining(this IFullNodeBuilder fullNodeBuilder)
         {

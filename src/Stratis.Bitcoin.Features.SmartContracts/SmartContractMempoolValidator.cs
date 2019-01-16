@@ -10,7 +10,7 @@ using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -33,9 +33,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly List<ISmartContractMempoolRule> feeTxRules;
         private readonly ICallDataSerializer callDataSerializer;
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer)
-            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, IStandardScriptsRegistry standardScripts, ICallDataSerializer callDataSerializer)
+            : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules, standardScripts)
         {
+            // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
+            // TODO: Remove ASAP. Ensure RequireStandard isn't used on SC mainnets, or the StandardScripts check is modular.
+            mempoolSettings.RequireStandard = false;
+
             this.callDataSerializer = callDataSerializer;
 
             var p2pkhRule = new P2PKHNotContractRule();

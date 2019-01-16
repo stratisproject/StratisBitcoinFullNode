@@ -2,9 +2,9 @@
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
-    public class PoWMockChainFixture : IDisposable
+    public class PoWMockChainFixture : IMockChainFixture, IDisposable
     {
-        public PoWMockChain Chain { get; }
+        public IMockChain Chain { get; }
 
         public PoWMockChainFixture()
         {

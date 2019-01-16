@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
         private void node1_builds_undersize_transaction_to_send_to_node2()
         {
-            Node1BuildsTransactionToSendToNode2(2450);
+            Node1BuildsTransactionToSendToNode2(2650);
         }
 
         private void serialized_size_of_transaction_is_close_to_upper_limit()

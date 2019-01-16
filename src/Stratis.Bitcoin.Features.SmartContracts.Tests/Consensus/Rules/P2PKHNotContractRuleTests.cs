@@ -10,13 +10,14 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Networks;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
@@ -99,6 +100,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
         {
         }
+
+        public ICallDataSerializer CallDataSerializer => throw new NotImplementedException();
 
         public IContractExecutorFactory ExecutorFactory => throw new NotImplementedException();
 

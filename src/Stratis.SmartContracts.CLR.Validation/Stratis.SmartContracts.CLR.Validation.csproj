@@ -1,0 +1,15 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <TargetFramework>netcoreapp2.1</TargetFramework>
+	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
+	<Version>0.0.3-beta</Version>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <PackageReference Include="Mono.Cecil" Version="0.10.1" />
+    <PackageReference Include="Stratis.SmartContracts" Version="1.1.0" />
+    <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
+  </ItemGroup>
+
+</Project>

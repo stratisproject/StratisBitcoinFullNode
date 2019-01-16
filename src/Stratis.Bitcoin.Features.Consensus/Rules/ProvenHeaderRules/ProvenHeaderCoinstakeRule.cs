@@ -1,10 +1,9 @@
-﻿using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
@@ -133,14 +132,16 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             {
                 // The trx was found now check if the UTXO is spent.
                 prevUtxo = coins.UnspentOutputs[0];
-                if (txIn.PrevOut.N >= prevUtxo.Outputs.Length)
+
+                TxOut utxo = null;
+                if (txIn.PrevOut.N < prevUtxo.Outputs.Length)
                 {
-                    // This should never happen, if it did, an incorrect number of UTXOs were created for a trx.
-                    this.Logger.LogTrace("(-)[PREV_UTXO_COUNT_MISMATCH]");
-                    ConsensusErrors.ReadTxPrevFailed.Throw();
+                    // Check that the size of the outs collection is the same as the expected position of the UTXO
+                    // Note the collection will not always represent the original size of the transaction unspent
+                    // outputs because when we store outputs do disk the last spent items are removed from the collection.
+                    utxo = prevUtxo.Outputs[txIn.PrevOut.N];
                 }
 
-                TxOut utxo = prevUtxo.Outputs[txIn.PrevOut.N];
                 if (utxo == null)
                 {
                     // UTXO is spent so find it in rewind data.
@@ -235,45 +236,42 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
         private uint256 GetPreviousStakeModifier(ChainedHeader chainedHeader)
         {
-            uint256 previousStakeModifier = null;
+            var previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
 
-            ProvenBlockHeader previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
-
-            if (previousProvenHeader == null)
+            if (previousProvenHeader != null)
             {
-                if (chainedHeader.Previous.Height == 0)
+                if (previousProvenHeader.StakeModifierV2 == null)
                 {
-                    previousStakeModifier = uint256.Zero;
-                    this.Logger.LogTrace("Genesis header.");
+                    this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
+                    ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
                 }
-                else if (chainedHeader.Previous.Height == this.LastCheckpointHeight)
-                {
-                    previousStakeModifier = this.LastCheckpoint.StakeModifierV2;
-                    this.Logger.LogTrace("Last checkpoint stake modifier V2 loaded: '{0}'.", previousStakeModifier);
-                }
-                else
-                {
-                    // This means we are one block after the tip.
-                    // TODO: Should we check at this point that we are once block after the tip?
-                    previousStakeModifier = this.PosParent.StakeChain.Get(chainedHeader.Previous.HashBlock)?.StakeModifierV2;
 
-                    if (previousStakeModifier == null)
-                    {
-                        // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
-                        this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
-                        ConsensusErrors.InvalidPreviousProvenHeader.Throw();
-                    }
-                }
+                //Stake modifier acquired from prev PH.
+                this.Logger.LogTrace("(-)[PREV_PH]");
+                return previousProvenHeader.StakeModifierV2;
             }
-            else
+
+            if (chainedHeader.Previous.Height == 0)
             {
-                previousStakeModifier = previousProvenHeader.StakeModifierV2;
+                this.Logger.LogTrace("(-)[GENESIS]");
+                return uint256.Zero;
             }
+
+            if (chainedHeader.Previous.Height == this.LastCheckpointHeight)
+            {
+                this.Logger.LogTrace("(-)[FROM_CHECKPOINT]");
+                return this.LastCheckpoint.StakeModifierV2;
+            }
+
+            uint256 previousStakeModifier = this.PosParent.StakeChain.Get(chainedHeader.Previous.HashBlock)?.StakeModifierV2;
 
             if (previousStakeModifier == null)
             {
-                this.Logger.LogTrace("(-)[PROVEN_HEADER_BAD_PREV_STAKE_MODIFIER]");
-                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
+                // When validating a proven header, we expect the previous header be of ProvenBlockHeader type.
+                // If this is not the case we will need to investigate why PH wasn't assigned. This might be due to
+                // the logic in ProvenHeadersBlockStoreSignaled.CreateAndStoreProvenHeader.
+                this.Logger.LogTrace("(-)[PROVEN_HEADER_INVALID_PREVIOUS_HEADER]");
+                ConsensusErrors.InvalidPreviousProvenHeader.Throw();
             }
 
             return previousStakeModifier;
@@ -294,7 +292,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             if (header.Coinstake.IsCoinStake)
             {
                 this.Logger.LogTrace("Found coinstake checking kernal hash.");
-                this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                var validKernel = this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                if (!validKernel)
+                {
+                    this.Logger.LogTrace("(-)[INVALID_STAKE_HASH_TARGET]");
+                    ConsensusErrors.StakeHashInvalidTarget.Throw();
+                }
             }
 
             this.ComputeNextStakeModifier(header, chainedHeader, previousStakeModifier);
@@ -325,13 +330,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header)
         {
-            Script script = header.Coinstake.Outputs[1].ScriptPubKey;
-            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
-
-            var signature = new ECDSASignature(header.Signature.Signature);
-            uint256 headerHash = header.GetHash();
-
-            if (!pubKey.Verify(headerHash, signature))
+            var consensusRules = (PosConsensusRuleEngine)this.Parent;
+            if (!consensusRules.StakeValidator.CheckStakeSignature(header.Signature, header.GetHash(), header.Coinstake))
             {
                 this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();
@@ -349,18 +349,35 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
             Transaction coinstake = header.Coinstake;
             TxIn input = coinstake.Inputs[0];
 
-            int? rewindDataIndex = this.PosParent.RewindDataIndexStore.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
+            int? rewindDataIndex = this.PosParent.RewindDataIndexCache.Get(input.PrevOut.Hash, (int)input.PrevOut.N);
             if (!rewindDataIndex.HasValue)
             {
                 this.Logger.LogTrace("(-)[NO_REWIND_DATA_INDEX_FOR_INPUT_PREVOUT]");
                 context.ValidationContext.InsufficientHeaderInformation = true;
-                ConsensusErrors.ReadTxPrevFailed.Throw();
+                ConsensusErrors.ReadTxPrevFailedInsufficient.Throw();
             }
 
             RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
-            UnspentOutputs matchingUnspentUtxo = rewindData.OutputsToRestore
-                .Where((unspent, i) => (unspent.TransactionId == input.PrevOut.Hash) && (i == input.PrevOut.N))
-                .FirstOrDefault();
+
+            if (rewindData == null)
+            {
+                this.Logger.LogTrace("(-)[NO_REWIND_DATA_FOR_INDEX]");
+                this.Logger.LogError("Error - Rewind data should always be present");
+                throw new ConsensusException("Rewind data should always be present");
+            }
+
+            UnspentOutputs matchingUnspentUtxo = null;
+            foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
+            {
+                if (unspent.TransactionId == input.PrevOut.Hash)
+                {
+                    if (input.PrevOut.N < unspent.Outputs.Length)
+                    {
+                        matchingUnspentUtxo = unspent;
+                        break;
+                    }
+                }
+            }
 
             if (matchingUnspentUtxo == null)
             {

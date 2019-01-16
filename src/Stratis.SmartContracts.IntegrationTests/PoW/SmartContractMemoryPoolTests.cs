@@ -7,8 +7,8 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Tests.Common;
 using Xunit;
 

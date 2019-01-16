@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (Exception ex)
             {
                 this.logger.LogTrace("Exception occurred: '{0}'", ex.ToString());
-                this.peer.Disconnect("Unexpected exception while waiting for a message", ex);
+                this.peer.Disconnect("Unexpected failure while waiting for a message", ex);
             }
         }
 

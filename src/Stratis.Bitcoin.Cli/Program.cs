@@ -81,8 +81,8 @@ namespace Stratis.Bitcoin.Cli
                     builder.AppendLine("Examples:");
                     builder.AppendLine();
                     builder.AppendLine("dotnet run stratis Wallet/history WalletName=testwallet - Lists all the historical transactions of the wallet called 'testwallet'.");
-                    builder.AppendLine("dotnet run stratis getinfo -rpcuser=stratistestuser -rpcpassword=stratistestpassword -rpcconnect=127.0.0.3 -rpcport=26174 - Displays general information about the Stratis node on the 127.0.0.3:26174, authenticating with the RPC specified user.");
-                    builder.AppendLine("dotnet run bitcoin getbalance -rpcuser=btctestuser -rpcpassword=btctestpass - Displays the current balance of the opened wallet on the 127.0.0.1:8332 node, authenticating with the RPC specified user.");
+                    builder.AppendLine("dotnet run stratis -rpcuser=stratistestuser -rpcpassword=stratistestpassword -rpcconnect=127.0.0.3 -rpcport=26174 getinfo - Displays general information about the Stratis node on the 127.0.0.3:26174, authenticating with the RPC specified user.");
+                    builder.AppendLine("dotnet run bitcoin -rpcuser=btctestuser -rpcpassword=btctestpass getbalance - Displays the current balance of the opened wallet on the 127.0.0.1:8332 node, authenticating with the RPC specified user.");
                     Console.WriteLine(builder);
                     return;
                 }
