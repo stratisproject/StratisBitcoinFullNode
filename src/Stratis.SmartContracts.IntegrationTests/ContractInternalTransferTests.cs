@@ -5,10 +5,10 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.Executor.Reflection.Local;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Local;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
@@ -628,7 +628,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         [Fact]
         public void Token_Standards_Test()
         {
-            const uint totalSupply = 100_000;
+            const ulong totalSupply = 100_000;
             // Deploy contract
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StandardToken.cs");
             Assert.True(compilationResult.Success);

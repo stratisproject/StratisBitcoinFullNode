@@ -861,13 +861,13 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             lock (this.lockObject)
             {
-                bool walletUpdated = false;
+                bool trxFoundInBlock = false;
                 foreach (Transaction transaction in block.Transactions)
                 {
                     bool trxFound = this.ProcessTransaction(transaction, chainedHeader.Height, block, true);
                     if (trxFound)
                     {
-                        walletUpdated = true;
+                        trxFoundInBlock = true;
                     }
                 }
 
@@ -876,9 +876,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // as if the node is stopped, on re-opening it will start updating from the previous height.
                 this.UpdateLastBlockSyncedHeight(chainedHeader);
 
-                if (walletUpdated)
+                if (trxFoundInBlock)
                 {
-                    this.SaveWallets();
+                    this.logger.LogDebug("Block {0} contains at least one transaction affecting the user's wallet(s).", chainedHeader);
                 }
             }
         }
@@ -901,6 +901,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         this.AddTransactionToWallet(transaction, utxo, blockHeight, block, isPropagated);
                         foundReceivingTrx = true;
+                        this.logger.LogDebug("Transaction '{0}' contained funds received by the user's wallet(s).", hash);
                     }
                 }
 
@@ -934,19 +935,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     this.AddSpendingTransactionToWallet(transaction, paidOutTo, tTx.Id, tTx.Index, blockHeight, block);
                     foundSendingTrx = true;
+                    this.logger.LogDebug("Transaction '{0}' contained funds sent by the user's wallet(s).", hash);
                 }
             }
 
-            // Figure out what to do when this transaction is found to affect the wallet.
-            if (foundSendingTrx || foundReceivingTrx)
-            {
-                // Save the wallet when the transaction was not included in a block.
-                if (blockHeight == null)
-                {
-                    this.SaveWallets();
-                }
-            }
-            
             return foundSendingTrx || foundReceivingTrx;
         }
 
@@ -1109,6 +1101,12 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
                 }
+            }
+
+            // If the transaction is spent and confirmed, we remove the UTXO from the lookup dictionary.
+            if (spentTransaction.BlockHeight != null)
+            {
+                this.RemoveInputKeysLookupLock(spentTransaction);
             }
         }
 
@@ -1326,7 +1324,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         if (address.Pubkey != null)
                             this.scriptToAddressLookup[address.Pubkey] = address;
 
-                        foreach (TransactionData transaction in address.Transactions)
+                        // Get the UTXOs that are unspent or spent but not confirmed.
+                        // We only exclude from the list the confirmed spent UTXOs.
+                        foreach (TransactionData transaction in address.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
                         {
                             this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
                         }
@@ -1366,6 +1366,20 @@ namespace Stratis.Bitcoin.Features.Wallet
             lock (this.lockObject)
             {
                 this.outpointLookup[new OutPoint(transactionData.Id, transactionData.Index)] = transactionData;
+            }
+        }
+
+        /// <summary>
+        /// Remove from the list of unspent outputs kept in memory.
+        /// </summary>
+        private void RemoveInputKeysLookupLock(TransactionData transactionData)
+        {
+            Guard.NotNull(transactionData, nameof(transactionData));
+            Guard.NotNull(transactionData.SpendingDetails, nameof(transactionData.SpendingDetails));
+
+            lock (this.lockObject)
+            {
+                this.outpointLookup.Remove(new OutPoint(transactionData.Id, transactionData.Index));
             }
         }
 

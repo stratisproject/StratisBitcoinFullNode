@@ -135,6 +135,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                .AddMining()
                .UseWallet()
                .AddRPC()
+               .UseTestChainedHeaderTree()
                .MockIBD());
 
             return CreateCustomNode(callback, network, ProtocolVersion.PROTOCOL_VERSION, configParameters: configParameters);

@@ -151,6 +151,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>'bad-txns-inputs-spent' error returns a <see cref="RejectDuplicate"/> reject code.</summary>
         public static MempoolError BadInputsSpent = new MempoolError(RejectDuplicate, "bad-txns-inputs-spent");
 
+        /// <summary>'bad-txns-inputs-missing' error returns a <see cref="RejectInvalid"/> reject code.</summary>
+        public static MempoolError MissingInputs = new MempoolError(RejectInvalid, "bad-txns-inputs-missing");
+
         /// <summary>'non-BIP68-final' error returns a <see cref="RejectNonstandard"/> reject code.</summary>
         public static MempoolError NonBIP68Final = new MempoolError(RejectNonstandard, "non-BIP68-final");
 

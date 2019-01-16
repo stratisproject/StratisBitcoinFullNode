@@ -6,7 +6,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Networks
+namespace Stratis.SmartContracts.Networks
 {
     public sealed class SmartContractPosRegTest : Network
     {

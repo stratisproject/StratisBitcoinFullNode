@@ -35,6 +35,8 @@
 
   <ItemGroup>
     <PackageReference Include="Microsoft.NET.Test.Sdk" Version="15.8.0" />
+    <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
+    <PackageReference Include="Stratis.XUnitRetry" Version="1.0.1" />
   </ItemGroup>
 
   <ItemGroup>
@@ -44,8 +46,6 @@
     <ProjectReference Include="..\Stratis.Bitcoin.IntegrationTests.Common\Stratis.Bitcoin.IntegrationTests.Common.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.Networks\Stratis.SmartContracts.Networks.csproj" />
     <ProjectReference Include="..\Stratis.SmartContracts.Tests.Common\Stratis.SmartContracts.Tests.Common.csproj" />
-    <ProjectReference Include="..\Stratis.SmartContracts.Test\Stratis.SmartContracts.Test.csproj" />
-    <ProjectReference Include="..\XUnitRetry\XUnitRetry.csproj" />
   </ItemGroup>
 
   <ItemGroup>
@@ -68,6 +68,9 @@
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\CallWithAllParameters.cs">
+      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
+    </Compile>
+    <Compile Update="SmartContracts\ConstructorLoop.cs">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </Compile>
     <Compile Update="SmartContracts\ContractCreation.cs">

@@ -8,7 +8,6 @@ using NBitcoin;
 using NBitcoin.Networks;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.Bitcoin.Features.SmartContracts.Networks;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
@@ -16,12 +15,13 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.CLR.Compilation;
+using Stratis.SmartContracts.CLR.Local;
+using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Executor.Reflection;
-using Stratis.SmartContracts.Executor.Reflection.Compilation;
-using Stratis.SmartContracts.Executor.Reflection.Local;
-using Stratis.SmartContracts.Executor.Reflection.Serialization;
+using Stratis.SmartContracts.Networks;
 using Stratis.SmartContracts.Tests.Common;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -247,6 +247,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Retry]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
+            throw new Exception();
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
@@ -703,17 +704,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 Assert.Equal("12345", counterRequestResult);
 
-                var callRequest = new BuildCallContractTransactionRequest
+                var callRequest = new LocalCallContractRequest
                 {
-                    AccountName = AccountName,
                     GasLimit = gasLimit,
                     GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     Amount = "0",
                     MethodName = "Increment",
                     ContractAddress = response.NewContractAddress,
-                    FeeAmount = "0.001",
-                    Password = Password,
-                    WalletName = WalletName,
                     Sender = addr.Address
                 };
 
@@ -786,17 +783,13 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
 
                 // Make a call request where the MethodName is the name of a property
-                var callRequest = new BuildCallContractTransactionRequest
+                var callRequest = new LocalCallContractRequest
                 {
-                    AccountName = AccountName,
                     GasLimit = gasLimit,
                     GasPrice = SmartContractMempoolValidator.MinGasPrice,
                     Amount = "0",
                     MethodName = "Counter",
                     ContractAddress = response.NewContractAddress,
-                    FeeAmount = "0.001",
-                    Password = Password,
-                    WalletName = WalletName,
                     Sender = addr.Address
                 };
 

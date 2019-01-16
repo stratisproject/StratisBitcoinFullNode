@@ -170,14 +170,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             nodes.Skip(1).ToList().ForEach(node => WaitLoop(() => AreNodesSynced(nodes.First(), node, true)));
         }
 
-        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
+        public static (HdAddress AddressUsed, List<uint256> BlockHashes) MineBlocks(CoreNode node, int numberOfBlocks, bool syncNode = true, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0", string miningAddress = null)
         {
             Guard.NotNull(node, nameof(node));
 
             if (numberOfBlocks == 0)
                 throw new ArgumentOutOfRangeException(nameof(numberOfBlocks), "Number of blocks must be greater than zero.");
 
-            SetMinerSecret(node, walletName, walletPassword, accountName);
+            SetMinerSecret(node, walletName, walletPassword, accountName, miningAddress);
 
             var script = new ReserveScript { ReserveFullNodeScript = node.MinerSecret.ScriptPubKey };
             var blockHashes = node.FullNode.Services.ServiceProvider.GetService<IPowMining>().GenerateBlocks(script, (ulong)numberOfBlocks, uint.MaxValue);
@@ -188,15 +188,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             return (node.MinerHDAddress, blockHashes);
         }
 
-        public static void SetMinerSecret(CoreNode coreNode, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0")
+        public static void SetMinerSecret(CoreNode coreNode, string walletName = "mywallet", string walletPassword = "password", string accountName = "account 0", string miningAddress = null)
         {
             if (coreNode.MinerSecret == null)
             {
-                HdAddress unusedAddress = coreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
-                coreNode.MinerHDAddress = unusedAddress;
+                HdAddress address;
+                if (!string.IsNullOrEmpty(miningAddress))
+                {
+                    address = coreNode.FullNode.WalletManager().GetAccounts(walletName).Single(a => a.Name == accountName).GetCombinedAddresses().Single(add => add.Address == miningAddress);
+                }
+                else
+                {
+                    address = coreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
+                }
+                
+                coreNode.MinerHDAddress = address;
 
                 Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);
-                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, unusedAddress).PrivateKey;
+                Key extendedPrivateKey = wallet.GetExtendedPrivateKeyForAddress(walletPassword, address).PrivateKey;
                 coreNode.SetMinerSecret(new BitcoinSecret(extendedPrivateKey, coreNode.FullNode.Network));
             }
         }

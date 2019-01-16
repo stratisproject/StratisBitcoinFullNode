@@ -87,6 +87,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                  .AddPowPosMining()
                  .AddRPC()
                  .UseApi()
+                 .UseTestChainedHeaderTree()
                  .MockIBD();
             });
 

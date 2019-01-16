@@ -67,10 +67,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.Port = config.GetOrDefault<int>("port", nodeSettings.Network.DefaultPort, this.logger);
+
             try
             {
-                this.Listen.AddRange(config.GetAll("bind")
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
+                this.Listen.AddRange(config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
             }
             catch (FormatException)
             {
@@ -79,8 +79,26 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.Listen.AddRange(config.GetAll("whitebind", this.logger)
-                        .Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), true)));
+                IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
+
+                List<IPEndPoint> networkEndpoints = this.Listen.Select(x => x.Endpoint).ToList();
+
+                foreach (IPEndPoint whiteBindEndpoint in whitebindEndpoints)
+                {
+                    if (whiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
+                    {
+                        // White-list white-bind endpoint if we are currently listening to it.
+                        NodeServerEndpoint listenToThisEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
+
+                        if (listenToThisEndpoint != null)
+                            listenToThisEndpoint.Whitelisted = true;
+                    }
+                    else
+                    {
+                        // Add to list of network interfaces if we are not.
+                        this.Listen.Add(new NodeServerEndpoint(whiteBindEndpoint, true));
+                    }
+                }
             }
             catch (FormatException)
             {
@@ -90,6 +108,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
             if (this.Listen.Count == 0)
             {
                 this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
+            }
+            else
+            {
+                var ports = this.Listen.Select(l => l.Endpoint.Port).ToList();
+
+                if (ports.Count != ports.Distinct().Count())
+                {
+                    throw new ConfigurationException("Invalid attempt to bind the same port twice");
+                }
             }
 
             try

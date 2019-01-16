@@ -278,7 +278,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     request.CreationDate);
 
                 this.SyncFromBestHeightForRecoveredWallets(request.CreationDate);
-                
+
                 return this.Ok();
             }
             catch (WalletException e)
@@ -762,6 +762,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
                     Shuffle = request.ShuffleOutputs ?? true, // We shuffle transaction outputs by default as it's better for anonymity.
                     OpReturnData = request.OpReturnData,
+                    OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount) ? null : Money.Parse(request.OpReturnAmount),
                     WalletPassword = request.Password,
                     SelectedInputs = request.Outpoints?.Select(u => new OutPoint(uint256.Parse(u.TransactionId), u.Index)).ToList(),
                     AllowOtherInputs = false,
@@ -795,7 +796,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Sends a transaction.
         /// </summary>
         /// <param name="request">The hex representing the transaction.</param>
-        /// <returns></returns>
         [Route("send-transaction")]
         [HttpPost]
         public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
@@ -839,7 +839,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                 TransactionBroadcastEntry transactionBroadCastEntry = this.broadcasterManager.GetTransaction(transaction.GetHash());
 
-                if (!string.IsNullOrEmpty(transactionBroadCastEntry?.ErrorMessage))
+                if (transactionBroadCastEntry.State == State.CantBroadcast)
                 {
                     this.logger.LogError("Exception occurred: {0}", transactionBroadCastEntry.ErrorMessage);
                     return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, transactionBroadCastEntry.ErrorMessage, "Transaction Exception");
@@ -1171,6 +1171,51 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             this.walletSyncManager.SyncFromDate(request.Date);
 
             return this.Ok();
+        }
+
+        /// <summary>Creates requested amount of UTXOs each of equal value.</summary>
+        [HttpPost]
+        [Route("splitcoins")]
+        public IActionResult SplitCoins([FromBody] SplitCoinsRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // checks the request is valid
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                var walletReference = new WalletAccountReference(request.WalletName, request.AccountName);
+                HdAddress address = this.walletManager.GetUnusedAddress(walletReference);
+
+                Money totalAmount = request.TotalAmountToSplit;
+                Money singleUtxoAmount = totalAmount / request.UtxosCount;
+
+                var recipients = new List<Recipient>(request.UtxosCount);
+                for (int i = 0; i < request.UtxosCount; i++)
+                    recipients.Add(new Recipient { ScriptPubKey = address.ScriptPubKey, Amount = singleUtxoAmount });
+
+                var context = new TransactionBuildContext(this.network)
+                {
+                    AccountReference = walletReference,
+                    MinConfirmations = 1,
+                    Shuffle = true,
+                    WalletPassword = request.WalletPassword,
+                    Recipients = recipients
+                };
+
+                Transaction transactionResult = this.walletTransactionHandler.BuildTransaction(context);
+
+                return this.SendTransaction(new SendTransactionRequest(transactionResult.ToHex()));
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         private void SyncFromBestHeightForRecoveredWallets(DateTime walletCreationDate)

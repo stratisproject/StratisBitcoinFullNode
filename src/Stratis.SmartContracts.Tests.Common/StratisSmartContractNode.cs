@@ -36,6 +36,7 @@ namespace Stratis.SmartContracts.Tests.Common
                 .UseSmartContractPowMining()
                 .UseReflectionExecutor()
                 .MockIBD()
+                .UseTestChainedHeaderTree()
                 .Build();
         }
     }

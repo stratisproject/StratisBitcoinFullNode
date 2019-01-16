@@ -72,8 +72,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.loggerFactory = new LoggerFactory();
 
             this.network = new BitcoinRegTest();
-            var serializer = new DBreezeSerializer();
-            serializer.Initialize(this.network);
         }
 
         [Fact]

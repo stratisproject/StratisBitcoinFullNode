@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         protected readonly ILoggerFactory loggerFactory;
         private readonly Network network;
         private readonly Network regTest;
-        private readonly DBreezeSerializer dbreezeSerializer;
+        private readonly DBreezeSerializer dBreezeSerializer;
 
         /// <summary>
         /// Initializes logger factory for tests in this class.
@@ -37,8 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.loggerFactory = new LoggerFactory();
             this.network = KnownNetworks.Main;
             this.regTest = KnownNetworks.RegTest;
-            this.dbreezeSerializer = new DBreezeSerializer();
-            this.dbreezeSerializer.Initialize(this.network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.network);
         }
 
         [Fact]
@@ -282,7 +281,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Fact]
         public void CanSaveChainIncrementally()
         {
-            using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory))
+            using (var repo = new ChainRepository(TestBase.CreateTestDir(this), this.loggerFactory, this.dBreezeSerializer))
             {
                 var chain = new ConcurrentChain(this.regTest);
 

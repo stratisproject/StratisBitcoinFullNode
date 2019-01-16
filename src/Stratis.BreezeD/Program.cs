@@ -1,13 +1,13 @@
 using System;
 using System.Linq;
 using System.Threading.Tasks;
-using NBitcoin;
-using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.LightWallet;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Networks;
@@ -21,42 +21,52 @@ namespace Stratis.BreezeD
         {
             try
             {
-                // Get the API uri.
-                bool isTestNet = args.Contains("-testnet");
                 bool isStratis = args.Contains("stratis");
-
-                string agent = "Breeze";
 
                 NodeSettings nodeSettings;
 
+                IFullNodeBuilder fullNodeBuilder = null;
+
+                if (!args.Any(a => a.Contains("datadirroot")))
+                    args = args.Concat(new[] { "-datadirroot=StratisBreeze" }).ToArray();
+
                 if (isStratis)
                 {
-                    if (isTestNet)
-                        args = args.Append("-addnode=51.141.28.47").ToArray(); // TODO: fix this temp hack
+                    nodeSettings = new NodeSettings(networksSelector: Networks.Stratis, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, agent: "Breeze", args: args)
+                    {
+                        MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                    };
 
-                    nodeSettings = new NodeSettings(networksSelector:Networks.Stratis, protocolVersion: ProtocolVersion.ALT_PROTOCOL_VERSION, agent: agent, args:args);
+                    fullNodeBuilder = new FullNodeBuilder()
+                                    .UseNodeSettings(nodeSettings)
+                                    .UseApi()
+                                    .UseBlockStore()
+                                    .UsePosConsensus()
+                                    .UseLightWallet()
+                                    .UseBlockNotification()
+                                    .UseTransactionNotification();
                 }
                 else
                 {
-                    nodeSettings = new NodeSettings(networksSelector:Networks.Bitcoin, agent: agent, args: args);
-                }
+                    nodeSettings = new NodeSettings(networksSelector: Networks.Bitcoin, agent: "Breeze", args: args);
 
-                IFullNodeBuilder fullNodeBuilder = new FullNodeBuilder()
-                    .UseNodeSettings(nodeSettings)
-                    .UseLightWallet()
-                    .UseBlockNotification()
-                    .UseTransactionNotification()
-                    .UseApi();
+                    fullNodeBuilder = new FullNodeBuilder()
+                                    .UseNodeSettings(nodeSettings)
+                                    .UseApi()
+                                    .UseBlockStore()
+                                    .UsePowConsensus()
+                                    .UseLightWallet()
+                                    .UseBlockNotification()
+                                    .UseTransactionNotification();
+                }
 
                 IFullNode node = fullNodeBuilder.Build();
 
-                // Start Full Node - this will also start the API.
-                if (node != null)
-                    await node.RunAsync();
+                await node.RunAsync();
             }
             catch (Exception ex)
             {
-                Console.WriteLine("There was a problem initializing the node. Details: '{0}'", ex.ToString());
+                Console.WriteLine($"There was a problem initializing the node: '{ex}'");
             }
         }
     }

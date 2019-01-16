@@ -15,7 +15,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
-using Stratis.SmartContracts.Executor.Reflection;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
@@ -49,8 +49,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
             INodeStats nodeStats,
-            IRewindDataIndexStore rewindDataIndexStore)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexStore)
+            IRewindDataIndexCache rewindDataIndexCache)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache)
         {
             this.CallDataSerializer = callDataSerializer;
             this.ExecutorFactory = executorFactory;

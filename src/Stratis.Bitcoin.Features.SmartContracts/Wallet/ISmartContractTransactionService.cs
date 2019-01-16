@@ -1,4 +1,5 @@
 ﻿using Stratis.Bitcoin.Features.SmartContracts.Models;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -6,5 +7,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
     {
         BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request);
         BuildCreateContractTransactionResponse BuildCreateTx(BuildCreateContractTransactionRequest request);
+        ContractTxData BuildLocalCallTxData(LocalCallContractRequest request);
+
     }
 }

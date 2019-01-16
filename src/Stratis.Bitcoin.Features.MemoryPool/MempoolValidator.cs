@@ -657,7 +657,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int dataOut = 0;
             foreach (TxOut txout in tx.Outputs)
             {
-                ScriptTemplate script = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
+                ScriptTemplate script = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
                 if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     this.logger.LogTrace("(-)[FAIL_SCRIPT_PUBKEY]");
@@ -713,7 +713,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 {
                     context.State.MissingInputs = true;
                     this.logger.LogTrace("(-)[FAIL_MISSING_INPUTS]");
-                    context.State.Fail(new MempoolError()).Throw(); // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
+                    context.State.Fail(MempoolErrors.MissingInputs).Throw(); // fMissingInputs and !state.IsInvalid() is used to detect this condition, don't set state.Invalid()
                 }
             }
 
@@ -1188,7 +1188,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxIn txin in tx.Inputs)
             {
                 TxOut prev = mapInputs.GetOutputFor(txin);
-                ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
+                ScriptTemplate template = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
                 if (template == null)
                 {
                     this.logger.LogTrace("(-)[BAD_SCRIPT_TEMPLATE]:false");
