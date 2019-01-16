@@ -1,7 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RuntimeFrameworkVersion>2.2.1</RuntimeFrameworkVersion>
     <CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
     <Version>0.0.1-beta</Version>
   </PropertyGroup>
