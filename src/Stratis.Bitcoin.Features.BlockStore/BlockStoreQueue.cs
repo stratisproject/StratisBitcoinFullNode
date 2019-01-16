@@ -496,6 +496,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
             while (currentHeader.HashBlock != expectedStoreTip.HashBlock)
             {
                 blocksToDelete.Add(currentHeader.HashBlock);
+
+                if (currentHeader.Previous == null)
+                    break;
+
                 currentHeader = currentHeader.Previous;
             }
 
