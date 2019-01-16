@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private const string DefaultWalletName = "default";
 
         /// <summary>Password for the default wallet created when -defaultwallet flag is set on startup.</summary>
-        private const string DefaultWalletPassword = "default"; // Cannot be empty string due to wallet create requirement.
+        //private const string DefaultWalletPassword = "default"; // Cannot be empty string due to wallet create requirement.
 
         /// <summary>
         /// A lock object that protects access to the <see cref="Wallet"/>.
@@ -199,9 +199,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // If the node was started with -defaultwallet flag, check if it already exists, if not, create one.
-            if (this.walletSettings.DefaultWallet)
+            if (this.walletSettings.DefaultWallet && !wallets.Any(w => w.Name == DefaultWalletName))
             {
-                this.CreateDefaultWallet(wallets.Any(w => w.Name == DefaultWalletName));
+                this.CreateDefaultWallet();
             }
 
             // Load data in memory for faster lookups.
@@ -279,16 +279,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             return mnemonic;
         }
 
-        private void CreateDefaultWallet(bool exists)
+        /// <summary>
+        /// Creates the default wallet with the password from settings.
+        /// </summary>
+        private void CreateDefaultWallet()
         {
-            if (!exists)
-            {
-                var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-                this.CreateWallet(DefaultWalletPassword, DefaultWalletName, string.Empty, mnemonic);
-            }
-
-            // Load the wallet from disk after creation, to verify it and also verify that we can decrypt it.
-            this.LoadWallet(DefaultWalletPassword, DefaultWalletName);
+            var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+            this.CreateWallet(this.walletSettings.DefaultWalletPassword, DefaultWalletName, string.Empty, mnemonic);
         }
 
         /// <inheritdoc />

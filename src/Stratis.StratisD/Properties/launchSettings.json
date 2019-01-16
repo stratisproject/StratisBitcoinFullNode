@@ -7,6 +7,10 @@
       "commandName": "Project",
       "commandLineArgs": "-testnet"
     },
+    "Stratis.StratisD Test with Default wallet": {
+      "commandName": "Project",
+      "commandLineArgs": "-testnet -rpcallowip=127.0.0.1 -defaultwallet -server -rpcpassword=password -rpcuser=user"
+    },
     "Stratis.StratisD Test with RPC": {
       "commandName": "Project",
       "commandLineArgs": "-testnet -server -rpcpassword=password -rpcuser=user"

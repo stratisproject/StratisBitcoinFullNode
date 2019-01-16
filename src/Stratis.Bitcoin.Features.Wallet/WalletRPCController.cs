@@ -37,13 +37,23 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet transaction handler.</summary>
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
-        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
+        public WalletRPCController(IWalletManager walletManager, 
+            IWalletTransactionHandler walletTransactionHandler, 
+            IFullNode fullNode, 
+            IBroadcasterManager broadcasterManager, 
+            ILoggerFactory loggerFactory,
+            WalletSettings walletSettings) : base(fullNode: fullNode)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.fullNode = fullNode;
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            if (walletSettings.DefaultWallet)
+            {
+                this.UnlockWallet(walletSettings.DefaultWalletPassword, maxDurationInSeconds);
+            }
         }
 
         [ActionName("walletpassphrase")]

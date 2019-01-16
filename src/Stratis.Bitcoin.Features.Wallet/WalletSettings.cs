@@ -25,6 +25,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool DefaultWallet { get; set; }
 
         /// <summary>
+        /// Password for the default wallet if overriding the default.
+        /// </summary>
+        public string DefaultWalletPassword { get; set; }
+
+        /// <summary>
         /// A value indicating whether the wallet being run is the light wallet or the full wallet.
         /// </summary>
         public bool IsLightWallet { get; set; }
@@ -46,6 +51,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
             this.DefaultWallet = config.GetOrDefault<bool>("defaultwallet", false, this.logger);
+            this.DefaultWalletPassword = config.GetOrDefault<string>("defaultwalletpassword", "default", this.logger);
             this.UnusedAddressesBuffer = config.GetOrDefault<int>("walletaddressbuffer", 20, this.logger);
         }
 
@@ -59,7 +65,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             var builder = new StringBuilder();
 
             builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: 0.");
-            builder.AppendLine("-defaultwallet=<0 or 1>         Creates a default wallet. Default: 0.");
+            builder.AppendLine("-defaultwallet=<0 or 1>         Loads the default wallet on startup. If not exists, will be created automatically. Default: 0.");
+            builder.AppendLine("-defaultwalletpassword=<string> Overrides the default wallet password.");
             defaults.Logger.LogInformation(builder.ToString());
         }
 
@@ -75,6 +82,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             builder.AppendLine("#savetrxhex=0");
             builder.AppendLine("#Creates a default wallet and unlocks the wallet on startup when set to 1. Default: 0.");
             builder.AppendLine("#defaultwallet=0");
+            builder.AppendLine("#defaultwalletpassword=<string>");
         }
     }
 }
