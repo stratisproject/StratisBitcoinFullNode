@@ -175,13 +175,8 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
-<<<<<<< HEAD
-            this.dbreezeSerializer.Initialize(this.chain.Network);
-
             // TODO rewrite chain starting logic. Tips manager should be used.
 
-=======
->>>>>>> master
             await this.StartChainAsync().ConfigureAwait(false);
 
             if (this.provenBlockHeaderStore != null)
