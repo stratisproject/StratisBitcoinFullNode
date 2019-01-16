@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -17,6 +18,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
     {
         private readonly IConnectionManager connectionManager;
         private readonly ILoggerFactory loggerFactory;
+
+        /// <summary>
+        /// The minimum peers supporting Proven Headers that we require to be connected to us.
+        /// </summary>
+        private const int MinimumRequiredPeerSupportingPH = 3;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -61,14 +67,18 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 // it's not yet included in the ConnectorPeers collection.
                 // freeSlots returns the number of available slots, considering that passed peer is taking one slot.
                 int freeSlots = connector.MaxOutboundConnections - connector.ConnectorPeers.Count - 1;
-                if (freeSlots >= 1)
+
+                // Get the number of PH-enabled peers we are already connected to.
+                int phEnabledPeersConnected = connector.ConnectorPeers.Count(p => this.DoesPeerSupportsPH(p.PeerVersion));
+
+                if (freeSlots >= (MinimumRequiredPeerSupportingPH - phEnabledPeersConnected))
                 {
-                    // There is at least one free slot, so we don't enforce this peer to be PH enabled.
+                    // There are enough free slot to allow the minimum required ph-enabled peers to connect to us.
+                    this.logger.LogTrace("Enough free slots. Free Slots: {0}, Required PH-enabled peers:{1}, Connected PH-enabled peers:{2}", freeSlots, MinimumRequiredPeerSupportingPH, phEnabledPeersConnected);
                     return Task.CompletedTask;
                 }
 
-                bool peerSupportsPH = version.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
-                if (peerSupportsPH)
+                if (this.DoesPeerSupportsPH(version))
                 {
                     INetworkPeer nodeToDisconnect = this.GetConnectedLegacyPeersSortedByTip(connector.ConnectorPeers).FirstOrDefault();
                     if (nodeToDisconnect != null)
@@ -85,6 +95,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             }
 
             return Task.CompletedTask;
+        }
+
+        private bool DoesPeerSupportsPH(VersionPayload peerVersion)
+        {
+            return peerVersion.Version >= NBitcoin.Protocol.ProtocolVersion.PROVEN_HEADER_VERSION;
         }
 
         private IEnumerable<INetworkPeer> GetConnectedLegacyPeersSortedByTip(NetworkPeerCollection connectedPeers)
