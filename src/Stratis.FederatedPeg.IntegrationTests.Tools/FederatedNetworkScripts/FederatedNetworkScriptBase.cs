@@ -5,9 +5,7 @@ using System.Linq;
 using System.Reflection;
 using System.Text;
 using NBitcoin;
-using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities;
-using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Tools.FederatedNetworkScripts
 {

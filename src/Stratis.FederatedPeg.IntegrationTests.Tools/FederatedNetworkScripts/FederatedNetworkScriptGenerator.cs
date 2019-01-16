@@ -2,8 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Reflection;
-using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Networks;
 using Stratis.Sidechains.Networks;

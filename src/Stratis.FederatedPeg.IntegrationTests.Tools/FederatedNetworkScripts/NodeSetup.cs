@@ -1,14 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
-using System.Net;
-using System.Reflection;
 using System.Text;
-using NBitcoin;
-using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Utilities;
-using Stratis.Sidechains.Networks;
 
 namespace Stratis.FederatedPeg.IntegrationTests.Tools.FederatedNetworkScripts
 {

@@ -24,7 +24,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\Stratis.FederatedPeg.IntegrationTests\Stratis.FederatedPeg.IntegrationTests.csproj" />
+    <ProjectReference Include="..\Stratis.Sidechains.Networks\Stratis.Sidechains.Networks.csproj" />
   </ItemGroup>
 
 </Project>
