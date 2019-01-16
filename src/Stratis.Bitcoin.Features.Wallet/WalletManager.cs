@@ -38,9 +38,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Name of the default wallet created when -defaultwallet flag is set on startup.</summary>
         public const string DefaultWalletName = "default";
 
-        /// <summary>Password for the default wallet created when -defaultwallet flag is set on startup.</summary>
-        //private const string DefaultWalletPassword = "default"; // Cannot be empty string due to wallet create requirement.
-
         /// <summary>
         /// A lock object that protects access to the <see cref="Wallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
