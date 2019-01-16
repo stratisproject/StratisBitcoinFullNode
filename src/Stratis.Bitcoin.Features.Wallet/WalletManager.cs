@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private const int WalletSavetimeIntervalInMinutes = 5;
 
         /// <summary>Name of the default wallet created when -defaultwallet flag is set on startup.</summary>
-        private const string DefaultWalletName = "default";
+        public const string DefaultWalletName = "default";
 
         /// <summary>Password for the default wallet created when -defaultwallet flag is set on startup.</summary>
         //private const string DefaultWalletPassword = "default"; // Cannot be empty string due to wallet create requirement.

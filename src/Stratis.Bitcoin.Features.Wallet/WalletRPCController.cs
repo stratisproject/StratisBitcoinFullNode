@@ -37,6 +37,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet transaction handler.</summary>
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
+        private readonly WalletSettings walletSettings;
+
         public WalletRPCController(IWalletManager walletManager, 
             IWalletTransactionHandler walletTransactionHandler, 
             IFullNode fullNode, 
@@ -49,10 +51,18 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.fullNode = fullNode;
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.walletSettings = walletSettings;
 
             if (walletSettings.DefaultWallet)
             {
-                this.UnlockWallet(walletSettings.DefaultWalletPassword, maxDurationInSeconds);
+                try
+                {
+                    this.UnlockWallet(walletSettings.DefaultWalletPassword, maxDurationInSeconds);
+                }
+                catch (Exception ex)
+                {
+                    this.logger.LogCritical(ex, "Failed to unlock the default wallet.");
+                }
             }
         }
 
@@ -370,16 +380,27 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <summary>
+        /// Will attempt to load the "default" wallet if it exists, else it will simply get the first available.
+        /// </summary>
+        /// <returns>Reference to the default wallet, or the first available.</returns>
         private WalletAccountReference GetAccount()
         {
-            //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-            string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
-            if (walletName == null)
-                throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
+            if (this.walletSettings.DefaultWallet)
+            {
+                HdAccount account = this.walletManager.GetAccounts(WalletManager.DefaultWalletName).Single();
+                return new WalletAccountReference(WalletManager.DefaultWalletName, account.Name);
+            }
+            else
+            {
+                //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
+                string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+                if (walletName == null)
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
 
-            HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
-
-            return new WalletAccountReference(walletName, account.Name);
+                HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
+                return new WalletAccountReference(walletName, account.Name);
+            }
         }
     }
 }
