@@ -22,7 +22,7 @@ namespace Stratis.Bitcoin.Tests.Base
         {
             this.loggerFactory = new LoggerFactory();
             string dir = CreateTestDir(this);
-            this.keyValueRepo = new KeyValueRepository(dir);
+            this.keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.Network));
 
             this.tipsManager = new TipsManager(this.keyValueRepo, this.loggerFactory);
 

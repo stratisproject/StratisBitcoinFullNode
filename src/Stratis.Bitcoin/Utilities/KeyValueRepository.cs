@@ -22,14 +22,17 @@ namespace Stratis.Bitcoin.Utilities
 
         private const string TableName = "common";
 
-        public KeyValueRepository(DataFolder dataFolder) : this (dataFolder.KeyValueRepositoryPath)
+        private readonly DBreezeSerializer dBreezeSerializer;
+
+        public KeyValueRepository(DataFolder dataFolder, DBreezeSerializer dBreezeSerializer) : this (dataFolder.KeyValueRepositoryPath, dBreezeSerializer)
         {
         }
 
-        public KeyValueRepository(string folder)
+        public KeyValueRepository(string folder, DBreezeSerializer dBreezeSerializer)
         {
             Directory.CreateDirectory(folder);
             this.dbreeze = new DBreezeEngine(folder);
+            this.dBreezeSerializer = dBreezeSerializer;
         }
 
         /// <inheritdoc />
@@ -39,7 +42,8 @@ namespace Stratis.Bitcoin.Utilities
 
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
             {
-                transaction.Insert(TableName, keyBytes, value);
+                transaction.Insert<byte[], byte[]>(TableName, keyBytes, this.dBreezeSerializer.Serialize(value));
+
                 transaction.Commit();
             }
         }
@@ -53,12 +57,13 @@ namespace Stratis.Bitcoin.Utilities
             {
                 transaction.ValuesLazyLoadingIsOn = false;
 
-                Row<byte[], T> row = transaction.Select<byte[], T>(TableName, keyBytes);
+                Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>(TableName, keyBytes);
 
                 if (!row.Exists)
                     return default(T);
-                else
-                    return row.Value;
+
+                T value = this.dBreezeSerializer.Deserialize<T>(row.Value);
+                return value;
             }
         }
 

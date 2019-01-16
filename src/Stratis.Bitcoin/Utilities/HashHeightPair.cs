@@ -81,5 +81,13 @@ namespace Stratis.Bitcoin.Utilities
 
             return this == (HashHeightPair)value;
         }
+
+        /// <summary>Constructs <see cref="HashHeightPair"/> from a set bytes and the given network.</summary>
+        public static HashHeightPair Load(byte[] bytes, Network network)
+        {
+            var hashHeight = new HashHeightPair();
+            hashHeight.ReadWrite(bytes, network.Consensus.ConsensusFactory);
+            return hashHeight;
+        }
     }
 }
