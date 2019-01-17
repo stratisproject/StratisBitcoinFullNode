@@ -247,7 +247,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Retry]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
-            throw new Exception();
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
