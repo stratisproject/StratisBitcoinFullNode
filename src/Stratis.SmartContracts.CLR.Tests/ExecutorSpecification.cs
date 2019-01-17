@@ -65,7 +65,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                         contractTxData,
                         fixture.MempoolFee,
                         fixture.ContractTransactionContext.Sender,
-                        It.IsAny<Gas>(),
+                        It.IsAny<ulong>(),
                         false),
                 Times.Once);
 
@@ -140,7 +140,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                         contractTxData,
                         fixture.MempoolFee,
                         fixture.ContractTransactionContext.Sender,
-                        It.IsAny<Gas>(),
+                        It.IsAny<ulong>(),
                         false),
                 Times.Once);
 
@@ -220,7 +220,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                         contractTxData,
                         fixture.MempoolFee,
                         fixture.ContractTransactionContext.Sender,
-                        It.IsAny<Gas>(),
+                        It.IsAny<ulong>(),
                         false),
                 Times.Once);
 
