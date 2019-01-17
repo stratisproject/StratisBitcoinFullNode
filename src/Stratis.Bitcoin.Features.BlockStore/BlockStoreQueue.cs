@@ -296,7 +296,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             {
                 log.AppendLine();
                 log.AppendLine("======BlockStore======");
-                log.AppendLine($"Batch Size: {this.currentBatchSizeBytes.BytesToMegaBytes()} MB / {this.BatchThresholdSizeBytes.BytesToMegaBytes()} MB  ({this.batch.Count} batched blocks)");
+                log.AppendLine($"Batch Size: {this.currentBatchSizeBytes.BytesToMegaBytes()} MB / {this.BatchThresholdSizeBytes.BytesToMegaBytes()} MB ({this.batch.Count} batched blocks)");
                 log.AppendLine($"Queue Size: {this.blocksQueueSizeBytes.BytesToMegaBytes()} MB ({this.blocksQueue.Count} queued blocks)");
             }
         }
@@ -393,7 +393,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                             foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
                             {
                                 this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
-
                             }
 
                             this.batch.Clear();

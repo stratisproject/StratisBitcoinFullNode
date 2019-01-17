@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public bool PruningEnabled { get; set; }
 
-        /// <summary>The maximum amount of blocks the cache can contain.</summary>
+        /// <summary>The maximum size of bytes the cache can contain.</summary>
         public int MaxCacheSize { get; set; }
 
         /// <summary>Calculates minimum amount of blocks we need to keep during pruning.</summary>
