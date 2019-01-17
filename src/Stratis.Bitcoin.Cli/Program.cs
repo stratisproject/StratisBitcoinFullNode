@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Cli
                     builder.AppendLine();
                     builder.AppendLine("Command line arguments:");
                     builder.AppendLine();
-                    builder.AppendLine("[network-name]                     Name of the network - e.g. \"stratis\", \"stratismain\", \"stratistest\", \"bitcoinmain\", \"bitcointest\".");
+                    builder.AppendLine("[network-name]                     Name of the network - e.g. \"stratis\" or \"bitcoin\".");
                     builder.AppendLine("[options]                          Options for the CLI (optional) - e.g. -help, -rpcuser, see below.");
                     builder.AppendLine("[command]                          Name of RPC method or API <controller>/<method>.");
                     builder.AppendLine("[arguments]                        Argument by position (RPC) or Name = Value pairs (API) (optional).");
@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Cli
                     builder.AppendLine();
                     builder.AppendLine("Examples:");
                     builder.AppendLine();
-                    builder.AppendLine("dotnet run stratis Wallet/history WalletName=testwallet - Lists all the historical transactions of the wallet called 'testwallet'.");
+                    builder.AppendLine("dotnet run stratis -testnet Wallet/history WalletName=testwallet - Lists all the historical transactions of the wallet called 'testwallet' on the stratis test network.");
                     builder.AppendLine("dotnet run stratis -rpcuser=stratistestuser -rpcpassword=stratistestpassword -rpcconnect=127.0.0.3 -rpcport=26174 getinfo - Displays general information about the Stratis node on the 127.0.0.3:26174, authenticating with the RPC specified user.");
                     builder.AppendLine("dotnet run bitcoin -rpcuser=btctestuser -rpcpassword=btctestpass getbalance - Displays the current balance of the opened wallet on the 127.0.0.1:8332 node, authenticating with the RPC specified user.");
                     Console.WriteLine(builder);
