@@ -243,7 +243,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 // During IBD the PH cache is not used much,
                 // to avoid occupying unused space in memory we flush the cache.
-                this.Cache.ClearCache();
+                foreach (KeyValuePair<int, ProvenBlockHeader> provenBlockHeader in pendingBatch)
+                {
+                    this.Cache.Remove(provenBlockHeader.Key);
+                }
             }
         }
 
