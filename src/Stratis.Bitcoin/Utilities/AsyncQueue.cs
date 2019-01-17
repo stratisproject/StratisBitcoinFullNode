@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
-        /// The number of items int he queue.
+        /// The number of items in the queue.
         /// </summary>
         public int Count
         {

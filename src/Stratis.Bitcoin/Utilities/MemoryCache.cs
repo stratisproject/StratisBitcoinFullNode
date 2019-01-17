@@ -166,7 +166,7 @@ namespace Stratis.Bitcoin.Utilities
         /// <summary>
         /// Flush the entire cache.
         /// </summary>
-        public void FlushCache()
+        public void ClearCache()
         {
             lock (this.lockObject)
             {
