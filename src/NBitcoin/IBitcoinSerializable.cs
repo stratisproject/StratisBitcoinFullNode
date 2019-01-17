@@ -95,6 +95,23 @@ namespace NBitcoin
             }
         }
 
+        public static void FromBytes(this IBitcoinSerializable serializable, byte[] bytes, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
+        {
+            if (consensusFactory == null)
+                throw new ArgumentException("{0} cannot be null", nameof(consensusFactory));
+
+            using (var ms = new MemoryStream(bytes))
+            {
+                var bitcoinStream = new BitcoinStream(ms, false)
+                {
+                    ProtocolVersion = version,
+                    ConsensusFactory = consensusFactory
+                };
+
+                serializable.ReadWrite(bitcoinStream);
+            }
+        }
+
         public static T Clone<T>(this T serializable, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION) where T : IBitcoinSerializable, new()
         {
             T instance = new DefaultConsensusFactory().TryCreateNew<T>();
