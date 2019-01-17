@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                // Ensure threshold conditions cached.
                ThresholdState[] thresholdStates = rule.Parent.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
 
-               object metrics = rule.Parent.NodeDeployments.BIP9.EnrichStatesWithBlockMetrics(thresholdStates);
+               object metrics = rule.Parent.NodeDeployments.BIP9.GetThresholdStateModel(thresholdStates);
 
                return this.Json(metrics);
             }

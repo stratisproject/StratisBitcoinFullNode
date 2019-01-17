@@ -29,10 +29,10 @@ namespace Stratis.Bitcoin.Base.Deployments
         private IConsensus consensus;
 
         // Cache of BIP9 deployment states keyed by block hash.
-        private readonly Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
+        //private readonly Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
 
-        // Cache of EnhancedThresholdState keyed by block hash.
-        private readonly Dictionary<uint256, EnhancedThresholdState[]> enhancedCache = new Dictionary<uint256, EnhancedThresholdState[]>();
+        // Cache of Cache of BIP9 deployment state information keyed by block hash.
+        private readonly Dictionary<uint256, ThresholdStateModel[]> cache = new Dictionary<uint256, ThresholdStateModel[]>();
 
         /// <summary>
         /// Constructs this object containing the BIP9 deployment states cache.
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Base.Deployments
 
             // At this point, cache[pindexPrev] is known.
             this.Assert(this.ContainsKey(indexPrev?.HashBlock, deployment));
-            ThresholdState state = this.Get(indexPrev?.HashBlock, deployment);
+            ThresholdState state = this.Get(indexPrev?.HashBlock, deployment).Value;
 
             // Now walk forward and compute the state of descendants of pindexPrev.
             while (vToCompute.Count != 0)
@@ -176,8 +176,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                         }
                 }
 
-                this.Set(indexPrev?.HashBlock, deployment, state = stateNext);
-                this.SetEnhanced(indexPrev?.HashBlock, deployment, state = stateNext, indexPrev.GetMedianTimePast(), votes);
+                this.Set(indexPrev?.HashBlock, deployment, state = stateNext, indexPrev.GetMedianTimePast(), votes);
             }
 
           return state;
@@ -186,7 +185,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <summary>
         /// Class representing the activation states with the count of blocks in each state.
         /// </summary>
-        public class EnrichedActivationStateModel
+        public class ThresholdStateModel
         {
             public int DeploymentIndex { get; }
             public int blocksDefined { get; }
@@ -194,15 +193,15 @@ namespace Stratis.Bitcoin.Base.Deployments
             public int blocksLockedIn { get; }
             public int blocksFailed { get; }
             public int blocksActive { get; }
-            public DateTimeOffset? medianTimePast { get; }
+            public DateTimeOffset? TimePast { get; set; }
             public DateTimeOffset? timeStart { get; }
             public DateTimeOffset? timeTimeOut { get; }
             public int threshold { get; }
-            public int votes { get; }
-            public ThresholdState StateValue { get; }
-            public string ThresholdState { get; }
+            public int Votes { get; set; }
+            public ThresholdState? StateValue { get; set; }
+            public string ThresholdState { get; set; }
 
-            public EnrichedActivationStateModel(int deploymentIndex, int blocksDefined, int blocksStarted, int blocksLockedIn,
+            public ThresholdStateModel(int deploymentIndex, int blocksDefined, int blocksStarted, int blocksLockedIn,
                 int blocksFailed, int blocksActive, DateTimeOffset? medianTimePast, DateTimeOffset? timeStart, DateTimeOffset? timeTimeOut, int threshold, int votes, ThresholdState stateValue, string thresholdState)
             {
                 this.DeploymentIndex = deploymentIndex;
@@ -211,51 +210,28 @@ namespace Stratis.Bitcoin.Base.Deployments
                 this.blocksLockedIn = blocksLockedIn;
                 this.blocksFailed = blocksFailed;
                 this.blocksActive = blocksActive;
-                this.medianTimePast = medianTimePast;
+                this.TimePast = medianTimePast;
                 this.timeStart = timeStart;
                 this.timeTimeOut = timeTimeOut;
-                this.votes = votes;
+                this.Votes = votes;
                 this.threshold = threshold;
                 this.StateValue = stateValue;
                 this.ThresholdState = thresholdState;
             }
-        }
 
-        /// <summary>
-        /// Class representing the activation states with the count of blocks in each state.
-        /// </summary>
-        public class EnhancedThresholdState
-        {
-            public ThresholdState? ThresholdState { get; set; }
-            public DateTimeOffset TimePast { get; set; }
-            public DateTimeOffset? TimeOut { get; set; }
-            public DateTimeOffset? TimeStart { get; set; }
-            public int Threshold { get; set; }
-            public int Votes { get; set; }
-
-            public EnhancedThresholdState(ThresholdState? thresholdState, DateTimeOffset timePast, DateTimeOffset? timeOut, DateTimeOffset? timeStart, int threshold, int votes)
-            {
-                this.ThresholdState = thresholdState;
-                this.TimePast = timePast;
-                this.TimeOut = timeOut;
-                this.TimeStart = timeStart;
-                this.Threshold = threshold;
-                this.Votes = votes;
-            }
-
-            public EnhancedThresholdState()
+            public ThresholdStateModel()
             {
             }
         }
 
         /// <summary>
-        /// Enriches the activation states with the count of blocks in each state.
+        /// Gets the threshold state model.
         /// </summary>
         /// <param name="thresholdStates">Array of activation states.</param>
-        /// <returns>Activation states enumerated by deployment index with block counts.</returns>
-        public object EnrichStatesWithBlockMetrics(ThresholdState[] thresholdStates)
+        /// <returns>Threshold state model object.</returns>
+        public object GetThresholdStateModel(ThresholdState[] thresholdStates)
         {
-            var enrichedActivationStateMode = new List<EnrichedActivationStateModel>();
+            var thresholdStateModel = new List<ThresholdStateModel>();
             var nonNullDeployments = new List<int>();
             for (int i = 0; i < this.consensus.BIP9Deployments.Length; i++)
             {
@@ -266,30 +242,30 @@ namespace Stratis.Bitcoin.Base.Deployments
             for (int thresholdStateIndex = 0; thresholdStateIndex < thresholdStates.Length; thresholdStateIndex++)
             {
                 if (!nonNullDeployments.Contains(thresholdStateIndex)) continue;
-                int definedStateCount = this.enhancedCache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Defined));
-                int startedStateCount = this.enhancedCache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Started));
-                int lockInStateCount = this.enhancedCache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.LockedIn));
-                int failedStateCount = this.enhancedCache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Failed));
-                int activeStateCount = this.enhancedCache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Active));
+                int definedStateCount = this.cache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Defined));
+                int startedStateCount = this.cache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Started));
+                int lockInStateCount = this.cache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.LockedIn));
+                int failedStateCount = this.cache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Failed));
+                int activeStateCount = this.cache.Values.Where(x => x[thresholdStateIndex].ThresholdState != null).Count(x => x[thresholdStateIndex].ThresholdState.Equals(ThresholdState.Active));
 
-                int maxVotes = (this.enhancedCache.Values.Count > 0) ? this.enhancedCache.Values.Max(x => x[thresholdStateIndex].Votes) : 0;
+                int maxVotes = (this.cache.Values.Count > 0) ? this.cache.Values.Max(x => x[thresholdStateIndex].Votes) : 0;
 
                 int threshold = this.consensus.RuleChangeActivationThreshold;
 
                 DateTimeOffset? timeStart = this.consensus.BIP9Deployments[thresholdStateIndex]?.StartTime;
                 DateTimeOffset? timeTimeout = this.consensus.BIP9Deployments[thresholdStateIndex]?.Timeout;
-                DateTimeOffset maxTimePast;
+                DateTimeOffset? maxTimePast = null;
 
-                if (this.enhancedCache.Values.Count > 0)
+                if (this.cache.Values.Count > 0)
                 {
-                    maxTimePast = this.enhancedCache.Values.Max(x => x[thresholdStateIndex].TimePast);
+                    maxTimePast = this.cache.Values.Max(x => x[thresholdStateIndex].TimePast);
                 }
 
-                var row = new EnrichedActivationStateModel(thresholdStateIndex, definedStateCount, startedStateCount, lockInStateCount, failedStateCount, activeStateCount, maxTimePast, timeStart, timeTimeout, threshold, maxVotes, thresholdStates[thresholdStateIndex], ((ThresholdState) thresholdStates[thresholdStateIndex]).ToString());
-                enrichedActivationStateMode.Add(row);
+                var row = new ThresholdStateModel(thresholdStateIndex, definedStateCount, startedStateCount, lockInStateCount, failedStateCount, activeStateCount, maxTimePast, timeStart, timeTimeout, threshold, maxVotes, thresholdStates[thresholdStateIndex], ((ThresholdState) thresholdStates[thresholdStateIndex]).ToString());
+                thresholdStateModel.Add(row);
             }
 
-            return enrichedActivationStateMode;
+            return thresholdStateModel;
         }
 
         /// <summary>
@@ -298,36 +274,16 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <param name="hash">The block hash to determine the BIP9 activation state for.</param>
         /// <param name="deployment">The deployment for which to determine the activation state.</param>
         /// <returns>The activation state.</returns>
-        private ThresholdState Get(uint256 hash, int deployment)
+        private ThresholdState? Get(uint256 hash, int deployment)
         {
             if (hash == null)
                 return ThresholdState.Defined;
-            ThresholdState?[] threshold;
+            ThresholdStateModel[] threshold;
             if (!this.cache.TryGetValue(hash, out threshold))
                 throw new InvalidOperationException("Should never happen");
             if (threshold[deployment] == null)
                 throw new InvalidOperationException("Should never happen");
-            return threshold[deployment].Value;
-        }
-
-        /// <summary>
-        /// Sets the activation state for a given block of a specific BIP9 deployment.
-        /// </summary>
-        /// <param name="hash">The block hash to set the BIP9 activation state for.</param>
-        /// <param name="deployment">The deployment for which to set the activation state.</param>
-        /// <param name="state">The activation state to set.</param>
-        private void Set(uint256 hash, int deployment, ThresholdState state)
-        {
-            if (hash == null)
-                return;
-            ThresholdState?[] threshold;
-            if (!this.cache.TryGetValue(hash, out threshold))
-            {
-                threshold = new ThresholdState?[this.ArraySize];
-                this.cache.Add(hash, threshold);
-            }
-
-            threshold[deployment] = state;
+            return threshold[deployment].StateValue;
         }
 
         /// <summary>
@@ -338,26 +294,25 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <param name="state">The activation state to set.</param>
         /// <param name="medianTimePast">Median block time over <see cref="MedianTimeSpan"/> window from this entry in the chain.</param>
         /// <param name="votes">Votes for activation state to be set.</param>
-        private void SetEnhanced(uint256 hash, int deployment, ThresholdState state, DateTimeOffset medianTimePast, int votes)
+        private void Set(uint256 hash, int deployment, ThresholdState state, DateTimeOffset? medianTimePast = null, int? votes = null)
         {
             if (hash == null)
                 return;
-            EnhancedThresholdState[] enhancedThreshold;
-            if (!this.enhancedCache.TryGetValue(hash, out enhancedThreshold))
+            if (!this.cache.TryGetValue(hash, out ThresholdStateModel[] threshold))
             {
-                enhancedThreshold = new EnhancedThresholdState[this.ArraySize];
+                threshold = new ThresholdStateModel[this.ArraySize];
 
                 for (int i = 0; i < this.ArraySize; i++)
                 {
-                    enhancedThreshold[i] = new EnhancedThresholdState();
+                    threshold[i] = new ThresholdStateModel();
                 }
 
-                this.enhancedCache.Add(hash, enhancedThreshold);
+                this.cache.Add(hash, threshold);
             }
 
-            enhancedThreshold[deployment].ThresholdState = state;
-            enhancedThreshold[deployment].TimePast = medianTimePast;
-            enhancedThreshold[deployment].Votes = votes;
+            threshold[deployment].StateValue = state;
+            threshold[deployment].TimePast = medianTimePast ?? null;
+            threshold[deployment].Votes = votes ?? 0;
         }
 
         /// <summary>
@@ -370,10 +325,10 @@ namespace Stratis.Bitcoin.Base.Deployments
         {
             if (hash == null)
                 return true;
-            ThresholdState?[] threshold;
+            ThresholdStateModel[] threshold;
             if (!this.cache.TryGetValue(hash, out threshold))
                 return false;
-            return threshold[deployment].HasValue;
+            return threshold[deployment].StateValue.HasValue;
         }
 
         /// <summary>
