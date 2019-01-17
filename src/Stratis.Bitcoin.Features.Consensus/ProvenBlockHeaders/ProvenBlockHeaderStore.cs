@@ -196,10 +196,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingTipHashHeight = newTip;
             }
 
-            // While node is in IBD there is no need to fill the cache up.
-            if(this.initialBlockDownloadState.IsInitialBlockDownload())
-                return;
-
             this.Cache.AddOrUpdate(newTip.Height, provenBlockHeader, provenBlockHeader.HeaderSize);
         }
 
@@ -241,6 +237,13 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 await this.provenBlockHeaderRepository.PutAsync(pendingBatch, hashHeight).ConfigureAwait(false);
 
                 this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
+            }
+
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                // During IBD the PH cache is not used much,
+                // to avoid occupying unused space in memory we flush the cache.
+                this.Cache.FlushCache();
             }
         }
 
