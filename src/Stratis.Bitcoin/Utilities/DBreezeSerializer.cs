@@ -122,6 +122,9 @@ namespace Stratis.Bitcoin.Utilities
                 return provenBlockHeader;
             }
 
+            if (type == typeof(HashHeightPair))
+                return HashHeightPair.Load(bytes, this.Network);
+
             if (typeof(IBitcoinSerializable).IsAssignableFrom(type))
             {
                 var result = (IBitcoinSerializable)Activator.CreateInstance(type);
