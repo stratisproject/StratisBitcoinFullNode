@@ -1,5 +1,6 @@
 ﻿using System.Diagnostics;
 using Microsoft.Extensions.Logging;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -8,18 +9,19 @@ namespace Stratis.SmartContracts.CLR
     {
         public const ulong DefaultGasLimit = GasPriceList.BaseCost * 2 - 1;
 
-        private readonly ILogger logger;
-        private readonly ILoggerFactory loggerFactory;
         private readonly IState state;
         private readonly IStateProcessor stateProcessor;
+        private readonly IResourceMeter gasMeter;
 
-        public InternalExecutor(ILoggerFactory loggerFactory, IState state,
-            IStateProcessor stateProcessor)
+        public InternalExecutor(
+            IState state,
+            IStateProcessor stateProcessor,
+            IResourceMeter gasMeter
+            )
         {
-            this.loggerFactory = loggerFactory;
-            this.logger = loggerFactory.CreateLogger(this.GetType());
             this.state = state;
             this.stateProcessor = stateProcessor;
+            this.gasMeter = gasMeter;
         }
 
         ///<inheritdoc />
@@ -28,10 +30,10 @@ namespace Stratis.SmartContracts.CLR
             object[] parameters,
             ulong gasLimit = 0)
         {
-            Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
+            ulong gasRemaining = (ulong) this.gasMeter.Available;
 
-            // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
-            ulong gasBudget = (gasLimit != 0) ? gasLimit : gasRemaining;
+            // For a method call, send all the gas unless an amount was selected. Should only call trusted methods so re - entrance is less problematic.
+            ulong gasBudget = (gasLimit != 0) ? gasLimit : (ulong) gasRemaining;
 
             Debug.WriteLine("Gas budget:" + gasBudget);
 
@@ -41,7 +43,7 @@ namespace Stratis.SmartContracts.CLR
             var message = new InternalCreateMessage(
                 smartContractState.Message.ContractAddress.ToUint160(),
                 amountToTransfer,
-                (Gas) gasBudget,
+                gasBudget,
                 parameters,
                 typeof(T).Name
             );
@@ -56,7 +58,7 @@ namespace Stratis.SmartContracts.CLR
             if (result.IsSuccess)
                 this.state.TransitionTo(newState);
 
-            smartContractState.GasMeter.Spend(result.GasConsumed);
+            this.gasMeter.Spend(result.GasConsumed);
 
             return result.IsSuccess
                 ? CreateResult.Succeeded(result.Success.ContractAddress.ToAddress())
@@ -72,9 +74,9 @@ namespace Stratis.SmartContracts.CLR
             object[] parameters,
             ulong gasLimit = 0)
         {
-            Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
+            ulong gasRemaining = (ulong) this.gasMeter.Available;
 
-            // For a method call, send all the gas unless an amount was selected.Should only call trusted methods so re - entrance is less problematic.
+            // For a method call, send all the gas unless an amount was selected. Should only call trusted methods so re - entrance is less problematic.
             ulong gasBudget = (gasLimit != 0) ? gasLimit : gasRemaining;
 
             if (gasRemaining < gasBudget || gasRemaining < GasPriceList.BaseCost)
@@ -84,7 +86,7 @@ namespace Stratis.SmartContracts.CLR
                 addressTo.ToUint160(),
                 smartContractState.Message.ContractAddress.ToUint160(),
                 amountToTransfer,
-                (Gas) gasBudget,
+                gasBudget,
                 new MethodCall(methodName, parameters)
             );
 
@@ -98,7 +100,7 @@ namespace Stratis.SmartContracts.CLR
             if (result.IsSuccess)
                 this.state.TransitionTo(newState);
 
-            smartContractState.GasMeter.Spend(result.GasConsumed);
+            this.gasMeter.Spend(result.GasConsumed);
 
             return result.IsSuccess
                 ? TransferResult.Transferred(result.Success.ExecutionResult)
@@ -108,7 +110,7 @@ namespace Stratis.SmartContracts.CLR
         ///<inheritdoc />
         public ITransferResult Transfer(ISmartContractState smartContractState, Address addressTo, ulong amountToTransfer)
         {
-            Gas gasRemaining = smartContractState.GasMeter.GasAvailable;
+            ulong gasRemaining = (ulong) this.gasMeter.Available;
 
             if (gasRemaining < GasPriceList.TransferCost)
                 return TransferResult.Failed();
@@ -121,7 +123,7 @@ namespace Stratis.SmartContracts.CLR
                 addressTo.ToUint160(),
                 smartContractState.Message.ContractAddress.ToUint160(),
                 amountToTransfer,
-                (Gas) gasBudget
+                gasBudget
             );
 
             // Create a snapshot of the current state
@@ -134,7 +136,7 @@ namespace Stratis.SmartContracts.CLR
             if (result.IsSuccess)
                 this.state.TransitionTo(newState);
 
-            smartContractState.GasMeter.Spend(result.GasConsumed);
+            this.gasMeter.Spend(result.GasConsumed);
 
             return result.IsSuccess
                 ? TransferResult.Empty()

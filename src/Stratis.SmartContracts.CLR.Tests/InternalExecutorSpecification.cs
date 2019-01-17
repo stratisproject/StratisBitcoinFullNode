@@ -24,9 +24,9 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ICreateResult result = internalExecutor.Create<string>(fixture.SmartContractState, amount, parameters, gasLimit);
 
@@ -67,9 +67,9 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ICreateResult result = internalExecutor.Create<string>(fixture.SmartContractState, amount, parameters, gasLimit);
 
@@ -104,9 +104,9 @@ namespace Stratis.SmartContracts.CLR.Tests
             fixture.SetGasMeterLimitBelow(gasLimit);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ICreateResult result = internalExecutor.Create<string>(fixture.SmartContractState, amount, parameters, gasLimit);
 
@@ -144,9 +144,9 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ITransferResult result = internalExecutor.Call(fixture.SmartContractState, to, amount, method, parameters, gasLimit);
 
@@ -190,9 +190,9 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ITransferResult result = internalExecutor.Call(fixture.SmartContractState, to, amount, method, parameters, gasLimit);
 
@@ -230,9 +230,9 @@ namespace Stratis.SmartContracts.CLR.Tests
             fixture.SetGasMeterLimitBelow(gasLimit);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ITransferResult result = internalExecutor.Call(fixture.SmartContractState, to, amount, method, parameters, gasLimit);
 
@@ -266,9 +266,9 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ITransferResult result = internalExecutor.Transfer(fixture.SmartContractState, to, amount);
 
@@ -307,9 +307,9 @@ namespace Stratis.SmartContracts.CLR.Tests
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ITransferResult result = internalExecutor.Transfer(fixture.SmartContractState, to, amount);
 
@@ -342,9 +342,9 @@ namespace Stratis.SmartContracts.CLR.Tests
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
                 fixture.State.Object,
-                fixture.StateProcessor.Object);
+                fixture.StateProcessor.Object,
+                fixture.GasMeter.Object);
 
             ITransferResult result = internalExecutor.Transfer(fixture.SmartContractState, to, amount);
 

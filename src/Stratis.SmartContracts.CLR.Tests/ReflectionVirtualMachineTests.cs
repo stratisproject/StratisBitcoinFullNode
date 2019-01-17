@@ -35,7 +35,6 @@ namespace Stratis.SmartContracts.CLR.Tests
                     new TestPersistenceStrategy(this.state),
                     this.context.Serializer, this.TestAddress.ToUint160()),
                 this.context.Serializer,
-                new GasMeter((Gas)5000000),
                 new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
@@ -45,6 +44,8 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void VM_ExecuteContract_WithoutParameters()
         {
+            var gasMeter = new GasMeter((Gas) 5000000);
+
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
             Assert.True(compilationResult.Success);
 
@@ -52,7 +53,8 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             var callData = new MethodCall("NoParamsTest");
 
-            VmExecutionResult result = this.vm.ExecuteMethod(this.contractState, 
+            VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
+                gasMeter,
                 callData,
                 contractExecutionCode, "StorageTest");
 
@@ -64,6 +66,8 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void VM_ExecuteContract_WithParameters()
         {
+            var gasMeter = new GasMeter((Gas)5000000);
+
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageTest.cs");
             Assert.True(compilationResult.Success);
 
@@ -72,6 +76,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var callData = new MethodCall("OneParamTest", methodParameters);
             
             VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
+                gasMeter,
                 callData,
                 contractExecutionCode, "StorageTest");
             
@@ -83,13 +88,15 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void VM_CreateContract_WithParameters()
         {
+            var gasMeter = new GasMeter((Gas)5000000);
+
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
             var methodParameters = new object[] { (ulong)5 };
 
-            VmExecutionResult result = this.vm.Create(this.state, this.contractState, contractExecutionCode, methodParameters);
+            VmExecutionResult result = this.vm.Create(this.state, this.contractState, gasMeter, contractExecutionCode, methodParameters);
 
             Assert.True(result.IsSuccess);
             Assert.Null(result.Error);
@@ -111,7 +118,9 @@ public class Contract : SmartContract
             Assert.True(compilationResult.Success);
 
             byte[] contractExecutionCode = compilationResult.Compilation;
-    
+
+            var gasMeter = new GasMeter((Gas)5000000);
+
             // Set up the state with an empty gasmeter so that out of gas occurs
             var contractState = Mock.Of<ISmartContractState>(s =>
                 s.Block == Mock.Of<IBlock>(b => b.Number == 1 && b.Coinbase == this.TestAddress) &&
@@ -120,13 +129,12 @@ public class Contract : SmartContract
                     new TestPersistenceStrategy(this.state),
                     this.context.Serializer, this.TestAddress.ToUint160()) &&
                 s.Serializer == this.context.Serializer &&
-                s.GasMeter == new GasMeter((Gas) 0) &&
                 s.ContractLogger == new ContractLogHolder() &&
                 s.InternalTransactionExecutor == Mock.Of<IInternalTransactionExecutor>() &&
                 s.InternalHashHelper == new InternalHashHelper() &&
                 s.GetBalance == new Func<ulong>(() => 0));
 
-            VmExecutionResult result = this.vm.Create(this.state, contractState, contractExecutionCode, null);
+            VmExecutionResult result = this.vm.Create(this.state, contractState, gasMeter, contractExecutionCode, null);
 
             Assert.False(result.IsSuccess);
             Assert.Equal(VmExecutionErrorKind.OutOfGas, result.Error.ErrorKind);
@@ -135,6 +143,8 @@ public class Contract : SmartContract
         [Fact]
         public void VM_ExecuteContract_ClearStorage()
         {
+            var gasMeter = new GasMeter((Gas)5000000);
+
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/ClearStorage.cs");
             Assert.True(compilationResult.Success);
 
@@ -148,6 +158,7 @@ public class Contract : SmartContract
             this.state.SetStorageValue(contractAddress, keyToClear, new byte[] { 1, 2, 3 });
 
             VmExecutionResult result = this.vm.ExecuteMethod(this.contractState,
+                gasMeter,
                 callData,
                 contractExecutionCode, nameof(ClearStorage));
 

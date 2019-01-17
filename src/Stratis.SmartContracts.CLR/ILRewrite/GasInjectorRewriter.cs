@@ -83,7 +83,7 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         {
             Instruction first = codeSegment.Instructions.First();
             Instruction newFirst = il.CreateLdlocBest(variable);
-            long segmentCost = (long) codeSegment.CalculateGasCost().Value;
+            ulong segmentCost = codeSegment.CalculateGasCost();
 
             il.Body.SimplifyMacros();
             il.InsertBefore(first, newFirst); // load observer

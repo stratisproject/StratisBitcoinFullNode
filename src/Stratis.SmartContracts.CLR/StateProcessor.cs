@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -21,26 +22,26 @@ namespace Stratis.SmartContracts.CLR
             byte[] code, 
             BaseMessage message,
             uint160 address,
-            IGasMeter gasMeter,
+            IResourceMeter gasMeter,
             string type = null)
         {
             state.ContractState.CreateAccount(address);
 
             ISmartContractState smartContractState = state.CreateSmartContractState(state, gasMeter, address, message, state.ContractState);
 
-            VmExecutionResult result = this.Vm.Create(state.ContractState, smartContractState, code, parameters, type);
+            VmExecutionResult result = this.Vm.Create(state.ContractState, smartContractState, gasMeter, code, parameters, type);
 
             bool revert = !result.IsSuccess;
 
             if (revert)
             {
                 return StateTransitionResult.Fail(
-                    gasMeter.GasConsumed,
+                    gasMeter.Consumed,
                     result.Error);
             }
 
             return StateTransitionResult.Ok(
-                gasMeter.GasConsumed,
+                gasMeter.Consumed,
                 address,
                 result.Success.Result
             );
@@ -52,7 +53,7 @@ namespace Stratis.SmartContracts.CLR
         public StateTransitionResult Apply(IState state, ExternalCreateMessage message)
         {
             var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.CreateCost);
+            gasMeter.Spend(GasPriceList.CreateCost);
 
             // We need to generate an address here so that we can set the initial balance.
             uint160 address = state.GenerateAddress(this.AddressGenerator);
@@ -72,10 +73,10 @@ namespace Stratis.SmartContracts.CLR
             bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
-                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
+                return StateTransitionResult.Fail(0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
 
             var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.CreateCost);
+            gasMeter.Spend(GasPriceList.CreateCost);
 
             byte[] contractCode = state.ContractState.GetCode(message.From);
 
@@ -91,32 +92,32 @@ namespace Stratis.SmartContracts.CLR
             return result;
         }
 
-        private StateTransitionResult ApplyCall(IState state, CallMessage message, byte[] contractCode, IGasMeter gasMeter)
+        private StateTransitionResult ApplyCall(IState state, CallMessage message, byte[] contractCode, IResourceMeter gasMeter)
         {
             // This needs to happen after the base fee is charged, which is why it's in here.
             // TODO - Remove this check. It isn't possible for the method name to be null.
             if (message.Method.Name == null)
             {
-                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoMethodName);
+                return StateTransitionResult.Fail(gasMeter.Consumed, StateTransitionErrorKind.NoMethodName);
             }
 
             string type = state.ContractState.GetContractType(message.To);
 
             ISmartContractState smartContractState = state.CreateSmartContractState(state, gasMeter, message.To, message, state.ContractState);
 
-            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, message.Method, contractCode, type);
+            VmExecutionResult result = this.Vm.ExecuteMethod(smartContractState, gasMeter, message.Method, contractCode, type);
 
             bool revert = !result.IsSuccess;
 
             if (revert)
             {
                 return StateTransitionResult.Fail(
-                    gasMeter.GasConsumed,
+                    gasMeter.Consumed,
                     result.Error);
             }
 
             return StateTransitionResult.Ok(
-                gasMeter.GasConsumed,
+                gasMeter.Consumed,
                 message.To,
                 result.Success.Result
             );
@@ -130,16 +131,16 @@ namespace Stratis.SmartContracts.CLR
             bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
-                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
+                return StateTransitionResult.Fail(0, StateTransitionErrorKind.InsufficientBalance); // Trivial - just return and let the MethodCall gas account for it.
 
             var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+            gasMeter.Spend(GasPriceList.BaseCost);
 
             byte[] contractCode = state.ContractState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
-                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoCode);
+                return StateTransitionResult.Fail(gasMeter.Consumed, StateTransitionErrorKind.NoCode);
             }
 
             // For internal calls we need to add the value contained in the contract invocation transaction
@@ -158,13 +159,13 @@ namespace Stratis.SmartContracts.CLR
         public StateTransitionResult Apply(IState state, ExternalCallMessage message)
         {
             var gasMeter = new GasMeter(message.GasLimit);
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+            gasMeter.Spend(GasPriceList.BaseCost);
 
             byte[] contractCode = state.ContractState.GetCode(message.To);
 
             if (contractCode == null || contractCode.Length == 0)
             {
-                return StateTransitionResult.Fail(gasMeter.GasConsumed, StateTransitionErrorKind.NoCode);
+                return StateTransitionResult.Fail(gasMeter.Consumed, StateTransitionErrorKind.NoCode);
             }
 
             // For external calls we need to increment the balance state to take into
@@ -182,7 +183,7 @@ namespace Stratis.SmartContracts.CLR
             bool enoughBalance = this.EnsureSenderHasEnoughBalance(state, message.From, message.Amount);
 
             if (!enoughBalance)
-                return StateTransitionResult.Fail((Gas)0, StateTransitionErrorKind.InsufficientBalance);
+                return StateTransitionResult.Fail(0, StateTransitionErrorKind.InsufficientBalance);
 
             var gasMeter = new GasMeter(message.GasLimit);
 
@@ -192,19 +193,19 @@ namespace Stratis.SmartContracts.CLR
 
             if (contractCode == null || contractCode.Length == 0)
             {
-                gasMeter.Spend((Gas)GasPriceList.TransferCost);
+                gasMeter.Spend(GasPriceList.TransferCost);
 
                 // No contract at this address, create a regular P2PKH xfer
                 state.AddInternalTransfer(new TransferInfo(message.From, message.To, message.Amount));
 
-                return StateTransitionResult.Ok(gasMeter.GasConsumed, message.To);
+                return StateTransitionResult.Ok(gasMeter.Consumed, message.To);
             }
 
             // For internal contract-contract transfers we need to add the value contained in the contract invocation transaction
             // to the internal transfer list. This must occur before we apply the message to the state.
             state.AddInternalTransfer(new TransferInfo(message.From, message.To, message.Amount));
 
-            gasMeter.Spend((Gas)GasPriceList.BaseCost);
+            gasMeter.Spend(GasPriceList.BaseCost);
             StateTransitionResult result = this.ApplyCall(state, message, contractCode, gasMeter);
             
             return result;

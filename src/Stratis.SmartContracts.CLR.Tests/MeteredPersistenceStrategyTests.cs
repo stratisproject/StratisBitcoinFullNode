@@ -50,7 +50,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             sr.Verify(s => s.SetStorageValue(testAddress, testKey, testValue));            
 
             // Test that gas is used
-            Assert.True(gasMeter.GasConsumed < availableGas);
+            Assert.True(gasMeter.Consumed < availableGas);
         }
     }
 }

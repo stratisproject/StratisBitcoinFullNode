@@ -18,7 +18,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
 
         public (Money, TxOut) Process(ContractTxData contractTxData,
             ulong mempoolFee, uint160 sender,
-            Gas gasConsumed,
+            ulong gasConsumed,
             bool outOfGas)
         {
 
@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
                 return (fee, null);
             }
 
-            var refund = new Money(contractTxData.GasCostBudget - (gasConsumed * contractTxData.GasPrice));
+            var refund = new Money(contractTxData.GasCostBudget - ((ulong)gasConsumed * contractTxData.GasPrice));
 
             TxOut ret = null;
 

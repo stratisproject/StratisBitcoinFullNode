@@ -1,6 +1,7 @@
 ﻿using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.Tests
 {
@@ -20,7 +21,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.State = state;
             this.StateProcessor = new Mock<IStateProcessor>();
 
-            this.GasMeter = new Mock<IGasMeter>();
+            this.GasMeter = new Mock<IResourceMeter>();
 
             var smartContractState = Mock.Of<ISmartContractState>(s =>
                 s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(), "0x0000000000000000000000000000000000000002".HexToAddress(), 100) &&
@@ -35,7 +36,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         public ISmartContractState SmartContractState { get; }
 
-        public Mock<IGasMeter> GasMeter { get; }
+        public Mock<IResourceMeter> GasMeter { get; }
 
         public IState Snapshot { get; }
 
@@ -47,12 +48,12 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         public void SetGasMeterLimitAbove(Gas minimum)
         {
-            this.GasMeter.SetupGet(g => g.GasAvailable).Returns((Gas)(minimum + 1));
+            this.GasMeter.SetupGet(g => g.Available).Returns((Gas)(minimum + 1));
         }
 
         public void SetGasMeterLimitBelow(Gas maximum)
         {
-            this.GasMeter.SetupGet(g => g.GasAvailable).Returns((Gas)(maximum - 1));
+            this.GasMeter.SetupGet(g => g.Available).Returns((Gas)(maximum - 1));
         }
     }
 }

@@ -142,7 +142,7 @@ namespace Stratis.SmartContracts.CLR
         {
             byte[] vmVersion = this.primitiveSerializer.Serialize(contractTxData.VmVersion);
             byte[] gasPrice = this.primitiveSerializer.Serialize(contractTxData.GasPrice);
-            byte[] gasLimit = this.primitiveSerializer.Serialize(contractTxData.GasLimit.Value);
+            byte[] gasLimit = this.primitiveSerializer.Serialize(contractTxData.GasLimit);
             bytes[0] = contractTxData.OpCodeType;
             vmVersion.CopyTo(bytes, OpcodeSize);
             gasPrice.CopyTo(bytes, OpcodeSize + VmVersionSize);

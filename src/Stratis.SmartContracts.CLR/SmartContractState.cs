@@ -12,7 +12,6 @@ namespace Stratis.SmartContracts.CLR
             IMessage message,
             IPersistentState persistentState,
             ISerializer serializer,
-            IGasMeter gasMeter,
             IContractLogger contractLogger,
             IInternalTransactionExecutor internalTransactionExecutor,
             IInternalHashHelper internalHashHelper,
@@ -22,7 +21,7 @@ namespace Stratis.SmartContracts.CLR
             this.Message = message;
             this.PersistentState = persistentState;
             this.Serializer = serializer;
-            this.GasMeter = gasMeter;
+            this.GasMeter = null;
             this.ContractLogger = contractLogger;
             this.InternalTransactionExecutor = internalTransactionExecutor;
             this.InternalHashHelper = internalHashHelper;
@@ -37,6 +36,9 @@ namespace Stratis.SmartContracts.CLR
 
         public ISerializer Serializer { get; }
 
+        /// <summary>
+        /// Void. Going to be removed.
+        /// </summary>
         public IGasMeter GasMeter { get; }
 
         public IContractLogger ContractLogger { get; }

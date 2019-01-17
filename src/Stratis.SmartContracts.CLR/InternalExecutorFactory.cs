@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -7,18 +8,16 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public sealed class InternalExecutorFactory : IInternalExecutorFactory
     {
-        private readonly ILoggerFactory loggerFactory;
         private readonly IStateProcessor stateProcessor;
 
-        public InternalExecutorFactory(ILoggerFactory loggerFactory, IStateProcessor stateProcessor)
+        public InternalExecutorFactory(IStateProcessor stateProcessor)
         {
-            this.loggerFactory = loggerFactory;
             this.stateProcessor = stateProcessor;
         }
 
-        public IInternalTransactionExecutor Create(IState state)
+        public IInternalTransactionExecutor Create(IState state, IResourceMeter gasMeter)
         {
-            return new InternalExecutor(this.loggerFactory, state, this.stateProcessor);
+            return new InternalExecutor(state, this.stateProcessor, gasMeter);
         }
     }
 }

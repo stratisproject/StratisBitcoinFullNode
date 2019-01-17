@@ -6,6 +6,7 @@ using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -83,7 +84,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>
-        public ISmartContractState CreateSmartContractState(IState state, IGasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository) 
+        public ISmartContractState CreateSmartContractState(IState state, IResourceMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository) 
         {
             return this.smartContractStateFactory.Create(state, gasMeter, address, message, repository);
         }

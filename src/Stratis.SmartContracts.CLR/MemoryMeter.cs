@@ -1,20 +1,23 @@
-﻿using Stratis.SmartContracts.CLR.Exceptions;
+﻿using System;
+using System.Collections.Generic;
+using System.Text;
+using Stratis.SmartContracts.CLR.Exceptions;
 using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
-    public sealed class GasMeter : IResourceMeter
+    public class MemoryMeter : IResourceMeter
     {
         public ulong Available { get; private set; }
 
         public ulong Consumed => this.Limit - this.Available;
 
-        public ulong Limit { get; }
+        public ulong Limit { get; private set; }
 
-        public GasMeter(ulong available)
+        public MemoryMeter(ulong available)
         {
-            this.Available = available;
             this.Limit = available;
+            this.Available = available;
         }
 
         public void Spend(ulong toSpend)
@@ -27,7 +30,7 @@ namespace Stratis.SmartContracts.CLR
 
             this.Available = 0;
 
-            throw new OutOfGasException("Went over gas limit of " + this.Limit);
+            throw new MemoryConsumptionException($"Smart contract has allocated too much memory. Spent more than {this.Limit} memory units when allocating strings or arrays.");
         }
     }
 }

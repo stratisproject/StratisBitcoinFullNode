@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.CLR.Local
     public interface ILocalExecutionResult
     {
         IReadOnlyList<TransferInfo> InternalTransfers { get; }
-        Gas GasConsumed { get; }
+        ulong GasConsumed { get; }
         bool Revert { get; }
         ContractErrorMessage ErrorMessage { get; }
         object Return { get; }

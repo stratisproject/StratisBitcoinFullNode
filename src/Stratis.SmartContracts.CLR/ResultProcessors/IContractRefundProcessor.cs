@@ -12,7 +12,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
         /// </summary>
         (Money, TxOut) Process(ContractTxData contractTxData,
             ulong mempoolFee, uint160 sender,
-            Gas gasConsumed,
+            ulong gasConsumed,
             bool outOfGas);
     }
 }

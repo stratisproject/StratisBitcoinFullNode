@@ -19,26 +19,26 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>The cost for transferring funds to a P2PKH from inside a contract.</summary>
         public const ulong TransferCost = 1_000;
 
-        public const int StoragePerByteSavedGasCost = 20;
-        public const int StoragePerByteRetrievedGasCost = 1;
-        public const int LogPerTopicByteCost = 2;
-        public const int LogPerByteCost = 1;
-        public const int MethodCallGasCost = 5;
-        public const int InstructionGasCost = 1;
-        public const ulong StorageCheckContractExistsCost = 5;
+        public const uint StoragePerByteSavedGasCost = 20;
+        public const uint StoragePerByteRetrievedGasCost = 1;
+        public const uint LogPerTopicByteCost = 2;
+        public const uint LogPerByteCost = 1;
+        public const uint MethodCallGasCost = 5;
+        public const uint InstructionGasCost = 1;
+        public const long StorageCheckContractExistsCost = 5;
 
         /// <summary>
         /// Get the gas cost for a specific instruction. For v1 all instructions are priced equally.
         /// </summary>
-        public static Gas InstructionOperationCost(Instruction instruction)
+        public static ulong InstructionOperationCost(Instruction instruction)
         {
             OpCode opcode = instruction.OpCode;
-            Gas cost;
+            ulong cost;
 
             switch (opcode.Name)
             {
                 default:
-                    cost = (Gas)InstructionGasCost;
+                    cost = InstructionGasCost;
                     break;
             }
 
@@ -48,44 +48,39 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Gas cost to log an event inside a contract.
         /// </summary>
-        public static Gas LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
+        public static ulong LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
         {
-            int topicCost = topics.Select(x => x.Length * LogPerTopicByteCost).Sum();
-            int dataCost = data.Length * LogPerByteCost;
-            return (Gas)(ulong) (topicCost + dataCost);
+            long topicCost = topics.Select(x => x.Length * LogPerTopicByteCost).Sum();
+            long dataCost = data.Length * LogPerByteCost;
+            return (ulong) (topicCost + dataCost);
         }
 
         /// <summary>
         /// Get cost to store this key and value.
         /// </summary>
-        public static Gas StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        public static ulong StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
             int keyLen = keyBytes != null ? keyBytes.Length : 0;
             int valueLen = valueBytes != null ? valueBytes.Length : 0;
-
-            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
-            return cost;
+            return (ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
         }
 
         /// <summary>
         /// Get cost to retrieve this value via key.
         /// </summary>
-        public static Gas StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        public static ulong StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
             int keyLen = keyBytes != null ? keyBytes.Length : 0;
             int valueLen = valueBytes != null ? valueBytes.Length : 0;
-
-            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
-            return cost;
+            return (ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
         }
 
         /// <summary>
         /// TODO - Add actual costs
         /// </summary>
-        /// <param name="methodToCall"></param>
-        public static Gas MethodCallCost(MethodReference methodToCall)
+        public static ulong MethodCallCost(MethodReference methodToCall)
         {
-            return (Gas)MethodCallGasCost;
+            return MethodCallGasCost;
         }
     }
 }

@@ -115,7 +115,7 @@ namespace Stratis.SmartContracts.CLR
                 NewContractAddress = !revert && creation ? result.Success?.ContractAddress : null,
                 ErrorMessage = result.Error?.GetErrorMessage(),
                 Revert = revert,
-                GasConsumed = result.GasConsumed,
+                GasConsumed = (ulong) result.GasConsumed,
                 Return = result.Success?.ExecutionResult,
                 InternalTransaction = internalTransaction,
                 Fee = fee,

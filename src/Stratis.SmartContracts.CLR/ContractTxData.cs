@@ -48,7 +48,7 @@ namespace Stratis.SmartContracts.CLR
         public uint160 ContractAddress { get; }
 
         /// <summary>The maximum amount of gas units that can spent to execute this contract.</summary>
-        public Gas GasLimit { get; }
+        public ulong GasLimit { get; }
 
         /// <summary>The amount it costs per unit of gas to execute the contract.</summary>
         public ulong GasPrice { get; }

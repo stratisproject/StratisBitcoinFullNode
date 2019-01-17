@@ -11,7 +11,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var gas = new Gas(1000);
             var gasMeter = new GasMeter(gas);
 
-            Assert.Equal(gas, gasMeter.GasLimit);
+            Assert.Equal(gas, gasMeter.Limit);
         }
 
         [Fact]
@@ -20,7 +20,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var gas = new Gas(1000);
             var gasMeter = new GasMeter(gas);
 
-            Assert.Equal(gas, gasMeter.GasAvailable);
+            Assert.Equal(gas, gasMeter.Available);
         }
 
         [Fact]
@@ -29,7 +29,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var gas = new Gas(1000);
             var gasMeter = new GasMeter(gas);
 
-            Assert.Equal(Gas.None, gasMeter.GasConsumed);
+            Assert.Equal(Gas.None, gasMeter.Consumed);
         }
 
         [Fact]
@@ -42,8 +42,8 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             gasMeter.Spend(consumed);
 
-            Assert.Equal(consumed, gasMeter.GasConsumed);
-            Assert.Equal(diff, gasMeter.GasAvailable);
+            Assert.Equal(consumed, gasMeter.Consumed);
+            Assert.Equal(diff, gasMeter.Available);
         }
 
         [Fact]

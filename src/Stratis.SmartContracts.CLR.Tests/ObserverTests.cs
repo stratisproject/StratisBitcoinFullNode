@@ -93,7 +93,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         private readonly Network network;
         private readonly IContractModuleDefinitionReader moduleReader;
         private readonly ContractAssemblyLoader assemblyLoader;
-        private readonly IGasMeter gasMeter;
+        private readonly IResourceMeter gasMeter;
 
         public ObserverTests()
         {
@@ -103,7 +103,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.repository = context.State;
             this.moduleReader = new ContractModuleDefinitionReader();
             this.assemblyLoader = new ContractAssemblyLoader();
-            this.gasMeter = new GasMeter((Gas)5000000);
+            this.gasMeter = new GasMeter(5000000);
 
             var block = new TestBlock
             {
@@ -127,13 +127,12 @@ namespace Stratis.SmartContracts.CLR.Tests
                 new PersistentState(new MeteredPersistenceStrategy(this.repository, this.gasMeter, new BasicKeyEncodingStrategy()),
                     context.Serializer, this.TestAddress.ToUint160()),
                 context.Serializer,
-                this.gasMeter,
                 new ContractLogHolder(),
                 Mock.Of<IInternalTransactionExecutor>(),
                 new InternalHashHelper(),
                 () => 1000);
 
-            this.rewriter = new ObserverRewriter(new Observer(this.gasMeter, ReflectionVirtualMachine.MemoryUnitLimit));
+            this.rewriter = new ObserverRewriter(new Observer(this.gasMeter,  new MemoryMeter(ReflectionVirtualMachine.MemoryUnitLimit)));
         }
 
         [Fact]
@@ -167,7 +166,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             IContractInvocationResult result = contract.Invoke(callData);
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal(22uL, this.state.GasMeter.GasConsumed);
+            Assert.Equal(22uL, this.gasMeter.Consumed);
         }
 
         [Fact]
@@ -196,9 +195,9 @@ namespace Stratis.SmartContracts.CLR.Tests
             IContractInvocationResult result = TimeoutHelper.RunCodeWithTimeout(3, () => contract.Invoke(callData));
 
             Assert.False(result.IsSuccess);
-            Assert.Equal((Gas)0, this.gasMeter.GasAvailable);
-            Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
-            Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
+            Assert.Equal(0uL, this.gasMeter.Available);
+            Assert.Equal(this.gasMeter.Limit, this.gasMeter.Consumed);
+            Assert.Equal(this.gasMeter.Limit, this.gasMeter.Consumed);
         }
 
         [Fact]
@@ -221,7 +220,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             IContractInvocationResult result = contract.InvokeConstructor(null);
 
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal((Gas)369, this.gasMeter.GasConsumed);
+            Assert.Equal(369uL, this.gasMeter.Consumed);
         }
 
         [Fact]
@@ -244,7 +243,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             IContractInvocationResult result = contract.InvokeConstructor(new[] { "Test Owner" });
 
             // Number here shouldn't be hardcoded - note this is really only to let us know of consensus failure
-            Assert.Equal((Gas)328, this.gasMeter.GasConsumed);
+            Assert.Equal(328uL, this.gasMeter.Consumed);
         }
 
         [Fact]
@@ -268,7 +267,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             IContractInvocationResult result = contract.Invoke(callData);
 
             Assert.True(result.IsSuccess);
-            Assert.True(this.gasMeter.GasConsumed > 0);
+            Assert.True(this.gasMeter.Consumed > 0);
         }
 
         [Fact]
@@ -308,7 +307,7 @@ public static class Other
             IContractInvocationResult result = contract.InvokeConstructor(null);
 
             Assert.False(result.IsSuccess);
-            Assert.Equal(this.gasMeter.GasLimit, this.gasMeter.GasConsumed);
+            Assert.Equal(this.gasMeter.Limit, this.gasMeter.Consumed);
         }
 
         [Fact]
