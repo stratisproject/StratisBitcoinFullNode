@@ -172,19 +172,47 @@ namespace Stratis.Bitcoin.Cli
                         client.DefaultRequestHeaders.Accept.Clear();
                         client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
                         string url = $"http://localhost:{apiSettings.ApiPort}/api/{command}";
-                        if (commandArgList.Any()) url += $"?{string.Join("&", commandArgList)}";
+                        string urlWithArgs = url;
+                        if (commandArgList.Any()) urlWithArgs += $"?{string.Join("&", commandArgList)}";
+
+                        // First try GET.
                         try
                         {
                             // Get the response.
-                            Console.WriteLine($"Sending API command to {url}.");
-                            string response = client.GetStringAsync(url).GetAwaiter().GetResult();
+                            Console.WriteLine($"Sending API command to {urlWithArgs}.");
+                            string response = client.GetStringAsync(urlWithArgs).GetAwaiter().GetResult();
 
                             // Format and return the result as a string to the console.
                             Console.WriteLine(JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented));
                         }
-                        catch (Exception err)
+                        catch (HttpRequestException err)
                         {
-                            Console.WriteLine(ExceptionToString(err));
+                            if (err.Message.Contains("404 (Not Found)"))
+                            {
+                                // Now try PUT.
+                                try
+                                {
+                                    string json = "{ " + string.Join(", ", commandArgList
+                                        .Select(a => a.Split('='))
+                                        .Select(a => $"\"{a[0]}\": \"{a[1]}\"")) + " }";
+
+                                    var content = new StringContent(json, Encoding.UTF8, "application/json");
+
+                                    HttpResponseMessage httpResponse = client.PostAsync(url, content).GetAwaiter().GetResult();
+                                    var response = httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+                                    // Format and return the result as a string to the console.
+                                    Console.WriteLine(JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented));
+                                }
+                                catch (Exception err2)
+                                {
+                                    Console.WriteLine(ExceptionToString(err2));
+                                }
+                            }
+                            else
+                            {
+                                Console.WriteLine(ExceptionToString(err));
+                            }
                         }
                     }
                 }
