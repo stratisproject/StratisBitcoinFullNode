@@ -24,8 +24,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.GasMeter = new Mock<IResourceMeter>();
 
             var smartContractState = Mock.Of<ISmartContractState>(s =>
-                s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(), "0x0000000000000000000000000000000000000002".HexToAddress(), 100) &&
-                s.GasMeter == this.GasMeter.Object);
+                s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(), "0x0000000000000000000000000000000000000002".HexToAddress(), 100));
 
             this.SmartContractState = smartContractState;
 

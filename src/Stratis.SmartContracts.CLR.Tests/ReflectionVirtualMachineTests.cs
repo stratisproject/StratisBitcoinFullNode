@@ -119,9 +119,8 @@ public class Contract : SmartContract
 
             byte[] contractExecutionCode = compilationResult.Compilation;
 
-            var gasMeter = new GasMeter((Gas)5000000);
-
             // Set up the state with an empty gasmeter so that out of gas occurs
+            var gasMeter = new GasMeter((Gas)0);
             var contractState = Mock.Of<ISmartContractState>(s =>
                 s.Block == Mock.Of<IBlock>(b => b.Number == 1 && b.Coinbase == this.TestAddress) &&
                 s.Message == new Message(this.TestAddress, this.TestAddress, 0) &&
