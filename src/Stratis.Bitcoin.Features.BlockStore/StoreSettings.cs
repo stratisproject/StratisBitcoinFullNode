@@ -14,10 +14,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        // Initialize 'MaxCacheBlocksCount' with default value of maximum 300 blocks or with user defined value.
-        // Value of 300 is chosen because it covers most of the cases when not synced node is connected and trying to sync from us.
-        private const int DefaultMaxCacheBlocksCount = 300;
-
         /// <summary><c>true</c> to maintain a full transaction index.</summary>
         public bool TxIndex { get; set; }
 
@@ -30,8 +26,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public bool PruningEnabled { get; set; }
 
-        /// <summary>The maximum amount of blocks the cache can contain.</summary>
-        public int MaxCacheBlocksCount { get; set; }
+        /// <summary>The maximum size of bytes the cache can contain.</summary>
+        public int MaxCacheSize { get; set; }
 
         /// <summary>Calculates minimum amount of blocks we need to keep during pruning.</summary>
         private int GetMinPruningAmount()
@@ -66,7 +62,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             this.TxIndex = config.GetOrDefault<bool>("txindex", false, this.logger);
             this.ReIndex = config.GetOrDefault<bool>("reindex", false, this.logger);
-            this.MaxCacheBlocksCount = nodeSettings.ConfigReader.GetOrDefault("maxCacheBlocksCount", DefaultMaxCacheBlocksCount, this.logger);
+
+            // For now we reuse the same value as ConsensusSetting, when store moves to core this can be updated.
+            this.MaxCacheSize = config.GetOrDefault("maxblkstoremem", 5, this.logger);
 
             if (this.PruningEnabled && this.TxIndex)
                 throw new ConfigurationException("Prune mode is incompatible with -txindex");
@@ -80,7 +78,9 @@ namespace Stratis.Bitcoin.Features.BlockStore
             builder.AppendLine($"-txindex=<0 or 1>              Enable to maintain a full transaction index.");
             builder.AppendLine($"-reindex=<0 or 1>              Rebuild chain state and block index from block data files on disk.");
             builder.AppendLine($"-prune=<amount of blocks>      Enable pruning to reduce storage requirements by enabling deleting of old blocks. Value of 0 means pruning is disabled.");
-            builder.AppendLine($"-maxCacheBlocksCount=<number>  The maximum amount of blocks the cache can contain. Default is {DefaultMaxCacheBlocksCount}.");
+            builder.AppendLine($"-maxblkstoremem=<number>       Max memory to use before flushing blocks to disk in MB. Default is 5 MB.");
+
+
 
             NodeSettings.Default(network).Logger.LogInformation(builder.ToString());
         }
@@ -99,8 +99,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             builder.AppendLine($"#reindex=0");
             builder.AppendLine($"#Enable pruning to reduce storage requirements by enabling deleting of old blocks.");
             builder.AppendLine($"#prune=2880");
-            builder.AppendLine($"#The maximum amount of blocks the cache can contain. Default is {DefaultMaxCacheBlocksCount}");
-            builder.AppendLine($"#maxCacheBlocksCount=300");
+            builder.AppendLine($"#The maximum amount of blocks the cache can contain. Default is 5 MB");
+            builder.AppendLine($"#maxblkstoremem=5");
         }
     }
 }

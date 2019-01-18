@@ -38,6 +38,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>Database repository storing <see cref="ProvenBlockHeader"/> items.</summary>
         private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
 
+        private readonly IInitialBlockDownloadState initialBlockDownloadState;
+
         /// <summary>Performance counter to measure performance of the save and get operations.</summary>
         private readonly BackendPerformanceCounter performanceCounter;
 
@@ -80,18 +82,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </remarks>
         public MemorySizeCache<int, ProvenBlockHeader> Cache { get; }
 
-        /// <summary>
-        /// Initializes a new instance of the object.
-        /// </summary>
-        /// <param name="dateTimeProvider">Provider of time functions.</param>
-        /// <param name="loggerFactory">Factory to create a logger for this type.</param>
-        /// <param name="provenBlockHeaderRepository">Persistent interface of the <see cref="ProvenBlockHeader"/> DBreeze repository.</param>
-        /// <param name="nodeStats">Registers an action used to append node stats when collected.</param>
         public ProvenBlockHeaderStore(
             IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory,
             IProvenBlockHeaderRepository provenBlockHeaderRepository,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IInitialBlockDownloadState initialBlockDownloadState)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(provenBlockHeaderRepository, nameof(provenBlockHeaderRepository));
@@ -99,6 +95,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.provenBlockHeaderRepository = provenBlockHeaderRepository;
+            this.initialBlockDownloadState = initialBlockDownloadState;
 
             this.lockObject = new object();
             this.PendingBatch = new SortedDictionary<int, ProvenBlockHeader>();
@@ -240,6 +237,16 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 await this.provenBlockHeaderRepository.PutAsync(pendingBatch, hashHeight).ConfigureAwait(false);
 
                 this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
+            }
+
+            if (this.initialBlockDownloadState.IsInitialBlockDownload())
+            {
+                // During IBD the PH cache is not used much,
+                // to avoid occupying unused space in memory we flush the cache.
+                foreach (KeyValuePair<int, ProvenBlockHeader> provenBlockHeader in pendingBatch)
+                {
+                    this.Cache.Remove(provenBlockHeader.Key);
+                }
             }
         }
 
