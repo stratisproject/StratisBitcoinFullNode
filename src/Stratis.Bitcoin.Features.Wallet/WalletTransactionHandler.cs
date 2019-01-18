@@ -25,13 +25,6 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </remarks>
     public class WalletTransactionHandler : IWalletTransactionHandler
     {
-        /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
-        /// <remarks>
-        /// 500 is a safe number that if reached ensures the coin selector will not take too long to complete,
-        /// most regular wallets will never reach such a high number of UTXO.
-        /// </remarks>
-        private const int SendCountThresholdLimit = 500;
-
         private readonly ILogger logger;
 
         private readonly Network network;
@@ -325,6 +318,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (balance < totalToSend)
                 throw new WalletException("Not enough funds.");
 
+            Money sum = 0;
+            var coins = new List<Coin>();
+
             if (context.SelectedInputs != null && context.SelectedInputs.Any())
             {
                 // 'SelectedInputs' are inputs that must be included in the
@@ -345,23 +341,32 @@ namespace Stratis.Bitcoin.Features.Wallet
                             context.UnspentOutputs.Remove(unspentOutputsItem.Value);
                     }
                 }
+
+                foreach (OutPoint outPoint in context.SelectedInputs)
+                {
+                    UnspentOutputReference item = availableHashList[outPoint];
+
+                    coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+                    sum += item.Transaction.Amount;
+                }
             }
 
-            Money sum = 0;
-            int index = 0;
-            var coins = new List<Coin>();
-            foreach (UnspentOutputReference item in context.UnspentOutputs.OrderByDescending(a => a.Transaction.Amount))
+            foreach (UnspentOutputReference item in context.UnspentOutputs
+                .OrderByDescending(a => a.Confirmations > 0)
+                .ThenByDescending(a => a.Transaction.Amount))
             {
-                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
-                sum += item.Transaction.Amount;
-                index++;
+                if (context.SelectedInputs?.Contains(item.ToOutPoint()) ?? false)
+                    continue;
 
-                // If threshold is reached and the total value is above the target
-                // then its safe to stop adding UTXOs to the coin list.
+                // If the total value is above the target
+                // then it's safe to stop adding UTXOs to the coin list.
                 // The primary goal is to reduce the time it takes to build a trx
                 // when the wallet is bloated with UTXOs.
-                if (index > SendCountThresholdLimit && sum > totalToSend)
+                if (sum > totalToSend)
                     break;
+
+                coins.Add(new Coin(item.Transaction.Id, (uint)item.Transaction.Index, item.Transaction.Amount, item.Transaction.ScriptPubKey));
+                sum += item.Transaction.Amount;
             }
 
             // All the UTXOs are added to the builder without filtering.
@@ -433,6 +438,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
+            // TODO: Get the template from the network standard scripts instead
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
             context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
         }

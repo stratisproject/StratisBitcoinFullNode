@@ -237,6 +237,14 @@ namespace NBitcoin
         public Money GenesisReward { get; protected set; }
 
         /// <summary>
+        /// The list of script templates regarded as standard.
+        /// Standardness is a distinct property from consensus validity.
+        /// A non-standard transaction can still be mined/staked by a willing node and the resulting block will be accepted by the network.
+        /// However, a non-standard transaction will typically not be relayed between nodes.
+        /// </summary>
+        public IStandardScriptsRegistry StandardScriptsRegistry { get; protected set; }
+
+        /// <summary>
         /// Mines a new genesis block, to use with a new network.
         /// Typically, 3 such genesis blocks need to be created when bootstrapping a new coin: for Main, Test and Reg networks.
         /// </summary>

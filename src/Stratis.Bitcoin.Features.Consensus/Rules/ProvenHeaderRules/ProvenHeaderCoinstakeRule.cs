@@ -1,10 +1,9 @@
-﻿using System.Linq;
-using Microsoft.Extensions.Logging;
+﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
@@ -137,7 +136,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 TxOut utxo = null;
                 if (txIn.PrevOut.N < prevUtxo.Outputs.Length)
                 {
-                    // Check that the size of the outs collection is the same as the expected position of the UTXO 
+                    // Check that the size of the outs collection is the same as the expected position of the UTXO
                     // Note the collection will not always represent the original size of the transaction unspent
                     // outputs because when we store outputs do disk the last spent items are removed from the collection.
                     utxo = prevUtxo.Outputs[txIn.PrevOut.N];
@@ -241,6 +240,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             if (previousProvenHeader != null)
             {
+                if (previousProvenHeader.StakeModifierV2 == null)
+                {
+                    this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
+                    ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
+                }
+
                 //Stake modifier acquired from prev PH.
                 this.Logger.LogTrace("(-)[PREV_PH]");
                 return previousProvenHeader.StakeModifierV2;
@@ -284,16 +289,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             uint256 previousStakeModifier = this.GetPreviousStakeModifier(chainedHeader);
 
-            if (previousStakeModifier == null)
-            {
-                this.Logger.LogTrace("(-)[MODIF_IS_NULL]");
-                ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier.Throw();
-            }
-
             if (header.Coinstake.IsCoinStake)
             {
                 this.Logger.LogTrace("Found coinstake checking kernal hash.");
-                this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                var validKernel = this.stakeValidator.CheckStakeKernelHash(context, headerBits, previousStakeModifier, stakingCoins, prevOut, transactionTime);
+
+                if (!validKernel)
+                {
+                    this.Logger.LogTrace("(-)[INVALID_STAKE_HASH_TARGET]");
+                    ConsensusErrors.StakeHashInvalidTarget.Throw();
+                }
             }
 
             this.ComputeNextStakeModifier(header, chainedHeader, previousStakeModifier);
@@ -324,13 +330,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// </exception>
         private void CheckHeaderSignatureWithCoinstakeKernel(ProvenBlockHeader header)
         {
-            Script script = header.Coinstake.Outputs[1].ScriptPubKey;
-            PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(script);
-
-            var signature = new ECDSASignature(header.Signature.Signature);
-            uint256 headerHash = header.GetHash();
-
-            if (!pubKey.Verify(headerHash, signature))
+            var consensusRules = (PosConsensusRuleEngine)this.Parent;
+            if (!consensusRules.StakeValidator.CheckStakeSignature(header.Signature, header.GetHash(), header.Coinstake))
             {
                 this.Logger.LogTrace("(-)[BAD_HEADER_SIGNATURE]");
                 ConsensusErrors.BadBlockSignature.Throw();

@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.BlockStore;
-using Stratis.Bitcoin.Features.LightWallet.Blocks;
+using Stratis.Bitcoin.Features.BlockStore.Pruning;
 using Stratis.Bitcoin.Features.LightWallet.Broadcasting;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.Wallet;

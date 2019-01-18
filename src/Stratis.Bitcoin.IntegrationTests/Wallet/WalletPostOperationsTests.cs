@@ -11,6 +11,7 @@ using NBitcoin;
 using Newtonsoft.Json;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -314,8 +315,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 // Arrange.
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
-                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
-                TestHelper.MineBlocks(miningNode, 150);
+                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
                 TestHelper.ConnectAndSync(node, miningNode);
@@ -337,6 +337,204 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 transactionsOnlyConfirmed.SpendableTransactions.Should().HaveCount(29);
                 transactionsOnlyConfirmed.SpendableTransactions.Sum(st => st.Amount).Should().Be(new Money(142190299995400));
+            }
+        }
+
+        [Fact]
+        public async Task SendingFromOneAddressToFiftyAddresses()
+        {
+            int sendingAccountBalanceOnStart = 98000596;
+            int receivingAccountBalanceOnStart = 0;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a sending and a receiving node.
+                CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
+                CoreNode receivingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Listener).Start();
+                TestHelper.ConnectAndSync(sendingNode, receivingNode);
+
+                // Check balances.
+                WalletBalanceModel sendingNodeBalances = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed + sendingAccountBalance.AmountUnconfirmed).Should().Be(new Money(sendingAccountBalanceOnStart, MoneyUnit.BTC));
+
+                WalletBalanceModel receivingNodeBalances = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
+                (receivingAccountBalance.AmountConfirmed + receivingAccountBalance.AmountUnconfirmed).Should().Be(new Money(receivingAccountBalanceOnStart));
+
+                // Act.
+                // Get 50 addresses to send to.
+                IEnumerable<string> unusedaddresses = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/unusedAddresses")
+                    .SetQueryParams(new { walletName = "mywallet", accountName = "account 0", count = 50 })
+                    .GetJsonAsync<IEnumerable<string>>();
+
+                // Build and send the transaction with 50 recipients.
+                WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/build-transaction")
+                    .PostJsonAsync(new BuildTransactionRequest
+                    {
+                        WalletName = "mywallet",
+                        AccountName = "account 0",
+                        FeeType = "low",
+                        Password = "password",
+                        ShuffleOutputs = true,
+                        AllowUnconfirmed = true,
+                        Recipients = unusedaddresses.Select(address => new RecipientModel
+                        {
+                            DestinationAddress = address,
+                            Amount = "1"
+                        }).ToList()
+                    })
+                    .ReceiveJson<WalletBuildTransactionModel>();
+
+                await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/send-transaction")
+                    .PostJsonAsync(new SendTransactionRequest
+                    {
+                        Hex = buildTransactionModel.Hex
+                    })
+                    .ReceiveJson<WalletSendTransactionModel>();
+
+                // Assert.
+                // The sending node should have 50 (+ fee) fewer coins.
+                sendingNodeBalances = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed + sendingAccountBalance.AmountUnconfirmed).Should().Be(new Money(sendingAccountBalanceOnStart - 50 - buildTransactionModel.Fee.ToDecimal(MoneyUnit.BTC), MoneyUnit.BTC));
+
+                // Mine and sync so that we make sure the receiving node is up to date.
+                TestHelper.MineBlocks(sendingNode, 1);
+
+                // The receiving node should have 50 more coins.
+                receivingNodeBalances = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
+                (receivingAccountBalance.AmountConfirmed + receivingAccountBalance.AmountUnconfirmed).Should().Be(new Money(receivingAccountBalanceOnStart + 50, MoneyUnit.BTC));
+            }
+        }
+
+        [Fact]
+        public async Task SendingFromManyAddressesToOneAddress()
+        {
+            int sendingAccountBalanceOnStart = 98000596;
+            int receivingAccountBalanceOnStart = 0;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a sending and a receiving node.
+                CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
+                CoreNode receivingNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
+
+                // Mine a few blocks to fund the sending node and connect the nodes.
+                IEnumerable<string> addressesToFund = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/unusedAddresses")
+                    .SetQueryParams(new { walletName = "mywallet", accountName = "account 0", count = 150 })
+                    .GetJsonAsync<IEnumerable<string>>();
+
+                foreach (string address in addressesToFund)
+                {
+                    TestHelper.MineBlocks(sendingNode, 1, syncNode: false, miningAddress: address);
+                }
+                
+                TestHelper.ConnectAndSync(sendingNode, receivingNode);
+
+                // Check balances.
+                WalletBalanceModel sendingNodeBalances = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed + sendingAccountBalance.AmountUnconfirmed).Should().Be(new Money(sendingAccountBalanceOnStart, MoneyUnit.BTC));
+
+                WalletBalanceModel receivingNodeBalances = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
+                (receivingAccountBalance.AmountConfirmed + receivingAccountBalance.AmountUnconfirmed).Should().Be(new Money(receivingAccountBalanceOnStart));
+
+                // Check max spendable amount.
+                var maxBalanceResponse = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/maxbalance")
+                    .SetQueryParams(new { walletName = "mywallet", accountName = "account 0", feetype = "low", allowunconfirmed = true })
+                    .GetJsonAsync<MaxSpendableAmountModel>();
+
+                Money totalToSpend = maxBalanceResponse.MaxSpendableAmount + maxBalanceResponse.Fee;
+
+                // Act.
+                // Get an address to send to.
+                IEnumerable<string> unusedaddresses = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/unusedAddresses")
+                    .SetQueryParams(new { walletName = "mywallet", accountName = "account 0", count = 1 })
+                    .GetJsonAsync<IEnumerable<string>>();
+
+                // Build and send the transaction with 50 recipients.
+                WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/build-transaction")
+                    .PostJsonAsync(new BuildTransactionRequest
+                    {
+                        WalletName = "mywallet",
+                        AccountName = "account 0",
+                        FeeAmount = maxBalanceResponse.Fee.ToString(),
+                        Password = "password",
+                        ShuffleOutputs = true,
+                        AllowUnconfirmed = true,
+                        Recipients = unusedaddresses.Select(address => new RecipientModel
+                        {
+                            DestinationAddress = address,
+                            Amount = maxBalanceResponse.MaxSpendableAmount.ToString()
+                        }).ToList()
+                    })
+                    .ReceiveJson<WalletBuildTransactionModel>();
+
+                    await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/send-transaction")
+                    .PostJsonAsync(new SendTransactionRequest
+                    {
+                        Hex = buildTransactionModel.Hex
+                    })
+                    .ReceiveJson<WalletSendTransactionModel>();
+
+                // Assert.
+                // The sending node should have 50 (+ fee) fewer coins.
+                sendingNodeBalances = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed + sendingAccountBalance.AmountUnconfirmed).Should().Be(new Money(sendingAccountBalanceOnStart, MoneyUnit.BTC) - totalToSpend);
+
+                // Mine and sync so that we make sure the receiving node is up to date.
+                TestHelper.MineBlocks(sendingNode, 1);
+
+                // The receiving node should have 50 more coins.
+                receivingNodeBalances = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
+                (receivingAccountBalance.AmountConfirmed + receivingAccountBalance.AmountUnconfirmed).Should().Be(new Money(receivingAccountBalanceOnStart) + maxBalanceResponse.MaxSpendableAmount);
             }
         }
     }

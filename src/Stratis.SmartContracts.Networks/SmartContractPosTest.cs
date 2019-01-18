@@ -6,7 +6,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Networks
+namespace Stratis.SmartContracts.Networks
 {
     public sealed class SmartContractPosTest : Network
     {
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPosConsensusFactory();
 
-            Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 4, Money.Coins(50m));
+            NBitcoin.Block genesis = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 414098458, 0x1d00ffff, 4, Money.Coins(50m));
 
             this.Genesis = genesis;
 

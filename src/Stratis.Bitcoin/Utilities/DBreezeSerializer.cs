@@ -2,7 +2,6 @@
 using System.Linq;
 using DBreeze.Utils;
 using NBitcoin;
-using NBitcoin.BitcoinCore;
 
 namespace Stratis.Bitcoin.Utilities
 {
@@ -91,13 +90,6 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>Deserialized object.</returns>
         public object Deserialize(byte[] bytes, Type type)
         {
-            if (type == typeof(Coins))
-            {
-                var coin = new Coins();
-                coin.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
-                return coin;
-            }
-
             if (type == typeof(BlockHeader))
             {
                 BlockHeader header = this.Network.Consensus.ConsensusFactory.CreateBlockHeader();
@@ -105,11 +97,11 @@ namespace Stratis.Bitcoin.Utilities
                 return header;
             }
 
-            if (type == typeof(RewindData))
+            if (type == typeof(Transaction))
             {
-                var rewind = new RewindData();
-                rewind.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
-                return rewind;
+                Transaction transaction = this.Network.Consensus.ConsensusFactory.CreateTransaction();
+                transaction.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
+                return transaction;
             }
 
             if (type == typeof(uint256))
@@ -121,9 +113,6 @@ namespace Stratis.Bitcoin.Utilities
             if (type == typeof(BlockStake))
                 return BlockStake.Load(bytes, this.Network);
 
-            if (type == typeof(HashHeightPair))
-                return HashHeightPair.Load(bytes);
-
             if (type == typeof(ProvenBlockHeader))
             {
                 ProvenBlockHeader provenBlockHeader =
@@ -133,10 +122,13 @@ namespace Stratis.Bitcoin.Utilities
                 return provenBlockHeader;
             }
 
+            if (type == typeof(HashHeightPair))
+                return HashHeightPair.Load(bytes, this.Network);
+
             if (typeof(IBitcoinSerializable).IsAssignableFrom(type))
             {
                 var result = (IBitcoinSerializable)Activator.CreateInstance(type);
-                result.ReadWrite(bytes);
+                result.ReadWrite(bytes, this.Network.Consensus.ConsensusFactory);
                 return result;
             }
 

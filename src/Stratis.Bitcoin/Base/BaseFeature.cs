@@ -23,6 +23,8 @@ using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.Tests.Common")]
+[assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests.Common")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Consensus.Tests")]
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.IntegrationTests")]
 
@@ -106,6 +108,8 @@ namespace Stratis.Bitcoin.Base
         private readonly IConsensusRuleEngine consensusRules;
         private readonly IBlockPuller blockPuller;
         private readonly IBlockStore blockStore;
+        private readonly ITipsManager tipsManager;
+        private readonly IKeyValueRepository keyValueRepo;
 
         /// <inheritdoc cref="IFinalizedBlockInfoRepository"/>
         private readonly IFinalizedBlockInfoRepository finalizedBlockInfoRepository;
@@ -134,6 +138,8 @@ namespace Stratis.Bitcoin.Base
             IBlockPuller blockPuller,
             IBlockStore blockStore,
             Network network,
+            ITipsManager tipsManager,
+            IKeyValueRepository keyValueRepo,
             IProvenBlockHeaderStore provenBlockHeaderStore = null)
         {
             this.chainState = Guard.NotNull(chainState, nameof(chainState));
@@ -152,6 +158,8 @@ namespace Stratis.Bitcoin.Base
             this.provenBlockHeaderStore = provenBlockHeaderStore;
             this.partialValidator = partialValidator;
             this.peerBanning = Guard.NotNull(peerBanning, nameof(peerBanning));
+            this.tipsManager = Guard.NotNull(tipsManager, nameof(tipsManager));
+            this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
 
             this.peerAddressManager = Guard.NotNull(peerAddressManager, nameof(peerAddressManager));
             this.peerAddressManager.PeerFilePath = this.dataFolder;
@@ -167,6 +175,8 @@ namespace Stratis.Bitcoin.Base
         /// <inheritdoc />
         public override async Task InitializeAsync()
         {
+            // TODO rewrite chain starting logic. Tips manager should be used.
+
             await this.StartChainAsync().ConfigureAwait(false);
 
             if (this.provenBlockHeaderStore != null)
@@ -223,10 +233,10 @@ namespace Stratis.Bitcoin.Base
                 Directory.CreateDirectory(this.dataFolder.ChainPath);
             }
 
-            if (!Directory.Exists(this.dataFolder.FinalizedBlockInfoPath))
+            if (!Directory.Exists(this.dataFolder.KeyValueRepositoryPath))
             {
-                this.logger.LogInformation("Creating {0}.", this.dataFolder.FinalizedBlockInfoPath);
-                Directory.CreateDirectory(this.dataFolder.FinalizedBlockInfoPath);
+                this.logger.LogInformation("Creating {0}.", this.dataFolder.KeyValueRepositoryPath);
+                Directory.CreateDirectory(this.dataFolder.KeyValueRepositoryPath);
             }
 
             this.logger.LogInformation("Loading finalized block height.");
@@ -322,6 +332,8 @@ namespace Stratis.Bitcoin.Base
 
             this.logger.LogInformation("Disposing block store.");
             this.blockStore.Dispose();
+
+            this.keyValueRepo.Dispose();
         }
     }
 
@@ -361,6 +373,8 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<IAsyncLoopFactory, AsyncLoopFactory>();
                     services.AddSingleton<NodeDeployments>();
                     services.AddSingleton<IInitialBlockDownloadState, InitialBlockDownloadState>();
+                    services.AddSingleton<IKeyValueRepository, KeyValueRepository>();
+                    services.AddSingleton<ITipsManager, TipsManager>();
 
                     // Consensus
                     services.AddSingleton<ConsensusSettings>();
@@ -384,7 +398,30 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<ISelfEndpointTracker, SelfEndpointTracker>();
 
                     // Consensus
-                    services.AddSingleton<IConsensusManager, ConsensusManager>();
+                    // Consensus manager is created like that due to CM's constructor being internal. This is done
+                    // in order to prevent access to CM creation and CHT usage from another features. CHT is supposed
+                    // to be used only by CM and no other component.
+                    services.AddSingleton<IConsensusManager>(provider => new ConsensusManager(
+                        chainedHeaderTree: provider.GetService<IChainedHeaderTree>(),
+                        network: provider.GetService<Network>(),
+                        loggerFactory: provider.GetService<ILoggerFactory>(),
+                        chainState: provider.GetService<IChainState>(),
+                        integrityValidator: provider.GetService<IIntegrityValidator>(),
+                        partialValidator: provider.GetService<IPartialValidator>(),
+                        fullValidator: provider.GetService<IFullValidator>(),
+                        consensusRules: provider.GetService<IConsensusRuleEngine>(),
+                        finalizedBlockInfo: provider.GetService<IFinalizedBlockInfoRepository>(),
+                        signals: provider.GetService<ISignals>(),
+                        peerBanning: provider.GetService<IPeerBanning>(),
+                        ibdState: provider.GetService<IInitialBlockDownloadState>(),
+                        chain: provider.GetService<ConcurrentChain>(),
+                        blockPuller: provider.GetService<IBlockPuller>(),
+                        blockStore: provider.GetService<IBlockStore>(),
+                        connectionManager: provider.GetService<IConnectionManager>(),
+                        nodeStats: provider.GetService<INodeStats>(),
+                        nodeLifetime: provider.GetService<INodeLifetime>(),
+                        consensusSettings: provider.GetService<ConsensusSettings>()
+                        ));
                     services.AddSingleton<IChainedHeaderTree, ChainedHeaderTree>();
                     services.AddSingleton<IHeaderValidator, HeaderValidator>();
                     services.AddSingleton<IIntegrityValidator, IntegrityValidator>();

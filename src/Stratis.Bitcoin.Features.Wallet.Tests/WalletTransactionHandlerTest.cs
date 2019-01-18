@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 WalletName = "myWallet1"
             };
 
-            // create a trx with 3 outputs 50 + 50 + 49 = 149 BTC
+            // create a trx with 3 outputs 50 + 50 + 50 = 150 BTC
             var context = new TransactionBuildContext(this.Network)
             {
                 AccountReference = walletReference,
@@ -325,7 +325,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys1.PubKey.ScriptPubKey },
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys2.PubKey.ScriptPubKey },
-                    new Recipient { Amount = new Money(49, MoneyUnit.BTC), ScriptPubKey = destinationKeys3.PubKey.ScriptPubKey }
+                    new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys3.PubKey.ScriptPubKey }
                 }.ToList()
             };
 
