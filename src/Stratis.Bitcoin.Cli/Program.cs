@@ -9,11 +9,11 @@ using Flurl.Http;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Utilities.Extensions;
-using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.Cli
 {
@@ -51,17 +51,13 @@ namespace Stratis.Bitcoin.Cli
                     argList.RemoveAt(0);
                 }
 
-                string method = "GET";
+                string method = "";
                 if (argList.Any())
                 {
                     method = argList.First().ToUpper();
                     if (method == "GET" || method == "POST" || method == "DELETE")
                     {
                         argList.RemoveAt(0);
-                    }
-                    else
-                    {
-                        method = "";
                     }
                 }
 
