@@ -49,6 +49,7 @@
         public static ConsensusError BadTransactionInBelowOut => new ConsensusError("bad-txns-in-belowout", "input value below output value");
         public static ConsensusError BadTransactionNegativeFee => new ConsensusError("bad-txns-fee-negative", "negative fee");
         public static ConsensusError BadTransactionFeeOutOfRange => new ConsensusError("bad-txns-fee-outofrange", "fee out of range");
+        public static ConsensusError BadTransactionEarlyTimestamp => new ConsensusError("bad-txns-early-timestamp", "timestamp earlier than input");
 
         public static ConsensusError BadTransactionScriptError => new ConsensusError("bad-txns-script-failed", "a script failed");
 
