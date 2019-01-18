@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Networks
         {
             get
             {
-                return new NetworksSelector(() => new X42Main(), () => new X42Main(), () => new X42Main());
+                return new NetworksSelector(() => new X42Main(), () => new X42Test(), () => new X42Main());
             }
         }
     }
