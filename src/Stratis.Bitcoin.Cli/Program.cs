@@ -59,6 +59,10 @@ namespace Stratis.Bitcoin.Cli
                     {
                         argList.RemoveAt(0);
                     }
+                    else
+                    {
+                        method = "";
+                    }
                 }
 
                 string command = string.Empty;
