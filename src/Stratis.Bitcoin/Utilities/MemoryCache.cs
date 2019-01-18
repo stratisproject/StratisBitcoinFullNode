@@ -162,5 +162,18 @@ namespace Stratis.Bitcoin.Utilities
             value = default(TValue);
             return false;
         }
+
+        /// <summary>
+        /// Flush the entire cache.
+        /// </summary>
+        public void ClearCache()
+        {
+            lock (this.lockObject)
+            {
+                this.keys.Clear();
+                this.cache.Clear();
+                this.totalSize = 0;
+            }
+        }
     }
 }
