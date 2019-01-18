@@ -33,12 +33,18 @@ namespace NBitcoin
 
         public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            ReadWrite(serializable, new MemoryStream(bytes), false, version);
+            using (var ms = new MemoryStream(bytes))
+            {
+                ReadWrite(serializable, ms, false, version);
+            }
         }
 
         public static void ReadWrite(this IBitcoinSerializable serializable, byte[] bytes, ConsensusFactory consensusFactory, ProtocolVersion version = ProtocolVersion.PROTOCOL_VERSION)
         {
-            ReadWrite(serializable, new MemoryStream(bytes), false, consensusFactory, version);
+            using (var ms = new MemoryStream(bytes))
+            {
+                ReadWrite(serializable, ms, false, consensusFactory, version);
+            }
         }
 
         public static int GetSerializedSize(this IBitcoinSerializable serializable, ProtocolVersion version, SerializationType serializationType)
