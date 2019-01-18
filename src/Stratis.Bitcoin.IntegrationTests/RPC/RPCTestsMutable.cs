@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 var response = rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
                 var txid = new uint256(response.ResultString);
 
-                // Check the hash calculated correctly.               
+                // Check the hash calculated correctly.
                 var tx = rpcClient.GetRawTransaction(txid);
                 txid.Should().Be(tx.GetHash());
 
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 //response = rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson, 0, string.Empty, subtractFeeAddresses);
                 //txid = new uint256(response.ResultString);
 
-                // Check the hash calculated correctly.               
+                // Check the hash calculated correctly.
                 //tx = rpcClient.GetRawTransaction(txid);
                 //txid.Should().Be(tx.GetHash());
 
@@ -294,7 +294,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 // Unlock for 10 minutes.
                 rpcClient.WalletPassphrase("password", 10 * 60);
 
-                // Sending should reset the lock timeout for another 10 minutes
+                // Send a transaction.
                 rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m)).Should().NotBeNull();
 
                 // Mine that transaction.
@@ -314,8 +314,8 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 blocksMined++;
                 TestHelper.WaitLoop(() => node.FullNode.GetBlockStoreTip().Height == blocksMined);
 
-                // Now wait 11 minutes so the wallet should be back locked and a transaction should fail.
-                Thread.Sleep(11 * 60 * 1000);
+                // Now wait 5 minutes so the wallet should be back locked and a transaction should fail.
+                Thread.Sleep(5 * 60 * 1000);
                 Action action = () => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
                 action.Should().Throw<RPCException>()
                     .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED);
@@ -344,6 +344,5 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                     .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_ERROR);
             }
         }
-
     }
 }
