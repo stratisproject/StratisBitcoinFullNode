@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
@@ -10,7 +9,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
@@ -167,8 +165,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Sync the network to height 55.
                 TestHelper.Connect(syncer, minerA);
                 TestHelper.Connect(syncer, minerB);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), cancellationToken: new CancellationTokenSource(15 * 60 * 1000).Token);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), cancellationToken: new CancellationTokenSource(15 * 60 * 1000).Token);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 600);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), waitTimeSeconds: 600);
 
                 // Disconnect Miner A and B.
                 TestHelper.DisconnectAll(syncer, minerA, minerB);
