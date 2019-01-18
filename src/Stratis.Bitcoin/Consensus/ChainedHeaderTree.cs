@@ -153,6 +153,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Gets tip of the best peer.</summary>
         /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
         ChainedHeader GetBestPeerTip();
+
+        /// <summary>
+        /// Whenever a block is attached to a ChainHeader that's not yet on the best chain, set that block as unconsumed.
+        /// </summary>
+        /// <param name="block">The block to set as unconsumed.</param>
+        void SetAsUnconsumed(Block block);
     }
 
     /// <inheritdoc />
@@ -611,8 +617,7 @@ namespace Stratis.Bitcoin.Consensus
             chainedHeader.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             chainedHeader.Block = block;
 
-            this.UnconsumedBlocksDataBytes += chainedHeader.Block.BlockSize.Value;
-            this.UnconsumedBlocksCount++;
+            this.SetAsUnconsumed(chainedHeader.Block);
 
             this.logger.LogTrace("Size of unconsumed block data is increased by {0}, new value is {1}.", chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
 
@@ -1152,6 +1157,13 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             return bestTip;
+        }
+
+        /// <inheritdoc />
+        public void SetAsUnconsumed(Block block)
+        {
+            this.UnconsumedBlocksDataBytes += block.BlockSize.Value;
+            this.UnconsumedBlocksCount++;
         }
     }
 

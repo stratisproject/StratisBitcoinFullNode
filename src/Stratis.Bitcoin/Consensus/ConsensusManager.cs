@@ -616,6 +616,8 @@ namespace Stratis.Bitcoin.Consensus
 
                         if (disconnectedBlock.ChainedHeader.Block == null)
                             disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+
+                        this.chainedHeaderTree.SetAsUnconsumed(disconnectedBlock.ChainedHeader.Block);
                     }
                 }
 
