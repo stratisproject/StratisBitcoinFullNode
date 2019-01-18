@@ -1,9 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
+using Flurl;
+using Flurl.Http;
 using NBitcoin;
 using NBitcoin.Protocol;
 using Newtonsoft.Json;
@@ -11,7 +13,7 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Utilities.Extensions;
-
+using Newtonsoft.Json.Linq;
 
 namespace Stratis.Bitcoin.Cli
 {
@@ -53,7 +55,7 @@ namespace Stratis.Bitcoin.Cli
                 if (argList.Any())
                 {
                     method = argList.First().ToUpper();
-                    if (method == "GET" || method == "PUT" || method == "DELETE")
+                    if (method == "GET" || method == "POST" || method == "DELETE")
                     {
                         argList.RemoveAt(0);
                     }
@@ -174,33 +176,39 @@ namespace Stratis.Bitcoin.Cli
                 else
                 {
                     // Process API call.
-                    using (var client = new HttpClient())
+                    string[] options = optionList.ToArray();
+                    var nodeSettings = new NodeSettings(networksSelector: networksSelector, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: options)
                     {
-                        string[] options = optionList.ToArray();
-                        var nodeSettings = new NodeSettings(networksSelector: networksSelector, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: options)
-                        {
-                            MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
-                        };
+                        MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                    };
 
-                        var apiSettings = new ApiSettings(nodeSettings);
+                    var apiSettings = new ApiSettings(nodeSettings);
 
-                        client.DefaultRequestHeaders.Accept.Clear();
-                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                        string url = $"http://localhost:{apiSettings.ApiPort}/api/{command}";
+                    string url = $"http://localhost:{apiSettings.ApiPort}/api".AppendPathSegment(command);
 
-                        switch (method)
-                        {
-                            case "GET":
-                                Console.WriteLine(CallApiGet(client, url, commandArgList));
-                                break;
-                            case "POST":
-                                Console.WriteLine(CallApiPost(client, url, commandArgList));
-                                break;
-                            case "DELETE":
-                                Console.WriteLine(CallApiDelete(client, url, commandArgList));
-                                break;
-                        }
+                    object commandArgObj = GetAnonymousObjectFromDictionary(commandArgList
+                        .Select(a => a.Split('='))
+                        .ToDictionary(a => a[0], a => a[1]));
+
+                    HttpResponseMessage httpResponse;
+
+                    switch (method)
+                    {
+                        case "POST":
+                            httpResponse = CallApiPost(url, commandArgObj);
+                            break;
+                        case "DELETE":
+                            httpResponse = CallApiDelete(url, commandArgObj);
+                            break;
+                        default:
+                            httpResponse = CallApiGet(url, commandArgObj);
+                            break;
                     }
+
+                    var response = httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+                    // Format and return the result as a string to the console.
+                    Console.WriteLine(JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented));
                 }
             }
             catch (Exception err)
@@ -210,47 +218,43 @@ namespace Stratis.Bitcoin.Cli
             }
         }
 
-        private static string CallApiGet(HttpClient client, string url, List<string> commandArgList)
+        private static object GetAnonymousObjectFromDictionary(Dictionary<string, string> dict)
         {
-            string urlWithArgs = url;
-            if (commandArgList.Any()) urlWithArgs += $"?{string.Join("&", commandArgList)}";
+            dynamic obj = new ExpandoObject();
+            var tmp = (IDictionary<string, object>)obj;
+
+            foreach (KeyValuePair<string, string> p in dict)
+            {
+                tmp[p.Key] = p.Value;
+            }
+
+            return tmp;
+        }
+
+        private static HttpResponseMessage CallApiGet(string url, object commandArgObj)
+        {
+            string urlWithArgs = url.SetQueryParams(commandArgObj);
 
             // Get the response.
             Console.WriteLine($"Sending API 'GET' command to {urlWithArgs}.");
-            string response = client.GetStringAsync(urlWithArgs).GetAwaiter().GetResult();
-
-            // Format and return the result as a string.
-            return JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented);
+            return urlWithArgs.GetAsync().GetAwaiter().GetResult();
         }
 
-        private static string CallApiPost(HttpClient client, string url, List<string> commandArgList)
+        private static HttpResponseMessage CallApiPost(string url, object commandArgObj)
         {
-            string json = "{ " + string.Join(", ", commandArgList
-                .Select(a => a.Split('='))
-                .Select(a => $"\"{a[0]}\": \"{a[1]}\"")) + " }";
-
-            var content = new StringContent(json, Encoding.UTF8, "application/json");
+            string json = JObject.FromObject(commandArgObj).ToString();
 
             Console.WriteLine($"Sending API 'POST' command to {url}. Post body is '{json}'.");
-            HttpResponseMessage httpResponse = client.PostAsync(url, content).GetAwaiter().GetResult();
-            var response = httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-            // Format and return the result as a string.
-            return JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented);
+            return url.PostJsonAsync(commandArgObj).GetAwaiter().GetResult();
         }
 
-        private static string CallApiDelete(HttpClient client, string url, List<string> commandArgList)
+        private static HttpResponseMessage CallApiDelete(string url, object commandArgObj)
         {
-            string urlWithArgs = url;
-            if (commandArgList.Any()) urlWithArgs += $"?{string.Join("&", commandArgList)}";
+            string urlWithArgs = url.SetQueryParams(commandArgObj);
 
             // Get the response.
             Console.WriteLine($"Sending API 'DELETE' command to {urlWithArgs}.");
-            HttpResponseMessage httpResponse = client.DeleteAsync(urlWithArgs).GetAwaiter().GetResult();
-            var response = httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
-
-            // Format and return the result as a string.
-            return JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented);
+            return urlWithArgs.DeleteAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>
