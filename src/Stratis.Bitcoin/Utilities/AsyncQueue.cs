@@ -109,6 +109,7 @@ namespace Stratis.Bitcoin.Utilities
 
         /// <summary>
         /// The number of items in the queue.
+        /// This property should only be used for collecting statistics.
         /// </summary>
         public int Count
         {
