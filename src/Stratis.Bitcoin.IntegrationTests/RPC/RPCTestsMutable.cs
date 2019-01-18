@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 // Not unlocked case.
                 Action action = () => rpcClient.SendToAddress(aliceAddress, Money.Coins(1.0m));
                 action.Should().Throw<RPCException>()
-                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED); 
+                    .Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED);
 
                 // Unlock and lock case.
                 rpcClient.WalletPassphrase("password", 60);
@@ -238,9 +238,12 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 // Test with just defaults.
                 const decimal coinsForAlice = 1.0m;
                 const decimal coinsForBob = 2.0m;
-                Dictionary<string, decimal> addresses = new Dictionary<string, decimal>();
-                addresses.Add(aliceAddress.ToString(), coinsForAlice);
-                addresses.Add(bobAddress.ToString(), coinsForBob);
+                var addresses = new Dictionary<string, decimal>
+                {
+                    { aliceAddress.ToString(), coinsForAlice },
+                    { bobAddress.ToString(), coinsForBob }
+                };
+
                 var addressesJson = JsonConvert.SerializeObject(addresses);
                 var response = rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
                 var txid = new uint256(response.ResultString);
