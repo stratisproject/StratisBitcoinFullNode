@@ -322,7 +322,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 AccountReference = accountReference,
                 MinConfirmations = minConf,
                 Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.                
-                Recipients = recipients
+                Recipients = recipients,
+                CacheSecret = false
             };
 
             // Set fee type for transaction build context.
