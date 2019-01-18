@@ -8,12 +8,7 @@
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   
-  <PropertyGroup Condition=" '$(Version)' == '' ">
-    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">3.0.1</VersionPrefix>
-    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
-    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
-  </PropertyGroup>
-
+  <Import Project="..\Common.FullNode.props" />
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">
     <DocumentationFile></DocumentationFile>

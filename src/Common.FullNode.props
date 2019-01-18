@@ -1,0 +1,17 @@
+<Project Sdk="Microsoft.NET.Sdk">
+
+  <PropertyGroup>
+    <Copyright>Copyright © 2016</Copyright>
+    <PackageLicenseUrl>https://github.com/stratisproject/StratisBitcoinFullNode/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/stratisproject/StratisBitcoinFullNode</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/stratisproject/StratisBitcoinFullNode</RepositoryUrl>
+    <RepositoryType>git</RepositoryType>
+  </PropertyGroup>
+  
+  <PropertyGroup Condition=" '$(Version)' == '' ">
+    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">3.0.1</VersionPrefix>
+    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
+    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
+  </PropertyGroup>
+
+</Project>

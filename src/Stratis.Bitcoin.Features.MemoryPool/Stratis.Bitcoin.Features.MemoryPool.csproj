@@ -13,11 +13,7 @@
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   
-  <PropertyGroup Condition=" '$(Version)' == '' ">
-    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">3.0.1</VersionPrefix>
-    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
-    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
-  </PropertyGroup>
+  <Import Project="..\Common.FullNode.props" />
 
   <ItemGroup>
     <PackageReference Include="Microsoft.Extensions.Logging.Debug" Version="2.1.1" />

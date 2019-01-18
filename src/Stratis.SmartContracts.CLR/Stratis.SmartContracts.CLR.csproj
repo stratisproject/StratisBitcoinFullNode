@@ -5,11 +5,7 @@
 	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
     
-  <PropertyGroup Condition=" '$(Version)' == '' ">
-    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">0.0.6</VersionPrefix>
-    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
-    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
-  </PropertyGroup>
+  <Import Project="..\Common.SmartContracts.props" />
 
   <ItemGroup>
     <PackageReference Include="CSharpFunctionalExtensions" Version="1.10.0" />

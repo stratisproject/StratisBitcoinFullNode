@@ -9,11 +9,7 @@
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
   </PropertyGroup>
   
-  <PropertyGroup Condition=" '$(Version)' == '' ">
-    <VersionPrefix Condition=" '$(VersionPrefix)' == '' ">3.0.1</VersionPrefix>
-    <Version Condition=" '$(VersionSuffix)' != '' ">$(VersionPrefix).$(VersionSuffix)</Version>
-    <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
-  </PropertyGroup>
+  <Import Project="..\Common.FullNode.props" />
 
   <ItemGroup>
     <PackageReference Include="Tracer.Fody" Version="2.2.0" />
