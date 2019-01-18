@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Reflection.Metadata.Ecma335;
 using NBitcoin;
+using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Base.Deployments
@@ -27,9 +28,6 @@ namespace Stratis.Bitcoin.Base.Deployments
 
         // Used to access the deployments, confirmation window and activation threshold.
         private IConsensus consensus;
-
-        // Cache of BIP9 deployment states keyed by block hash.
-        //private readonly Dictionary<uint256, ThresholdState?[]> cache = new Dictionary<uint256, ThresholdState?[]>();
 
         // Cache of Cache of BIP9 deployment state information keyed by block hash.
         private readonly Dictionary<uint256, ThresholdStateModel[]> cache = new Dictionary<uint256, ThresholdStateModel[]>();
@@ -180,48 +178,6 @@ namespace Stratis.Bitcoin.Base.Deployments
             }
 
           return state;
-        }
-
-        /// <summary>
-        /// Class representing the activation states with the count of blocks in each state.
-        /// </summary>
-        public class ThresholdStateModel
-        {
-            public int DeploymentIndex { get; }
-            public int blocksDefined { get; }
-            public int blocksStarted { get; }
-            public int blocksLockedIn { get; }
-            public int blocksFailed { get; }
-            public int blocksActive { get; }
-            public DateTimeOffset? TimePast { get; set; }
-            public DateTimeOffset? timeStart { get; }
-            public DateTimeOffset? timeTimeOut { get; }
-            public int threshold { get; }
-            public int Votes { get; set; }
-            public ThresholdState? StateValue { get; set; }
-            public string ThresholdState { get; set; }
-
-            public ThresholdStateModel(int deploymentIndex, int blocksDefined, int blocksStarted, int blocksLockedIn,
-                int blocksFailed, int blocksActive, DateTimeOffset? medianTimePast, DateTimeOffset? timeStart, DateTimeOffset? timeTimeOut, int threshold, int votes, ThresholdState stateValue, string thresholdState)
-            {
-                this.DeploymentIndex = deploymentIndex;
-                this.blocksDefined = blocksDefined;
-                this.blocksStarted = blocksStarted;
-                this.blocksLockedIn = blocksLockedIn;
-                this.blocksFailed = blocksFailed;
-                this.blocksActive = blocksActive;
-                this.TimePast = medianTimePast;
-                this.timeStart = timeStart;
-                this.timeTimeOut = timeTimeOut;
-                this.Votes = votes;
-                this.threshold = threshold;
-                this.StateValue = stateValue;
-                this.ThresholdState = thresholdState;
-            }
-
-            public ThresholdStateModel()
-            {
-            }
         }
 
         /// <summary>
