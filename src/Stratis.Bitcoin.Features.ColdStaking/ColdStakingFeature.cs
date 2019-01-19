@@ -252,7 +252,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 throw new InvalidOperationException("Cold staking can only be used on a Stratis network.");
 
             // Register the cold staking script template.
-            StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+            fullNodeBuilder.Network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
 
             LoggingConfiguration.RegisterFeatureNamespace<ColdStakingFeature>("wallet");
 

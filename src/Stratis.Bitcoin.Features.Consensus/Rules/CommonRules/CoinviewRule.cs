@@ -208,6 +208,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         public abstract void CheckMaturity(UnspentOutputs coins, int spendHeight);
 
         /// <summary>
+        /// Contains checks that need to be performed on each input once UTXO data is available.
+        /// </summary>
+        /// <param name="transaction">The transaction that is having its input examined.</param>
+        /// <param name="coins">The unspent output consumed by the input being examined.</param>
+        protected virtual void CheckInputValidity(Transaction transaction, UnspentOutputs coins)
+        {
+        }
+
+        /// <summary>
         /// Checks that transaction's inputs are valid.
         /// </summary>
         /// <param name="transaction">Transaction to check.</param>
@@ -231,6 +240,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 UnspentOutputs coins = inputs.AccessCoins(prevout.Hash);
 
                 this.CheckMaturity(coins, spendHeight);
+
+                this.CheckInputValidity(transaction, coins);
 
                 // Check for negative or overflow input values.
                 valueIn += coins.TryGetOutput(prevout.N).Value;

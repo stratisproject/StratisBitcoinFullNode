@@ -431,6 +431,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
+            // TODO: Get the template from the network standard scripts instead
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
             context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
         }

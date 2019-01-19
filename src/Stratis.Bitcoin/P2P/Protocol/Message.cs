@@ -132,21 +132,27 @@ namespace Stratis.Bitcoin.P2P.Protocol
                     }
                 }
 
-                var payloadStream = new BitcoinStream(payloadBytes);
-                payloadStream.ConsensusFactory = stream.ConsensusFactory;
-                payloadStream.CopyParameters(stream);
+                using (var ms = new MemoryStream(payloadBytes))
+                {
+                    var payloadStream = new BitcoinStream(ms, false)
+                    {
+                        ConsensusFactory = stream.ConsensusFactory
+                    };
 
-                Type payloadType = this.payloadProvider.GetCommandType(this.Command);
-                bool unknown = payloadType == typeof(UnknowPayload);
-                if (unknown)
-                    NodeServerTrace.Trace.TraceEvent(TraceEventType.Warning, 0, "Unknown command received : " + this.Command);
+                    payloadStream.CopyParameters(stream);
 
-                object payload = this.payloadObject;
-                payloadStream.ReadWrite(payloadType, ref payload);
-                if (unknown)
-                    ((UnknowPayload)payload).command = this.Command;
+                    Type payloadType = this.payloadProvider.GetCommandType(this.Command);
+                    bool unknown = payloadType == typeof(UnknowPayload);
+                    if (unknown)
+                        NodeServerTrace.Trace.TraceEvent(TraceEventType.Warning, 0, "Unknown command received : " + this.Command);
 
-                this.Payload = (Payload)payload;
+                    object payload = this.payloadObject;
+                    payloadStream.ReadWrite(payloadType, ref payload);
+                    if (unknown)
+                        ((UnknowPayload)payload).command = this.Command;
+
+                    this.Payload = (Payload)payload;
+                }
             }
         }
 
@@ -163,7 +169,7 @@ namespace Stratis.Bitcoin.P2P.Protocol
                 var stream = new BitcoinStream(ms, true);
                 stream.ConsensusFactory = consensusFactory;
                 this.Payload.ReadWrite(stream);
-                length = (int) ms.Position;
+                length = (int)ms.Position;
                 return ms.ToArray();
             }
         }

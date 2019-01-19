@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.CLR
+﻿using Stratis.SmartContracts.Core.Hashing;
+
+namespace Stratis.SmartContracts.CLR
 {
     /// <summary>
     /// Encodes keys by applying a Keccak256 hash, returning 32-bytes.
