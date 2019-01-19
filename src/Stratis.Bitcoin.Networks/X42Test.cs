@@ -42,14 +42,14 @@ namespace Stratis.Bitcoin.Networks
             var consensusFactory = new PosConsensusFactory();
 
             // Create the testnet genesis block.
-            this.GenesisTime = 1547612611;
+            this.GenesisTime = 1547913523;
             this.GenesisNonce = 2433759;
             this.GenesisBits = powLimit;
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
             Block genesisBlock = CreateX42GenesisBlock(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward);
-            
+
             this.Genesis = genesisBlock;
 
             var consensusOptions = new PosConsensusOptions(
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Networks
 
             this.Checkpoints = new Dictionary<int, CheckpointInfo>
             {
-                { 0, new CheckpointInfo(new uint256("0x6348662ce2771e6cca3daed4a87bb90574888e00bf39bb07edeb8a491194117a"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) }, // Genisis
+                { 0, new CheckpointInfo(new uint256("0x8f4fd479064ac44e1ca633754cc0de1bdc5b0d61562722e29beb32daf9bd8ce9"), new uint256("0x0000000000000000000000000000000000000000000000000000000000000000")) }, // Genisis
             };
 
             var encoder = new Bech32Encoder("bc");
@@ -129,11 +129,11 @@ namespace Stratis.Bitcoin.Networks
                 new DNSSeedData("testnet1.x42seed.host", "testnet1.x42seed.host"),
             };
 
-            string[] seedNodes = { "127.0.0.1" };
+            string[] seedNodes = { "63.32.82.169" };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
 
-            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x6348662ce2771e6cca3daed4a87bb90574888e00bf39bb07edeb8a491194117a"));
-            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x69bc1ee906e4f7063d288115de343463c5721a36063b860b2773ea401f117faa"));
+            Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x8f4fd479064ac44e1ca633754cc0de1bdc5b0d61562722e29beb32daf9bd8ce9"));
+            Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x288d7d5bbd1fb96f3550c2cc6a127fe382b6d967694a352b06c5101412b14d09"));
         }
     }
 }
