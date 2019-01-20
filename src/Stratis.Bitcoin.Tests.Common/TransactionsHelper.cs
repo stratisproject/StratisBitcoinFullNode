@@ -41,6 +41,8 @@ namespace Stratis.Bitcoin.Tests.Common
 
             block.GetHash();
 
+            // populate the size
+            block.ToBytes(network.Consensus.ConsensusFactory);
             return block;
         }
     }
