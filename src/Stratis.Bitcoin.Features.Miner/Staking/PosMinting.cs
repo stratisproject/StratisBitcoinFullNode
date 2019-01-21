@@ -670,14 +670,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
 
             // Get reward for newly created block.
             long reward = fees + this.consensusManager.ConsensusRules.GetRule<PosCoinviewRule>().GetProofOfStakeReward(chainTip.Height + 1);
-            if (reward <= 0)
-            {
-                // TODO: This can't happen unless we remove reward for mined block.
-                // If this can happen over time then this check could be done much sooner
-                // to avoid a lot of computation.
-                this.logger.LogTrace("(-)[NO_REWARD]:false");
-                return false;
-            }
+            //TODO: There are blocks that don't have fees or a mint reward. 
+            // We will want to check to see a better way for x42 to save computational power by checking this sooner.
 
             // Input to coinstake transaction.
             UtxoStakeDescription coinstakeInput = workersResult.KernelCoin;
