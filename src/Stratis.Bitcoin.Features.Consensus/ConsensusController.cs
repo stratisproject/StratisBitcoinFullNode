@@ -64,13 +64,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             try
             {
                var rule = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>();
-               
-               // Ensure threshold conditions cached.
-               ThresholdState[] thresholdStates = rule.Parent.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
 
-               object metrics = rule.Parent.NodeDeployments.BIP9.GetThresholdStateModel(thresholdStates);
+                // Ensure threshold conditions cached.
+                ThresholdState[] thresholdStates = rule.Parent.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
 
-               return this.Json(metrics);
+                object metrics = rule.Parent.NodeDeployments.BIP9.GetThresholdStateMetrics(this.ChainState.ConsensusTip.Previous, thresholdStates);
+
+                return this.Json(metrics);
             }
             catch (Exception e)
             {
