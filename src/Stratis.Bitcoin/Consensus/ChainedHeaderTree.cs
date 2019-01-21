@@ -617,7 +617,7 @@ namespace Stratis.Bitcoin.Consensus
             chainedHeader.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
             chainedHeader.Block = block;
 
-            this.UnconsumedBlocksDataBytes += block.BlockSize.Value;
+            this.UnconsumedBlocksDataBytes += chainedHeader.Block.BlockSize.Value;
             this.UnconsumedBlocksCount++;
 
             this.logger.LogTrace("Size of unconsumed block data is increased by {0}, new value is {1}.", chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksDataBytes);
