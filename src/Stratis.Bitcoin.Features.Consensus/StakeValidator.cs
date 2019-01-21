@@ -414,7 +414,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             int missingZero = 32 - array.Length;
 
             if (missingZero < 0)
-                return new uint256(array.Skip(Math.Abs(missingZero)).ToArray());
+                return new uint256(array.Skip(Math.Abs(missingZero)).ToArray(), false);
 
             if (missingZero > 0)
                 return new uint256(new byte[missingZero].Concat(array).ToArray(), false);
