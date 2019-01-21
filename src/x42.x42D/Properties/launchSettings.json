@@ -1,7 +1,8 @@
 {
   "profiles": {
     "x42.x42D": {
-      "commandName": "Project"
+      "commandName": "Project",
+      "commandLineArgs": "-testnet"
     },
     "x42.x42D Test": {
       "commandName": "Project",
