@@ -47,7 +47,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             byte[] key = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             byte[] value = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            Gas cost = (Gas)(GasPriceList.StoragePerByteSavedGasCost * key.Length +  GasPriceList.StoragePerByteSavedGasCost * value.Length);
+            var cost = (RuntimeObserver.Gas)(GasPriceList.StoragePerByteSavedGasCost * key.Length +  GasPriceList.StoragePerByteSavedGasCost * value.Length);
 
             Assert.Equal(cost, GasPriceList.StorageSaveOperationCost(key, value));
         }
@@ -57,7 +57,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             byte[] key = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9 };
             byte[] value = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            Gas cost = (Gas)(GasPriceList.StoragePerByteRetrievedGasCost * key.Length + GasPriceList.StoragePerByteRetrievedGasCost * value.Length);
+            var cost = (RuntimeObserver.Gas)(GasPriceList.StoragePerByteRetrievedGasCost * key.Length + GasPriceList.StoragePerByteRetrievedGasCost * value.Length);
 
             Assert.Equal(cost, GasPriceList.StorageRetrieveOperationCost(key, value));
         }
@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 new byte[]{ 1, 2, 3, 4, 5, 6 }
             };
             byte[] data = new byte[] { 1, 2, 3, 4, 5, 6, 7, 8, 9, 1, 2, 3, 4, 5, 6, 7, 8, 9 };
-            Gas cost = (Gas)(GasPriceList.LogPerTopicByteCost * topics[0].Length + GasPriceList.LogPerByteCost * data.Length);
+            var cost = (RuntimeObserver.Gas)(GasPriceList.LogPerTopicByteCost * topics[0].Length + GasPriceList.LogPerByteCost * data.Length);
 
             Assert.Equal(cost, GasPriceList.LogOperationCost(topics, data));
         }
@@ -85,7 +85,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             TypeDefinition type = moduleDefinition.Types.First(t => t.FullName.Contains("DateTime"));
             MethodDefinition method = type.Methods.First(m => m.FullName.Contains("Parse"));
 
-            Assert.Equal((Gas) GasPriceList.MethodCallGasCost, GasPriceList.MethodCallCost(method));
+            Assert.Equal((RuntimeObserver.Gas) GasPriceList.MethodCallGasCost, GasPriceList.MethodCallCost(method));
         }
     }
 }

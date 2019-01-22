@@ -28,7 +28,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             var message = new TestMessage
             {
                 ContractAddress = this.TestAddress,
-                GasLimit = (Gas)GasLimit,
                 Sender = this.TestAddress,
                 Value = Value
             };
@@ -124,8 +123,6 @@ namespace Stratis.SmartContracts.CLR.Tests
         public Address ContractAddress { get; set; }
 
         public Address Sender { get; set; }
-
-        public Gas GasLimit { get; set; }
 
         public ulong Value { get; set; }
     }

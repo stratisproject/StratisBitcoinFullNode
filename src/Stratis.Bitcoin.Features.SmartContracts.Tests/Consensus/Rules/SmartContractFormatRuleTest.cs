@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var totalSuppliedSatoshis = gasBudgetSatoshis + relayFeeSatoshis;
 
-            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)gasLimit, 0, "TestMethod");
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Stratis.SmartContracts.RuntimeObserver.Gas)gasLimit, 0, "TestMethod");
             var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction
@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var totalSuppliedSatoshis = gasBudgetSatoshis + relayFeeSatoshis;
 
-            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)gasLimit, 0, "TestMethod");
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Stratis.SmartContracts.RuntimeObserver.Gas)gasLimit, 0, "TestMethod");
             var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             var higherGasLimit = gasLimit + 10000;
 
-            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Gas)higherGasLimit, 0, "TestMethod");
+            var contractTxData = new ContractTxData(1, (ulong)gasPriceSatoshis, (Stratis.SmartContracts.RuntimeObserver.Gas)higherGasLimit, 0, "TestMethod");
             var serialized = this.callDataSerializer.Serialize(contractTxData);
 
             Transaction funding = new Transaction

@@ -9,11 +9,11 @@ namespace Stratis.SmartContracts.CLR.ContractLogging
     /// </summary>
     public class MeteredContractLogger : IContractLogger
     {
-        private readonly IGasMeter gasMeter;
+        private readonly RuntimeObserver.IGasMeter gasMeter;
         private readonly IContractLogger logger;
         private readonly IContractPrimitiveSerializer serializer;
 
-        public MeteredContractLogger(IGasMeter gasMeter, IContractLogger logger, IContractPrimitiveSerializer serializer)
+        public MeteredContractLogger(RuntimeObserver.IGasMeter gasMeter, IContractLogger logger, IContractPrimitiveSerializer serializer)
         {
             this.gasMeter = gasMeter;
             this.logger = logger;
