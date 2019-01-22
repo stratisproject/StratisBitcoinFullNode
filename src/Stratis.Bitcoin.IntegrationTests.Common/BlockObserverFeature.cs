@@ -28,18 +28,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// Adds a feature to the node that will observe when blocks are connected or disconnected.
         /// </summary>
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
-        /// <param name="interceptor">Callback routine to be called when a certain block has been disconnected.</param>
         /// <returns>The full node builder, enriched with the new component.</returns>
-        public static IFullNodeBuilder InterceptBlockDisconnected(this IFullNodeBuilder fullNodeBuilder, Func<ChainedHeaderBlock, bool> interceptor)
+        public static IFullNodeBuilder AddBlockObserverFeature(this IFullNodeBuilder fullNodeBuilder)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                features
-                    .AddFeature<BlockObserverFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton(service => new InterceptBlockDisconnected(service.GetService<Signals.Signals>(), interceptor));
-                    });
+                features.AddFeature<BlockObserverFeature>();
             });
 
             return fullNodeBuilder;
@@ -51,21 +45,31 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
         /// <param name="interceptor">Callback routine to be called when a certain block has been disconnected.</param>
         /// <returns>The full node builder, enriched with the new component.</returns>
-        public static IFullNodeBuilder InterceptBlockConnected(this IFullNodeBuilder fullNodeBuilder, Func<ChainedHeaderBlock, bool> interceptor)
+        public static IFullNodeBuilder UseBlockDisconnectedInterceptor(this IFullNodeBuilder fullNodeBuilder, Func<ChainedHeaderBlock, bool> interceptor)
         {
-            fullNodeBuilder.ConfigureFeature(features =>
+            fullNodeBuilder.ConfigureServices(services =>
             {
-                features
-                    .AddFeature<BlockObserverFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton(service => new InterceptBlockConnected(service.GetService<Signals.Signals>(), interceptor));
-                    });
+                services.AddSingleton(service => new InterceptBlockDisconnected(service.GetService<Signals.Signals>(), interceptor));
             });
 
             return fullNodeBuilder;
         }
 
+        /// <summary>
+        /// Adds a feature to the node that will observe when blocks are connected or disconnected.
+        /// </summary>
+        /// <param name="fullNodeBuilder">The object used to build the current node.</param>
+        /// <param name="interceptor">Callback routine to be called when a certain block has been disconnected.</param>
+        /// <returns>The full node builder, enriched with the new component.</returns>
+        public static IFullNodeBuilder UseBlockConnectedInterceptor(this IFullNodeBuilder fullNodeBuilder, Func<ChainedHeaderBlock, bool> interceptor)
+        {
+            fullNodeBuilder.ConfigureServices(services =>
+            {
+                services.AddSingleton(service => new InterceptBlockConnected(service.GetService<Signals.Signals>(), interceptor));
+            });
+
+            return fullNodeBuilder;
+        }
     }
 
     /// <summary>
