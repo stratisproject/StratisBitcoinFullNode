@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     return false;
                 }
 
-                minerA.ExecuteDisconnectInterceptorOnce(interceptor);
+                minerA.SetDisconnectInterceptorOnce(interceptor);
 
                 // Start the nodes.
                 minerA.Start();
@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                     return false;
                 }
 
-                minerA.ExecuteDisconnectInterceptorOnce(interceptor);
+                minerA.SetDisconnectInterceptorOnce(interceptor);
 
                 // Start the nodes.
                 minerA.Start();

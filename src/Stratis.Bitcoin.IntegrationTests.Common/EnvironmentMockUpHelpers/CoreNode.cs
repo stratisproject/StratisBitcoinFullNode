@@ -58,11 +58,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
-        private Action<ChainedHeaderBlock> builderExecuteDisconnectInterceptor;
-        private Func<ChainedHeaderBlock, bool> builderExecuteDisconnectInterceptorOnce;
+        private Action<ChainedHeaderBlock> builderDisconnectInterceptor;
+        private Func<ChainedHeaderBlock, bool> builderDisconnectInterceptorOnce;
 
-        private Action<ChainedHeaderBlock> builderExecuteBlockConnectInterceptor;
-        private Func<ChainedHeaderBlock, bool> builderExecuteConnectInterceptorOnce;
+        private Action<ChainedHeaderBlock> builderConnectInterceptor;
+        private Func<ChainedHeaderBlock, bool> builderConnectInterceptorOnce;
 
         private bool builderEnablePeerDiscovery;
         private bool builderNoValidation;
@@ -120,9 +120,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         /// <param name="interceptor">A function that is called when a block disconnects.</param>
         /// <returns>This node.</returns>
-        public CoreNode ExecuteDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
+        public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderExecuteDisconnectInterceptor = interceptor;
+            this.builderDisconnectInterceptor = interceptor;
             return this;
         }
 
@@ -131,9 +131,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         /// <param name="interceptor">A function that is called when a block disconnects, it will return true if it executed.</param>
         /// <returns>This node.</returns>
-        public CoreNode ExecuteDisconnectInterceptorOnce(Func<ChainedHeaderBlock, bool> interceptor)
+        public CoreNode SetDisconnectInterceptorOnce(Func<ChainedHeaderBlock, bool> interceptor)
         {
-            this.builderExecuteDisconnectInterceptorOnce = interceptor;
+            this.builderDisconnectInterceptorOnce = interceptor;
             return this;
         }
 
@@ -142,9 +142,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         /// <param name="interceptor">A function that is called everytime a block connects.</param>
         /// <returns>This node.</returns>
-        public CoreNode ExecuteConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
+        public CoreNode SetConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderExecuteBlockConnectInterceptor = interceptor;
+            this.builderConnectInterceptor = interceptor;
             return this;
         }
 
@@ -153,9 +153,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         /// <param name="interceptor">A function that is called when a block connects, it will return true if it executed.</param>
         /// <returns>This node.</returns>
-        public CoreNode ExecuteConnectInterceptorOnce(Func<ChainedHeaderBlock, bool> interceptor)
+        public CoreNode SetConnectInterceptorOnce(Func<ChainedHeaderBlock, bool> interceptor)
         {
-            this.builderExecuteConnectInterceptorOnce = interceptor;
+            this.builderConnectInterceptorOnce = interceptor;
             return this;
         }
 
@@ -277,13 +277,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 
                 // Connect interceptors------------------------------
-                this.runner.InterceptorConnect = this.builderExecuteBlockConnectInterceptor;
-                this.runner.InterceptorConnectOnce = this.builderExecuteConnectInterceptorOnce;
+                this.runner.InterceptorConnect = this.builderConnectInterceptor;
+                this.runner.InterceptorConnectOnce = this.builderConnectInterceptorOnce;
                 // --------------------------------------------------
 
                 // Disconnect interceptors---------------------------
-                this.runner.InterceptorDisconnect = this.builderExecuteDisconnectInterceptor;
-                this.runner.InterceptorDisconnectOnce = this.builderExecuteDisconnectInterceptorOnce;
+                this.runner.InterceptorDisconnect = this.builderDisconnectInterceptor;
+                this.runner.InterceptorDisconnectOnce = this.builderDisconnectInterceptorOnce;
                 // --------------------------------------------------
 
                 this.runner.BuildNode();
