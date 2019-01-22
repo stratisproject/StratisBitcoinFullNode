@@ -2,6 +2,6 @@
 {
     public interface IInternalExecutorFactory
     {
-        IInternalTransactionExecutor Create(IState state);
+        IInternalTransactionExecutor Create(RuntimeObserver.IGasMeter gasMeter, IState state);
     }
 }

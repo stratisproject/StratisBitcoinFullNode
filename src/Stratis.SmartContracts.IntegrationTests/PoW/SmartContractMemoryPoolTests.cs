@@ -59,7 +59,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Gas higher than allowed limit
                 var tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                var contractTxData = new ContractTxData(1, 100, new Gas(10_000_000), new uint160(0), "Test");
+                var contractTxData = new ContractTxData(1, 100, new RuntimeObserver.Gas(10_000_000), new uint160(0), "Test");
                 tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(contractTxData))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);
@@ -92,7 +92,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Gas price lower than minimum
                 tx = stratisNodeSync.FullNode.Network.CreateTransaction();
                 tx.AddInput(new TxIn(new OutPoint(prevTrx.GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey)));
-                var lowGasPriceContractTxData = new ContractTxData(1, SmartContractMempoolValidator.MinGasPrice - 1, new Gas(SmartContractFormatRule.GasLimitMaximum), new uint160(0), "Test");
+                var lowGasPriceContractTxData = new ContractTxData(1, SmartContractMempoolValidator.MinGasPrice - 1, new RuntimeObserver.Gas(SmartContractFormatRule.GasLimitMaximum), new uint160(0), "Test");
                 tx.AddOutput(new TxOut(1, new Script(callDataSerializer.Serialize(lowGasPriceContractTxData))));
                 tx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
                 stratisNodeSync.Broadcast(tx);

@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                     It.IsAny<ContractTxData>(),
                     It.IsAny<ulong>(),
                     It.IsAny<uint160>(),
-                    It.IsAny<Gas>(),
+                    It.IsAny<RuntimeObserver.Gas>(),
                     It.IsAny<bool>()))
                 .Returns((this.Fee, this.Refund));            
             this.RefundProcessor = refundProcessor;
