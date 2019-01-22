@@ -58,11 +58,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
-        private Action<ChainedHeaderBlock> builderDisconnectInterceptor;
-        private Func<ChainedHeaderBlock, bool> builderDisconnectInterceptorOnce;
-
         private Action<ChainedHeaderBlock> builderConnectInterceptor;
-        private Func<ChainedHeaderBlock, bool> builderConnectInterceptorOnce;
+        private Action<ChainedHeaderBlock> builderDisconnectInterceptor;
 
         private bool builderEnablePeerDiscovery;
         private bool builderNoValidation;
@@ -116,28 +113,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// Executes a function when a block has disconnected.
-        /// </summary>
-        /// <param name="interceptor">A function that is called when a block disconnects.</param>
-        /// <returns>This node.</returns>
-        public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
-        {
-            this.builderDisconnectInterceptor = interceptor;
-            return this;
-        }
-
-        /// <summary>
-        /// Executes a function when a block has disconnected.
-        /// </summary>
-        /// <param name="interceptor">A function that is called when a block disconnects, it will return true if it executed.</param>
-        /// <returns>This node.</returns>
-        public CoreNode SetDisconnectInterceptorOnce(Func<ChainedHeaderBlock, bool> interceptor)
-        {
-            this.builderDisconnectInterceptorOnce = interceptor;
-            return this;
-        }
-
-        /// <summary>
         /// Executes a function when a block has connected.
         /// </summary>
         /// <param name="interceptor">A function that is called everytime a block connects.</param>
@@ -149,13 +124,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// Executes a function when a block has connected.
+        /// Executes a function when a block has disconnected.
         /// </summary>
-        /// <param name="interceptor">A function that is called when a block connects, it will return true if it executed.</param>
+        /// <param name="interceptor">A function that is called when a block disconnects.</param>
         /// <returns>This node.</returns>
-        public CoreNode SetConnectInterceptorOnce(Func<ChainedHeaderBlock, bool> interceptor)
+        public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderConnectInterceptorOnce = interceptor;
+            this.builderDisconnectInterceptor = interceptor;
             return this;
         }
 
@@ -276,14 +251,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.runner.EnablePeerDiscovery = this.builderEnablePeerDiscovery;
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 
-                // Connect interceptors------------------------------
-                this.runner.InterceptorConnect = this.builderConnectInterceptor;
-                this.runner.InterceptorConnectOnce = this.builderConnectInterceptorOnce;
-                // --------------------------------------------------
-
-                // Disconnect interceptors---------------------------
-                this.runner.InterceptorDisconnect = this.builderDisconnectInterceptor;
-                this.runner.InterceptorDisconnectOnce = this.builderDisconnectInterceptorOnce;
+                // Interceptors--------------------------------------
+                this.runner.ConnectInterceptor = this.builderConnectInterceptor;
+                this.runner.DisconnectInterceptor = this.builderDisconnectInterceptor;
                 // --------------------------------------------------
 
                 this.runner.BuildNode();

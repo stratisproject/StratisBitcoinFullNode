@@ -23,11 +23,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public bool EnablePeerDiscovery { get; internal set; }
         public FullNode FullNode { get; set; }
 
-        public Action<ChainedHeaderBlock> InterceptorDisconnect { get; internal set; }
-        public Func<ChainedHeaderBlock, bool> InterceptorDisconnectOnce { get; internal set; }
-
-        public Action<ChainedHeaderBlock> InterceptorConnect { get; internal set; }
-        public Func<ChainedHeaderBlock, bool> InterceptorConnectOnce { get; internal set; }
+        public Action<ChainedHeaderBlock> ConnectInterceptor { get; internal set; }
+        public Action<ChainedHeaderBlock> DisconnectInterceptor { get; internal set; }
 
         public Network Network { set; get; }
         public bool OverrideDateTimeProvider { get; internal set; }
@@ -68,17 +65,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
             builder = builder.AddBlockObserverFeature();
 
-            if (this.InterceptorConnect != null)
-                builder = builder.UseBlockConnectedInterceptor(this.InterceptorConnect);
+            if (this.ConnectInterceptor != null)
+                builder = builder.UseConnectedInterceptor(this.ConnectInterceptor);
 
-            if (this.InterceptorConnectOnce != null)
-                builder = builder.UseBlockConnectedInterceptorOnce(this.InterceptorConnectOnce);
-
-            if (this.InterceptorDisconnect != null)
-                builder = builder.UseBlockDisconnectedInterceptor(this.InterceptorDisconnect);
-
-            if (this.InterceptorDisconnectOnce != null)
-                builder = builder.UseBlockDisconnectedInterceptorOnce(this.InterceptorDisconnectOnce);
+            if (this.DisconnectInterceptor != null)
+                builder = builder.UseDisconnectedInterceptor(this.DisconnectInterceptor);
         }
     }
 }
