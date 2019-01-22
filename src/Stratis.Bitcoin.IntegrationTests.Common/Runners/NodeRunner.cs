@@ -1,6 +1,7 @@
 ﻿using System;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
+using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
@@ -53,6 +54,20 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             }
 
             this.FullNode = null;
+        }
+
+        protected void ConfigureInterceptors(IFullNodeBuilder builder)
+        {
+            if (this is BitcoinCoreRunner)
+                return;
+
+            builder = builder.AddBlockObserverFeature();
+
+            if (this.InterceptorConnect != null)
+                builder = builder.UseBlockConnectedInterceptor(this.InterceptorConnect);
+
+            if (this.InterceptorDisconnect != null)
+                builder = builder.UseBlockDisconnectedInterceptor(this.InterceptorDisconnect);
         }
     }
 }

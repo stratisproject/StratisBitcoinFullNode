@@ -41,13 +41,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             if (this.OverrideDateTimeProvider)
                 builder.OverrideDateTimeProviderFor<MiningFeature>();
 
-            builder = builder.AddBlockObserverFeature();
-
-            if (this.InterceptorConnect != null)
-                builder = builder.UseBlockConnectedInterceptor(this.InterceptorConnect);
-
-            if (this.InterceptorDisconnect != null)
-                builder = builder.UseBlockDisconnectedInterceptor(this.InterceptorDisconnect);
+            ConfigureInterceptors(builder);
 
             if (!this.EnablePeerDiscovery)
             {

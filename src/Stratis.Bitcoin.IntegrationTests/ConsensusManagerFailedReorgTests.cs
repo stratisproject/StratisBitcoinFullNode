@@ -12,12 +12,10 @@ namespace Stratis.Bitcoin.IntegrationTests
 {
     public class ConsensusManagerFailedReorgTests
     {
-        private readonly Network posNetwork;
         private readonly Network powNetwork;
 
         public ConsensusManagerFailedReorgTests()
         {
-            this.posNetwork = new StratisRegTest();
             this.powNetwork = new BitcoinRegTest();
         }
 

@@ -43,13 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseTestChainedHeaderTree()
                             .MockIBD();
 
-            builder = builder.AddBlockObserverFeature();
-
-            if (this.InterceptorConnect != null)
-                builder = builder.UseBlockConnectedInterceptor(this.InterceptorConnect);
-
-            if (this.InterceptorDisconnect != null)
-                builder = builder.UseBlockDisconnectedInterceptor(this.InterceptorDisconnect);
+            ConfigureInterceptors(builder);
 
             if (this.ServiceToOverride != null)
                 builder.OverrideService<BaseFeature>(this.ServiceToOverride);
