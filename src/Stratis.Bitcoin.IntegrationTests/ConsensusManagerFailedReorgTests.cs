@@ -37,17 +37,17 @@ namespace Stratis.Bitcoin.IntegrationTests
                 bool minerA_Reconnected_Its_OwnChain = false;
 
                 // Configure the interceptor to intercept when Miner A connects Miner B's chain.
-                bool interceptorConnect(ChainedHeaderBlock chainedHeaderBlock)
+                void interceptorConnect(ChainedHeaderBlock chainedHeaderBlock)
                 {
                     if (!interceptorsEnabled)
-                        return false;
+                        return;
 
                     if (!minerA_IsConnecting_To_MinerBChain)
                     {
                         if (chainedHeaderBlock.ChainedHeader.Height == 12)
                             minerA_IsConnecting_To_MinerBChain = minerA.FullNode.ConsensusManager().Tip.HashBlock == minerBChainTip.GetAncestor(12).HashBlock;
 
-                        return false;
+                        return;
                     }
 
                     if (!minerA_Reconnected_Its_OwnChain)
@@ -55,24 +55,22 @@ namespace Stratis.Bitcoin.IntegrationTests
                         if (chainedHeaderBlock.ChainedHeader.Height == 14)
                             minerA_Reconnected_Its_OwnChain = true;
 
-                        return false;
+                        return;
                     }
-
-                    return false;
                 }
 
                 // Configure the interceptor to intercept when Miner A disconnects Miner B's chain after the reorg.
-                bool interceptorDisconnect(ChainedHeaderBlock chainedHeaderBlock)
+                void interceptorDisconnect(ChainedHeaderBlock chainedHeaderBlock)
                 {
                     if (!interceptorsEnabled)
-                        return false;
+                        return;
 
                     if (!minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain)
                     {
                         if (minerA.FullNode.ConsensusManager().Tip.Height == 10)
                             minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain = true;
 
-                        return false;
+                        return;
                     }
 
                     if (!minerA_Disconnected_MinerBsChain)
@@ -80,14 +78,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                         if (minerA.FullNode.ConsensusManager().Tip.Height == 10)
                             minerA_Disconnected_MinerBsChain = true;
 
-                        return false;
+                        return;
                     }
-
-                    return false;
                 }
 
-                minerA.BlockConnectInterceptor(interceptorConnect);
-                minerA.BlockDisconnectInterceptor(interceptorDisconnect);
+                minerA.ExecuteConnectInterceptor(interceptorConnect);
+                minerA.ExecuteDisconnectInterceptor(interceptorDisconnect);
                 minerA.Start();
 
                 // Miner B syncs with Miner A
@@ -163,14 +159,14 @@ namespace Stratis.Bitcoin.IntegrationTests
                 bool minerA_Reconnected_Its_OwnChain = false;
 
                 // Configure the interceptor to intercept when Miner A connects Miner B's chain.
-                bool interceptorConnect(ChainedHeaderBlock chainedHeaderBlock)
+                void interceptorConnect(ChainedHeaderBlock chainedHeaderBlock)
                 {
                     if (minerA_IsConnecting_To_MinerBChain == false)
                     {
                         if (chainedHeaderBlock.ChainedHeader.Height == 12)
                             minerA_IsConnecting_To_MinerBChain = minerA.FullNode.ConsensusManager().Tip.HashBlock == minerBChainTip.GetAncestor(12).HashBlock;
 
-                        return false;
+                        return;
                     }
 
                     if (minerA_Reconnected_Its_OwnChain == false)
@@ -178,21 +174,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                         if (chainedHeaderBlock.ChainedHeader.Height == 14)
                             minerA_Reconnected_Its_OwnChain = true;
 
-                        return false;
+                        return;
                     }
-
-                    return false;
                 }
 
                 // Configure the interceptor to intercept when Miner A disconnects Miner B's chain after the reorg.
-                bool interceptorDisconnect(ChainedHeaderBlock chainedHeaderBlock)
+                void interceptorDisconnect(ChainedHeaderBlock chainedHeaderBlock)
                 {
                     if (minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain == false)
                     {
                         if (minerA.FullNode.ConsensusManager().Tip.Height == 10)
                             minerA_Disconnected_ItsOwnChain_ToConnectTo_MinerBs_LongerChain = true;
 
-                        return false;
+                        return;
                     }
                     else
 
@@ -201,14 +195,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                         if (minerA.FullNode.ConsensusManager().Tip.Height == 10)
                             minerA_Disconnected_MinerBsChain = true;
 
-                        return false;
+                        return;
                     }
-
-                    return false;
                 }
 
-                minerA.BlockConnectInterceptor(interceptorConnect);
-                minerA.BlockDisconnectInterceptor(interceptorDisconnect);
+                minerA.ExecuteConnectInterceptor(interceptorConnect);
+                minerA.ExecuteDisconnectInterceptor(interceptorDisconnect);
                 minerA.Restart();
 
                 TestHelper.Connect(minerA, minerB);
