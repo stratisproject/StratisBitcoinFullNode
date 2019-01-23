@@ -10,8 +10,4 @@
     <Version Condition=" '$(Version)' == '' ">$(VersionPrefix)</Version>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Stratis.SmartContracts" Version="1.1.0" />
-  </ItemGroup>
-
 </Project>

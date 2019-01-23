@@ -506,9 +506,11 @@ namespace NBitcoin
 
         public byte[] ToBytes()
         {
-            var ms = new MemoryStream();
-            WriteTo(ms);
-            return ms.ToArray();
+            using (var ms = new MemoryStream())
+            {
+                WriteTo(ms);
+                return ms.ToArray();
+            }
         }
 
         public override string ToString()

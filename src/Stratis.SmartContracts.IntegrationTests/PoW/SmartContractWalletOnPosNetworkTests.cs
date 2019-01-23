@@ -41,7 +41,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Create a token contract
                 ulong gasPrice = 1;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)5000;
+                var gasLimit = (RuntimeObserver.Gas)5000;
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTestPos.cs");
                 Assert.True(compilationResult.Success);
 

@@ -11,8 +11,9 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
         /// Returns the fee and refund transactions to account for gas refunds after contract execution.
         /// </summary>
         (Money, TxOut) Process(ContractTxData contractTxData,
-            ulong mempoolFee, uint160 sender,
-            Gas gasConsumed,
+            ulong mempoolFee, 
+            uint160 sender,
+            RuntimeObserver.Gas gasConsumed,
             bool outOfGas);
     }
 }

@@ -1,4 +1,8 @@
 ﻿using System.IO;
+using System.Net;
+using NBitcoin;
+using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Configuration
 {
@@ -22,7 +26,7 @@ namespace Stratis.Bitcoin.Configuration
             this.CoinViewPath = Path.Combine(path, "coinview");
             this.AddressManagerFilePath = path;
             this.ChainPath = Path.Combine(path, "chain");
-            this.FinalizedBlockInfoPath = Path.Combine(path, "finalizedBlock");
+            this.KeyValueRepositoryPath = Path.Combine(path, "common");
             this.BlockPath = Path.Combine(path, "blocks");
             this.IndexPath = Path.Combine(path, "index");
             this.RpcCookieFile = Path.Combine(path, ".cookie");
@@ -41,19 +45,19 @@ namespace Stratis.Bitcoin.Configuration
         public string RootPath { get; }
 
         /// <summary>Address manager's database of peers.</summary>
-        /// <seealso cref="Protocol.PeerAddressManager.SavePeers(string, string)"/>
+        /// <seealso cref="PeerAddressManager.SavePeers(string, string)"/>
         public string AddressManagerFilePath { get; private set; }
 
         /// <summary>Path to the folder with coinview database files.</summary>
-        /// <seealso cref="Features.Consensus.CoinViews.DBreezeCoinView.DBreezeCoinView"/>
+        /// <seealso cref="Consensus.CoinViews.DBreezeCoinView.DBreezeCoinView"/>
         public string CoinViewPath { get; set; }
 
         /// <summary>Path to the folder with node's chain repository database files.</summary>
         /// <seealso cref="Base.BaseFeature.StartChain"/>
         public string ChainPath { get; internal set; }
 
-        /// <summary>Path to the folder with node's finalized block info repository database files.</summary>
-        public string FinalizedBlockInfoPath { get; internal set; }
+        /// <summary>Path to the folder with separated key-value items managed by <see cref="IKeyValueRepository"/>.</summary>
+        public string KeyValueRepositoryPath { get; internal set; }
 
         /// <summary>Path to the folder with block repository database files.</summary>
         /// <seealso cref="Features.BlockStore.BlockRepository.BlockRepository"/>
@@ -76,13 +80,13 @@ namespace Stratis.Bitcoin.Configuration
         public string LogPath { get; internal set; }
 
         /// <summary>Path to DNS masterfile.</summary>
-        /// <seealso cref="Features.Dns.IMasterFile.Save"/>
+        /// <seealso cref="Dns.IMasterFile.Save"/>
         public string DnsMasterFilePath { get; internal set; }
 
         /// <summary>Path to the folder with smart contract state database files.</summary>
         public string SmartContractStatePath { get; set; }
 
-        /// <summary>Path to the folder for <see cref="Bitcoin.Features.Consensus.ProvenBlockHeaders.ProvenBlockHeader"/> items database files.</summary>
+        /// <summary>Path to the folder for <see cref="ProvenBlockHeader"/> items database files.</summary>
         public string ProvenBlockHeaderPath { get; set; }
 
         /// <summary>Path to Stratis applications</summary>

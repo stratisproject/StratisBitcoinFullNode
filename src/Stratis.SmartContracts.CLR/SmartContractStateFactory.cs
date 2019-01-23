@@ -24,7 +24,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>        
-        public ISmartContractState Create(IState state, IGasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository)
+        public ISmartContractState Create(IState state, RuntimeObserver.IGasMeter gasMeter, uint160 address, BaseMessage message, IStateRepository repository)
         {
             IPersistenceStrategy persistenceStrategy = new MeteredPersistenceStrategy(repository, gasMeter, new BasicKeyEncodingStrategy());
 
@@ -41,9 +41,8 @@ namespace Stratis.SmartContracts.CLR
                 ),
                 persistentState,
                 this.serializer,
-                gasMeter,
                 contractLogger,
-                this.InternalTransactionExecutorFactory.Create(state),
+                this.InternalTransactionExecutorFactory.Create(gasMeter, state),
                 new InternalHashHelper(),
                 () => state.GetBalance(address));
 

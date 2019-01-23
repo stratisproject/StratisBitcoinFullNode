@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public class ExternalCallMessage : CallMessage
     {
-        public ExternalCallMessage(uint160 to, uint160 from, ulong amount, Gas gasLimit, MethodCall methodCall) 
+        public ExternalCallMessage(uint160 to, uint160 from, ulong amount, RuntimeObserver.Gas gasLimit, MethodCall methodCall) 
             : base(to, from, amount, gasLimit, methodCall)
         {
         }

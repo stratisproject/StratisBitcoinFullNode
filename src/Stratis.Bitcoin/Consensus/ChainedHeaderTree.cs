@@ -44,6 +44,9 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Total amount of unconsumed blocks.</summary>
         long UnconsumedBlocksCount { get; }
 
+        /// <summary>Total size of ChainedHeaders data in bytes.</summary>
+        long ChainedBlocksDataBytes { get; }
+
         /// <summary>
         /// Initialize the tree with consensus tip.
         /// </summary>
@@ -150,6 +153,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Gets tip of the best peer.</summary>
         /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
         ChainedHeader GetBestPeerTip();
+
+        /// <summary>
+        /// Whenever a block is rewinded we set that block as unconsumed.
+        /// </summary>
+        /// <param name="disconnectedBlock">The disconnected block to set as unconsumed.</param>
+        void BlockRewinded(ChainedHeaderBlock disconnectedBlock);
     }
 
     /// <inheritdoc />
@@ -169,6 +178,9 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <inheritdoc />
         public long UnconsumedBlocksCount { get; private set; }
+
+        /// <inheritdoc />
+        public long ChainedBlocksDataBytes { get; private set; }
 
         /// <summary>A special peer identifier that represents our local node.</summary>
         internal const int LocalPeerId = -1;
@@ -236,6 +248,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 current.Previous.Next.Add(current);
                 this.chainedHeadersByHash.Add(current.HashBlock, current);
+                this.ChainedBlocksDataBytes += current.Header.HeaderSize;
 
                 // TODO when pruned node is implemented it should be header only for pruned blocks
                 current.BlockDataAvailability = BlockDataAvailabilityState.BlockAvailable;
@@ -246,6 +259,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // Add the genesis block.
             this.chainedHeadersByHash.Add(current.HashBlock, current);
+            this.ChainedBlocksDataBytes += current.Header.HeaderSize;
 
             if (current.HashBlock != this.network.GenesisHash)
             {
@@ -574,6 +588,7 @@ namespace Stratis.Bitcoin.Consensus
         {
             header.Previous.Next.Remove(header);
             this.chainedHeadersByHash.Remove(header.HashBlock);
+            this.ChainedBlocksDataBytes -= header.Header.HeaderSize;
 
             if (header.Block != null)
             {
@@ -1065,6 +1080,7 @@ namespace Stratis.Bitcoin.Consensus
 
             previousChainedHeader.Next.Add(newChainedHeader);
             this.chainedHeadersByHash.Add(newChainedHeader.HashBlock, newChainedHeader);
+            this.ChainedBlocksDataBytes += newChainedHeader.Header.HeaderSize;
 
             return newChainedHeader;
         }
@@ -1142,6 +1158,16 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             return bestTip;
+        }
+
+        /// <inheritdoc />
+        public void BlockRewinded(ChainedHeaderBlock disconnectedBlock)
+        {
+            if (disconnectedBlock.ChainedHeader.Block == null)
+                disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+
+            this.UnconsumedBlocksDataBytes += disconnectedBlock.Block.BlockSize.Value;
+            this.UnconsumedBlocksCount++;
         }
     }
 

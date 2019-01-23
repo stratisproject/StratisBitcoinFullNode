@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.IO.Compression;
 using System.Linq;
 using System.Net;
 using System.Threading;
@@ -68,6 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private string builderWalletName;
         private string builderWalletPassword;
         private string builderWalletPassphrase;
+        private string builderWalletMnemonic;
 
         public CoreNode(NodeRunner runner, NodeConfigParameters configParameters, string configfile, bool useCookieAuth = false)
         {
@@ -183,14 +185,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <param name="walletPassword">Wallet password defaulted to "password".</param>
         /// <param name="walletName">Wallet name defaulted to "mywallet".</param>
         /// <param name="walletPassphrase">Wallet passphrase defaulted to "passphrase".</param>
+        /// <param name="walletMnemonic">Optional wallet mnemonic.</param>
         /// <returns>This node.</returns>
-        public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase")
+        public CoreNode WithWallet(string walletPassword = "password", string walletName = "mywallet", string walletPassphrase = "passphrase", string walletMnemonic = null)
         {
             this.builderWithDummyWallet = false;
             this.builderWithWallet = true;
             this.builderWalletName = walletName;
             this.builderWalletPassphrase = walletPassphrase;
             this.builderWalletPassword = walletPassword;
+            this.builderWalletMnemonic = walletMnemonic;
+            return this;
+        }
+
+        public CoreNode WithReadyBlockchainData(string readyDataName)
+        {
+            // Extract the zipped blockchain data to the node's DataFolder.
+            ZipFile.ExtractToDirectory(Path.GetFullPath(readyDataName), this.DataFolder, true);
+
             return this;
         }
 
@@ -340,7 +352,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.SetMinerSecret(new BitcoinSecret(new Key(), this.FullNode.Network));
 
             if (this.builderWithWallet)
-                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(this.builderWalletPassword, this.builderWalletName, this.builderWalletPassphrase);
+            {
+                this.Mnemonic = this.FullNode.WalletManager().CreateWallet(
+                    this.builderWalletPassword, 
+                    this.builderWalletName, 
+                    this.builderWalletPassphrase,
+                    string.IsNullOrEmpty(this.builderWalletMnemonic) ? null : new Mnemonic(this.builderWalletMnemonic));
+            }
 
             if (this.builderNoValidation)
                 DisableValidation();

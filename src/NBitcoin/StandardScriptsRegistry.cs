@@ -10,27 +10,36 @@ namespace NBitcoin
     /// </summary>
     public class StandardScriptsRegistry : IStandardScriptsRegistry
     {
-        public bool IsStandardTransaction(Transaction tx, Network network)
+        /// <summary>
+        /// Registers a new standard script template if it does not exist yet based on <see cref="ScriptTemplate.Type"/>.
+        /// </summary>
+        /// <param name="scriptTemplate">The standard script template to register.</param>
+        public virtual void RegisterStandardScriptTemplate(ScriptTemplate scriptTemplate)
+        {
+            StandardScripts.RegisterStandardScriptTemplate(scriptTemplate);
+        }
+
+        public virtual bool IsStandardTransaction(Transaction tx, Network network)
         {
             return StandardScripts.IsStandardTransaction(tx, network);
         }
 
-        public bool AreOutputsStandard(Network network, Transaction tx)
+        public virtual bool AreOutputsStandard(Network network, Transaction tx)
         {
             return StandardScripts.AreOutputsStandard(network, tx);
         }
 
-        public ScriptTemplate GetTemplateFromScriptPubKey(Script script)
+        public virtual ScriptTemplate GetTemplateFromScriptPubKey(Script script)
         {
             return StandardScripts.GetTemplateFromScriptPubKey(script);
         }
 
-        public bool IsStandardScriptPubKey(Network network, Script scriptPubKey)
+        public virtual bool IsStandardScriptPubKey(Network network, Script scriptPubKey)
         {
             return StandardScripts.IsStandardScriptPubKey(network, scriptPubKey);
         }
 
-        public bool AreInputsStandard(Network network, Transaction tx, CoinsView coinsView)
+        public virtual bool AreInputsStandard(Network network, Transaction tx, CoinsView coinsView)
         {
             return StandardScripts.AreInputsStandard(network, tx, coinsView);
         }

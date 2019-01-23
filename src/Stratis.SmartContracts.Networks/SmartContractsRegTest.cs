@@ -5,6 +5,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.SmartContracts.Networks
 {
@@ -111,6 +112,8 @@ namespace Stratis.SmartContracts.Networks
 
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
+
+            this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
         }
     }
 }
