@@ -433,7 +433,10 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
-                // Check if the transaction already exist in the mempool.
+                // If the transaction already exists in the mempool,
+                // we only record the state but do not throw an exception.
+                // This is because the caller will check if the state is invalid
+                // and if so return false, meaning that the transaction should not be relayed.
                 if (this.memPool.Exists(context.TransactionHash))
                 {
                     state.Invalid(MempoolErrors.InPool);
