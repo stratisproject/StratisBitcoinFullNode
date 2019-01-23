@@ -1478,6 +1478,39 @@ namespace Stratis.Bitcoin.Features.Wallet
             return removedTransactions;
         }
 
+        /// <inheritdoc />
+        public HashSet<(uint256, DateTimeOffset)> RemoveTransactionsFromDate(string walletName, DateTimeOffset fromDate)
+        {
+            Guard.NotEmpty(walletName, nameof(walletName));
+            Wallet wallet = this.GetWallet(walletName);
+
+            var removedTransactions = new HashSet<(uint256, DateTimeOffset)>();
+
+            lock (this.lockObject)
+            {
+                IEnumerable<HdAccount> accounts = wallet.GetAccountsByCoinType(this.coinType);
+                foreach (HdAccount account in accounts)
+                {
+                    foreach (HdAddress address in account.GetCombinedAddresses())
+                    {
+                        var toRemove = address.Transactions.Where(t => t.CreationTime > fromDate).ToList();
+                        foreach (var trx in toRemove)
+                        {
+                            removedTransactions.Add((trx.Id, trx.CreationTime));
+                            address.Transactions.Remove(trx);
+                        }
+                    }
+                }
+            }
+
+            if (removedTransactions.Any())
+            {
+                this.SaveWallet(wallet);
+            }
+
+            return removedTransactions;
+        }
+
         /// <summary>
         /// Updates details of the last block synced in a wallet when the chain of headers finishes downloading.
         /// </summary>
