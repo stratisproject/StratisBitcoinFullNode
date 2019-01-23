@@ -307,32 +307,37 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                if (this.innerBlockHash == null)
-                {
-                    this.logger.LogTrace("(-)[NULL_INNER_TIP]");
-                    return;
-                }
-
-                KeyValuePair<uint256, CacheItem>[] unspent = this.cachedUtxoItems.Where(u => u.Value.IsDirty).ToArray();
-
-                foreach (KeyValuePair<uint256, CacheItem> u in unspent)
-                {
-                    u.Value.IsDirty = false;
-                    u.Value.ExistInInner = true;
-                }
-
-                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, 0, this.cachedRewindDataIndex.Select(c => c.Value).ToList()).ConfigureAwait(false);
-
-                // Remove prunable entries from cache as they were flushed down.
-                IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
-                foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
-                    this.cachedUtxoItems.Remove(entry.Key);
-
-                this.cachedRewindDataIndex.Clear();
-                this.innerBlockHash = this.blockHash;
+                await this.FlushInternalLockedAsync().ConfigureAwait(false);
             }
 
             this.lastCacheFlushTime = this.dateTimeProvider.GetUtcNow();
+        }
+
+        private async Task FlushInternalLockedAsync()
+        {
+            if (this.innerBlockHash == null)
+            {
+                this.logger.LogTrace("(-)[NULL_INNER_TIP]");
+                return;
+            }
+
+            KeyValuePair<uint256, CacheItem>[] unspent = this.cachedUtxoItems.Where(u => u.Value.IsDirty).ToArray();
+
+            foreach (KeyValuePair<uint256, CacheItem> u in unspent)
+            {
+                u.Value.IsDirty = false;
+                u.Value.ExistInInner = true;
+            }
+
+            await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, 0, this.cachedRewindDataIndex.Select(c => c.Value).ToList()).ConfigureAwait(false);
+
+            // Remove prunable entries from cache as they were flushed down.
+            IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
+            foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
+                this.cachedUtxoItems.Remove(entry.Key);
+
+            this.cachedRewindDataIndex.Clear();
+            this.innerBlockHash = this.blockHash;
         }
 
         /// <summary>
@@ -464,6 +469,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
+                // Flush the entire cache.
+                await this.FlushInternalLockedAsync().ConfigureAwait(false);
+
                 // Check if rewind data is available in local cache. If it is
                 // we can rewind and there is no need to check underlying storage.
                 if (this.cachedRewindDataIndex.Count > 0)
