@@ -23,11 +23,11 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
 
         public int Threshold { get; }
 
-        public DateTimeOffset? TimeStart { get; }
+        public DateTime? TimeStart { get; }
 
-        public DateTimeOffset? TimeTimeOut { get; }
+        public DateTime? TimeTimeOut { get; }
 
-        public ThresholdStateModel(int deploymentIndex, int votes, DateTimeOffset? timeStart, DateTimeOffset? timeTimeOut, int threshold, int height, int periodStartsHeight, int periodEndsHeight, ThresholdState stateValue, string thresholdState)
+        public ThresholdStateModel(int deploymentIndex, int votes, DateTime? timeStart, DateTime? timeTimeOut, int threshold, int height, int periodStartsHeight, int periodEndsHeight, ThresholdState stateValue, string thresholdState)
         {
             this.DeploymentIndex = deploymentIndex;
             this.Votes = votes;

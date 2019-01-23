@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Base.Deployments
             for (int deploymentIndex = 0; deploymentIndex < array.Length; deploymentIndex++)
             {
                 if (!nonNullDeployments.Contains(deploymentIndex)) continue;
-                DateTimeOffset? timeStart = this.consensus.BIP9Deployments[deploymentIndex]?.StartTime;
-                DateTimeOffset? timeTimeout = this.consensus.BIP9Deployments[deploymentIndex]?.Timeout;
+                DateTime? timeStart = this.consensus.BIP9Deployments[deploymentIndex]?.StartTime.Date;
+                DateTime? timeTimeout = this.consensus.BIP9Deployments[deploymentIndex]?.Timeout.Date;
                 int threshold = this.consensus.RuleChangeActivationThreshold;
 
                 int votes = 0;
