@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.IntegrationTests.Common;
+﻿using System.Threading.Tasks;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Primitives;
@@ -13,7 +14,7 @@ namespace Stratis.Bitcoin.IntegrationTests
         /// tries to connect to another chain with longer chain work but containing an invalid block.
         /// </summary>
         [Fact]
-        public void ReorgChain_AfterInitialRewind_ChainA_Extension_MinerC_Disconnects()
+        public async Task ReorgChain_AfterInitialRewind_ChainA_Extension_MinerC_DisconnectsAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -23,21 +24,26 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerB = builder.CreateStratisPowNode(network).NoValidation().WithDummyWallet();
                 var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
 
+                bool minerADisconnectedFromSyncer = false;
+
                 // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
-                bool interceptor(ChainedHeaderBlock chainedHeaderBlock)
+                void interceptor(ChainedHeaderBlock chainedHeaderBlock)
                 {
+                    if (minerADisconnectedFromSyncer)
+                        return;
+
                     if (chainedHeaderBlock.ChainedHeader.Previous.Height == 5)
                     {
                         // Ensure that minerA's tip has rewound to 5.
                         TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 5));
                         TestHelper.Disconnect(minerA, syncer);
-                        return true;
-                    }
+                        minerADisconnectedFromSyncer = true;
 
-                    return false;
+                        return;
+                    }
                 }
 
-                minerA.BlockDisconnectInterceptor(interceptor);
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // Start the nodes.
                 minerA.Start();
@@ -63,7 +69,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 6,7,9,10 = valid
                 // Block 8 = invalid
                 Assert.False(TestHelper.IsNodeConnected(minerB));
-                TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (node, block) => BlockBuilder.InvalidCoinbaseReward(node, block)).BuildAsync();
+                await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (node, block) => BlockBuilder.InvalidCoinbaseReward(node, block)).BuildAsync();
 
                 // Reconnect minerA to minerB.
                 TestHelper.Connect(minerA, minerB);
@@ -96,21 +102,26 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerB = builder.CreateStratisPowNode(network).WithDummyWallet();
                 var syncer = builder.CreateStratisPowNode(network).WithDummyWallet();
 
+                bool minerADisconnectedFromMinerB = false;
+
                 // Configure the interceptor to disconnect a node after a certain block has been disconnected (rewound).
-                bool interceptor(ChainedHeaderBlock chainedHeaderBlock)
+                void interceptor(ChainedHeaderBlock chainedHeaderBlock)
                 {
+                    if (minerADisconnectedFromMinerB)
+                        return;
+
                     if (chainedHeaderBlock.ChainedHeader.Previous.Height == 5)
                     {
                         // Ensure that minerA's tips has rewound to 5.
                         TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 5));
                         TestHelper.Disconnect(minerA, minerB);
-                        return true;
-                    }
+                        minerADisconnectedFromMinerB = true;
 
-                    return false;
+                        return;
+                    }
                 }
 
-                minerA.BlockDisconnectInterceptor(interceptor);
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // Start the nodes.
                 minerA.Start();
