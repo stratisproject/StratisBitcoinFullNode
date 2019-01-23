@@ -153,6 +153,12 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Gets tip of the best peer.</summary>
         /// <returns>Tip of the best peer or <c>null</c> if there are no peers.</returns>
         ChainedHeader GetBestPeerTip();
+
+        /// <summary>
+        /// Whenever a block is rewinded we set that block as unconsumed.
+        /// </summary>
+        /// <param name="disconnectedBlock">The disconnected block to set as unconsumed.</param>
+        void BlockRewinded(ChainedHeaderBlock disconnectedBlock);
     }
 
     /// <inheritdoc />
@@ -1152,6 +1158,16 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             return bestTip;
+        }
+
+        /// <inheritdoc />
+        public void BlockRewinded(ChainedHeaderBlock disconnectedBlock)
+        {
+            if (disconnectedBlock.ChainedHeader.Block == null)
+                disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+
+            this.UnconsumedBlocksDataBytes += disconnectedBlock.Block.BlockSize.Value;
+            this.UnconsumedBlocksCount++;
         }
     }
 

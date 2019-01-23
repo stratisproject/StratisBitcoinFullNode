@@ -5,8 +5,4 @@
     <Version>0.0.1-beta</Version>
   </PropertyGroup>
 
-  <ItemGroup>
-    <PackageReference Include="Stratis.SmartContracts" Version="1.1.0" />
-  </ItemGroup>
-
 </Project>

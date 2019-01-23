@@ -20,11 +20,10 @@ namespace Stratis.SmartContracts.CLR.Tests
             this.State = state;
             this.StateProcessor = new Mock<IStateProcessor>();
 
-            this.GasMeter = new Mock<IGasMeter>();
+            this.GasMeter = new Mock<RuntimeObserver.IGasMeter>();
 
             var smartContractState = Mock.Of<ISmartContractState>(s =>
-                s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(), "0x0000000000000000000000000000000000000002".HexToAddress(), 100) &&
-                s.GasMeter == this.GasMeter.Object);
+                s.Message == new Message("0x0000000000000000000000000000000000000001".HexToAddress(), "0x0000000000000000000000000000000000000002".HexToAddress(), 100));
 
             this.SmartContractState = smartContractState;
 
@@ -35,7 +34,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         public ISmartContractState SmartContractState { get; }
 
-        public Mock<IGasMeter> GasMeter { get; }
+        public Mock<RuntimeObserver.IGasMeter> GasMeter { get; }
 
         public IState Snapshot { get; }
 
@@ -45,14 +44,14 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         public ILoggerFactory LoggerFactory { get; }
 
-        public void SetGasMeterLimitAbove(Gas minimum)
+        public void SetGasMeterLimitAbove(RuntimeObserver.Gas minimum)
         {
-            this.GasMeter.SetupGet(g => g.GasAvailable).Returns((Gas)(minimum + 1));
+            this.GasMeter.SetupGet(g => g.GasAvailable).Returns((RuntimeObserver.Gas)(minimum + 1));
         }
 
-        public void SetGasMeterLimitBelow(Gas maximum)
+        public void SetGasMeterLimitBelow(RuntimeObserver.Gas maximum)
         {
-            this.GasMeter.SetupGet(g => g.GasAvailable).Returns((Gas)(maximum - 1));
+            this.GasMeter.SetupGet(g => g.GasAvailable).Returns((RuntimeObserver.Gas)(maximum - 1));
         }
     }
 }

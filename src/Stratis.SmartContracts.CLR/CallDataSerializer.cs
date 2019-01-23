@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts.CLR
                 
                 var vmVersion = this.primitiveSerializer.Deserialize<int>(vmVersionBytes);
                 var gasPrice = this.primitiveSerializer.Deserialize<ulong>(gasPriceBytes);
-                var gasLimit = (Gas) this.primitiveSerializer.Deserialize<ulong>(gasLimitBytes);
+                var gasLimit = (RuntimeObserver.Gas) this.primitiveSerializer.Deserialize<ulong>(gasLimitBytes);
 
                 return IsCallContract(type) 
                     ? this.SerializeCallContract(smartContractBytes, vmVersion, gasPrice, gasLimit)
@@ -53,7 +53,7 @@ namespace Stratis.SmartContracts.CLR
             }
         }
 
-        private Result<ContractTxData> SerializeCreateContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, Gas gasLimit)
+        private Result<ContractTxData> SerializeCreateContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, RuntimeObserver.Gas gasLimit)
         {
             var remaining = smartContractBytes.Slice(PrefixSize, (uint) (smartContractBytes.Length - PrefixSize));
 
@@ -66,7 +66,7 @@ namespace Stratis.SmartContracts.CLR
             return Result.Ok(callData);
         }
 
-        private Result<ContractTxData> SerializeCallContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, Gas gasLimit)
+        private Result<ContractTxData> SerializeCallContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, RuntimeObserver.Gas gasLimit)
         {
             var contractAddressBytes = smartContractBytes.Slice(PrefixSize, AddressSize);
             var contractAddress = new uint160(contractAddressBytes);
