@@ -90,22 +90,24 @@ namespace NBitcoin
                 return this;
 
             Block instance = consensusFactory.CreateBlock();
-            var ms = new MemoryStream();
-            var bms = new BitcoinStream(ms, true)
+            using (var ms = new MemoryStream())
             {
-                TransactionOptions = options,
-                ConsensusFactory = consensusFactory
-            };
+                var bms = new BitcoinStream(ms, true)
+                {
+                    TransactionOptions = options,
+                    ConsensusFactory = consensusFactory
+                };
 
-            this.ReadWrite(bms);
-            ms.Position = 0;
-            bms = new BitcoinStream(ms, false)
-            {
-                TransactionOptions = options,
-                ConsensusFactory = consensusFactory
-            };
+                this.ReadWrite(bms);
+                ms.Position = 0;
+                bms = new BitcoinStream(ms, false)
+                {
+                    TransactionOptions = options,
+                    ConsensusFactory = consensusFactory
+                };
 
-            instance.ReadWrite(bms);
+                instance.ReadWrite(bms);
+            }
             return instance;
         }
 

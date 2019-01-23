@@ -9,6 +9,7 @@ using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Exceptions;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
+using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
@@ -39,7 +40,12 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Creates a new instance of a smart contract by invoking the contract's constructor
         /// </summary>
-        public VmExecutionResult Create(IStateRepository repository, ISmartContractState contractState, byte[] contractCode, object[] parameters, string typeName = null)
+        public VmExecutionResult Create(IStateRepository repository,
+            ISmartContractState contractState,
+            RuntimeObserver.IGasMeter gasMeter,
+            byte[] contractCode,
+            object[] parameters,
+            string typeName = null)
         {
             string typeToInstantiate;
             ContractByteCode code;
@@ -66,7 +72,7 @@ namespace Stratis.SmartContracts.CLR
 
                 typeToInstantiate = typeName ?? moduleDefinition.ContractType.Name;
 
-                var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
+                var observer = new Observer(gasMeter,  new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
                 moduleDefinition.Rewrite(rewriter);
 
@@ -113,14 +119,14 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Invokes a method on an existing smart contract
         /// </summary>
-        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, MethodCall methodCall, byte[] contractCode, string typeName)
+        public VmExecutionResult ExecuteMethod(ISmartContractState contractState, RuntimeObserver.IGasMeter gasMeter, MethodCall methodCall, byte[] contractCode, string typeName)
         {
             ContractByteCode code;
 
             // Code we're loading from database - can assume it's valid.
             using (IContractModuleDefinition moduleDefinition = this.moduleDefinitionReader.Read(contractCode).Value)
             {
-                var observer = new Observer(contractState.GasMeter, MemoryUnitLimit);
+                var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
                 moduleDefinition.Rewrite(rewriter);
                 code = moduleDefinition.ToByteCode();

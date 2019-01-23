@@ -9,7 +9,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Miner.Interfaces;
 using Stratis.Bitcoin.Features.Miner.Staking;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Interfaces;
@@ -164,8 +163,10 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(minerA, 55);
 
                 // Sync the network to height 55.
-                TestHelper.ConnectAndSync(syncer, minerA);
-                TestHelper.ConnectAndSync(syncer, minerB);
+                TestHelper.Connect(syncer, minerA);
+                TestHelper.Connect(syncer, minerB);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 600);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), waitTimeSeconds: 600);
 
                 // Disconnect Miner A and B.
                 TestHelper.DisconnectAll(syncer, minerA, minerB);
@@ -192,8 +193,8 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.Connect(syncer, minerA);
                 TestHelper.Connect(syncer, minerB);
 
-                // Wait until syncer has disconnected either minerA or minerB due to a InvalidStakeDepth exception.
-                TestHelper.WaitLoop(() => syncer.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() == 1);
+                // Wait until syncer has disconnected either minerA and/or minerB due to a InvalidStakeDepth exception.
+                TestHelper.WaitLoop(() => syncer.FullNode.ConnectionManager.ConnectedPeers.Where(p => !p.Inbound).Count() < 2);
 
                 // Determine which node was disconnected.
                 CoreNode survived = null;

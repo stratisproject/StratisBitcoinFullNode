@@ -1,6 +1,7 @@
 ﻿using System;
 using Moq;
 using NBitcoin;
+using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
 
@@ -15,7 +16,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             var sr = new Mock<IStateRepository>();
 
-            Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(null, new GasMeter((Gas) 0), this.keyEncodingStrategy));
+            Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(null, new GasMeter((RuntimeObserver.Gas) 0), this.keyEncodingStrategy));
             Assert.Throws<ArgumentNullException>(() => new MeteredPersistenceStrategy(sr.Object, null, this.keyEncodingStrategy));
         }
 
@@ -33,7 +34,7 @@ namespace Stratis.SmartContracts.CLR.Tests
                 It.IsAny<byte[]>(),
                 It.IsAny<byte[]>()));
 
-            Gas availableGas = (Gas) 100000;
+            var availableGas = (RuntimeObserver.Gas) 100000;
             GasMeter gasMeter = new GasMeter(availableGas);
 
             MeteredPersistenceStrategy strategy = new MeteredPersistenceStrategy(

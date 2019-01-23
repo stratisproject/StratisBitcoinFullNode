@@ -614,8 +614,7 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader);
                         this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader.Previous);
 
-                        if (disconnectedBlock.ChainedHeader.Block == null)
-                            disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+                        this.chainedHeaderTree.BlockRewinded(disconnectedBlock);
                     }
                 }
 
