@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             // get extended private key
             string cacheKey = wallet.EncryptedSeed;
 
-            // Cache timeout is 5 minute duration.
+            // The default duration the secret is cached is 5 minutes.
             TimeSpan timeOutDuration = new TimeSpan(0, 5, 0);
 
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
@@ -558,7 +558,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool Sign { get; set; }
 
         /// <summary>
-        /// Whether the secret should be cached for 5 mins between transactions or not.
+        /// Whether the secret should be cached for 5 mins after it is used or not.
         /// </summary>
         public bool CacheSecret { get; set; }
     }
