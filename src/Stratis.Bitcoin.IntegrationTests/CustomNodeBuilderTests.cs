@@ -63,11 +63,16 @@ namespace Stratis.Bitcoin.IntegrationTests
         [Retry(1)]
         public void CanOverrideAllPorts()
         {
+            // On MacOS ports below 1024 are privileged, and cannot be bound to by anyone other than root.
+            const int port = 1024 + 123;
+            const int rpcPort = 1024 + 456;
+            const int apiPort = 1024 + 567;
+
             var extraParams = new NodeConfigParameters
             {
-                { "port", "123" },
-                { "rpcport", "456" },
-                { "apiport", "567" }
+                { "port", port.ToString() },
+                { "rpcport", rpcPort.ToString() },
+                { "apiport", apiPort.ToString() }
             };
 
             using (var nodeBuilder = NodeBuilder.Create(this))
@@ -87,14 +92,14 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 coreNode.Start();
 
-                coreNode.ApiPort.Should().Be(567);
-                coreNode.FullNode.NodeService<ApiSettings>().ApiPort.Should().Be(567);
+                coreNode.ApiPort.Should().Be(apiPort);
+                coreNode.FullNode.NodeService<ApiSettings>().ApiPort.Should().Be(apiPort);
 
-                coreNode.RpcPort.Should().Be(456);
-                coreNode.FullNode.NodeService<RpcSettings>().RPCPort.Should().Be(456);
+                coreNode.RpcPort.Should().Be(rpcPort);
+                coreNode.FullNode.NodeService<RpcSettings>().RPCPort.Should().Be(rpcPort);
 
-                coreNode.ProtocolPort.Should().Be(123);
-                coreNode.FullNode.ConnectionManager.ConnectionSettings.ExternalEndpoint.Port.Should().Be(123);
+                coreNode.ProtocolPort.Should().Be(port);
+                coreNode.FullNode.ConnectionManager.ConnectionSettings.ExternalEndpoint.Port.Should().Be(port);
             }
         }
 
