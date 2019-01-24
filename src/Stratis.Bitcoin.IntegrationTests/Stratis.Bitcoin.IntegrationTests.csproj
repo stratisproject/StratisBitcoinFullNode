@@ -86,4 +86,8 @@
     </None>
   </ItemGroup>
 
+  <ItemGroup>
+    <Folder Include="Transactions\" />
+  </ItemGroup>
+
 </Project>
