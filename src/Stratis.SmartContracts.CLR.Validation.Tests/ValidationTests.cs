@@ -328,7 +328,7 @@ public class Test
         [Fact]
         public void NestedTypesAreValueTypesValidator_Should_Allow_Nested_Value_Type()
         {
-            const string source = @"public class Test {public struct A{}}";
+            const string source = @"public struct A{}";
 
             var typeDefinition = CompileToTypeDef(source);
 
