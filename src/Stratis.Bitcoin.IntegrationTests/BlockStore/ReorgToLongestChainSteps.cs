@@ -2,12 +2,14 @@
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
+using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -48,6 +50,9 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
             this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
             this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+
+            // Reduce this time for test purposes.
+            (this.bobNode.FullNode.BlockStore() as BlockStoreQueue).SetPrivateVariableValue<int>("BatchMaxSaveIntervalSeconds", 1);
 
             TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.Connect(this.jingNode, this.charlieNode);
@@ -146,6 +151,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
+            TestHelper.WaitLoop(() => this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result == null, waitTimeSeconds: 10);
             this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }
