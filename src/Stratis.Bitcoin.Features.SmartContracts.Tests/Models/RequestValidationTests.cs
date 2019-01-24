@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Models
             Assert.Contains(results, x => x.MemberNames.First() == nameof(BuildCreateContractTransactionRequest.GasPrice));
 
             request.GasLimit = SmartContractFormatRule.GasLimitMaximum + 1;
-            request.GasPrice = SmartContractFormatRule.GasPriceMinimum - 1;
+            request.GasPrice = SmartContractMempoolValidator.MinGasPrice - 1;
 
             results = Validate(request);
             Assert.Equal(2, results.Count);
@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Models
             Assert.Contains(results, x => x.MemberNames.First() == nameof(BuildCreateContractTransactionRequest.GasPrice));
 
             request.GasLimit = SmartContractFormatRule.GasLimitMaximum;
-            request.GasPrice = SmartContractFormatRule.GasPriceMinimum;
+            request.GasPrice = SmartContractMempoolValidator.MinGasPrice;
             results = Validate(request);
             Assert.Empty(results);
         }
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Models
             Assert.Contains(results, x => x.MemberNames.First() == nameof(BuildCallContractTransactionRequest.GasPrice));
 
             request.GasLimit = SmartContractFormatRule.GasLimitMaximum + 1;
-            request.GasPrice = SmartContractFormatRule.GasPriceMinimum - 1;
+            request.GasPrice = SmartContractMempoolValidator.MinGasPrice - 1;
 
             results = Validate(request);
             Assert.Equal(2, results.Count);
@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Models
             Assert.Contains(results, x => x.MemberNames.First() == nameof(BuildCallContractTransactionRequest.GasPrice));
 
             request.GasLimit = SmartContractFormatRule.GasLimitMaximum;
-            request.GasPrice = SmartContractFormatRule.GasPriceMinimum;
+            request.GasPrice = SmartContractMempoolValidator.MinGasPrice;
             results = Validate(request);
             Assert.Empty(results);
         }
