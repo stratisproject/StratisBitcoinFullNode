@@ -7,9 +7,9 @@
       traceConstructors="false"
       traceProperties="false">
       <TraceOn namespace="Stratis.Bitcoin+*" class="private" method="private" />
+	  <TraceOn namespace="Stratis.Bitcoin.Features.Consensus+*" class="private" method="private" />
       <TraceOn namespace="Stratis.SmartContracts.Core+*" class="private" method="private" />
       <TraceOn namespace="Stratis.SmartContracts.CLR+*" class="private" method="private" />
-      <NoTrace namespace="Stratis.Bitcoin.Features.Consensus+*" />
       <NoTrace namespace="Stratis.Bitcoin.Features.Miner+*" />
       <NoTrace namespace="*.Tests+*" />
       <NoTrace namespace="*.IntegrationTests+*" />
