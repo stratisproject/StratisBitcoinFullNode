@@ -110,16 +110,13 @@ public class Test : SmartContract
 
                                                 public Test(ISmartContractState state)
                                                     : base(state) { }
-
-                                                public void B() { var test = new A(); }
                                             }";
 
             IContractModuleDefinition decompilation = CompileToModuleDef(source);
 
             SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
-            Assert.Single(result.Errors);
-            Assert.IsType<NestedTypeIsValueTypeValidator.TypeIsValueTypeValidationResult>(result.Errors.Single());
+            Assert.Contains(result.Errors, e => e is NestedTypeIsValueTypeValidator.NestedTypeIsValueTypeValidationResult);
         }
 
         [Fact]

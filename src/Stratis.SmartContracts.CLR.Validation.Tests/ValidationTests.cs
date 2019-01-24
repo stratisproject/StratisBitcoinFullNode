@@ -334,7 +334,7 @@ public class Test
 
             var validator = new NestedTypeIsValueTypeValidator();
 
-            var result = validator.Validate(typeDefinition).ToList();
+            var result = validator.Validate(typeDefinition.NestedTypes.First()).ToList();
 
             Assert.Empty(result);
         }
@@ -348,10 +348,10 @@ public class Test
 
             var validator = new NestedTypeIsValueTypeValidator();
 
-            var result = validator.Validate(typeDefinition).ToList();
+            var result = validator.Validate(typeDefinition.NestedTypes.First()).ToList();
 
             Assert.Single(result);
-            Assert.IsType<NestedTypeIsValueTypeValidator.TypeIsValueTypeValidationResult>(result.Single());
+            Assert.IsType<NestedTypeIsValueTypeValidator.NestedTypeIsValueTypeValidationResult>(result.Single());
         }
 
         [Fact]
