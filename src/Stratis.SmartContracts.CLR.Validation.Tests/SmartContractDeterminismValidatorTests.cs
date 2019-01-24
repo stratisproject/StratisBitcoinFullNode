@@ -119,7 +119,7 @@ public class Test : SmartContract
             SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Single(result.Errors);
-            Assert.IsType<NestedTypesAreValueTypesValidator.NestedTypeIsValueTypeValidationResult>(result.Errors.Single());
+            Assert.IsType<NestedTypeIsValueTypeValidator.TypeIsValueTypeValidationResult>(result.Errors.Single());
         }
 
         [Fact]

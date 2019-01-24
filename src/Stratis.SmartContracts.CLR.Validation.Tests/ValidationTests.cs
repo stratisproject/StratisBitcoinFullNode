@@ -326,32 +326,32 @@ public class Test
         //
 
         [Fact]
-        public void NestedTypesAreValueTypesValidator_Should_Allow_Nested_Value_Type()
+        public void NestedTypeIsValueTypeValidator_Should_Allow_Value_Type()
         {
-            const string source = @"public struct A{}";
+            const string source = @"public class Test {public struct A{}}";
 
             var typeDefinition = CompileToTypeDef(source);
 
-            var validator = new NestedTypesAreValueTypesValidator();
+            var validator = new NestedTypeIsValueTypeValidator();
 
             var result = validator.Validate(typeDefinition).ToList();
 
             Assert.Empty(result);
         }
-        
+
         [Fact]
-        public void NestedTypesAreValueTypesValidator_Should_Not_Allow_Nested_Reference_Type()
+        public void NestedTypeIsValueTypeValidator_Should_Not_Allow_Reference_Type()
         {
-            const string source = @"public class Test{class A {} }";
+            const string source = @"public class Test {class A {}}";
 
             var typeDefinition = CompileToTypeDef(source);
 
-            var validator = new NestedTypesAreValueTypesValidator();
-           
+            var validator = new NestedTypeIsValueTypeValidator();
+
             var result = validator.Validate(typeDefinition).ToList();
 
             Assert.Single(result);
-            Assert.IsType<NestedTypesAreValueTypesValidator.NestedTypeIsValueTypeValidationResult>(result.Single());
+            Assert.IsType<NestedTypeIsValueTypeValidator.TypeIsValueTypeValidationResult>(result.Single());
         }
 
         [Fact]
