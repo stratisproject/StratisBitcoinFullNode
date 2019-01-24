@@ -652,39 +652,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         }
 
         [Fact]
-        public void Cant_Send_With_LessThan_Min_GasPrice()
-        {
-            using (PoWMockChain chain = new PoWMockChain(2))
-            {
-                MockChainNode sender = chain.Nodes[0];
-                MockChainNode receiver = chain.Nodes[1];
-
-                // Mine some coins so we can send 100 coins
-                int maturity = (int)sender.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity;
-                sender.MineBlocks(maturity + 3);
-                int spendable = GetSpendableBlocks(maturity + 1, maturity);
-                Assert.Equal(Money.COIN * spendable * 150, (long)sender.WalletSpendableBalance);
-
-                // Give the receiver 100 coins
-                Money receiverBalance = new Money(100, MoneyUnit.BTC);
-                sender.SendTransaction(receiver.MinerAddress.ScriptPubKey, receiverBalance);
-                sender.MineBlocks(1);
-                Assert.Equal(receiver.WalletSpendableBalance, receiverBalance);
-
-                uint256 currentHash = sender.GetLastBlock().GetHash();
-
-                // Attempt to create contract with too little gas
-                ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/Auction.cs");
-                Assert.True(compilationResult.Success);
-                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, new string[] { "7#20" }, gasPrice: 1);
-
-                // Never reaches mempool.
-                Thread.Sleep(3000);
-                Assert.Empty(sender.CoreNode.CreateRPCClient().GetRawMempool());
-            }
-        }
-
-        [Fact]
         public void SendAndReceiveLocalSmartContractTransactionsUsingController()
         {
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
