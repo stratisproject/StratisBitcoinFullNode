@@ -11,22 +11,21 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Type
     {
         public IEnumerable<ValidationResult> Validate(TypeDefinition type)
         {
-            if (!type.IsValueType)
+            if (type.IsNested && !type.IsValueType)
             {
                 return new []
                 {
-                    new TypeIsValueTypeValidationResult(
-                        "Only nested value types are allowed.")
+                    new NestedTypeIsValueTypeValidationResult(type.Name, "Only nested value types are allowed.")
                 };
             }
 
             return Enumerable.Empty<TypeDefinitionValidationResult>();
         }
 
-        public class TypeIsValueTypeValidationResult : ValidationResult
+        public class NestedTypeIsValueTypeValidationResult : ValidationResult
         {
-            public TypeIsValueTypeValidationResult(string message) 
-                : base(message)
+            public NestedTypeIsValueTypeValidationResult(string subjectName, string message) 
+                : base(subjectName, "NestedTypeIsValueType", message)
             {
             }
         }
