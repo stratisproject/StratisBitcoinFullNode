@@ -490,14 +490,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 // Rewind data was not found in cache, try underlying storage.
                 uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
 
+                bool wasDirty = false;
                 foreach (KeyValuePair<uint256, CacheItem> cachedUtxoItem in this.cachedUtxoItems)
                 {
                     // This is a protection check to ensure we are
                     // not deleting dirty items form the cache.
 
                     if (cachedUtxoItem.Value.IsDirty)
-                        throw new InvalidOperationException("Items in cache are modified");
+                    {
+                        wasDirty = true;
+                        this.logger.LogTrace("Cache item '{0}' was dirty.", cachedUtxoItem.Key);
+                    }
                 }
+
+                if (wasDirty)
+                    throw new InvalidOperationException("Items in cache are modified");
 
                 // All the cached utxos are now on disk so we can clear the cached entry list.
                 this.cachedUtxoItems.Clear();
