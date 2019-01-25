@@ -76,7 +76,7 @@ public class Test : SmartContract
         }
 
         [Fact]
-        public void SmartContractValidator_Should_Allow_New_NestedType()
+        public void SmartContractValidator_Should_Allow_New_NestedValueType()
         {
             const string source = @"using System;
                                             using Stratis.SmartContracts;
@@ -96,6 +96,27 @@ public class Test : SmartContract
             SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
 
             Assert.Empty(result.Errors);
+        }
+
+        [Fact]
+        public void SmartContractValidator_Should_Not_Allow_New_NestedReferenceType()
+        {
+            const string source = @"using System;
+                                            using Stratis.SmartContracts;
+
+                                            public class Test : SmartContract
+                                            {
+                                                public class A {}
+
+                                                public Test(ISmartContractState state)
+                                                    : base(state) { }
+                                            }";
+
+            IContractModuleDefinition decompilation = CompileToModuleDef(source);
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(decompilation.ModuleDefinition);
+
+            Assert.Contains(result.Errors, e => e is NestedTypeIsValueTypeValidator.NestedTypeIsValueTypeValidationResult);
         }
 
         [Fact]
