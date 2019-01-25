@@ -158,7 +158,7 @@ namespace NBitcoin.Policy
             {
                 foreach (Coin txout in transaction.Outputs.AsCoins())
                 {
-                    ScriptTemplate template = StandardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
+                    ScriptTemplate template = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
 
                     if (template == null)
                         errors.Add(new OutputPolicyError("Non-Standard scriptPubKey", (int)txout.Outpoint.N));

@@ -54,11 +54,9 @@ public class StandardToken : SmartContract, IStandardToken
             return false;
         }
 
-        ulong toBalance = GetBalance(to);
-
         SetBalance(Message.Sender, senderBalance - amount);
 
-        SetBalance(to, checked(toBalance + amount));
+        SetBalance(to, checked(GetBalance(to) + amount));
 
         Log(new TransferLog { From = Message.Sender, To = to, Amount = amount });
 

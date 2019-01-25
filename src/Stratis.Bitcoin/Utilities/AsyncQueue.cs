@@ -108,6 +108,21 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>
+        /// The number of items in the queue.
+        /// This property should only be used for collecting statistics.
+        /// </summary>
+        public int Count
+        {
+            get
+            {
+                lock (this.lockObject)
+                {
+                    return this.items.Count;
+                }
+            }
+        }
+
+        /// <summary>
         /// Consumer of the newly added items to the queue that waits for the signal
         /// and then executes the user-defined callback.
         /// <para>

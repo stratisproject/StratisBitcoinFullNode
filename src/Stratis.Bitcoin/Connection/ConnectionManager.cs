@@ -418,7 +418,9 @@ namespace Stratis.Bitcoin.Connection
             }
 
             this.peerAddressManager.RemovePeer(ipEndpoint);
-            IEnumerable<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint));
+
+            // Create a copy of the nodes to remove. This avoids errors due to both modifying the collection and iterating it.
+            List<IPEndPoint> matchingAddNodes = this.ConnectionSettings.AddNode.Where(p => p.Match(ipEndpoint)).ToList();
             foreach (IPEndPoint m in matchingAddNodes)
                 this.ConnectionSettings.AddNode.Remove(m);
         }

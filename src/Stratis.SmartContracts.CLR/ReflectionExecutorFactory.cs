@@ -46,8 +46,7 @@ namespace Stratis.SmartContracts.CLR
             IStateRepositoryRoot stateRepository,
             IContractTransactionContext transactionContext)
         {
-            return new ContractExecutor(this.loggerFactory, this.serializer, 
-                    stateRepository, this.refundProcessor, this.transferProcessor, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
+            return new ContractExecutor(this.serializer, stateRepository, this.refundProcessor, this.transferProcessor, this.stateFactory, this.stateProcessor, this.contractPrimitiveSerializer);
         }
     }
 }

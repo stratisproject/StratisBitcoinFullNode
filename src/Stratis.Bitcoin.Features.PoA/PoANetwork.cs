@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
+using Stratis.Bitcoin.Features.PoA.Policies;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -159,6 +160,8 @@ namespace Stratis.Bitcoin.Features.PoA
             // No seed nodes.
             string[] seedNodes = { };
             this.SeedNodes = this.ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
+
+            this.StandardScriptsRegistry = new PoAStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x9928b372fd9e4cf62a31638607344c03c48731ba06d24576342db9c8591e1432"));

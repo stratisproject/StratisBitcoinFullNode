@@ -44,6 +44,8 @@ namespace NBitcoin
 
         protected uint256[] hashes;
 
+        public virtual long HeaderSize => Size;
+
         public DateTimeOffset BlockTime
         {
             get

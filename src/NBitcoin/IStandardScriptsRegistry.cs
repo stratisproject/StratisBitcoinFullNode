@@ -7,6 +7,8 @@ namespace NBitcoin
 {
     public interface IStandardScriptsRegistry
     {
+        void RegisterStandardScriptTemplate(ScriptTemplate scriptTemplate);
+
         bool IsStandardTransaction(Transaction tx, Network network);
 
         bool AreOutputsStandard(Network network, Transaction tx);
