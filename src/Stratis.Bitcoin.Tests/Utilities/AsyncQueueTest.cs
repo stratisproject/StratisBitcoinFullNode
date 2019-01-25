@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             });
 
             // Enqueue an item, which should trigger the callback.
-            await Assert.ThrowsAsync< InvalidOperationException>(async () => await asyncQueue.DequeueAsync());
+            await Assert.ThrowsAsync<InvalidOperationException>(async () => await asyncQueue.DequeueAsync());
         }
 
         /// <summary>
