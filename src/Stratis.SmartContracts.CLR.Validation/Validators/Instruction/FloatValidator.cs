@@ -9,6 +9,9 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Instruction
     /// </summary>
     public class FloatValidator : IInstructionValidator
     {
+        public const string FloatValidationType = "Float usage";
+        public const string FloatValidationMessage = "Float or double used.";
+
         /// <summary>
         /// Any float-based instructions. Not allowed.
         /// </summary>
@@ -50,8 +53,8 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Instruction
         {
             public FloatValidationResult(MethodDefinition method) 
                 : base(method.FullName,
-                    "Float usage",
-                    $"Float or double used.")
+                    FloatValidationType,
+                    FloatValidationMessage)
             {
             }
         }

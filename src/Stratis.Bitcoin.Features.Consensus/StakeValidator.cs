@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
@@ -45,6 +46,9 @@ namespace Stratis.Bitcoin.Features.Consensus
     /// </remarks>
     public class StakeValidator : IStakeValidator
     {
+        /// <summary>When checking the POS block signature this determines the maximum push data (public key) size following the OP_RETURN in the nonspendable output.</summary>
+        private const int MaxPushDataSize = 40;
+
         /// <summary>Expected (or target) block time in seconds.</summary>
         public const uint TargetSpacingSeconds = 64;
 
@@ -408,16 +412,73 @@ namespace Stratis.Bitcoin.Features.Consensus
             byte[] array = input.ToByteArray();
 
             int missingZero = 32 - array.Length;
+
             if (missingZero < 0)
-            {
-                //throw new InvalidOperationException("Awful bug, this should never happen");
-                array = array.Skip(Math.Abs(missingZero)).ToArray();
-            }
+                return new uint256(array.Skip(Math.Abs(missingZero)).ToArray(), false);
 
             if (missingZero > 0)
-                array = new byte[missingZero].Concat(array).ToArray();
+                return new uint256(new byte[missingZero].Concat(array).ToArray(), false);
 
             return new uint256(array, false);
+        }
+
+        /// <inheritdoc />
+        public bool CheckStakeSignature(BlockSignature signature, uint256 blockHash, Transaction coinStake)
+        {
+            if (signature.IsEmpty())
+            {
+                this.logger.LogTrace("(-)[EMPTY]:false");
+                return false;
+            }
+
+            TxOut txout = coinStake.Outputs[1];
+
+            if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(txout.ScriptPubKey))
+            {
+                PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
+                bool res = pubKey.Verify(blockHash, new ECDSASignature(signature.Signature));
+                this.logger.LogTrace("(-)[P2PK]:{0}", res);
+                return res;
+            }
+
+            // Block signing key also can be encoded in the nonspendable output.
+            // This allows to not pollute UTXO set with useless outputs e.g. in case of multisig staking.
+
+            List<Op> ops = txout.ScriptPubKey.ToOps().ToList();
+            if (!ops.Any())
+            {
+                this.logger.LogTrace("(-)[NO_OPS]:false");
+                return false;
+            }
+
+            if (ops.ElementAt(0).Code != OpcodeType.OP_RETURN) // OP_RETURN)
+            {
+                this.logger.LogTrace("(-)[NO_OP_RETURN]:false");
+                return false;
+            }
+
+            if (ops.Count != 2)
+            {
+                this.logger.LogTrace("(-)[INVALID_OP_COUNT]:false");
+                return false;
+            }
+
+            byte[] data = ops.ElementAt(1).PushData;
+
+            if (data.Length > MaxPushDataSize)
+            {
+                this.logger.LogTrace("(-)[PUSH_DATA_TOO_LARGE]:false");
+                return false;
+            }
+
+            if (!ScriptEvaluationContext.IsCompressedOrUncompressedPubKey(data))
+            {
+                this.logger.LogTrace("(-)[NO_PUSH_DATA]:false");
+                return false;
+            }
+
+            bool verifyRes = new PubKey(data).Verify(blockHash, new ECDSASignature(signature.Signature));
+            return verifyRes;
         }
     }
 }

@@ -907,14 +907,16 @@ namespace NBitcoin
         {
             if (script == null)
                 throw new ArgumentNullException("script");
-            var ms = new MemoryStream(script);
-            var stream = new BitcoinStream(ms, false);
-            ReadCore(stream);
+
+            using (var ms = new MemoryStream(script))
+            {
+                var stream = new BitcoinStream(ms, false);
+                ReadCore(stream);
+            }
         }
 
         private WitScript()
         {
-
         }
 
         public WitScript(Script scriptSig)
@@ -1036,16 +1038,18 @@ namespace NBitcoin
 
         public byte[] ToBytes()
         {
-            var ms = new MemoryStream();
-            var stream = new BitcoinStream(ms, true);
-            uint pushCount = (uint) this._Pushes.Length;
-            stream.ReadWriteAsVarInt(ref pushCount);
-            foreach(byte[] push in this.Pushes)
+            using (var ms = new MemoryStream())
             {
-                byte[] localpush = push;
-                stream.ReadWriteAsVarString(ref localpush);
+                var stream = new BitcoinStream(ms, true);
+                uint pushCount = (uint)this._Pushes.Length;
+                stream.ReadWriteAsVarInt(ref pushCount);
+                foreach (byte[] push in this.Pushes)
+                {
+                    byte[] localpush = push;
+                    stream.ReadWriteAsVarString(ref localpush);
+                }
+                return ms.ToArrayEfficient();
             }
-            return ms.ToArrayEfficient();
         }
 
         public override string ToString()
@@ -1870,17 +1874,19 @@ namespace NBitcoin
             if(options == TransactionOptions.None && !this.HasWitness)
                 return this;
             Transaction instance = consensusFactory.CreateTransaction();
-            var ms = new MemoryStream();
-            var bms = new BitcoinStream(ms, true);
-            bms.ConsensusFactory = consensusFactory;
-            bms.TransactionOptions = options;
-            ReadWrite(bms);
-            ms.Position = 0;
-            bms = new BitcoinStream(ms, false);
-            bms.ConsensusFactory = consensusFactory;
-            bms.TransactionOptions = options;
-            instance.ReadWrite(bms);
-            return instance;
+            using (var ms = new MemoryStream())
+            {
+                var bms = new BitcoinStream(ms, true);
+                bms.ConsensusFactory = consensusFactory;
+                bms.TransactionOptions = options;
+                ReadWrite(bms);
+                ms.Position = 0;
+                bms = new BitcoinStream(ms, false);
+                bms.ConsensusFactory = consensusFactory;
+                bms.TransactionOptions = options;
+                instance.ReadWrite(bms);
+                return instance;
+            }
         }
 
         public bool HasWitness

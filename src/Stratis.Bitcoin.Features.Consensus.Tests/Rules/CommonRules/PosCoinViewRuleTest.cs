@@ -150,6 +150,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Create a previous transaction with scriptPubKey outputs.
             Transaction prevTransaction = this.network.CreateTransaction();
+
+            uint blockTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask;
+
+            // To avoid violating the transaction timestamp consensus rule
+            // we need to ensure that the transaction used for the coinstake's
+            // input occurs well before the block time (as the coinstake time
+            // is set to the block time)
+            prevTransaction.Time = blockTime - 100;
+
             // Coins sent to miner 2.
             prevTransaction.Outputs.Add(new TxOut(Money.COIN * 5_000_000, scriptPubKey2));
             // Coins sent to miner 1.
@@ -184,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Finalize the block and add it to the chain.
             block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
-            block.Header.Time = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask;
+            block.Header.Time = blockTime;
             block.Header.Bits = block.Header.GetWorkRequired(this.network, this.concurrentChain.Tip);
             block.SetPrivatePropertyValue("BlockSize", 1L);
             block.Transactions[0].Time = block.Header.Time;

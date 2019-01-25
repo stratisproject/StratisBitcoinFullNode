@@ -24,8 +24,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         public ColdStakingManagerTest(WalletFixture walletFixture)
         {
             this.walletFixture = walletFixture;
-
-            StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+            this.Network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
         }
 
         public Transaction CreateColdStakingSetupTransaction(Wallet.Wallet wallet, string password, HdAddress spendingAddress, PubKey destinationColdPubKey, PubKey destinationHotPubKey, HdAddress changeAddress, Money amount, Money fee)
