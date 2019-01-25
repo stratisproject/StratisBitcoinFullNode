@@ -5,7 +5,9 @@ using System.Linq;
 using System.Threading;
 using System.Threading.Tasks;
 using FluentAssertions;
+using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
@@ -27,9 +29,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             var dBreezeSerializer = new DBreezeSerializer(this.Network);
 
+            var ibdMock = new Mock<IInitialBlockDownloadState>();
+            ibdMock.Setup(s => s.IsInitialBlockDownload()).Returns(false);
+
             this.provenBlockHeaderRepository = new ProvenBlockHeaderRepository(this.Network, CreateTestDir(this), this.LoggerFactory.Object, dBreezeSerializer);
 
-            this.provenBlockHeaderStore = new ProvenBlockHeaderStore(DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, nodeStats);
+            this.provenBlockHeaderStore = new ProvenBlockHeaderStore(DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, nodeStats, ibdMock.Object);
         }
 
         [Fact]
@@ -301,7 +306,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
         private ProvenBlockHeaderStore SetupStore()
         {
-            return new ProvenBlockHeaderStore(DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, new NodeStats(DateTimeProvider.Default));
+            var ibdMock = new Mock<IInitialBlockDownloadState>();
+            ibdMock.Setup(s => s.IsInitialBlockDownload()).Returns(false);
+
+
+            return new ProvenBlockHeaderStore(DateTimeProvider.Default, this.LoggerFactory.Object, this.provenBlockHeaderRepository, new NodeStats(DateTimeProvider.Default), ibdMock.Object);
         }
 
         private static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))

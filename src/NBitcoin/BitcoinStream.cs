@@ -105,11 +105,6 @@ namespace NBitcoin
             this.inner = inner;
         }
 
-        public BitcoinStream(byte[] bytes)
-            : this(new MemoryStream(bytes), false)
-        {
-        }
-
         public Script ReadWrite(Script data)
         {
             if (this.Serializing)

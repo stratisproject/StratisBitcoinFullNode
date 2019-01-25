@@ -1,4 +1,6 @@
-﻿namespace Stratis.SmartContracts.RuntimeObserver
+﻿using System.Buffers;
+
+namespace Stratis.SmartContracts.RuntimeObserver
 {
     /// <summary>
     /// Is able to hold metrics about the current runtime.
@@ -6,28 +8,14 @@
     /// </summary>
     public class Observer
     {
-        /// <summary>
-        /// The limit for 'memory units'.
-        /// 
-        /// A 'memory unit' is spent for any operation that reserves a significant chunk of memory. 
-        /// 
-        /// Standard allocations for primitives aren't counted as memory units as they are trivially small
-        /// and the instructions that cause them will run the contract out of gas eventually.
-        /// 
-        /// String primitives and method parameters are always limited by the size of transactions and will be costly.
-        /// 
-        /// So 'memory units' are spent when allocating arrays or performing string concatenations.
-        /// </summary>
-        private readonly long memoryLimit;
+        public IMemoryMeter MemoryMeter { get; private set; }
 
-        public IGasMeter GasMeter { get; }
+        public IGasMeter GasMeter { get; private set; }
 
-        public long MemoryConsumed { get; private set; }
-
-        public Observer(IGasMeter gasMeter, long memoryLimit)
+        public Observer(IGasMeter gasMeter, IMemoryMeter memoryMeter)
         {
             this.GasMeter = gasMeter;
-            this.memoryLimit = memoryLimit;
+            this.MemoryMeter = memoryMeter;
         }
 
         /// <summary>
@@ -35,18 +23,15 @@
         /// </summary>
         public void SpendGas(long gas)
         {
-            this.GasMeter.Spend((Gas) gas);
+            this.GasMeter.Spend((Gas)gas);
         }
 
         /// <summary>
-        /// Register that some amount of memory has been reserved. If it goes over the allowed limit, throw an exception.
+        /// Register that some amount of memory has been reserved.
         /// </summary>
         public void SpendMemory(long memory)
         {
-            this.MemoryConsumed += memory;
-
-            if (this.MemoryConsumed > this.memoryLimit)
-                throw new MemoryConsumptionException($"Smart contract has allocated too much memory. Spent more than {this.memoryLimit} memory units when allocating strings or arrays.");
+            this.MemoryMeter.Spend((ulong)memory);
         }
 
         /// <summary>

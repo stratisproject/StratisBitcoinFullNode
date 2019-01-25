@@ -28,6 +28,7 @@
     <PackageReference Include="DBreeze" Version="1.89.0" />
     <PackageReference Include="NLog" Version="5.0.0-beta09" />
     <PackageReference Include="NLog.Extensions.Logging" Version="1.0.0-rtm-beta5" />
+    <PackageReference Include="Stratis.FodyNlogAdapter" Version="3.0.0.4-beta" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
     <PackageReference Include="System.Reactive" Version="4.0.0" />
     <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.1.1" />
@@ -48,7 +49,6 @@
   </ItemGroup>
 
   <ItemGroup>
-    <ProjectReference Include="..\FodyNlogAdapter\FodyNlogAdapter.csproj" />
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
   </ItemGroup>
 

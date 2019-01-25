@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
         public ColdStakingControllerTest() : base(KnownNetworks.StratisMain)
         {
             // Register the cold staking script template.
-            StandardScripts.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
+            this.Network.StandardScriptsRegistry.RegisterStandardScriptTemplate(ColdStakingScriptTemplate.Instance);
         }
 
         /// <summary>
@@ -154,9 +154,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             // Create mempool validator.
             var mempoolLock = new MempoolSchedulerLock();
-            var standardScripts = new StandardScriptsRegistry();
             var mempoolValidator = new MempoolValidator(this.txMemPool, mempoolLock, this.dateTimeProvider, this.mempoolSettings, this.concurrentChain,
-                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine, standardScripts);
+                this.coinView.Object, this.loggerFactory, this.nodeSettings, consensusRuleEngine);
 
             // Create mempool manager.
             var mempoolPersistence = new Mock<IMempoolPersistence>();

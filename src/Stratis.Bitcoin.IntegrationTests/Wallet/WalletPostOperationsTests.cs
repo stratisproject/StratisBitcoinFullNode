@@ -4,13 +4,18 @@ using System.IO;
 using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
+using DBreeze.Utils;
 using FluentAssertions;
 using Flurl;
 using Flurl.Http;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.BlockStore.Models;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
@@ -314,8 +319,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 // Arrange.
                 CoreNode node = builder.CreateStratisPosNode(this.network).Start();
-                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
-                TestHelper.MineBlocks(miningNode, 150);
+                CoreNode miningNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
 
                 this.AddAndLoadWalletFileToWalletFolder(node);
                 TestHelper.ConnectAndSync(node, miningNode);
@@ -350,11 +354,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 // Arrange.
                 // Create a sending and a receiving node.
-                CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
-                CoreNode receivingNode = builder.CreateStratisPosNode(this.network).WithWallet().Start();
-
-                // Mine a few blocks to fund the sending node and connect the nodes.
-                TestHelper.MineBlocks(sendingNode, 150);
+                CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
+                CoreNode receivingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Listener).Start();
                 TestHelper.ConnectAndSync(sendingNode, receivingNode);
 
                 // Check balances.
@@ -538,6 +539,118 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
                 (receivingAccountBalance.AmountConfirmed + receivingAccountBalance.AmountUnconfirmed).Should().Be(new Money(receivingAccountBalanceOnStart) + maxBalanceResponse.MaxSpendableAmount);
+            }
+        }
+
+        [Fact]
+        public async Task SendingATransactionWithAnOpReturn()
+        {
+            int sendingAccountBalanceOnStart = 98000596;
+            int receivingAccountBalanceOnStart = 0;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a sending and a receiving node.
+                CoreNode sendingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Miner).Start();
+                CoreNode receivingNode = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest150Listener).Start();
+                TestHelper.ConnectAndSync(sendingNode, receivingNode);
+
+                // Check balances.
+                WalletBalanceModel sendingNodeBalances = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed + sendingAccountBalance.AmountUnconfirmed).Should().Be(new Money(sendingAccountBalanceOnStart, MoneyUnit.BTC));
+
+                WalletBalanceModel receivingNodeBalances = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                AccountBalanceModel receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
+                (receivingAccountBalance.AmountConfirmed + receivingAccountBalance.AmountUnconfirmed).Should().Be(new Money(receivingAccountBalanceOnStart));
+
+                // Act.
+                // Get an address to send to.
+                IEnumerable<string> unusedaddresses = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/unusedAddresses")
+                    .SetQueryParams(new { walletName = "mywallet", accountName = "account 0", count = 1 })
+                    .GetJsonAsync<IEnumerable<string>>();
+
+                // Build and send the transaction with an Op_Return.
+                WalletBuildTransactionModel buildTransactionModel = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/build-transaction")
+                    .PostJsonAsync(new BuildTransactionRequest
+                    {
+                        WalletName = "mywallet",
+                        AccountName = "account 0",
+                        FeeType = "low",
+                        Password = "password",
+                        ShuffleOutputs = true,
+                        AllowUnconfirmed = true,
+                        Recipients = unusedaddresses.Select(address => new RecipientModel
+                        {
+                            DestinationAddress = address,
+                            Amount = "1"
+                        }).ToList(),
+                        OpReturnData = "some data to send",
+                        OpReturnAmount = "1"
+                    })
+                    .ReceiveJson<WalletBuildTransactionModel>();
+
+                await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/send-transaction")
+                    .PostJsonAsync(new SendTransactionRequest
+                    {
+                        Hex = buildTransactionModel.Hex
+                    })
+                    .ReceiveJson<WalletSendTransactionModel>();
+
+                // Assert.
+                // Mine and sync so that we make sure the receiving node is up to date.
+                TestHelper.MineBlocks(sendingNode, 1);
+                TestHelper.WaitForNodeToSync(sendingNode, receivingNode);
+
+                // The receiving node should have coins.
+                receivingNodeBalances = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                receivingAccountBalance = receivingNodeBalances.AccountsBalances.Single();
+                (receivingAccountBalance.AmountConfirmed).Should().Be(new Money(receivingAccountBalanceOnStart + 1, MoneyUnit.BTC));
+
+                // The sending node should have fewer coins.
+                sendingNodeBalances = await $"http://localhost:{sendingNode.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                sendingAccountBalance = sendingNodeBalances.AccountsBalances.Single();
+                (sendingAccountBalance.AmountConfirmed).Should().Be(new Money(sendingAccountBalanceOnStart + 4 - 2, MoneyUnit.BTC));
+
+                // Check the transaction.
+                string lastBlockHash = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("consensus/getbestblockhash")
+                    .GetJsonAsync<string>();
+
+                BlockTransactionDetailsModel block = await $"http://localhost:{receivingNode.ApiPort}/api"
+                    .AppendPathSegment("blockstore/block")
+                    .SetQueryParams(new {hash = lastBlockHash, showTransactionDetails = true, outputJson = true})
+                    .GetJsonAsync<BlockTransactionDetailsModel>();
+
+                TransactionVerboseModel trx = block.Transactions.SingleOrDefault(t => t.TxId == buildTransactionModel.TransactionId.ToString());
+                trx.Should().NotBeNull();
+
+                Vout opReturnOutputFromBlock = trx.VOut.Single(t => t.ScriptPubKey.Type == "nulldata");
+                opReturnOutputFromBlock.Value.Should().Be(1);
+                var script = opReturnOutputFromBlock.ScriptPubKey.Asm;
+                string[] ops = script.Split(" ");
+                ops[0].Should().Be("OP_RETURN");
+                Encoders.Hex.DecodeData(ops[1]).Should().BeEquivalentTo("some data to send".ToBytes());
             }
         }
     }

@@ -1,15 +1,18 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Dynamic;
 using System.Linq;
 using System.Net.Http;
-using System.Net.Http.Headers;
 using System.Text;
+using Flurl;
+using Flurl.Http;
 using NBitcoin;
-using NBitcoin.Networks;
+using NBitcoin.Protocol;
 using Newtonsoft.Json;
+using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC;
-using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Cli
@@ -48,6 +51,20 @@ namespace Stratis.Bitcoin.Cli
                     argList.RemoveAt(0);
                 }
 
+                string method = "";
+                if (argList.Any())
+                {
+                    method = argList.First().ToUpper();
+                    if (method == "GET" || method == "POST" || method == "DELETE")
+                    {
+                        argList.RemoveAt(0);
+                    }
+                    else
+                    {
+                        method = "";
+                    }
+                }
+
                 string command = string.Empty;
                 if (argList.Any())
                 {
@@ -62,12 +79,13 @@ namespace Stratis.Bitcoin.Cli
                 {
                     var builder = new StringBuilder();
                     builder.AppendLine("Usage:");
-                    builder.AppendLine(" dotnet run <Stratis.Bitcoin.Cli/Stratis.Bitcoin.Cli.dll> [network-name] [options] <command> [arguments]");
+                    builder.AppendLine(" dotnet run <Stratis.Bitcoin.Cli/Stratis.Bitcoin.Cli.dll> [network-name] [options] [method] <command> [arguments]");
                     builder.AppendLine();
                     builder.AppendLine("Command line arguments:");
                     builder.AppendLine();
-                    builder.AppendLine("[network-name]                     Name of the network - e.g. \"stratis\", \"stratismain\", \"stratistest\", \"bitcoinmain\", \"bitcointest\".");
+                    builder.AppendLine("[network-name]                     Name of the network - e.g. \"stratis\" or \"bitcoin\".");
                     builder.AppendLine("[options]                          Options for the CLI (optional) - e.g. -help, -rpcuser, see below.");
+                    builder.AppendLine("[method]                           Method to use for API calls - 'GET', 'POST' or 'DELETE'.");
                     builder.AppendLine("[command]                          Name of RPC method or API <controller>/<method>.");
                     builder.AppendLine("[arguments]                        Argument by position (RPC) or Name = Value pairs (API) (optional).");
                     builder.AppendLine();
@@ -80,7 +98,7 @@ namespace Stratis.Bitcoin.Cli
                     builder.AppendLine();
                     builder.AppendLine("Examples:");
                     builder.AppendLine();
-                    builder.AppendLine("dotnet run stratis Wallet/history WalletName=testwallet - Lists all the historical transactions of the wallet called 'testwallet'.");
+                    builder.AppendLine("dotnet run stratis -testnet GET Wallet/history WalletName=testwallet - Lists all the historical transactions of the wallet called 'testwallet' on the stratis test network.");
                     builder.AppendLine("dotnet run stratis -rpcuser=stratistestuser -rpcpassword=stratistestpassword -rpcconnect=127.0.0.3 -rpcport=26174 getinfo - Displays general information about the Stratis node on the 127.0.0.3:26174, authenticating with the RPC specified user.");
                     builder.AppendLine("dotnet run bitcoin -rpcuser=btctestuser -rpcpassword=btctestpass getbalance - Displays the current balance of the opened wallet on the 127.0.0.1:8332 node, authenticating with the RPC specified user.");
                     Console.WriteLine(builder);
@@ -88,18 +106,15 @@ namespace Stratis.Bitcoin.Cli
                 }
 
                 // Determine API port.
-                int defaultRestApiPort = 0;
-                Network network = null;
+                NetworksSelector networksSelector = null;
 
                 if (networkName.Contains("stratis"))
                 {
-                    defaultRestApiPort = 37221;
-                    network = NetworkRegistration.Register(new StratisMain());
+                    networksSelector = Networks.Networks.Stratis;
                 }
                 else
                 {
-                    defaultRestApiPort = 37220;
-                    network = NetworkRegistration.Register(new BitcoinMain());
+                    networksSelector = Networks.Networks.Bitcoin;
                 }
 
                 // API calls require both the contoller name and the method name separated by "/".
@@ -110,10 +125,13 @@ namespace Stratis.Bitcoin.Cli
                     try
                     {
                         string[] options = optionList.Append("-server").ToArray();
-
-                        var nodeSettings = new NodeSettings(network, args:options);
+                        var nodeSettings = new NodeSettings(networksSelector: networksSelector, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: options)
+                        {
+                            MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                        };
 
                         var rpcSettings = new RpcSettings(nodeSettings);
+                        Network network = nodeSettings.Network;
 
                         // Find the binding to 127.0.0.1 or the first available. The logic in RPC settings ensures there will be at least 1.
                         System.Net.IPEndPoint nodeEndPoint = rpcSettings.Bind.FirstOrDefault(b => b.Address.ToString() == "127.0.0.1") ?? rpcSettings.Bind[0];
@@ -158,26 +176,39 @@ namespace Stratis.Bitcoin.Cli
                 else
                 {
                     // Process API call.
-                    using (var client = new HttpClient())
+                    string[] options = optionList.ToArray();
+                    var nodeSettings = new NodeSettings(networksSelector: networksSelector, protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: options)
                     {
-                        client.DefaultRequestHeaders.Accept.Clear();
-                        client.DefaultRequestHeaders.Accept.Add(new MediaTypeWithQualityHeaderValue("application/json"));
-                        string url = $"http://localhost:{defaultRestApiPort}/api/{command}";
-                        if (commandArgList.Any()) url += $"?{string.Join("&", commandArgList)}";
-                        try
-                        {
-                            // Get the response.
-                            Console.WriteLine($"Sending API command to {url}.");
-                            string response = client.GetStringAsync(url).GetAwaiter().GetResult();
+                        MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
+                    };
 
-                            // Format and return the result as a string to the console.
-                            Console.WriteLine(JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented));
-                        }
-                        catch (Exception err)
-                        {
-                            Console.WriteLine(ExceptionToString(err));
-                        }
+                    var apiSettings = new ApiSettings(nodeSettings);
+
+                    string url = $"http://localhost:{apiSettings.ApiPort}/api".AppendPathSegment(command);
+
+                    object commandArgObj = GetAnonymousObjectFromDictionary(commandArgList
+                        .Select(a => a.Split('='))
+                        .ToDictionary(a => a[0], a => a[1]));
+
+                    HttpResponseMessage httpResponse;
+
+                    switch (method)
+                    {
+                        case "POST":
+                            httpResponse = CallApiPost(url, commandArgObj);
+                            break;
+                        case "DELETE":
+                            httpResponse = CallApiDelete(url, commandArgObj);
+                            break;
+                        default:
+                            httpResponse = CallApiGet(url, commandArgObj);
+                            break;
                     }
+
+                    var response = httpResponse.Content.ReadAsStringAsync().GetAwaiter().GetResult();
+
+                    // Format and return the result as a string to the console.
+                    Console.WriteLine(JsonConvert.SerializeObject(JsonConvert.DeserializeObject<object>(response), Formatting.Indented));
                 }
             }
             catch (Exception err)
@@ -185,6 +216,45 @@ namespace Stratis.Bitcoin.Cli
                 // Report any errors to the console.
                 Console.WriteLine(ExceptionToString(err));
             }
+        }
+
+        private static object GetAnonymousObjectFromDictionary(Dictionary<string, string> dict)
+        {
+            dynamic obj = new ExpandoObject();
+            var tmp = (IDictionary<string, object>)obj;
+
+            foreach (KeyValuePair<string, string> p in dict)
+            {
+                tmp[p.Key] = p.Value;
+            }
+
+            return tmp;
+        }
+
+        private static HttpResponseMessage CallApiGet(string url, object commandArgObj)
+        {
+            string urlWithArgs = url.SetQueryParams(commandArgObj);
+
+            // Get the response.
+            Console.WriteLine($"Sending API 'GET' command to {urlWithArgs}.");
+            return urlWithArgs.GetAsync().GetAwaiter().GetResult();
+        }
+
+        private static HttpResponseMessage CallApiPost(string url, object commandArgObj)
+        {
+            string json = JObject.FromObject(commandArgObj).ToString();
+
+            Console.WriteLine($"Sending API 'POST' command to {url}. Post body is '{json}'.");
+            return url.PostJsonAsync(commandArgObj).GetAwaiter().GetResult();
+        }
+
+        private static HttpResponseMessage CallApiDelete(string url, object commandArgObj)
+        {
+            string urlWithArgs = url.SetQueryParams(commandArgObj);
+
+            // Get the response.
+            Console.WriteLine($"Sending API 'DELETE' command to {urlWithArgs}.");
+            return urlWithArgs.DeleteAsync().GetAwaiter().GetResult();
         }
 
         /// <summary>

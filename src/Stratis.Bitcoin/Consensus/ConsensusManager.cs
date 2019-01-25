@@ -17,6 +17,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Stratis.Bitcoin.Utilities.Statistics;
 
 namespace Stratis.Bitcoin.Consensus
@@ -614,8 +615,7 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader);
                         this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader.Previous);
 
-                        if (disconnectedBlock.ChainedHeader.Block == null)
-                            disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+                        this.chainedHeaderTree.BlockRewinded(disconnectedBlock);
                     }
                 }
 
@@ -1338,14 +1338,18 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.isIbd) log.AppendLine("IBD Stage");
 
-                string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
+                log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");
 
-                string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
-                string maxUnconsumedBytes = this.FormatBigNumber(this.maxUnconsumedBlocksDataBytes);
+                string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
                 double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.maxUnconsumedBlocksDataBytes) * 100, 2);
 
-                log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
+                log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({this.chainedHeaderTree.UnconsumedBlocksDataBytes.BytesToMegaBytes()} / {this.maxUnconsumedBlocksDataBytes.BytesToMegaBytes()} MB). Cache is filled by: {filledPercentage}%");
+
+                int pendingDownloadCount = this.callbacksByBlocksRequestedHash.Count;
+                int currentlyDownloadingCount = this.expectedBlockSizes.Count;
+
+                log.AppendLine($"Downloading blocks: {currentlyDownloadingCount} queued out of {pendingDownloadCount} pending");
             }
         }
 

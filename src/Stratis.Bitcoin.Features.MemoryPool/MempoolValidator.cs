@@ -131,8 +131,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <inheritdoc cref="IConsensusRuleEngine" />
         private readonly IConsensusRuleEngine consensusRules;
 
-        private readonly IStandardScriptsRegistry standardScripts;
-
         /// <summary>Transaction memory pool for managing transactions in the memory pool.</summary>
         private readonly ITxMempool memPool;
 
@@ -165,8 +163,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             ICoinView coinView,
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
-            IConsensusRuleEngine consensusRules,
-            IStandardScriptsRegistry standardScripts)
+            IConsensusRuleEngine consensusRules)
         {
             this.memPool = memPool;
             this.mempoolLock = mempoolLock;
@@ -181,7 +178,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.PerformanceCounter = new MempoolPerformanceCounter(this.dateTimeProvider);
             this.minRelayTxFee = nodeSettings.MinRelayTxFeeRate;
             this.consensusRules = consensusRules;
-            this.standardScripts = standardScripts;
         }
 
         /// <summary>Gets a counter for tracking memory pool performance.</summary>
@@ -661,7 +657,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             int dataOut = 0;
             foreach (TxOut txout in tx.Outputs)
             {
-                ScriptTemplate script = this.standardScripts.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
+                ScriptTemplate script = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(txout.ScriptPubKey);
                 if (script == null) //!::IsStandard(txout.scriptPubKey, whichType, witnessEnabled))  https://github.com/bitcoin/bitcoin/blob/aa624b61c928295c27ffbb4d27be582f5aa31b56/src/policy/policy.cpp#L57-L80
                 {
                     this.logger.LogTrace("(-)[FAIL_SCRIPT_PUBKEY]");
@@ -1192,7 +1188,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             foreach (TxIn txin in tx.Inputs)
             {
                 TxOut prev = mapInputs.GetOutputFor(txin);
-                ScriptTemplate template = this.standardScripts.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
+                ScriptTemplate template = this.network.StandardScriptsRegistry.GetTemplateFromScriptPubKey(prev.ScriptPubKey);
                 if (template == null)
                 {
                     this.logger.LogTrace("(-)[BAD_SCRIPT_TEMPLATE]:false");
