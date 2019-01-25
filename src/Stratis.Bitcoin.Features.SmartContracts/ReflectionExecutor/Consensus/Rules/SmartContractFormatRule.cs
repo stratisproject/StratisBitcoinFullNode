@@ -36,7 +36,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
         {
             Block block = context.ValidationContext.BlockToValidate;
 
-            foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
+            // Check all transactions. We rely on other rules to determine which
+            // transactions are allowed to contain SmartContractExec opcodes.
+            foreach (Transaction transaction in block.Transactions)
             {
                 if (!transaction.IsSmartContractExecTransaction())
                     continue;
