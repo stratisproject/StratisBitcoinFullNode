@@ -40,9 +40,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 },
                 new Transaction()
                 {
-                    Outputs =
+                    Inputs =
                     {
-                        new TxOut(new Money(1000), new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
+                        new TxIn(new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
                     }
                 }
             };
