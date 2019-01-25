@@ -315,5 +315,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletName">The name of the wallet to remove transactions from.</param>
         /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
         HashSet<(uint256, DateTimeOffset)> RemoveAllTransactions(string walletName);
+
+        /// <summary>
+        /// Removes all the transactions that occurred after a certain date.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to remove transactions from.</param>
+        /// <param name="fromDate">The date after which the transactions should be removed.</param>
+        /// <returns>A list of objects made up of a transactions ID along with the time at which they were created.</returns>
+        HashSet<(uint256, DateTimeOffset)> RemoveTransactionsFromDate(string walletName, DateTimeOffset fromDate);
     }
 }
