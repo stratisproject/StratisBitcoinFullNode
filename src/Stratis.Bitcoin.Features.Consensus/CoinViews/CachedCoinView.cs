@@ -462,33 +462,22 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (this.innerBlockHash == null)
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
 
+            // Flush the entire cache before rewinding
+            await this.FlushAsync(true).ConfigureAwait(false);
+
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                // Check if rewind data is available in local cache. If it is
-                // we can rewind and there is no need to check underlying storage.
-                if (this.cachedRewindDataIndex.Count > 0)
-                {
-                    KeyValuePair<int, RewindData> lastRewindDataItem = this.cachedRewindDataIndex.Last();
-                    RewindData lastRewindData = lastRewindDataItem.Value;
-
-                    this.RemoveTransactions(lastRewindData);
-                    this.RestoreOutputs(lastRewindData);
-
-                    // Change current block hash to the one from the rewind data.
-                    this.blockHash = lastRewindData.PreviousBlockHash;
-                    this.blockHeight = lastRewindDataItem.Key - 1;
-
-                    this.cachedRewindDataIndex.Remove(lastRewindDataItem.Key);
-
-                    if (this.rewindDataIndexCache != null)
-                        await this.rewindDataIndexCache.Remove(this.blockHeight, this);
-
-                    this.logger.LogTrace("(-)[REMOVED_FROM_BATCH]:'{0}'", this.blockHash);
-                    return this.blockHash;
-                }
-
                 // Rewind data was not found in cache, try underlying storage.
                 uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
+
+                foreach (KeyValuePair<uint256, CacheItem> cachedUtxoItem in this.cachedUtxoItems)
+                {
+                    // This is a protection check to ensure we are
+                    // not deleting dirty items form the cache.
+
+                    if (cachedUtxoItem.Value.IsDirty)
+                        throw new InvalidOperationException("Items in cache are modified");
+                }
 
                 // All the cached utxos are now on disk so we can clear the cached entry list.
                 this.cachedUtxoItems.Clear();
@@ -511,41 +500,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 return existingRewindData;
 
             return await this.Inner.GetRewindData(height);
-        }
-
-        private void RestoreOutputs(RewindData rewindData)
-        {
-            foreach (UnspentOutputs unspentToRestore in rewindData.OutputsToRestore)
-            {
-                this.logger.LogTrace("Outputs of transaction ID '{0}' will be restored.", unspentToRestore.TransactionId);
-
-                if (this.cachedUtxoItems.TryGetValue(unspentToRestore.TransactionId, out CacheItem cacheItem))
-                {
-                    cacheItem.UnspentOutputs = unspentToRestore;
-                    cacheItem.IsDirty = true;
-                }
-                else
-                {
-                    this.logger.LogTrace("Outputs of transaction ID '{0}' not found in cache, inserting them.", unspentToRestore.TransactionId);
-
-                    cacheItem = new CacheItem
-                    {
-                        UnspentOutputs = unspentToRestore,
-                        IsDirty = true
-                    };
-
-                    this.cachedUtxoItems.Add(unspentToRestore.TransactionId, cacheItem);
-                }
-            }
-        }
-
-        private void RemoveTransactions(RewindData rewindData)
-        {
-            foreach (uint256 transactionToRemove in rewindData.TransactionsToRemove)
-            {
-                this.logger.LogTrace("Attempt to remove transaction with ID '{0}'.", transactionToRemove);
-                this.cachedUtxoItems.Remove(transactionToRemove);
-            }
         }
 
         [NoTrace]
