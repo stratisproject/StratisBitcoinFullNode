@@ -36,9 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 Transaction previousTransaction = block.Transactions[i - 1];
 
                 // Check for OP_CREATE and OP_CALL outputs because both opcodes can be followed by an OP_SPEND input.
-                var previousWasOpCreateOrOpCall = previousTransaction.Outputs.Any(o => o.ScriptPubKey.IsSmartContractExec());
-
-                if (!previousWasOpCreateOrOpCall)
+                if (!previousTransaction.IsSmartContractExecTransaction())
                 {
                     this.Throw();
                 }
