@@ -64,6 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
             }
 
+            // CallDataSerializer swallows all exceptions, so we do not wrap this in a try-catch.
             Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
 
             if (callDataDeserializationResult.IsFailure)
