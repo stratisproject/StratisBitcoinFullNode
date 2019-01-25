@@ -187,6 +187,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(provenBlockHeader), provenBlockHeader, nameof(newTip), newTip);
 
+            Guard.Assert(provenBlockHeader.GetHash() == newTip.Hash);
+
             lock (this.lockObject)
             {
                 // If an item is already there this means a reorg happened.
