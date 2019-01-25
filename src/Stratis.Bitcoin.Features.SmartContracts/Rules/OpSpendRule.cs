@@ -9,8 +9,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     /// <summary>
     /// If a transaction's inputs contain an OP_SPEND opcode in the scriptsig, check that the transaction
-    /// that occurs directly before contains OP_CREATE or OP_CALL in its outputs. Ensures that only a
-    /// contract execution transaction is able to create OP_SPEND inputs.
+    /// that occurs directly before contains OP_CREATE or OP_CALL in its outputs. In conjunction with
+    /// <see cref="MempoolOpSpendRule"/>, ensures that only a contract execution transaction is able to
+    /// create OP_SPEND inputs.
     /// </summary>
     public class OpSpendRule : FullValidationConsensusRule
     {
