@@ -185,6 +185,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                         this.logger.LogTrace("(-)[NO_PH_AVAILABLE]");
                         break;
                     }
+                    else if (provenBlockHeader.GetHash() != header.Header.GetHash())
+                    {
+                        // Proven header is in the store, but with a wrong hash.
+                        // This can happen in case of reorgs, when the store has not yet been updated.
+                        this.logger.LogDebug("Stored PH hash is wrong. Expected: {0}, Found: {1}", header.Header.GetHash(), provenBlockHeader.GetHash());
+                        this.logger.LogTrace("(-)[WRONG STORED PH]");
+                        break;
+                    }
                 }
 
                 lastHeader = header;
