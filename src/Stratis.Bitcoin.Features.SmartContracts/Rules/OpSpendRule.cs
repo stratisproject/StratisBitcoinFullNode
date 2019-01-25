@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
                 // If i == 0, there can be no previous OP_CALL or OP_CREATE, so OP_SPEND is invalid.
                 if (i == 0)
                 {
-                    new ConsensusError("opspend-in-first-transaction", "the first transaction in the block contained an op-spend").Throw();
+                    this.Throw();
                 };
 
                 Transaction previousTransaction = block.Transactions[i - 1];
@@ -40,11 +40,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
                 if (!previousWasOpCall)
                 {
-                    new ConsensusError("opspend-did-not-follow-opcall-or-opcreate", "transaction contained an op-spend that did not follow an op-call or an op-create").Throw();
+                    this.Throw();
                 }
             }
 
             return Task.CompletedTask;
+        }
+
+        private void Throw()
+        {
+            new ConsensusError("opspend-did-not-follow-opcall", "transaction contained an op-spend that did not follow an op-call").Throw();
         }
     }
 }
