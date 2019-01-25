@@ -4,11 +4,8 @@ using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.CLR;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 {
