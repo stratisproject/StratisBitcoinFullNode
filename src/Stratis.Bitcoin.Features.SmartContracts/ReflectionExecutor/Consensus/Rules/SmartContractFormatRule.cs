@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
             {
                 if (!transaction.IsSmartContractExecTransaction())
-                    return Task.CompletedTask;
+                    continue;
 
                 this.CheckTransaction(transaction, null);
             }
