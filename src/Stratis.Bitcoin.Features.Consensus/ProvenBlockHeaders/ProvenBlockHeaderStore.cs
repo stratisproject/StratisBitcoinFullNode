@@ -75,6 +75,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         public readonly SortedDictionary<int, ProvenBlockHeader> PendingBatch;
 
         /// <summary>
+        /// This is a work around to fail the node if the save operation fails.
+        /// TODO: Use a global node exception that will stop consensus in critical errors.
+        /// </summary>
+        private Exception saveAsyncLoopException;
+
+        /// <summary>
         /// Store Cache of <see cref= "ProvenBlockHeader"/> items.
         /// </summary>
         /// <remarks>
@@ -187,6 +193,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             this.logger.LogTrace("({0}:'{1}',{2}:'{3}')", nameof(provenBlockHeader), provenBlockHeader, nameof(newTip), newTip);
 
+            Guard.Assert(provenBlockHeader.GetHash() == newTip.Hash);
+
+            // Stop the consensus loop.
+            if (this.saveAsyncLoopException != null)
+                throw this.saveAsyncLoopException;
+
             lock (this.lockObject)
             {
                 // If an item is already there this means a reorg happened.
@@ -208,45 +220,54 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 return;
             }
 
-            SortedDictionary<int, ProvenBlockHeader> pendingBatch;
-            HashHeightPair hashHeight;
-
-            lock (this.lockObject)
+            try
             {
-                pendingBatch = new SortedDictionary<int, ProvenBlockHeader>(this.PendingBatch);
+                SortedDictionary<int, ProvenBlockHeader> pendingBatch;
+                HashHeightPair hashHeight;
 
-                this.PendingBatch.Clear();
-
-                hashHeight = this.pendingTipHashHeight;
-
-                this.pendingTipHashHeight = null;
-            }
-
-            if (pendingBatch.Count == 0)
-            {
-                this.logger.LogTrace("(-)[NO_PROVEN_HEADER_ITEMS]");
-                return;
-            }
-
-            this.CheckItemsAreInConsecutiveSequence(pendingBatch.Keys.ToList());
-
-            // Save the items to disk.
-            using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
-            {
-                // Save the items to disk.
-                await this.provenBlockHeaderRepository.PutAsync(pendingBatch, hashHeight).ConfigureAwait(false);
-
-                this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
-            }
-
-            if (this.initialBlockDownloadState.IsInitialBlockDownload())
-            {
-                // During IBD the PH cache is not used much,
-                // to avoid occupying unused space in memory we flush the cache.
-                foreach (KeyValuePair<int, ProvenBlockHeader> provenBlockHeader in pendingBatch)
+                lock (this.lockObject)
                 {
-                    this.Cache.Remove(provenBlockHeader.Key);
+                    pendingBatch = new SortedDictionary<int, ProvenBlockHeader>(this.PendingBatch);
+
+                    this.PendingBatch.Clear();
+
+                    hashHeight = this.pendingTipHashHeight;
+
+                    this.pendingTipHashHeight = null;
                 }
+
+                if (pendingBatch.Count == 0)
+                {
+                    this.logger.LogTrace("(-)[NO_PROVEN_HEADER_ITEMS]");
+                    return;
+                }
+
+                this.CheckItemsAreInConsecutiveSequence(pendingBatch.Keys.ToList());
+
+                // Save the items to disk.
+                using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
+                {
+                    // Save the items to disk.
+                    await this.provenBlockHeaderRepository.PutAsync(pendingBatch, hashHeight).ConfigureAwait(false);
+
+                    this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
+                }
+
+                if (this.initialBlockDownloadState.IsInitialBlockDownload())
+                {
+                    // During IBD the PH cache is not used much,
+                    // to avoid occupying unused space in memory we flush the cache.
+                    foreach (KeyValuePair<int, ProvenBlockHeader> provenBlockHeader in pendingBatch)
+                    {
+                        this.Cache.Remove(provenBlockHeader.Key);
+                    }
+                }
+            }
+            catch (Exception ex)
+            {
+                this.saveAsyncLoopException = ex;
+                this.logger.LogError("Error saving the batch {0}", ex);
+                throw;
             }
         }
 
