@@ -172,8 +172,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
             {
                 if (!(header.Header is ProvenBlockHeader provenBlockHeader))
                 {
-                    this.logger.LogTrace("Invalid proven header, try loading it from the store.");
-
                     provenBlockHeader = this.provenBlockHeaderStore.GetAsync(header.Height).GetAwaiter().GetResult();
 
                     if (provenBlockHeader == null)

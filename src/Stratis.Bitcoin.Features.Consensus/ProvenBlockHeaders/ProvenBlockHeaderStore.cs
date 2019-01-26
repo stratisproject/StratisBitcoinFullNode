@@ -182,7 +182,11 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 header = await this.provenBlockHeaderRepository.GetAsync(blockHeight).ConfigureAwait(false);
 
                 if (header != null)
+                {
                     this.Cache.AddOrUpdate(blockHeight, header, header.HeaderSize);
+                    this.logger.LogTrace("(-)[FROM_REPO]");
+                    return header;
+                }
 
                 return header;
             }
@@ -277,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count)))
             {
-                this.logger.LogTrace("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_CONSECUTIVE_SEQEUNCE]");
+                this.logger.LogError("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_CONSECUTIVE_SEQEUNCE]: {0}", string.Join(",", keys));
                 throw new ProvenBlockHeaderException("Proven block headers are not in the correct consecutive sequence.");
             }
         }
