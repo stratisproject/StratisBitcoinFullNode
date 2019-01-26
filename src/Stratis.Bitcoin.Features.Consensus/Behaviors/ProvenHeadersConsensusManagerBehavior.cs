@@ -185,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                         this.logger.LogTrace("(-)[NO_PH_AVAILABLE]");
                         break;
                     }
-                    else if (provenBlockHeader.GetHash() != header.Header.GetHash())
+                    else if (provenBlockHeader.GetHash() != header.HashBlock)
                     {
                         // Proven header is in the store, but with a wrong hash.
                         // This can happen in case of reorgs, when the store has not yet been updated.
