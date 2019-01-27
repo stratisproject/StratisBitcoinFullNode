@@ -209,7 +209,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 // We always assume the latest header belongs to the longest chain so just overwrite the previous values.
                 this.PendingBatch.AddOrReplace(newTip.Height, provenBlockHeader);
 
-                this.pendingTipHashHeight = newTip;
+                // If the new items is now the tip set it.
+                if (this.PendingBatch.Last().Key == newTip.Height)
+                    this.pendingTipHashHeight = newTip;
             }
 
             this.Cache.AddOrUpdate(newTip.Height, provenBlockHeader, provenBlockHeader.HeaderSize);
@@ -281,7 +283,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             if (!keys.SequenceEqual(Enumerable.Range(keys.First(), keys.Count)))
             {
-                this.logger.LogError("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_CONSECUTIVE_SEQEUNCE]: {0}", string.Join(",", keys));
+                this.logger.LogError("(-)[PROVEN_BLOCK_HEADERS_NOT_IN_CONSECUTIVE_SEQUENCE]: {0}", string.Join(",", keys));
                 throw new ProvenBlockHeaderException("Proven block headers are not in the correct consecutive sequence.");
             }
         }

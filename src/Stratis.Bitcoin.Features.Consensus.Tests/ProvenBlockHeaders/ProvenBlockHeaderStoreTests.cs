@@ -257,6 +257,60 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         */
 
         [Fact]
+        public async Task AddToPending_Then_Reorg_New_Items_Not_Tip_Then_Save()
+        {
+            var chainWithHeaders = this.BuildProvenHeaderChain(20);
+
+            var items = chainWithHeaders.EnumerateToGenesis().Reverse().ToList();
+
+            foreach (ChainedHeader chainedHeader in items.Skip(1))
+            {
+                this.provenBlockHeaderStore.AddToPendingBatch(chainedHeader.Header as ProvenBlockHeader, new HashHeightPair(chainedHeader.HashBlock, chainedHeader.Height));
+            }
+
+            var newChainWithHeaders = this.BuildProvenHeaderChain(20, items[10]);
+
+            var items1 = newChainWithHeaders.EnumerateToGenesis().Reverse().ToList();
+
+            foreach (ChainedHeader chainedHeader in items1.Skip(10).Take(5))
+            {
+                this.provenBlockHeaderStore.AddToPendingBatch(chainedHeader.Header as ProvenBlockHeader, new HashHeightPair(chainedHeader.HashBlock, chainedHeader.Height));
+            }
+
+            this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
+
+            var error = this.provenBlockHeaderStore.GetMemberValue("saveAsyncLoopException") as Exception;
+            Assert.Null(error);
+        }
+
+        [Fact]
+        public async Task AddToPending_Then_Reorg_New_Items_Is_Tip_Then_Save()
+        {
+            var chainWithHeaders = this.BuildProvenHeaderChain(20);
+
+            var items = chainWithHeaders.EnumerateToGenesis().Reverse().ToList();
+
+            foreach (ChainedHeader chainedHeader in items.Skip(1))
+            {
+                this.provenBlockHeaderStore.AddToPendingBatch(chainedHeader.Header as ProvenBlockHeader, new HashHeightPair(chainedHeader.HashBlock, chainedHeader.Height));
+            }
+
+            var newChainWithHeaders = this.BuildProvenHeaderChain(20, items[10]);
+
+            var items1 = newChainWithHeaders.EnumerateToGenesis().Reverse().ToList();
+
+            foreach (ChainedHeader chainedHeader in items1.Skip(10))
+            {
+                this.provenBlockHeaderStore.AddToPendingBatch(chainedHeader.Header as ProvenBlockHeader, new HashHeightPair(chainedHeader.HashBlock, chainedHeader.Height));
+            }
+
+            this.provenBlockHeaderStore.InvokeMethod("SaveAsync");
+
+            var error = this.provenBlockHeaderStore.GetMemberValue("saveAsyncLoopException") as Exception;
+            Assert.Null(error);
+        }
+
+        [Fact]
         public void AddToPending_Then_Save_Incorrect_Sequence_Push_To_Store()
         {
             var inHeader = CreateNewProvenBlockHeaderMock();

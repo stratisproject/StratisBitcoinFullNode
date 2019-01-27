@@ -197,9 +197,9 @@ namespace Stratis.Bitcoin.Tests.Common
         /// </summary>
         /// <param name="blockCount">The amount of blocks to chain.</param>
         /// <returns>Tip of a created chain of headers.</returns>
-        public ChainedHeader BuildProvenHeaderChain(int blockCount)
+        public ChainedHeader BuildProvenHeaderChain(int blockCount, ChainedHeader currentHeader = null)
         {
-            ChainedHeader currentHeader = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
+            currentHeader = currentHeader ?? ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
 
             for (int i = 1; i < blockCount; i++)
             {
@@ -211,7 +211,7 @@ namespace Stratis.Bitcoin.Tests.Common
                 header.Bits = Target.Difficulty1;
 
                 ChainedHeader prevHeader = currentHeader;
-                currentHeader = new ChainedHeader(header, header.GetHash(), i);
+                currentHeader = new ChainedHeader(header, header.GetHash(), prevHeader.Height + 1);
 
                 currentHeader.SetPrivatePropertyValue("Previous", prevHeader);
                 prevHeader.Next.Add(currentHeader);
