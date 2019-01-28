@@ -20,9 +20,14 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool SaveTransactionHex { get; set; }
 
         /// <summary>
-        /// A value indicating whether to create a default wallet and unlock it on startup. Wallet password is saved in configuration.
+        /// A value indicating whether to unlock the supplied default wallet on startup.
         /// </summary>
-        public bool DefaultWallet { get; set; }
+        public bool UnlockDefaultWallet { get; set; }
+
+        /// <summary>
+        /// Name for the default wallet.
+        /// </summary>
+        public string DefaultWalletName { get; set; }
 
         /// <summary>
         /// Password for the default wallet if overriding the default.
@@ -50,9 +55,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
-            this.DefaultWallet = config.GetOrDefault<bool>("defaultwallet", false, this.logger);
-            this.DefaultWalletPassword = config.GetOrDefault<string>("defaultwalletpassword", "default", this.logger);
+            this.DefaultWalletName = config.GetOrDefault<string>("defaultwallet", null, this.logger);
+            this.DefaultWalletPassword = config.GetOrDefault<string>("defaultpassword", "default", null); // No logging!
+            this.UnlockDefaultWallet = config.GetOrDefault<bool>("unlockdefaultwallet", false, this.logger);
             this.UnusedAddressesBuffer = config.GetOrDefault<int>("walletaddressbuffer", 20, this.logger);
+        }
+
+        /// <summary>
+        /// Check if the default wallet is specified.
+        /// </summary>
+        /// <returns>Returns true if the <see cref="DefaultWalletName"/> is other than empty string.</returns>
+        public bool IsDefaultWalletEnabled()
+        {
+            return !string.IsNullOrWhiteSpace(this.DefaultWalletName);
         }
 
         /// <summary>
@@ -65,8 +80,9 @@ namespace Stratis.Bitcoin.Features.Wallet
             var builder = new StringBuilder();
 
             builder.AppendLine("-savetrxhex=<0 or 1>            Save the hex of transactions in the wallet file. Default: 0.");
-            builder.AppendLine("-defaultwallet=<0 or 1>         Loads the default wallet on startup. If not exists, will be created automatically. Default: 0.");
-            builder.AppendLine("-defaultwalletpassword=<string> Overrides the default wallet password.");
+            builder.AppendLine("-defaultwallet=<string>         Loads the default wallet on startup. If not exists, will be created automatically. Default: 0.");
+            builder.AppendLine("-defaultpassword=<string>       Overrides the default wallet password.");
+            builder.AppendLine("-unlockdefaultwallet=<0 or 1>   Unlocks the specified default wallet.");
             defaults.Logger.LogInformation(builder.ToString());
         }
 
@@ -80,9 +96,10 @@ namespace Stratis.Bitcoin.Features.Wallet
             builder.AppendLine("####Wallet Settings####");
             builder.AppendLine("#Save the hex of transactions in the wallet file. Default: 0.");
             builder.AppendLine("#savetrxhex=0");
-            builder.AppendLine("#Creates a default wallet and unlocks the wallet on startup when set to 1. Default: 0.");
-            builder.AppendLine("#defaultwallet=0");
-            builder.AppendLine("#defaultwalletpassword=<string>");
+            builder.AppendLine("#Creates a default wallet, with the specified password and it can be unlocked on startup when unlockdefaultwallet set to 1. Default: 0.");
+            builder.AppendLine("#defaultwallet=string");
+            builder.AppendLine("#defaultpassword=<string>");
+            builder.AppendLine("#unlockdefaultwallet=0");
         }
     }
 }

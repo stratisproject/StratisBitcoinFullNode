@@ -35,9 +35,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Timer for saving wallet files to the file system.</summary>
         private const int WalletSavetimeIntervalInMinutes = 5;
 
-        /// <summary>Name of the default wallet created when -defaultwallet flag is set on startup.</summary>
-        public const string DefaultWalletName = "default";
-
         /// <summary>
         /// A lock object that protects access to the <see cref="Wallet"/>.
         /// Any of the collections inside Wallet must be synchronized using this lock.
@@ -196,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // If the node was started with -defaultwallet flag, check if it already exists, if not, create one.
-            if (this.walletSettings.DefaultWallet && !wallets.Any(w => w.Name == DefaultWalletName))
+            if (this.walletSettings.IsDefaultWalletEnabled() && !wallets.Any(w => w.Name == this.walletSettings.DefaultWalletName))
             {
                 this.CreateDefaultWallet();
             }
@@ -277,12 +274,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Creates the default wallet with the password from settings.
+        /// Creates the default wallet with the name and password from settings.
         /// </summary>
         private void CreateDefaultWallet()
         {
             var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
-            this.CreateWallet(this.walletSettings.DefaultWalletPassword, DefaultWalletName, string.Empty, mnemonic);
+            this.CreateWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, string.Empty, mnemonic);
         }
 
         /// <inheritdoc />

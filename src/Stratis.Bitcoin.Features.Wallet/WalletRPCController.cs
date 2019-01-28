@@ -53,7 +53,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.walletSettings = walletSettings;
 
-            if (walletSettings.DefaultWallet)
+            // Make sure both unlock is specified, and that we actually have a default wallet name specified.
+            if (walletSettings.UnlockDefaultWallet && walletSettings.IsDefaultWalletEnabled())
             {
                 try
                 {
@@ -386,10 +387,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>Reference to the default wallet, or the first available.</returns>
         private WalletAccountReference GetAccount()
         {
-            if (this.walletSettings.DefaultWallet)
+            if (this.walletSettings.IsDefaultWalletEnabled())
             {
-                HdAccount account = this.walletManager.GetAccounts(WalletManager.DefaultWalletName).Single();
-                return new WalletAccountReference(WalletManager.DefaultWalletName, account.Name);
+                HdAccount account = this.walletManager.GetAccounts(this.walletSettings.DefaultWalletName).Single();
+                return new WalletAccountReference(this.walletSettings.DefaultWalletName, account.Name);
             }
             else
             {
