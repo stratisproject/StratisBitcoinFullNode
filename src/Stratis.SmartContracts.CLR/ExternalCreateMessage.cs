@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public class ExternalCreateMessage : BaseMessage
     {
-        public ExternalCreateMessage(uint160 from, ulong amount, Gas gasLimit, byte[] code, object[] parameters)
+        public ExternalCreateMessage(uint160 from, ulong amount, RuntimeObserver.Gas gasLimit, byte[] code, object[] parameters)
             : base(from, amount, gasLimit)
         {
             this.Code = code;

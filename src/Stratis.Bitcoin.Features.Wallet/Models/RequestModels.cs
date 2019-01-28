@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
+using System.Linq;
 using Microsoft.AspNetCore.Mvc;
 using Newtonsoft.Json;
 using Newtonsoft.Json.Converters;
@@ -268,7 +269,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     /// Model object to use as input to the Api request for removing transactions from a wallet.
     /// </summary>
     /// <seealso cref="RequestModel" />
-    public class RemoveTransactionsModel : RequestModel
+    public class RemoveTransactionsModel : RequestModel, IValidatableObject
     {
         [Required(ErrorMessage = "The name of the wallet is required.")]
         public string WalletName { get; set; }
@@ -276,11 +277,45 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [FromQuery(Name = "ids")]
         public IEnumerable<string> TransactionsIds { get; set; }
 
+        [JsonConverter(typeof(IsoDateTimeConverter))]
+        [FromQuery(Name = "fromDate")]
+        public DateTime FromDate { get; set; }
+
         [FromQuery(Name = "all")]
         public bool DeleteAll { get; set; }
 
         [JsonProperty(PropertyName = "reSync")]
         public bool ReSync { get; set; }
+
+        /// <inheritdoc />
+        public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)
+        {
+            // Check that one of the filters is set.
+            if (!this.DeleteAll && (this.TransactionsIds == null || !this.TransactionsIds.Any()) && this.FromDate == default(DateTime))
+            {
+                yield return new ValidationResult(
+                    $"One of the query parameters '{nameof(this.DeleteAll)}', '{nameof(this.TransactionsIds)}' or '{nameof(this.FromDate)}' must be set.",
+                    new[] { $"{nameof(this.DeleteAll)}" });
+            }
+
+            // Check that only one of the filters is set.
+            if ((this.DeleteAll && this.TransactionsIds != null) 
+                || (this.DeleteAll && this.FromDate != default(DateTime))
+                || (this.TransactionsIds != null && this.FromDate != default(DateTime)))
+            {
+                yield return new ValidationResult(
+                    $"Only one out of the query parameters '{nameof(this.DeleteAll)}', '{nameof(this.TransactionsIds)}' or '{nameof(this.FromDate)}' can be set.",
+                    new[] { $"{nameof(this.DeleteAll)}" });
+            }
+
+            // Check that transaction ids doesn't contain empty elements.
+            if (this.TransactionsIds != null && this.TransactionsIds.Any(trx => trx == null))
+            {
+                yield return new ValidationResult(
+                    $"'{nameof(this.TransactionsIds)}' must not contain any null ids.",
+                    new[] { $"{nameof(this.TransactionsIds)}" });
+            }
+        }
     }
 
     public class ListAccountsModel : RequestModel

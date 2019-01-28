@@ -3,6 +3,7 @@ using Microsoft.CodeAnalysis;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
+using Stratis.SmartContracts.CLR.Validation.Validators.Instruction;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -37,7 +38,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -100,8 +101,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
-            Assert.Equal("Float usage", result.Errors.First().ValidationType);
-            Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.Skip(1).Take(1).First().ValidationType);
         }
 
         [Fact]
@@ -140,8 +141,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Equal(2, result.Errors.Count());
-            Assert.Equal("Float usage", result.Errors.First().ValidationType);
-            Assert.Equal("Float usage", result.Errors.Skip(1).Take(1).First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.Skip(1).Take(1).First().ValidationType);
         }
 
         [Fact]
@@ -175,7 +176,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -214,7 +215,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -258,7 +259,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.First().ValidationType);
         }
 
         [Fact]
@@ -293,7 +294,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             SmartContractValidationResult result = this.validator.Validate(moduleDefinition.ModuleDefinition);
             Assert.False(result.IsValid);
             Assert.Single(result.Errors);
-            Assert.Equal("Float usage", result.Errors.First().ValidationType);
+            Assert.Equal(FloatValidator.FloatValidationType, result.Errors.First().ValidationType);
         }
     }
 }

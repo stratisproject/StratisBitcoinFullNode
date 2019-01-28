@@ -46,7 +46,7 @@ namespace Stratis.SmartContracts.CLR
     public class StateTransitionSuccess
     {
         public StateTransitionSuccess(
-            Gas gasConsumed,
+            RuntimeObserver.Gas gasConsumed,
             uint160 contractAddress,
             object result = null)
         {
@@ -63,7 +63,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Gas consumed during execution.
         /// </summary>
-        public Gas GasConsumed { get; }
+        public RuntimeObserver.Gas GasConsumed { get; }
 
         /// <summary>
         /// The receiving contract's address.
@@ -77,7 +77,7 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public class StateTransitionError
     {
-        public StateTransitionError(Gas gasConsumed, StateTransitionErrorKind kind, ContractErrorMessage vmError)
+        public StateTransitionError(RuntimeObserver.Gas gasConsumed, StateTransitionErrorKind kind, ContractErrorMessage vmError)
         {
             this.Kind = kind;
             this.GasConsumed = gasConsumed;
@@ -98,7 +98,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// The gas consumed during execution.
         /// </summary>
-        public Gas GasConsumed { get; }
+        public RuntimeObserver.Gas GasConsumed { get; }
 
         public ContractErrorMessage GetErrorMessage()
         {
@@ -142,7 +142,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// The gas consumed during the state transition.
         /// </summary>
-        public Gas GasConsumed => this.IsSuccess ? this.Success.GasConsumed : this.Error.GasConsumed;
+        public RuntimeObserver.Gas GasConsumed => this.IsSuccess ? this.Success.GasConsumed : this.Error.GasConsumed;
 
         public bool IsSuccess { get; }
 
@@ -163,7 +163,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Creates a new result for a successful state transition.
         /// </summary>
-        public static StateTransitionResult Ok(Gas gasConsumed,
+        public static StateTransitionResult Ok(RuntimeObserver.Gas gasConsumed,
             uint160 contractAddress,
             object result = null)
         {
@@ -174,7 +174,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Creates a new result for a failed state transition due to a VM exception.
         /// </summary>
-        public static StateTransitionResult Fail(Gas gasConsumed, VmExecutionError vmError)
+        public static StateTransitionResult Fail(RuntimeObserver.Gas gasConsumed, VmExecutionError vmError)
         {
             // If VM execution ran out of gas we return a different kind of state transition error.
             StateTransitionErrorKind errorKind = vmError.ErrorKind == VmExecutionErrorKind.OutOfGas
@@ -187,7 +187,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Creates a new result for a failed state transition.
         /// </summary>
-        public static StateTransitionResult Fail(Gas gasConsumed, StateTransitionErrorKind kind)
+        public static StateTransitionResult Fail(RuntimeObserver.Gas gasConsumed, StateTransitionErrorKind kind)
         {
             return new StateTransitionResult(new StateTransitionError(gasConsumed, kind, null));
         }

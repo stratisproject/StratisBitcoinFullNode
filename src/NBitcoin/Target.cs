@@ -160,12 +160,13 @@ namespace NBitcoin
             byte[] array = input.ToByteArray();
 
             int missingZero = 32 - array.Length;
+
             if(missingZero < 0)
                 throw new InvalidOperationException("Awful bug, this should never happen");
+
             if(missingZero != 0)
-            {
-                array = new byte[missingZero].Concat(array).ToArray();
-            }
+                return new uint256(new byte[missingZero].Concat(array), false);
+
             return new uint256(array, false);
         }
 

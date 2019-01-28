@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 
@@ -247,7 +247,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Retry]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
-            throw new Exception();
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();

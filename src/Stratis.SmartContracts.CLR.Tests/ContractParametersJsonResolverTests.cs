@@ -43,7 +43,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var execResult = new LocalExecutionResult
             {
                 ErrorMessage = new ContractErrorMessage("Error message"),
-                GasConsumed = (Gas) 69,
+                GasConsumed = (RuntimeObserver.Gas) 69,
                 Return = testAddress
             };
 
