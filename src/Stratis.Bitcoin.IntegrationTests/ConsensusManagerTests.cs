@@ -515,12 +515,9 @@ namespace Stratis.Bitcoin.IntegrationTests
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(Common.ReadyData.ReadyBlockchain.BitcoinRegTest10Miner).WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
                 var syncer = builder.CreateStratisPowNode(this.powNetwork).Start();
-
-                // MinerA mines to height 10.
-                TestHelper.MineBlocks(minerA, 10);
 
                 // Sync the network to height 10.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
@@ -532,20 +529,19 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(minerA, 105);
                 TestHelper.WaitForNodeToSync(syncer, minerA);
 
-                // Miner B continues mines 110 blocks to a longer chain at height 120.
+                // Miner B mines 110 more blocks to create a longer chain at height 120.
                 TestHelper.MineBlocks(minerB, 110);
-                TestHelper.WaitForNodeToSync(syncer, minerB);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), waitTimeSeconds: 120);
 
                 // Miner A mines an additional 10 blocks to height 125 that will create the longest chain.
                 TestHelper.MineBlocks(minerA, 10);
-                TestHelper.WaitForNodeToSync(syncer, minerA);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 120);
 
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 125);
                 Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 120);
             }
         }
-
 
         /// <remarks>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</remarks>
         [Fact(Skip = "Work in progress")]

@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
+using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
@@ -420,9 +421,9 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
         private void a_full_list_of_available_commands_is_returned()
         {
-            var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText);
+            var commands = JsonDataSerializer.Instance.Deserialize<List<RpcCommandModel>>(this.responseText).OrderBy(c => c.Command);
 
-            commands.Count.Should().Be(26);
+            commands.Count().Should().Be(27);
             commands.Should().Contain(x => x.Command == "stop");
             commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
@@ -436,6 +437,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
             commands.Should().Contain(x => x.Command == "getblockhash <height>");
             commands.Should().Contain(x => x.Command == "getrawmempool");
             commands.Should().Contain(x => x.Command == "generate <blockcount>");
+            commands.Should().Contain(x => x.Command == "stopstaking");
             commands.Should().Contain(x => x.Command == "startstaking <walletname> <walletpassword>");
             commands.Should().Contain(x => x.Command == "getstakinginfo [<isjsonformat>]");
             commands.Should().Contain(x => x.Command == "sendtoaddress <address> <amount> <commenttx> <commentdest>");
