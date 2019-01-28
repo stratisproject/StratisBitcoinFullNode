@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         private HashHeightPair pendingTipHashHeight;
 
-        /// <summary>A lock object that protects access to the <see cref="PendingBatch"/> and <see cref="pendingTipHashHeight"/>.</summary>
+        /// <summary>A lock object that protects access to the <see cref="pendingBatch"/> and <see cref="pendingTipHashHeight"/>.</summary>
         private readonly object lockObject;
 
         /// <summary>Cache limit.</summary>
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// All access to these items have to be protected by <see cref="lockObject"/>.
         /// </para>
         /// </remarks>
-        public readonly SortedDictionary<int, ProvenBlockHeader> PendingBatch;
+        private readonly SortedDictionary<int, ProvenBlockHeader> pendingBatch;
 
         /// <summary>
         /// This is a work around to fail the node if the save operation fails.
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             this.initialBlockDownloadState = initialBlockDownloadState;
 
             this.lockObject = new object();
-            this.PendingBatch = new SortedDictionary<int, ProvenBlockHeader>();
+            this.pendingBatch = new SortedDictionary<int, ProvenBlockHeader>();
             this.Cache = new MemorySizeCache<int, ProvenBlockHeader>(this.MemoryCacheSizeLimitInBytes);
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 lock (this.lockObject)
                 {
-                    if (this.PendingBatch.TryGetValue(blockHeight, out ProvenBlockHeader headerFromBatch))
+                    if (this.pendingBatch.TryGetValue(blockHeight, out ProvenBlockHeader headerFromBatch))
                     {
                         this.logger.LogTrace("(-)[FROM_BATCH]");
                         return headerFromBatch;
@@ -205,9 +205,29 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             lock (this.lockObject)
             {
+                if (this.pendingTipHashHeight != null && provenBlockHeader.HashPrevBlock != this.pendingTipHashHeight.Hash)
+                {
+                    // The latest prven header to be added is the most recent from consensus
+                    // and is always assumed to be the consensus tip.
+                    // If a none consecutive item is added then there may have been a reorg in the chain
+                    // this can happen when the node is in the middle of rewinding its consensus
+
+                    // Walk back the batch and remove all the blocks that are on the fork.
+                    KeyValuePair<int, ProvenBlockHeader> lastItem = this.pendingBatch.Last();
+                    while (provenBlockHeader.HashPrevBlock != lastItem.Value.GetHash())
+                    {
+                        this.pendingBatch.Remove(lastItem.Key);
+                        
+                        if (this.pendingBatch.Count == 0)
+                            break;
+
+                        lastItem = this.pendingBatch.Last();
+                    }
+                }
+
                 // If an item is already there this means a reorg happened.
                 // We always assume the latest header belongs to the longest chain so just overwrite the previous values.
-                this.PendingBatch.AddOrReplace(newTip.Height, provenBlockHeader);
+                this.pendingBatch.AddOrReplace(newTip.Height, provenBlockHeader);
 
                 this.pendingTipHashHeight = newTip;
             }
@@ -231,15 +251,9 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 lock (this.lockObject)
                 {
-                    // If the tip is not the last item in the list skip saving.
-                    // This can happen if save is called in the middle of a reorg
-                    // then the pending collection can be temporary in an inconsistent state
-                    if (this.PendingBatch.Last().Key != this.pendingTipHashHeight.Height)
-                        return;
+                    pendingBatch = new SortedDictionary<int, ProvenBlockHeader>(this.pendingBatch);
 
-                    pendingBatch = new SortedDictionary<int, ProvenBlockHeader>(this.PendingBatch);
-
-                    this.PendingBatch.Clear();
+                    this.pendingBatch.Clear();
 
                     hashHeight = this.pendingTipHashHeight;
 
@@ -321,8 +335,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             lock (this.lockObject)
             {
-                totalBytes = this.PendingBatch.Sum(p => p.Value.HeaderSize);
-                count = this.PendingBatch.Count;
+                totalBytes = this.pendingBatch.Sum(p => p.Value.HeaderSize);
+                count = this.pendingBatch.Count;
             }
 
             decimal totalCacheInMb = Convert.ToDecimal(this.Cache.TotalSize / Math.Pow(2, 20));
