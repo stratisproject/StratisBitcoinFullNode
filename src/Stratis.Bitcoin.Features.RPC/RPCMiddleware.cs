@@ -4,6 +4,7 @@ using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Http.Features;
+using Microsoft.AspNetCore.Http.Internal;
 using Microsoft.Extensions.Logging;
 using Microsoft.Extensions.Primitives;
 using NBitcoin.DataEncoders;
@@ -46,34 +47,29 @@ namespace Stratis.Bitcoin.Features.RPC
                 return;
             }
 
-            JToken token = null;
-            try
-            {
-                var memoryStream = new MemoryStream();
-                await httpContext.Request.Body.CopyToAsync(memoryStream);
-                httpContext.Request.Body = memoryStream;
-                memoryStream.Position = 0;
-
-                token = JToken.Load(new JsonTextReader(new StreamReader(memoryStream)));
-                httpContext.Request.Body.Position = 0;
-            }
-            catch (JsonException)
-            {
-                token = null;
-            }
-
             Exception ex = null;
             try
-            {               
-                if (token is JArray)
+            {
+                // Allows streams to be read multiple times.
+                httpContext.Request.EnableRewind();
+
+                using (var body = new StreamReader(httpContext.Request.Body, Encoding.UTF8, true, 1024, true))
                 {
-                    // Batch request, invoke each request and accumulate responses.
-                    await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
-                }
-                else
-                {
-                    // Single request, invoke the request.
-                    await this.next.Invoke(httpContext);
+                    string requestBody = body.ReadToEnd();
+                    httpContext.Request.Body.Position = 0;
+
+                    JToken token = string.IsNullOrEmpty(requestBody) ? null : JToken.Parse(requestBody);
+                    
+                    if (token is JArray)
+                    {
+                        // Batch request, invoke each request and accumulate responses.
+                        await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
+                    }
+                    else
+                    {
+                        // Single request, invoke the request.
+                        await this.next.Invoke(httpContext);
+                    }
                 }
             }
             catch (Exception exx)
