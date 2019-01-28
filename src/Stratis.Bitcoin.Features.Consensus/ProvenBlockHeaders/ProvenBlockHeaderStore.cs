@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 if (this.pendingTipHashHeight != null && provenBlockHeader.HashPrevBlock != this.pendingTipHashHeight.Hash)
                 {
-                    // The latest prven header to be added is the most recent from consensus
+                    // The latest proven header to be added is the most recent from consensus
                     // and is always assumed to be the consensus tip.
                     // If a none consecutive item is added then there may have been a reorg in the chain
                     // this can happen when the node is in the middle of rewinding its consensus
