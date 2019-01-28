@@ -3314,10 +3314,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void CreateDefaultWalletAndVerify()
+        public void CreateDefaultWalletAndVerifyTheDefaultPassword()
         {
             DataFolder dataFolder = CreateDataFolder(this);
-            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet");
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet=default");
             walletManager.Start();
             Assert.True(walletManager.ContainsWallets);
 
@@ -3329,6 +3329,25 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             var wallet = walletManager.LoadWallet("default", "default");
 
             Assert.Equal(wallet.EncryptedSeed, defaultWallet.EncryptedSeed);
+        }
+
+        [Fact]
+        public void CreateDefaultWalletAndVerifyWrongPassword()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet=default", "-defaultpassword=default2");
+            walletManager.Start();
+            Assert.True(walletManager.ContainsWallets);
+
+            var defaultWallet = walletManager.Wallets.First();
+
+            Assert.Equal("default", defaultWallet.Name);
+
+            Assert.Throws<System.Security.SecurityException>(() =>
+            {
+                // Attempt to load the default wallet with wrong password.
+                var wallet = walletManager.LoadWallet("default", "default");
+            });
         }
 
         private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)
