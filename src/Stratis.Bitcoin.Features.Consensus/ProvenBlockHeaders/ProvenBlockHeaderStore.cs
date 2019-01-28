@@ -203,6 +203,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             if (this.saveAsyncLoopException != null)
                 throw this.saveAsyncLoopException;
 
+            List<KeyValuePair<int, ProvenBlockHeader>> itemsToRemove = null;
+
             lock (this.lockObject)
             {
                 if (this.pendingTipHashHeight != null && provenBlockHeader.HashPrevBlock != this.pendingTipHashHeight.Hash)
@@ -212,12 +214,15 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     // If a none consecutive item is added then there may have been a reorg in the chain
                     // this can happen when the node is in the middle of rewinding its consensus
 
+                    itemsToRemove = new List<KeyValuePair<int, ProvenBlockHeader>>();
+
                     // Walk back the batch and remove all the blocks that are on the fork.
                     KeyValuePair<int, ProvenBlockHeader> lastItem = this.pendingBatch.Last();
                     while (provenBlockHeader.HashPrevBlock != lastItem.Value.GetHash())
                     {
                         this.pendingBatch.Remove(lastItem.Key);
-                        
+                        itemsToRemove.Add(lastItem);
+
                         if (this.pendingBatch.Count == 0)
                             break;
 
@@ -230,6 +235,14 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingBatch.AddOrReplace(newTip.Height, provenBlockHeader);
 
                 this.pendingTipHashHeight = newTip;
+            }
+
+            if (itemsToRemove != null)
+            {
+                foreach (KeyValuePair<int, ProvenBlockHeader> itemToRemove in itemsToRemove)
+                {
+                    this.Cache.Remove(itemToRemove.Key);
+                }
             }
 
             this.Cache.AddOrUpdate(newTip.Height, provenBlockHeader, provenBlockHeader.HeaderSize);
