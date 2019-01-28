@@ -7,6 +7,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P.Peer
 {
@@ -85,6 +86,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             return this;
         }
 
+        [NoTrace]
         public NetworkPeerConnectionParameters Clone()
         {
             return new NetworkPeerConnectionParameters().SetFrom(this);
