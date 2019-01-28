@@ -86,7 +86,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionBuildContext context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = this.GetAccount(),
-                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList()
+                Recipients = new [] {new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
+                CacheSecret = false
             };
 
             try
@@ -166,7 +167,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!string.IsNullOrEmpty(accountName) && !accountName.Equals("*"))
                 throw new RPCServerException(RPCErrorCode.RPC_METHOD_DEPRECATED, "Account has been deprecated, must be excluded or set to \"*\"");
 
-            var account = this.GetAccount();
+            WalletAccountReference account = this.GetAccount();
 
             Money balance = this.walletManager.GetSpendableTransactionsInAccount(account, minConfirmations).Sum(x => x.Transaction.Amount);
             return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
@@ -186,7 +187,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!uint256.TryParse(txid, out trxid))
                 throw new ArgumentException(nameof(txid));
 
-            var accountReference = this.GetAccount();
+            WalletAccountReference accountReference = this.GetAccount();
             var account = this.walletManager.GetAccounts(accountReference.WalletName)
                                             .Where(i => i.Name.Equals(accountReference.AccountName))
                                             .Single();
@@ -231,7 +232,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 JsonConvert.DeserializeObject<List<string>>(addressesJson).ForEach(i => addresses.Add(BitcoinAddress.Create(i, this.fullNode.Network)));
             }
-            var accountReference = this.GetAccount();
+
+            WalletAccountReference accountReference = this.GetAccount();
             IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(accountReference, minConfirmations);
 
             var unspentCoins = new List<UnspentCoinModel>();
@@ -314,14 +316,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                 recipients.Add(recipient);
             }
 
-            var accountReference = this.GetAccount();
+            WalletAccountReference accountReference = this.GetAccount();
 
             var context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = accountReference,
                 MinConfirmations = minConf,
                 Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.                
-                Recipients = recipients
+                Recipients = recipients,
+                CacheSecret = false
             };
 
             // Set fee type for transaction build context.

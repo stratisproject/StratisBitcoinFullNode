@@ -6,6 +6,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.ReadyData
     /// </summary>
     public class ReadyBlockchain
     {
+        public static string StratisRegTestMinerAddress = "TXYdgqNVbHTfW5FsdxqSX6vejBByNEk2Yb";
+        public static string BitcoinRegTestMinerAddress = "mgCHT7ABM88SGpgQGXmidU6dG3qb9qC4oa";
+
         public static string StratisRegTest10Miner = @"ReadyData/StratisRegTest10Miner.zip";
         public static string StratisRegTest10Listener = @"ReadyData/StratisRegTest10Listener.zip";
         public static string StratisRegTest10NoWallet = @"ReadyData/StratisRegTest10NoWallet.zip";
