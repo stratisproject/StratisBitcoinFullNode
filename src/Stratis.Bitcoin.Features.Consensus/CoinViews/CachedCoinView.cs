@@ -7,7 +7,6 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NLog.Config;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
@@ -366,6 +365,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             {
                 if ((this.blockHash != null) && (oldBlockHash != this.blockHash))
                 {
+                    this.logger.LogTrace("(-):{0}='{1}'", nameof(this.blockHash), this.blockHash);
                     this.logger.LogTrace("(-)[BLOCKHASH_MISMATCH]");
                     throw new InvalidOperationException("Invalid oldBlockHash");
                 }
@@ -386,15 +386,20 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] { unspent.TransactionId }).ConfigureAwait(false);
 
+                        foreach (var utxo in result.UnspentOutputs)
+                        {
+                            this.logger.LogTrace("UTXO fetched from disk: {0}", utxo == null ? "null" : utxo.ToString());
+                        }
+
                         UnspentOutputs unspentOutput = result.UnspentOutputs[0];
 
                         cacheItem = new CacheItem();
                         cacheItem.ExistInInner = unspentOutput != null;
                         cacheItem.IsDirty = false;
-
                         cacheItem.UnspentOutputs = unspentOutput?.Clone();
 
                         this.cachedUtxoItems.TryAdd(unspent.TransactionId, cacheItem);
+                        this.logger.LogTrace("CacheItem added to cache {0}:{1}", nameof(cacheItem.ExistInInner), cacheItem.ExistInInner);
                     }
                     else
                     {
@@ -413,17 +418,24 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         // We take the original items that are in cache and put them in rewind data.
                         clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
+                        this.logger.LogTrace("Adding {0}:{1} to {2}", nameof(clone), clone.ToString(), nameof(rewindData.OutputsToRestore));
                         rewindData.OutputsToRestore.Add(clone);
 
                         // Now modify the cached items with the mutated data.
+                        this.logger.LogTrace("{0}:{1} not null", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs.ToString());
+                        this.logger.LogTrace("Spending {0}:{1}", nameof(unspent), unspent.ToString());
+
                         cacheItem.UnspentOutputs.Spend(unspent);
                     }
                     else
                     {
                         // New trx so it needs to be deleted if a rewind happens.
+                        this.logger.LogTrace("{0}:null", nameof(cacheItem.UnspentOutputs));
+                        this.logger.LogTrace("Adding {0}:{1} to {2}", nameof(unspent), unspent, nameof(rewindData.TransactionsToRemove));
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
 
                         // Put in the cache the new UTXOs.
+                        this.logger.LogTrace("Setting {0} to {1}:{2}", nameof(cacheItem.UnspentOutputs), nameof(unspent), unspent);
                         cacheItem.UnspentOutputs = unspent;
                     }
 
@@ -460,15 +472,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         public async Task<uint256> RewindAsync()
         {
             if (this.innerBlockHash == null)
+            {
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
+                this.logger.LogTrace("{0} null, value fetched fom disk {1} null", nameof(this.innerBlockHash), this.innerBlockHash);
+            }
 
             // Flush the entire cache before rewinding
             await this.FlushAsync(true).ConfigureAwait(false);
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                // Rewind data was not found in cache, try underlying storage.
                 uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
+                this.logger.LogTrace("Underlying storage has been rewound to {0}.", hash);
 
                 foreach (KeyValuePair<uint256, CacheItem> cachedUtxoItem in this.cachedUtxoItems)
                 {
@@ -498,6 +513,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             if (this.cachedRewindDataIndex.TryGetValue(height, out RewindData existingRewindData))
                 return existingRewindData;
+
+            this.logger.LogTrace("Rewind data fetched from disk at height {0}.", height);
 
             return await this.Inner.GetRewindData(height);
         }
