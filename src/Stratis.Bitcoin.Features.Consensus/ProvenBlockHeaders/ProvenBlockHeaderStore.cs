@@ -209,9 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 // We always assume the latest header belongs to the longest chain so just overwrite the previous values.
                 this.PendingBatch.AddOrReplace(newTip.Height, provenBlockHeader);
 
-                // If the new items is now the tip set it.
-                if (this.PendingBatch.Last().Key == newTip.Height)
-                    this.pendingTipHashHeight = newTip;
+                this.pendingTipHashHeight = newTip;
             }
 
             this.Cache.AddOrUpdate(newTip.Height, provenBlockHeader, provenBlockHeader.HeaderSize);
@@ -233,6 +231,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
                 lock (this.lockObject)
                 {
+                    // If the tip is not the last item in the list skip saving.
+                    // This can happen if save is called in the middle of a reorg
+                    // then the pending collection can be temporary in an inconsistent state
+                    if (this.PendingBatch.Last().Key != this.pendingTipHashHeight.Height)
+                        return;
+
                     pendingBatch = new SortedDictionary<int, ProvenBlockHeader>(this.PendingBatch);
 
                     this.PendingBatch.Clear();
