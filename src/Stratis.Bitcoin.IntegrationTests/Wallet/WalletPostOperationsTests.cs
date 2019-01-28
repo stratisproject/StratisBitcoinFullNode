@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
+using System.Net.Http;
 using System.Threading.Tasks;
 using DBreeze.Utils;
 using FluentAssertions;
@@ -273,7 +274,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task RemoveTransactionsWithoutIdsOrAllFlagFromWallet()
+        public async Task RemoveTransactionsFromWalletWithoutFilters()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
@@ -307,10 +308,85 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 response.StatusCode.Should().Be(HttpStatusCode.BadRequest);
                 errors.Should().ContainSingle();
-                errors.First().Message.Should().Be("Transaction ids need to be specified if the 'all' flag is not set.");
+                errors.First().Message.Should().Be($"One of the query parameters '{nameof(RemoveTransactionsModel.DeleteAll)}', '{nameof(RemoveTransactionsModel.TransactionsIds)}' or '{nameof(RemoveTransactionsModel.FromDate)}' must be set.");
             }
         }
 
+        [Fact]
+        public async Task RemoveTransactionsFromWalletCalledWithMoreThanOneFilter()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                CoreNode node = builder.CreateStratisPosNode(this.network).Start();
+
+                this.AddAndLoadWalletFileToWalletFolder(node);
+
+                // Make sure the account is used, i.e, it has transactions.
+                WalletHistoryModel history = await $"http://localhost:{node.ApiPort}/api"
+                .AppendPathSegment("wallet/history")
+                .SetQueryParams(new { walletName = this.walletWithFundsName, accountName = "account 0" })
+                .GetJsonAsync<WalletHistoryModel>();
+
+                history.AccountsHistoryModel.Should().NotBeEmpty();
+                history.AccountsHistoryModel.First().TransactionsHistory.Should().NotBeEmpty();
+
+                // Act.
+                Func<Task> act1 = async () => await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/remove-transactions")
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, all = true, ids = new[] { "3ccdfdce538eabe4d18efd2ee8fdc2554dc95cae6ce082aa4b5c7b9074b2e0a3" } })
+                    .DeleteAsync()
+                    .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
+
+                Func<Task> act2 = async () => await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/remove-transactions")
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, fromDate = "06/06/2018", ids = new[] { "3ccdfdce538eabe4d18efd2ee8fdc2554dc95cae6ce082aa4b5c7b9074b2e0a3" } })
+                    .DeleteAsync()
+                    .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
+
+                Func<Task> act3 = async () => await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/remove-transactions")
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, fromDate = "06/06/2018", all = true })
+                    .DeleteAsync()
+                    .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
+
+                Func<Task> act4 = async () => await $"http://localhost:{node.ApiPort}/api"
+                    .AppendPathSegment("wallet/remove-transactions")
+                    .SetQueryParams(new { walletName = this.walletWithFundsName, fromDate = "06/06/2018", all = true, ids = new[] { "3ccdfdce538eabe4d18efd2ee8fdc2554dc95cae6ce082aa4b5c7b9074b2e0a3" } })
+                    .DeleteAsync()
+                    .ReceiveJson<HashSet<(uint256 transactionId, DateTimeOffset creationTime)>>();
+
+                // Assert.
+                FlurlHttpException exception1 = act1.Should().Throw<FlurlHttpException>().Which;
+                HttpResponseMessage response1 = exception1.Call.Response;
+
+                FlurlHttpException exception2 = act2.Should().Throw<FlurlHttpException>().Which;
+                HttpResponseMessage response2 = exception2.Call.Response;
+
+                FlurlHttpException exception3 = act3.Should().Throw<FlurlHttpException>().Which;
+                HttpResponseMessage response3 = exception3.Call.Response;
+
+                FlurlHttpException exception4 = act4.Should().Throw<FlurlHttpException>().Which;
+                HttpResponseMessage response4 = exception4.Call.Response;
+
+                ErrorResponse errorResponse1 = JsonConvert.DeserializeObject<ErrorResponse>(await response1.Content.ReadAsStringAsync());
+                ErrorResponse errorResponse2 = JsonConvert.DeserializeObject<ErrorResponse>(await response2.Content.ReadAsStringAsync());
+                ErrorResponse errorResponse3 = JsonConvert.DeserializeObject<ErrorResponse>(await response3.Content.ReadAsStringAsync());
+                ErrorResponse errorResponse4 = JsonConvert.DeserializeObject<ErrorResponse>(await response4.Content.ReadAsStringAsync());
+
+                response1.StatusCode.Should().Be(HttpStatusCode.BadRequest);
+                response1.StatusCode.Should().Be(response2.StatusCode);
+                response2.StatusCode.Should().Be(response3.StatusCode);
+                response3.StatusCode.Should().Be(response4.StatusCode);
+
+                List<ErrorModel> errors = errorResponse1.Errors;
+                errors.Should().ContainSingle();
+                errors.First().Message.Should().Be($"Only one out of the query parameters '{nameof(RemoveTransactionsModel.DeleteAll)}', '{nameof(RemoveTransactionsModel.TransactionsIds)}' or '{nameof(RemoveTransactionsModel.FromDate)}' can be set.");
+                errorResponse1.Should().BeEquivalentTo(errorResponse2);
+                errorResponse2.Should().BeEquivalentTo(errorResponse3);
+                errorResponse3.Should().BeEquivalentTo(errorResponse4);
+            }
+        }
 
         [Fact]
         public async Task GetSpendableTransactionsInAccountAllowUnconfirmed()
