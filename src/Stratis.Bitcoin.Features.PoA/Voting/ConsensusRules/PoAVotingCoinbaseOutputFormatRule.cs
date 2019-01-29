@@ -33,9 +33,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules
 
             List<VotingData> votingDataList = this.votingDataEncoder.Decode(votingDataBytes);
 
-            // TODO verify format of voting data
+            if (votingDataList.Count == 0)
+            {
+                this.Logger.LogTrace("(-)[EMPTY]");
+                PoAConsensusErrors.VotingDataInvalidFormat.Throw();
+            }
 
-            throw new NotImplementedException();
+            return Task.CompletedTask;
         }
     }
 }
