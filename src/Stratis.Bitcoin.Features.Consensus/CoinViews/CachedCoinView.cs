@@ -327,7 +327,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 // Remove prunable entries from cache as they were flushed down.
                 IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
                 foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
+                {
                     this.cachedUtxoItems.Remove(entry.Key);
+                    this.logger.LogTrace("Removed prunable entry Transaction Id '{0}', CacheItem:'{1}'", entry.Key, entry.Value.UnspentOutputs);
+                }
 
                 this.cachedRewindDataIndex.Clear();
                 this.innerBlockHash = this.blockHash;
@@ -415,20 +418,21 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         // We take the original items that are in cache and put them in rewind data.
                         clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
-                        this.logger.LogTrace("Adding {0}:'{1}' to {2}", nameof(clone), clone, nameof(rewindData.OutputsToRestore));
+
+                        this.logger.LogTrace("Modifying transaction '{0}' in OutputsToRestore rewind data.", unspent.TransactionId);
                         rewindData.OutputsToRestore.Add(clone);
 
-                        // Now modify the cached items with the mutated data.
-                        this.logger.LogTrace("Spending {0}:'{1}'", nameof(unspent), unspent);
+                        this.logger.LogTrace("Cache item before spend  {0}:'{1}'", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
 
+                        // Now modify the cached items with the mutated data.
                         cacheItem.UnspentOutputs.Spend(unspent);
 
-                        this.logger.LogTrace("Spent {0}:'{1}'", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
+                        this.logger.LogTrace("Cache item after spend {0}:'{1}'", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
                     }
                     else
                     {
                         // New trx so it needs to be deleted if a rewind happens.
-                        this.logger.LogTrace("Adding {0}:'{1}' to {2}", nameof(unspent), unspent, nameof(rewindData.TransactionsToRemove));
+                        this.logger.LogTrace("Adding transaction '{0}' to TransactionsToRemove rewind data.", unspent.TransactionId);
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
 
                         // Put in the cache the new UTXOs.
