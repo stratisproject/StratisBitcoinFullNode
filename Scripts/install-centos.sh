@@ -17,6 +17,9 @@ firewall-cmd --zone=public --add-port=4334/tcp --permanent
 # Opens the API port, this is required to generate multiple wallet addresses. API documentation: http://localhost:4335/swagger/index.html
 firewall-cmd --zone=public --add-port=4335/tcp --permanent
 
+# Reload the firewall. Also make sure that the zone is correct, it might be dmz and not public. Run this command to see firewall zones: firewall-cmd --get-active-zones
+firewall-cmd --reload
+
 wget -q https://github.com/CityChainFoundation/city-chain/releases/download/v1.0.16/City.Chain-1.0.16-linux-x64.tar.gz
 tar zxf City.Chain-1.0.16-linux-x64.tar.gz
 chmod +x City.Chain

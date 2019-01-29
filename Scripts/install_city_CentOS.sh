@@ -14,6 +14,7 @@ declare -r CONF=release
 declare -r COINGITHUB=https://github.com/CityChainFoundation/city-chain.git
 declare -r COINPORT=4333
 declare -r COINRPCPORT=4334
+declare -r COINAPIPORT=4335
 declare -r COINDAEMON=cityd
 declare -r COINCORE=/home/${NODE_USER}/.citychain/city/CityMain
 declare -r COINCONFIG=city.conf
@@ -111,6 +112,7 @@ installFirewall() {
     echo "y" | sudo ufw enable &>> ${SCRIPT_LOGFILE}
     sudo ufw allow $COINPORT/tcp &>> ${SCRIPT_LOGFILE}
     sudo ufw allow $COINRPCPORT/tcp &>> ${SCRIPT_LOGFILE}
+    sudo ufw allow $COINAPIPORT/tcp &>> ${SCRIPT_LOGFILE}
     echo -e "${NONE}${GREEN}* Done${NONE}";
 }
 
