@@ -388,8 +388,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         FetchCoinsResponse result = await this.inner.FetchCoinsAsync(new[] { unspent.TransactionId }).ConfigureAwait(false);
 
-                        this.logger.LogTrace("UTXO fetched from disk: '{0}'", result.UnspentOutputs);
-
                         UnspentOutputs unspentOutput = result.UnspentOutputs[0];
 
                         cacheItem = new CacheItem();
