@@ -396,7 +396,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.UnspentOutputs = unspentOutput?.Clone();
 
                         this.cachedUtxoItems.TryAdd(unspent.TransactionId, cacheItem);
-                        this.logger.LogTrace("CacheItem added to the cache '{0}'", cacheItem.UnspentOutputs);
+                        this.logger.LogTrace("CacheItem added to the cache during save '{0}'", cacheItem.UnspentOutputs);
                     }
                     else
                     {
@@ -419,15 +419,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         rewindData.OutputsToRestore.Add(clone);
 
                         // Now modify the cached items with the mutated data.
-                        this.logger.LogTrace("{0}:'{1}' not null", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
                         this.logger.LogTrace("Spending {0}:'{1}'", nameof(unspent), unspent);
 
                         cacheItem.UnspentOutputs.Spend(unspent);
+
+                        this.logger.LogTrace("Spent {0}:'{1}'", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
                     }
                     else
                     {
                         // New trx so it needs to be deleted if a rewind happens.
-                        this.logger.LogTrace("{0}:null", nameof(cacheItem.UnspentOutputs));
                         this.logger.LogTrace("Adding {0}:'{1}' to {2}", nameof(unspent), unspent, nameof(rewindData.TransactionsToRemove));
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
 
