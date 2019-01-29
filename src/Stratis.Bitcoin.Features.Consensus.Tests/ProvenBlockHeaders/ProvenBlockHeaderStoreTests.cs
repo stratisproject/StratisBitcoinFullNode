@@ -287,7 +287,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
 
             var newChainedHeaders = newChainWithHeaders.EnumerateToGenesis().Reverse().ToList();
 
-            // 1-15 on main chain then items 15-20 on a fork
+            // 1-10 on main chain then items 10-15 on a fork
             foreach (ChainedHeader chainedHeader in newChainedHeaders.Skip(10).Take(6))
             {
                 this.provenBlockHeaderStore.AddToPendingBatch(chainedHeader.Header as ProvenBlockHeader, new HashHeightPair(chainedHeader.HashBlock, chainedHeader.Height));
