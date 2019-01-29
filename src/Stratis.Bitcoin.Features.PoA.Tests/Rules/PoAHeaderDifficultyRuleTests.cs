@@ -50,9 +50,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         public void VerifyHeaderDifficulty()
         {
             var rule = new PoAHeaderDifficultyRule();
-            rule.Parent = this.rulesEngine;
-            rule.Logger = this.loggerFactory.CreateLogger(rule.GetType().FullName);
-            rule.Initialize();
+            this.InitRule(rule);
 
             var validationContext = new ValidationContext() { ChainedHeaderToValidate = this.currentHeader };
             var ruleContext = new RuleContext(validationContext, DateTimeOffset.Now);

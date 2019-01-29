@@ -17,9 +17,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         public PoAIntegritySignatureRuleTests()
         {
             this.integritySignatureRule = new PoAIntegritySignatureRule();
-            this.integritySignatureRule.Parent = this.rulesEngine;
-            this.integritySignatureRule.Logger = this.loggerFactory.CreateLogger(this.integritySignatureRule.GetType().FullName);
-            this.integritySignatureRule.Initialize();
+            this.InitRule(this.integritySignatureRule);
         }
 
         [Fact]

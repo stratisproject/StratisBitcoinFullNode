@@ -1,10 +1,4 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using NBitcoin;
-using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Features.PoA.Voting;
-using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
-using Xunit;
+﻿using Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
@@ -15,9 +9,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         public PoAVotingCoinbaseOutputFormatRuleTests()
         {
             this.votingFormatRule = new PoAVotingCoinbaseOutputFormatRule();
-            this.votingFormatRule.Parent = this.rulesEngine;
-            this.votingFormatRule.Logger = this.loggerFactory.CreateLogger(this.votingFormatRule.GetType().FullName);
-            this.votingFormatRule.Initialize();
+            this.InitRule(this.votingFormatRule);
         }
 
         // TODO add tests

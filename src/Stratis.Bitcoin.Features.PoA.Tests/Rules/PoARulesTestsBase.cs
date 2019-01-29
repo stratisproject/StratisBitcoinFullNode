@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -50,6 +51,13 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(50, null, false, null, this.network);
 
             this.currentHeader = headers.Last();
+        }
+
+        public void InitRule(ConsensusRuleBase rule)
+        {
+            rule.Parent = this.rulesEngine;
+            rule.Logger = this.loggerFactory.CreateLogger(rule.GetType().FullName);
+            rule.Initialize();
         }
     }
 
