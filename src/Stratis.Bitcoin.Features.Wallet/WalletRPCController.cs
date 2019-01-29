@@ -19,9 +19,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletRPCController : FeatureController
     {
-        // <summary>As per RPC method definition this should be the max allowable expiry duration.</summary>
-        private const int maxDurationInSeconds = 1073741824;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -52,19 +49,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.walletSettings = walletSettings;
-
-            // Make sure both unlock is specified, and that we actually have a default wallet name specified.
-            if (walletSettings.UnlockDefaultWallet && walletSettings.IsDefaultWalletEnabled())
-            {
-                try
-                {
-                    this.UnlockWallet(walletSettings.DefaultWalletPassword, maxDurationInSeconds);
-                }
-                catch (Exception ex)
-                {
-                    this.logger.LogCritical(ex, "Failed to unlock the default wallet.");
-                }
-            }
+          
         }
 
         [ActionName("walletpassphrase")]
@@ -76,12 +61,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference account = this.GetAccount();
 
-            // Length of expiry of the unlocking, restricted to max duration.
-            TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, maxDurationInSeconds));
-
             try
             {
-                this.walletTransactionHandler.CacheSecret(account, passphrase, duration);
+                this.walletManager.UnlockWallet(passphrase, account.WalletName, timeout);
             }
             catch (SecurityException exception)
             {
@@ -95,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool LockWallet()
         {
             WalletAccountReference account = this.GetAccount();
-            this.walletTransactionHandler.ClearCachedSecret(account);
+            this.walletManager.LockWallet(account.WalletName);
             return true; // NOTE: Have to return a value or else RPC middleware doesn't serialize properly.
         }
 

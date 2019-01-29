@@ -3325,10 +3325,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             Assert.Equal("default", defaultWallet.Name);
 
-            // Attempt to load the default wallet.
+            // Load the default wallet.
             var wallet = walletManager.LoadWallet("default", "default");
 
-            Assert.Equal(wallet.EncryptedSeed, defaultWallet.EncryptedSeed);
+            Assert.NotNull(wallet);
         }
 
         [Fact]
@@ -3348,6 +3348,38 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 // Attempt to load the default wallet with wrong password.
                 var wallet = walletManager.LoadWallet("default", "default");
             });
+        }
+
+        /// <summary>
+        /// Test that first creates an unlocked default wallet, retrieves the extkey to verify it is actually unlocked. Lock the wallet, verify
+        /// it is not possible to get extkey. Unlock manually, and verify that returned key is same as before.
+        /// </summary>
+        [Fact]
+        public void CreateDefaultWalletAndVerifyUnlockAndLocking()
+        {
+            DataFolder dataFolder = CreateDataFolder(this);
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet=default", "-unlockdefaultwallet");
+            walletManager.Start();
+            Assert.True(walletManager.ContainsWallets);
+
+            var wallet = walletManager.GetWalletByName("default");
+
+            HdAccount account = walletManager.GetAccounts("default").Single();
+            var reference = new WalletAccountReference("default", account.Name);
+
+            var extKey1 = walletManager.GetExtKey(reference);
+            walletManager.LockWallet("default");
+
+            Assert.Throws<System.Security.SecurityException>(() =>
+            {
+                walletManager.GetExtKey(reference);
+            });
+
+            walletManager.UnlockWallet("default", "default", 10);
+
+            var extKey2 = walletManager.GetExtKey(reference);
+
+            Assert.Equal(extKey1.ToString(wallet.Network), extKey2.ToString(wallet.Network));
         }
 
         private WalletManager CreateWalletManager(DataFolder dataFolder, Network network, params string[] cmdLineArgs)
