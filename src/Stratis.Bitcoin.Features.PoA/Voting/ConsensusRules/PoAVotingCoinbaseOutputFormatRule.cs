@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -35,13 +34,6 @@ namespace Stratis.Bitcoin.Features.PoA.Voting.ConsensusRules
             List<VotingData> votingDataList = this.votingDataEncoder.Decode(votingDataBytes);
 
             // TODO verify format of voting data
-
-            // find voting output. exit if not found. if found check that it's not the first output, then check the format
-            // there could be only 1 voting output
-
-            // max op return data is ushort.maxValue
-
-            // TODO
 
             throw new NotImplementedException();
         }
