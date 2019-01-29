@@ -205,12 +205,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             lock (this.lockObject)
             {
-                if (this.pendingTipHashHeight != null && provenBlockHeader.HashPrevBlock != this.pendingTipHashHeight.Hash)
+                if ((this.pendingTipHashHeight != null) && (provenBlockHeader.HashPrevBlock != this.pendingTipHashHeight.Hash))
                 {
                     // The latest proven header to be added is the most recent from consensus
                     // and is always assumed to be the consensus tip.
                     // If a non-consecutive item is added then there may have been a reorg in the chain
-                    // this can happen when the node is in the middle of rewinding its consensus
+                    // this can happen after the node rewind its consensus.
 
                     // Walk back the batch and remove all the blocks that are on the fork.
                     KeyValuePair<int, ProvenBlockHeader> lastItem = this.pendingBatch.Last();
