@@ -259,7 +259,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     cache.IsDirty = false;
                     cache.UnspentOutputs = unspent?.Clone();
 
-                    this.logger.LogTrace("CacheItem added to the cache, Transaction Id '{0}', UTXO:'{1}'", txIds[index], cache.UnspentOutputs);
+                    this.logger.LogTrace("CacheItem added to the cache, Transaction Id '{0}', UTXO:'{1}'.", txIds[index], cache.UnspentOutputs);
                     this.cachedUtxoItems.TryAdd(txIds[index], cache);
                 }
 
@@ -329,7 +329,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
                 {
                     this.cachedUtxoItems.Remove(entry.Key);
-                    this.logger.LogTrace("Removed prunable entry Transaction Id '{0}', CacheItem:'{1}'", entry.Key, entry.Value.UnspentOutputs);
+                    this.logger.LogTrace("Removed prunable entry Transaction Id '{0}', CacheItem:'{1}'.", entry.Key, entry.Value.UnspentOutputs);
                 }
 
                 this.cachedRewindDataIndex.Clear();
@@ -352,7 +352,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     if ((this.random.Next() % 3) == 0)
                     {
-                        this.logger.LogTrace("Transaction Id '{0}' selected to be removed from the cache, CacheItem:'{1}'", entry.Key, entry.Value.UnspentOutputs);
+                        this.logger.LogTrace("Transaction Id '{0}' selected to be removed from the cache, CacheItem:'{1}'.", entry.Key, entry.Value.UnspentOutputs);
                         this.cachedUtxoItems.Remove(entry.Key);
                     }
                 }
@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.UnspentOutputs = unspentOutput?.Clone();
 
                         this.cachedUtxoItems.TryAdd(unspent.TransactionId, cacheItem);
-                        this.logger.LogTrace("CacheItem added to the cache during save '{0}'", cacheItem.UnspentOutputs);
+                        this.logger.LogTrace("CacheItem added to the cache during save '{0}'.", cacheItem.UnspentOutputs);
                     }
                     else
                     {
@@ -422,12 +422,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.logger.LogTrace("Modifying transaction '{0}' in OutputsToRestore rewind data.", unspent.TransactionId);
                         rewindData.OutputsToRestore.Add(clone);
 
-                        this.logger.LogTrace("Cache item before spend  {0}:'{1}'", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
+                        this.logger.LogTrace("Cache item before spend {0}:'{1}'.", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
 
                         // Now modify the cached items with the mutated data.
                         cacheItem.UnspentOutputs.Spend(unspent);
 
-                        this.logger.LogTrace("Cache item after spend {0}:'{1}'", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
+                        this.logger.LogTrace("Cache item after spend {0}:'{1}'.", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
                     }
                     else
                     {
@@ -436,7 +436,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         rewindData.TransactionsToRemove.Add(unspent.TransactionId);
 
                         // Put in the cache the new UTXOs.
-                        this.logger.LogTrace("Setting {0} to {1}:'{2}'", nameof(cacheItem.UnspentOutputs), nameof(unspent), unspent);
+                        this.logger.LogTrace("Setting {0} to {1}: '{2}'.", nameof(cacheItem.UnspentOutputs), nameof(unspent), unspent);
                         cacheItem.UnspentOutputs = unspent;
                     }
 
@@ -475,7 +475,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             if (this.innerBlockHash == null)
             {
                 this.innerBlockHash = await this.inner.GetTipHashAsync().ConfigureAwait(false);
-                this.logger.LogTrace("{0} null, value fetched fom disk '{1}' null", nameof(this.innerBlockHash), this.innerBlockHash);
             }
 
             // Flush the entire cache before rewinding
@@ -484,7 +483,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
                 uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
-                this.logger.LogTrace("Underlying storage has been rewound to '{0}'.", hash);
 
                 foreach (KeyValuePair<uint256, CacheItem> cachedUtxoItem in this.cachedUtxoItems)
                 {
@@ -514,8 +512,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             if (this.cachedRewindDataIndex.TryGetValue(height, out RewindData existingRewindData))
                 return existingRewindData;
-
-            this.logger.LogTrace("Rewind data fetched from disk at height {0}.", height);
 
             return await this.Inner.GetRewindData(height);
         }
