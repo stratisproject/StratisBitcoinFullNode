@@ -209,7 +209,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     // The latest proven header to be added is the most recent from consensus
                     // and is always assumed to be the consensus tip.
-                    // If a none consecutive item is added then there may have been a reorg in the chain
+                    // If a non-consecutive item is added then there may have been a reorg in the chain
                     // this can happen when the node is in the middle of rewinding its consensus
 
                     // Walk back the batch and remove all the blocks that are on the fork.
