@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     Protocol = httpContext.Request.Protocol,
                     Scheme = httpContext.Request.Scheme,
                     QueryString = httpContext.Request.QueryString.Value
-                };                
+                };
                 contextFeatures.Set<IHttpRequestFeature>(requestFeature);
 
                 var responseMemoryStream = new MemoryStream();
