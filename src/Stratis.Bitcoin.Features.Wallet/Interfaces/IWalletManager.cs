@@ -307,8 +307,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <summary>
         /// Gets the extended private key of an account.
         /// </summary>
-        /// <param name="accountReference"></param>
-        /// <returns></returns>
+        /// <param name="accountReference">The account.</param>
+        /// <param name="password">The password used to decrypt the encrypted seed.</param>
+        /// <param name="cache">whether to cache the private key for future use.</param>
+        /// <returns>The private key.</returns>
         ExtKey GetExtKey(WalletAccountReference accountReference, string password = "", bool cache = false);
 
         /// <summary>

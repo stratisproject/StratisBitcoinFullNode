@@ -208,8 +208,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!context.Sign)
                 return;
 
-            var wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-            var seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
+            Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
+            ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
             
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
