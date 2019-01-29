@@ -203,8 +203,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             if (this.saveAsyncLoopException != null)
                 throw this.saveAsyncLoopException;
 
-            List<KeyValuePair<int, ProvenBlockHeader>> itemsToRemove = null;
-
             lock (this.lockObject)
             {
                 if (this.pendingTipHashHeight != null && provenBlockHeader.HashPrevBlock != this.pendingTipHashHeight.Hash)
@@ -214,14 +212,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     // If a none consecutive item is added then there may have been a reorg in the chain
                     // this can happen when the node is in the middle of rewinding its consensus
 
-                    itemsToRemove = new List<KeyValuePair<int, ProvenBlockHeader>>();
-
                     // Walk back the batch and remove all the blocks that are on the fork.
                     KeyValuePair<int, ProvenBlockHeader> lastItem = this.pendingBatch.Last();
                     while (provenBlockHeader.HashPrevBlock != lastItem.Value.GetHash())
                     {
                         this.pendingBatch.Remove(lastItem.Key);
-                        itemsToRemove.Add(lastItem);
+                        this.Cache.Remove(lastItem.Key);
 
                         if (this.pendingBatch.Count == 0)
                             break;
@@ -235,14 +231,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 this.pendingBatch.AddOrReplace(newTip.Height, provenBlockHeader);
 
                 this.pendingTipHashHeight = newTip;
-            }
-
-            if (itemsToRemove != null)
-            {
-                foreach (KeyValuePair<int, ProvenBlockHeader> itemToRemove in itemsToRemove)
-                {
-                    this.Cache.Remove(itemToRemove.Key);
-                }
             }
 
             this.Cache.AddOrUpdate(newTip.Height, provenBlockHeader, provenBlockHeader.HeaderSize);
@@ -259,12 +247,12 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             try
             {
-                SortedDictionary<int, ProvenBlockHeader> pendingBatch;
+                SortedDictionary<int, ProvenBlockHeader> pendingBatchInsert;
                 HashHeightPair hashHeight;
 
                 lock (this.lockObject)
                 {
-                    pendingBatch = new SortedDictionary<int, ProvenBlockHeader>(this.pendingBatch);
+                    pendingBatchInsert = new SortedDictionary<int, ProvenBlockHeader>(this.pendingBatch);
 
                     this.pendingBatch.Clear();
 
@@ -273,19 +261,19 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                     this.pendingTipHashHeight = null;
                 }
 
-                if (pendingBatch.Count == 0)
+                if (pendingBatchInsert.Count == 0)
                 {
                     this.logger.LogTrace("(-)[NO_PROVEN_HEADER_ITEMS]");
                     return;
                 }
 
-                this.CheckItemsAreInConsecutiveSequence(pendingBatch.Keys.ToList());
+                this.CheckItemsAreInConsecutiveSequence(pendingBatchInsert.Keys.ToList());
 
                 // Save the items to disk.
                 using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
                 {
                     // Save the items to disk.
-                    await this.provenBlockHeaderRepository.PutAsync(pendingBatch, hashHeight).ConfigureAwait(false);
+                    await this.provenBlockHeaderRepository.PutAsync(pendingBatchInsert, hashHeight).ConfigureAwait(false);
 
                     this.TipHashHeight = this.provenBlockHeaderRepository.TipHashHeight;
                 }
@@ -294,7 +282,7 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
                 {
                     // During IBD the PH cache is not used much,
                     // to avoid occupying unused space in memory we flush the cache.
-                    foreach (KeyValuePair<int, ProvenBlockHeader> provenBlockHeader in pendingBatch)
+                    foreach (KeyValuePair<int, ProvenBlockHeader> provenBlockHeader in pendingBatchInsert)
                     {
                         this.Cache.Remove(provenBlockHeader.Key);
                     }
