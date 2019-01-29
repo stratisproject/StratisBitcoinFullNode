@@ -213,13 +213,13 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     CacheItem cache;
                     if (!this.cachedUtxoItems.TryGetValue(txIds[i], out cache))
                     {
-                        this.logger.LogTrace("Cache missed for transaction ID '{0}'.", txIds[i]);
+                        this.logger.LogTrace("Transaction {0} not found in cache.", txIds[i]);
                         miss.Add(i);
                         missedTxIds.Add(txIds[i]);
                     }
                     else
                     {
-                        this.logger.LogTrace("Cache hit for transaction ID '{0}'.", txIds[i]);
+                        this.logger.LogTrace("Transaction {0} found in cache, UTXOs={1}.", txIds[i], cache.UnspentOutputs);
                         outputs[i] = cache.UnspentOutputs == null ? null :
                                      cache.UnspentOutputs.IsPrunable ? null :
                                      cache.UnspentOutputs.Clone();
@@ -258,6 +258,8 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     cache.ExistInInner = unspent != null;
                     cache.IsDirty = false;
                     cache.UnspentOutputs = unspent?.Clone();
+
+                    this.logger.LogTrace("CacheItem added to the cache, Transaction Id {0}, UTXOs={1}", txIds[index], cache.UnspentOutputs);
                     this.cachedUtxoItems.TryAdd(txIds[index], cache);
                 }
 
@@ -347,7 +349,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 {
                     if ((this.random.Next() % 3) == 0)
                     {
-                        this.logger.LogTrace("Transaction ID '{0}' selected to be removed from the cache.", entry.Key);
+                        this.logger.LogTrace("Transaction Id '{0}' selected to be removed from the cache, CacheItem={1}", entry.Key, entry.Value.UnspentOutputs);
                         this.cachedUtxoItems.Remove(entry.Key);
                     }
                 }
@@ -399,7 +401,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         cacheItem.UnspentOutputs = unspentOutput?.Clone();
 
                         this.cachedUtxoItems.TryAdd(unspent.TransactionId, cacheItem);
-                        this.logger.LogTrace("CacheItem added to cache {0}:{1}", nameof(cacheItem.ExistInInner), cacheItem.ExistInInner);
+                        this.logger.LogTrace("CacheItem added to the cache {0}", cacheItem.UnspentOutputs);
                     }
                     else
                     {
