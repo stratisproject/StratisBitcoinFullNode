@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     Protocol = httpContext.Request.Protocol,
                     Scheme = httpContext.Request.Scheme,
                     QueryString = httpContext.Request.QueryString.Value
-                };
+                };                
                 contextFeatures.Set<IHttpRequestFeature>(requestFeature);
 
                 var responseMemoryStream = new MemoryStream();
@@ -160,10 +160,11 @@ namespace Stratis.Bitcoin.Features.RPC
             }
 
             // Update the response with the array of responses.
-            StringBuilder responsesStringBuilder = new StringBuilder();
-            await responses.WriteToAsync(new JsonTextWriter(new StringWriter(responsesStringBuilder)));
-            var responsesMemoryStream = new MemoryStream(Encoding.UTF8.GetBytes(responsesStringBuilder.ToString()));
-            await responsesMemoryStream.CopyToAsync(httpContext.Response.Body);
+            using (StreamWriter streamWriter = new StreamWriter(httpContext.Response.Body))
+            using (JsonTextWriter textWriter = new JsonTextWriter(streamWriter))
+            {
+                await responses.WriteToAsync(textWriter);
+            }
         }
 
         private bool IsDependencyFailure(Exception ex)
