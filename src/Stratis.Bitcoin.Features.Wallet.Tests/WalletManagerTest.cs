@@ -3317,7 +3317,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void CreateDefaultWalletAndVerifyTheDefaultPassword()
         {
             DataFolder dataFolder = CreateDataFolder(this);
-            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet=default");
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwalletname=default");
             walletManager.Start();
             Assert.True(walletManager.ContainsWallets);
 
@@ -3335,7 +3335,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void CreateDefaultWalletAndVerifyWrongPassword()
         {
             DataFolder dataFolder = CreateDataFolder(this);
-            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet=default", "-defaultpassword=default2");
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwalletname=default", "-defaultwalletpassword=default2");
             walletManager.Start();
             Assert.True(walletManager.ContainsWallets);
 
@@ -3358,7 +3358,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         public void CreateDefaultWalletAndVerifyUnlockAndLocking()
         {
             DataFolder dataFolder = CreateDataFolder(this);
-            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwallet=default", "-unlockdefaultwallet");
+            var walletManager = this.CreateWalletManager(dataFolder, KnownNetworks.StratisMain, "-defaultwalletname=default", "-unlockdefaultwallet");
             walletManager.Start();
             Assert.True(walletManager.ContainsWallets);
 
