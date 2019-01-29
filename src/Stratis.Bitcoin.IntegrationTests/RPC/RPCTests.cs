@@ -252,6 +252,21 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             Assert.Throws<RPCException>(() => this.rpcTestFixture.RpcClient.SendCommand(RPCOperations.getnewaddress, new[] { "account1", "legacy" }));
         }
 
+        [Fact]
+        public async void TestRpcBatchAsync()
+        {
+            var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
+            var rpc1 = rpcBatch.SendCommandAsync("getpeerinfo");
+            var rpc2 = rpcBatch.SendCommandAsync("getrawmempool");
+            await rpcBatch.SendBatchAsync();
+            var response1 = await rpc1;
+            var response1AsString = response1.ResultString;
+            Assert.False(string.IsNullOrEmpty(response1AsString));
+            var response2 = await rpc2;
+            var response2AsString = response2.ResultString;
+            Assert.False(string.IsNullOrEmpty(response2AsString));
+        }
+
         // TODO: implement the RPC methods used below
         //[Fact]
         //public void RawTransactionIsConformsToRPC()
