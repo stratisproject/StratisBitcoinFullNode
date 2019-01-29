@@ -33,14 +33,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     PoAConsensusErrors.VotingDataInvalidFormat.Throw();
                 }
 
-                var memoryStream = new MemoryStream(votingDataBytes);
-                var deserializeStream = new BitcoinStream(memoryStream, false);
+                using (var memoryStream = new MemoryStream(votingDataBytes))
+                {
+                    var deserializeStream = new BitcoinStream(memoryStream, false);
 
-                var decoded = new List<VotingData>();
+                    var decoded = new List<VotingData>();
 
-                deserializeStream.ReadWrite(ref decoded);
+                    deserializeStream.ReadWrite(ref decoded);
 
-                return decoded;
+                    return decoded;
+                }
             }
             catch (Exception e)
             {
@@ -55,12 +57,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>Encodes voting data collection.</summary>
         public byte[] Encode(List<VotingData> votingData)
         {
-            var memoryStream = new MemoryStream();
-            var serializeStream = new BitcoinStream(memoryStream, true);
+            using (var memoryStream = new MemoryStream())
+            {
+                var serializeStream = new BitcoinStream(memoryStream, true);
 
-            serializeStream.ReadWrite(ref votingData);
+                serializeStream.ReadWrite(ref votingData);
 
-            return memoryStream.ToArray();
+                return memoryStream.ToArray();
+            }
         }
 
         /// <summary>Provides voting output data from transaction's coinbase voting output.</summary>
