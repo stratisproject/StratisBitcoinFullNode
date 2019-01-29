@@ -388,7 +388,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         foreach (var utxo in result.UnspentOutputs)
                         {
-                            this.logger.LogTrace("UTXO fetched from disk: {0}", utxo == null ? "null" : utxo.ToString());
+                            this.logger.LogTrace("UTXO fetched from disk: {0}", utxo);
                         }
 
                         UnspentOutputs unspentOutput = result.UnspentOutputs[0];
@@ -418,12 +418,12 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         // We take the original items that are in cache and put them in rewind data.
                         clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
-                        this.logger.LogTrace("Adding {0}:{1} to {2}", nameof(clone), clone.ToString(), nameof(rewindData.OutputsToRestore));
+                        this.logger.LogTrace("Adding {0}:{1} to {2}", nameof(clone), clone, nameof(rewindData.OutputsToRestore));
                         rewindData.OutputsToRestore.Add(clone);
 
                         // Now modify the cached items with the mutated data.
-                        this.logger.LogTrace("{0}:{1} not null", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs.ToString());
-                        this.logger.LogTrace("Spending {0}:{1}", nameof(unspent), unspent.ToString());
+                        this.logger.LogTrace("{0}:{1} not null", nameof(cacheItem.UnspentOutputs), cacheItem.UnspentOutputs);
+                        this.logger.LogTrace("Spending {0}:{1}", nameof(unspent), unspent);
 
                         cacheItem.UnspentOutputs.Spend(unspent);
                     }
