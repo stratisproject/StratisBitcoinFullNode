@@ -608,6 +608,10 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 sender.WaitMempoolCount(1);
                 sender.MineBlocks(1);
 
+                // Code didn't actually deploy.
+                ReceiptResponse receipt = sender.GetReceipt(sendResponse.TransactionId.ToString());
+                Assert.False(receipt.Success);
+
                 // Can still progress - node didn't hang.
                 sender.MineBlocks(1);
             }
