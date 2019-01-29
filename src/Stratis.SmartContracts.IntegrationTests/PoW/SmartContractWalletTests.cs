@@ -608,8 +608,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 sender.WaitMempoolCount(1);
                 sender.MineBlocks(1);
 
-                Assert.Equal((ulong)30 * 100_000_000, sender.GetContractBalance(sendResponse.NewContractAddress));
-
                 // Can still progress - node didn't hang.
                 sender.MineBlocks(1);
             }
