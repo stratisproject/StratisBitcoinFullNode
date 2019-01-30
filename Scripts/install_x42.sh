@@ -220,7 +220,7 @@ displayServiceStatus() {
 	on="${GREEN}ACTIVE${NONE}"
 	off="${RED}OFFLINE${NONE}"
 
-	if systemctl is-active --quiet cityd@city; then echo -e "City Chain Service: ${on}"; else echo -e "City Chain Service: ${off}"; fi
+	if systemctl is-active --quiet ${COINSERVICENAME}; then echo -e "Service: ${on}"; else echo -e "Service: ${off}"; fi
 }
 
 clear
