@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Security;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.Wallet.Interfaces
@@ -49,7 +50,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="walletAccount">The account to cache the secret.</param>
         /// <param name="walletPassword">The password for the wallet.</param>
         /// <param name="duration">How long to cache secret for.</param>
-        void CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration);
+        /// <returns>The secret being cached.</returns>
+        SecureString CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration);
 
         /// <summary>
         /// Clears a secret that is stored in a cache for a specific wallet.

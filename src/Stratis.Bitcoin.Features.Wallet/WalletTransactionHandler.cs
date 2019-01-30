@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         /// <inheritdoc />
         [NoTrace]
-        public void CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration)
+        public SecureString CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration)
         {
             Guard.NotNull(walletAccount, nameof(walletAccount));
             Guard.NotEmpty(walletPassword, nameof(walletPassword));
@@ -188,15 +188,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
             string cacheKey = wallet.EncryptedSeed;
 
-            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
-            {
-                this.privateKeyCache.Set(cacheKey, secretValue, duration);
-            }
-            else
+            if (!this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
             {
                 Key privateKey = Key.Parse(wallet.EncryptedSeed, walletPassword, wallet.Network);
-                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), duration);
+                secretValue = privateKey.ToString(wallet.Network).ToSecureString();
             }
+
+            this.privateKeyCache.Set(cacheKey, secretValue, duration);
+            return secretValue;
         }
 
         /// <inheritdoc />
@@ -234,7 +233,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
+        /// Loads all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddSecrets(TransactionBuildContext context)
@@ -243,22 +242,23 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-            Key privateKey;
-            // get extended private key
             string cacheKey = wallet.EncryptedSeed;
+            Key privateKey;
 
             if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
             {
                 privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
-                this.privateKeyCache.Set(cacheKey, secretValue, new TimeSpan(0, 5, 0));
             }
             else
             {
-                if (string.IsNullOrEmpty(context.WalletPassword))
-                    return;
-
                 privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
-                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
+            }
+
+            if (context.CacheSecret)
+            {
+                // The default duration the secret is cached is 5 minutes.
+                var timeOutDuration = new TimeSpan(0, 5, 0);
+                this.privateKeyCache.Set(cacheKey, secretValue ?? privateKey.ToString(wallet.Network).ToSecureString(), timeOutDuration);
             }
 
             var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
@@ -453,6 +453,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.SelectedInputs = new List<OutPoint>();
             this.AllowOtherInputs = false;
             this.Sign = true;
+            this.CacheSecret = true;
         }
 
         /// <summary>
@@ -548,5 +549,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Whether the transaction should be signed or not.
         /// </summary>
         public bool Sign { get; set; }
+
+        /// <summary>
+        /// Whether the secret should be cached for 5 mins after it is used or not.
+        /// </summary>
+        public bool CacheSecret { get; set; }
     }
 }
