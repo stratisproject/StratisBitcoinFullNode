@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 .ToList();
 
             FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(stakableUtxos.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
-            Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
+            Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.Where(utxo => utxo != null).ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
             fetchedCoinSet = null; // allow GC to collect as soon as possible.
 
             for (int i = 0; i < stakableUtxos.Count; i++)
