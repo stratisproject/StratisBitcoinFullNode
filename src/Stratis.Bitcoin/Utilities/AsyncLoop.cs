@@ -173,10 +173,18 @@ namespace Stratis.Bitcoin.Utilities
         /// </summary>
         public void Dispose()
         {
-            if (!this.RunningTask.IsCanceled)
+            try
             {
-                this.logger.LogInformation("Waiting for {0} to finish.", this.Name);
-                this.RunningTask.Wait();
+                if (!this.RunningTask.IsCanceled)
+                {
+                    this.logger.LogInformation("Waiting for {0} to finish.", this.Name);
+                    this.RunningTask.Wait();
+                }
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogInformation(ex.ToString());
+                throw;
             }
         }
     }
