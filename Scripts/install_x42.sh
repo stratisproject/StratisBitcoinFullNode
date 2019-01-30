@@ -27,7 +27,7 @@ declare -r COINSERVICENAME=${COINDAEMON}@${NODE_USER}
 declare -r DATE_STAMP="$(date +%y-%m-%d-%s)"
 declare -r SCRIPT_LOGFILE="/tmp/${NODE_USER}_${DATE_STAMP}_output.log"
 declare -r SWAPSIZE="1024" ## =1GB
-declare -r OS_VER=*Ubuntu*
+declare -r OS_VER="Ubuntu*"
 
 function check_root() {
 if [ "$(id -u)" != "0" ]; then
