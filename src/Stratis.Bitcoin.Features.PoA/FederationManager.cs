@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 throw new Exception(message);
             }
 
-            this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
+            this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: '{0}'.", this.FederationMemberKey.PubKey);
         }
 
         /// <summary>Provides up to date list of federation members.</summary>
@@ -106,10 +106,7 @@ namespace Stratis.Bitcoin.Features.PoA
         {
             List<string> hexList = this.keyValueRepo.LoadValueJson<List<string>>(federationMembersDbKey);
 
-            if (hexList == null)
-                return null;
-
-            return hexList.Select(x => new PubKey(x)).ToList();
+            return hexList?.Select(x => new PubKey(x)).ToList();
         }
     }
 }

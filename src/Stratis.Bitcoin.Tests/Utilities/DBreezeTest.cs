@@ -207,7 +207,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         }
 
         [Fact]
-        public void IsAbleToSerializeAndDeserializeCollections()
+        public void IsAbleToSerializeCollections()
         {
             var data = new List<uint256>
             {

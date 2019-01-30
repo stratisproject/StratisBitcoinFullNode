@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Utilities
 
             if (obj is IEnumerable<object> collection)
             {
-                var array = collection.ToArray();
+                object[] array = collection.ToArray();
 
                 var serializedItems = new byte[array.Count()][];
                 int itemIndex = 0;
