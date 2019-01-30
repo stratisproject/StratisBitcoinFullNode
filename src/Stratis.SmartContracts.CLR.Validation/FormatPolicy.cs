@@ -28,6 +28,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
         public static ValidationPolicy Default = new ValidationPolicy()
             .ModuleDefValidator(new AssemblyReferenceValidator(AllowedAssemblies))
+            .ModuleDefValidator(new ModuleReferenceValidator())
             .ModuleDefValidator(new ContractToDeployValidator())
             .TypeDefValidator(new NamespaceValidator())
             .TypeDefValidator(new StaticConstructorValidator(), t => t.IsContractType())

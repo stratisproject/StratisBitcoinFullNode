@@ -1,6 +1,7 @@
 using System.IO;
 using System.Linq;
 using Microsoft.CodeAnalysis;
+using Mono.Cecil;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
 using Stratis.SmartContracts.CLR.Validation.Validators.Method;
@@ -799,7 +800,40 @@ public class Test : SmartContract
 
             Assert.False(result.IsValid);
             Assert.NotEmpty(result.Errors);
-            Assert.True(result.Errors.All(e => e is PInvokeValidator.PInvokeValidationResult));
+            Assert.Contains(result.Errors, e => e is PInvokeValidator.PInvokeValidationResult);
         }
+
+        [Fact]
+        public void SmartContractValidator_ModuleReference_Tests()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+[Deploy]
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state): base(state) 
+    {
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decompilation = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            // Add a module reference
+            decompilation.ModuleDefinition.ModuleReferences.Add(new ModuleReference("Test.dll"));
+
+            var moduleDefinition = decompilation.ModuleDefinition;
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(moduleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+            Assert.True(result.Errors.All(e => e is ModuleDefinitionValidationResult));
+        }        
     }
 }
