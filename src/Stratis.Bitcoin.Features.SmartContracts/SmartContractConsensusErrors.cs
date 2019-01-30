@@ -10,7 +10,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         public static ConsensusError UnequalStateRoots => new ConsensusError("invalid-state-roots", "contract state root not matching after block execution");
         public static ConsensusError UnequalReceiptRoots => new ConsensusError("invalid-receipt-roots", "contract receipt roots not matching after block execution");
         public static ConsensusError UnequalRefundAmounts => new ConsensusError("invalid-refund-amount", "contract execution refunded a different amount or to a different address");
-        public static ConsensusError MissingRefundOutput => new ConsensusError("missing-refund-output", "contract execution refudned some amount but refund output is missing.");
+        public static ConsensusError MissingRefundOutput => new ConsensusError("missing-refund-output", "contract execution refunded some amount but refund output is missing.");
         public static ConsensusError FeeTooSmallForGas => new ConsensusError("total-gas-value-greater-than-total-fee", "total supplied gas value was greater than total supplied fee value");
     }
 }
