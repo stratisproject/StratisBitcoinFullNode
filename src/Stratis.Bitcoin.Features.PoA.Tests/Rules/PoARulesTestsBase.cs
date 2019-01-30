@@ -40,7 +40,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             IDateTimeProvider timeProvider = new DateTimeProvider();
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 
-            this.slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory), this.loggerFactory);
+            string dir = TestBase.CreateTestDir(this);
+            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+
+            this.slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory, keyValueRepo), this.loggerFactory);
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 

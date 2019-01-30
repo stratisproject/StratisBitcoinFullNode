@@ -5,6 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA.Tests.Rules;
 using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
@@ -15,13 +16,17 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         private PoANetwork network;
         private PoAConsensusOptions consensusOptions;
         private FederationManager federationManager;
+        private KeyValueRepository keyValueRepository;
 
         public SlotsManagerTests()
         {
             this.network = new TestPoANetwork();
             this.consensusOptions = this.network.ConsensusOptions;
 
-            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory());
+            string dir = TestBase.CreateTestDir(this);
+            this.keyValueRepository = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+
+            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory(), this.keyValueRepository);
             this.slotsManager = new SlotsManager(this.network, this.federationManager, new LoggerFactory());
         }
 
@@ -59,7 +64,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Key key = tool.GeneratePrivateKey();
             this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey});
 
-            var fedManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory());
+            var fedManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory(), this.keyValueRepository);
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();

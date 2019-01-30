@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -21,10 +23,18 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly ILogger logger;
 
-        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory)
+        private readonly IKeyValueRepository keyValueRepo;
+
+        /// <summary>Key for accessing list of public keys that represent federation members from <see cref="IKeyValueRepository"/>.</summary>
+        private const string federationMembersDbKey = "fedmemberskeys";
+
+        private List<PubKey> federationMembers;
+
+        public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo)
         {
             this.settings = Guard.NotNull(nodeSettings, nameof(nodeSettings));
             this.network = Guard.NotNull(network as PoANetwork, nameof(network));
+            this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -32,7 +42,16 @@ namespace Stratis.Bitcoin.Features.PoA
         public void Initialize()
         {
             // Load federation from the db.
-            // TODO
+            this.federationMembers = this.LoadFederationKeys();
+
+            if (this.federationMembers == null)
+            {
+                this.logger.LogDebug("Federation members are not stored in the db. Loading genesis federation members.");
+
+                this.federationMembers = this.network.ConsensusOptions.GenesisFederationPublicKeys;
+
+                this.SaveFederationKeys(this.federationMembers);
+            }
 
             // Display federation.
             this.logger.LogInformation("Federation contains {0} members. Their public keys are: {1}",
@@ -69,8 +88,24 @@ namespace Stratis.Bitcoin.Features.PoA
         /// </remarks>
         public List<PubKey> GetFederationMembers()
         {
-            // TODO replace with actual list
-            return this.network.ConsensusOptions.GenesisFederationPublicKeys;
+            return this.federationMembers;
+        }
+
+        private void SaveFederationKeys(List<PubKey> pubKeys)
+        {
+            List<string> hexList = pubKeys.Select(x => x.ToHex()).ToList();
+
+            this.keyValueRepo.SaveValueJson(federationMembersDbKey, hexList);
+        }
+
+        private List<PubKey> LoadFederationKeys()
+        {
+            List<string> hexList = this.keyValueRepo.LoadValueJson<List<string>>(federationMembersDbKey);
+
+            if (hexList == null)
+                return null;
+
+            return hexList.Select(x => new PubKey(x)).ToList();
         }
     }
 }
