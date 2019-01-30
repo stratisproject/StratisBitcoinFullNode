@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.Core.Util
 
                 if (unspentOutputs == null)
                 {
-                    throw new Exception("Unspent outputs to smart contract transaction are not present in coinview");
+                    return GetSenderResult.CreateFailure("Unspent outputs to smart contract transaction are not present in coinview");
                 }
 
                 Script script = unspentOutputs.Outputs[prevOut.N].ScriptPubKey;
