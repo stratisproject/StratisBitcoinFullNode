@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -38,6 +37,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
+
+        // TODO
+        /*
+         * Subscribe to VotingManager and track when new member is added or deleted. Update keys and then persist.
+         */
 
         public void Initialize()
         {
