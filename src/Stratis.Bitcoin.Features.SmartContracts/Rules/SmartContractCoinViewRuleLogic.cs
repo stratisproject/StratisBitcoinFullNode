@@ -133,6 +133,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// </summary>
         public void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
+            if (coinbaseTransaction.Outputs.Count < this.refundCounter)
+                SmartContractConsensusErrors.MissingRefundOutput.Throw();
+
             TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
             if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
             {
