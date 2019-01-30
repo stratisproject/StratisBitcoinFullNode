@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.Wallet
     public class WalletManager : IWalletManager
     {
         // <summary>As per RPC method definition this should be the max allowable expiry duration.</summary>
-        private const int maxDurationInSeconds = 1073741824;
+        private const int MaxWalletUnlockDurationInSeconds = 1073741824;
 
         /// <summary>Quantity of accounts created in a wallet file when a wallet is restored.</summary>
         private const int WalletRecoveryAccountsCount = 1;
@@ -215,7 +215,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 // Make sure both unlock is specified, and that we actually have a default wallet name specified.
                 if (this.walletSettings.UnlockDefaultWallet)
                 {
-                    this.UnlockWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, maxDurationInSeconds);
+                    this.UnlockWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, MaxWalletUnlockDurationInSeconds);
                 }
             }
 
@@ -328,7 +328,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(name, nameof(name));
 
             // Length of expiry of the unlocking, restricted to max duration.
-            TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, maxDurationInSeconds));
+            TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, MaxWalletUnlockDurationInSeconds));
 
             this.CacheSecret(name, password, duration);
         }
