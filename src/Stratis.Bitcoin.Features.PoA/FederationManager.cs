@@ -1,4 +1,6 @@
 ﻿using System;
+using System.Collections.Generic;
+using System.Security.Cryptography.X509Certificates;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
@@ -30,9 +32,12 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public void Initialize()
         {
+            // Load federation from the db.
+            // TODO
+
             // Display federation.
             this.logger.LogInformation("Federation contains {0} members. Their public keys are: {1}",
-                this.network.ConsensusOptions.FederationPublicKeys.Count, Environment.NewLine + string.Join(Environment.NewLine, this.network.ConsensusOptions.FederationPublicKeys));
+                this.network.ConsensusOptions.GenesisFederationPublicKeys.Count, Environment.NewLine + string.Join(Environment.NewLine, this.network.ConsensusOptions.GenesisFederationPublicKeys));
 
             // Load key.
             Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
@@ -47,7 +52,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             // Loaded key has to be a key for current federation.
-            if (!this.network.ConsensusOptions.FederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
+            if (!this.network.ConsensusOptions.GenesisFederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
             {
                 string message = "Key provided is not registered on the network!";
 
@@ -56,6 +61,17 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
+        }
+
+        /// <summary>Provides up to date list of federation members.</summary>
+        /// <remarks>
+        /// Blocks that are not signed with private keys that correspond
+        /// to public keys from this list are considered to be invalid.
+        /// </remarks>
+        public List<PubKey> GetFederationMembers()
+        {
+            // TODO replace with actual list
+            return this.network.ConsensusOptions.GenesisFederationPublicKeys;
         }
     }
 }

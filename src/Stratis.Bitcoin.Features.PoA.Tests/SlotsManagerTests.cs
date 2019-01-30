@@ -14,14 +14,15 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         private SlotsManager slotsManager;
         private PoANetwork network;
         private PoAConsensusOptions consensusOptions;
+        private FederationManager federationManager;
 
         public SlotsManagerTests()
         {
             this.network = new TestPoANetwork();
             this.consensusOptions = this.network.ConsensusOptions;
 
-            var fedManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory());
-            this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
+            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory());
+            this.slotsManager = new SlotsManager(this.network, this.federationManager, new LoggerFactory());
         }
 
         [Fact]
@@ -38,7 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void ValidSlotAssigned()
         {
-            List<PubKey> fedKeys = this.network.ConsensusOptions.FederationPublicKeys;
+            List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
             uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
 
             Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart));
@@ -61,7 +62,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             var fedManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory());
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
-            List<PubKey> fedKeys = this.consensusOptions.FederationPublicKeys;
+            List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
             uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
 
             fedManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
