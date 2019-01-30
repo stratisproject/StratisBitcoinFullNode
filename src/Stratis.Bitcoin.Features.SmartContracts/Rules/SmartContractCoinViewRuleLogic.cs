@@ -133,7 +133,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// </summary>
         public void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
-            if (coinbaseTransaction.Outputs.Count < this.refundCounter)
+            // Check that this refund exists before trying to retrieve in case of incorrect block coming in
+            if (this.refundCounter >= coinbaseTransaction.Outputs.Count)
                 SmartContractConsensusErrors.MissingRefundOutput.Throw();
 
             TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
