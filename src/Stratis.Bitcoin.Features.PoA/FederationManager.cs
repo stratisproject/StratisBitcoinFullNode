@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             // Display federation.
             this.logger.LogInformation("Federation contains {0} members. Their public keys are: {1}",
-                this.network.ConsensusOptions.GenesisFederationPublicKeys.Count, Environment.NewLine + string.Join(Environment.NewLine, this.network.ConsensusOptions.GenesisFederationPublicKeys));
+                this.federationMembers.Count, Environment.NewLine + string.Join(Environment.NewLine, this.federationMembers));
 
             // Load key.
             Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             // Loaded key has to be a key for current federation.
-            if (!this.network.ConsensusOptions.GenesisFederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
+            if (!this.federationMembers.Contains(this.FederationMemberKey.PubKey))
             {
                 string message = "Key provided is not registered on the network!";
 

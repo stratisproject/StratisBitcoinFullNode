@@ -26,7 +26,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             string dir = TestBase.CreateTestDir(this);
             this.keyValueRepository = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
 
-            this.federationManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory(), this.keyValueRepository);
+            var settings = new NodeSettings(this.network, args: new string[] { $"-datadir={dir}" });
+
+            this.federationManager = new FederationManager(settings, this.network, new LoggerFactory(), this.keyValueRepository);
+            this.federationManager.Initialize();
             this.slotsManager = new SlotsManager(this.network, this.federationManager, new LoggerFactory());
         }
 
@@ -64,7 +67,12 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Key key = tool.GeneratePrivateKey();
             this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey});
 
-            var fedManager = new FederationManager(NodeSettings.Default(this.network), this.network, new LoggerFactory(), this.keyValueRepository);
+            string dir = TestBase.CreateTestDir(this);
+            this.keyValueRepository = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+            var settings = new NodeSettings(this.network, args: new string[] { $"-datadir={dir}" });
+
+            var fedManager = new FederationManager(settings, this.network, new LoggerFactory(), this.keyValueRepository);
+            fedManager.Initialize();
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
