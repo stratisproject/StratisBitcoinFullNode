@@ -55,10 +55,14 @@ namespace Stratis.Bitcoin.Features.Wallet
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             this.SaveTransactionHex = config.GetOrDefault<bool>("savetrxhex", false, this.logger);
-            this.DefaultWalletName = config.GetOrDefault<string>("defaultwalletname", null, this.logger);
-            this.DefaultWalletPassword = config.GetOrDefault<string>("defaultwalletpassword", "default", null); // No logging!
-            this.UnlockDefaultWallet = config.GetOrDefault<bool>("unlockdefaultwallet", false, this.logger);
             this.UnusedAddressesBuffer = config.GetOrDefault<int>("walletaddressbuffer", 20, this.logger);
+            this.DefaultWalletName = config.GetOrDefault<string>("defaultwalletname", null, this.logger);
+
+            if (!string.IsNullOrEmpty(this.DefaultWalletName))
+            {
+                this.DefaultWalletPassword = config.GetOrDefault<string>("defaultwalletpassword", "default", null); // No logging!
+                this.UnlockDefaultWallet = config.GetOrDefault<bool>("unlockdefaultwallet", false, this.logger);
+            }
         }
 
         /// <summary>
