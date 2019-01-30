@@ -2,7 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 
-namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
+namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 {
     /// <summary>
     /// Checks that signature from header we wanted to download block data for

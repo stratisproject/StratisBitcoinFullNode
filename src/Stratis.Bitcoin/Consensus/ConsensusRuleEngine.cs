@@ -17,11 +17,11 @@ namespace Stratis.Bitcoin.Consensus
     /// <inheritdoc />
     public abstract class ConsensusRuleEngine : IConsensusRuleEngine
     {
-        /// <summary>A factory to creates logger instances for each rule.</summary>
-        private readonly ILoggerFactory loggerFactory;
-
         /// <summary>Instance logger.</summary>
         protected readonly ILogger logger;
+
+        /// <summary>A factory to creates logger instances for each rule.</summary>
+        public ILoggerFactory LoggerFactory { get; }
 
         /// <summary>Specification of the network the node runs on - regtest/testnet/mainnet.</summary>
         public Network Network { get; }
@@ -92,14 +92,14 @@ namespace Stratis.Bitcoin.Consensus
             this.Chain = chain;
             this.ChainState = chainState;
             this.NodeDeployments = nodeDeployments;
-            this.loggerFactory = loggerFactory;
+            this.LoggerFactory = loggerFactory;
             this.ConsensusSettings = consensusSettings;
             this.Checkpoints = checkpoints;
             this.ConsensusParams = this.Network.Consensus;
             this.ConsensusSettings = consensusSettings;
             this.DateTimeProvider = dateTimeProvider;
             this.invalidBlockHashStore = invalidBlockHashStore;
-            this.loggerFactory = loggerFactory;
+            this.LoggerFactory = loggerFactory;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
 
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Consensus
             foreach (ConsensusRuleBase rule in rules)
             {
                 rule.Parent = this;
-                rule.Logger = this.loggerFactory.CreateLogger(rule.GetType().FullName);
+                rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
                 rule.Initialize();
             }
         }

@@ -5,7 +5,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 
-namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
+namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 {
     public class PoACoinviewRule : CoinViewRule
     {
