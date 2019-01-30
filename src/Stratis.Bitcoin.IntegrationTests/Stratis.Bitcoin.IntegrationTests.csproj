@@ -27,6 +27,12 @@
   </PropertyGroup>
 
   <ItemGroup>
+    <Compile Remove="Transactions\**" />
+    <EmbeddedResource Remove="Transactions\**" />
+    <None Remove="Transactions\**" />
+  </ItemGroup>
+
+  <ItemGroup>
     <PackageReference Include="Flurl" Version="2.8.0" />
     <PackageReference Include="Flurl.Http" Version="2.4.0" />
     <PackageReference Include="NSubstitute" Version="3.1.0" />
@@ -84,10 +90,6 @@
     <None Update="xunit.runner.json">
       <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
     </None>
-  </ItemGroup>
-
-  <ItemGroup>
-    <Folder Include="Transactions\" />
   </ItemGroup>
 
 </Project>
