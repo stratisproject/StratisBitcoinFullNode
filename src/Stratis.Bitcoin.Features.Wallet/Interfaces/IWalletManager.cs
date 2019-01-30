@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Security;
 using NBitcoin;
 using NBitcoin.BuilderExtensions;
 
@@ -73,6 +74,20 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="name">The name of the wallet.</param>
         /// <returns>The wallet.</returns>
         Wallet LoadWallet(string password, string name);
+
+        /// <summary>
+        /// Unlocks a wallet for the specified time.
+        /// </summary>
+        /// <param name="password">The wallet password.</param>
+        /// <param name="name">The name of the wallet.</param>
+        /// <param name="timeout">The timeout in seconds.</param>
+        void UnlockWallet(string password, string name, int timeout);
+
+        /// <summary>
+        /// Locks the wallet.
+        /// </summary>
+        /// <param name="name">The name of the wallet.</param>
+        void LockWallet(string name);
 
         /// <summary>
         /// Recovers a wallet using mnemonic and password.
@@ -288,6 +303,15 @@ namespace Stratis.Bitcoin.Features.Wallet.Interfaces
         /// <param name="accountReference">The account.</param>
         /// <returns>The extended public key.</returns>
         string GetExtPubKey(WalletAccountReference accountReference);
+
+        /// <summary>
+        /// Gets the extended private key of an account.
+        /// </summary>
+        /// <param name="accountReference">The account.</param>
+        /// <param name="password">The password used to decrypt the encrypted seed.</param>
+        /// <param name="cache">whether to cache the private key for future use.</param>
+        /// <returns>The private key.</returns>
+        ExtKey GetExtKey(WalletAccountReference accountReference, string password = "", bool cache = false);
 
         /// <summary>
         /// Gets the lowest LastBlockSyncedHeight of all loaded wallet account roots.
