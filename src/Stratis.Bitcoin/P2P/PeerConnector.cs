@@ -284,8 +284,16 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void Dispose()
         {
-            this.asyncLoop?.Dispose();
-            this.networkPeerDisposer.Dispose();
+            try
+            {
+                this.asyncLoop?.Dispose();
+                this.networkPeerDisposer.Dispose();
+            }
+            catch (Exception ex)
+            {
+                this.logger.LogInformation("{0}-{1}", this.GetType().Name, ex.ToString());
+                throw;
+            }
         }
     }
 }
