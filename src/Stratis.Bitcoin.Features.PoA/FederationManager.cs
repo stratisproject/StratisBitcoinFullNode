@@ -30,35 +30,32 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public void Initialize()
         {
-            this.LoadKey();
-
-            if (this.FederationMemberKey != null)
-            {
-                // Loaded key has to be a key for current federation.
-                if (!this.network.ConsensusOptions.FederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
-                {
-                    string message = "Key provided is not registered on the network!";
-
-                    this.logger.LogCritical(message);
-                    throw new Exception(message);
-                }
-
-                this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
-            }
-
+            // Display federation.
             this.logger.LogInformation("Federation contains {0} members. Their public keys are: {1}",
                 this.network.ConsensusOptions.FederationPublicKeys.Count, Environment.NewLine + string.Join(Environment.NewLine, this.network.ConsensusOptions.FederationPublicKeys));
-        }
 
-        /// <summary>Loads federation key if it exists.</summary>
-        private void LoadKey()
-        {
-            var keyTool = new KeyTool(this.settings.DataFolder);
-
-            Key key = keyTool.LoadPrivateKey();
+            // Load key.
+            Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
 
             this.IsFederationMember = key != null;
             this.FederationMemberKey = key;
+
+            if (this.FederationMemberKey == null)
+            {
+                this.logger.LogTrace("(-)[NOT_FED_MEMBER]");
+                return;
+            }
+
+            // Loaded key has to be a key for current federation.
+            if (!this.network.ConsensusOptions.FederationPublicKeys.Contains(this.FederationMemberKey.PubKey))
+            {
+                string message = "Key provided is not registered on the network!";
+
+                this.logger.LogCritical(message);
+                throw new Exception(message);
+            }
+
+            this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: {0}.", this.FederationMemberKey.PubKey);
         }
     }
 }
