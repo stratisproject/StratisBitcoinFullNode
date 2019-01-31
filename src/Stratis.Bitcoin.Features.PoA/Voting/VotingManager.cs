@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
@@ -34,7 +35,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         public void ScheduleVote(VotingData votingData)
         {
-
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -42,7 +43,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// </summary>
         public List<VotingData> GetScheduledVotes()
         {
-
+            throw new NotImplementedException();
         }
 
         /// <summary>
@@ -51,12 +52,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>Used by miner.</remarks>
         public List<VotingData> GetAndCleanScheduledVotes()
         {
-
+            throw new NotImplementedException();
         }
-
-
-
-
 
 
         /*
