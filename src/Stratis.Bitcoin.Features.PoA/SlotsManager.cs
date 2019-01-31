@@ -36,9 +36,9 @@ namespace Stratis.Bitcoin.Features.PoA
             if (!this.IsValidTimestamp(headerUnixTimestamp))
                 PoAConsensusErrors.InvalidHeaderTimestamp.Throw();
 
-            List<PubKey> keys = this.consensusOptions.FederationPublicKeys;
+            List<PubKey> federationMembers = this.federationManager.GetFederationMembers();
 
-            uint roundTime = this.GetRoundLengthSeconds();
+            uint roundTime = this.GetRoundLengthSeconds(federationMembers.Count);
 
             // Time when current round started.
             uint roundStartTimestamp = (headerUnixTimestamp / roundTime) * roundTime;
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.PoA
             // Slot number in current round.
             int currentSlotNumber = (int)((headerUnixTimestamp - roundStartTimestamp) / this.consensusOptions.TargetSpacingSeconds);
 
-            return keys[currentSlotNumber];
+            return federationMembers[currentSlotNumber];
         }
 
         /// <summary>Gets next timestamp at which current node can produce a block.</summary>
@@ -56,11 +56,13 @@ namespace Stratis.Bitcoin.Features.PoA
             if (!this.federationManager.IsFederationMember)
                 throw new Exception("Not a federation member!");
 
+            List<PubKey> federationMembers = this.federationManager.GetFederationMembers();
+
             // Round length in seconds.
-            uint roundTime = this.GetRoundLengthSeconds();
+            uint roundTime = this.GetRoundLengthSeconds(federationMembers.Count);
 
             // Index of a slot that current node can take in each round.
-            uint slotIndex = (uint)this.consensusOptions.FederationPublicKeys.IndexOf(this.federationManager.FederationMemberKey.PubKey);
+            uint slotIndex = (uint)federationMembers.IndexOf(this.federationManager.FederationMemberKey.PubKey);
 
             // Time when current round started.
             uint roundStartTimestamp = (currentTime / roundTime) * roundTime;
@@ -83,9 +85,9 @@ namespace Stratis.Bitcoin.Features.PoA
             return (headerUnixTimestamp % this.consensusOptions.TargetSpacingSeconds) == 0;
         }
 
-        private uint GetRoundLengthSeconds()
+        private uint GetRoundLengthSeconds(int federationMembersCount)
         {
-            uint roundLength = (uint)(this.consensusOptions.FederationPublicKeys.Count * this.consensusOptions.TargetSpacingSeconds);
+            uint roundLength = (uint)(federationMembersCount * this.consensusOptions.TargetSpacingSeconds);
 
             return roundLength;
         }

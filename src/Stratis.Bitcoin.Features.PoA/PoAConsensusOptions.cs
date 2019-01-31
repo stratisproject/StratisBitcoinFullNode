@@ -5,12 +5,14 @@ namespace Stratis.Bitcoin.Features.PoA
 {
     public class PoAConsensusOptions : ConsensusOptions
     {
-        /// <summary>Public keys of all federation members.</summary>
+        /// <summary>Public keys of all federation members at the start of the chain.</summary>
         /// <remarks>
-        /// Blocks that are not signed with private keys that correspond
-        /// to public keys from this list are considered to be invalid.
+        /// Do not use this list anywhere except for at the initialization of the chain.
+        /// Actual collection of the federation members can be changed with time.
+        /// Use <see cref="FederationManager.GetFederationMembers"/> as a source of
+        /// up to date federation keys.
         /// </remarks>
-        public List<PubKey> FederationPublicKeys { get; protected set; }
+        public List<PubKey> GenesisFederationPublicKeys { get; protected set; }
 
         public uint TargetSpacingSeconds { get; protected set; }
 
@@ -25,7 +27,7 @@ namespace Stratis.Bitcoin.Features.PoA
             uint targetSpacingSeconds)
                 : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
-            this.FederationPublicKeys = federationPublicKeys;
+            this.GenesisFederationPublicKeys = federationPublicKeys;
             this.TargetSpacingSeconds = targetSpacingSeconds;
         }
     }
