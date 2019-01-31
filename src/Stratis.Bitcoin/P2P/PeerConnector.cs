@@ -128,8 +128,8 @@ namespace Stratis.Bitcoin.P2P
             this.selfEndpointTracker = selfEndpointTracker;
             this.Requirements = new NetworkPeerRequirement { MinVersion = nodeSettings.MinProtocolVersion ?? nodeSettings.ProtocolVersion };
 
-            this.defaultConnectionInterval = TimeSpans.Second;
-            this.burstConnectionInterval = TimeSpan.Zero;
+            this.defaultConnectionInterval = TimeSpans.FiveSeconds;
+            this.burstConnectionInterval = TimeSpans.Second;
         }
 
         /// <inheritdoc/>
@@ -206,10 +206,7 @@ namespace Stratis.Bitcoin.P2P
             this.asyncLoop = this.asyncLoopFactory.Run($"{this.GetType().Name}.{nameof(this.ConnectAsync)}", async token =>
             {
                 if (!this.peerAddressManager.Peers.Any() || (this.ConnectorPeers.Count >= this.MaxOutboundConnections))
-                {
-                    await Task.Delay(2000, this.nodeLifetime.ApplicationStopping).ConfigureAwait(false);
                     return;
-                }
 
                 await this.OnConnectAsync().ConfigureAwait(false);
             },
@@ -284,16 +281,8 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public void Dispose()
         {
-            try
-            {
-                this.asyncLoop?.Dispose();
-                this.networkPeerDisposer.Dispose();
-            }
-            catch (Exception ex)
-            {
-                this.logger.LogInformation("{0}-{1}", this.GetType().Name, ex.ToString());
-                throw;
-            }
+            this.asyncLoop?.Dispose();
+            this.networkPeerDisposer.Dispose();
         }
     }
 }
