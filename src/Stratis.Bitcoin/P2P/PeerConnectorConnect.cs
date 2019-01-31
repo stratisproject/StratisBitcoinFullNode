@@ -1,5 +1,4 @@
-﻿using System;
-using System.Linq;
+﻿using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -38,11 +37,6 @@ namespace Stratis.Bitcoin.P2P
         /// <inheritdoc/>
         public override void OnInitialize()
         {
-            // For the -connect connector, effectively disable burst mode by preventing high frequency connection attempts.
-            // The initial -connect list will all have their connection attempts made in parallel regardless, so this
-            // does not slow down the startup.
-            this.burstConnectionInterval = TimeSpans.Second;
-
             this.MaxOutboundConnections = this.ConnectionSettings.Connect.Count;
 
             // Add the endpoints from the -connect arg to the address manager.
