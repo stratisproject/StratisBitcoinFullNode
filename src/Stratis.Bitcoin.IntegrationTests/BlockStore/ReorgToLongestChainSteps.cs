@@ -2,14 +2,12 @@
 using System.Linq;
 using FluentAssertions;
 using NBitcoin;
-using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.IntegrationTests.BlockStore
@@ -46,13 +44,10 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void four_miners()
         {
-            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
-            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
-            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
-            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
-
-            // Reduce this time for test purposes.
-            (this.bobNode.FullNode.BlockStore() as BlockStoreQueue).SetPrivateVariableValue<int>("BatchMaxSaveIntervalSeconds", 1);
+            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).AlwaysFlushBlocks().WithWallet().Start();
+            this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).AlwaysFlushBlocks().WithWallet().Start();
+            this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).AlwaysFlushBlocks().WithWallet().Start();
+            this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).AlwaysFlushBlocks().WithWallet().Start();
 
             TestHelper.Connect(this.jingNode, this.bobNode);
             TestHelper.Connect(this.jingNode, this.charlieNode);
