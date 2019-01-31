@@ -266,10 +266,13 @@ namespace Stratis.Bitcoin.P2P
             }
         }
 
+        /// <summary>
+        /// Determines how often the connector should try and connect to an address from it's list.
+        /// </summary>
         [NoTrace]
-        private TimeSpan CalculateConnectionInterval()
+        public virtual TimeSpan CalculateConnectionInterval()
         {
-            return this.ConnectorPeers.Count < this.ConnectionSettings.BurstModeTargetConnections ? TimeSpan.Zero : TimeSpans.Second;
+            return this.ConnectorPeers.Count < this.ConnectionSettings.BurstModeTargetConnections ? TimeSpans.Ms100 : TimeSpans.Second;
         }
 
         /// <summary>

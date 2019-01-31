@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -8,6 +9,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.P2P
 {
@@ -55,6 +57,13 @@ namespace Stratis.Bitcoin.P2P
         public override void OnStartConnect()
         {
             this.CurrentParameters.PeerAddressManagerBehaviour().Mode = PeerAddressManagerBehaviourMode.AdvertiseDiscover;
+        }
+
+        /// <inheritdoc/>
+        [NoTrace]
+        public override TimeSpan CalculateConnectionInterval()
+        {
+            return TimeSpans.Second;
         }
 
         /// <summary>
