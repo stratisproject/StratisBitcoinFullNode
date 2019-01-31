@@ -20,6 +20,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             }
         }
 
+        public bool AlwaysFlushBlocks { get; internal set; }
         public bool EnablePeerDiscovery { get; internal set; }
         public FullNode FullNode { get; set; }
 

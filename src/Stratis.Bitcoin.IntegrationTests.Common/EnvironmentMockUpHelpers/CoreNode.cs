@@ -61,6 +61,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         private Action<ChainedHeaderBlock> builderConnectInterceptor;
         private Action<ChainedHeaderBlock> builderDisconnectInterceptor;
 
+        private bool builderAlwaysFlushBlocks;
         private bool builderEnablePeerDiscovery;
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
@@ -141,6 +142,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode EnablePeerDiscovery()
         {
             this.builderEnablePeerDiscovery = true;
+            return this;
+        }
+
+        public CoreNode AlwaysFlushBlocks()
+        {
+            this.builderAlwaysFlushBlocks = true;
             return this;
         }
 
@@ -248,6 +255,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                this.runner.AlwaysFlushBlocks = this.builderAlwaysFlushBlocks;
                 this.runner.EnablePeerDiscovery = this.builderEnablePeerDiscovery;
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 

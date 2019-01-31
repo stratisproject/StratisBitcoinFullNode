@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus.PerformanceCounters.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -300,6 +301,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <inheritdoc />
         public abstract Task<RewindState> RewindAsync();
 
+        [NoTrace]
         public T GetRule<T>() where T : ConsensusRuleBase
         {
             object rule = this.headerValidationRules.SingleOrDefault(r => r is T);

@@ -401,10 +401,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         this.cachedUtxoItems.TryAdd(unspent.TransactionId, cacheItem);
                         this.logger.LogTrace("CacheItem added to the cache during save '{0}'.", cacheItem.UnspentOutputs);
                     }
-                    else
-                    {
-                        this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
-                    }
 
                     // If cacheItem.UnspentOutputs is null this means the trx was not stored in the disk,
                     // that means the trx (and UTXO) is new and all the UTXOs need to be stored in cache

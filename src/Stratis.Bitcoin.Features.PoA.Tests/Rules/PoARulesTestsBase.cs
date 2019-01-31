@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         protected readonly SlotsManager slotsManager;
         protected readonly ConsensusSettings consensusSettings;
         protected readonly ConcurrentChain chain;
+        protected readonly FederationManager federationManager;
 
         public PoARulesTestsBase(PoANetwork network = null)
         {
@@ -40,7 +42,14 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             IDateTimeProvider timeProvider = new DateTimeProvider();
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 
-            this.slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory), this.loggerFactory);
+            string dir = TestBase.CreateTestDir(this);
+            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+
+            var settings = new NodeSettings(this.network, args: new string[] { $"-datadir={dir}"});
+            this.federationManager = new FederationManager(settings, this.network, this.loggerFactory, keyValueRepo);
+            this.federationManager.Initialize();
+
+            this.slotsManager = new SlotsManager(this.network, this.federationManager, this.loggerFactory);
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 
