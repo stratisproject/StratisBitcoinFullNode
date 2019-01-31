@@ -19,6 +19,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
     /// <summary>Information about a single vote.</summary>
     public class VotingData : IBitcoinSerializable
     {
+        public VotingData()
+        {
+            this.key = 0;
+            this.Data = new byte[0];
+        }
+
         public VoteKey Key
         {
             get => (VoteKey)this.key;
@@ -50,7 +56,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         public override bool Equals(object obj)
         {
-            VotingData item = obj as VotingData;
+            var item = obj as VotingData;
 
             if (item == null)
             {
@@ -58,6 +64,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
 
             return this == item;
+        }
+
+        public override int GetHashCode()
+        {
+            return this.Data.GetHashCode() ^ this.key;
         }
 
         public void ReadWrite(BitcoinStream stream)
