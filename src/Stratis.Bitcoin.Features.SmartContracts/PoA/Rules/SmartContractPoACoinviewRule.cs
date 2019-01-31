@@ -2,7 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.PoA.ConsensusRules;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules

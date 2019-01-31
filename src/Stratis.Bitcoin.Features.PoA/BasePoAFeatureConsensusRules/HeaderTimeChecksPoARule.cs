@@ -3,7 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 
-namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
+namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 {
     /// <summary>
     /// Ensures that timestamp of current block is greater than timestamp of previous block,

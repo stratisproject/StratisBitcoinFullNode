@@ -43,8 +43,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseTestChainedHeaderTree()
                             .MockIBD();
 
-            if (this.InterceptorDisconnect != null)
-                builder = builder.InterceptBlockDisconnected(this.InterceptorDisconnect);
+            ConfigureInterceptors(builder);
 
             if (this.ServiceToOverride != null)
                 builder.OverrideService<BaseFeature>(this.ServiceToOverride);
@@ -52,7 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             if (!this.EnablePeerDiscovery)
             {
                 builder.RemoveImplementation<PeerConnectorDiscovery>();
-                builder.ReplaceService<IPeerDiscovery>(new PeerDiscoveryDisabled());
+                builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
             }
 
             this.FullNode = (FullNode)builder.Build();

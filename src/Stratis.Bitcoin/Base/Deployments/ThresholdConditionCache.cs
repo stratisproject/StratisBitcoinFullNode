@@ -1,8 +1,8 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Base.Deployments
 {
@@ -216,11 +216,12 @@ namespace Stratis.Bitcoin.Base.Deployments
         }
 
         /// <summary>
-        /// Deterines if the activation state is available for a given block hash for a specific deployment.
+        /// Determines if the activation state is available for a given block hash for a specific deployment.
         /// </summary>
         /// <param name="hash">The block hash to determine the BIP9 activation state for.</param>
         /// <param name="deployment">The deployment for which to determine the activation state.</param>
         /// <returns>Returns <c>true</c> if the state is available and <c>false</c> otherwise.</returns>
+        [NoTrace]
         private bool ContainsKey(uint256 hash, int deployment)
         {
             if (hash == null)
@@ -234,6 +235,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// <summary>
         /// Inspects the chain header to determine whether the version bit of a deployment is active.
         /// </summary>
+        [NoTrace]
         private bool Condition(ChainedHeader pindex, int deployment)
         {
             // This restricts us to at most 30 independent deployments. By restricting the top 3 bits to 001 we get 29 out of those
@@ -247,6 +249,7 @@ namespace Stratis.Bitcoin.Base.Deployments
         /// </summary>
         /// <param name="deployment">The BIP9 deployment to return the bit mask for.</param>
         /// <returns>The bit mask of the bit representing the deployment within the version bits.</returns>
+        [NoTrace]
         public uint Mask(int deployment)
         {
             return ((uint)1) << this.consensus.BIP9Deployments[deployment].Bit;
