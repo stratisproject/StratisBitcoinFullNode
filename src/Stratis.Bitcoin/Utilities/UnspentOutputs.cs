@@ -190,8 +190,17 @@ namespace Stratis.Bitcoin.Utilities
             builder.AppendLine($"{nameof(this.Time)}={this.Time}");
             builder.AppendLine($"{nameof(this.Outputs)}.{nameof(this.Outputs.Length)}={this.Outputs.Length}");
 
-            foreach (TxOut output in this.Outputs)
-                builder.AppendLine(output == null ? "null" : output.ToString());
+            for (var i = 0; i < this.Outputs.Length; i++)
+            {
+                builder.AppendLine(this.Outputs[i] == null ? "null" : this.Outputs[i].ToString());
+
+                if (i > 4)
+                {
+                    // Only log out the first 5 outputs to avoid cluttering the logs.
+                    builder.AppendLine($"{this.Outputs.Length - 5} more outputs...");
+                    break;
+                }
+            }
 
             return builder.ToString();
         }
