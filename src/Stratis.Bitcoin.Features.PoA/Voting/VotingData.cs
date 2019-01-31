@@ -54,6 +54,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             return !(a == b);
         }
 
+        /// <inheritdoc />
         public override bool Equals(object obj)
         {
             var item = obj as VotingData;
@@ -66,11 +67,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             return this == item;
         }
 
+        /// <inheritdoc />
         public override int GetHashCode()
         {
             return this.Data.GetHashCode() ^ this.key;
         }
 
+        /// <inheritdoc />
         public void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.key);
