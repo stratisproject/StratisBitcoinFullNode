@@ -254,9 +254,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Maximum number of inbound connections.</summary>
         public int MaxInboundConnections { get; internal set; }
 
-        /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
-        public int BurstModeTargetConnections { get; internal set; }
-
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
         public bool SyncTimeEnabled { get; private set; }
 
