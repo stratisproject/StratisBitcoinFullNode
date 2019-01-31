@@ -8,7 +8,6 @@ Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331F
 		.editorconfig = .editorconfig
 		Directory.Build.props = Directory.Build.props
 		None.ruleset = None.ruleset
-		Settings.StyleCop = Settings.StyleCop
 		Stratis.ruleset = Stratis.ruleset
 		stylecop.json = stylecop.json
 	EndProjectSection
