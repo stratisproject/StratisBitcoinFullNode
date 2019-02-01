@@ -1,11 +1,14 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     public class VotingManager
     {
         private readonly FederationManager federationManager;
+
+        private readonly IKeyValueRepository keyValueRepo;
 
         private readonly ILogger logger;
 
@@ -17,12 +20,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<PendingPoll> pendingPolls;
 
+        /// <summary>Key for accessing list of pending polls from <see cref="IKeyValueRepository"/>.</summary>
+        private const string pendingPollsDbKey = "pendingpollskey";
+
         /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="pendingPolls"/>.</summary>
         private readonly object locker;
 
-        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory)
+        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo)
         {
             this.federationManager = federationManager;
+            this.keyValueRepo = keyValueRepo;
             this.locker = new object();
             this.scheduledVotingData = new List<VotingData>();
 
@@ -37,7 +44,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 return;
             }
 
-            // TODO load pendingPolls from kv storage
+            this.pendingPolls = this.LoadPendingPolls();
+
+            if (this.pendingPolls == null)
+            {
+                this.logger.LogDebug("No pending polls found in DB, initializing with empty collection.");
+
+                this.pendingPolls = new List<PendingPoll>();
+                this.SavePendingPolls(this.pendingPolls);
+            }
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
@@ -72,6 +87,17 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        private void SavePendingPolls(List<PendingPoll> polls)
+        {
+            this.keyValueRepo.SaveValueJson(pendingPollsDbKey, polls);
+        }
+
+        private List<PendingPoll> LoadPendingPolls()
+        {
+            List<PendingPoll> polls = this.keyValueRepo.LoadValueJson<List<PendingPoll>>(pendingPollsDbKey);
+
+            return polls;
+        }
 
         /*
             Component is subscribed to block updates and parses `voteOutput`'s of all blocks and keeps up to date view of pendingPolls.
