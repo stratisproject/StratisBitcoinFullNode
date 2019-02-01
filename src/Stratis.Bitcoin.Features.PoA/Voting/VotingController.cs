@@ -8,11 +8,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
     [Route("api/[controller]")]
     public class VotingController : Controller
     {
-        //[Route("qwe")]
-        //[HttpPost]
-        //public IActionResult ScheduleVote()
-        //{
-        //    return this.Ok();
-        //}
+        // TODO add methods to vote for adding\removeing fed members
+        // methods to display pending votes and all active polls
     }
 }
