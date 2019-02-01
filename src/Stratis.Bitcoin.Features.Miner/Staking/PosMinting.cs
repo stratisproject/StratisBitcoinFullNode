@@ -368,7 +368,14 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                // Prevent staking if not in initial block download.
+                // Don't stake when the wallet tip is not on the current chain.
+                if (this.consensusManager.Tip.FindAncestorOrSelf(this.walletManager.WalletTipHash) == null)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                // Prevent staking if in initial block download.
                 if (this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started.");
