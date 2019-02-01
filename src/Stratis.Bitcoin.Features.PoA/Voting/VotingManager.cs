@@ -10,9 +10,18 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly ILogger logger;
 
+        /// <summary>Collection of voting data that should be included in a block when it's mined.</summary>
+        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
+        private List<VotingData> scheduledVotingData;
+
+        /// <summary>Protects access to <see cref="scheduledVotingData"/>.</summary>
+        private readonly object locker;
+
         public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory)
         {
             this.federationManager = federationManager;
+            this.locker = new object();
+            this.scheduledVotingData = new List<VotingData>();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
@@ -28,31 +37,39 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             // TODO
         }
 
-        // implement locks
 
         /// <summary>
         ///
         /// </summary>
         public void ScheduleVote(VotingData votingData)
         {
-            throw new NotImplementedException();
+            lock (this.locker)
+            {
+                this.scheduledVotingData.Add(votingData);
+            }
         }
 
-        /// <summary>
-        ///
-        /// </summary>
+        /// <summary>Provides a copy of scheduled voting data.</summary>
         public List<VotingData> GetScheduledVotes()
         {
-            throw new NotImplementedException();
+            lock (this.locker)
+            {
+                return new List<VotingData>(this.scheduledVotingData);
+            }
         }
 
-        /// <summary>
-        ///
-        /// </summary>
+        /// <summary>Provides scheduled voting data and removes all items that were provided.</summary>
         /// <remarks>Used by miner.</remarks>
         public List<VotingData> GetAndCleanScheduledVotes()
         {
-            throw new NotImplementedException();
+            lock (this.locker)
+            {
+                List<VotingData> votingData = this.scheduledVotingData;
+
+                this.scheduledVotingData = new List<VotingData>();
+
+                return votingData;
+            }
         }
 
 
