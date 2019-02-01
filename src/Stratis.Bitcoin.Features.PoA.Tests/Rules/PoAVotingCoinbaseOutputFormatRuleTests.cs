@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class PoAVotingCoinbaseOutputFormatRuleTests : PoARulesTestsBase
+    public class PoAVotingCoinbaseOutputFormatRuleTests : PoATestsBase
     {
         private readonly PoAVotingCoinbaseOutputFormatRule votingFormatRule;
 
