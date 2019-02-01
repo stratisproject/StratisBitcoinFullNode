@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
 
             // send the transaction to the notifier
-            this.signals.TriggerTransactionAvailable(transaction);
+            this.signals.TriggerTransactionReceived(transaction);
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 

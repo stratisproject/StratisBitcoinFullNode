@@ -50,9 +50,9 @@ namespace Stratis.Bitcoin.Tests.Signals
             Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
 
             bool signaled = false;
-            this.signals.OnTransactionAvailable += delegate(Transaction transaction1) { signaled = true; };
+            this.signals.OnTransactionReceived += delegate(Transaction transaction1) { signaled = true; };
 
-            this.signals.TriggerTransactionAvailable(transaction);
+            this.signals.TriggerTransactionReceived(transaction);
 
             Assert.True(signaled);
         }

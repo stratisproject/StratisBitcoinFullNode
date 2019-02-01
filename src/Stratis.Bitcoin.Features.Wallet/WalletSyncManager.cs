@@ -99,7 +99,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             this.signals.OnBlockConnected += this.onBlockConnected;
-            this.signals.OnTransactionAvailable += this.onTransactionAvailable;
+            this.signals.OnTransactionReceived += this.onTransactionAvailable;
         }
 
         private void onTransactionAvailable(Transaction transaction)
@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public void Stop()
         {
             this.signals.OnBlockConnected -= this.onBlockConnected;
-            this.signals.OnTransactionAvailable -= this.onTransactionAvailable;
+            this.signals.OnTransactionReceived -= this.onTransactionAvailable;
         }
 
         /// <summary>Called when a <see cref="Block"/> is added to the <see cref="blocksQueue"/>.

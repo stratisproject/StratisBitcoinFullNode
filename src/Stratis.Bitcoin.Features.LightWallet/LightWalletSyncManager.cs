@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void Start()
         {
-            this.signals.OnTransactionAvailable += this.ProcessTransaction;
+            this.signals.OnTransactionReceived += this.ProcessTransaction;
             this.signals.OnBlockConnected += onBlockConnected;
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 this.asyncLoop = null;
             }
 
-            this.signals.OnTransactionAvailable -= this.ProcessTransaction;
+            this.signals.OnTransactionReceived -= this.ProcessTransaction;
             this.signals.OnBlockConnected -= this.onBlockConnected;
         }
 

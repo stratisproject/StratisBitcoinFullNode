@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Signals
         event Signals.BlockDelegate OnBlockDisconnected;
 
         /// <summary>Event that is executed when transaction is received from another peer.</summary>
-        event Signals.TransactionDelegate OnTransactionAvailable;
+        event Signals.TransactionDelegate OnTransactionReceived;
 
         /// <summary>Invokes <see cref="OnBlockConnected"/> event.</summary>
         void TriggerBlockConnected(ChainedHeaderBlock chainedHeaderBlock);
@@ -20,8 +20,8 @@ namespace Stratis.Bitcoin.Signals
         /// <summary>Invokes <see cref="OnBlockDisconnected"/> event.</summary>
         void TriggerBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock);
 
-        /// <summary>Invokes <see cref="OnTransactionAvailable"/> event.</summary>
-        void TriggerTransactionAvailable(Transaction transaction);
+        /// <summary>Invokes <see cref="OnTransactionReceived"/> event.</summary>
+        void TriggerTransactionReceived(Transaction transaction);
     }
 
     public class Signals : ISignals
@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.Signals
         public event BlockDelegate OnBlockDisconnected;
 
         /// <inheritdoc />
-        public event TransactionDelegate OnTransactionAvailable;
+        public event TransactionDelegate OnTransactionReceived;
 
         /// <inheritdoc />
         public void TriggerBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock)
@@ -52,9 +52,9 @@ namespace Stratis.Bitcoin.Signals
         }
 
         /// <inheritdoc />
-        public void TriggerTransactionAvailable(Transaction transaction)
+        public void TriggerTransactionReceived(Transaction transaction)
         {
-            this.OnTransactionAvailable?.Invoke(transaction);
+            this.OnTransactionReceived?.Invoke(transaction);
         }
     }
 }

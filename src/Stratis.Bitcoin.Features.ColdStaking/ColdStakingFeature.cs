@@ -53,9 +53,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <summary>The synchronization manager for the wallet, tasked with keeping the wallet synced with the network.</summary>
         private readonly IWalletSyncManager walletSyncManager;
 
-        /// <summary>The signals responsible for receiving blocks and transactions from the network.</summary>
-        private readonly ISignals signals;
-
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
 
@@ -97,8 +94,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             IAddressBookManager addressBookManager,
-            ISignals signals,
-            ConcurrentChain chain,
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
             NodeSettings nodeSettings,
@@ -117,7 +112,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
 
             this.walletSyncManager = walletSyncManager;
             this.addressBookManager = addressBookManager;
-            this.signals = signals;
             this.connectionManager = connectionManager;
             this.broadcasterBehavior = broadcasterBehavior;
             this.nodeSettings = nodeSettings;
