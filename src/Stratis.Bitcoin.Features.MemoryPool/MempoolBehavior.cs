@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.validator.SanityCheck();
                 this.RelayTransaction(trxHash);
 
-                this.signals.SignalTransaction(trx);
+                this.signals.TriggerTransactionAvailable(trx);
 
                 long mmsize = state.MempoolSize;
                 long memdyn = state.MempoolDynamicSize;

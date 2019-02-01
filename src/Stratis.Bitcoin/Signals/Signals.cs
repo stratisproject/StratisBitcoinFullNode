@@ -29,6 +29,7 @@ namespace Stratis.Bitcoin.Signals
 
         public event BlockDelegate OnBlockDisconnected;
 
+        /// <summary>Even that is executed when tranasction is received from another peer.</summary>
         public event TransactionDelegate OnTransactionAvailable;
 
         public void TriggerBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock)
