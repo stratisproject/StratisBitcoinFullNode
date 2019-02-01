@@ -71,6 +71,16 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
         }
 
         [Fact]
+        public void IsAuthorizedIpWithAllZerosIPAddressReturnsTrue()
+        {
+            this.authorization.AllowIp.Add(IPAddress.Parse("0.0.0.0"));
+
+            bool result = this.authorization.IsAuthorized(IPAddress.Parse("127.1.1.15"));
+
+            Assert.True(result);
+        }
+
+        [Fact]
         public void IsAuthorizedIpNotOnListReturnsFalse()
         {
             this.authorization.AllowIp.Add(IPAddress.Parse("127.0.0.1"));

@@ -42,6 +42,10 @@ namespace Stratis.Bitcoin.Features.RPC
 
             if (this.AllowIp.Count == 0)
                 return true;
+
+            if (this.AllowIp.Any(i => i.ToString() == "0.0.0.0"))
+                return true;
+
             return this.AllowIp.Any(i => i.AddressFamily == ip.AddressFamily && i.Equals(ip));
         }
     }
