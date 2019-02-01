@@ -84,6 +84,28 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         }
 
         [Fact]
+        public void CanEncodeAndDecodeLargeAmountsOfData()
+        {
+            var dataList = new List<VotingData>();
+
+            for (int i = 0; i < 2000; i++)
+            {
+                dataList.Add(new VotingData()
+                {
+                    Key = VoteKey.AddFederationMember,
+                    Data = RandomUtils.GetBytes(25)
+                });
+            }
+
+            byte[] encodedBytes = this.encoder.Encode(dataList);
+
+            List<VotingData> decoded = this.encoder.Decode(encodedBytes);
+
+            byte[] encodedBytes2 = this.encoder.Encode(decoded);
+            Assert.True(encodedBytes.SequenceEqual(encodedBytes2));
+        }
+
+        [Fact]
         public void DecodeRandomData()
         {
             Assert.Throws<ConsensusErrorException>(() => this.encoder.Decode(new byte[] { 123, 55, 77, 14, 98, 12, 56, 0, 12 }));

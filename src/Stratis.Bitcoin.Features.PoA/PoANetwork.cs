@@ -71,9 +71,9 @@ namespace Stratis.Bitcoin.Features.PoA
             // and should be the same for all nodes operating on this network.
             var federationPublicKeys = new List<PubKey>()
             {
-                new PubKey("03e6f19ea3dc6c145d98a0e0838af952755798e5bc3950bbca4f9485aa23873d7f"),
-                new PubKey("02ddebcf18207072bdd172a25f85f2ea12e2de1d9d794f136722634aad08400fcb"),
-                new PubKey("02067b38d777690aaaf23a5b371a819e6ddc6d2aae734b0199fe59df28dc056dd7")
+                new PubKey("03025fcadedd28b12665de0542c8096f4cd5af8e01791a4d057f67e2866ca66ba7"),
+                new PubKey("027724a9ecc54417ff0250c3355d300cee008747b630f43e791cd02c2b35294d2f"),
+                new PubKey("022f8ad1799fd281fc9519814d20a407ed120ba84ec24cca8e869b811e6f6d4590")
             };
 
             var consensusOptions = new PoAConsensusOptions(
@@ -166,9 +166,9 @@ namespace Stratis.Bitcoin.Features.PoA
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x0621b88fb7a99c985d695be42e606cb913259bace2babe92970547fa033e4076"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x9928b372fd9e4cf62a31638607344c03c48731ba06d24576342db9c8591e1432"));
 
-            if ((this.ConsensusOptions.FederationPublicKeys == null) || (this.ConsensusOptions.FederationPublicKeys.Count == 0))
+            if ((this.ConsensusOptions.GenesisFederationPublicKeys == null) || (this.ConsensusOptions.GenesisFederationPublicKeys.Count == 0))
             {
-                throw new Exception("No keys for federation members are configured!");
+                throw new Exception("No keys for initial federation are configured!");
             }
         }
 
