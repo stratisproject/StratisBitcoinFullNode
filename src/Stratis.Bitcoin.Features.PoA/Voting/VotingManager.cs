@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
@@ -14,7 +13,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<VotingData> scheduledVotingData;
 
-        /// <summary>Protects access to <see cref="scheduledVotingData"/>.</summary>
+        /// <summary>Collection of pending polls.</summary>
+        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
+        private List<PendingPoll> pendingPolls;
+
+        /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="pendingPolls"/>.</summary>
         private readonly object locker;
 
         public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory)
@@ -34,13 +37,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 return;
             }
 
-            // TODO
+            // TODO load pendingPolls from kv storage
         }
 
-
-        /// <summary>
-        ///
-        /// </summary>
+        /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
         public void ScheduleVote(VotingData votingData)
         {
             lock (this.locker)
@@ -74,15 +74,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
 
         /*
-            It is subscribed to blocks updates and parses `voteOutput`'s of all blocks and keeps up to date view of existing votes.
+            Component is subscribed to block updates and parses `voteOutput`'s of all blocks and keeps up to date view of pendingPolls.
             When majority votes for something this component applies the changes.
-
-            Keep active votes as a data structure: `block in which vote was started, list of voters (pubKeys), voting type, voting data`
 
             When vote in favor comes check who voted against active fed members. only votes from active members count.
 
-            // TODO it should handle reorgs and revert votes that were applied. Or introduce max reorg property.
 
+            it should handle reorgs and revert votes that were applied. Or introduce max reorg property.
             For particular keys there will be a requirement for N % of fed members
          */
     }
