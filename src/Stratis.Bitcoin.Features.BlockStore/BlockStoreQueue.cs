@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
             Block block = await this.GetBlockAsync(blockId).ConfigureAwait(false);
 
-            return block.Transactions.FirstOrDefault(x => x.GetHash() == trxid);
+            return block?.Transactions.FirstOrDefault(x => x.GetHash() == trxid);
         }
 
         /// <inheritdoc/>
