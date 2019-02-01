@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             Signals.Signals signals = new Signals.Signals();
             var subject = new BlocksDisconnectedSignaled(mempoolValidatorMock.Object, new MempoolSchedulerLock(), loggerFactoryMock.Object, signals);
+            subject.Initialize();
 
             var block = new Block();
             var genesisChainedHeaderBlock = new ChainedHeaderBlock(block, ChainedHeadersHelper.CreateGenesisChainedHeader());

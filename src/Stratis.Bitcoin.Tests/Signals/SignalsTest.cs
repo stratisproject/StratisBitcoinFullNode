@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Tests.Signals
 {
     public class SignalsTest
     {
-        private readonly Bitcoin.Signals.Signals signals;
+        private readonly Bitcoin.Signals.ISignals signals;
 
         public SignalsTest()
         {

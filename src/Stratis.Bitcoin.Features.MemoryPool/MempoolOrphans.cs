@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly ConcurrentChain chain;
 
         /// <summary>Node notifications available to subscribe to.</summary>
-        private readonly Signals.Signals signals;
+        private readonly Signals.ISignals signals;
 
         /// <summary>Coin view of the memory pool.</summary>
         private readonly ICoinView coinView;
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public MempoolOrphans(
             ConcurrentChain chain,
-            Signals.Signals signals,
+            Signals.ISignals signals,
             IMempoolValidator validator,
             ICoinView coinView,
             IDateTimeProvider dateTimeProvider,

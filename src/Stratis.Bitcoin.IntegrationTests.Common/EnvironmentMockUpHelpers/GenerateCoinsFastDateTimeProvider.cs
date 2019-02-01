@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             startFrom = new DateTime(2018, 1, 1);
         }
 
-        public GenerateCoinsFastDateTimeProvider(Signals.Signals signals)
+        public GenerateCoinsFastDateTimeProvider(ISignals signals)
         {
             signals.OnBlockConnected += this.onBlockConnected;
         }

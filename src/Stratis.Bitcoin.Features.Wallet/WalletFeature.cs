@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly IWalletManager walletManager;
 
-        private readonly Signals.Signals signals;
+        private readonly Signals.ISignals signals;
 
         private readonly IConnectionManager connectionManager;
 
@@ -61,7 +61,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             IAddressBookManager addressBookManager,
-            Signals.Signals signals,
+            Signals.ISignals signals,
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
             INodeStats nodeStats)
