@@ -666,13 +666,7 @@ namespace Stratis.Bitcoin.Consensus
 
             while (current != fork)
             {
-                await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    this.SetConsensusTipInternalLocked(current.Previous);
-                }
-
+                // Access the block before rewinding.
                 Block block = current.Block;
 
                 if (block == null)
@@ -686,6 +680,13 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)[BLOCK_NOT_FOUND]");
                         throw new Exception("Block that is about to be rewinded wasn't found in cache or database!");
                     }
+                }
+
+                await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
+
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
                 var disconnectedBlock = new ChainedHeaderBlock(block, current);

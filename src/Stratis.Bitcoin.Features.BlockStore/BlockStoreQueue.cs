@@ -179,53 +179,52 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc/>
-        public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
+        public async Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
-            lock (this.blocksCacheLock)
-            {
-                // The result is meaningless unless its selected from the current chain.
-                for (ChainedHeader chainedHeader = this.chain.Tip; chainedHeader != null; chainedHeader = chainedHeader.Previous)
-                {
-                    if (!this.pendingBlocksCache.TryGetValue(chainedHeader.HashBlock, out ChainedHeaderBlock chainedHeaderBlock))
-                        break;
+            uint256 blockId = await this.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false);
+            if (blockId == null)
+                return null;
 
-                    Transaction tx = chainedHeaderBlock.Block.Transactions.FirstOrDefault(x => x.GetHash() == trxid);
+            Block block = await this.GetBlockAsync(blockId).ConfigureAwait(false);
 
-                    if (tx != null)
-                    {
-                        this.logger.LogTrace("Transaction '{0}' was found in the pending blocks cache.", trxid);
-                        return Task.FromResult(tx);
-                    }
-                }
-            }
-
-            return this.blockRepository.GetTransactionByIdAsync(trxid);
+            return block.Transactions.FirstOrDefault(x => x.GetHash() == trxid);
         }
 
         /// <inheritdoc/>
-        public Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
+        public async Task<uint256> GetBlockIdByTransactionIdAsync(uint256 trxid)
         {
             lock (this.blocksCacheLock)
             {
-                // The result is meaningless unless its selected from the current chain.
-                for (ChainedHeader chainedHeader = this.chain.Tip; chainedHeader != null; chainedHeader = chainedHeader.Previous)
+                // According to SaveBlockAsync the last block in the list is considered to be on the current main chain.
+                if (this.chain.GetBlock(this.BlockStoreCacheTip.HashBlock) != null)
                 {
-                    if (!this.pendingBlocksCache.TryGetValue(chainedHeader.HashBlock, out ChainedHeaderBlock chainedHeaderBlock))
-                        break;
-
-                    bool exists = chainedHeaderBlock.Block.Transactions.Any(x => x.GetHash() == trxid);
-
-                    if (exists)
+                    // Indeed so let's proceed.
+                    for (ChainedHeader chainedHeader = this.BlockStoreCacheTip; chainedHeader != null; chainedHeader = chainedHeader.Previous)
                     {
-                        uint256 blockId = chainedHeaderBlock.Block.GetHash();
+                        if (!this.pendingBlocksCache.TryGetValue(chainedHeader.HashBlock, out ChainedHeaderBlock chainedHeaderBlock))
+                            break;
 
-                        this.logger.LogTrace("Block Id '{0}' with tx '{1}' was found in the pending blocks cache.", blockId, trxid);
-                        return Task.FromResult(blockId);
+                        bool exists = chainedHeaderBlock.Block.Transactions.Any(x => x.GetHash() == trxid);
+
+                        if (exists)
+                        {
+                            uint256 blockId = chainedHeaderBlock.Block.GetHash();
+
+                            this.logger.LogTrace("Block Id '{0}' with tx '{1}' was found in the pending blocks cache.", blockId, trxid);
+                            return blockId;
+                        }
                     }
                 }
             }
 
-            return this.blockRepository.GetBlockIdByTransactionIdAsync(trxid);
+            // Now look in the repository.
+            uint256 blockId2 = await this.blockRepository.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false);
+
+            // The repository may be dirty. Check that this is a valid block.
+            if (blockId2 == null || this.chain.GetBlock(blockId2) == null)
+                return null;
+
+            return blockId2;
         }
 
         /// <inheritdoc/>
@@ -233,6 +232,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             lock (this.blocksCacheLock)
             {
+                // The cache or repository may be dirty. Check that this is a valid block.
+                if (this.chain.GetBlock(blockHash) == null)
+                    return null;
+
                 if (this.pendingBlocksCache.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
                 {
                     this.logger.LogTrace("(-)[FOUND_IN_DICTIONARY]");
