@@ -368,8 +368,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                // Don't stake when the wallet tip is not on the current chain.
-                if (this.consensusManager.Tip.FindAncestorOrSelf(this.walletManager.WalletTipHash) == null)
+                // Don't stake if the wallet is not up-to-date with the current chain.
+                if (this.consensusManager.Tip.HashBlock != this.walletManager.WalletTipHash)
                 {
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
                     continue;
