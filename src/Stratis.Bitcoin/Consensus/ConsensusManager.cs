@@ -694,7 +694,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 using (this.performanceCounter.MeasureBlockDisconnectedSignal())
                 {
-                    this.signals.SignalBlockDisconnected(disconnectedBlock);
+                    this.signals.TriggerBlockDisconnected(disconnectedBlock);
                 }
 
                 current = current.Previous;
@@ -752,7 +752,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 using (this.performanceCounter.MeasureBlockConnectedSignal())
                 {
-                    this.signals.SignalBlockConnected(blockToConnect);
+                    this.signals.TriggerBlockConnected(blockToConnect);
                 }
             }
 

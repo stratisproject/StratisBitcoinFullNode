@@ -110,7 +110,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.signals.SubscribeForBlocksConnected(this.mempoolSignaled);
             this.mempoolSignaled.Start();
 
-            this.signals.SubscribeForBlocksDisconnected(this.blocksDisconnectedSignaled);
+            this.blocksDisconnectedSignaled.Initialize();
         }
 
         /// <summary>
@@ -147,6 +147,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogWarning("Memory Pool Not Saved!");
             }
 
+            this.blocksDisconnectedSignaled.Dispose();
+
             this.mempoolSignaled.Stop();
         }
     }
@@ -165,7 +167,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             LoggingConfiguration.RegisterFeatureNamespace<MempoolFeature>("mempool");
             LoggingConfiguration.RegisterFeatureNamespace<BlockPolicyEstimator>("estimatefee");
-            
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features

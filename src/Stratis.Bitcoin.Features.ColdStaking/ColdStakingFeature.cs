@@ -8,6 +8,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.Policy;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
@@ -20,8 +21,8 @@ using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.ColdStaking
@@ -53,16 +54,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         private readonly IWalletSyncManager walletSyncManager;
 
         /// <summary>The signals responsible for receiving blocks and transactions from the network.</summary>
-        private readonly Signals.Signals signals;
-
-        /// <summary>Records disposable returned by <see cref="Signals.Signals.SubscribeForBlocksConnected"/> for <see cref="BlockObserver"/>.</summary>
-        private IDisposable blockSubscriberDisposable;
-
-        /// <summary>Records disposable returned by <see cref="Signals.Signals.SubscribeForBlocksConnected"/> for <see cref="TransactionObserver"/>.</summary>
-        private IDisposable transactionSubscriberDisposable;
-
-        /// <summary>The chain of blocks.</summary>
-        private ConcurrentChain chain;
+        private readonly ISignals signals;
 
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
@@ -105,7 +97,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             IWalletSyncManager walletSyncManager,
             IWalletManager walletManager,
             IAddressBookManager addressBookManager,
-            Signals.Signals signals,
+            ISignals signals,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             BroadcasterBehavior broadcasterBehavior,
@@ -126,7 +118,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.walletSyncManager = walletSyncManager;
             this.addressBookManager = addressBookManager;
             this.signals = signals;
-            this.chain = chain;
             this.connectionManager = connectionManager;
             this.broadcasterBehavior = broadcasterBehavior;
             this.nodeSettings = nodeSettings;
@@ -215,10 +206,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            // subscribe to receiving blocks and transactions
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
-            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
-
             this.coldStakingManager.Start();
             this.walletSyncManager.Start();
             this.addressBookManager.Initialize();
@@ -231,9 +218,6 @@ namespace Stratis.Bitcoin.Features.ColdStaking
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.blockSubscriberDisposable.Dispose();
-            this.transactionSubscriberDisposable.Dispose();
-
             this.coldStakingManager.Stop();
             this.walletSyncManager.Stop();
         }
