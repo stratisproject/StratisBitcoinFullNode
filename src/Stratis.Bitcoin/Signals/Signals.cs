@@ -21,9 +21,9 @@ namespace Stratis.Bitcoin.Signals
 
     public class Signals : ISignals
     {
-        public delegate Task BlockDelegate(ChainedHeaderBlock chainedHeaderBlock);
+        public delegate void BlockDelegate(ChainedHeaderBlock chainedHeaderBlock);
 
-        public delegate Task TransactionDelegate(Transaction transaction);
+        public delegate void TransactionDelegate(Transaction transaction);
 
         public event BlockDelegate OnBlockConnected;
 
