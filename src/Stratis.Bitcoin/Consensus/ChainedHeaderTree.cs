@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.UnconsumedBlocksDataBytes -= currentHeader.Block.BlockSize.Value;
                 this.UnconsumedBlocksCount--;
 
-                this.logger.LogTrace("UnconsumedBlocks decreased by block {0} (byte: {1}).New count: {2}; new size: {3}", currentHeader.Block.GetHash(), currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+                this.logger.LogTrace("UnconsumedBlocks decreased by block {0} (byte: {1}), new count: {2}, new size: {3}", currentHeader, currentHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
                 currentHeader = currentHeader.Previous;
             }
 
@@ -595,7 +595,7 @@ namespace Stratis.Bitcoin.Consensus
                 this.UnconsumedBlocksDataBytes -= header.Block.BlockSize.Value;
                 this.UnconsumedBlocksCount--;
 
-                this.logger.LogTrace("UnconsumedBlocks decreased by block {0} (byte: {1}).New count: {2}; new size: {3}", header.Block.GetHash(), header.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+                this.logger.LogTrace("UnconsumedBlocks decreased by block {0} (byte: {1}), new count: {2}, new size: {3}", header, header.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
             }
         }
 
@@ -620,7 +620,7 @@ namespace Stratis.Bitcoin.Consensus
             this.UnconsumedBlocksDataBytes += chainedHeader.Block.BlockSize.Value;
             this.UnconsumedBlocksCount++;
 
-            this.logger.LogTrace("UnconsumedBlocks increased by block {0} (byte: {1}).New count: {2}; new size: {3}", chainedHeader.Block.GetHash(), chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+            this.logger.LogTrace("UnconsumedBlocks increased by block {0} (byte: {1}), new count: {2}, new size: {3}", chainedHeader, chainedHeader.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
 
             bool partialValidationRequired = chainedHeader.Previous.BlockValidationState == ValidationState.PartiallyValidated
                                           || chainedHeader.Previous.BlockValidationState == ValidationState.FullyValidated;
@@ -1169,7 +1169,7 @@ namespace Stratis.Bitcoin.Consensus
             this.UnconsumedBlocksDataBytes += disconnectedBlock.Block.BlockSize.Value;
             this.UnconsumedBlocksCount++;
 
-            this.logger.LogTrace("UnconsumedBlocks increased by block {0} (byte: {1}).New count: {2}; new size: {3}", disconnectedBlock.Block.GetHash(), disconnectedBlock.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
+            this.logger.LogTrace("UnconsumedBlocks increased by block {0} (byte: {1}), new count: {2}, new size: {3}", disconnectedBlock.ChainedHeader, disconnectedBlock.Block.BlockSize.Value, this.UnconsumedBlocksCount, this.UnconsumedBlocksDataBytes);
         }
     }
 
