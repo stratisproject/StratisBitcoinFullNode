@@ -37,10 +37,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
-        private IDisposable sub;
-
-        private IDisposable txSub;
-
         public ChainedHeader WalletTip => this.walletTip;
 
         private readonly IConsensusManager consensusManager;
@@ -79,9 +75,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void Start()
         {
-            // subscribe to receiving blocks and transactions
-            this.sub = this.signals.SubscribeForBlocksConnected(new BlockObserver(this));
-            this.txSub = this.signals.SubscribeForTransactions(new TransactionObserver(this));
+            this.signals.OnTransactionAvailable += this.ProcessTransaction;
+            this.signals.OnBlockConnected += onBlockConnected;
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
             if (!this.walletManager.ContainsWallets)
@@ -141,6 +136,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
         }
 
+        private void onBlockConnected(ChainedHeaderBlock chainedheaderblock)
+        {
+            this.ProcessBlock(chainedheaderblock.Block);
+        }
+
         /// <inheritdoc />
         public void Stop()
         {
@@ -150,17 +150,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 this.asyncLoop = null;
             }
 
-            if (this.sub != null)
-            {
-                this.sub.Dispose();
-                this.sub = null;
-            }
-
-            if (this.txSub != null)
-            {
-                this.txSub.Dispose();
-                this.txSub = null;
-            }
+            this.signals.OnTransactionAvailable -= this.ProcessTransaction;
+            this.signals.OnBlockConnected -= this.onBlockConnected;
         }
 
         /// <inheritdoc />
