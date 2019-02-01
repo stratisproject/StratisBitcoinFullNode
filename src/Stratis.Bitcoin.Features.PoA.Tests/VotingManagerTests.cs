@@ -1,4 +1,6 @@
 ﻿using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
@@ -9,7 +11,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public VotingManagerTests()
         {
-            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory);
+            string dir = TestBase.CreateTestDir(this);
+            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+
+            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo);
         }
 
         [Fact]
