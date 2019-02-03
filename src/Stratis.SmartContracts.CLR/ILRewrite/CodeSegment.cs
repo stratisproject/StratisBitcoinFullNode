@@ -28,14 +28,14 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
         /// <summary>
         /// Total gas cost to execute the instructions in this segment.
         /// </summary>
-        public Gas CalculateGasCost()
+        public RuntimeObserver.Gas CalculateGasCost()
         {
-            Gas gasTally = (Gas) 0;
+            RuntimeObserver.Gas gasTally = (RuntimeObserver.Gas) 0;
 
             foreach (Instruction instruction in this.Instructions)
             {
-                Gas instructionCost = GasPriceList.InstructionOperationCost(instruction);
-                gasTally = (Gas)(gasTally + instructionCost);
+                RuntimeObserver.Gas instructionCost = GasPriceList.InstructionOperationCost(instruction);
+                gasTally = (RuntimeObserver.Gas)(gasTally + instructionCost);
 
                 if (instruction.IsMethodCall())
                 {
@@ -44,8 +44,8 @@ namespace Stratis.SmartContracts.CLR.ILRewrite
                     // If it's a method outside this contract then we will add some cost.
                     if (this.methodDefinition.DeclaringType != methodToCall.DeclaringType)
                     {
-                        Gas methodCallCost = GasPriceList.MethodCallCost(methodToCall);
-                        gasTally = (Gas)(gasTally + methodCallCost);
+                        RuntimeObserver.Gas methodCallCost = GasPriceList.MethodCallCost(methodToCall);
+                        gasTally = (RuntimeObserver.Gas)(gasTally + methodCallCost);
                     }
                 }
             }

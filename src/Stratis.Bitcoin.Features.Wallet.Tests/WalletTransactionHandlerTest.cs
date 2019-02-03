@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Security;
 using System.Text;
 using DBreeze.Utils;
 using FluentAssertions;
@@ -14,6 +15,7 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Tests.Wallet.Common;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.Wallet.Tests
@@ -314,7 +316,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 WalletName = "myWallet1"
             };
 
-            // create a trx with 3 outputs 50 + 50 + 49 = 149 BTC
+            // create a trx with 3 outputs 50 + 50 + 50 = 150 BTC
             var context = new TransactionBuildContext(this.Network)
             {
                 AccountReference = walletReference,
@@ -325,7 +327,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 {
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys1.PubKey.ScriptPubKey },
                     new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys2.PubKey.ScriptPubKey },
-                    new Recipient { Amount = new Money(49, MoneyUnit.BTC), ScriptPubKey = destinationKeys3.PubKey.ScriptPubKey }
+                    new Recipient { Amount = new Money(50, MoneyUnit.BTC), ScriptPubKey = destinationKeys3.PubKey.ScriptPubKey }
                 }.ToList()
             };
 
@@ -611,7 +613,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             contextWithoutOpReturn.TransactionFee.Satoshi.Should().BeLessThan(contextWithOpReturn.TransactionFee.Satoshi);
         }
 
-
         public static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations, string opReturnData = null)
         {
@@ -622,6 +623,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 FeeType = feeType,
                 OpReturnData = opReturnData,
                 WalletPassword = password,
+                Sign = !string.IsNullOrEmpty(password),
                 Recipients = new[] { new Recipient { Amount = amount, ScriptPubKey = destinationScript } }.ToList()
             };
         }

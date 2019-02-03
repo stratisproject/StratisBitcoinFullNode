@@ -3,9 +3,11 @@ using System.Collections.Generic;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.SmartContracts.Networks.Policies;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.Networks
+namespace Stratis.SmartContracts.Networks
 {
     public sealed class SmartContractsRegTest : Network
     {
@@ -30,7 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             var consensusFactory = new SmartContractPowConsensusFactory();
 
-            Block genesisBlock = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
+            NBitcoin.Block genesisBlock = SmartContractNetwork.CreateGenesis(consensusFactory, 1296688602, 2, 0x207fffff, 1, Money.Coins(50m));
             ((SmartContractBlockHeader)genesisBlock.Header).HashStateRoot = new uint256("21B463E3B52F6201C0AD6C991BE0485B6EF8C092E64583FFA655CC1B171FE856");
 
             this.Genesis = genesisBlock;
@@ -110,6 +112,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Networks
 
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
+
+            this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
         }
     }
 }

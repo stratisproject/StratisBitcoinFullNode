@@ -8,11 +8,8 @@
 
   <ItemGroup>
     <PackageReference Include="Mono.Cecil" Version="0.10.1" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <ProjectReference Include="..\Stratis.SmartContracts.Standards\Stratis.SmartContracts.Standards.csproj" />
-    <ProjectReference Include="..\Stratis.SmartContracts\Stratis.SmartContracts.csproj" />
+    <PackageReference Include="Stratis.SmartContracts" Version="1.1.0" />
+    <PackageReference Include="Stratis.SmartContracts.Standards" Version="1.0.0" />
   </ItemGroup>
 
 </Project>

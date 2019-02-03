@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var consensus = new ConsensusManager(chainedHeaderTree, this.network, this.loggerFactory.Object, this.chainState.Object, integrityValidator,
                 partialValidator, fullValidator, consensusRuleEngine, new Mock<IFinalizedBlockInfoRepository>().Object, new Signals.Signals(),
                 new Mock<IPeerBanning>().Object, initialBlockDownloadState, this.concurrentChain, new Mock<IBlockPuller>().Object, new Mock<IBlockStore>().Object,
-                new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object);
+                new Mock<IConnectionManager>().Object, new Mock<INodeStats>().Object, new Mock<INodeLifetime>().Object, this.consensusSettings);
 
             // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
             this.coinView.Setup(d => d.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
@@ -150,6 +150,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Create a previous transaction with scriptPubKey outputs.
             Transaction prevTransaction = this.network.CreateTransaction();
+
+            uint blockTime = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask;
+
+            // To avoid violating the transaction timestamp consensus rule
+            // we need to ensure that the transaction used for the coinstake's
+            // input occurs well before the block time (as the coinstake time
+            // is set to the block time)
+            prevTransaction.Time = blockTime - 100;
+
             // Coins sent to miner 2.
             prevTransaction.Outputs.Add(new TxOut(Money.COIN * 5_000_000, scriptPubKey2));
             // Coins sent to miner 1.
@@ -184,7 +193,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Finalize the block and add it to the chain.
             block.Header.HashPrevBlock = this.concurrentChain.Tip.HashBlock;
-            block.Header.Time = (this.concurrentChain.Tip.Header.Time + 60) & ~PosConsensusOptions.StakeTimestampMask;
+            block.Header.Time = blockTime;
             block.Header.Bits = block.Header.GetWorkRequired(this.network, this.concurrentChain.Tip);
             block.SetPrivatePropertyValue("BlockSize", 1L);
             block.Transactions[0].Time = block.Header.Time;

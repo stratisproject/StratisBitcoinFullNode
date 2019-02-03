@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public class InternalCallMessage : CallMessage
     {
-        public InternalCallMessage(uint160 to, uint160 from, ulong amount, Gas gasLimit, MethodCall methodCall)
+        public InternalCallMessage(uint160 to, uint160 from, ulong amount, RuntimeObserver.Gas gasLimit, MethodCall methodCall)
             : base(to, from, amount, gasLimit, methodCall)
         {
         }

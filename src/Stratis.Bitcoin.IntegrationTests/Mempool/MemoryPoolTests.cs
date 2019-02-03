@@ -449,6 +449,85 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         }
 
         [Fact]
+        public void Mempool_SendPosTransaction_WithElapsedLockTime_ShouldBeAcceptedByMempool()
+        {
+            // See CheckFinalTransaction_WithElapsedLockTime_ReturnsTrueAsync for the 'unit test' version
+            
+            var network = KnownNetworks.StratisRegTest;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode stratisSender = builder.CreateStratisPosNode(network).WithWallet().Start();
+
+                int maturity = (int)network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(stratisSender, maturity + 5);
+
+                // Send coins to the receiver.
+                var context = WalletTests.CreateContext(network, new WalletAccountReference(WalletName, Account), Password, new Key().PubKey.GetAddress(network).ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1);
+
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+                // Treat the locktime as absolute, not relative.
+                trx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
+                
+                // Set the nLockTime to be behind the current tip so that locktime has elapsed.
+                trx.LockTime = new LockTime(stratisSender.FullNode.Chain.Height - 1);
+
+                // Sign trx again after changing the nLockTime.
+                trx = context.TransactionBuilder.SignTransaction(trx);
+
+                // Enable standard policy relay.
+                stratisSender.FullNode.NodeService<MempoolSettings>().RequireStandard = true;
+
+                var broadcaster = stratisSender.FullNode.NodeService<IBroadcasterManager>();
+
+                broadcaster.BroadcastTransactionAsync(trx);
+                
+                TestHelper.WaitLoop(() => stratisSender.CreateRPCClient().GetRawMempool().Length == 1);
+            }
+        }
+        
+        [Fact]
+        public void Mempool_SendPosTransaction_WithFutureLockTime_ShouldBeRejectedByMempool()
+        {
+            // See AcceptToMemoryPool_TxFinalCannotMine_ReturnsFalseAsync for the 'unit test' version
+            
+            var network = KnownNetworks.StratisRegTest;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode stratisSender = builder.CreateStratisPosNode(network).WithWallet().Start();
+
+                int maturity = (int)network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(stratisSender, maturity + 5);
+
+                // Send coins to the receiver.
+                var context = WalletTests.CreateContext(network, new WalletAccountReference(WalletName, Account), Password, new Key().PubKey.GetAddress(network).ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1);
+
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+                // Treat the locktime as absolute, not relative.
+                trx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
+                
+                // Set the nLockTime to be ahead of the current tip so that locktime has not elapsed.
+                trx.LockTime = new LockTime(stratisSender.FullNode.Chain.Height + 1);
+
+                // Sign trx again after changing the nLockTime.
+                trx = context.TransactionBuilder.SignTransaction(trx);
+
+                // Enable standard policy relay.
+                stratisSender.FullNode.NodeService<MempoolSettings>().RequireStandard = true;
+
+                var broadcaster = stratisSender.FullNode.NodeService<IBroadcasterManager>();
+
+                broadcaster.BroadcastTransactionAsync(trx).GetAwaiter().GetResult();
+                var entry = broadcaster.GetTransaction(trx.GetHash());
+
+                Assert.Equal("non-final", entry.ErrorMessage);
+            }
+        }
+        
+        [Fact]
         public void Mempool_SendOversizeTransaction_ShouldRejectByMempool()
         {
             var network = KnownNetworks.StratisRegTest;
@@ -481,6 +560,94 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 var entry = broadcaster.GetTransaction(trx.GetHash());
 
                 Assert.Equal("tx-size", entry.ErrorMessage);
+            }
+        }
+
+        [Fact]
+        public void Mempool_SendTransactionWithEarlyTimestamp_ShouldRejectByMempool()
+        {
+            var network = KnownNetworks.StratisRegTest;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode stratisSender = builder.CreateStratisPosNode(network).WithWallet().Start();
+
+                int maturity = (int)network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(stratisSender, maturity + 5);
+
+                // Send coins to the receiver
+                var context = WalletTests.CreateContext(network, new WalletAccountReference(WalletName, Account), Password, new Key().PubKey.GetAddress(network).ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1);
+
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+                // Use timestamp value that is definitely earlier than the input's timestamp
+                trx.Time = 1;
+
+                // Sign trx again after mutating timestamp
+                trx = context.TransactionBuilder.SignTransaction(trx);
+
+                // Enable standard policy relay.
+                stratisSender.FullNode.NodeService<MempoolSettings>().RequireStandard = true;
+
+                var broadcaster = stratisSender.FullNode.NodeService<IBroadcasterManager>();
+
+                broadcaster.BroadcastTransactionAsync(trx).GetAwaiter().GetResult();
+                var entry = broadcaster.GetTransaction(trx.GetHash());
+
+                Assert.Equal("timestamp earlier than input", entry.ErrorMessage);
+            }
+        }
+
+        // TODO: There is no need for this to be a full integration test, there just needs to be a PoS version of the test chain used in the validator unit tests
+        [Fact]
+        public void Mempool_SendTransactionWithLargeOpReturn_ShouldRejectByMempool()
+        {
+            var network = KnownNetworks.StratisRegTest;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                CoreNode stratisSender = builder.CreateStratisPosNode(network).WithWallet().Start();
+
+                int maturity = (int)network.Consensus.CoinbaseMaturity;
+                TestHelper.MineBlocks(stratisSender, maturity + 5);
+
+                // Send coins to the receiver.
+                var context = WalletTests.CreateContext(network, new WalletAccountReference(WalletName, Account), Password, new Key().PubKey.GetAddress(network).ScriptPubKey, Money.COIN * 100, FeeType.Medium, 1);
+                context.OpReturnData = "1";
+                context.OpReturnAmount = Money.Coins(0.01m);
+                Transaction trx = stratisSender.FullNode.WalletTransactionHandler().BuildTransaction(context);
+
+                foreach (TxOut output in trx.Outputs)
+                {
+                    if (output.ScriptPubKey.IsUnspendable)
+                    {
+                        int[] data =
+                        {
+                            0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0
+                        };
+                        var ops = new Op[data.Length + 1];
+                        ops[0] = OpcodeType.OP_RETURN;
+                        for (int i = 0; i < data.Length; i++)
+                        {
+                            ops[1 + i] = Op.GetPushOp(data[i]);
+                        }
+
+                        output.ScriptPubKey = new Script(ops);
+                    }
+                }
+
+                // Sign trx again after lengthening nulldata output.
+                trx = context.TransactionBuilder.SignTransaction(trx);
+
+                // Enable standard policy relay.
+                stratisSender.FullNode.NodeService<MempoolSettings>().RequireStandard = true;
+
+                var broadcaster = stratisSender.FullNode.NodeService<IBroadcasterManager>();
+
+                broadcaster.BroadcastTransactionAsync(trx).GetAwaiter().GetResult();
+                var entry = broadcaster.GetTransaction(trx.GetHash());
+
+                Assert.Equal("scriptpubkey", entry.ErrorMessage);
             }
         }
     }

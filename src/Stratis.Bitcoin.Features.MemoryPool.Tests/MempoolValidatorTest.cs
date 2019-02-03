@@ -20,42 +20,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         {
         }
 
-        [Fact(Skip = "Awaiting fix for issue #2474")]
-        public async void CheckFinalTransaction_WithStandardLockTimeAndValidTxTime_ReturnsTrueAsync()
-        {
-            string dataDir = GetTestDirectoryPath(this);
-
-            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
-            Network network = KnownNetworks.Main;
-            var minerSecret = new BitcoinSecret(new Key(), network);
-            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
-            IMempoolValidator validator = context.MempoolValidator;
-            Assert.NotNull(validator);
-
-            var destSecret = new BitcoinSecret(new Key(), network);
-            Transaction tx = network.CreateTransaction();
-            tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
-
-            tx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
-
-            tx.AddOutput(new TxOut(new Money(Money.Coins(1)), destSecret.PubKeyHash));
-
-            // Set the nLockTime to an arbitrary low block number so that the locktime has elapsed.
-            tx.LockTime = new LockTime(1);
-
-            // Set the transaction time to a recent value.
-            tx.Time = context.SrcTxs.Last().Time + 100;
-
-            tx.Sign(network, minerSecret, false);
-
-            var state = new MempoolValidationState(false);
-
-            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
-            Assert.True(isSuccess, "Transaction with nLockTime in the past and valid transaction time should have been accepted.");
-        }
-
-        [Fact(Skip = "Awaiting fix for issue #2474")]
-        public async void CheckFinalTransaction_WithNoLockTimeAndValidTxTime_ReturnsTrueAsync()
+        [Fact]
+        public async void CheckFinalTransaction_WithElapsedLockTime_ReturnsTrueAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -76,55 +42,14 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
 
             // Do not set an nLockTime for this test.
 
-            // Set the transaction time to a recent value.
-            tx.Time = context.SrcTxs.Last().Time + 100;
+            // Non-PoS chains do not have the concept of a transaction time, so do not set that.
 
             tx.Sign(network, minerSecret, false);
 
             var state = new MempoolValidationState(false);
 
             bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
-            Assert.True(isSuccess, "Transaction with no nLockTime and a valid transaction time should have been accepted.");
-        }
-
-        [Fact(Skip = "Awaiting fix for issue #2474")]
-        public async void CheckFinalTransaction_WithStandardLockTimeAndExpiredTxTime_FailsAsync()
-        {
-            string dataDir = GetTestDirectoryPath(this);
-
-            // Run mempool tests on mainnet so that RequireStandard flag is set in the mempool settings.
-            Network network = KnownNetworks.Main;
-            var minerSecret = new BitcoinSecret(new Key(), network);
-            ITestChainContext context = await TestChainFactory.CreateAsync(network, minerSecret.PubKey.Hash.ScriptPubKey, dataDir);
-            IMempoolValidator validator = context.MempoolValidator;
-            Assert.NotNull(validator);
-
-            var destSecret = new BitcoinSecret(new Key(), network);
-            Transaction tx = network.CreateTransaction();
-            tx.AddInput(new TxIn(new OutPoint(context.SrcTxs[0].GetHash(), 0), PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(minerSecret.PubKey)));
-
-            tx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
-
-            tx.AddOutput(new TxOut(new Money(Money.Coins(1)), destSecret.PubKeyHash));
-
-            // Set the nLockTime to an arbitrary low block number so that the locktime has elapsed.
-            tx.LockTime = new LockTime(1);
-
-            // Set the transaction time to an old value.
-            tx.Time = context.SrcTxs.First().Time - 100;
-
-            tx.Sign(network, minerSecret, false);
-
-            var state = new MempoolValidationState(false);
-
-            bool isSuccess = await validator.AcceptToMemoryPool(state, tx);
-            Assert.False(isSuccess, "Transaction with nLockTime in the past and valid transaction time should have been accepted.");
-        }
-
-        [Fact(Skip = "Awaiting fix for issue #2474")]
-        public void CheckFinalTransaction_WithNoLockTimeLockTimeAndExpiredTxTime_Fails()
-        {
-            // TODO: Implement test
+            Assert.True(isSuccess, "Transaction with elapsed nLockTime should have been accepted.");
         }
 
         [Fact(Skip = "Not implemented yet.")]
@@ -145,12 +70,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         public void CheckSequenceLocks_WithExistingLockPointAndChainWihtNoPrevAndExpiredBlockTime_Fails()
         {
             // TODO: Test case - the lock point MinTime exceeds 0
-        }
-
-        [Fact(Skip = "Not implemented yet.")]
-        public void CheckSequenceLocks_WithExistingLockPointAndBadHeight_Fails()
-        {
-            // TODO: Test case - lock point height exceeds chain height
         }
 
         [Fact(Skip = "Not implemented yet.")]
@@ -180,7 +99,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         }
 
         [Fact]
-        public async Task AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfullAsync()
+        public async Task AcceptToMemoryPool_WithValidP2PKHTxn_IsSuccessfulAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -208,7 +127,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         /// <seealso cref="https://www.codeproject.com/Articles/835098/NBitcoin-Build-Them-All"/>
         [Fact]
-        public async Task AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfullAsync()
+        public async Task AcceptToMemoryPool_WithMultiInOutValidTxns_IsSuccessfulAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -272,7 +191,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         /// <seealso cref="https://www.codeproject.com/Articles/835098/NBitcoin-Build-Them-All"/>
         [Fact]
-        public async Task AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfullAsync()
+        public async Task AcceptToMemoryPool_WithMultiSigValidTxns_IsSuccessfulAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -340,7 +259,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// </summary>
         /// <seealso cref="https://www.codeproject.com/Articles/835098/NBitcoin-Build-Them-All"/>
         [Fact]
-        public async Task AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfullAsync()
+        public async Task AcceptToMemoryPool_WithP2SHValidTxns_IsSuccessfulAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -400,7 +319,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Validate P2WPKH transaction in memory pool.
         /// </summary>
         [Fact]
-        public async Task AcceptToMemoryPool_WithP2WPKHValidTxns_IsSuccessfullAsync()
+        public async Task AcceptToMemoryPool_WithP2WPKHValidTxns_IsSuccessfulAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -431,7 +350,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Validate P2WSH transaction in memory pool.
         /// </summary>
         [Fact]
-        public async Task AcceptToMemoryPool_WithP2WSHValidTxns_IsSuccessfullAsync()
+        public async Task AcceptToMemoryPool_WithP2WSHValidTxns_IsSuccessfulAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 
@@ -462,7 +381,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
         /// Validate SegWit transaction in memory pool.
         /// </summary>
         [Fact]
-        public async Task AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfullAsync()
+        public async Task AcceptToMemoryPool_WithSegWitValidTxns_IsSuccessfulAsync()
         {
             string dataDir = GetTestDirectoryPath(this);
 

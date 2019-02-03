@@ -220,7 +220,12 @@ namespace NBitcoin
 
         public ProvenBlockHeader CreateProvenBlockHeader(PosBlock block)
         {
-            return new ProvenBlockHeader(block);
+            var provenBlockHeader = new ProvenBlockHeader(block);
+
+            // Serialize the size.
+            provenBlockHeader.ToBytes(this);
+
+            return provenBlockHeader;
         }
 
         /// <inheritdoc />

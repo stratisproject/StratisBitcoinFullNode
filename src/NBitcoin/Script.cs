@@ -369,13 +369,15 @@ namespace NBitcoin
 
         public Script(IEnumerable<Op> ops)
         {
-            var ms = new MemoryStream();
-            foreach(Op op in ops)
+            using (var ms = new MemoryStream())
             {
-                op.WriteTo(ms);
-            }
+                foreach (Op op in ops)
+                {
+                    op.WriteTo(ms);
+                }
 
-            this._Script = ms.ToArray();
+                this._Script = ms.ToArray();
+            }
         }
 
         public Script(string script)
@@ -385,13 +387,18 @@ namespace NBitcoin
 
         private static byte[] Parse(string script)
         {
-            var reader = new StringReader(script.Trim());
-            var result = new MemoryStream();
-            while(reader.Peek() != -1)
+            using (var reader = new StringReader(script.Trim()))
             {
-                Op.Read(reader).WriteTo(result);
+                using (var result = new MemoryStream())
+                {
+                    while (reader.Peek() != -1)
+                    {
+                        Op.Read(reader).WriteTo(result);
+                    }
+
+                    return result.ToArray();
+                }
             }
-            return result.ToArray();
         }
 
         public static Script FromBytesUnsafe(byte[] data)
@@ -813,7 +820,7 @@ namespace NBitcoin
             return a == null ? new Script(ops) : new Script(a._Script.Concat(new Script(ops)._Script));
         }
 
-        public IEnumerable<Op> ToOps()
+        public IList<Op> ToOps()
         {
             using (var reader = new ScriptReader(this._Script))
             {

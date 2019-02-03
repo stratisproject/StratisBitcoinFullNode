@@ -112,6 +112,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             }
         }
 
+        /// <inheritdoc />
+        protected override void CheckInputValidity(Transaction transaction, UnspentOutputs coins)
+        {
+            // Transaction timestamp earlier than input transaction - main.cpp, CTransaction::ConnectInputs
+            if (coins.Time > transaction.Time)
+                ConsensusErrors.BadTransactionEarlyTimestamp.Throw();
+        }
+
         /// <summary>
         /// Checks and computes stake.
         /// </summary>
