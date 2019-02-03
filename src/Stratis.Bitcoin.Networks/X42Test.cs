@@ -5,6 +5,7 @@ using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Networks.Deployments;
+using Stratis.Bitcoin.Networks.Policies;
 
 namespace Stratis.Bitcoin.Networks
 {
@@ -131,6 +132,8 @@ namespace Stratis.Bitcoin.Networks
 
             string[] seedNodes = { "63.32.82.169" };
             this.SeedNodes = ConvertToNetworkAddresses(seedNodes, this.DefaultPort).ToList();
+
+            this.StandardScriptsRegistry = new StratisStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x8f4fd479064ac44e1ca633754cc0de1bdc5b0d61562722e29beb32daf9bd8ce9"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x288d7d5bbd1fb96f3550c2cc6a127fe382b6d967694a352b06c5101412b14d09"));
