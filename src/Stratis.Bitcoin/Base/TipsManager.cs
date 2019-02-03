@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Base
     {
         private readonly IKeyValueRepository keyValueRepo;
 
-        private const string commonTipKey = "lastcommontip";
+        private const string CommonTipKey = "lastcommontip";
 
         /// <summary>Highest commited tips mapped by their providers.</summary>
         private readonly Dictionary<ITipProvider, ChainedHeader> tipsByProvider;
@@ -80,7 +80,7 @@ namespace Stratis.Bitcoin.Base
             if (this.commonTipPersistingTask != null)
                 throw new Exception("Already initialized.");
 
-            var commonTipHashHeight = this.keyValueRepo.LoadValue<HashHeightPair>(commonTipKey);
+            var commonTipHashHeight = this.keyValueRepo.LoadValue<HashHeightPair>(CommonTipKey);
 
             if (commonTipHashHeight != null)
                 this.lastCommonTip = highestHeader.FindAncestorOrSelf(commonTipHashHeight.Hash, commonTipHashHeight.Height);
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Base
                 ChainedHeader tipToSave = this.lastCommonTip;
 
                 var hashHeight = new HashHeightPair(tipToSave);
-                this.keyValueRepo.SaveValue(commonTipKey, hashHeight);
+                this.keyValueRepo.SaveValue(CommonTipKey, hashHeight);
 
                 this.logger.LogDebug("Saved common tip '{0}'.", tipToSave);
             }
