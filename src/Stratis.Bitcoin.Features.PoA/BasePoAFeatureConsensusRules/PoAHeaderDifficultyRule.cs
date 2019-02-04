@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 
-namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
+namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 {
     /// <summary>
     /// All PoA blocks should be of constant difficulty so chainwork always

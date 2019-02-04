@@ -2,7 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Consensus.Rules;
 
-namespace Stratis.Bitcoin.Features.PoA.ConsensusRules
+namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 {
     /// <summary>
     /// Estimates which public key should be used for timestamp of a header being

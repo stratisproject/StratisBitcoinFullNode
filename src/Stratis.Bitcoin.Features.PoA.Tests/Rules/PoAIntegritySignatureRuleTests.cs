@@ -5,7 +5,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.PoA.ConsensusRules;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
@@ -17,9 +17,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         public PoAIntegritySignatureRuleTests()
         {
             this.integritySignatureRule = new PoAIntegritySignatureRule();
-            this.integritySignatureRule.Parent = this.rulesEngine;
-            this.integritySignatureRule.Logger = this.loggerFactory.CreateLogger(this.integritySignatureRule.GetType().FullName);
-            this.integritySignatureRule.Initialize();
+            this.InitRule(this.integritySignatureRule);
         }
 
         [Fact]

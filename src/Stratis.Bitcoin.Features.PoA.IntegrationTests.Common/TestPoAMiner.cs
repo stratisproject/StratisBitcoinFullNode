@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
                     await base.TaskDelayAsync(delayMs, token).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException exception)
+                catch (OperationCanceledException)
                 {
                 }
             }

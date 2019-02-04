@@ -5,11 +5,13 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -28,6 +30,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
         protected readonly SlotsManager slotsManager;
         protected readonly ConsensusSettings consensusSettings;
         protected readonly ConcurrentChain chain;
+        protected readonly FederationManager federationManager;
 
         public PoARulesTestsBase(PoANetwork network = null)
         {
@@ -39,7 +42,14 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             IDateTimeProvider timeProvider = new DateTimeProvider();
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
 
-            this.slotsManager = new SlotsManager(this.network, new FederationManager(NodeSettings.Default(this.network), this.network, this.loggerFactory), this.loggerFactory);
+            string dir = TestBase.CreateTestDir(this);
+            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+
+            var settings = new NodeSettings(this.network, args: new string[] { $"-datadir={dir}"});
+            this.federationManager = new FederationManager(settings, this.network, this.loggerFactory, keyValueRepo);
+            this.federationManager.Initialize();
+
+            this.slotsManager = new SlotsManager(this.network, this.federationManager, this.loggerFactory);
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 
@@ -50,6 +60,13 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(50, null, false, null, this.network);
 
             this.currentHeader = headers.Last();
+        }
+
+        public void InitRule(ConsensusRuleBase rule)
+        {
+            rule.Parent = this.rulesEngine;
+            rule.Logger = this.loggerFactory.CreateLogger(rule.GetType().FullName);
+            rule.Initialize();
         }
     }
 

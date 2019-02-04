@@ -6,6 +6,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.ReadyData
     /// </summary>
     public class ReadyBlockchain
     {
+        public const string MinerMnemonic = "elevator slight dad hair table forum maze feed trim ignore field mystery";
+        public const string MinerPassword = "password";
+
+        public const string ListenerMnemonic = "seminar cool use bleak drink section rent bid language obey skin round";
+        public const string ListenerPassword = "password";
+
         public static string StratisRegTestMinerAddress = "TXYdgqNVbHTfW5FsdxqSX6vejBByNEk2Yb";
         public static string BitcoinRegTestMinerAddress = "mgCHT7ABM88SGpgQGXmidU6dG3qb9qC4oa";
 

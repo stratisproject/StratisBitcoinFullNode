@@ -969,7 +969,7 @@ namespace Stratis.Bitcoin.Consensus
                        if (downloadedCallbacks.Callbacks == null)
                            downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
 
-                        downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
+                       downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
                     }
 
                     bool blockIsNotConsecutive = (previousHeader != null) && (chainedHeader.Previous.HashBlock != previousHeader.HashBlock);
@@ -1286,7 +1286,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Returns <c>true</c> if consensus' height is within <see cref="ConsensusIsConsideredToBeSyncedMargin"/>
         /// blocks from the best tip's height.
         /// </summary>
-        /// <remarks>Should be locked by <see cref="peerLock"/></remarks>
+        /// <remarks>Should be locked by <see cref="peerLock"/>.</remarks>
         private bool IsConsensusConsideredToBeSyncedLocked()
         {
             ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
@@ -1353,7 +1353,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Formats the big number.</summary>
-        /// <remarks><c>123456789</c> => <c>123,456,789</c></remarks>
+        /// <remarks><c>123456789</c> => <c>123,456,789</c>.</remarks>
         private string FormatBigNumber(long number)
         {
             return $"{number:#,##0}";
