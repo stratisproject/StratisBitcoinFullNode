@@ -59,12 +59,12 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         /// <summary>
-        /// Display the block of ip address defined by this object as a string.
+        /// Returns the block of ip address defined by this object as a string.
         /// </summary>
         /// <returns>The block of ip address defined by this object as a string.</returns>
         public override string ToString()
         {
-            if (this.Mask == this.FullMask)
+            if (this.IsFullMask)
                 return this.Address.ToString();
 
             return $"{ this.Address.ToString() }/{ this.Mask.ToString() }";
