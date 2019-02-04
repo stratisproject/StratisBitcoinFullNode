@@ -1,16 +1,26 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     public class VotingManager
     {
+        /// <summary>Key for accessing list of pending polls from <see cref="IKeyValueRepository"/>.</summary>
+        private const string PendingPollsDbKey = "pendingpollskey";
+
+        /// <summary>Key for accessing list of pending polls from <see cref="IKeyValueRepository"/>.</summary>
+        private const string FinishedPollsDbKey = "finishedpollskey";
+
         private readonly FederationManager federationManager;
 
         private readonly IKeyValueRepository keyValueRepo;
 
         private readonly ILogger logger;
+
+        /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="pendingPolls"/>.</summary>
+        private readonly object locker;
 
         /// <summary>Collection of voting data that should be included in a block when it's mined.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
@@ -18,13 +28,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         /// <summary>Collection of pending polls.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
-        private List<PendingPoll> pendingPolls;
-
-        /// <summary>Key for accessing list of pending polls from <see cref="IKeyValueRepository"/>.</summary>
-        private const string pendingPollsDbKey = "pendingpollskey";
-
-        /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="pendingPolls"/>.</summary>
-        private readonly object locker;
+        private List<Poll> pendingPolls;
 
         public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo)
         {
@@ -44,14 +48,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 return;
             }
 
-            this.pendingPolls = this.LoadPendingPolls();
+            this.pendingPolls = this.LoadPolls(PendingPollsDbKey);
 
             if (this.pendingPolls == null)
             {
                 this.logger.LogDebug("No pending polls found in DB, initializing with empty collection.");
 
-                this.pendingPolls = new List<PendingPoll>();
-                this.SavePendingPolls(this.pendingPolls);
+                this.pendingPolls = new List<Poll>();
+                this.SavePolls(this.pendingPolls, PendingPollsDbKey);
             }
         }
 
@@ -87,22 +91,36 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        private void SavePendingPolls(List<PendingPoll> polls)
+        /// <summary>Saves collection of polls to the database under provided key.</summary>
+        private void SavePolls(List<Poll> polls, string key)
         {
-            this.keyValueRepo.SaveValueJson(pendingPollsDbKey, polls);
+            this.keyValueRepo.SaveValueJson(key, polls);
         }
 
-        private List<PendingPoll> LoadPendingPolls()
+        /// <summary>Loads collection of polls from the database using provided key.</summary>
+        private List<Poll> LoadPolls(string key)
         {
-            List<PendingPoll> polls = this.keyValueRepo.LoadValueJson<List<PendingPoll>>(pendingPollsDbKey);
-
+            List<Poll> polls = this.keyValueRepo.LoadValueJson<List<Poll>>(key);
             return polls;
         }
 
-        /*
-            Component is subscribed to block updates and parses `voteOutput`'s of all blocks and keeps up to date view of pendingPolls.
-            When majority votes for something this component applies the changes.
+        // TODO subscribe to signals
+        private void onBlockConnected(ChainedHeaderBlock chBlock)
+        {
+            // parse voteOutputs
+            // update pending polls
 
+            // check if some polls are finished now (majority voted in favor), if true move them to finished polls
+            // When vote in favor comes check who voted against active fed members. only votes from active members count.
+        }
+
+        // TODO subscribe to signals
+        private void onBlockDisconnected(ChainedHeaderBlock chBlock)
+        {
+
+        }
+
+        /*
             When vote in favor comes check who voted against active fed members. only votes from active members count.
 
 
