@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -42,12 +43,6 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         public void Initialize()
         {
-            if (!this.federationManager.IsFederationMember)
-            {
-                this.logger.LogTrace("(-)[NOT_FED_MEMBER]");
-                return;
-            }
-
             this.pendingPolls = this.LoadPolls(PendingPollsDbKey);
 
             if (this.pendingPolls == null)
@@ -62,6 +57,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
         public void ScheduleVote(VotingData votingData)
         {
+            if (!this.federationManager.IsFederationMember)
+            {
+                this.logger.LogTrace("(-)[NOT_FED_MEMBER]");
+                throw new InvalidOperationException("Not a federation member!");
+            }
+
             lock (this.locker)
             {
                 this.scheduledVotingData.Add(votingData);
@@ -127,5 +128,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             it should handle reorgs and revert votes that were applied. Or introduce max reorg property.
             For particular keys there will be a requirement for N % of fed members
          */
+
+        // TODO add tests that will check reorg that adds or removes fed members
     }
 }
