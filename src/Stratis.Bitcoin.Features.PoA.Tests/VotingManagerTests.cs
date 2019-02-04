@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             string dir = TestBase.CreateTestDir(this);
             var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
 
-            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo);
+            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager);
         }
 
         [Fact]
