@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core.ContractSigning;
 using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
@@ -18,11 +19,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
     public class SmartContractSignedCodeRule : PartialValidationConsensusRule, ISmartContractMempoolRule
     {
         private readonly SignedCodeCallDataSerializer callDataSerializer;
+        private readonly IContractSigner contractSigner;
         private readonly PubKey signingContractPubKey;
 
-        public SmartContractSignedCodeRule(SignedCodeCallDataSerializer callDataSerializer, PubKey signingContractPubKey)
+        public SmartContractSignedCodeRule(
+            SignedCodeCallDataSerializer callDataSerializer,
+            IContractSigner contractSigner,
+            PubKey signingContractPubKey)
         {
             this.callDataSerializer = callDataSerializer;
+            this.contractSigner = contractSigner;
             this.signingContractPubKey = signingContractPubKey;
         }
 
@@ -45,14 +51,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
 
         private void CheckTransaction(Transaction transaction)
         {
-            if (!transaction.IsSmartContractExecTransaction())
-                return;
-
             TxOut scTxOut = transaction.TryGetSmartContractTxOut();
 
             if (scTxOut == null)
             {
-                new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
+                return;
             }
 
             Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
@@ -75,19 +78,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
                 return;
             }
 
-            try
+            if (!this.contractSigner.Verify(this.signingContractPubKey, callData.ContractExecutionCode, callData.CodeSignature))
             {
-                ECDSASignature signature = new ECDSASignature(callData.CodeSignature);
-
-                if (!this.signingContractPubKey.VerifyMessage(callData.ContractExecutionCode, signature))
-                {
-                    this.ThrowInvalidCode();
-                }
-            }
-            catch (Exception)
-            {
-                // new ECDSASignature can throw a format exception, and possibly other exceptions
-                // PubKey.VerifyMessage can throw unknown exceptions
                 this.ThrowInvalidCode();
             }
         }
