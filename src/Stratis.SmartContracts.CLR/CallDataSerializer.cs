@@ -98,7 +98,7 @@ namespace Stratis.SmartContracts.CLR
                 : this.SerializeCreateContract(contractTxData);
         }
 
-        protected virtual byte[] SerializeCreateContract(ContractTxData contractTxData)
+        private byte[] SerializeCreateContract(ContractTxData contractTxData)
         {
             var rlpBytes = new List<byte[]>();
 
