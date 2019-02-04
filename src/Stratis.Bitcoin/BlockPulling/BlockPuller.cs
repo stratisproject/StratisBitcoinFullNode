@@ -598,7 +598,7 @@ namespace Stratis.Bitcoin.BlockPulling
 
         /// <summary>Distributes download job's headers to peers that can provide blocks represented by those headers.</summary>
         /// <remarks>
-        /// If some of the blocks from the job can't be provided by any peer those headers will be added to a <param name="failedHashes">.</param>
+        /// If some of the blocks from the job can't be provided by any peer those headers will be added to a <param name="failedHashes"></param>.
         /// <para>
         /// Have to be locked by <see cref="queueLock"/>.
         /// </para>
