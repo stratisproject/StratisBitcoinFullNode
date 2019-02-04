@@ -6,11 +6,26 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
     public static partial class IFullNodeBuilderExtensions
     {
+        /// <summary>
+        /// Configures the node to use signed contract code only. Must be called after <see cref="SmartContracts.IFullNodeBuilderExtensions.AddSmartContracts"/>.
+        /// </summary>
+        /// <param name="fullNodeBuilder"></param>
+        /// <returns></returns>
+        public static IFullNodeBuilder AllowSignedContractCodeOnly(this IFullNodeBuilder fullNodeBuilder)
+        {
+            fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
+
+            // TODO - Add the validation rule here
+            //fullNodeBuilder.NodeSettings.Network.Consensus.PartialValidationRules.Add();
+            return fullNodeBuilder;
+        }
+
         /// <summary>
         /// Configures the node with the smart contract proof of authority consensus model.
         /// </summary>
