@@ -225,6 +225,11 @@ namespace NBitcoin
         public bool VerifyMessage(byte[] messageBytes, string signature)
         {
             ECDSASignature sig = DecodeSigString(signature);
+            return VerifyMessage(messageBytes, sig);
+        }
+
+        public bool VerifyMessage(byte[] messageBytes, ECDSASignature sig)
+        {
             byte[] messageSigned = Utils.FormatMessageForSigning(messageBytes);
             uint256 hash = Hashes.Hash256(messageSigned);
             return this.ECKey.Verify(hash, sig);
