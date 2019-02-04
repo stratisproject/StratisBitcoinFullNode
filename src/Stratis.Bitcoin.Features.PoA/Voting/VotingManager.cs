@@ -198,6 +198,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     if (validVotesCount > requiredVotesCount)
                     {
                         // TODO apply changes, move active poll to finished polls, set finished block hash
+
+                        // TODO to apply changes use voting data result executor that has methods like apply change and revert change
                     }
                 }
 
