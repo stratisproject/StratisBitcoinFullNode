@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>(ConsensusRuleEngine ruleEngine) where T : ConsensusRuleBase, new()
         {
             var rule = new T();
-
+                        
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
                 ruleEngine.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
             else if (rule is IIntegrityValidationConsensusRule consensusRule)
@@ -70,7 +70,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             else
                 throw new Exception("Rule type wasn't recognized.");
 
-            ruleEngine.Register();
             return rule;
         }
     }

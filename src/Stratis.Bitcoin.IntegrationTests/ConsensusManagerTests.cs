@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
+using NBitcoin.Rules;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
@@ -350,9 +351,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 20);
 
                 // Inject a rule that will fail at block 15 of the new chain.
-                var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(15));
-                engine.Register();
+                var existingRuleRegistration = syncer.FullNode.NodeService<IRuleRegistration>();
+                var newRuleRegistration = new TestRuleRegistration(existingRuleRegistration);
+                newRuleRegistration.FullValidationRules.Insert(1, new FailValidation(15));
+                var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;                
+                engine.Register(newRuleRegistration);
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -393,9 +396,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
 
                 // Inject a rule that will fail at block 11 of the new chain
-                ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(11));
-                engine.Register();
+                var existingRuleRegistration = syncer.FullNode.NodeService<IRuleRegistration>();
+                var newRuleRegistration = new TestRuleRegistration(existingRuleRegistration);
+                newRuleRegistration.FullValidationRules.Insert(1, new FailValidation(11));
+                var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
+                engine.Register(newRuleRegistration);
+
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -479,9 +485,11 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(minerA, 1);
 
                 // Inject a rule that will fail at block 11 of the new chain
-                ConsensusRuleEngine engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(11));
-                engine.Register();
+                var existingRuleRegistration = syncer.FullNode.NodeService<IRuleRegistration>();
+                var newRuleRegistration = new TestRuleRegistration(existingRuleRegistration);
+                newRuleRegistration.FullValidationRules.Insert(1, new FailValidation(11));
+                var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
+                engine.Register(newRuleRegistration);
 
                 // Connect syncer to Miner A, reorg should fail.
                 TestHelper.Connect(syncer, minerA);
@@ -706,4 +714,35 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
     }
+
+    public class TestRuleRegistration : IRuleRegistration
+    {
+        public TestRuleRegistration(IRuleRegistration existing)
+        {
+            var rules = existing.CreateRules();
+            this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>(rules.HeaderValidationRules);
+            this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>(rules.IntegrityValidationRules);
+            this.PartialValidationRules = new List<IPartialValidationConsensusRule>(rules.PartialValidationRules);
+            this.FullValidationRules = new List<IFullValidationConsensusRule>(rules.FullValidationRules);
+        }
+
+        public TestRuleRegistration()
+        {
+            this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>();
+            this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>();
+            this.PartialValidationRules = new List<IPartialValidationConsensusRule>();
+            this.FullValidationRules = new List<IFullValidationConsensusRule>();
+        }
+
+        public List<IHeaderValidationConsensusRule> HeaderValidationRules { get; }
+        public List<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; }
+        public List<IPartialValidationConsensusRule> PartialValidationRules { get; }
+        public List<IFullValidationConsensusRule> FullValidationRules { get; }
+
+        public RuleContainer CreateRules()
+        {
+            return new RuleContainer(this.FullValidationRules, this.PartialValidationRules, this.HeaderValidationRules, this.IntegrityValidationRules);
+        }
+    }
+
 }
