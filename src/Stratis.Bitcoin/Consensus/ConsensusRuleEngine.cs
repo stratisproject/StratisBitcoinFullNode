@@ -127,7 +127,7 @@ namespace Stratis.Bitcoin.Consensus
         {
         }
 
-        /// <param name="consensusRules"></param>
+        /// <param name="ruleRegistration"></param>
         /// <inheritdoc />
         public ConsensusRuleEngine Register(IRuleRegistration ruleRegistration)
         {
