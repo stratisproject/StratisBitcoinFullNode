@@ -2,6 +2,7 @@
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
@@ -58,6 +59,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             if (this.AlwaysFlushBlocks)
             {
                 builder.ReplaceService<IBlockStoreQueueFlushCondition, BlockStoreFeature>(new BlockStoreAlwaysFlushCondition());
+            }
+
+            if (this.NoValidation)
+            {
+                builder.ReplaceService<IRuleRegistration, ConsensusFeature>(new NoValidationRuleRegistration());
             }
 
             this.FullNode = (FullNode)builder.Build();

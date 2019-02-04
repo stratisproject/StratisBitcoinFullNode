@@ -16,6 +16,8 @@ using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.Wallet;
@@ -63,7 +65,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         private bool builderAlwaysFlushBlocks;
         private bool builderEnablePeerDiscovery;
-        private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
         private bool builderWithDummyWallet;
         private bool builderWithWallet;
@@ -109,7 +110,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public CoreNode NoValidation()
         {
-            this.builderNoValidation = true;
+            this.runner.NoValidation = true;
             return this;
         }
 
@@ -366,22 +367,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                     this.builderWalletPassphrase,
                     string.IsNullOrEmpty(this.builderWalletMnemonic) ? null : new Mnemonic(this.builderWalletMnemonic));
             }
-
-            if (this.builderNoValidation)
-                DisableValidation();
-        }
-
-        /// <summary>
-        /// Clears all consensus rules for this node.
-        /// </summary>
-        public void DisableValidation()
-        {
-            this.FullNode.Network.Consensus.FullValidationRules.Clear();
-            this.FullNode.Network.Consensus.HeaderValidationRules.Clear();
-            this.FullNode.Network.Consensus.IntegrityValidationRules.Clear();
-            this.FullNode.Network.Consensus.PartialValidationRules.Clear();
-
-            this.FullNode.NodeService<IConsensusRuleEngine>().Register();
         }
 
         public void Broadcast(Transaction transaction)
