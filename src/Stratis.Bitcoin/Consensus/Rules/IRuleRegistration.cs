@@ -20,10 +20,10 @@ namespace Stratis.Bitcoin.Consensus.Rules
     public class RuleContainer
     {
         public RuleContainer(
-            List<IFullValidationConsensusRule> fullValidationConsensusRules,
-            List<IPartialValidationConsensusRule> partialValidationConsensusRules,
-            List<IHeaderValidationConsensusRule> headerValidationConsensusRules,
-            List<IIntegrityValidationConsensusRule> integrityValidationConsensusRules
+            IReadOnlyList<IFullValidationConsensusRule> fullValidationConsensusRules,
+            IReadOnlyList<IPartialValidationConsensusRule> partialValidationConsensusRules,
+            IReadOnlyList<IHeaderValidationConsensusRule> headerValidationConsensusRules,
+            IReadOnlyList<IIntegrityValidationConsensusRule> integrityValidationConsensusRules
             )
         {
             this.FullValidationRules = fullValidationConsensusRules;
