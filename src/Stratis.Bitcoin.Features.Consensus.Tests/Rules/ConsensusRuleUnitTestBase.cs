@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<ICheckpoints> checkpoints;
         protected List<IConsensusRuleBase> rules;
         protected Mock<IChainState> chainState;
-        protected Mock<IRuleRegistration> ruleRegistration;
+        protected IRuleRegistration ruleRegistration;
         protected RuleContext ruleContext;
         protected Transaction lastAddedTransaction;
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
 
             this.rules = new List<IConsensusRuleBase>();
-            this.ruleRegistration = new Mock<IRuleRegistration>();
+            this.ruleRegistration = new TestRuleRegistration();
 
             if (network.Consensus.IsProofOfStake)
                 this.ruleContext = new PosRuleContext(new ValidationContext(), this.dateTimeProvider.Object.GetTimeOffset());
@@ -110,8 +110,38 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
                 Logger = this.logger.Object,
                 Parent = new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments,
                     this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object, this.stakeValidator.Object, this.chainState.Object,
-                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object, this.ruleRegistration.Object)
+                    new InvalidBlockHashStore(new DateTimeProvider()), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object, this.ruleRegistration)
             };
+        }
+    }
+
+    public class TestRuleRegistration : IRuleRegistration
+    {
+        public TestRuleRegistration(IRuleRegistration existing)
+        {
+            var rules = existing.CreateRules();
+            this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>(rules.HeaderValidationRules);
+            this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>(rules.IntegrityValidationRules);
+            this.PartialValidationRules = new List<IPartialValidationConsensusRule>(rules.PartialValidationRules);
+            this.FullValidationRules = new List<IFullValidationConsensusRule>(rules.FullValidationRules);
+        }
+
+        public TestRuleRegistration()
+        {
+            this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>();
+            this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>();
+            this.PartialValidationRules = new List<IPartialValidationConsensusRule>();
+            this.FullValidationRules = new List<IFullValidationConsensusRule>();
+        }
+
+        public List<IHeaderValidationConsensusRule> HeaderValidationRules { get; }
+        public List<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; }
+        public List<IPartialValidationConsensusRule> PartialValidationRules { get; }
+        public List<IFullValidationConsensusRule> FullValidationRules { get; }
+
+        public RuleContainer CreateRules()
+        {
+            return new RuleContainer(this.FullValidationRules, this.PartialValidationRules, this.HeaderValidationRules, this.IntegrityValidationRules);
         }
     }
 
@@ -127,7 +157,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         protected Mock<IChainState> chainState;
         protected T consensusRules;
         protected RuleContext ruleContext;
-        protected Mock<IRuleRegistration> ruleRegistration;
+        protected IRuleRegistration ruleRegistration;
 
         protected ConsensusRuleUnitTestBase(Network network)
         {
@@ -141,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             this.consensusSettings = new ConsensusSettings(NodeSettings.Default(this.network));
             this.dateTimeProvider = new Mock<IDateTimeProvider>();
             this.nodeDeployments = new NodeDeployments(this.network, this.concurrentChain);
-            this.ruleRegistration = new Mock<IRuleRegistration>();
+            this.ruleRegistration = new TestRuleRegistration();
 
             if (network.Consensus.IsProofOfStake)
             {
@@ -205,7 +235,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public override TestConsensusRules InitializeConsensusRules()
         {
             return new TestConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain, this.nodeDeployments,
-                this.consensusSettings, this.checkpoints.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), this.ruleRegistration.Object);
+                this.consensusSettings, this.checkpoints.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), this.ruleRegistration);
         }
     }
 
@@ -237,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         {
             return new TestPosConsensusRules(this.network, this.loggerFactory.Object, this.dateTimeProvider.Object, this.concurrentChain,
                 this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object, this.ruleRegistration.Object);
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new NodeStats(this.dateTimeProvider.Object), this.rewindDataIndexStore.Object, this.ruleRegistration);
         }
     }
 

@@ -58,17 +58,21 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public T RegisterRule<T>(ConsensusRuleEngine ruleEngine) where T : ConsensusRuleBase, new()
         {
             var rule = new T();
-                        
+
+            var ruleRegistration = new TestRuleRegistration();
+
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
-                ruleEngine.Network.Consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>() { validationConsensusRule };
+                ruleRegistration.HeaderValidationRules.Add(validationConsensusRule);
             else if (rule is IIntegrityValidationConsensusRule consensusRule)
-                ruleEngine.Network.Consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>() { consensusRule };
+                ruleRegistration.IntegrityValidationRules.Add(consensusRule);
             else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
-                ruleEngine.Network.Consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>() { partialValidationConsensusRule };
+                ruleRegistration.PartialValidationRules.Add(partialValidationConsensusRule);
             else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
-                ruleEngine.Network.Consensus.FullValidationRules = new List<IFullValidationConsensusRule>() { fullValidationConsensusRule };
+                ruleRegistration.FullValidationRules.Add(fullValidationConsensusRule);
             else
                 throw new Exception("Rule type wasn't recognized.");
+
+            ruleEngine.Register(ruleRegistration);
 
             return rule;
         }
