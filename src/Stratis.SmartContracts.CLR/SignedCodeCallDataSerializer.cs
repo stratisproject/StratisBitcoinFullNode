@@ -8,9 +8,6 @@ namespace Stratis.SmartContracts.CLR
 {
     public class SignedCodeCallDataSerializer : CallDataSerializer
     {
-        private readonly IContractPrimitiveSerializer primitiveSerializer;
-        private readonly CallDataSerializer baseSerializer;
-
         public SignedCodeCallDataSerializer(IContractPrimitiveSerializer primitiveSerializer)
             : base(primitiveSerializer)
         {
