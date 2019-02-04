@@ -12,7 +12,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class PoAHeaderDifficultyRuleTests : PoARulesTestsBase
+    public class PoAHeaderDifficultyRuleTests : PoATestsBase
     {
         [Fact]
         public void CumulativeWorkForALotOfBlocksIsLowerThanMaxValue()
