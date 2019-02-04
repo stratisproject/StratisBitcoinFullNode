@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.RPC
             if (this.IsFullMask)
                 return this.Address.ToString();
 
-            return $"{ this.Address.ToString() }/{ this.Mask.ToString() }";
+            return $"{ this.Address }/{ this.Mask }";
         }
     }
 }
