@@ -176,7 +176,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 };
 
                 this.ConsensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, this.chain, deployments, consensusSettings,
-                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+                    new Checkpoints(), this.cachedCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(this.network.Consensus));
 
                 this.consensus = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain);
 

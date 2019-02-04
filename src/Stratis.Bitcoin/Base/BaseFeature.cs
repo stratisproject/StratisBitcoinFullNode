@@ -428,6 +428,8 @@ namespace Stratis.Bitcoin.Base
 
                     // Console
                     services.AddSingleton<INodeStats, NodeStats>();
+
+                    services.AddSingleton<IConsensus>(fullNodeBuilder.Network.Consensus);
                 });
             });
 

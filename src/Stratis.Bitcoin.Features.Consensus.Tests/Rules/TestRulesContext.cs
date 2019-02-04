@@ -119,6 +119,11 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             return this.ruleRegistrationHelper.RegisterRule<T>(this);
         }
 
+        public T RegisterRule<T>(T rule)
+        {
+            return this.ruleRegistrationHelper.RegisterRule(this, rule);
+        }
+
         public override RuleContext CreateRuleContext(ValidationContext validationContext)
         {
             return this.RuleContext ?? new PowRuleContext();
@@ -192,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var deployments = new NodeDeployments(testRulesContext.Network, testRulesContext.Chain);
             testRulesContext.ConsensusRuleEngine = new PowConsensusRuleEngine(testRulesContext.Network, testRulesContext.LoggerFactory, testRulesContext.DateTimeProvider,
                 testRulesContext.Chain, deployments, consensusSettings, testRulesContext.Checkpoints, new InMemoryCoinView(new uint256()), testRulesContext.ChainState,
-                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default), new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+                new InvalidBlockHashStore(DateTimeProvider.Default), new NodeStats(DateTimeProvider.Default), new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(network.Consensus));
 
             return testRulesContext;
         }

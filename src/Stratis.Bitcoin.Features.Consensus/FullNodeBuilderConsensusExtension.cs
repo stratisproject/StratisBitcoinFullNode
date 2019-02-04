@@ -83,13 +83,20 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
+            private readonly IConsensus consensus;
+
+            public PowConsensusRulesRegistration(IConsensus consensus)
+            {
+                this.consensus = consensus;
+            }
+
             public RuleContainer CreateRules()
             {
                 var headerValidationRules = new List<IHeaderValidationConsensusRule>()
                 {
                     new HeaderTimeChecksRule(),
                     new CheckDifficultyPowRule(),
-                    new BitcoinActivationRule(),
+                    new BitcoinActivationRule(this.consensus),
                     new BitcoinHeaderVersionRule()
                 };
 

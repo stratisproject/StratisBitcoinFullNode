@@ -289,7 +289,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var mempoolPersistence = new MempoolPersistence(settings, loggerFactory);
             this.network.Consensus.Options = new PosConsensusOptions();
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(this.network, loggerFactory, dateTimeProvider, chain, new NodeDeployments(this.network, chain),
-                consensusSettings, new Checkpoints(), coins, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+                consensusSettings, new Checkpoints(), coins, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(this.network.Consensus));
             var mempoolValidator = new MempoolValidator(txMemPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coins, loggerFactory, settings, consensusRules);
             return new MempoolManager(mempoolLock, txMemPool, mempoolValidator, dateTimeProvider, mempoolSettings, mempoolPersistence, coins, loggerFactory, settings.Network);
         }

@@ -14,7 +14,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         [Fact]
         public void BitcoinConsensusRulesRegistrationTest()
         {
-            var rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration().CreateRules();
+            var rules = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(null).CreateRules();
 
             IReadOnlyList<IHeaderValidationConsensusRule> headerValidationRules = rules.HeaderValidationRules;
 

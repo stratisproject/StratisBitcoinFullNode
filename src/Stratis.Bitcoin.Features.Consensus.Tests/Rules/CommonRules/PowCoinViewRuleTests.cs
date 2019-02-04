@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                     new ConsensusSettings(NodeSettings.Default(KnownNetworks.RegTest)), new Mock<ICheckpoints>().Object, new Mock<ICoinView>().Object, new Mock<IChainState>().Object,
                     new InvalidBlockHashStore(dateTimeProvider),
                     new NodeStats(dateTimeProvider),
-                    new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration());
+                    new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(this.network.Consensus));
 
                 rule.Initialize();
 

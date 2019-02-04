@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             {
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
-                new BitcoinActivationRule(),
+                new BitcoinActivationRule(this.network.Consensus),
                 new BitcoinHeaderVersionRule()
             };
 

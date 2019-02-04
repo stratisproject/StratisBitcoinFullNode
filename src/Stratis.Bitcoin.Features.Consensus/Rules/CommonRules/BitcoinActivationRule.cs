@@ -10,6 +10,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// </summary>
     public class BitcoinActivationRule : HeaderValidationConsensusRule
     {
+        private IConsensus consensusParams;
+
+        public BitcoinActivationRule(IConsensus consensusParams)
+        {
+            this.consensusParams = consensusParams;
+        }
+
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadVersion">Thrown if block's version is outdated.</exception>
         public override void Run(RuleContext context)
@@ -21,9 +28,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Reject outdated version blocks when 95% (75% on testnet) of the network has upgraded:
             // check for version 2, 3 and 4 upgrades.
             // TODO: this checks need to be moved to their respective validation rules.
-            if (((header.Version < 2) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
-                ((header.Version < 3) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
-                ((header.Version < 4) && (height >= this.Parent.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
+            if (((header.Version < 2) && (height >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP34])) ||
+                ((header.Version < 3) && (height >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP66])) ||
+                ((header.Version < 4) && (height >= this.consensusParams.BuriedDeployments[BuriedDeployments.BIP65])))
             {
                 this.Logger.LogTrace("(-)[BAD_VERSION]");
                 ConsensusErrors.BadVersion.Throw();

@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Tests.Common
             network.Consensus.Options = new ConsensusOptions();
 
             if (ruleRegistration == null)
-                ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
+                ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(network.Consensus);
 
             // Dont check PoW of a header in this test.
             network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));

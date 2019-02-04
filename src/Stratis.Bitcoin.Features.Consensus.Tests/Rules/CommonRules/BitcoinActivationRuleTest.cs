@@ -10,11 +10,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 {
     public class BitcoinActivationRuleTest : TestConsensusRulesUnitTestBase
     {
+        private BitcoinActivationRule rule;
+
         public BitcoinActivationRuleTest()
         {
             this.network = KnownNetworks.TestNet; //important for bips
             this.concurrentChain = GenerateChainWithHeight(5, this.network);
             this.consensusRules = this.InitializeConsensusRules();
+            this.rule = this.consensusRules.RegisterRule(
+                new BitcoinActivationRule(this.consensusRules.ConsensusParams));
         }
 
         [Fact]
@@ -28,7 +32,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             header.Version = 1;
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -45,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -62,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -79,7 +83,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -96,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -113,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -130,7 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -147,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -164,7 +168,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -181,7 +185,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -198,7 +202,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66]);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -215,7 +219,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 1);
 
-            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext));
+            ConsensusErrorException exception = Assert.Throws<ConsensusErrorException>(() => this.rule.Run(this.ruleContext));
 
             Assert.Equal(ConsensusErrors.BadVersion, exception.ConsensusError);
         }
@@ -232,7 +236,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP34] - 2);
 
-            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
+            this.rule.Run(this.ruleContext);
         }
 
         [Fact]
@@ -247,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP66] - 2);
 
-            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
+            this.rule.Run(this.ruleContext);
         }
 
         [Fact]
@@ -262,7 +266,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] - 2);
 
-            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
+            this.rule.Run(this.ruleContext);
         }
 
         [Fact]
@@ -277,7 +281,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = new ChainedHeader(header, header.GetHash(), this.consensusRules.ConsensusParams.BuriedDeployments[BuriedDeployments.BIP65] + 30);
 
-            this.consensusRules.RegisterRule<BitcoinActivationRule>().Run(this.ruleContext);
+            this.rule.Run(this.ruleContext);
         }
     }
 }
