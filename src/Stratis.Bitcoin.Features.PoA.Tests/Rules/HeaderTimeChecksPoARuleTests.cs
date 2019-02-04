@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 
             this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, provider.Object, this.chain,
                 new NodeDeployments(this.network, this.chain), this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object,
-                new ChainState(), new InvalidBlockHashStore(provider.Object), new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator);
+                new ChainState(), new InvalidBlockHashStore(provider.Object), new NodeStats(provider.Object), this.slotsManager, this.poaHeaderValidator, new PoAConsensusRulesRegistration());
 
             this.timeChecksRule.Parent = this.rulesEngine;
             this.timeChecksRule.Initialize();

@@ -37,11 +37,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
             var initialBlockDownloadState = new InitialBlockDownloadState(this.chainState.Object, this.network, this.consensusSettings, new Checkpoints());
 
             // Register POS consensus rules.
-            new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration().RegisterRules(this.network.Consensus);
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.network, this.loggerFactory.Object, DateTimeProvider.Default,
                 this.concurrentChain, this.nodeDeployments, this.consensusSettings, this.checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object)
-                .Register();
+                this.stakeValidator.Object, this.chainState.Object, new InvalidBlockHashStore(this.dateTimeProvider.Object), new Mock<INodeStats>().Object, this.rewindDataIndexStore.Object, new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration());
 
             var headerValidator = new HeaderValidator(consensusRuleEngine, this.loggerFactory.Object);
             var integrityValidator = new IntegrityValidator(consensusRuleEngine, this.loggerFactory.Object);

@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -41,6 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             var coinView = new Mock<ICoinView>();
             var chainState = new Mock<ChainState>();
             var invalidBlockHashStore = new Mock<IInvalidBlockHashStore>();
+            var ruleRegistration = new Mock<IRuleRegistration>();
 
             this.rulesEngine = new TestContractRulesEngine(this.network,
                 loggerFactory.Object,
@@ -52,7 +54,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 coinView.Object,
                 chainState.Object,
                 invalidBlockHashStore.Object,
-                new NodeStats(new DateTimeProvider())
+                new NodeStats(new DateTimeProvider()),
+                ruleRegistration.Object
             );
         }
 
@@ -96,8 +99,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
     public class TestContractRulesEngine : PowConsensusRuleEngine, ISmartContractCoinviewRule
     {
         public TestContractRulesEngine(Network network, ILoggerFactory loggerFactory, IDateTimeProvider dateTimeProvider, ConcurrentChain chain, NodeDeployments nodeDeployments, ConsensusSettings consensusSettings, ICheckpoints checkpoints, ICoinView utxoSet, IChainState chainState,
-            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
+            IInvalidBlockHashStore invalidBlockHashStore, INodeStats nodeStats, IRuleRegistration ruleRegistration)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, ruleRegistration)
         {
         }
 

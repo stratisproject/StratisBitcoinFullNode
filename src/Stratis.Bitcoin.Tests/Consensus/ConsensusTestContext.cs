@@ -105,7 +105,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.Network.Consensus.Options = new ConsensusOptions();
 
             this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration();
-            this.ruleRegistration.RegisterRules(this.Network.Consensus);
 
             // Dont check PoW of a header in this test.
             this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
@@ -138,9 +137,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.deployments = new NodeDeployments(this.Network, this.chain);
 
             this.consensusRules = new PowConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider, this.chain, this.deployments, this.ConsensusSettings,
-                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats);
-
-            this.consensusRules.Register();
+                     this.checkpoints.Object, this.coinView, this.ChainState.Object, this.hashStore, this.nodeStats, this.ruleRegistration);
 
             var tree = new ChainedHeaderTree(this.Network, this.loggerFactory, this.HeaderValidator.Object, this.checkpoints.Object,
                 this.ChainState.Object, this.FinalizedBlockMock.Object, this.ConsensusSettings, this.hashStore);

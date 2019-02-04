@@ -38,7 +38,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chain = serviceProvider.GetService<ConcurrentChain>();
             var chainState = serviceProvider.GetService<IChainState>() as ChainState;
             var consensusRuleEngine = serviceProvider.GetService<IConsensusRuleEngine>();
-            consensusRuleEngine.Register();
             var mempoolManager = serviceProvider.GetService<MempoolManager>();
             var connectionManager = serviceProvider.GetService<IConnectionManager>() as ConnectionManager;
 
