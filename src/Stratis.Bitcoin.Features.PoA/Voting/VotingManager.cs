@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -18,6 +19,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly IKeyValueRepository keyValueRepo;
 
+        private readonly VotingDataEncoder votingDataEncoder;
+
+        private readonly SlotsManager slotsManager;
+
         private readonly ILogger logger;
 
         /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="pendingPolls"/>.</summary>
@@ -31,11 +36,17 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<Poll> pendingPolls;
 
-        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo)
+        /// <summary>Collection of finished polls.</summary>
+        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
+        private List<Poll> finishedPolls;
+
+        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, SlotsManager slotsManager)
         {
             this.federationManager = federationManager;
             this.keyValueRepo = keyValueRepo;
             this.locker = new object();
+            this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
+            this.slotsManager = slotsManager;
             this.scheduledVotingData = new List<VotingData>();
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -51,6 +62,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                 this.pendingPolls = new List<Poll>();
                 this.SavePolls(this.pendingPolls, PendingPollsDbKey);
+            }
+
+            this.finishedPolls = this.LoadPolls(FinishedPollsDbKey);
+
+            if (this.finishedPolls == null)
+            {
+                this.logger.LogDebug("No finished polls found in DB, initializing with empty collection.");
+
+                this.finishedPolls = new List<Poll>();
+                this.SavePolls(this.finishedPolls, FinishedPollsDbKey);
             }
         }
 
@@ -105,30 +126,95 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             return polls;
         }
 
+        /// <summary>Provides a collection of polls that are currently active.</summary>
+        public List<Poll> GetPendingPolls()
+        {
+            lock (this.locker)
+            {
+                return new List<Poll>(this.pendingPolls);
+            }
+        }
+
+        /// <summary>Provides a collection of polls that are already finished and their results applied.</summary>
+        public List<Poll> GetFinishedPolls()
+        {
+            lock (this.locker)
+            {
+                return new List<Poll>(this.finishedPolls);
+            }
+        }
+
         // TODO subscribe to signals
+        // TODO more logs and log polls
         private void onBlockConnected(ChainedHeaderBlock chBlock)
         {
-            // parse voteOutputs
-            // update pending polls
+            byte[] rawVotingData = this.votingDataEncoder.ExtractRawVotingData(chBlock.Block.Transactions[0]);
 
-            // check if some polls are finished now (majority voted in favor), if true move them to finished polls
-            // When vote in favor comes check who voted against active fed members. only votes from active members count.
+            if (rawVotingData == null)
+            {
+                this.logger.LogTrace("(-)[NO_VOTING_DATA]");
+                return;
+            }
+
+            // Pub key of a fed member that created voting data.
+            string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+
+            List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
+
+            lock (this.locker)
+            {
+                foreach (VotingData data in votingDataList)
+                {
+                    Poll existingPoll = this.pendingPolls.SingleOrDefault(x => x.VotingData == data);
+
+                    if (existingPoll == null)
+                    {
+                        existingPoll = new Poll()
+                        {
+                            PollAppliedBlockHash = null,
+                            PollStartBlockHash = chBlock.Block.GetHash(),
+                            VotingData = data,
+                            PubKeysHexVotedInFavor = new List<string>() { fedMemberKeyHex }
+                        };
+
+                        this.pendingPolls.Add(existingPoll);
+                        this.logger.LogDebug("New poll was created.");
+                    }
+                    else if (!existingPoll.PubKeysHexVotedInFavor.Contains(fedMemberKeyHex))
+                    {
+                        existingPoll.PubKeysHexVotedInFavor.Add(fedMemberKeyHex);
+
+                        this.logger.LogDebug("Voted on existing poll.");
+                    }
+
+                    List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
+
+                    // It is possible that there is a vote from a federation member that was deleted from the federation.
+                    // Do not count votes from entities that are not active fed members.
+                    int validVotesCount = existingPoll.PubKeysHexVotedInFavor.Count(x => fedMembersHex.Contains(x));
+
+                    int requiredVotesCount = (fedMembersHex.Count / 2) + 1;
+
+                    if (validVotesCount > requiredVotesCount)
+                    {
+                        // TODO apply changes, move active poll to finished polls, set finished block hash
+                    }
+                }
+
+                this.SavePolls(this.pendingPolls, PendingPollsDbKey);
+                this.SavePolls(this.finishedPolls, FinishedPollsDbKey);
+            }
         }
 
         // TODO subscribe to signals
         private void onBlockDisconnected(ChainedHeaderBlock chBlock)
         {
-
+            // TODO it should handle reorgs and revert votes that were applied.
         }
 
-        /*
-            When vote in favor comes check who voted against active fed members. only votes from active members count.
-
-
-            it should handle reorgs and revert votes that were applied. Or introduce max reorg property.
-            For particular keys there will be a requirement for N % of fed members
-         */
-
-        // TODO add tests that will check reorg that adds or removes fed members
+        // TODO tests
+        // add tests that will check reorg that adds or removes fed members
+        // test that vote of a fed member that is no longer there is not active anymore
+        // test case when we have 2 votes in a block and because 1 is executed before the other other no longer has enough votes
     }
 }
