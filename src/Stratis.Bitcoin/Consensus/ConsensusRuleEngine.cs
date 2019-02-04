@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Consensus
             this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
 
             // Registers all rules that might be executed to the performance counter.
-            this.performanceCounter = new ConsensusRulesPerformanceCounter(this.Network.Consensus);
+            this.performanceCounter = new ConsensusRulesPerformanceCounter(consensusRules);
 
             return this;
         }
