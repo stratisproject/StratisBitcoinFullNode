@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             this.callback(builder);
 
             builder.RemoveImplementation<PeerConnectorDiscovery>();
-            builder.ReplaceService<IPeerDiscovery>(new PeerDiscoveryDisabled());
+            builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
 
             this.FullNode = (FullNode)builder.Build();
         }

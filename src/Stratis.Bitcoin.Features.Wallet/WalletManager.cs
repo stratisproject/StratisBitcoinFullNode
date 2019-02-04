@@ -5,6 +5,7 @@ using System.Linq;
 using System.Runtime.CompilerServices;
 using System.Security;
 using System.Threading.Tasks;
+using Microsoft.Extensions.Caching.Memory;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BuilderExtensions;
@@ -13,6 +14,8 @@ using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 [assembly: InternalsVisibleTo("Stratis.Bitcoin.Features.Wallet.Tests")]
 
@@ -23,6 +26,9 @@ namespace Stratis.Bitcoin.Features.Wallet
     /// </summary>
     public class WalletManager : IWalletManager
     {
+        // <summary>As per RPC method definition this should be the max allowable expiry duration.</summary>
+        private const int MaxWalletUnlockDurationInSeconds = 1073741824;
+
         /// <summary>Quantity of accounts created in a wallet file when a wallet is restored.</summary>
         private const int WalletRecoveryAccountsCount = 1;
 
@@ -80,6 +86,9 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>The settings for the wallet feature.</summary>
         private readonly IScriptAddressReader scriptAddressReader;
 
+        /// <summary>The private key cache for unlocked wallets.</summary>
+        private readonly MemoryCache privateKeyCache;
+
         public uint256 WalletTipHash { get; set; }
 
         // In order to allow faster look-ups of transactions affecting the wallets' addresses,
@@ -136,6 +145,8 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             this.scriptToAddressLookup = this.CreateAddressFromScriptLookup();
             this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+
+            this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
         }
 
         /// <summary>
@@ -189,6 +200,22 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     this.AddAddressesToMaintainBuffer(account, false);
                     this.AddAddressesToMaintainBuffer(account, true);
+                }
+            }
+
+            if (this.walletSettings.IsDefaultWalletEnabled())
+            {
+                // Check if it already exists, if not, create one.
+                if (!wallets.Any(w => w.Name == this.walletSettings.DefaultWalletName))
+                {
+                    var mnemonic = new Mnemonic(Wordlist.English, WordCount.Twelve);
+                    this.CreateWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, string.Empty, mnemonic);
+                }
+
+                // Make sure both unlock is specified, and that we actually have a default wallet name specified.
+                if (this.walletSettings.UnlockDefaultWallet)
+                {
+                    this.UnlockWallet(this.walletSettings.DefaultWalletPassword, this.walletSettings.DefaultWalletName, MaxWalletUnlockDurationInSeconds);
                 }
             }
 
@@ -292,6 +319,45 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.Load(wallet);
 
             return wallet;
+        }
+
+        /// <inheritdoc />
+        public void UnlockWallet(string password, string name, int timeout)
+        {
+            Guard.NotEmpty(password, nameof(password));
+            Guard.NotEmpty(name, nameof(name));
+
+            // Length of expiry of the unlocking, restricted to max duration.
+            TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, MaxWalletUnlockDurationInSeconds));
+
+            this.CacheSecret(name, password, duration);
+        }
+
+        /// <inheritdoc />
+        public void LockWallet(string name)
+        {
+            Guard.NotNull(name, nameof(name));
+
+            Wallet wallet = this.GetWalletByName(name);
+            string cacheKey = wallet.EncryptedSeed;
+            this.privateKeyCache.Remove(cacheKey);
+        }
+
+        [NoTrace]
+        private SecureString CacheSecret(string name, string walletPassword, TimeSpan duration)
+        {
+            Wallet wallet = this.GetWalletByName(name);
+            string cacheKey = wallet.EncryptedSeed;
+
+            if (!this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
+            {
+                Key privateKey = Key.Parse(wallet.EncryptedSeed, walletPassword, wallet.Network);
+                secretValue = privateKey.ToString(wallet.Network).ToSecureString();
+            }
+
+            this.privateKeyCache.Set(cacheKey, secretValue, duration);
+
+            return secretValue;
         }
 
         /// <inheritdoc />
@@ -1543,6 +1609,33 @@ namespace Stratis.Bitcoin.Features.Wallet
                     }
                 },
                 TimeSpans.FiveSeconds);
+        }
+
+        /// <inheritdoc />
+        [NoTrace]
+        public ExtKey GetExtKey(WalletAccountReference accountReference, string password = "", bool cache = false)
+        {
+            Wallet wallet = this.GetWalletByName(accountReference.WalletName);
+            string cacheKey = wallet.EncryptedSeed;
+            Key privateKey;
+
+            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
+            {
+                privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
+            }
+            else
+            {
+                privateKey = Key.Parse(wallet.EncryptedSeed, password, wallet.Network);
+            }
+
+            if (cache)
+            {
+                // The default duration the secret is cached is 5 minutes.
+                var timeOutDuration = new TimeSpan(0, 5, 0);
+                this.UnlockWallet(password, accountReference.WalletName, (int)timeOutDuration.TotalSeconds);
+            }
+
+            return new ExtKey(privateKey, wallet.ChainCode);
         }
     }
 }

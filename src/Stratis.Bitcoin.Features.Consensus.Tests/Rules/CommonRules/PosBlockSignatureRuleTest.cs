@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlockSignatureNotEmpty_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfWorkBlockSignatureNotEmpty_ThrowsBadBlockSignatureConsensusErrorException()
         {
             this.ruleContext.ValidationContext.BlockToValidate = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
 
@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlockSignatureEmpty_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlockSignatureEmpty_ThrowsBadBlockSignatureConsensusErrorException()
         {
             this.ruleContext.ValidationContext.BlockToValidate = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             this.ruleContext.ValidationContext.BlockToValidate.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_CoinStakePayToPubScriptKeyInvalid_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_CoinStakePayToPubScriptKeyInvalid_ThrowsBadBlockSignatureConsensusErrorException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_NoOpsInScriptPubKey_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_NoOpsInScriptPubKey_ThrowsBadBlockSignatureConsensusErrorException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_FirstOpInScriptPubKeyNotOP_Return_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_FirstOpInScriptPubKeyNotOP_Return_ThrowsBadBlockSignatureConsensusErrorException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_OpCountBelowTwo_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_OpCountBelowTwo_ThrowsBadBlockSignatureConsensusErrorException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_ScriptKeyDoesNotPassCompressedUncompresedKeyValidation_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_ScriptKeyDoesNotPassCompressedUncompresedKeyValidation_ThrowsBadBlockSignatureConsensusErrorException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -198,7 +198,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_ScriptKeyDoesNotPassBlockSignatureValidation_ThrowsBadBlockSignatureConsensusErrorExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_ScriptKeyDoesNotPassBlockSignatureValidation_ThrowsBadBlockSignatureConsensusErrorException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfStakeBlock_PayToPubKeyScriptPassesBlockSignatureValidation_DoesNotThrowExceptionAsync()
+        public void RunAsync_ProofOfStakeBlock_PayToPubKeyScriptPassesBlockSignatureValidation_DoesNotThrowException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         }
 
         [Fact]
-        public async Task RunAsync_ProofOfWorkBlock_BlockSignatureEmpty_DoesNotThrowExceptionAsync()
+        public void RunAsync_ProofOfWorkBlock_BlockSignatureEmpty_DoesNotThrowException()
         {
             Block block = KnownNetworks.StratisMain.Consensus.ConsensusFactory.CreateBlock();
             block.Transactions.Add(KnownNetworks.StratisMain.CreateTransaction());
@@ -345,7 +345,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// with the block signature correctly created with the corresponding private key expect success.
         /// </summary>
         [Fact]
-        public async Task ProofOfStakeBlock_ValidCoinStakeBlockDoesNotThrowExceptionAsync()
+        public void ProofOfStakeBlock_ValidCoinStakeBlockDoesNotThrowException()
         {
             ProofOfStakeBlock_CoinStakeTestHelper(useCompressedKey: true, includeSecondPush: false, expectFailure: false);
         }
@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// with the block signature correctly created with the corresponding private key expect failure.
         /// </summary>
         [Fact]
-        public async Task ProofOfStakeBlock_ValidCoinStakeBlockExceptUncompressedKeyThrowsExceptionAsync()
+        public void ProofOfStakeBlock_ValidCoinStakeBlockExceptUncompressedKeyThrowsException()
         {
             ProofOfStakeBlock_CoinStakeTestHelper(useCompressedKey: false, includeSecondPush: false, expectFailure: true);
         }
@@ -366,7 +366,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
         /// expect failure.
         /// </summary>
         [Fact]
-        public async Task ProofOfStakeBlock_ValidCoinStakeBlockExceptExtraPushThrowsExceptionAsync()
+        public void ProofOfStakeBlock_ValidCoinStakeBlockExceptExtraPushThrowsException()
         {
             ProofOfStakeBlock_CoinStakeTestHelper(useCompressedKey: true, includeSecondPush: true, expectFailure: true);
         }

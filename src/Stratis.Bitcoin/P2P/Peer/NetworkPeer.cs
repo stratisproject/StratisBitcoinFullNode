@@ -125,7 +125,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         public NetworkPeerState State { get; private set; }
 
         /// <summary>Table of valid transitions between peer states.</summary>
-        private static readonly Dictionary<NetworkPeerState, NetworkPeerState[]> stateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
+        private static readonly Dictionary<NetworkPeerState, NetworkPeerState[]> StateTransitionTable = new Dictionary<NetworkPeerState, NetworkPeerState[]>()
         {
             { NetworkPeerState.Created, new[] { NetworkPeerState.Connected, NetworkPeerState.Offline, NetworkPeerState.Failed} },
             { NetworkPeerState.Connected, new[] { NetworkPeerState.HandShaked, NetworkPeerState.Disconnecting, NetworkPeerState.Offline, NetworkPeerState.Failed} },
@@ -377,7 +377,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         {
             NetworkPeerState previous = this.State;
 
-            if (stateTransitionTable[previous].Contains(newState))
+            if (StateTransitionTable[previous].Contains(newState))
             {
                 this.State = newState;
 
