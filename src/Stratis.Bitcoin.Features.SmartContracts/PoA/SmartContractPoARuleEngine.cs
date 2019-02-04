@@ -4,6 +4,7 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Utilities;
@@ -41,8 +42,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             IInvalidBlockHashStore invalidBlockHashStore,
             INodeStats nodeStats,
             SlotsManager slotsManager,
-            PoABlockHeaderValidator poaHeaderValidator)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, slotsManager, poaHeaderValidator)
+            PoABlockHeaderValidator poaHeaderValidator,
+            IRuleRegistration ruleRegistration)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, slotsManager, poaHeaderValidator, ruleRegistration)
         {
             this.CallDataSerializer = callDataSerializer;
             this.ExecutorFactory = executorFactory;

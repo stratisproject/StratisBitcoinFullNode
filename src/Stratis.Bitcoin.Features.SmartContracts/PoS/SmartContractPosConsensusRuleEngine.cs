@@ -49,8 +49,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
             INodeStats nodeStats,
-            IRewindDataIndexCache rewindDataIndexCache)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache)
+            IRewindDataIndexCache rewindDataIndexCache,
+            IRuleRegistration ruleRegistration)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, ruleRegistration)
         {
             this.CallDataSerializer = callDataSerializer;
             this.ExecutorFactory = executorFactory;

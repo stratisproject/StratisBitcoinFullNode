@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
@@ -42,6 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             var coinView = new Mock<ICoinView>();
             var chainState = new Mock<ChainState>();
             var invalidBlockHashStore = new Mock<IInvalidBlockHashStore>();
+            var ruleRegistration = new Mock<IRuleRegistration>();
 
             this.rulesEngine = new TestContractRulesEngine(this.network,
                 loggerFactory.Object,
@@ -53,7 +55,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 coinView.Object,
                 chainState.Object,
                 invalidBlockHashStore.Object,
-                new NodeStats(new DateTimeProvider())
+                new NodeStats(new DateTimeProvider()),
+                ruleRegistration.Object
             );
 
             this.rule = new AllowedScriptTypeRule
