@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.checkpoints.Setup(c => c.GetLastCheckpointHeight()).Returns(100);
 
             // When we run the validation rule, we should not hit any exceptions as rule will be skipped.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().NotThrow();
         }
 
@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate = null;
 
             // When we run the validation rule, we should hit null argument exception for chained header.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ArgumentNullException>();
         }
 
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header.SetPrivateVariableValue<Transaction>("coinstake", null);
 
             // When we run the validation rule, we should hit coinstake empty exception.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                           .And.ConsensusError
                           .Should().Be(ConsensusErrors.EmptyCoinstake);
@@ -90,7 +90,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[] { null }, posBlock.GetHash()));
 
             // When we run the validation rule, we should hit coinstake read transaction error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.ReadTxPrevFailedInsufficient);
@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne, utxoTwo }, posBlock.GetHash()));
 
             // When we run the validation rule, ConsensusErrors.ReadTxPrevFailed should be thrown.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>().And.ConsensusError.Should().Be(ConsensusErrors.ReadTxPrevFailedInsufficient);
         }
 
@@ -146,7 +146,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .ReturnsAsync(new FetchCoinsResponse(new[] { (UnspentOutputs)null }, posBlock.GetHash()));
 
             // When we run the validation rule, we should hit coinstake read transaction error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.ReadTxPrevFailedInsufficient);
@@ -171,7 +171,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             // Change coinstake outputs to make it invalid.
             ((ProvenBlockHeader)this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header).Coinstake.Outputs.RemoveAt(0);
 
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.ProofOfWorkTooHigh);
@@ -197,7 +197,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             ((ProvenBlockHeader)this.ruleContext.ValidationContext.ChainedHeaderToValidate.Header).Coinstake.Time = 16;
 
             // When we run the validation rule, we should hit coinstake stake time violation error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.StakeTimeViolation);
@@ -247,7 +247,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Returns(true);
 
             // When we run the validation rule, we should hit coinstake depth error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.InvalidStakeDepth);
@@ -293,7 +293,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Returns(false);
 
             // When we run the validation rule, we should hit coinstake signature verification error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>().And.ConsensusError.Should().Be(ConsensusErrors.CoinstakeVerifySignatureFailed);
         }
 
@@ -338,7 +338,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Returns(true);
 
             // When we run the validation rule, we should hit previous stake null error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.InvalidPreviousProvenHeaderStakeModifier);
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Throws(new ConsensusErrorException(ConsensusErrors.StakeHashInvalidTarget));
 
             // When we run the validation rule, we should hit stake hash invalid target error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.StakeHashInvalidTarget);
@@ -444,7 +444,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>())).Returns(true);
 
             // When we run the validation rule, we should hit bad merkle proof error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.BadMerkleRoot);
@@ -504,7 +504,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Returns(false);
 
             // When we run the validation rule, we should hit bad merkle proof error.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().Throw<ConsensusErrorException>()
                 .And.ConsensusError
                 .Should().Be(ConsensusErrors.BadBlockSignature);
@@ -570,7 +570,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 .Setup(m => m.CheckStakeKernelHash(It.IsAny<PosRuleContext>(), It.IsAny<uint>(), It.IsAny<uint256>(), It.IsAny<UnspentOutputs>(), It.IsAny<OutPoint>(), It.IsAny<uint>())).Returns(true);
 
             // When we run the validation rule, we should not hit any errors.
-            Action ruleValidation = () => this.consensusRules.RegisterRule<ProvenHeaderCoinstakeRule>().Run(this.ruleContext);
+            Action ruleValidation = () => this.consensusRules.RegisterRule(new ProvenHeaderCoinstakeRule(this.stakeValidator.Object, this.coinView.Object)).Run(this.ruleContext);
             ruleValidation.Should().NotThrow();
         }
     }

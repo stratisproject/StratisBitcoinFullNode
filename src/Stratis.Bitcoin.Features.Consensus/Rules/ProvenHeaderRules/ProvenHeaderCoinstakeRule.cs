@@ -36,15 +36,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
         /// <summary>The stake validator.</summary>
         private IStakeValidator stakeValidator;
 
-        /// <inheritdoc />
-        public override void Initialize()
+        private ICoinView utxoSet;
+
+        public ProvenHeaderCoinstakeRule(IStakeValidator stakeValidator, ICoinView utxoSet)
         {
-            base.Initialize();
-
-            Guard.NotNull(this.PosParent.StakeValidator, nameof(this.PosParent.StakeValidator));
-            Guard.NotNull(this.PosParent.UtxoSet, nameof(this.PosParent.UtxoSet));
-
-            this.stakeValidator = this.PosParent.StakeValidator;
+            this.stakeValidator = stakeValidator;
+            this.utxoSet = utxoSet;
         }
 
         /// <inheritdoc />
@@ -122,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             UnspentOutputs prevUtxo = null;
 
-            FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
+            FetchCoinsResponse coins = this.utxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
             if (coins.UnspentOutputs[0] == null)
             {
                 // We did not find the previous trx in the database, look in rewind data.
@@ -357,7 +354,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 ConsensusErrors.ReadTxPrevFailedInsufficient.Throw();
             }
 
-            RewindData rewindData = this.PosParent.UtxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
+            RewindData rewindData = this.utxoSet.GetRewindData(rewindDataIndex.Value).GetAwaiter().GetResult();
 
             if (rewindData == null)
             {

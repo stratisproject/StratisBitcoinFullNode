@@ -76,6 +76,26 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
 
             return rule;
         }
+
+        public T RegisterRule<T>(ConsensusRuleEngine ruleEngine, T rule)
+        {
+            var ruleRegistration = new TestRuleRegistration();
+
+            if (rule is IHeaderValidationConsensusRule validationConsensusRule)
+                ruleRegistration.HeaderValidationRules.Add(validationConsensusRule);
+            else if (rule is IIntegrityValidationConsensusRule consensusRule)
+                ruleRegistration.IntegrityValidationRules.Add(consensusRule);
+            else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
+                ruleRegistration.PartialValidationRules.Add(partialValidationConsensusRule);
+            else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
+                ruleRegistration.FullValidationRules.Add(fullValidationConsensusRule);
+            else
+                throw new Exception("Rule type wasn't recognized.");
+
+            ruleEngine.Register(ruleRegistration);
+
+            return rule;
+        }
     }
 
     /// <summary>
@@ -128,11 +148,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, ruleRegistration)
         {
             this.ruleRegistrationHelper = new RuleRegistrationHelper();
+            this.Register(ruleRegistration);
         }
 
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()
         {
             return this.ruleRegistrationHelper.RegisterRule<T>(this);
+        }
+
+        public T RegisterRule<T>(T rule)
+        {
+            return this.ruleRegistrationHelper.RegisterRule(this, rule);
         }
     }
 

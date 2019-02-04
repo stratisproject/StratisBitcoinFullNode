@@ -149,7 +149,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Tests
 
             ConsensusRuleEngine consensusRuleEngine = new PosConsensusRuleEngine(this.Network, this.loggerFactory, this.dateTimeProvider,
                 this.concurrentChain, this.nodeDeployments, this.consensusSettings, checkpoints.Object, this.coinView.Object, this.stakeChain.Object,
-                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object, new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration());
+                this.stakeValidator.Object, chainState, new InvalidBlockHashStore(this.dateTimeProvider), new Mock<INodeStats>().Object, new Mock<IRewindDataIndexCache>().Object, new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration(this.stakeValidator.Object, this.coinView.Object));
 
             // Create mempool validator.
             var mempoolLock = new MempoolSchedulerLock();

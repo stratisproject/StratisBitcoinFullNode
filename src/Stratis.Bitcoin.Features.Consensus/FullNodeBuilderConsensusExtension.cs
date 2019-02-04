@@ -133,6 +133,14 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// </summary>
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
+            private IStakeValidator stakeValidator;
+            private ICoinView coinView;
+
+            public PosConsensusRulesRegistration(IStakeValidator stakeValidator, ICoinView coinView)
+            {
+                this.stakeValidator = stakeValidator;
+                this.coinView = coinView;
+            }
             public RuleContainer CreateRules()
             {
                 var headerValidationRules = new List<IHeaderValidationConsensusRule>()
@@ -143,7 +151,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new CheckDifficultyPosRule(),
                     new StratisHeaderVersionRule(),
                     new ProvenHeaderSizeRule(),
-                    new ProvenHeaderCoinstakeRule()
+                    new ProvenHeaderCoinstakeRule(this.stakeValidator, this.coinView)
                 };
 
                 var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()

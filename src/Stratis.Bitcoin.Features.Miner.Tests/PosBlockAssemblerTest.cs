@@ -441,7 +441,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
         private void SetupRulesEngine(ConcurrentChain chain)
         {
             var dateTimeProvider = new DateTimeProvider();
-
+            var coinView = new Mock<ICoinView>().Object;
             var posConsensusRules = new PosConsensusRuleEngine(
                 this.stratisTest,
                 this.LoggerFactory.Object,
@@ -450,14 +450,14 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 new NodeDeployments(this.stratisTest, chain),
                 new ConsensusSettings(new NodeSettings(this.stratisTest)),
                 new Checkpoints(),
-                new Mock<ICoinView>().Object,
+                coinView,
                 new Mock<IStakeChain>().Object,
                 new Mock<IStakeValidator>().Object,
                 new Mock<IChainState>().Object,
                 new InvalidBlockHashStore(dateTimeProvider),
                 new NodeStats(dateTimeProvider),
                 new Mock<IRewindDataIndexCache>().Object,
-                new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration());
+                new FullNodeBuilderConsensusExtension.PosConsensusRulesRegistration(this.stakeValidator.Object, coinView));
 
 
             this.consensusManager.SetupGet(x => x.ConsensusRules)
