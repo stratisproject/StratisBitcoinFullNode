@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         {
             Block block = context.ValidationContext.BlockToValidate;
 
-            foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
+            foreach (Transaction transaction in block.Transactions)
             {
                 this.CheckTransaction(transaction);
             }
