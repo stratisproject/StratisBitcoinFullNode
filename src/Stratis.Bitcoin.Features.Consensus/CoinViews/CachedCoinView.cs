@@ -228,18 +228,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.performanceCounter.AddMissCount(miss.Count);
                 this.performanceCounter.AddHitCount(txIds.Length - miss.Count);
-            }
+            
+                FetchCoinsResponse fetchedCoins = null;
 
-            FetchCoinsResponse fetchedCoins = null;
+                if (missedTxIds.Count > 0 || this.blockHash == null)
+                {
+                    this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
+                    fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
+                }
 
-            if (missedTxIds.Count > 0 || this.blockHash == null)
-            {
-                this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
-                fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
-            }
-
-            using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
-            {
                 if (this.blockHash == null)
                 {
                     uint256 innerblockHash = fetchedCoins.BlockHash;
