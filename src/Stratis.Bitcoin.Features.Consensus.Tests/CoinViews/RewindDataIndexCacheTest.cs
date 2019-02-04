@@ -19,9 +19,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 {
     public class RewindDataIndexCacheTest : LogsTestBase
     {
-        private readonly ProvenBlockHeaderStore provenBlockHeaderStore;
-        private readonly IProvenBlockHeaderRepository provenBlockHeaderRepository;
-
         public RewindDataIndexCacheTest() : base(new StratisTest())
         {
             // override max reorg to 10
@@ -31,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         }
 
         [Fact]
-        public async Task RewindDataIndex_InitialiseCache_BelowMaxREprg()
+        public async Task RewindDataIndex_InitialiseCache_BelowMaxREprgAsync()
         {
             Mock<IDateTimeProvider> dateTimeProviderMock = new Mock<IDateTimeProvider>();
             Mock<ICoinView> coinViewMock = new Mock<ICoinView>();
@@ -48,7 +45,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         }
 
         [Fact]
-        public async Task RewindDataIndex_InitialiseCache()
+        public async Task RewindDataIndex_InitialiseCacheAsync()
         {
             Mock<IDateTimeProvider> dateTimeProviderMock = new Mock<IDateTimeProvider>();
             Mock<ICoinView> coinViewMock = new Mock<ICoinView>();
@@ -65,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         }
 
         [Fact]
-        public async Task RewindDataIndex_Save()
+        public async Task RewindDataIndex_SaveAsync()
         {
             Mock<IDateTimeProvider> dateTimeProviderMock = new Mock<IDateTimeProvider>();
             Mock<ICoinView> coinViewMock = new Mock<ICoinView>();
@@ -83,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         }
 
         [Fact]
-        public async Task RewindDataIndex_Flush()
+        public async Task RewindDataIndex_FlushAsync()
         {
             Mock<IDateTimeProvider> dateTimeProviderMock = new Mock<IDateTimeProvider>();
             Mock<ICoinView> coinViewMock = new Mock<ICoinView>();
@@ -101,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
         }
 
         [Fact]
-        public async Task RewindDataIndex_Remove()
+        public async Task RewindDataIndex_RemoveAsync()
         {
             Mock<IDateTimeProvider> dateTimeProviderMock = new Mock<IDateTimeProvider>();
             Mock<ICoinView> coinViewMock = new Mock<ICoinView>();
