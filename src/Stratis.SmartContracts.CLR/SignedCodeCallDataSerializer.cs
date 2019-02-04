@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.CLR
 
             var contractExecutionCode = decodedParams[0];
             var signature = decodedParams[1];
-            var methodParameters = base.DeserializeMethodParameters(decodedParams[2]);
+            var methodParameters = this.DeserializeMethodParameters(decodedParams[2]);
 
             var callData = new SignedCodeContractTxData(vmVersion, gasPrice, gasLimit, contractExecutionCode, signature, methodParameters);
             return Result.Ok<ContractTxData>(callData);
