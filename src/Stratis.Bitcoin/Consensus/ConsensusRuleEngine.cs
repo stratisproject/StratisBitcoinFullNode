@@ -76,7 +76,8 @@ namespace Stratis.Bitcoin.Consensus
             ICheckpoints checkpoints,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            IRuleRegistration ruleRegistration)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
@@ -88,6 +89,7 @@ namespace Stratis.Bitcoin.Consensus
             Guard.NotNull(chainState, nameof(chainState));
             Guard.NotNull(invalidBlockHashStore, nameof(invalidBlockHashStore));
             Guard.NotNull(nodeStats, nameof(nodeStats));
+            Guard.NotNull(ruleRegistration, nameof(ruleRegistration));
 
             this.Network = network;
             this.Chain = chain;
@@ -109,6 +111,8 @@ namespace Stratis.Bitcoin.Consensus
             this.partialValidationRules = new List<PartialValidationConsensusRule>();
             this.fullValidationRules = new List<FullValidationConsensusRule>();
 
+            this.Register(ruleRegistration);
+
             nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
         }
 
@@ -123,19 +127,22 @@ namespace Stratis.Bitcoin.Consensus
         {
         }
 
+        /// <param name="consensusRules"></param>
         /// <inheritdoc />
-        public ConsensusRuleEngine Register()
+        public ConsensusRuleEngine Register(IRuleRegistration ruleRegistration)
         {
-            this.headerValidationRules = this.Network.Consensus.HeaderValidationRules.Select(x => x as HeaderValidationConsensusRule).ToList();
+            RuleContainer consensusRules = ruleRegistration.CreateRules();
+
+            this.headerValidationRules = consensusRules.HeaderValidationRules.Select(x => x as HeaderValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.headerValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.integrityValidationRules = this.Network.Consensus.IntegrityValidationRules.Select(x => x as IntegrityValidationConsensusRule).ToList();
+            this.integrityValidationRules = consensusRules.IntegrityValidationRules.Select(x => x as IntegrityValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.partialValidationRules = this.Network.Consensus.PartialValidationRules.Select(x => x as PartialValidationConsensusRule).ToList();
+            this.partialValidationRules = consensusRules.PartialValidationRules.Select(x => x as PartialValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.partialValidationRules.Select(x => x as ConsensusRuleBase));
 
-            this.fullValidationRules = this.Network.Consensus.FullValidationRules.Select(x => x as FullValidationConsensusRule).ToList();
+            this.fullValidationRules = consensusRules.FullValidationRules.Select(x => x as FullValidationConsensusRule).ToList();
             this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
 
             // Registers all rules that might be executed to the performance counter.

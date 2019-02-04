@@ -44,8 +44,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             ICoinView utxoSet,
             IChainState chainState,
             IInvalidBlockHashStore invalidBlockHashStore,
-            INodeStats nodeStats)
-            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats)
+            INodeStats nodeStats,
+            IRuleRegistration ruleRegistration)
+            : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, utxoSet, chainState, invalidBlockHashStore, nodeStats, ruleRegistration)
         {
             this.CallDataSerializer = callDataSerializer;
             this.ExecutorFactory = executorFactory;

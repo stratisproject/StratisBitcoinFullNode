@@ -23,11 +23,6 @@ namespace Stratis.Bitcoin.Consensus
         Task InitializeAsync(ChainedHeader chainTip);
 
         /// <summary>
-        /// Register a new rule to the engine
-        /// </summary>
-        ConsensusRuleEngine Register();
-
-        /// <summary>
         /// Gets the consensus rule that is assignable to the supplied generic type.
         /// </summary>
         T GetRule<T>() where T : ConsensusRuleBase;

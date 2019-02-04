@@ -21,9 +21,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
             this.network = network;
         }
 
-        public void RegisterRules(IConsensus consensus)
+        public RuleContainer CreateRules()
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            var headerValidationRules = new List<IHeaderValidationConsensusRule>()
             {
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
@@ -31,12 +31,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new BitcoinHeaderVersionRule()
             };
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule()
             };
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            var partialValidationRules = new List<IPartialValidationConsensusRule>()
             {
                 new SetActivationDeploymentsPartialValidationRule(),
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new AllowedScriptTypeRule()
             };
 
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            var fullValidationRules = new List<IFullValidationConsensusRule>()
             {
                 new SetActivationDeploymentsFullValidationRule(),
 
@@ -66,6 +66,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new SmartContractPowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward 
                 new SaveCoinviewRule()
             };
+
+            return new RuleContainer(fullValidationRules, partialValidationRules, headerValidationRules, integrityValidationRules);
         }
     }
 }

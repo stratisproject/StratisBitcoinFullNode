@@ -9,9 +9,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
     public sealed class SmartContractPosRuleRegistration : IRuleRegistration
     {
-        public void RegisterRules(IConsensus consensus)
+        public RuleContainer CreateRules()
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+            var headerValidationRules = new List<IHeaderValidationConsensusRule>()
             {
                 new HeaderTimeChecksRule(),
                 new HeaderTimeChecksPosRule(),
@@ -20,14 +20,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 new StratisHeaderVersionRule(),
             };
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule(),
                 new PosBlockSignatureRepresentationRule(),
                 new SmartContractPosBlockSignatureRule(),
             };
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+            var partialValidationRules = new List<IPartialValidationConsensusRule>()
             {
                 new SetActivationDeploymentsPartialValidationRule(),
 
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             };
 
             // TODO: When looking to make PoS work again, will need to add several of the smart contract consensus rules below (see PoA and PoW implementations)
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            var fullValidationRules = new List<IFullValidationConsensusRule>()
             {
                 new SetActivationDeploymentsFullValidationRule(),
 
@@ -58,6 +58,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 new SmartContractPosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
                 new SaveCoinviewRule()
             };
+
+            return new RuleContainer(fullValidationRules, partialValidationRules, headerValidationRules, integrityValidationRules);
         }
     }
 }

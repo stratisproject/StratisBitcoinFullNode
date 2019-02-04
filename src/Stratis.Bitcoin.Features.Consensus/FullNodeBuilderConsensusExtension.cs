@@ -41,7 +41,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                         services.AddSingleton<ConsensusQuery>()
                             .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
-                        new PowConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
+                        services.AddSingleton<IRuleRegistration, PowConsensusRulesRegistration>();
                     });
             });
 
@@ -71,18 +71,21 @@ namespace Stratis.Bitcoin.Features.Consensus
                             .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
                         services.AddSingleton<IProvenBlockHeaderStore, ProvenBlockHeaderStore>();
                         services.AddSingleton<IProvenBlockHeaderRepository, ProvenBlockHeaderRepository>();
-                        new PosConsensusRulesRegistration().RegisterRules(fullNodeBuilder.Network.Consensus);
+                        services.AddSingleton<IRuleRegistration, PosConsensusRulesRegistration>();
                     });
             });
 
             return fullNodeBuilder;
         }
 
+        /// <summary>
+        /// Factory for creating new consensus rules for POW.
+        /// </summary>
         public class PowConsensusRulesRegistration : IRuleRegistration
         {
-            public void RegisterRules(IConsensus consensus)
+            public RuleContainer CreateRules()
             {
-                consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+                var headerValidationRules = new List<IHeaderValidationConsensusRule>()
                 {
                     new HeaderTimeChecksRule(),
                     new CheckDifficultyPowRule(),
@@ -90,12 +93,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new BitcoinHeaderVersionRule()
                 };
 
-                consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+                var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
                 {
                     new BlockMerkleRootRule()
                 };
 
-                consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+                var partialValidationRules = new List<IPartialValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsPartialValidationRule(),
 
@@ -110,7 +113,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new CheckSigOpsRule(),
                 };
 
-                consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+                var fullValidationRules = new List<IFullValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsFullValidationRule(),
 
@@ -120,14 +123,19 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new PowCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
                     new SaveCoinviewRule()
                 };
+
+                return new RuleContainer(fullValidationRules, partialValidationRules, headerValidationRules, integrityValidationRules);
             }
         }
 
+        /// <summary>
+        /// Factory for creating new consensus rules for POS.
+        /// </summary>
         public class PosConsensusRulesRegistration : IRuleRegistration
         {
-            public void RegisterRules(IConsensus consensus)
+            public RuleContainer CreateRules()
             {
-                consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
+                var headerValidationRules = new List<IHeaderValidationConsensusRule>()
                 {
                     new HeaderTimeChecksRule(),
                     new HeaderTimeChecksPosRule(),
@@ -138,14 +146,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new ProvenHeaderCoinstakeRule()
                 };
 
-                consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+                var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
                 {
                     new BlockMerkleRootRule(),
                     new PosBlockSignatureRepresentationRule(),
                     new PosBlockSignatureRule(),
                 };
 
-                consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
+                var partialValidationRules = new List<IPartialValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsPartialValidationRule(),
 
@@ -165,7 +173,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new PosCoinstakeRule(),
                 };
 
-                consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+                var fullValidationRules = new List<IFullValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsFullValidationRule(),
 
@@ -180,6 +188,8 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new PosColdStakingRule(),
                     new SaveCoinviewRule()
                 };
+
+                return new RuleContainer(fullValidationRules, partialValidationRules, headerValidationRules, integrityValidationRules);
             }
         }
     }

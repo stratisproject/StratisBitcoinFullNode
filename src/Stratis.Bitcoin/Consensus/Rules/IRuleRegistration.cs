@@ -14,6 +14,27 @@ namespace Stratis.Bitcoin.Consensus.Rules
     /// </remarks>
     public interface IRuleRegistration
     {
-        void RegisterRules(IConsensus consensus);
+        RuleContainer CreateRules();
+    }
+
+    public class RuleContainer
+    {
+        public RuleContainer(
+            List<IFullValidationConsensusRule> fullValidationConsensusRules,
+            List<IPartialValidationConsensusRule> partialValidationConsensusRules,
+            List<IHeaderValidationConsensusRule> headerValidationConsensusRules,
+            List<IIntegrityValidationConsensusRule> integrityValidationConsensusRules
+            )
+        {
+            this.FullValidationRules = fullValidationConsensusRules;
+            this.PartialValidationRules = partialValidationConsensusRules;
+            this.HeaderValidationRules = headerValidationConsensusRules;
+            this.IntegrityValidationRules = integrityValidationConsensusRules;
+        }
+
+        public IReadOnlyList<IHeaderValidationConsensusRule> HeaderValidationRules { get; }
+        public IReadOnlyList<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; }
+        public IReadOnlyList<IPartialValidationConsensusRule> PartialValidationRules { get; }
+        public IReadOnlyList<IFullValidationConsensusRule> FullValidationRules { get; }
     }
 }
