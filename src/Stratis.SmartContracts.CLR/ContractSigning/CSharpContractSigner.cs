@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
+using Nethereum.RLP;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Core.ContractSigning;
 
@@ -29,6 +30,16 @@ namespace Stratis.SmartContracts.CLR.ContractSigning
             byte[] signature = this.contractSigner.Sign(privKey, compilationResult.Compilation);
 
             return (compilationResult.Compilation, signature);
-        } 
+        }
+
+        public byte[] PackageSignedCSharpFile(Key privKey, string path)
+        {
+            (byte[] contractCode, byte[] signature) signed = this.SignCSharpFile(privKey, path);
+
+            return RLP.EncodeList(
+                RLP.EncodeElement(signed.contractCode),
+                RLP.EncodeElement(signed.signature)
+            );
+        }
     }
 }

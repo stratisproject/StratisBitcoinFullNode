@@ -2,10 +2,11 @@
 using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
+using Stratis.Bitcoin.Features.SmartContracts;
 
 namespace Stratis.SmartContracts.Networks
 {
-    public class SignedContractsPoARegTest : SmartContractsPoARegTest
+    public class SignedContractsPoARegTest : SmartContractsPoARegTest, ISignedCodePubKeyHolder
     {
         public Key SigningContractPrivKey { get;}
 

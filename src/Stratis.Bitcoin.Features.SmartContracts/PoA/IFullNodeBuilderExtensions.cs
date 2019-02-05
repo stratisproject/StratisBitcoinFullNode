@@ -13,20 +13,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
     public static partial class IFullNodeBuilderExtensions
     {
         /// <summary>
-        /// Configures the node to use signed contract code only. Must be called after <see cref="SmartContracts.IFullNodeBuilderExtensions.AddSmartContracts"/>.
-        /// </summary>
-        /// <param name="fullNodeBuilder"></param>
-        /// <returns></returns>
-        public static IFullNodeBuilder AllowSignedContractCodeOnly(this IFullNodeBuilder fullNodeBuilder)
-        {
-            fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
-
-            // TODO - Add the validation rule here
-            //fullNodeBuilder.NodeSettings.Network.Consensus.PartialValidationRules.Add();
-            return fullNodeBuilder;
-        }
-
-        /// <summary>
         /// Configures the node with the smart contract proof of authority consensus model.
         /// </summary>
         public static IFullNodeBuilder UseSmartContractPoAConsensus(this IFullNodeBuilder fullNodeBuilder)
@@ -46,6 +32,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
 
                         new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Configures the node with the smart contract proof of authority consensus model.
+        /// </summary>
+        public static IFullNodeBuilder UseSignedContractPoAConsensus(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<ConsensusFeature>()
+                    .DependOn<SmartContractFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<DBreezeCoinView>();
+                        services.AddSingleton<ICoinView, CachedCoinView>();
+                        services.AddSingleton<ConsensusController>();
+                        services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
+
+                        // Replace serializer
+                        fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
+
+                        new SignedContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
