@@ -58,9 +58,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public Mnemonic Mnemonic { get; set; }
 
-        private Func<ChainedHeaderBlock, bool> builderDisconnectInterceptor;
-        private Func<ChainedHeaderBlock, bool> builderConnectInterceptor;
+        private Action<ChainedHeaderBlock> builderConnectInterceptor;
+        private Action<ChainedHeaderBlock> builderDisconnectInterceptor;
 
+        private bool builderAlwaysFlushBlocks;
         private bool builderEnablePeerDiscovery;
         private bool builderNoValidation;
         private bool builderOverrideDateTimeProvider;
@@ -113,24 +114,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// Executes a function when a block has disconnected.
+        /// Executes a function when a block has connected.
         /// </summary>
-        /// <param name="interceptor">A function that is called when a block disconnects, it will return true if it executed.</param>
+        /// <param name="interceptor">A function that is called everytime a block connects.</param>
         /// <returns>This node.</returns>
-        public CoreNode BlockDisconnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        public CoreNode SetConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderDisconnectInterceptor = interceptor;
+            this.builderConnectInterceptor = interceptor;
             return this;
         }
 
         /// <summary>
-        /// Executes a function when a block has connected.
+        /// Executes a function when a block has disconnected.
         /// </summary>
-        /// <param name="interceptor">A function that is called when a block connects, it will return true if it executed.</param>
+        /// <param name="interceptor">A function that is called when a block disconnects.</param>
         /// <returns>This node.</returns>
-        public CoreNode BlockConnectInterceptor(Func<ChainedHeaderBlock, bool> interceptor)
+        public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderConnectInterceptor = interceptor;
+            this.builderDisconnectInterceptor = interceptor;
             return this;
         }
 
@@ -141,6 +142,12 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public CoreNode EnablePeerDiscovery()
         {
             this.builderEnablePeerDiscovery = true;
+            return this;
+        }
+
+        public CoreNode AlwaysFlushBlocks()
+        {
+            this.builderAlwaysFlushBlocks = true;
             return this;
         }
 
@@ -248,14 +255,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         {
             lock (this.lockObject)
             {
+                this.runner.AlwaysFlushBlocks = this.builderAlwaysFlushBlocks;
                 this.runner.EnablePeerDiscovery = this.builderEnablePeerDiscovery;
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
 
-                if (this.builderDisconnectInterceptor != null)
-                    this.runner.InterceptorDisconnect = this.builderDisconnectInterceptor;
-
-                if (this.builderConnectInterceptor != null)
-                    this.runner.InterceptorConnect = this.builderConnectInterceptor;
+                // Interceptors--------------------------------------
+                this.runner.ConnectInterceptor = this.builderConnectInterceptor;
+                this.runner.DisconnectInterceptor = this.builderDisconnectInterceptor;
+                // --------------------------------------------------
 
                 this.runner.BuildNode();
                 this.runner.Start();
@@ -354,8 +361,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             if (this.builderWithWallet)
             {
                 this.Mnemonic = this.FullNode.WalletManager().CreateWallet(
-                    this.builderWalletPassword, 
-                    this.builderWalletName, 
+                    this.builderWalletPassword,
+                    this.builderWalletName,
                     this.builderWalletPassphrase,
                     string.IsNullOrEmpty(this.builderWalletMnemonic) ? null : new Mnemonic(this.builderWalletMnemonic));
             }

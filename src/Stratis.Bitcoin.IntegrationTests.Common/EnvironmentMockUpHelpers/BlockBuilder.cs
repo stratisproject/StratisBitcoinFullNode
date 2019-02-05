@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Utilities;
@@ -52,7 +53,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// Each block will also be submitted to consensus.
         /// </para>
         /// </summary>
-        public async void BuildAsync()
+        public async Task<ChainedHeader> BuildAsync()
         {
             var chainTip = this.coreNode.FullNode.ConsensusManager().Tip;
             var chainTipHeight = chainTip.Height;
@@ -92,6 +93,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
                 chainTip = this.coreNode.FullNode.ConsensusManager().Tip;
             }
+
+            return chainTip;
         }
 
         /// <summary>

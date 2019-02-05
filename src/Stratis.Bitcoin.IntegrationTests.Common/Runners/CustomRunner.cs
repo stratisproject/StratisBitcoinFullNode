@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
@@ -43,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             this.callback(builder);
 
             builder.RemoveImplementation<PeerConnectorDiscovery>();
-            builder.ReplaceService<IPeerDiscovery>(new PeerDiscoveryDisabled());
+            builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
 
             this.FullNode = (FullNode)builder.Build();
         }

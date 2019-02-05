@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void four_miners()
         {
-            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.bobNode = this.nodeBuilder.CreateStratisPowNode(this.network).AlwaysFlushBlocks().WithWallet().Start();
             this.charlieNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
             this.daveNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
             this.jingNode = this.nodeBuilder.CreateStratisPowNode(this.network).WithWallet().Start();
@@ -146,6 +146,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void bobs_transaction_from_shorter_chain_is_now_missing()
         {
+            TestHelper.WaitLoop(() => this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result == null, waitTimeSeconds: 300);
             this.bobNode.FullNode.BlockStore().GetTransactionByIdAsync(this.shorterChainTransaction.GetHash()).Result
                 .Should().BeNull("longest chain comes from selfish miner and shouldn't contain the transaction made on the chain with the other 3 nodes");
         }

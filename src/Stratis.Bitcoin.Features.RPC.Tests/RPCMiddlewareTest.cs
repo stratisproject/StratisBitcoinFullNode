@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             this.response.Body = new MemoryStream();
             this.featureCollection = new FeatureCollection();
 
-            this.middleware = new RPCMiddleware(this.delegateContext.Object, this.authorization.Object, this.LoggerFactory.Object);
+            this.middleware = new RPCMiddleware(this.delegateContext.Object, this.authorization.Object, this.LoggerFactory.Object, new Mock<IHttpContextFactory>().Object);
         }
 
         [Fact]
