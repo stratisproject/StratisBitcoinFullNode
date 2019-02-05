@@ -102,12 +102,5 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         {
             this.votingManager.onBlockDisconnected(block);
         }
-
-
-        // TODO tests
-        // add tests that will check reorg that adds or removes fed members
-        // test that vote of a fed member that is no longer there is not active anymore
-        // test case when we have 2 votes in a block and because 1 is executed before the other other no longer has enough votes
-        // test that pending polls are always sorted by id
     }
 }
