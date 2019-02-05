@@ -423,7 +423,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 await this.SetStateAsync(NetworkPeerState.Offline).ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)[CANCELLED]");
-                throw;
             }
             catch (Exception ex)
             {
@@ -438,7 +437,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 await this.SetStateAsync(NetworkPeerState.Failed).ConfigureAwait(false);
 
                 this.logger.LogTrace("(-)[EXCEPTION]");
-                throw;
             }
         }
 
@@ -578,7 +576,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 this.selfEndpointTracker.Add(version.AddressReceiver);
 
                 this.logger.LogTrace("(-)[CONNECTED_TO_SELF]");
-                throw new OperationCanceledException();
             }
 
             using (CancellationTokenSource cancellationSource = CancellationTokenSource.CreateLinkedTokenSource(this.Connection.CancellationSource.Token, cancellation))
@@ -595,7 +592,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.Disconnect("Handshake timeout");
 
                     this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
-                    throw;
                 }
                 catch (Exception ex)
                 {
@@ -604,7 +600,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.Disconnect("Handshake exception", ex);
 
                     this.logger.LogTrace("(-)[HANDSHAKE_EXCEPTION]");
-                    throw;
                 }
             }
         }
@@ -664,7 +659,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (Exception ex)
             {
                 this.logger.LogError("Exception occurred while connecting to peer '{0}': {1}", this.PeerEndPoint, ex is SocketException ? ex.Message : ex.ToString());
-                throw;
             }
         }
 
@@ -676,7 +670,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (!this.IsConnected)
             {
                 this.logger.LogTrace("(-)[NOT_CONNECTED]");
-                throw new OperationCanceledException("The peer has been disconnected");
+                this.logger.LogTrace("Peer {0} has been disconnected.", this.PeerEndPoint);
             }
 
             this.onSendingMessage?.Invoke(this.RemoteSocketEndpoint, payload);

@@ -194,14 +194,12 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.logger.LogTrace("Connecting to '{0}' cancelled.", endPoint);
                 this.logger.LogTrace("(-)[CANCELLED]");
-                throw;
             }
             catch (Exception e)
             {
                 if (e is AggregateException) e = e.InnerException;
                 this.logger.LogDebug("Error connecting to '{0}', exception message: {1}", endPoint, e.Message);
                 this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                throw e;
             }
         }
 
@@ -254,7 +252,6 @@ namespace Stratis.Bitcoin.P2P.Peer
             {
                 this.peer.Disconnect("Connection to the peer has been terminated");
                 this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
-                throw;
             }
             catch (Exception ex)
             {
@@ -285,7 +282,6 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     this.logger.LogTrace("Connection has been terminated.");
                     this.logger.LogTrace("(-)[NO_STREAM]");
-                    throw new OperationCanceledException();
                 }
 
                 try
@@ -299,13 +295,11 @@ namespace Stratis.Bitcoin.P2P.Peer
                         this.logger.LogTrace("Connection has been terminated.");
                         if (e is IOException) this.logger.LogTrace("(-)[IO_EXCEPTION]");
                         else this.logger.LogTrace("(-)[CANCELLED]");
-                        throw new OperationCanceledException();
                     }
                     else
                     {
                         this.logger.LogTrace("Exception occurred: {0}", e.ToString());
                         this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
-                        throw;
                     }
                 }
             }
