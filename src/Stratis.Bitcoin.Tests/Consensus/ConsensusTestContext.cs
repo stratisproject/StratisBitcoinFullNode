@@ -104,10 +104,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.selfEndpointTracker = new SelfEndpointTracker(this.loggerFactory);
             this.Network.Consensus.Options = new ConsensusOptions();
 
-            this.ruleRegistration = new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(this.Network.Consensus);
+            var ruleRegistration = new TestRuleRegistration(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(this.Network.Consensus));
 
             // Dont check PoW of a header in this test.
-            this.Network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
+            ruleRegistration.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
+
+            this.ruleRegistration = ruleRegistration;
 
             this.ChainedHeaderTree = new ChainedHeaderTree(
                   this.Network,

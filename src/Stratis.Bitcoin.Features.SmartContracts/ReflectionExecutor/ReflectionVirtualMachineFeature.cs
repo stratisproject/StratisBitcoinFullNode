@@ -12,13 +12,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
     public sealed class ReflectionVirtualMachineFeature : FullNodeFeature
     {
         private readonly ILogger logger;
-        private readonly Network network;
-        private readonly ICallDataSerializer callDataSerializer;
 
         public ReflectionVirtualMachineFeature(ILoggerFactory loggerFactory, Network network, ICallDataSerializer callDataSerializer)
         {
-            this.network = network;
-            this.callDataSerializer = callDataSerializer;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 

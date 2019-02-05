@@ -77,9 +77,11 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             IDateTimeProvider dateTimeProvider = DateTimeProvider.Default;
 
             network.Consensus.Options = new ConsensusOptions();
+            
+            var ruleRegistration = new TestRuleRegistration(new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(network.Consensus));
 
             // Dont check PoW of a header in this test.
-            network.Consensus.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
+            ruleRegistration.HeaderValidationRules.RemoveAll(x => x.GetType() == typeof(CheckDifficultyPowRule));
 
             var consensusSettings = new ConsensusSettings(nodeSettings);
             var chain = new ConcurrentChain(network);
@@ -88,7 +90,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var chainState = new ChainState();
             var deployments = new NodeDeployments(network, chain);
             ConsensusRuleEngine consensusRules = new PowConsensusRuleEngine(network, loggerFactory, dateTimeProvider, chain, deployments, consensusSettings, new Checkpoints(),
-                inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), new FullNodeBuilderConsensusExtension.PowConsensusRulesRegistration(network.Consensus));
+                inMemoryCoinView, chainState, new InvalidBlockHashStore(dateTimeProvider), new NodeStats(dateTimeProvider), ruleRegistration);
 
             ConsensusManager consensus = ConsensusManagerHelper.CreateConsensusManager(network, dataDir, chainState);
 
