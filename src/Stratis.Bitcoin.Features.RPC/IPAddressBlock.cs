@@ -63,8 +63,8 @@ namespace Stratis.Bitcoin.Features.RPC
                 return false;
 
             byte[] blockAddrBytes = this.Address.GetAddressBytes();
-            if ((this.Mask == (blockAddrBytes.Length * 8)) && (this.Address == address))
-                return true;
+            if (this.Mask == (blockAddrBytes.Length * 8))
+                return this.Address.Equals(address);
 
             byte[] addressBytes = address.GetAddressBytes();
             int bytesToKeep = this.Mask / 8;
