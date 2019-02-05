@@ -8,7 +8,6 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
@@ -197,6 +196,13 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 //    BOOST_FOREACH(const uint256& hashTx, vHashTxToUncache)
                 //        pcoinsTip->Uncache(hashTx);
                 //}
+
+                if (state.IsInvalid)
+                {
+                    this.logger.LogTrace("(-):false");
+                    return false;
+                }
+
                 this.logger.LogTrace("(-):true");
                 return true;
             }
@@ -427,11 +433,15 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // use the sequential scheduler for that.
             await this.mempoolLock.WriteAsync(() =>
             {
-                // is it already in the memory pool?
+                // If the transaction already exists in the mempool,
+                // we only record the state but do not throw an exception.
+                // This is because the caller will check if the state is invalid
+                // and if so return false, meaning that the transaction should not be relayed.
                 if (this.memPool.Exists(context.TransactionHash))
                 {
-                    this.logger.LogTrace("(-)[INVALID_ALREADY_EXISTS]");
-                    state.Invalid(MempoolErrors.InPool).Throw();
+                    state.Invalid(MempoolErrors.InPool);
+                    this.logger.LogTrace("(-)[INVALID_TX_ALREADY_EXISTS]");
+                    return;
                 }
 
                 // Check for conflicts with in-memory transactions

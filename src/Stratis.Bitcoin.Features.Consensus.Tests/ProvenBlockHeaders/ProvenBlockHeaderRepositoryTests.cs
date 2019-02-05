@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task Initializes_Genesis_ProvenBlockHeader_OnLoadAsync()
+        public void Initializes_Genesis_ProvenBlockHeader_OnLoadAsync()
         {
             string folder = CreateTestDir(this);
 

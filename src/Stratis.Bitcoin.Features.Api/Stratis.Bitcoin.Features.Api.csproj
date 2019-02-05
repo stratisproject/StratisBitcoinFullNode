@@ -14,7 +14,6 @@
     <StartupObject />
     <!-- Force packing of a web project https://github.com/aspnet/websdk/issues/228 -->
     <IsPackable>true</IsPackable>
-	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
 
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|AnyCPU'">

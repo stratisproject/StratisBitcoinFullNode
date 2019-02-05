@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
         private static DataFolder folder;
 
         /// <summary>Mappings of keys to class name spaces to be used when filtering log categories.</summary>
-        private static readonly Dictionary<string, string> keyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
+        private static readonly Dictionary<string, string> KeyCategories = new Dictionary<string, string>(StringComparer.OrdinalIgnoreCase)
         {
             // { "addrman", "" },
             // { "cmpctblock", "" }
@@ -81,12 +81,12 @@ namespace Stratis.Bitcoin.Configuration.Logging
 
         public static void RegisterFeatureNamespace<T>(string key)
         {
-            keyCategories[key] = typeof(T).Namespace + ".*";
+            KeyCategories[key] = typeof(T).Namespace + ".*";
         }
 
         public static void RegisterFeatureClass<T>(string key)
         {
-            keyCategories[key] = typeof(T).Namespace + "." + typeof(T).Name;
+            KeyCategories[key] = typeof(T).Namespace + "." + typeof(T).Name;
         }
 
         /// <summary>
@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 // Increase selected categories to Debug.
                 foreach (string key in settings.DebugArgs)
                 {
-                    if (!keyCategories.TryGetValue(key.Trim(), out string category))
+                    if (!KeyCategories.TryGetValue(key.Trim(), out string category))
                     {
                         // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                         category = key.Trim();
@@ -206,7 +206,6 @@ namespace Stratis.Bitcoin.Configuration.Logging
         /// Configure the console logger and set it to filter logs not related to the fullnode.
         /// </summary>
         /// <param name="loggerFactory">The logger factory to add the console logger.</param>
-        /// <returns>The new console settings.</returns>
         public static void AddConsoleWithFilters(this ILoggerFactory loggerFactory)
         {
             var consoleLoggerSettings = new ConsoleLoggerSettings
@@ -253,7 +252,7 @@ namespace Stratis.Bitcoin.Configuration.Logging
                         // Increase selected categories to Debug.
                         foreach (string key in settings.DebugArgs)
                         {
-                            if (!keyCategories.TryGetValue(key.Trim(), out string category))
+                            if (!KeyCategories.TryGetValue(key.Trim(), out string category))
                             {
                                 // Allow direct specification - e.g. "-debug=Stratis.Bitcoin.Miner".
                                 category = key.Trim();
