@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
 
             if (this.NoValidation)
             {
-                builder.ReplaceService<IRuleRegistration, ConsensusFeature>(new NoValidationRuleRegistration());
+                builder.ReplaceService<IRuleRegistration, PowConsensusFeature>(new NoValidationRuleRegistration());
             }
 
             this.FullNode = (FullNode)builder.Build();
