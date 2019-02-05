@@ -121,13 +121,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>Saves collection of polls to the database under provided key.</summary>
         private void SavePolls(List<Poll> polls, string key)
         {
-            this.keyValueRepo.SaveValueJson(key, polls);
+            this.keyValueRepo.SaveValue(key, polls);
         }
 
         /// <summary>Loads collection of polls from the database using provided key.</summary>
         private List<Poll> LoadPolls(string key)
         {
-            List<Poll> polls = this.keyValueRepo.LoadValueJson<List<Poll>>(key);
+            List<Poll> polls = this.keyValueRepo.LoadValue<List<Poll>>(key);
             return polls;
         }
 
