@@ -1,8 +1,8 @@
 ﻿using System.Collections.Generic;
 using Microsoft.Extensions.Logging;
-using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Features.PoA.Tests.Rules;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
@@ -16,20 +16,13 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         private PoANetwork network;
         private PoAConsensusOptions consensusOptions;
         private FederationManager federationManager;
-        private KeyValueRepository keyValueRepository;
 
         public SlotsManagerTests()
         {
             this.network = new TestPoANetwork();
             this.consensusOptions = this.network.ConsensusOptions;
 
-            string dir = TestBase.CreateTestDir(this);
-            this.keyValueRepository = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
-
-            var settings = new NodeSettings(this.network, args: new string[] { $"-datadir={dir}" });
-
-            this.federationManager = new FederationManager(settings, this.network, new LoggerFactory(), this.keyValueRepository);
-            this.federationManager.Initialize();
+            this.federationManager = PoATestsBase.CreateFederationManager(this);
             this.slotsManager = new SlotsManager(this.network, this.federationManager, new LoggerFactory());
         }
 
@@ -53,9 +46,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart));
             Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 1));
             Assert.Equal(fedKeys[2], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 2));
-            Assert.Equal(fedKeys[3], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 3));
-            Assert.Equal(fedKeys[4], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 4));
-            Assert.Equal(fedKeys[5], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 5));
+            Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 3));
+            Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 4));
+            Assert.Equal(fedKeys[2], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 5));
             Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 6));
             Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 7));
         }
@@ -67,12 +60,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             Key key = tool.GeneratePrivateKey();
             this.network = new TestPoANetwork(new List<PubKey>() { tool.GeneratePrivateKey().PubKey, key.PubKey, tool.GeneratePrivateKey().PubKey});
 
-            string dir = TestBase.CreateTestDir(this);
-            this.keyValueRepository = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
-            var settings = new NodeSettings(this.network, args: new string[] { $"-datadir={dir}" });
-
-            var fedManager = new FederationManager(settings, this.network, new LoggerFactory(), this.keyValueRepository);
-            fedManager.Initialize();
+            FederationManager fedManager = PoATestsBase.CreateFederationManager(this, this.network, new ExtendedLoggerFactory());
             this.slotsManager = new SlotsManager(this.network, fedManager, new LoggerFactory());
 
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
