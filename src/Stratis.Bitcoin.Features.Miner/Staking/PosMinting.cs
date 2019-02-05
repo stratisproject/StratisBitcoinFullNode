@@ -371,6 +371,8 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 // Don't stake if the wallet is not up-to-date with the current chain.
                 if (this.consensusManager.Tip.HashBlock != this.walletManager.WalletTipHash)
                 {
+                    this.logger.LogTrace("Waiting for wallet to catch up before mining can be started.");
+
                     await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
                     continue;
                 }
