@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.RPC
@@ -12,7 +13,6 @@ namespace Stratis.Bitcoin.Features.RPC
         public IPAddress Address { get; private set; }
 
         public int FullMask => 8 * this.Address.GetAddressBytes().Length;
-        public bool IsFullMask => this.Mask == this.FullMask;
 
         /// <summary>
         /// Constructs an object representing a block of ip addresses.
@@ -21,7 +21,19 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="mask">The mask identifies the number of significant bits of the base ip address.</param>
         public IPAddressBlock(IPAddress address, int? mask = null)
         {
+            // Normalize address.
+            if (address.IsIPv4MappedToIPv6)
+            {
+                address = address.MapToIPv4();
+                if (mask != null)
+                    mask -= 96;
+            }
+
             this.Address = address;
+
+            if (mask != null && (mask < 0 || mask > this.FullMask))
+                throw new FormatException("Invalid IPAddressBlock format");
+
             this.Mask = mask ?? this.FullMask;
         }
 
@@ -43,19 +55,25 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <returns><c>True</c> if the ip address occurs in this range and <c>false</c> otherwise.</returns>
         public bool Contains(IPAddress address)
         {
-            byte[] addressV6 = address.EnsureIPv6().GetAddressBytes();
-            byte[] blockAddr = this.Address.EnsureIPv6().GetAddressBytes();
+            if (address.IsIPv4MappedToIPv6)
+                address = address.MapToIPv4();
 
-            int bitsToKeep = (this.FullMask < blockAddr.Length * 8) ? this.Mask + 96 : this.Mask;
-            int bytesToKeep = bitsToKeep / 8;
+            if (this.Address.AddressFamily != address.AddressFamily)
+                return false;
 
-            if ((bitsToKeep % 8) != 0)
-                addressV6[bytesToKeep++] &= (byte)(0xff00 >> (bitsToKeep % 8));
+            byte[] blockAddrBytes = this.Address.GetAddressBytes();
+            if ((this.Mask == (blockAddrBytes.Length * 8)) && (this.Address == address))
+                return true;
 
-            while (bytesToKeep < addressV6.Length)
-                addressV6[bytesToKeep++] = 0;
+            byte[] addressBytes = address.GetAddressBytes();
+            int bytesToKeep = this.Mask / 8;
+            if ((this.Mask % 8) != 0)
+                addressBytes[bytesToKeep++] &= (byte)(0xff00 >> (this.Mask % 8));
 
-            return Utils.ArrayEqual(addressV6, blockAddr);
+            while (bytesToKeep < addressBytes.Length)
+                addressBytes[bytesToKeep++] = 0;
+
+            return Utils.ArrayEqual(addressBytes, blockAddrBytes);
         }
 
         /// <summary>
@@ -64,7 +82,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <returns>The block of ip address defined by this object as a string.</returns>
         public override string ToString()
         {
-            if (this.IsFullMask)
+            if (this.Mask == this.FullMask)
                 return this.Address.ToString();
 
             return $"{ this.Address }/{ this.Mask }";
