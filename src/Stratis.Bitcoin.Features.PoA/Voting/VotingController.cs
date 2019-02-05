@@ -81,36 +81,17 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         [HttpPost]
         public IActionResult VoteAddFedMember([FromBody]HexPubKeyModel request)
         {
-            Guard.NotNull(request, nameof(request));
-
-            if (!this.ModelState.IsValid)
-                return ModelStateErrors.BuildErrorResponse(this.ModelState);
-
-            if (!this.fedManager.IsFederationMember)
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "Only federation members can vote", string.Empty);
-
-            try
-            {
-                var key = new PubKey(request.PubKeyHex);
-
-                this.votingManager.ScheduleVote(new VotingData()
-                {
-                    Key = VoteKey.AddFederationMember,
-                    Data = key.ToBytes()
-                });
-
-                return this.Ok();
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem executing a command.", e.ToString());
-            }
+            return this.VoteAddKickFedMember(request, true);
         }
 
         [Route("vote_kickfedmember")]
         [HttpPost]
         public IActionResult VoteKickFedMember([FromBody]HexPubKeyModel request)
+        {
+            return this.VoteAddKickFedMember(request, false);
+        }
+
+        private IActionResult VoteAddKickFedMember(HexPubKeyModel request, bool addMember)
         {
             Guard.NotNull(request, nameof(request));
 
@@ -126,7 +107,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                 this.votingManager.ScheduleVote(new VotingData()
                 {
-                    Key = VoteKey.KickFederationMember,
+                    Key = addMember ? VoteKey.AddFederationMember : VoteKey.KickFederationMember,
                     Data = key.ToBytes()
                 });
 
