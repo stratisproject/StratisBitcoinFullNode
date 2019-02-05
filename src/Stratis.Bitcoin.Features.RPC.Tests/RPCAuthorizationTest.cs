@@ -1,4 +1,5 @@
-﻿using System.Net;
+﻿using System;
+using System.Net;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.RPC.Tests
@@ -158,6 +159,12 @@ namespace Stratis.Bitcoin.Features.RPC.Tests
             bool result = this.authorization.IsAuthorized(IPAddress.Parse("127.1.1.15"));
 
             Assert.False(result);
+        }
+
+        [Fact]
+        public void IsAuthorizedInvalidBlockThrowsError()
+        {
+            Assert.Throws<FormatException>(() => IPAddressBlock.Parse("240.0.0.0/33"));
         }
     }
 }

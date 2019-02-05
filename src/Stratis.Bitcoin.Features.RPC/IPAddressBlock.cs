@@ -19,6 +19,7 @@ namespace Stratis.Bitcoin.Features.RPC
         /// </summary>
         /// <param name="address">The base ip address.</param>
         /// <param name="mask">The mask identifies the number of significant bits of the base ip address.</param>
+        /// <exception cref="FormatException">If the block format is incorrect.</exception>
         public IPAddressBlock(IPAddress address, int? mask = null)
         {
             // Normalize address.
@@ -68,7 +69,7 @@ namespace Stratis.Bitcoin.Features.RPC
             byte[] addressBytes = address.GetAddressBytes();
             int bytesToKeep = this.Mask / 8;
             if ((this.Mask % 8) != 0)
-                addressBytes[bytesToKeep++] &= (byte)(0xff00 >> (this.Mask % 8));
+                addressBytes[bytesToKeep++] &= (byte)~(0xff >> (this.Mask % 8));
 
             while (bytesToKeep < addressBytes.Length)
                 addressBytes[bytesToKeep++] = 0;
