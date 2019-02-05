@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
             this.MaxInboundConnections = config.GetOrDefault<int>("maxinboundconnections", nodeSettings.Network.DefaultMaxInboundConnections, this.logger);
-            this.BurstModeTargetConnections = config.GetOrDefault("burstModeTargetConnections", 1, this.logger);
+            this.InitialConnectionTarget = config.GetOrDefault("initialconnectiontarget", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);
             this.IpRangeFiltering = config.GetOrDefault<bool>("IpRangeFiltering", true, this.logger);
@@ -254,8 +254,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>Maximum number of inbound connections.</summary>
         public int MaxInboundConnections { get; internal set; }
 
-        /// <summary>Connections number after which burst connectivity mode (connection attempts with no delay in between) will be disabled.</summary>
-        public int BurstModeTargetConnections { get; internal set; }
+        /// <summary>
+        /// The amount of connections to be reached before a 1 second connection interval in the <see cref="P2P.PeerConnectorDiscovery"/> is set.
+        /// <para>
+        /// When the <see cref="P2P.PeerConnectorDiscovery"/> starts up, a 100ms delay is set as the connection interval in order for
+        /// the node to quickly connect to other peers.
+        /// </para>
+        /// </summary>
+        public int InitialConnectionTarget { get; internal set; }
 
         /// <summary><c>true</c> to sync time with other peers and calculate adjusted time, <c>false</c> to use our system clock only.</summary>
         public bool SyncTimeEnabled { get; private set; }
