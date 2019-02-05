@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         /// Peer A_1 connects to Peer A_2
         /// Peer B_1 connects to Peer B_2
         /// Peer A_1 connects to Peer B_1
-        /// 
+        ///
         /// Peer A_1 asks Peer B_1 for its addresses and gets Peer B_2
         /// Peer A_1 now also connects to Peer B_2
         /// </summary>

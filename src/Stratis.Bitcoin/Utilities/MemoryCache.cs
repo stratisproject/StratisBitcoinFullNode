@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Utilities
             /// <summary>Size of value in bytes.</summary>
             public long Size { get; set; }
 
-            /// <summary>Initializes a new instance of the <see cref="CacheItem{TKey, TValue}"/> class.</summary>
+            /// <summary>Initializes a new instance of the <see cref="CacheItem"/> class.</summary>
             /// <param name="key">The key.</param>
             /// <param name="value">The value.</param>
             public CacheItem(TKey key, TValue value)
@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Utilities
                 this.Value = value;
             }
 
-            /// <summary>Initializes a new instance of the <see cref="CacheItem{TKey, TValue}"/> class.</summary>
+            /// <summary>Initializes a new instance of the <see cref="CacheItem"/> class.</summary>
             /// <param name="key">The key.</param>
             /// <param name="value">The value.</param>
             public CacheItem(TKey key, TValue value, long size) : this(key, value)

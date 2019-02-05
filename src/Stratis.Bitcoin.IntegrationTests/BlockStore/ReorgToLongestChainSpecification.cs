@@ -6,7 +6,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
     public partial class ReorgToLongestChainSpecification : BddSpecification
     {
         [Retry(2)]
-        [Trait("Unstable", "True")]
         public void A_cut_off_miner_advanced_ahead_of_network_causes_reorg_on_reconnect()
         {
             Given(four_miners);

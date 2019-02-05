@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.PoA.Voting;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
@@ -29,6 +30,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
+                        services.AddSingleton<VotingManager>();
 
                         new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
                     });

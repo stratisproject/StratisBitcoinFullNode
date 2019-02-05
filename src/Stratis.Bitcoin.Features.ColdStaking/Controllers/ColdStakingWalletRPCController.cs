@@ -8,8 +8,8 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
     public class ColdStakingWalletRPCController : WalletRPCController
     {
           
-        public ColdStakingWalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : 
-            base(walletManager, walletTransactionHandler, fullNode, broadcasterManager, loggerFactory)
+        public ColdStakingWalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory, WalletSettings walletSettings) : 
+            base(walletManager, walletTransactionHandler, fullNode, broadcasterManager, loggerFactory, walletSettings)
         {
         }
     }

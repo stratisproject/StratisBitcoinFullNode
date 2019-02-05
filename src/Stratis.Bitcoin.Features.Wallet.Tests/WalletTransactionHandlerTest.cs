@@ -613,24 +613,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             contextWithoutOpReturn.TransactionFee.Satoshi.Should().BeLessThan(contextWithOpReturn.TransactionFee.Satoshi);
         }
 
-        /// <summary>
-        /// Tests the <see cref="WalletTransactionHandler.CacheSecret(WalletAccountReference, string, TimeSpan)"/> method by
-        /// seeing if returned secret is valid, given valid wallet and password.
-        /// </summary>
-        [Fact]
-        public void CacheSecretWithValidPasswordReturnsValidSecret()
-        {
-            WalletTransactionHandlerTestContext testContext = SetupWallet();
-
-            SecureString secret = testContext.WalletTransactionHandler.CacheSecret(testContext.WalletReference, "password", new TimeSpan(0, 5, 0));
-            string calculatedSecret = new System.Net.NetworkCredential(string.Empty, secret).Password;
-
-            Key privateKey = Key.Parse(testContext.Wallet.EncryptedSeed, "password", testContext.Wallet.Network);
-            string expectedSecret = privateKey.ToString(testContext.Wallet.Network);
-
-            calculatedSecret.Should().Be(expectedSecret);
-        }
-
         public static TransactionBuildContext CreateContext(Network network, WalletAccountReference accountReference, string password,
             Script destinationScript, Money amount, FeeType feeType, int minConfirmations, string opReturnData = null)
         {
