@@ -77,14 +77,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        [Route("vote_addfedmember")]
+        [Route("schedulevote_addfedmember")]
         [HttpPost]
         public IActionResult VoteAddFedMember([FromBody]HexPubKeyModel request)
         {
             return this.VoteAddKickFedMember(request, true);
         }
 
-        [Route("vote_kickfedmember")]
+        [Route("schedulevote_kickfedmember")]
         [HttpPost]
         public IActionResult VoteKickFedMember([FromBody]HexPubKeyModel request)
         {
@@ -117,6 +117,23 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, "There was a problem executing a command.", e.ToString());
+            }
+        }
+
+        [Route("getscheduledvotes")]
+        [HttpGet]
+        public IActionResult GetScheduledVotes()
+        {
+            try
+            {
+                List<string> votes = this.votingManager.GetScheduledVotes().Select(x => x.Key.ToString()).ToList();
+
+                return this.Json(votes);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
     }
