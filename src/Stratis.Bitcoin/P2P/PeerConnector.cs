@@ -272,7 +272,7 @@ namespace Stratis.Bitcoin.P2P
         [NoTrace]
         public virtual TimeSpan CalculateConnectionInterval()
         {
-            return this.ConnectorPeers.Count < this.ConnectionSettings.BurstModeTargetConnections ? TimeSpans.Ms100 : TimeSpans.Second;
+            return this.ConnectorPeers.Count < this.ConnectionSettings.InitialConnectionTarget ? TimeSpans.Ms100 : TimeSpans.Second;
         }
 
         /// <summary>
