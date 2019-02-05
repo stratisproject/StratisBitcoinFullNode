@@ -51,6 +51,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         // TODO: Test cases:
         // - Sending just code. No signature / Not RLPed.
         // - Sending code with invalid signature.
+        // - Mempool rejecting invalid transactions.
 
         private void PayHalfPremine(IMockChain chain, MockChainNode from, MockChainNode to)
         {
