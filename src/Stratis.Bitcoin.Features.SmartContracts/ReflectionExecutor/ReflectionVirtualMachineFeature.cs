@@ -24,19 +24,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor
 
         public override Task InitializeAsync()
         {
-            this.RegisterRules(this.network.Consensus);
-
             this.logger.LogInformation("Reflection Virtual Machine Injected.");
             
             return Task.CompletedTask;
-        }
-
-        private void RegisterRules(IConsensus consensus)
-        {
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
-            {
-                new SmartContractFormatRule(this.callDataSerializer)
-            };
         }
     }
 }
