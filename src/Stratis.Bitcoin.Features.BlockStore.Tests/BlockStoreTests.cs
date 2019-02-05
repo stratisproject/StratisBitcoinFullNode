@@ -419,6 +419,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task RetrieveBlocksFromCacheAsync()
         {
             List<ChainedHeaderBlock> chainedHeaderBlocks = this.AddBlocksToBlockStoreQueue();
+            this.chainState.ConsensusTip = this.chain.Tip;
 
             // Try to get 10 random blocks.
             for (int i = 0; i < 10; i++)
@@ -436,6 +437,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         public async Task RetrieveTransactionByIdFromCacheAsync()
         {
             List<ChainedHeaderBlock> chainedHeaderBlocks = this.AddBlocksToBlockStoreQueue();
+            this.chainState.ConsensusTip = this.chain.Tip;
 
             // Try to get 10 random transactions.
             for (int i = 0; i < 10; i++)
