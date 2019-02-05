@@ -355,7 +355,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var newRuleRegistration = new TestRuleRegistration(existingRuleRegistration);
                 newRuleRegistration.FullValidationRules.Insert(1, new FailValidation(15));
                 var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;                
-                engine.Register(newRuleRegistration);
+                engine.RuleRegistration = newRuleRegistration;
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -400,8 +400,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var newRuleRegistration = new TestRuleRegistration(existingRuleRegistration);
                 newRuleRegistration.FullValidationRules.Insert(1, new FailValidation(11));
                 var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                engine.Register(newRuleRegistration);
-
+                engine.RuleRegistration = newRuleRegistration;
 
                 // Miner B continues to mine to height 30 on a new and longer chain.
                 TestHelper.MineBlocks(minerB, 20);
@@ -489,7 +488,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var newRuleRegistration = new TestRuleRegistration(existingRuleRegistration);
                 newRuleRegistration.FullValidationRules.Insert(1, new FailValidation(11));
                 var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
-                engine.Register(newRuleRegistration);
+                engine.RuleRegistration = newRuleRegistration;
 
                 // Connect syncer to Miner A, reorg should fail.
                 TestHelper.Connect(syncer, minerA);

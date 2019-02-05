@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             else
                 throw new Exception("Rule type wasn't recognized.");
 
-            ruleEngine.Register(ruleRegistration);
+            ruleEngine.RuleRegistration = ruleRegistration;
 
             return rule;
         }
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             else
                 throw new Exception("Rule type wasn't recognized.");
 
-            ruleEngine.Register(ruleRegistration);
+            ruleEngine.RuleRegistration = ruleRegistration;
 
             return rule;
         }
@@ -153,7 +153,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             : base(network, loggerFactory, dateTimeProvider, chain, nodeDeployments, consensusSettings, checkpoints, uxtoSet, stakeChain, stakeValidator, chainState, invalidBlockHashStore, nodeStats, rewindDataIndexCache, ruleRegistration)
         {
             this.ruleRegistrationHelper = new RuleRegistrationHelper();
-            this.Register(ruleRegistration);
         }
 
         public T RegisterRule<T>() where T : ConsensusRuleBase, new()

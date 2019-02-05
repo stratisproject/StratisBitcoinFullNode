@@ -55,16 +55,30 @@ namespace Stratis.Bitcoin.Consensus
         private ConsensusRulesPerformanceCounter performanceCounter;
 
         /// <summary>Group of rules that are used during block header validation.</summary>
-        private List<HeaderValidationConsensusRule> headerValidationRules;
+        private List<HeaderValidationConsensusRule> headerValidationRules =>
+            this.RuleContainer.HeaderValidationRules.Cast<HeaderValidationConsensusRule>().ToList();
 
         /// <summary>Group of rules that are used during block integrity validation.</summary>
-        private List<IntegrityValidationConsensusRule> integrityValidationRules;
+        private List<IntegrityValidationConsensusRule> integrityValidationRules =>
+            this.RuleContainer.IntegrityValidationRules.Cast<IntegrityValidationConsensusRule>().ToList();
 
         /// <summary>Group of rules that are used during partial block validation.</summary>
-        private List<PartialValidationConsensusRule> partialValidationRules;
-
+        private List<PartialValidationConsensusRule> partialValidationRules =>
+            this.RuleContainer.PartialValidationRules.Cast<PartialValidationConsensusRule>().ToList();
+        
         /// <summary>Group of rules that are used during full validation (connection of a new block).</summary>
-        private List<FullValidationConsensusRule> fullValidationRules;
+        private List<FullValidationConsensusRule> fullValidationRules =>
+            this.RuleContainer.FullValidationRules.Cast<FullValidationConsensusRule>().ToList();
+
+        /// <summary>
+        /// Backing field for the <see cref="RuleContainer"/> property.
+        /// </summary>
+        private RuleContainer ruleContainer;
+
+        /// <summary>
+        /// Backing field for the <see cref="RuleRegistration"/> property.
+        /// </summary>
+        private IRuleRegistration ruleRegistration;
 
         protected ConsensusRuleEngine(
             Network network,
@@ -106,14 +120,43 @@ namespace Stratis.Bitcoin.Consensus
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.NodeDeployments = nodeDeployments;
 
-            this.headerValidationRules = new List<HeaderValidationConsensusRule>();
-            this.integrityValidationRules = new List<IntegrityValidationConsensusRule>();
-            this.partialValidationRules = new List<PartialValidationConsensusRule>();
-            this.fullValidationRules = new List<FullValidationConsensusRule>();
-
-            this.Register(ruleRegistration);
+            // Set the private field and not the property.
+            // Setting the property will cause rules to be registered here, which we do not want.
+            this.ruleRegistration = ruleRegistration;
 
             nodeStats.RegisterStats(this.AddBenchStats, StatsType.Benchmark, 500);
+        }
+
+        public RuleContainer RuleContainer
+        {
+            get
+            {
+                // Workaround for removing the ability to call Register externally.
+                // We do not want to call Register in the constructor due to overrides
+                // setting additional dependencies *after* Register has been called.
+                // This can be removed once full rule DI is in place.
+                if (this.ruleContainer == null)
+                {
+                    this.ruleContainer = this.RuleRegistration.CreateRules();
+                    this.Register(this.ruleContainer);
+                }
+
+                return this.ruleContainer;
+            }
+        }
+
+        public IRuleRegistration RuleRegistration
+        {
+            get => this.ruleRegistration;
+            set
+            {
+                // Enables tests that require custom rule registrations.
+                // This allows the rule factory to be changed, and the next time the rules are accessed
+                // the factory's creation method will generate a new set of rules.
+                this.ruleRegistration = value;
+                this.ruleContainer = value.CreateRules();
+                this.Register(this.ruleContainer);
+            }
         }
 
         /// <inheritdoc />
@@ -127,28 +170,16 @@ namespace Stratis.Bitcoin.Consensus
         {
         }
 
-        /// <param name="ruleRegistration"></param>
         /// <inheritdoc />
-        public ConsensusRuleEngine Register(IRuleRegistration ruleRegistration)
+        private void Register(RuleContainer consensusRules)
         {
-            RuleContainer consensusRules = ruleRegistration.CreateRules();
-
-            this.headerValidationRules = consensusRules.HeaderValidationRules.Select(x => x as HeaderValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.headerValidationRules.Select(x => x as ConsensusRuleBase));
-
-            this.integrityValidationRules = consensusRules.IntegrityValidationRules.Select(x => x as IntegrityValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.integrityValidationRules.Select(x => x as ConsensusRuleBase));
-
-            this.partialValidationRules = consensusRules.PartialValidationRules.Select(x => x as PartialValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.partialValidationRules.Select(x => x as ConsensusRuleBase));
-
-            this.fullValidationRules = consensusRules.FullValidationRules.Select(x => x as FullValidationConsensusRule).ToList();
-            this.SetupConsensusRules(this.fullValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(consensusRules.HeaderValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(consensusRules.IntegrityValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(consensusRules.PartialValidationRules.Select(x => x as ConsensusRuleBase));
+            this.SetupConsensusRules(consensusRules.FullValidationRules.Select(x => x as ConsensusRuleBase));
 
             // Registers all rules that might be executed to the performance counter.
             this.performanceCounter = new ConsensusRulesPerformanceCounter(consensusRules);
-
-            return this;
         }
 
         private void SetupConsensusRules(IEnumerable<ConsensusRuleBase> rules)
