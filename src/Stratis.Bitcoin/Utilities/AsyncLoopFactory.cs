@@ -118,6 +118,7 @@ namespace Stratis.Bitcoin.Utilities
                     onException(e);
                     linkedTokenSource.Cancel();
                 }
+
                 return Task.CompletedTask;
             },
             linkedTokenSource.Token,

@@ -38,13 +38,13 @@ namespace Stratis.Bitcoin
         private readonly IKeyValueRepository keyValueRepo;
 
         /// <summary>Database key under which the block height of the last finalized block height is stored.</summary>
-        private const string finalizedBlockKey = "finalizedBlock";
+        private const string FinalizedBlockKey = "finalizedBlock";
 
         /// <summary>Height and hash of a block that can't be reorged away from.</summary>
         private HashHeightPair finalizedBlockInfo;
 
         /// <summary>Queue of finalized infos to save.</summary>
-        /// <remarks>All access should be protected by <see cref="queueLock"/></remarks>
+        /// <remarks>All access should be protected by <see cref="queueLock"/>.</remarks>
         private readonly Queue<HashHeightPair> finalizedBlockInfosToSave;
 
         /// <summary>Protects access to <see cref="finalizedBlockInfosToSave"/>.</summary>
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin
                 if (lastFinalizedBlock == null)
                     continue;
 
-                this.keyValueRepo.SaveValue(finalizedBlockKey, lastFinalizedBlock);
+                this.keyValueRepo.SaveValue(FinalizedBlockKey, lastFinalizedBlock);
 
                 this.logger.LogTrace("Finalized info saved: '{0}'.", lastFinalizedBlock);
             }
@@ -118,7 +118,7 @@ namespace Stratis.Bitcoin
         {
             Task task = Task.Run(() =>
             {
-                var finalizedInfo = this.keyValueRepo.LoadValue<HashHeightPair>(finalizedBlockKey);
+                var finalizedInfo = this.keyValueRepo.LoadValue<HashHeightPair>(FinalizedBlockKey);
 
                 if (finalizedInfo == null)
                     finalizedInfo = new HashHeightPair(network.GenesisHash, 0);

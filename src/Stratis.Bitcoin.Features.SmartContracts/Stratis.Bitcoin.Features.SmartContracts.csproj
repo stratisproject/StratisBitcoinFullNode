@@ -2,8 +2,7 @@
 
   <PropertyGroup>
     <TargetFramework>netcoreapp2.1</TargetFramework>
-	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
-	<Version>0.0.6-beta</Version>
+    <Version>0.0.6-beta</Version>
   </PropertyGroup>
 
   <ItemGroup>
