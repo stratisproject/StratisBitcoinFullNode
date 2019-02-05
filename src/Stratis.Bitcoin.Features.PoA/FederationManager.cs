@@ -108,7 +108,6 @@ namespace Stratis.Bitcoin.Features.PoA
                     return;
                 }
 
-
                 this.federationMembers.Add(pubKey);
 
                 this.SaveFederationKeys(this.federationMembers);
