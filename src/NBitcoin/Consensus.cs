@@ -82,18 +82,6 @@ namespace NBitcoin
         /// <inheritdoc />
         public ConsensusFactory ConsensusFactory { get; }
 
-        /// <inheritdoc />
-        public List<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; set; }
-
-        /// <inheritdoc />
-        public List<IHeaderValidationConsensusRule> HeaderValidationRules { get; set; }
-
-        /// <inheritdoc />
-        public List<IPartialValidationConsensusRule> PartialValidationRules { get; set; }
-
-        /// <inheritdoc />
-        public List<IFullValidationConsensusRule> FullValidationRules { get; set; }
-
         public Consensus(
             ConsensusFactory consensusFactory,
             ConsensusOptions consensusOptions,
@@ -127,10 +115,6 @@ namespace NBitcoin
             BigInteger proofOfStakeLimitV2,
             Money proofOfStakeReward)
         {
-            this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>();
-            this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>();
-            this.PartialValidationRules = new List<IPartialValidationConsensusRule>();
-            this.FullValidationRules = new List<IFullValidationConsensusRule>();
             this.CoinbaseMaturity = coinbaseMaturity;
             this.PremineReward = premineReward;
             this.PremineHeight = premineHeight;

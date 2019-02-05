@@ -32,9 +32,16 @@ namespace Stratis.Bitcoin.Consensus.Rules
             this.IntegrityValidationRules = integrityValidationConsensusRules;
         }
 
+        /// <summary>Group of rules that are used during block header validation specific to the given network.</summary>
         public IReadOnlyList<IHeaderValidationConsensusRule> HeaderValidationRules { get; }
+
+        /// <summary>Group of rules that are used during block integrity validation specific to the given network.</summary>
         public IReadOnlyList<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; }
+
+        /// <summary>Group of rules that are used during partial block validation specific to the given network.</summary>
         public IReadOnlyList<IPartialValidationConsensusRule> PartialValidationRules { get; }
+
+        /// <summary>Group of rules that are used during full validation (connection of a new block) specific to the given network.</summary>
         public IReadOnlyList<IFullValidationConsensusRule> FullValidationRules { get; }
     }
 }
