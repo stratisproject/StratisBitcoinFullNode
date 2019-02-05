@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.RPC
             int bytesToKeep = bitsToKeep / 8;
 
             if ((bitsToKeep % 8) != 0)
-                addressV6[bytesToKeep++] &= (byte)(256 >> (bitsToKeep % 8));
+                addressV6[bytesToKeep++] &= (byte)(0xff00 >> (bitsToKeep % 8));
 
             while (bytesToKeep < addressV6.Length)
                 addressV6[bytesToKeep++] = 0;
