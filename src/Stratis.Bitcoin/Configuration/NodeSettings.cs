@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Configuration
     internal static class NormalizeDirectorySeparatorExt
     {
         /// <summary>
-        /// Fixes incorrect directory separator characters in path (if any)
+        /// Fixes incorrect directory separator characters in path (if any).
         /// </summary>
         public static string NormalizeDirectorySeparator(this string path)
         {
@@ -84,14 +84,14 @@ namespace Stratis.Bitcoin.Configuration
 
         /// <summary>The network which the node is configured to run on. The network can be a "mainnet", "testnet",
         /// or "regtest" network. All three network configurations can be defined, and one is selected at the command
-        /// line (via the  <see cref="NetworkSelector" class) to connect to. A Full Node defaults to running on the
+        /// line (via the  <see cref="NetworksSelector"/> class) to connect to. A Full Node defaults to running on the
         /// mainnet.
         /// </summary>
         public Network Network { get; private set; }
 
         /// <summary>A string that is used to help identify the Full Node when it connects to other peers on a network.
-		/// Defaults to "StratisNode".
-		/// </summary>
+        /// Defaults to "StratisNode".
+        /// </summary>
         public string Agent { get; private set; }
 
         /// <summary>The minimum fee for a kB of transactions on the node.</summary>

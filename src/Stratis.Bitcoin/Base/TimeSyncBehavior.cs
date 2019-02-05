@@ -215,9 +215,11 @@ namespace Stratis.Bitcoin.Base
 
                         CircularArray<TimestampOffsetSample> samples = isInboundConnection ? this.inboundTimestampOffsets : this.outboundTimestampOffsets;
 
-                        var newSample = new TimestampOffsetSample();
-                        newSample.Source = peerAddress;
-                        newSample.TimeOffset = offsetSample;
+                        var newSample = new TimestampOffsetSample
+                        {
+                            Source = peerAddress,
+                            TimeOffset = offsetSample
+                        };
 
                         TimestampOffsetSample oldSample;
                         if (samples.Add(newSample, out oldSample))

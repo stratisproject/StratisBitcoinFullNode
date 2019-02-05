@@ -7,7 +7,6 @@ using System.Threading.Tasks;
 using FluentAssertions;
 using Moq;
 using NBitcoin;
-using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Networks;
@@ -268,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         */
 
         [Fact]
-        public async Task AddToPending_Then_Reorg_New_Items_Consecutive_Not_Tip_Then_Save()
+        public void AddToPending_Then_Reorg_New_Items_Consecutive_Not_Tip_Then_Save()
         {
             var chainWithHeaders = this.BuildProvenHeaderChain(21);
 
@@ -305,7 +304,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task AddToPending_Then_Reorg_New_Items_Consecutive_Is_Tip_Then_Save()
+        public void AddToPending_Then_Reorg_New_Items_Consecutive_Is_Tip_Then_Save()
         {
             var chainWithHeaders = this.BuildProvenHeaderChain(21);
 
@@ -342,7 +341,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.ProvenBlockHeaders
         }
 
         [Fact]
-        public async Task AddToPending_Then_Reorg_New_Items_Not_Consecutive_Is_Not_Tip_Then_Save()
+        public void AddToPending_Then_Reorg_New_Items_Not_Consecutive_Is_Not_Tip_Then_Save()
         {
             var chainWithHeaders = this.BuildProvenHeaderChain(21);
 

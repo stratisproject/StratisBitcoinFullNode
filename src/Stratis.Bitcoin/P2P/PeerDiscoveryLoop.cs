@@ -53,9 +53,6 @@ namespace Stratis.Bitcoin.P2P
         /// <summary>Peer address manager instance, see <see cref="IPeerAddressManager"/>.</summary>
         private readonly IPeerAddressManager peerAddressManager;
 
-        /// <summary>The amount of peers to find.</summary>
-        private int peersToFind;
-
         /// <summary>The network the node is running on.</summary>
         private readonly Network network;
 
@@ -108,7 +105,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
-        /// See <see cref="DiscoverPeers"/>
+        /// See <see cref="DiscoverPeers"/>.
         /// </summary>
         private async Task DiscoverPeersAsync()
         {
