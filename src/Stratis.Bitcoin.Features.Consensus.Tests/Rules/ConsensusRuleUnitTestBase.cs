@@ -120,24 +120,24 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
         public TestRuleRegistration(IRuleRegistration existing)
         {
             var rules = existing.CreateRules();
-            this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>(rules.HeaderValidationRules);
-            this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>(rules.IntegrityValidationRules);
-            this.PartialValidationRules = new List<IPartialValidationConsensusRule>(rules.PartialValidationRules);
-            this.FullValidationRules = new List<IFullValidationConsensusRule>(rules.FullValidationRules);
+            this.HeaderValidationRules = new List<HeaderValidationConsensusRule>(rules.HeaderValidationRules);
+            this.IntegrityValidationRules = new List<IntegrityValidationConsensusRule>(rules.IntegrityValidationRules);
+            this.PartialValidationRules = new List<PartialValidationConsensusRule>(rules.PartialValidationRules);
+            this.FullValidationRules = new List<FullValidationConsensusRule>(rules.FullValidationRules);
         }
 
         public TestRuleRegistration()
         {
-            this.HeaderValidationRules = new List<IHeaderValidationConsensusRule>();
-            this.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>();
-            this.PartialValidationRules = new List<IPartialValidationConsensusRule>();
-            this.FullValidationRules = new List<IFullValidationConsensusRule>();
+            this.HeaderValidationRules = new List<HeaderValidationConsensusRule>();
+            this.IntegrityValidationRules = new List<IntegrityValidationConsensusRule>();
+            this.PartialValidationRules = new List<PartialValidationConsensusRule>();
+            this.FullValidationRules = new List<FullValidationConsensusRule>();
         }
 
-        public List<IHeaderValidationConsensusRule> HeaderValidationRules { get; }
-        public List<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; }
-        public List<IPartialValidationConsensusRule> PartialValidationRules { get; }
-        public List<IFullValidationConsensusRule> FullValidationRules { get; }
+        public List<HeaderValidationConsensusRule> HeaderValidationRules { get; }
+        public List<IntegrityValidationConsensusRule> IntegrityValidationRules { get; }
+        public List<PartialValidationConsensusRule> PartialValidationRules { get; }
+        public List<FullValidationConsensusRule> FullValidationRules { get; }
 
         public RuleContainer CreateRules()
         {

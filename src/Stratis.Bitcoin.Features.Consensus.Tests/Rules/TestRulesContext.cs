@@ -63,13 +63,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var ruleRegistration = new TestRuleRegistration();
 
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
-                ruleRegistration.HeaderValidationRules.Add(validationConsensusRule);
+                ruleRegistration.HeaderValidationRules.Add(validationConsensusRule as HeaderValidationConsensusRule);
             else if (rule is IIntegrityValidationConsensusRule consensusRule)
-                ruleRegistration.IntegrityValidationRules.Add(consensusRule);
+                ruleRegistration.IntegrityValidationRules.Add(consensusRule as IntegrityValidationConsensusRule);
             else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
-                ruleRegistration.PartialValidationRules.Add(partialValidationConsensusRule);
+                ruleRegistration.PartialValidationRules.Add(partialValidationConsensusRule as PartialValidationConsensusRule);
             else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
-                ruleRegistration.FullValidationRules.Add(fullValidationConsensusRule);
+                ruleRegistration.FullValidationRules.Add(fullValidationConsensusRule as FullValidationConsensusRule);
             else
                 throw new Exception("Rule type wasn't recognized.");
 
@@ -83,13 +83,13 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules
             var ruleRegistration = new TestRuleRegistration();
 
             if (rule is IHeaderValidationConsensusRule validationConsensusRule)
-                ruleRegistration.HeaderValidationRules.Add(validationConsensusRule);
+                ruleRegistration.HeaderValidationRules.Add(validationConsensusRule as HeaderValidationConsensusRule);
             else if (rule is IIntegrityValidationConsensusRule consensusRule)
-                ruleRegistration.IntegrityValidationRules.Add(consensusRule);
+                ruleRegistration.IntegrityValidationRules.Add(consensusRule as IntegrityValidationConsensusRule);
             else if (rule is IPartialValidationConsensusRule partialValidationConsensusRule)
-                ruleRegistration.PartialValidationRules.Add(partialValidationConsensusRule);
+                ruleRegistration.PartialValidationRules.Add(partialValidationConsensusRule as PartialValidationConsensusRule);
             else if (rule is IFullValidationConsensusRule fullValidationConsensusRule)
-                ruleRegistration.FullValidationRules.Add(fullValidationConsensusRule);
+                ruleRegistration.FullValidationRules.Add(fullValidationConsensusRule as FullValidationConsensusRule);
             else
                 throw new Exception("Rule type wasn't recognized.");
 

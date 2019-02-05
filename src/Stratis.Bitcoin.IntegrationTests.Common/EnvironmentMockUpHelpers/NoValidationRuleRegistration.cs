@@ -9,10 +9,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public RuleContainer CreateRules()
         {
             return new RuleContainer(
-                new List<IFullValidationConsensusRule>(),
-                new List<IPartialValidationConsensusRule>(),
-                new List<IHeaderValidationConsensusRule>(),
-                new List<IIntegrityValidationConsensusRule>()
+                new List<FullValidationConsensusRule>(),
+                new List<PartialValidationConsensusRule>(),
+                new List<HeaderValidationConsensusRule>(),
+                new List<IntegrityValidationConsensusRule>()
             );
         }
     }

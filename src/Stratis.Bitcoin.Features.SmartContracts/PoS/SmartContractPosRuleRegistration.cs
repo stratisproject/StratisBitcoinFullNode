@@ -11,7 +11,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
     {
         public RuleContainer CreateRules()
         {
-            var headerValidationRules = new List<IHeaderValidationConsensusRule>()
+            var headerValidationRules = new List<HeaderValidationConsensusRule>()
             {
                 new HeaderTimeChecksRule(),
                 new HeaderTimeChecksPosRule(),
@@ -20,14 +20,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 new StratisHeaderVersionRule(),
             };
 
-            var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            var integrityValidationRules = new List<IntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule(),
                 new PosBlockSignatureRepresentationRule(),
                 new SmartContractPosBlockSignatureRule(),
             };
 
-            var partialValidationRules = new List<IPartialValidationConsensusRule>()
+            var partialValidationRules = new List<PartialValidationConsensusRule>()
             {
                 new SetActivationDeploymentsPartialValidationRule(),
 
@@ -48,7 +48,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
             };
 
             // TODO: When looking to make PoS work again, will need to add several of the smart contract consensus rules below (see PoA and PoW implementations)
-            var fullValidationRules = new List<IFullValidationConsensusRule>()
+            var fullValidationRules = new List<FullValidationConsensusRule>()
             {
                 new SetActivationDeploymentsFullValidationRule(),
 

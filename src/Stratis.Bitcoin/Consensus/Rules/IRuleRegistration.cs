@@ -20,10 +20,10 @@ namespace Stratis.Bitcoin.Consensus.Rules
     public class RuleContainer
     {
         public RuleContainer(
-            IReadOnlyList<IFullValidationConsensusRule> fullValidationConsensusRules,
-            IReadOnlyList<IPartialValidationConsensusRule> partialValidationConsensusRules,
-            IReadOnlyList<IHeaderValidationConsensusRule> headerValidationConsensusRules,
-            IReadOnlyList<IIntegrityValidationConsensusRule> integrityValidationConsensusRules
+            IReadOnlyList<FullValidationConsensusRule> fullValidationConsensusRules,
+            IReadOnlyList<PartialValidationConsensusRule> partialValidationConsensusRules,
+            IReadOnlyList<HeaderValidationConsensusRule> headerValidationConsensusRules,
+            IReadOnlyList<IntegrityValidationConsensusRule> integrityValidationConsensusRules
             )
         {
             this.FullValidationRules = fullValidationConsensusRules;
@@ -33,15 +33,15 @@ namespace Stratis.Bitcoin.Consensus.Rules
         }
 
         /// <summary>Group of rules that are used during block header validation specific to the given network.</summary>
-        public IReadOnlyList<IHeaderValidationConsensusRule> HeaderValidationRules { get; }
+        public IReadOnlyList<HeaderValidationConsensusRule> HeaderValidationRules { get; }
 
         /// <summary>Group of rules that are used during block integrity validation specific to the given network.</summary>
-        public IReadOnlyList<IIntegrityValidationConsensusRule> IntegrityValidationRules { get; }
+        public IReadOnlyList<IntegrityValidationConsensusRule> IntegrityValidationRules { get; }
 
         /// <summary>Group of rules that are used during partial block validation specific to the given network.</summary>
-        public IReadOnlyList<IPartialValidationConsensusRule> PartialValidationRules { get; }
+        public IReadOnlyList<PartialValidationConsensusRule> PartialValidationRules { get; }
 
         /// <summary>Group of rules that are used during full validation (connection of a new block) specific to the given network.</summary>
-        public IReadOnlyList<IFullValidationConsensusRule> FullValidationRules { get; }
+        public IReadOnlyList<FullValidationConsensusRule> FullValidationRules { get; }
     }
 }

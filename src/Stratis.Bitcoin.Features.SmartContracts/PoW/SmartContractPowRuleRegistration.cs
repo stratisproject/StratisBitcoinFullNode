@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
         public RuleContainer CreateRules()
         {
-            var headerValidationRules = new List<IHeaderValidationConsensusRule>()
+            var headerValidationRules = new List<HeaderValidationConsensusRule>()
             {
                 new HeaderTimeChecksRule(),
                 new CheckDifficultyPowRule(),
@@ -31,12 +31,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new BitcoinHeaderVersionRule()
             };
 
-            var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+            var integrityValidationRules = new List<IntegrityValidationConsensusRule>()
             {
                 new BlockMerkleRootRule()
             };
 
-            var partialValidationRules = new List<IPartialValidationConsensusRule>()
+            var partialValidationRules = new List<PartialValidationConsensusRule>()
             {
                 new SetActivationDeploymentsPartialValidationRule(),
 
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new AllowedScriptTypeRule()
             };
 
-            var fullValidationRules = new List<IFullValidationConsensusRule>()
+            var fullValidationRules = new List<FullValidationConsensusRule>()
             {
                 new SetActivationDeploymentsFullValidationRule(),
 

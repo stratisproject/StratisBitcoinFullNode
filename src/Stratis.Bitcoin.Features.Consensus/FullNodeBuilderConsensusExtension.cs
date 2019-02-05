@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             public RuleContainer CreateRules()
             {
-                var headerValidationRules = new List<IHeaderValidationConsensusRule>()
+                var headerValidationRules = new List<HeaderValidationConsensusRule>()
                 {
                     new HeaderTimeChecksRule(),
                     new CheckDifficultyPowRule(),
@@ -100,12 +100,12 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new BitcoinHeaderVersionRule()
                 };
 
-                var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+                var integrityValidationRules = new List<IntegrityValidationConsensusRule>()
                 {
                     new BlockMerkleRootRule()
                 };
 
-                var partialValidationRules = new List<IPartialValidationConsensusRule>()
+                var partialValidationRules = new List<PartialValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsPartialValidationRule(),
 
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new CheckSigOpsRule(),
                 };
 
-                var fullValidationRules = new List<IFullValidationConsensusRule>()
+                var fullValidationRules = new List<FullValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsFullValidationRule(),
 
@@ -150,7 +150,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             public RuleContainer CreateRules()
             {
-                var headerValidationRules = new List<IHeaderValidationConsensusRule>()
+                var headerValidationRules = new List<HeaderValidationConsensusRule>()
                 {
                     new HeaderTimeChecksRule(),
                     new HeaderTimeChecksPosRule(),
@@ -161,14 +161,14 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new ProvenHeaderCoinstakeRule(this.stakeValidator, this.coinView)
                 };
 
-                var integrityValidationRules = new List<IIntegrityValidationConsensusRule>()
+                var integrityValidationRules = new List<IntegrityValidationConsensusRule>()
                 {
                     new BlockMerkleRootRule(),
                     new PosBlockSignatureRepresentationRule(),
                     new PosBlockSignatureRule(),
                 };
 
-                var partialValidationRules = new List<IPartialValidationConsensusRule>()
+                var partialValidationRules = new List<PartialValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsPartialValidationRule(),
 
@@ -188,7 +188,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                     new PosCoinstakeRule(),
                 };
 
-                var fullValidationRules = new List<IFullValidationConsensusRule>()
+                var fullValidationRules = new List<FullValidationConsensusRule>()
                 {
                     new SetActivationDeploymentsFullValidationRule(),
 
