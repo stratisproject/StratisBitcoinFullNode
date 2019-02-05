@@ -221,7 +221,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             uint256 blockId2 = await this.blockRepository.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false);
 
             // The repository may be dirty. Check that this is a valid block.
-            if (blockId2 == null || this.chain.GetBlock(blockId2) == null)
+            if (blockId2 == null || this.chainState.ConsensusTip.FindAncestorOrSelf(blockId2) == null)
                 return null;
 
             return blockId2;
@@ -233,7 +233,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             lock (this.blocksCacheLock)
             {
                 // The cache or repository may be dirty. Check that this is a valid block.
-                if (this.chain.GetBlock(blockHash) == null)
+                if (this.chainState.ConsensusTip.FindAncestorOrSelf(blockHash) == null)
                     return null;
 
                 if (this.pendingBlocksCache.TryGetValue(blockHash, out ChainedHeaderBlock chainedHeaderBlock))
