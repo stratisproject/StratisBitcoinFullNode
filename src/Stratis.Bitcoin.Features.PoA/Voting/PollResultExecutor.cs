@@ -1,6 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
+﻿using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
@@ -13,19 +11,53 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
     public class PollResultExecutor : IPollResultExecutor
     {
-        public PollResultExecutor()
-        {
+        private readonly FederationManager federationManager;
 
+        public PollResultExecutor(FederationManager federationManager)
+        {
+            this.federationManager = federationManager;
         }
 
         public void ApplyChange(VotingData data)
         {
-            // TODO
+            switch (data.Key)
+            {
+                case VoteKey.AddFederationMember:
+                    this.AddFederationMember(data.Data);
+                    break;
+
+                case VoteKey.KickFederationMember:
+                    this.RemoveFederationMember(data.Data);
+                    break;
+            }
         }
 
         public void RevertChange(VotingData data)
         {
-            // TODO
+            switch (data.Key)
+            {
+                case VoteKey.AddFederationMember:
+                    this.RemoveFederationMember(data.Data);
+                    break;
+
+                case VoteKey.KickFederationMember:
+                    this.AddFederationMember(data.Data);
+                    break;
+            }
+        }
+
+        private void AddFederationMember(byte[] pubKeyBytes)
+        {
+            var key = new PubKey(pubKeyBytes);
+
+            this.federationManager.AddFederationMember(key);
+        }
+
+        private void RemoveFederationMember(byte[] pubKeyBytes)
+        {
+            var key = new PubKey(pubKeyBytes);
+
+            this.federationManager.RemoveFederationMember(key);
         }
     }
 }

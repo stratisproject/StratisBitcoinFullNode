@@ -30,6 +30,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.resultExecutorMock.Setup(x => x.ApplyChange(It.IsAny<VotingData>())).Callback((VotingData data) => this.changesApplied.Add(data));
             this.resultExecutorMock.Setup(x => x.RevertChange(It.IsAny<VotingData>())).Callback((VotingData data) => this.changesReverted.Add(data));
 
+            this.federationManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
+
             this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager, this.resultExecutorMock.Object);
             this.votingManager.Initialize();
         }
@@ -37,7 +39,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void CanScheduleAndRemoveVotes()
         {
-            this.federationManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
             this.votingManager.ScheduleVote(new VotingData());
 
             Assert.Single(this.votingManager.GetScheduledVotes());
@@ -52,8 +53,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         [Fact]
         public void CanVote()
         {
-            this.federationManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
-
             var votingData = new VotingData()
             {
                 Key = VoteKey.AddFederationMember,
@@ -83,7 +82,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             tx.AddOutput(Money.COIN, votingOutputScript);
 
-
             Block block = new Block();
             block.Transactions.Add(tx);
 
@@ -105,8 +103,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.votingManager.onBlockDisconnected(block);
         }
 
-        // TODO
-        // implement IPollResultExecutor first
 
         // TODO tests
         // add tests that will check reorg that adds or removes fed members
