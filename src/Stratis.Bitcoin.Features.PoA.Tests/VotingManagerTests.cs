@@ -31,6 +31,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.resultExecutorMock.Setup(x => x.RevertChange(It.IsAny<VotingData>())).Callback((VotingData data) => this.changesReverted.Add(data));
 
             this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager, this.resultExecutorMock.Object);
+            this.votingManager.Initialize();
         }
 
         [Fact]
@@ -59,12 +60,19 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 Data = RandomUtils.GetBytes(20)
             };
 
-            //this.TriggerOnBlockConnected(this.CreateBlockWithVotingData(new List<VotingData>() { votingData }));
+            int votesRequired = (this.federationManager.GetFederationMembers().Count / 2) + 1;
 
-            // TODO simulate several members voting and then ensure that we've triggered change being applied
+            for (int i = 0; i < votesRequired; i++)
+            {
+                Assert.Empty(this.changesApplied);
+
+                this.TriggerOnBlockConnected(this.CreateBlockWithVotingData(new List<VotingData>() { votingData }, i + 1));
+            }
+
+            Assert.Single(this.changesApplied);
         }
 
-        private ChainedHeaderBlock CreateBlockWithVotingData(List<VotingData> data)
+        private ChainedHeaderBlock CreateBlockWithVotingData(List<VotingData> data, int height)
         {
             var tx = new Transaction();
 
@@ -78,6 +86,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             Block block = new Block();
             block.Transactions.Add(tx);
+
+            block.Header.Time = (uint)(height * (this.network.ConsensusOptions as PoAConsensusOptions).TargetSpacingSeconds);
 
             block.UpdateMerkleRoot();
             block.GetHash();
@@ -94,6 +104,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         {
             this.votingManager.onBlockDisconnected(block);
         }
+
+        // TODO
+        // implement IPollResultExecutor first
 
         // TODO tests
         // add tests that will check reorg that adds or removes fed members

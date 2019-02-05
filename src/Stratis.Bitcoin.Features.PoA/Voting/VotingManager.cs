@@ -193,6 +193,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                         this.logger.LogDebug("Voted on existing poll.");
                     }
+                    else
+                    {
+                        this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote.", fedMemberKeyHex);
+                    }
 
                     List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
 
@@ -202,7 +206,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                     int requiredVotesCount = (fedMembersHex.Count / 2) + 1;
 
-                    if (validVotesCount > requiredVotesCount)
+                    if (validVotesCount >= requiredVotesCount)
                     {
                         this.pollResultExecutor.ApplyChange(data);
 
