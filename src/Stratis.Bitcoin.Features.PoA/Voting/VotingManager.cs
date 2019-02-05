@@ -80,6 +80,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
+        /// <exception cref="InvalidOperationException">Thrown in case caller is not a federation member.</exception>
         public void ScheduleVote(VotingData votingData)
         {
             if (!this.federationManager.IsFederationMember)
