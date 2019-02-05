@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry]
+        [Fact]
         public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_MaxReorgViolation()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -226,58 +226,35 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var minerA = builder.CreateStratisPowNode(network).WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPowNode(network).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPowNode(network).Start();
 
-                // MinerA mines to height 20.
-                TestHelper.MineBlocks(minerA, 20);
+                // MinerA mines height 10.
+                TestHelper.MineBlocks(minerA, 10);
 
-                // Sync the network to height 20.
-                TestHelper.Connect(syncer, minerA);
-                TestHelper.Connect(syncer, minerB);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+                // Connect and sync minerA and minerB.
+                TestHelper.ConnectAndSync(minerA, minerB);
 
-                // Disconnect Miner A and B.
-                TestHelper.Disconnect(syncer, minerA);
-                TestHelper.Disconnect(syncer, minerB);
+                // Disconnect minerA from minerB.
+                TestHelper.Disconnect(minerA, minerB);
 
-                // Ensure syncer does not have any connections.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(syncer));
+                // MinerA continues to mine to height 20 (10 + 10).
+                TestHelper.MineBlocks(minerA, 10);
 
-                // MinerA continues to mine to height 45.
-                TestHelper.MineBlocks(minerA, 25);
+                // MinerB continues to mine to height 40 (10 + 30).
+                TestHelper.MineBlocks(minerB, 30);
 
-                // MinerB continues to mine to height 65.
-                TestHelper.MineBlocks(minerB, 45);
+                // Ensure the correct height before the connect.
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 20);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 40);
 
-                // Syncer now connects to both miners causing a MaxReorgViolation exception to be thrown
-                // on Miner B.
-                TestHelper.Connect(syncer, minerA);
-                TestHelper.Connect(syncer, minerB);
+                // Connect minerA to minerB.
+                TestHelper.Connect(minerA, minerB);
 
-                // Determine which node was disconnected.
-                CoreNode survived = null;
-                CoreNode notSurvived = null;
-                if (TestHelper.IsNodeConnectedTo(syncer, minerA))
-                {
-                    survived = minerA;
-                    notSurvived = minerB;
-                }
-                else
-                {
-                    survived = minerB;
-                    notSurvived = minerA;
-                }
+                // Wait until the nodes become disconnected due to the MaxReorgViolation.
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
 
-                // Ensure that Syncer is synced with MinerB.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, survived));
-
-                // Ensure that Syncer is not connected to MinerA.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, notSurvived));
-
-                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 45);
-                Assert.True(survived.FullNode.ConsensusManager().Tip.Height == 45);
-
+                // Check that the heights did not change.
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 20);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 40);
             }
         }
 
