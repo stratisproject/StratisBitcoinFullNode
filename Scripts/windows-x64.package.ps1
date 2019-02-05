@@ -1,10 +1,10 @@
 $configuration="release"
 $runtime="win-x64"
 $git_commit=(git log --format=%h --abbrev=7 -n 1)
-$publish_directory="..\src\Stratis.StratisD\bin\$configuration\netcoreapp2.1\$runtime\publish"
+$publish_directory="..\src\x42.x42D\bin\$configuration\netcoreapp2.1\$runtime\publish"
 $download_directory=$env:temp
 $warp="$download_directory\windows-x64.warp-packer.exe"
-$project_path="..\src\Stratis.StratisD\Stratis.StratisD.csproj"
+$project_path="..\src\x42.x42D\x42.x42D.csproj"
 
 Write-Host "Download directory is $download_directory" -foregroundcolor "Magenta"
 Write-Host "Current directory is $PWD" -foregroundcolor "Magenta"
@@ -30,7 +30,7 @@ Write-Host "List of files to package:" -foregroundcolor "Magenta"
 Get-ChildItem -Path $publish_directory
 
 Write-Host "Packaging the daemon..." -foregroundcolor "Magenta"
-& $warp --arch windows-x64 --input_dir $publish_directory --exec Stratis.StratisD.exe --output $publish_directory\Stratis-$git_commit.exe
+& $warp --arch windows-x64 --input_dir $publish_directory --exec x42.x42D.exe --output $publish_directory\x42-$git_commit.exe
 
 Write-Host "Done." -foregroundcolor "green"
 Read-Host "Press ENTER"
