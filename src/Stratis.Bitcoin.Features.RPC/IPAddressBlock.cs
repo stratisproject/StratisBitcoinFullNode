@@ -39,6 +39,15 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         /// <summary>
+        /// Allow implicit cast from IPAddress to IPAddressBlock for convenience.
+        /// </summary>
+        /// <param name="address">The IPAddress to cast to an IPAddressBlock.</param>
+        public static implicit operator IPAddressBlock(IPAddress address)
+        {
+            return new IPAddressBlock(address);
+        }
+
+        /// <summary>
         /// Parses the string representation of a block of ip addresses and creates a corresponding object.
         /// </summary>
         /// <param name="value">The string representation of a block of ip addresses.</param>
