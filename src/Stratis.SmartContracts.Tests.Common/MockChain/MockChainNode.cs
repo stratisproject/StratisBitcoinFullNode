@@ -158,7 +158,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             byte[] contractCode,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01,
             string sender = null)
@@ -204,7 +204,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string contractAddress,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01, 
             string sender = null)
@@ -232,7 +232,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
             string contractAddress,
             double amount,
             string[] parameters = null,
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             string sender = null)
         {

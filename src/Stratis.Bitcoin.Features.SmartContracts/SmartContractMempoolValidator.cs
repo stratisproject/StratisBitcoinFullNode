@@ -58,9 +58,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 p2pkhRule
             };
 
+            // TODO: Also add Signed Code check.
+
             this.feeTxRules = new List<ISmartContractMempoolRule>()
             {
-                new SmartContractFormatRule(callDataSerializer)
+                new ContractTransactionValidationRule(this.callDataSerializer, new List<IContractTransactionValidationLogic>
+                {
+                    new SmartContractFormatLogic()
+                })
             };
         }
 

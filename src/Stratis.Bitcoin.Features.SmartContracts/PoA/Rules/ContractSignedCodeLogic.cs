@@ -1,0 +1,54 @@
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using CSharpFunctionalExtensions;
+using NBitcoin;
+using NBitcoin.Crypto;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core.ContractSigning;
+using Block = NBitcoin.Block;
+
+namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
+{
+    /// <summary>
+    /// Validates that the supplied smart contract code is signed with a valid signature.
+    /// </summary>
+    public class ContractSignedCodeLogic : IContractTransactionValidationLogic
+    {
+        private readonly IContractSigner contractSigner;
+        private readonly PubKey signingContractPubKey;
+
+        public ContractSignedCodeLogic(
+            IContractSigner contractSigner,
+            PubKey signingContractPubKey)
+        {
+            this.contractSigner = contractSigner;
+            this.signingContractPubKey = signingContractPubKey;
+        }
+
+        public void CheckContractTransaction(ContractTxData txData, Money suppliedBudget)
+        {
+            if (!txData.IsCreateContract)
+            {
+                // We do not need to validate calls
+                return;
+            }
+
+            var signedTxData = (SignedCodeContractTxData)txData;
+
+            if (!this.contractSigner.Verify(this.signingContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature))
+            {
+                this.ThrowInvalidCode();
+            }
+        }
+        
+        private void ThrowInvalidCode()
+        {
+            new ConsensusError("contract-code-invalid-signature", "Contract code does not have a valid signature").Throw();
+        }
+    }
+}

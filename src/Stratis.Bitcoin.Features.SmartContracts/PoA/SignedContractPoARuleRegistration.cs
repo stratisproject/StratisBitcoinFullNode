@@ -56,7 +56,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
                 new AllowedScriptTypeRule(),
-                new SmartContractSignedCodeRule(callDataSerializer, new ContractSigner(), networkWithPubKey.SigningContractPubKey),
+                new ContractTransactionValidationRule(callDataSerializer, new List<IContractTransactionValidationLogic>()
+                {
+                    new SmartContractFormatLogic(),
+                    new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey)
+                })
             };
 
             consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
@@ -69,7 +73,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new CanGetSenderRule(new SenderRetriever()),
-                new SmartContractFormatRule(callDataSerializer), // Can we inject these serializers?
                 new P2PKHNotContractRule(),
                 new SmartContractPoACoinviewRule(),
                 new SaveCoinviewRule()

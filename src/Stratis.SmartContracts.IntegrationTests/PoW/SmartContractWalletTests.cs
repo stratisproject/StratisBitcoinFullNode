@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
                 int vmVersion = 1;
-                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 
@@ -265,7 +265,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                Gas gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
@@ -672,7 +672,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                Gas gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {
@@ -759,7 +759,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                Gas gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 var buildRequest = new BuildCreateContractTransactionRequest
                 {

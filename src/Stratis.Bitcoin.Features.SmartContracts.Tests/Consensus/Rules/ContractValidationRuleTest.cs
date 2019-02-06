@@ -4,6 +4,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
@@ -13,12 +14,12 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 {
-    public class SmartContractFormatRuleTest
+    public class ContractValidationRuleTest
     {
         private readonly Network network;
         private readonly ICallDataSerializer callDataSerializer;
 
-        public SmartContractFormatRuleTest()
+        public ContractValidationRuleTest()
         {
             this.network = new SmartContractsRegTest();
             this.callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             checked
             {
 #pragma warning disable CS0219 // Variable is assigned but its value is never used
-                ulong test = SmartContractFormatRule.GasPriceMaximum * SmartContractFormatRule.GasLimitMaximum;
+                ulong test = SmartContractFormatLogic.GasPriceMaximum * SmartContractFormatLogic.GasLimitMaximum;
 #pragma warning restore CS0219 // Variable is assigned but its value is never used
             }
         }
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            SmartContractFormatRule rule = testContext.CreateSmartContractFormatRule();
+            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
             context.UnspentOutputSet = GetMockOutputSet();
@@ -102,7 +103,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public async Task SmartContractFormatRule_MultipleOutputs_SuccessAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            SmartContractFormatRule rule = testContext.CreateSmartContractFormatRule();
+            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset())
             {
@@ -155,7 +156,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         public void SmartContractFormatRule_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
-            SmartContractFormatRule rule = testContext.CreateSmartContractFormatRule();
+            ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
 
             var context = new PowRuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
 
