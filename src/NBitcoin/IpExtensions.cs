@@ -81,6 +81,14 @@ namespace NBitcoin
                 (bytes[15 - 3] & 240) == 240);
         }
 
+        public static bool IsRFC6890(this IPAddress address)
+        {
+            address = address.EnsureIPv6();
+            byte[] bytes = address.GetAddressBytes();
+            return address.IsIPv4() && (
+                bytes[15 - 3] == 192 && bytes[15 - 2] == 0 && bytes[15 - 1] == 0);
+        }
+
         public static bool IsRFC1918(this IPAddress address)
         {
             address = address.EnsureIPv6();
@@ -289,6 +297,7 @@ namespace NBitcoin
         {
             return address.IsValid() && !(
                                             (!allowLocal && address.IsRFC1918()) ||
+                                            address.IsRFC6890() ||
                                             address.IsRFC5737() ||
                                             address.IsRFC6598() ||
                                             address.IsRFC7534() ||
