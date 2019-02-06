@@ -824,7 +824,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
             // Add the smart contract transaction to the mempool and mine as normal.
             ulong gasPrice = 1;
-            var gasLimit = (RuntimeObserver.Gas)1000000;
+            var gasLimit = (RuntimeObserver.Gas) SmartContractFormatLogic.GasLimitMaximum;
             var gasBudget = gasPrice * gasLimit;
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InterContract1.cs");
             Assert.True(compilationResult.Success);
