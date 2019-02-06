@@ -72,7 +72,7 @@ namespace NBitcoin
                 bytes[15 - 3] == 198 && (bytes[15 - 2] & 254) == 18);
         }
 
-        /// <summary>240.0.0.0/4 Reserved</summary>
+        /// <summary>240.0.0.0/4 Reserved.</summary>
         public static bool IsRFC1112(this IPAddress address)
         {
             address = address.EnsureIPv6();
@@ -81,6 +81,7 @@ namespace NBitcoin
                 (bytes[15 - 3] & 240) == 240);
         }
 
+        /// <summary>192.0.0.0/24 IETF Protocol Assignments.</summary>
         public static bool IsRFC6890(this IPAddress address)
         {
             address = address.EnsureIPv6();
