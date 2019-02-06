@@ -9,33 +9,37 @@ namespace Stratis.Bitcoin.Features.RPC
     /// </summary>
     public class IPAddressBlock
     {
-        public int Mask { get; private set; }
-        public IPAddress Address { get; private set; }
+        /// <summary>The mask length identifies the number of significant bits in the <see cref="BlockAddress"/>.</summary>
+        public int MaskLength { get; private set; }
 
-        public int FullMask => 8 * this.Address.GetAddressBytes().Length;
+        /// <summary>The block address which is the same as the first ip address in the block.</summary>
+        public IPAddress BlockAddress { get; private set; }
+
+        /// <summary>The maximum length of the mask.</summary>
+        public int FullMaskLengthInBits => 8 * this.BlockAddress.GetAddressBytes().Length;
 
         /// <summary>
         /// Constructs an object representing a block of ip addresses.
         /// </summary>
-        /// <param name="address">The base ip address.</param>
-        /// <param name="mask">The mask identifies the number of significant bits of the base ip address.</param>
+        /// <param name="blockAddress">The block address.</param>
+        /// <param name="maskLength">The mask identifies the number of significant bits of the block address.</param>
         /// <exception cref="FormatException">If the block format is incorrect.</exception>
-        public IPAddressBlock(IPAddress address, int? mask = null)
+        public IPAddressBlock(IPAddress blockAddress, int? maskLength = null)
         {
             // Normalize address.
-            if (address.IsIPv4MappedToIPv6)
+            if (blockAddress.IsIPv4MappedToIPv6)
             {
-                address = address.MapToIPv4();
-                if (mask != null)
-                    mask -= 96;
+                blockAddress = blockAddress.MapToIPv4();
+                if (maskLength != null)
+                    maskLength -= 96;
             }
 
-            this.Address = address;
+            this.BlockAddress = blockAddress;
 
-            if (mask != null && (mask < 0 || mask > this.FullMask))
+            if (maskLength != null && (maskLength < 0 || maskLength > this.FullMaskLengthInBits))
                 throw new FormatException("Invalid IPAddressBlock format");
 
-            this.Mask = mask ?? this.FullMask;
+            this.MaskLength = maskLength ?? this.FullMaskLengthInBits;
         }
 
         /// <summary>
@@ -68,17 +72,17 @@ namespace Stratis.Bitcoin.Features.RPC
             if (address.IsIPv4MappedToIPv6)
                 address = address.MapToIPv4();
 
-            if (this.Address.AddressFamily != address.AddressFamily)
+            if (this.BlockAddress.AddressFamily != address.AddressFamily)
                 return false;
 
-            byte[] blockAddrBytes = this.Address.GetAddressBytes();
-            if (this.Mask == (blockAddrBytes.Length * 8))
-                return this.Address.Equals(address);
+            byte[] blockAddrBytes = this.BlockAddress.GetAddressBytes();
+            if (this.MaskLength == (blockAddrBytes.Length * 8))
+                return this.BlockAddress.Equals(address);
 
             byte[] addressBytes = address.GetAddressBytes();
-            int bytesToKeep = this.Mask / 8;
-            if ((this.Mask % 8) != 0)
-                addressBytes[bytesToKeep++] &= (byte)~(0xff >> (this.Mask % 8));
+            int bytesToKeep = this.MaskLength / 8;
+            if ((this.MaskLength % 8) != 0)
+                addressBytes[bytesToKeep++] &= (byte)~(0xff >> (this.MaskLength % 8));
 
             while (bytesToKeep < addressBytes.Length)
                 addressBytes[bytesToKeep++] = 0;
@@ -87,15 +91,15 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         /// <summary>
-        /// Returns the block of ip address defined by this object as a string.
+        /// Returns the block of ip addresses defined by this object as a string.
         /// </summary>
-        /// <returns>The block of ip address defined by this object as a string.</returns>
+        /// <returns>The block of ip addresses defined by this object as a string.</returns>
         public override string ToString()
         {
-            if (this.Mask == this.FullMask)
-                return this.Address.ToString();
+            if (this.MaskLength == this.FullMaskLengthInBits)
+                return this.BlockAddress.ToString();
 
-            return $"{ this.Address }/{ this.Mask }";
+            return $"{ this.BlockAddress }/{ this.MaskLength }";
         }
     }
 }
