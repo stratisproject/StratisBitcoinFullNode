@@ -433,11 +433,13 @@ namespace Stratis.Bitcoin.Consensus
             {
                 var peersToBan = new List<INetworkPeer>();
 
+                if (validationContext.MissingServices != null)
+                    this.connectionManager.AddDiscoveredNodesRequirement(validationContext.MissingServices.Value);
+
                 lock (this.peerLock)
                 {
                     if (validationContext.MissingServices != null)
                     {
-                        this.connectionManager.AddDiscoveredNodesRequirement(validationContext.MissingServices.Value);
                         this.blockPuller.RequestPeerServices(validationContext.MissingServices.Value);
 
                         this.logger.LogTrace("(-)[MISSING_SERVICES]");
