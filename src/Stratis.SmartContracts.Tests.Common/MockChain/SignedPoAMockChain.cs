@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public SignedPoAMockChain Build()
         {
-            var network = new SignedContractsPoARegTest();
+            SignedContractsPoARegTest network = new SignedContractsPoARegTest();
 
             for (int nodeIndex = 0; nodeIndex < this.nodes.Length; nodeIndex++)
             {
