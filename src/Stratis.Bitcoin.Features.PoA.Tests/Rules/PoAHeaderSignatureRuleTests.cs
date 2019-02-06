@@ -10,7 +10,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class PoAHeaderSignatureRuleTests : PoARulesTestsBase
+    public class PoAHeaderSignatureRuleTests : PoATestsBase
     {
         private readonly PoAHeaderSignatureRule signatureRule;
 

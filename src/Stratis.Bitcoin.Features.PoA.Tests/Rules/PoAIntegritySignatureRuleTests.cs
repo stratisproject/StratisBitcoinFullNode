@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
@@ -10,7 +8,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class PoAIntegritySignatureRuleTests : PoARulesTestsBase
+    public class PoAIntegritySignatureRuleTests : PoATestsBase
     {
         private readonly PoAIntegritySignatureRule integritySignatureRule;
 
