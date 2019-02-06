@@ -58,6 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
+                        services.AddSingleton<VotingManager>();
 
                         // Replace serializer
                         fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
