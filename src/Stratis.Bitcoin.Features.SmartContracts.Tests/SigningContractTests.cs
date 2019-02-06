@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         public void SignContract()
         {
             byte[] contractCode = new byte[12];
-            ECDSASignature signature = this.network.SigningContractPrivKey.SignData(contractCode);
+            ECDSASignature signature = this.network.SigningContractPrivKey.SignMessageBytes(contractCode);
 
             Assert.True(this.network.SigningContractPubKey.VerifyMessage(contractCode, signature));
         }

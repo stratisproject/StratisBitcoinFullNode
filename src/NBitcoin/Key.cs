@@ -95,7 +95,7 @@ namespace NBitcoin
             return this._ECKey.Sign(hash);
         }
 
-        public ECDSASignature SignData(byte[] messageBytes)
+        public ECDSASignature SignMessageBytes(byte[] messageBytes)
         {
             byte[] data = Utils.FormatMessageForSigning(messageBytes);
             uint256 hash = Hashes.Hash256(data);

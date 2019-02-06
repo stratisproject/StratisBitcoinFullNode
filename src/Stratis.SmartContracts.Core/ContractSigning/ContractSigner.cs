@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Core.ContractSigning
     {
         public byte[] Sign(Key privKey, byte[] contractCode)
         {
-            return privKey.SignData(contractCode).ToDER();
+            return privKey.SignMessageBytes(contractCode).ToDER();
         }
 
         public bool Verify(PubKey pubKey, byte[] contractCode, byte[] signature)
