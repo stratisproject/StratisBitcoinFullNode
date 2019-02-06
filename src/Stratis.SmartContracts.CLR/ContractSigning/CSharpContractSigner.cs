@@ -32,6 +32,9 @@ namespace Stratis.SmartContracts.CLR.ContractSigning
             return (compilationResult.Compilation, signature);
         }
 
+        /// <summary>
+        /// Compile and sign a .cs file before packaging it into the format it goes into a smart contract transaction in.
+        /// </summary>
         public byte[] PackageSignedCSharpFile(Key privKey, string path)
         {
             (byte[] contractCode, byte[] signature) signed = this.SignCSharpFile(privKey, path);

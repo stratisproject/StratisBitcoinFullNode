@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
 {
     /// <summary>
     /// Validates that the supplied smart contract code is signed with a valid signature.
+    /// Depends on <see cref="SignedCodeCallDataSerializer"/> being injected into the node.
     /// </summary>
     public class ContractSignedCodeLogic : IContractTransactionValidationLogic
     {
@@ -38,6 +39,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
                 return;
             }
 
+            // If this rule is being used as part of consensus, then we need to have the SignedCodeCallDataSerializer being used
+            // If the below line is throwing, it must not be being used.
             var signedTxData = (SignedCodeContractTxData)txData;
 
             if (!this.contractSigner.Verify(this.signingContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature))
