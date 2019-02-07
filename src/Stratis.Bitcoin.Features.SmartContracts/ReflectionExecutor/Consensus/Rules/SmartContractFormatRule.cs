@@ -40,9 +40,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             // transactions are allowed to contain SmartContractExec opcodes.
             foreach (Transaction transaction in block.Transactions)
             {
-                if (!transaction.IsSmartContractExecTransaction())
-                    continue;
-
                 this.CheckTransaction(transaction, null);
             }
 
