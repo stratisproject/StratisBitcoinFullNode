@@ -128,70 +128,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         }
 
         [Fact]
-        [Trait("Unstable", "True")]
-        public void TxMempoolBlockDoublespend()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
-
-                stratisNodeSync.FullNode.NodeService<MempoolSettings>().RequireStandard = true; // make sure to test standard tx
-
-                TestHelper.MineBlocks(stratisNodeSync, 100); // coinbase maturity = 100
-
-                // Make sure skipping validation of transctions that were
-                // validated going into the memory pool does not allow
-                // double-spends in blocks to pass validation when they should not.
-
-                Script scriptPubKey = PayToPubkeyHashTemplate.Instance.GenerateScriptPubKey(stratisNodeSync.MinerSecret.PubKey);
-                Block genBlock = stratisNodeSync.FullNode.BlockStore().GetBlockAsync(stratisNodeSync.FullNode.Chain.GetBlock(1).HashBlock).Result;
-
-                // Create a double-spend of mature coinbase txn:
-                var spends = new List<Transaction>(2);
-                foreach (int index in Enumerable.Range(1, 2))
-                {
-                    Transaction trx = stratisNodeSync.FullNode.Network.CreateTransaction();
-                    trx.AddInput(new TxIn(new OutPoint(genBlock.Transactions[0].GetHash(), 0), scriptPubKey));
-                    trx.AddOutput(Money.Cents(11), new Key().PubKey.Hash);
-                    // Sign:
-                    trx.Sign(stratisNodeSync.FullNode.Network, stratisNodeSync.MinerSecret, false);
-                    spends.Add(trx);
-                }
-
-                // Test 1: block with both of those transactions should be rejected.
-                var tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
-                Assert.Throws<ConsensusException>(() => { Task.Delay(2).Wait(); Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends); });
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
-
-                // Test 2: ... and should be rejected if spend1 is in the memory pool
-                tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
-                Assert.True(stratisNodeSync.AddToStratisMempool(spends[0]));
-                Assert.Throws<ConsensusException>(() => { Task.Delay(2).Wait(); Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000); });
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
-                stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
-
-                // Test 3: ... and should be rejected if spend2 is in the memory pool
-                tipBeforeBlockCreation = stratisNodeSync.FullNode.Chain.Tip;
-                Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                Assert.Throws<ConsensusException>(() => { Task.Delay(2).Wait(); Block block = TestHelper.GenerateBlockManually(stratisNodeSync, spends, 100_000_000); });
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == tipBeforeBlockCreation.HashBlock);
-                stratisNodeSync.FullNode.MempoolManager().Clear().Wait();
-
-                // Final sanity test: first spend in mempool, second in block, that's OK:
-                var oneSpend = new List<Transaction>();
-                oneSpend.Add(spends[0]);
-                Assert.True(stratisNodeSync.AddToStratisMempool(spends[1]));
-                var validBlock = TestHelper.GenerateBlockManually(stratisNodeSync, oneSpend);
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.ConsensusManager().Tip.HashBlock == stratisNodeSync.FullNode.Chain.Tip.HashBlock);
-                Assert.True(stratisNodeSync.FullNode.Chain.Tip.HashBlock == validBlock.GetHash());
-
-                // spends[1] should have been removed from the mempool when the
-                // block with spends[0] is accepted:
-                TestHelper.WaitLoop(() => stratisNodeSync.FullNode.MempoolManager().MempoolSize().Result == 0);
-            }
-        }
-
-        [Fact]
         public void TxMempoolMapOrphans()
         {
             var rand = new Random();
@@ -452,7 +388,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
         public void Mempool_SendPosTransaction_WithElapsedLockTime_ShouldBeAcceptedByMempool()
         {
             // See CheckFinalTransaction_WithElapsedLockTime_ReturnsTrueAsync for the 'unit test' version
-            
+
             var network = KnownNetworks.StratisRegTest;
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -469,7 +405,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 // Treat the locktime as absolute, not relative.
                 trx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
-                
+
                 // Set the nLockTime to be behind the current tip so that locktime has elapsed.
                 trx.LockTime = new LockTime(stratisSender.FullNode.Chain.Height - 1);
 
@@ -482,16 +418,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 var broadcaster = stratisSender.FullNode.NodeService<IBroadcasterManager>();
 
                 broadcaster.BroadcastTransactionAsync(trx);
-                
+
                 TestHelper.WaitLoop(() => stratisSender.CreateRPCClient().GetRawMempool().Length == 1);
             }
         }
-        
+
         [Fact]
         public void Mempool_SendPosTransaction_WithFutureLockTime_ShouldBeRejectedByMempool()
         {
             // See AcceptToMemoryPool_TxFinalCannotMine_ReturnsFalseAsync for the 'unit test' version
-            
+
             var network = KnownNetworks.StratisRegTest;
 
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -508,7 +444,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 // Treat the locktime as absolute, not relative.
                 trx.Inputs.First().Sequence = new Sequence(Sequence.SEQUENCE_LOCKTIME_DISABLE_FLAG);
-                
+
                 // Set the nLockTime to be ahead of the current tip so that locktime has not elapsed.
                 trx.LockTime = new LockTime(stratisSender.FullNode.Chain.Height + 1);
 
@@ -526,7 +462,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
                 Assert.Equal("non-final", entry.ErrorMessage);
             }
         }
-        
+
         [Fact]
         public void Mempool_SendOversizeTransaction_ShouldRejectByMempool()
         {

@@ -26,47 +26,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
             this.powNetwork = new BitcoinRegTest();
         }
 
-        /// <summary>
-        /// Peer A_1 connects to Peer A_2
-        /// Peer B_1 connects to Peer B_2
-        /// Peer A_1 connects to Peer B_1
-        ///
-        /// Peer A_1 asks Peer B_1 for its addresses and gets Peer B_2
-        /// Peer A_1 now also connects to Peer B_2
-        /// </summary>
-        [Fact]
-        [Trait("Unstable", "True")]
-        public void Ensure_Peer_CanDiscover_Address_From_ConnectedPeers_And_Connect_ToThem()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode nodeGroupA_1 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupA_1").EnablePeerDiscovery().Start();
-                CoreNode nodeGroupB_1 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupB_1").EnablePeerDiscovery().Start();
-                CoreNode nodeGroupB_2 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupB_2").EnablePeerDiscovery().Start();
-
-                // Connect group 2 nodes.
-                TestHelper.WaitLoop(() => nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 0);
-                nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_2.Endpoint, IPAddress.Loopback);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupB_1, nodeGroupB_2));
-
-                // Connect group 1 to group 2
-                // This will add all nodeGroupB_1's addresses which includes nodeGroupB_2 to nodeGroupA_1
-                nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_1.Endpoint, IPAddress.Loopback);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_1));
-
-                // First check that B_2 now has more than the initial connection to B_1
-                TestHelper.WaitLoop(() => nodeGroupB_2.FullNode.ConnectionManager.ConnectedPeers.Count() > 1);
-
-                // Ensure that B_2 got connected to via either A_1 or A_2
-                TestHelper.WaitLoop(() =>
-                {
-                    if (TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2))
-                        return true;
-                    return false;
-                });
-            }
-        }
-
         [Fact]
         public void When_Connecting_WithAddnode_Connect_ToPeer_AndAnyPeers_InTheAddressManager()
         {

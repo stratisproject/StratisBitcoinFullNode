@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.network = new BitcoinRegTest();
         }
 
-        [Retry(1)]
+        [Fact]
         public void CanOverrideOnlyApiPort()
         {
             var extraParams = new NodeConfigParameters { { "apiport", "12345" } };
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry(1)]
+        [Fact]
         public void CanOverrideAllPorts()
         {
             // On MacOS ports below 1024 are privileged, and cannot be bound to by anyone other than root.
@@ -103,7 +103,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry(1)]
+        [Fact]
         public void CanUnderstandUnknownParams()
         {
             var extraParams = new NodeConfigParameters
@@ -132,7 +132,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
-        [Retry(1)]
+        [Fact]
         public void CanUseCustomConfigFileFromParams()
         {
             var specialConf = "special.conf";
