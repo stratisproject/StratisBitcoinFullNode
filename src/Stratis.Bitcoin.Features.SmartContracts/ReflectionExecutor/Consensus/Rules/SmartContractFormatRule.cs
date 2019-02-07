@@ -4,16 +4,14 @@ using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.CLR;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 {
     /// <summary>
-    /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
+    /// Validates that a smart contract transaction can be deserialized correctly, and that it conforms to gas
+    /// price and gas limit rules.
     /// </summary>
     public class SmartContractFormatRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
@@ -38,11 +36,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
         {
             Block block = context.ValidationContext.BlockToValidate;
 
-            foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
+            // Check all transactions. We rely on other rules to determine which
+            // transactions are allowed to contain SmartContractExec opcodes.
+            foreach (Transaction transaction in block.Transactions)
             {
-                if (!transaction.IsSmartContractExecTransaction())
-                    return Task.CompletedTask;
-
                 this.CheckTransaction(transaction, null);
             }
 
@@ -66,6 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
                 new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
             }
 
+            // CallDataSerializer swallows all exceptions, so we do not wrap this in a try-catch.
             Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
 
             if (callDataDeserializationResult.IsFailure)
