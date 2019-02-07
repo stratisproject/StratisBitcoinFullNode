@@ -17,7 +17,7 @@ declare -r COINRPCPORT=4334
 declare -r COINDAEMON=cityd
 declare -r COINCORE=/home/${NODE_USER}/.citychain/city/CityMain
 declare -r COINCONFIG=city.conf
-declare -r COINRUNCMD='sudo dotnet ./City.Chain.dll' ## additional commands can be used here e.g. -testnet or -stake=1
+declare -r COINRUNCMD='sudo dotnet ./City.Chain.dll -datadir=/home/${NODE_USER}/.citychain' ## additional commands can be used here e.g. -testnet or -stake=1
 declare -r COINSTARTUP=/home/${NODE_USER}/cityd
 declare -r COINSRCLOC=/home/${NODE_USER}/city-chain
 declare -r COINDLOC=/home/${NODE_USER}/citynode   
@@ -27,6 +27,7 @@ declare -r COINSERVICENAME=${COINDAEMON}@${NODE_USER}
 declare -r DATE_STAMP="$(date +%y-%m-%d-%s)"
 declare -r SCRIPT_LOGFILE="/tmp/${NODE_USER}_${DATE_STAMP}_output.log"
 declare -r SWAPSIZE="1024" ## =1GB
+declare -r OS_VER="Ubuntu*"
 
 function check_root() {
 if [ "$(id -u)" != "0" ]; then
@@ -56,13 +57,13 @@ function set_permissions() {
     chmod -R g=u ${COINCORE} ${COINSTARTUP} ${COINDLOC} ${COINSERVICELOC} &>> ${SCRIPT_LOGFILE}
 }
 
-checkForUbuntuVersion() {
+checkOSVersion() {
    echo
-   echo "* Checking Ubuntu version..."
-    if [[ `cat /etc/issue.net`  == *16.04* ]]; then
+   echo "* Checking OS version..."
+    if [[ `cat /etc/issue.net`  == ${OS_VER} ]]; then
         echo -e "${GREEN}* You are running `cat /etc/issue.net` . Setup will continue.${NONE}";
     else
-        echo -e "${RED}* You are not running Ubuntu 16.04.X. You are running `cat /etc/issue.net` ${NONE}";
+        echo -e "${RED}* You are not running ${OS_VER}. You are running `cat /etc/issue.net` ${NONE}";
         echo && echo "Installation cancelled" && echo;
         exit;
     fi
@@ -108,14 +109,6 @@ installFail2Ban() {
        echo "ulimit -s 256" | sudo tee -a /etc/default/fail2ban &>> ${SCRIPT_LOGFILE}
        sudo systemctl restart fail2ban &>> ${SCRIPT_LOGFILE}
     fi
-    echo -e "${NONE}${GREEN}* Done${NONE}";
-}
-
-setupTmpRAM() {
-    echo
-    echo -e "* Pushing tmp files to RAM for performance. Please wait..."
-    echo 'tmpfs   /tmp            tmpfs   defaults,noatime,nosuid,nodev,noexec,mode=1777,size=512M          0       0' | tee -a /etc/fstab &>> ${SCRIPT_LOGFILE}
-    echo 'tmpfs   /var/tmp        tmpfs   defaults,noatime,mode=1777,size=2M                      0       0' | tee -a /etc/fstab &>> ${SCRIPT_LOGFILE}
     echo -e "${NONE}${GREEN}* Done${NONE}";
 }
 
@@ -219,7 +212,7 @@ displayServiceStatus() {
 	on="${GREEN}ACTIVE${NONE}"
 	off="${RED}OFFLINE${NONE}"
 
-	if systemctl is-active --quiet cityd@city; then echo -e "City Chain Service: ${on}"; else echo -e "City Chain Service: ${off}"; fi
+	if systemctl is-active --quiet ${COINSERVICENAME}; then echo -e "Service: ${on}"; else echo -e "Service: ${off}"; fi
 }
 
 clear
@@ -249,10 +242,9 @@ if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
 
     check_root
     create_mn_user
-    checkForUbuntuVersion
+    checkOSVersion
     updateAndUpgrade
     setupSwap
-    setupTmpRAM
     installFail2Ban
     installFirewall
     installDependencies

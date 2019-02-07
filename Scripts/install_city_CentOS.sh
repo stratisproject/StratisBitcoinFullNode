@@ -152,7 +152,7 @@ EOL
 
 sudo cat > ${COINSERVICELOC}${COINSERVICENAME}.service << EOL
 [Unit]
-Description=City Chain Service
+Description=${COINDAEMON} Service
 After=network-online.target
 
 [Service]
@@ -214,7 +214,7 @@ displayServiceStatus() {
 	on="${GREEN}ACTIVE${NONE}"
 	off="${RED}OFFLINE${NONE}"
 
-	if systemctl is-active --quiet cityd@city; then echo -e "City Chain Service: ${on}"; else echo -e "City Chain Service: ${off}"; fi
+	if systemctl is-active --quiet ${COINSERVICENAME}; then echo -e "Service: ${on}"; else echo -e "Service: ${off}"; fi
 }
 
 clear
@@ -264,7 +264,7 @@ if [[ "$response" =~ ^([yY][eE][sS]|[yY])+$ ]]; then
     if [[ "$response" =~ ^([uU])+$ ]]; then
         check_root
         stopWallet
-	updateAndUpgrade
+    	updateAndUpgrade
         compileWallet
         startWallet
         displayServiceStatus        
