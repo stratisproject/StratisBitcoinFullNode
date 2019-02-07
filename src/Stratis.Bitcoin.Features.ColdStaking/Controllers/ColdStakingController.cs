@@ -70,8 +70,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                this.logger.LogTrace("(-)[ERROR]");
+                this.logger.LogError("Exception occurred: {0}" + "\r\n" + "(-)[ERROR]", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -111,8 +110,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                this.logger.LogTrace("(-)[ERROR]");
+                this.logger.LogError("Exception occurred: {0}" + "\r\n" + "(-)[ERROR]", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -155,8 +153,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                this.logger.LogTrace("(-)[ERROR]");
+                this.logger.LogError("Exception occurred: {0}"  + "\r\n" + "(-)[ERROR]", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -203,8 +200,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                this.logger.LogTrace("(-)[ERROR]");
+                this.logger.LogError("Exception occurred: {0}" + "\r\n" + "(-)[ERROR]", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
@@ -250,8 +246,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking.Controllers
             }
             catch (Exception e)
             {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                this.logger.LogTrace("(-)[ERROR]");
+                this.logger.LogError("Exception occurred: {0}" + "\r\n" + "(-)[ERROR]", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }

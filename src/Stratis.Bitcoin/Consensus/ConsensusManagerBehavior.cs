@@ -186,8 +186,8 @@ namespace Stratis.Bitcoin.Consensus
             // because that will slow down our own syncing process.
             if (this.initialBlockDownloadState.IsInitialBlockDownload() && !peer.IsWhitelisted())
             {
-                this.logger.LogDebug("GetHeaders message from {0} was ignored because node is in IBD.", peer.PeerEndPoint);
-                this.logger.LogTrace("(-)[IGNORE_ON_IBD]");
+                this.logger.LogDebug("GetHeaders message from {0} was ignored because node is in IBD."
+                                    + "\r\n" + "(-)[IGNORE_ON_IBD]", peer.PeerEndPoint);
                 return;
             }
 
@@ -289,8 +289,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (headers.Count == 0)
             {
-                this.logger.LogDebug("Headers payload with no headers was received. Assuming we're synced with the peer.");
-                this.logger.LogTrace("(-)[NO_HEADERS]");
+                this.logger.LogDebug("Headers payload with no headers was received. Assuming we're synced with the peer." + "\r\n" + "(-)[NO_HEADERS]");
                 return;
             }
 
@@ -298,8 +297,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 this.peerBanning.BanAndDisconnectPeer(peer.PeerEndPoint, validationError);
 
-                this.logger.LogDebug("Headers are invalid. Peer was banned.");
-                this.logger.LogTrace("(-)[VALIDATION_FAILED]");
+                this.logger.LogDebug("Headers are invalid. Peer was banned." + "\r\n" + "(-)[VALIDATION_FAILED]");
                 return;
             }
 
@@ -308,8 +306,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.cachedHeaders.Count > CacheSyncHeadersThreshold) // TODO when proven headers are implemented combine this with size threshold of N mb.
                 {
                     // Ignore this message because cache is full.
-                    this.logger.LogDebug("Cache is full. Headers ignored.");
-                    this.logger.LogTrace("(-)[CACHE_IS_FULL]");
+                    this.logger.LogDebug("Cache is full. Headers ignored." + "\r\n" + "(-)[CACHE_IS_FULL]");
                     return;
                 }
 
@@ -324,8 +321,8 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         this.cachedHeaders.AddRange(headers);
 
-                        this.logger.LogDebug("{0} headers were added to cache, new cache size is {1}.", headers.Count, this.cachedHeaders.Count);
-                        this.logger.LogTrace("(-)[HEADERS_ADDED_TO_CACHE]");
+                        this.logger.LogDebug("{0} headers were added to cache, new cache size is {1}."
+                                            + "\r\n" + "(-)[HEADERS_ADDED_TO_CACHE]", headers.Count, this.cachedHeaders.Count);
                         return;
                     }
 
@@ -348,8 +345,8 @@ namespace Stratis.Bitcoin.Consensus
                     this.cachedHeaders.Clear();
                     await this.ResyncAsync().ConfigureAwait(false);
 
-                    this.logger.LogDebug("Header {0} could not be connected to last cached header {1}, clear cache and resync.", headers[0].GetHash(), cachedHeader);
-                    this.logger.LogTrace("(-)[FAILED_TO_ATTACH_TO_CACHE]");
+                    this.logger.LogDebug("Header {0} could not be connected to last cached header {1}, clear cache and resync."
+                                        + "\r\n" + "(-)[FAILED_TO_ATTACH_TO_CACHE]", headers[0].GetHash(), cachedHeader);
                     return;
                 }
 
@@ -357,9 +354,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result == null)
                 {
-                    this.logger.LogDebug("Processing of {0} headers failed.", headers.Count);
-                    this.logger.LogTrace("(-)[PROCESSING_FAILED]");
-
+                    this.logger.LogDebug("Processing of {0} headers failed." + "\r\n" + "(-)[PROCESSING_FAILED]", headers.Count);
                     return;
                 }
 
@@ -441,8 +436,7 @@ namespace Stratis.Bitcoin.Consensus
 
             if (peer == null)
             {
-                this.logger.LogDebug("Peer detached!");
-                this.logger.LogTrace("(-)[PEER_DETACHED]:null");
+                this.logger.LogDebug("Peer detached!" + "\r\n" + "(-)[PEER_DETACHED]:null");
                 return null;
             }
 

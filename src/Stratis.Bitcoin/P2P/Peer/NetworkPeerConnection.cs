@@ -199,8 +199,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             catch (Exception e)
             {
                 if (e is AggregateException) e = e.InnerException;
-                this.logger.LogDebug("Error connecting to '{0}', exception message: {1}", endPoint, e.Message);
-                this.logger.LogTrace("(-)[UNHANDLED_EXCEPTION]");
+                this.logger.LogDebug("Error connecting to '{0}', exception message: {1}" + "\r\n" + "(-)[UNHANDLED_EXCEPTION]", endPoint, e.Message);
                 throw e;
             }
         }

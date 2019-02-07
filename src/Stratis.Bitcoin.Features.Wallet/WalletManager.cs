@@ -229,9 +229,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.asyncLoop = this.asyncLoopFactory.Run("Wallet persist job", token =>
             {
                 this.SaveWallets();
-                this.logger.LogInformation("Wallets saved to file at {0}.", this.dateTimeProvider.GetUtcNow());
-
-                this.logger.LogTrace("(-)[IN_ASYNC_LOOP]");
+                this.logger.LogInformation("Wallets saved to file at {0}." + "\r\n" + "(-)[IN_ASYNC_LOOP]", this.dateTimeProvider.GetUtcNow());
                 return Task.CompletedTask;
             },
             this.nodeLifetime.ApplicationStopping,

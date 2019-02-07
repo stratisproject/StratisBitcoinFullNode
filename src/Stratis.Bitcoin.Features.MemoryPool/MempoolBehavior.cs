@@ -215,8 +215,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             Guard.NotNull(peer, nameof(peer));
             if (peer != this.AttachedPeer)
             {
-                this.logger.LogDebug("Attached peer '{0}' does not match the originating peer '{1}'.", this.AttachedPeer?.RemoteSocketEndpoint, peer.RemoteSocketEndpoint);
-                this.logger.LogTrace("(-)[PEER_MISMATCH]");
+                this.logger.LogDebug("Attached peer '{0}' does not match the originating peer '{1}'."
+									+ "\r\n" + "(-)[PEER_MISMATCH]", this.AttachedPeer?.RemoteSocketEndpoint, peer.RemoteSocketEndpoint);
                 return;
             }
 
@@ -369,8 +369,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             // Stop processing the transaction early if we are in blocks only mode.
             if (this.isBlocksOnlyMode)
             {
-                this.logger.LogDebug("Transaction sent in violation of protocol from peer '{0}'.", peer.RemoteSocketEndpoint);
-                this.logger.LogTrace("(-)[BLOCKSONLY]");
+                this.logger.LogDebug("Transaction sent in violation of protocol from peer '{0}'." + "\r\n" + "(-)[BLOCKSONLY]", peer.RemoteSocketEndpoint);
                 return;
             }
 

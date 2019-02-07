@@ -361,8 +361,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             if (rewindData == null)
             {
-                this.Logger.LogTrace("(-)[NO_REWIND_DATA_FOR_INDEX]");
-                this.Logger.LogError("Error - Rewind data should always be present");
+                this.Logger.LogError("(-)[NO_REWIND_DATA_FOR_INDEX]" + "\r\n" + "Error - Rewind data should always be present");
                 throw new ConsensusException("Rewind data should always be present");
             }
 

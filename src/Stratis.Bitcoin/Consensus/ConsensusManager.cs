@@ -336,8 +336,9 @@ namespace Stratis.Bitcoin.Consensus
                         this.chainedHeaderTree.PartialOrFullValidationFailed(chainedHeader);
                     }
 
-                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}", validationContext.Error.Message);
-                    this.logger.LogTrace("(-)[PARTIAL_VALIDATION_FAILED]");
+                    this.logger.LogError("Miner produced an invalid block, partial validation failed: {0}"
+                                        + "\r\n" + "(-)[PARTIAL_VALIDATION_FAILED]", validationContext.Error.Message);
+
                     throw new ConsensusException(validationContext.Error.ToString());
                 }
             }
@@ -576,8 +577,7 @@ namespace Stratis.Bitcoin.Consensus
             if (fork == newTip)
             {
                 // The new header is behind the current tip this is a bug.
-                this.logger.LogCritical("New header '{0}' is behind the current tip '{1}'.", newTip, oldTip);
-                this.logger.LogTrace("(-)[INVALID_NEW_TIP]");
+                this.logger.LogCritical("New header '{0}' is behind the current tip '{1}'." + "\r\n" + "(-)[INVALID_NEW_TIP]", newTip, oldTip);
                 throw new ConsensusException("New tip must be ahead of old tip.");
             }
 
@@ -594,8 +594,7 @@ namespace Stratis.Bitcoin.Consensus
             // Sanity check. This should never happen.
             if (blocksToConnect == null)
             {
-                this.logger.LogCritical("Blocks to connect are missing!");
-                this.logger.LogTrace("(-)[NO_BLOCK_TO_CONNECT]");
+                this.logger.LogCritical("Blocks to connect are missing!" + "\r\n" + "(-)[NO_BLOCK_TO_CONNECT]");
                 throw new ConsensusException("Blocks to connect are missing!");
             }
 
@@ -781,8 +780,7 @@ namespace Stratis.Bitcoin.Consensus
 
             // We failed to jump back on the previous chain after a failed reorg.
             // And we failed to reconnect the old chain, database might be corrupted.
-            this.logger.LogError("A critical error has prevented reconnecting blocks, error = {0}", connectBlockResult.Error);
-            this.logger.LogTrace("(-)[FAILED_TO_RECONNECT]");
+            this.logger.LogError("A critical error has prevented reconnecting blocks, error = {0}" + "\r\n" + "(-)[FAILED_TO_RECONNECT]", connectBlockResult.Error);
             throw new ConsensusException("A critical error has prevented reconnecting blocks.");
         }
 
@@ -827,8 +825,9 @@ namespace Stratis.Bitcoin.Consensus
             if ((blockToConnect.ChainedHeader.BlockValidationState != ValidationState.PartiallyValidated) &&
                 (blockToConnect.ChainedHeader.BlockValidationState != ValidationState.FullyValidated))
             {
-                this.logger.LogError("Block '{0}' must be partially or fully validated but it is {1}.", blockToConnect, blockToConnect.ChainedHeader.BlockValidationState);
-                this.logger.LogTrace("(-)[BLOCK_INVALID_STATE]");
+                this.logger.LogError("Block '{0}' must be partially or fully validated but it is {1}."
+                                    + "\r\n" + "(-)[BLOCK_INVALID_STATE]", blockToConnect, blockToConnect.ChainedHeader.BlockValidationState);
+
                 throw new ConsensusException("Block must be partially or fully validated.");
             }
 
@@ -882,8 +881,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (chainedHeaderBlock?.Block == null)
                 {
-                    this.logger.LogError("Block '{0}' wasn't loaded from store!", currentHeader);
-                    this.logger.LogTrace("(-):null");
+                    this.logger.LogError("Block '{0}' wasn't loaded from store!" + "\r\n" + "(-):null", currentHeader);	
                     return null;
                 }
 
@@ -1032,8 +1030,7 @@ namespace Stratis.Bitcoin.Consensus
                 else
                 {
                     // This means the puller has not filtered blocks correctly.
-                    this.logger.LogError("Unsolicited block '{0}'.", blockHash);
-                    this.logger.LogTrace("(-)[UNSOLICITED_BLOCK]");
+                    this.logger.LogError("Unsolicited block '{0}'." + "\r\n" + "(-)[UNSOLICITED_BLOCK]", blockHash);
                     throw new InvalidOperationException("Unsolicited block");
                 }
 
@@ -1071,8 +1068,7 @@ namespace Stratis.Bitcoin.Consensus
             if (reassignDownload)
             {
                 this.DownloadBlocks(new[] { chainedHeader });
-                this.logger.LogWarning("Downloading block for '{0}' failed, it will be enqueued again.", chainedHeader);
-                this.logger.LogTrace("(-)[BLOCK_DOWNLOAD_FAILED_REASSIGNED]");
+                this.logger.LogWarning("Downloading block for '{0}' failed, it will be enqueued again." + "\r\n" + "(-)[BLOCK_DOWNLOAD_FAILED_REASSIGNED]", chainedHeader);
                 return;
             }
 

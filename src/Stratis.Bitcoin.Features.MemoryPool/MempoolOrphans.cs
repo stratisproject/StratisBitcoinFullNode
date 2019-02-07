@@ -322,8 +322,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
             if (rejectedParents)
             {
-                this.logger.LogInformation("not keeping orphan with rejected parents {0}", tx.GetHash());
-                this.logger.LogTrace("(-)[REJECT_PARENTS_ORPH]:false");
+                this.logger.LogInformation("not keeping orphan with rejected parents {0}" + "\r\n" + "(-)[REJECT_PARENTS_ORPH]:false", tx.GetHash());
                 return false;
             }
 
@@ -435,8 +434,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 int sz = MempoolValidator.GetTransactionWeight(tx, this.Validator.ConsensusOptions);
                 if (sz >= this.chain.Network.Consensus.Options.MaxStandardTxWeight)
                 {
-                    this.logger.LogInformation("ignoring large orphan tx (size: {0}, hash: {1})", sz, hash);
-                    this.logger.LogTrace("(-)[LARGE_ORPH]:false");
+                    this.logger.LogInformation("ignoring large orphan tx (size: {0}, hash: {1})" + "\r\n" + "(-)[LARGE_ORPH]:false", sz, hash);
                     return false;
                 }
 

@@ -124,8 +124,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
             catch (Exception ex)
             {
-                this.logger.LogError("Exception occurred: {0}", ex.ToString());
-                this.logger.LogTrace("(-)[EXCEPTION]");
+                this.logger.LogError("Exception occurred: {0}" + "\r\n" + "(-)[EXCEPTION]", ex.ToString());
                 throw;
             }
         }
@@ -216,8 +215,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // If block store is lower than the fork point, or it is on different chain, we don't have anything to contribute to this peer at this point.
             if (blockStoreTip.FindAncestorOrSelf(forkPoint) == null)
             {
-                this.logger.LogDebug("Fork point of peer '{0}' was not found on the block store chain.", peer.RemoteSocketEndpoint);
-                this.logger.LogTrace("(-)[FORK_OUTSIDE_STORE]");
+                this.logger.LogDebug("Fork point of peer '{0}' was not found on the block store chain." + "\r\n" + "(-)[FORK_OUTSIDE_STORE]", peer.RemoteSocketEndpoint);
                 return;
             }
 

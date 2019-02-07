@@ -85,8 +85,8 @@ namespace Stratis.Bitcoin.Features.Miner
             // When kernel is found txes with timestamp greater than header's timestamp are removed.
             if (entry.Transaction.Time > latestValidTime)
             {
-                this.logger.LogDebug("Transaction '{0}' has timestamp of {1} but latest valid tx time that can be mined is {2}.", entry.TransactionHash, entry.Transaction.Time, latestValidTime);
-                this.logger.LogTrace("(-)[TOO_EARLY_TO_MINE_TX]:false");
+                this.logger.LogDebug("Transaction '{0}' has timestamp of {1} but latest valid tx time that can be mined is {2}."
+									+ "\r\n" + "(-)[TOO_EARLY_TO_MINE_TX]:false", entry.TransactionHash, entry.Transaction.Time, latestValidTime);
                 return false;
             }
 

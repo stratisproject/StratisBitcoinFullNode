@@ -53,8 +53,7 @@ namespace Stratis.Bitcoin.Builder
             }
             catch
             {
-                this.logger.LogError("An error occurred starting the application.");
-                this.logger.LogTrace("(-)[INITIALIZE_EXCEPTION]");
+                this.logger.LogError("An error occurred starting the application." + "\r\n" + "(-)[INITIALIZE_EXCEPTION]");
                 throw;
             }
         }
@@ -68,8 +67,7 @@ namespace Stratis.Bitcoin.Builder
             }
             catch
             {
-                this.logger.LogError("An error occurred stopping the application.");
-                this.logger.LogTrace("(-)[DISPOSE_EXCEPTION]");
+                this.logger.LogError("An error occurred stopping the application." + "\r\n" + "(-)[DISPOSE_EXCEPTION]");
                 throw;
             }
         }

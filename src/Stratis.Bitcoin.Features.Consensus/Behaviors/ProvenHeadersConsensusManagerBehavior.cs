@@ -179,17 +179,15 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                         // Proven header is not available yet for this header.
                         // This can happen in case headers were requested by the peer right after we advanced consensus tip
                         // So at this moment proven header is not created or not yet saved to headers store for the block connected.
-                        this.logger.LogDebug("No PH available for header '{0}'.", header);
-                        this.logger.LogTrace("(-)[NO_PH_AVAILABLE]");
-                        break;
+                        this.logger.LogDebug("No PH available for header '{0}'." + "\r\n" + "(-)[NO_PH_AVAILABLE]", header);
+						break;
                     }
                     else if (provenBlockHeader.GetHash() != header.HashBlock)
                     {
                         // Proven header is in the store, but with a wrong hash.
                         // This can happen in case of reorgs, when the store has not yet been updated.
                         // Without this check, we may send headers that aren't consecutive because are built from different branches, and the other peer may ban us.
-                        this.logger.LogDebug("Stored PH hash is wrong. Expected: {0}, Found: {1}", header.Header.GetHash(), provenBlockHeader.GetHash());
-                        this.logger.LogTrace("(-)[WRONG STORED PH]");
+                        this.logger.LogDebug("Stored PH hash is wrong. Expected: {0}, Found: {1}" + "\r\n" + "(-)[WRONG STORED PH]", header.Header.GetHash(), provenBlockHeader.GetHash());
                         break;
                     }
                 }
@@ -273,8 +271,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
                 if (peer.IsWhitelisted())
                 {
                     // A gateway node can only sync using regular headers and from whitelisted peers
-                    this.logger.LogDebug("Node is a gateway, sync regular headers from whitelisted peer.");
-                    this.logger.LogTrace("(-)[PEER_WHITELISTED_BY_GATEWAY]");
+                    this.logger.LogDebug("Node is a gateway, sync regular headers from whitelisted peer." + "\r\n" + "(-)[PEER_WHITELISTED_BY_GATEWAY]");
                     return base.BuildGetHeadersPayload();
                 }
 

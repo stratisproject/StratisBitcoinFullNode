@@ -316,8 +316,7 @@ namespace Stratis.Bitcoin.Consensus
             ChainedHeader peerTip;
             if (!this.chainedHeadersByHash.TryGetValue(peerTipHash, out peerTip))
             {
-                this.logger.LogError("Header '{0}' not found but it is claimed by {1} as its tip.", peerTipHash, networkPeerId);
-                this.logger.LogTrace("(-)[HEADER_NOT_FOUND]");
+                this.logger.LogError("Header '{0}' not found but it is claimed by {1} as its tip." + "\r\n" + "(-)[HEADER_NOT_FOUND]", peerTipHash, networkPeerId);
                 throw new ConsensusException("Header not found!");
             }
 
@@ -819,8 +818,8 @@ namespace Stratis.Bitcoin.Consensus
                 // Otherwise a new peer may connect and present headers on top of invalid chain and we wouldn't recognize it.
                 this.RemovePeerClaim(peerId, latestNewHeader);
 
-                this.logger.LogDebug("Chained header '{0}' does not match checkpoint '{1}'.", chainedHeader, checkpoint.Hash);
-                this.logger.LogTrace("(-)[INVALID_HEADER_NOT_MATCHING_CHECKPOINT]");
+                this.logger.LogDebug("Chained header '{0}' does not match checkpoint '{1}'." + "\r\n"
+                                    + "(-)[INVALID_HEADER_NOT_MATCHING_CHECKPOINT]", chainedHeader, checkpoint.Hash);
                 throw new CheckpointMismatchException();
             }
 
@@ -1118,8 +1117,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (fork == null)
                 {
-                    this.logger.LogError("Header '{0}' is from a different network.", chainedHeader);
-                    this.logger.LogTrace("(-)[HEADER_IS_INVALID_NETWORK]");
+                    this.logger.LogError("Header '{0}' is from a different network." + "\r\n" + "(-)[HEADER_IS_INVALID_NETWORK]", chainedHeader);
                     throw new InvalidOperationException("Header is from a different network");
                 }
 

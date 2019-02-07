@@ -87,8 +87,7 @@ namespace Stratis.Bitcoin.Features.Consensus
 
             if (!farFromTip)
             {
-                this.logger.LogDebug("Block selected for pre-fetching is too close to the tip! Skipping pre-fetching.");
-                this.logger.LogTrace("(-)[TOO_CLOSE_TO_PREFETCH]");
+                this.logger.LogDebug("Block selected for pre-fetching is too close to the tip! Skipping pre-fetching." + "\r\n" + "(-)[TOO_CLOSE_TO_PREFETCH]");
                 return;
             }
 
