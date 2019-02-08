@@ -10,6 +10,11 @@ namespace Stratis.SmartContracts.Core.Util
 {
     public class SenderRetriever : ISenderRetriever
     {
+        public const string InvalidOutputIndex = "Invalid index given for PrevOut.";
+        public const string OutputsNotInCoinView = "Unspent outputs to smart contract transaction are not present in coinview.";
+        public const string UnableToGetSender ="Unable to get the sender of the transaction from previous transactions and null coinview.";
+
+
         /// <inheritdoc />
         public GetSenderResult GetSender(Transaction tx, ICoinView coinView, IList<Transaction> blockTxs)
         {
@@ -22,6 +27,11 @@ namespace Stratis.SmartContracts.Core.Util
                 {
                     if (btx.GetHash() == prevOut.Hash)
                     {
+                        if (prevOut.N >= btx.Outputs.Count)
+                        {
+                            return GetSenderResult.CreateFailure(InvalidOutputIndex);
+                        }
+
                         Script script = btx.Outputs[prevOut.N].ScriptPubKey;
                         return GetAddressFromScript(script);
                     }
@@ -34,9 +44,14 @@ namespace Stratis.SmartContracts.Core.Util
                 FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { prevOut.Hash }).Result;
                 UnspentOutputs unspentOutputs = fetchCoinResult.UnspentOutputs.FirstOrDefault();
 
-                if (unspentOutputs == null)
+                if (unspentOutputs == null || prevOut.N >= unspentOutputs.Outputs.Length)
                 {
-                    return GetSenderResult.CreateFailure("Unspent outputs to smart contract transaction are not present in coinview");
+                    return GetSenderResult.CreateFailure(OutputsNotInCoinView);
+                }
+
+                if (prevOut.N >= unspentOutputs.Outputs.Length)
+                {
+                    return GetSenderResult.CreateFailure(InvalidOutputIndex);
                 }
 
                 Script script = unspentOutputs.Outputs[prevOut.N].ScriptPubKey;
@@ -44,7 +59,7 @@ namespace Stratis.SmartContracts.Core.Util
                 return GetAddressFromScript(script);
             }
 
-            return GetSenderResult.CreateFailure("Unable to get the sender of the transaction");
+            return GetSenderResult.CreateFailure(UnableToGetSender);
         }
 
         public GetSenderResult GetSender(Transaction tx, MempoolCoinView coinView)
