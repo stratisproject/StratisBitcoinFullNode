@@ -1,16 +1,8 @@
-using System;
-using System.Linq;
-using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using NBitcoin;
-using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core.ContractSigning;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
 {
@@ -35,11 +27,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         {
             if (!txData.IsCreateContract)
             {
-                // We do not need to validate calls
+                // We do not need to validate calls.
                 return;
             }
 
-            // If this rule is being used as part of consensus, then we need to have the SignedCodeCallDataSerializer being used
+            // If this rule is being used as part of consensus, then we need to have the SignedCodeCallDataSerializer being used.
             // If the below line is throwing, it must not be being used.
             var signedTxData = (SignedCodeContractTxData)txData;
 

@@ -95,6 +95,11 @@ namespace NBitcoin
             return this._ECKey.Sign(hash);
         }
 
+        /// <summary>
+        /// Hashes and signs a message, returning the signature.
+        /// </summary>
+        /// <param name="messageBytes">The message to hash then sign.</param>
+        /// <returns>The signature of the hashed and signed message.</returns>
         public ECDSASignature SignMessageBytes(byte[] messageBytes)
         {
             byte[] data = Utils.FormatMessageForSigning(messageBytes);
@@ -106,6 +111,7 @@ namespace NBitcoin
         {
             return SignMessage(Encoding.UTF8.GetBytes(message));
         }
+
         public string SignMessage(byte[] messageBytes)
         {
             byte[] data = Utils.FormatMessageForSigning(messageBytes);

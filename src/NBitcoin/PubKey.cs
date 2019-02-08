@@ -228,6 +228,12 @@ namespace NBitcoin
             return VerifyMessage(messageBytes, sig);
         }
 
+        /// <summary>
+        /// Verify message signed using signmessage from bitcoincore.
+        /// </summary>
+        /// <param name="messageBytes">The message.</param>
+        /// <param name="sig">The signature.</param>
+        /// <returns>True if signature is valid.</returns>
         public bool VerifyMessage(byte[] messageBytes, ECDSASignature sig)
         {
             byte[] messageSigned = Utils.FormatMessageForSigning(messageBytes);
