@@ -111,13 +111,7 @@ namespace Stratis.Bitcoin.Builder
                 try
                 {
                     // Initialize features that are flagged to start before the base feature.
-                    foreach (IFullNodeFeature feature in this.node.Services.Features.Where(f => f.InitializeBeforeBase))
-                    {
-                        callback(feature);
-                    }
-
-                    // Initialize the rest of the features.
-                    foreach (IFullNodeFeature feature in this.node.Services.Features.Where(f => !f.InitializeBeforeBase))
+                    foreach (IFullNodeFeature feature in this.node.Services.Features.OrderByDescending(f => f.InitializeBeforeBase))
                     {
                         callback(feature);
                     }
