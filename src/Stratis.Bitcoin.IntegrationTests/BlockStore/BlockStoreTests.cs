@@ -98,29 +98,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         }
 
         [Fact]
-        public void BlockStoreCanRecoverOnStartup()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
-
-                // Set the tip of the best chain to some blocks in the past.
-                stratisNodeSync.FullNode.Chain.SetTip(stratisNodeSync.FullNode.Chain.GetBlock(stratisNodeSync.FullNode.Chain.Height - 5));
-
-                // Stop the node to persist the chain with the reset tip.
-                stratisNodeSync.FullNode.Dispose();
-
-                CoreNode newNodeInstance = builder.CloneStratisNode(stratisNodeSync);
-
-                // Start the node, this should hit the block store recover code.
-                newNodeInstance.Start();
-
-                // Check that the store recovered to be the same as the best chain.
-                Assert.Equal(newNodeInstance.FullNode.Chain.Tip.HashBlock, newNodeInstance.FullNode.GetBlockStoreTip().HashBlock);
-            }
-        }
-
-        [Fact]
         public void BlockStoreCanReorg()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
