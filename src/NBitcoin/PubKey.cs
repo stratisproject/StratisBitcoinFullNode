@@ -213,7 +213,7 @@ namespace NBitcoin
         /// <returns>True if signatures is valid</returns>
         public bool VerifyMessage(string message, string signature)
         {
-            return VerifyMessage(Encoding.UTF8.GetBytes(message), signature);
+            return this.VerifyMessage(Encoding.UTF8.GetBytes(message), signature);
         }
 
         /// <summary>
@@ -225,7 +225,7 @@ namespace NBitcoin
         public bool VerifyMessage(byte[] messageBytes, string signature)
         {
             ECDSASignature sig = DecodeSigString(signature);
-            return VerifyMessage(messageBytes, sig);
+            return this.VerifyMessage(messageBytes, sig);
         }
 
         /// <summary>
