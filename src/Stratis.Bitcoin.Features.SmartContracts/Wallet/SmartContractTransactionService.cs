@@ -5,11 +5,9 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -49,55 +47,51 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
         {
-            AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
-            if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
-                return BuildCallContractTransactionResponse.Failed(SenderNoBalanceError);
-
-            var selectedInputs = new List<OutPoint>();
-            selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
-
-            uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
-
-            ContractTxData txData;
-            if (request.Parameters != null && request.Parameters.Any())
+            try
             {
-                try
+                AddressBalance addressBalance = this.walletManager.GetAddressBalance(request.Sender);
+                if (addressBalance.AmountConfirmed == 0 && addressBalance.AmountUnconfirmed == 0)
+                    throw new Exception(SenderNoBalanceError);
+
+                var selectedInputs = new List<OutPoint>();
+                selectedInputs = this.walletManager.GetSpendableInputsForAddress(request.WalletName, request.Sender);
+
+                uint160 addressNumeric = request.ContractAddress.ToUint160(this.network);
+
+                ContractTxData txData;
+                if (request.Parameters != null && request.Parameters.Any())
                 {
                     var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
                     txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
                 }
-                catch (MethodParameterStringSerializerException exception)
+                else
                 {
-                    return BuildCallContractTransactionResponse.Failed(exception.Message);
+                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, addressNumeric, request.MethodName);
                 }
-            }
-            else
-            {
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, addressNumeric, request.MethodName);
-            }
 
-            HdAddress senderAddress = null;
-            if (!string.IsNullOrWhiteSpace(request.Sender))
-            {
-                Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
-                HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
-                senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
-            }
+                HdAddress senderAddress = null;
+                if (!string.IsNullOrWhiteSpace(request.Sender))
+                {
+                    Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
+                    HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                    if (account == null)
+                        throw new Exception($"No account with the name '{request.AccountName}' could be found.");
 
-            ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
-            var context = new TransactionBuildContext(this.network)
-            {
-                AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
-                TransactionFee = totalFee,
-                ChangeAddress = senderAddress,
-                SelectedInputs = selectedInputs,
-                MinConfirmations = MinConfirmationsAllChecks,
-                WalletPassword = request.Password,
-                Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) } }.ToList()
-            };
+                    senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
+                }
 
-            try
-            {
+                ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
+                var context = new TransactionBuildContext(this.network)
+                {
+                    AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
+                    TransactionFee = totalFee,
+                    ChangeAddress = senderAddress,
+                    SelectedInputs = selectedInputs,
+                    MinConfirmations = MinConfirmationsAllChecks,
+                    WalletPassword = request.Password,
+                    Recipients = new[] { new Recipient { Amount = request.Amount, ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) } }.ToList()
+                };
+
                 Transaction transaction = this.walletTransactionHandler.BuildTransaction(context);
                 return BuildCallContractTransactionResponse.Succeeded(request.MethodName, transaction, context.TransactionFee);
             }
@@ -139,6 +133,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                if (account == null)
+                    throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
+
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
@@ -176,7 +173,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
 
-                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);                
+                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);
             }
 
             return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName);
