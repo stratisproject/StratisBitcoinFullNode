@@ -63,6 +63,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 .Select(grouping => grouping.Key);
         }
 
+        /// <summary>
+        /// Gets the account addresses for a wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to get the account addresses for.</param>
         [Route("account-addresses")]
         [HttpGet]
         public IActionResult GetAccountAddresses(string walletName)
@@ -94,6 +98,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
+        /// <summary>
+        /// Gets the balance at a specific wallet address.
+        /// </summary>
+        /// <param name="walletName">The address at which to retrieve the balance.</param>
         [Route("address-balance")]
         [HttpGet]
         public IActionResult GetAddressBalance(string address)
@@ -103,7 +111,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.Satoshi));
         }
 
-        [Route("history")]
+
+        /// <summary>
+        /// Gets the history of a specifc wallet.
+        /// </summary>
+        /// <param name="walletName">The name of the wallet to get the history for.</param>
+        /// <param name="address"></param>
+        [Route("wallet-history")]
         [HttpGet]
         public IActionResult GetHistory(string walletName, string address)
         {
@@ -211,7 +225,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
         }
 
-        [Route("create")]
+        /// <summary>
+        /// Builds a transaction to create a smart contract. Although the transaction is created, the smart contract is not
+        /// deployed on the network, and no gas or fees are consumed.
+        /// Instead the created transaction is returned as a JSON object.
+        /// </summary>
+        /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        [Route("build-SC-creation-TX")]
         [HttpPost]
         public IActionResult Create([FromBody] BuildCreateContractTransactionRequest request)
         {
@@ -230,7 +250,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             return Json(response.TransactionId);
         }
 
-        [Route("call")]
+        /// <summary>
+        /// Builds a transaction to call a smart contract method. Although the transaction is created, the
+        /// call is not made, and no gas or fees are consumed.
+        /// Instead the created transaction is returned as a JSON object.
+        /// </summary>
+        /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        [Route("build-SC-method-call-TX")]
         [HttpPost]
         public IActionResult Call([FromBody] BuildCallContractTransactionRequest request)
         {
@@ -248,7 +274,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             return Json(response);
         }
 
-        [Route("send-transaction")]
+        /// <summary>
+        /// Broadcasts a transaction, which either creates a smart contract or calls a method on a smart contract.
+        /// If the contract deployment or method call are successful gas and fees are consumed.
+        /// </summary>
+        /// <param name="request">An object containing the necessary parameters to send the transaction.</param>
+        [Route("broadcast-SC-TX-to-network")]
         [HttpPost]
         public IActionResult SendTransaction([FromBody] SendTransactionRequest request)
         {

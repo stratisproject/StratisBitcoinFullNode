@@ -6,6 +6,9 @@ using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
+    /// <summary>
+    /// A class containing the necessary parameters to perform a smart contract methods call request.
+    /// </summary>
     public class BuildCallContractTransactionRequest
     {
         public BuildCallContractTransactionRequest()
@@ -13,37 +16,77 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             this.AccountName = "account 0";
         }
 
+        /// <summary>
+        /// The name of the wallet containing funds to use to cover transaction fees, gas, and any funds specified in the
+        /// Amount field.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
+
+        /// <summary>
+        /// The name of the wallet account containing funds to use to cover transaction fees, gas, and any funds specified in the
+        /// Amount field. Defaults to "account 0".
+        /// </summary>
         public string AccountName { get; set; }
 
-        [Required(ErrorMessage = "A destination address is required.")]
+        /// <summary>
+        /// The address of the smart contract containing the method.
+        /// </summary>
+        [Required(ErrorMessage = "A smart contract address is required.")]
         [IsBitcoinAddress]
         public string ContractAddress { get; set; }
 
+        /// <summary>
+        /// The name of the method to call.
+        /// </summary>
         [Required(ErrorMessage = "A method name is required.")]
         public string MethodName { get; set; }
 
-        [Required(ErrorMessage = "An amount is required.")]
+        /// <summary>
+        /// The amount of STRAT to send to the smart contract address.
+        /// </summary>
+        [Required(ErrorMessage = "An amount is required but this can be set to 0.")]
         public string Amount { get; set; }
 
+        /// <summary>
+        /// The fees in STRAT to cover the method call transaction.
+        /// </summary>
         [MoneyFormat(isRequired: true, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
 
-        [Required(ErrorMessage = "A password is required.")]
+        /// <summary>
+        /// The password for the wallet.
+        /// </summary>
+        [Required(ErrorMessage = "A password for the wallet is required.")]
         public string Password { get; set; }
 
+        /// <summary>
+        /// The gas price in Satoshi to charge when the method is run by the miner mining the call transaction. 
+        /// </summary>
         [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatRule.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
 
+        /// <summary>
+        /// The limit of the gas charge in Satoshi. This limit cannnot be exceeded when the method is 
+        /// run by the miner mining the call transaction. If the gas spent exceeds this value, 
+        /// execution of the smart contract stops.
+        /// </summary>
         [Range(SmartContractFormatRule.GasLimitCallMinimum, SmartContractFormatRule.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
+        /// <summary>
+        /// A STRAT address containing the funds to cover transaction fees, gas, and any funds specified in the
+        /// Amount field.
+        /// </summary>
         [Required(ErrorMessage = "Sender is required.")]
         [IsBitcoinAddress]
         public string Sender { get; set; }
 
+        /// <summary>
+        /// An array of strings containing the parameters to pass to the method when it is called. For information the
+        /// format of a parameters string, please refer to 
+        /// </summary>
         public string[] Parameters { get; set; }
 
         public override string ToString()

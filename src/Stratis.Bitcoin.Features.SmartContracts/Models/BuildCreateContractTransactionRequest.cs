@@ -6,6 +6,9 @@ using Stratis.Bitcoin.Utilities.ValidationAttributes;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
+    /// <summary>
+    /// A class containing the necessary parameters to perform a smart contract creation request.
+    /// </summary>
     public class BuildCreateContractTransactionRequest
     {
         public BuildCreateContractTransactionRequest()
@@ -13,33 +16,69 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             this.AccountName = "account 0";
         }
 
+        /// <summary>
+        /// The name of the wallet containing funds to use to cover transaction fees, gas, and any funds specified in the
+        /// Amount field.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string WalletName { get; set; }
 
+        /// <summary>
+        /// The name of the wallet account containing funds to use to cover transaction fees, gas, and any funds specified in the
+        /// Amount field. Defaults to "account 0".
+        /// </summary>
         public string AccountName { get; set; }
 
+        /// <summary>
+        /// The amount of STRAT to send to the smart contract address on creation.
+        /// </summary>
         [Required(ErrorMessage = "An amount is required.")]
         public string Amount { get; set; }
 
+        /// <summary>
+        /// The fees in STRAT to cover the smart contract creation transaction.
+        /// </summary>
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
 
+        /// <summary>
+        /// The password for the wallet.
+        /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
+        /// <summary>
+        /// The smart contract bytecode.
+        /// </summary>
         [Required(ErrorMessage = "Contract code is required.")]
         public string ContractCode { get; set; }
 
+        /// <summary>
+        /// The gas price in Satoshi to charge when the smart contract constructor is run by the miner mining the сreation transaction. 
+        /// </summary>
         [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatRule.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
-
+         
+        /// <summary>
+        /// The limit of the gas charge in Satoshi. This limit cannnot be exceeded when the method is 
+        /// run by the miner mining the creation transaction. If the gas spent exceeds this value, 
+        /// execution of the smart contract stops.
+        /// </summary>
         [Range(SmartContractFormatRule.GasLimitCreateMinimum, SmartContractFormatRule.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
+        /// <summary>
+        /// A STRAT address containing the funds to cover transaction fees, gas, and any funds specified in the
+        /// Amount field.
+        /// </summary>
         [Required(ErrorMessage = "Sender is required.")]
         [IsBitcoinAddress]
         public string Sender { get; set; }
 
+        /// <summary>
+        /// An array of strings containing the parameters to pass to the smart contract constructor when it is called. For information the
+        /// format of a parameters string, please refer to 
+        /// </summary>
         public string[] Parameters { get; set; }
 
         public override string ToString()
