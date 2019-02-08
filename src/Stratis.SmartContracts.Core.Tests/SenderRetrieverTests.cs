@@ -70,7 +70,7 @@ namespace Stratis.SmartContracts.Core.Tests
             // Retriever fails but doesn't throw IndexOutOfRangeException
             GetSenderResult result = this.senderRetriever.GetSender(transaction, this.coinView.Object, blockTxs);
             Assert.False(result.Success);
-            Assert.Equal(result.Error, SenderRetriever.OutputsNotInCoinView);
+            Assert.Equal(result.Error, SenderRetriever.InvalidOutputIndex);
         }
 
         [Fact]

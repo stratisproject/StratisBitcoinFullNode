@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.Core.Util
                 FetchCoinsResponse fetchCoinResult = coinView.FetchCoinsAsync(new uint256[] { prevOut.Hash }).Result;
                 UnspentOutputs unspentOutputs = fetchCoinResult.UnspentOutputs.FirstOrDefault();
 
-                if (unspentOutputs == null || prevOut.N >= unspentOutputs.Outputs.Length)
+                if (unspentOutputs == null)
                 {
                     return GetSenderResult.CreateFailure(OutputsNotInCoinView);
                 }
