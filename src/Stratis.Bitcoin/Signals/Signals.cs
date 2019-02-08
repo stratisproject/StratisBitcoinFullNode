@@ -7,10 +7,13 @@ namespace Stratis.Bitcoin.Signals
 {
     public interface ISignals
     {
+        /// <summary>Event that is executed when block is connected to consensus chain.</summary>
         EventNotifier<ChainedHeaderBlock> OnBlockConnected { get; }
 
+        /// <summary>Event that is executed when block is disconnected from consensus chain.</summary>
         EventNotifier<ChainedHeaderBlock> OnBlockDisconnected { get; }
 
+        /// <summary>Event that is executed when transaction is received from another peer.</summary>
         EventNotifier<Transaction> OnTransactionReceived { get; }
     }
 
@@ -23,10 +26,13 @@ namespace Stratis.Bitcoin.Signals
             this.OnTransactionReceived = new EventNotifier<Transaction>();
         }
 
+        /// <inheritdoc />
         public EventNotifier<ChainedHeaderBlock> OnBlockConnected { get; private set; }
 
+        /// <inheritdoc />
         public EventNotifier<ChainedHeaderBlock> OnBlockDisconnected { get; private set; }
 
+        /// <inheritdoc />
         public EventNotifier<Transaction> OnTransactionReceived { get; private set; }
     }
 
@@ -39,16 +45,19 @@ namespace Stratis.Bitcoin.Signals
             this.callbacks = new List<Action<T>>();
         }
 
+        /// <summary>Registers a callback which will be invoked when <see cref="Notify"/> is called.</summary>
         public void Attach(Action<T> callback)
         {
             this.callbacks.Add(callback);
         }
 
+        /// <summary>Unregisters a callback.</summary>
         public void Detach(Action<T> callback)
         {
             this.callbacks.Remove(callback);
         }
 
+        /// <summary>Executes all registered callbacks.</summary>
         public void Notify(T item)
         {
             foreach (Action<T> callback in this.callbacks)
