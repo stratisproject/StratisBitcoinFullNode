@@ -1,5 +1,7 @@
 using System;
 using System.Net;
+using System.Threading.Tasks;
+using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.RPC;
@@ -265,6 +267,25 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
             var response2 = await rpc2;
             var response2AsString = response2.ResultString;
             Assert.False(string.IsNullOrEmpty(response2AsString));
+        }
+
+        [Fact]
+        public async void TestRpcBatchWithUnknownMethodsReturnsArrayAsync()
+        {
+            var rpcBatch = this.rpcTestFixture.RpcClient.PrepareBatch();
+            var unknownRpc = rpcBatch.SendCommandAsync("unknownmethod", "random");
+            var address = new Key().ScriptPubKey.WitHash.ScriptPubKey.GetDestinationAddress(rpcBatch.Network);
+            var knownRpc = rpcBatch.SendCommandAsync("validateaddress",address.ToString());
+
+            await rpcBatch.SendBatchAsync();
+
+            Func<Task> unknownRpcMethod = async () => { await unknownRpc; };
+
+            unknownRpcMethod.Should().Throw<RPCException>().Which.RPCCode.Should().Be(RPCErrorCode.RPC_METHOD_NOT_FOUND);
+
+            var knownRpcResponse = await knownRpc;
+            var knownRpcResponseAsString = knownRpcResponse.ResultString;
+            Assert.False(string.IsNullOrEmpty(knownRpcResponseAsString));
         }
 
         // TODO: implement the RPC methods used below
