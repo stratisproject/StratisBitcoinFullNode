@@ -1,60 +1,58 @@
-﻿using NBitcoin;
+﻿using System;
+using System.Collections.Generic;
+using NBitcoin;
 using Stratis.Bitcoin.Primitives;
 
 namespace Stratis.Bitcoin.Signals
 {
     public interface ISignals
     {
-        /// <summary>Event that is executed when block is connected to consensus chain.</summary>
-        event Signals.BlockDelegate OnBlockConnected;
+        EventNotifier<ChainedHeaderBlock> OnBlockConnected { get; }
 
-        /// <summary>Event that is executed when block is disconnected from consensus chain.</summary>
-        event Signals.BlockDelegate OnBlockDisconnected;
+        EventNotifier<ChainedHeaderBlock> OnBlockDisconnected { get; }
 
-        /// <summary>Event that is executed when transaction is received from another peer.</summary>
-        event Signals.TransactionDelegate OnTransactionReceived;
-
-        /// <summary>Invokes <see cref="OnBlockConnected"/> event.</summary>
-        void TriggerBlockConnected(ChainedHeaderBlock chainedHeaderBlock);
-
-        /// <summary>Invokes <see cref="OnBlockDisconnected"/> event.</summary>
-        void TriggerBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock);
-
-        /// <summary>Invokes <see cref="OnTransactionReceived"/> event.</summary>
-        void TriggerTransactionReceived(Transaction transaction);
+        EventNotifier<Transaction> OnTransactionReceived { get; }
     }
 
     public class Signals : ISignals
     {
-        public delegate void BlockDelegate(ChainedHeaderBlock chainedHeaderBlock);
-
-        public delegate void TransactionDelegate(Transaction transaction);
-
-        /// <inheritdoc />
-        public event BlockDelegate OnBlockConnected;
-
-        /// <inheritdoc />
-        public event BlockDelegate OnBlockDisconnected;
-
-        /// <inheritdoc />
-        public event TransactionDelegate OnTransactionReceived;
-
-        /// <inheritdoc />
-        public void TriggerBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock)
+        public Signals()
         {
-            this.OnBlockDisconnected?.Invoke(chainedHeaderBlock);
+            this.OnBlockConnected = new EventNotifier<ChainedHeaderBlock>();
+            this.OnBlockDisconnected = new EventNotifier<ChainedHeaderBlock>();
+            this.OnTransactionReceived = new EventNotifier<Transaction>();
         }
 
-        /// <inheritdoc />
-        public void TriggerBlockConnected(ChainedHeaderBlock chainedHeaderBlock)
+        public EventNotifier<ChainedHeaderBlock> OnBlockConnected { get; private set; }
+
+        public EventNotifier<ChainedHeaderBlock> OnBlockDisconnected { get; private set; }
+
+        public EventNotifier<Transaction> OnTransactionReceived { get; private set; }
+    }
+
+    public class EventNotifier<T>
+    {
+        private readonly List<Action<T>> callbacks;
+
+        public EventNotifier()
         {
-            this.OnBlockConnected?.Invoke(chainedHeaderBlock);
+            this.callbacks = new List<Action<T>>();
         }
 
-        /// <inheritdoc />
-        public void TriggerTransactionReceived(Transaction transaction)
+        public void Attach(Action<T> callback)
         {
-            this.OnTransactionReceived?.Invoke(transaction);
+            this.callbacks.Add(callback);
+        }
+
+        public void Detach(Action<T> callback)
+        {
+            this.callbacks.Remove(callback);
+        }
+
+        public void Notify(T item)
+        {
+            foreach (Action<T> callback in this.callbacks)
+                callback(item);
         }
     }
 }
