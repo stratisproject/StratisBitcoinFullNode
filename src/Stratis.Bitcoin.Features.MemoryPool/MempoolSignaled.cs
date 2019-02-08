@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public void Start()
         {
-            this.signals.OnBlockConnected += this.onBlockConnected;
+            this.signals.OnBlockConnected.Attach(this.onBlockConnected);
 
             this.asyncLoop = this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
             {
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Stop()
         {
-            this.signals.OnBlockConnected -= this.onBlockConnected;
+            this.signals.OnBlockConnected.Detach(this.onBlockConnected);
             this.asyncLoop?.Dispose();
         }
     }

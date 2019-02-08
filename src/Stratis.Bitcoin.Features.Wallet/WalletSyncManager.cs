@@ -98,8 +98,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.walletTip = fork;
             }
 
-            this.signals.OnBlockConnected += this.onBlockConnected;
-            this.signals.OnTransactionReceived += this.onTransactionAvailable;
+            this.signals.OnBlockConnected.Attach(this.onBlockConnected);
+            this.signals.OnTransactionReceived.Attach(this.onTransactionAvailable);
         }
 
         private void onTransactionAvailable(Transaction transaction)
@@ -115,8 +115,8 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public void Stop()
         {
-            this.signals.OnBlockConnected -= this.onBlockConnected;
-            this.signals.OnTransactionReceived -= this.onTransactionAvailable;
+            this.signals.OnBlockConnected.Detach(this.onBlockConnected);
+            this.signals.OnTransactionReceived.Detach(this.onTransactionAvailable);
         }
 
         /// <summary>Called when a <see cref="Block"/> is added to the <see cref="blocksQueue"/>.

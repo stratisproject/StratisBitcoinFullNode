@@ -118,10 +118,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.FullNode.NodeService<ISignals>().OnBlockConnected += delegate(ChainedHeaderBlock block)
-            {
-                interceptor(block);
-            };
+            this.FullNode.NodeService<ISignals>().OnBlockConnected.Attach(interceptor);
 
             return this;
         }
@@ -133,10 +130,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.FullNode.NodeService<ISignals>().OnBlockDisconnected += delegate (ChainedHeaderBlock block)
-            {
-                interceptor(block);
-            };
+            this.FullNode.NodeService<ISignals>().OnBlockDisconnected.Attach(interceptor);
 
             return this;
         }

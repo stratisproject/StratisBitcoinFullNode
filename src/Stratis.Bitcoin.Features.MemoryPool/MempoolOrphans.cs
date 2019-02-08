@@ -241,7 +241,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
                         behavior.RelayTransaction(orphanTx.GetHash());
 
-                        this.signals.TriggerTransactionReceived(orphanTx);
+                        this.signals.OnTransactionReceived.Notify(orphanTx);
 
                         for (int index = 0; index < orphanTx.Outputs.Count; index++)
                             workQueue.Enqueue(new OutPoint(orphanHash, index));

@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var transaction2 = new Transaction();
             block.Transactions = new List<Transaction> { transaction1, transaction2 };
 
-            signals.TriggerBlockDisconnected(genesisChainedHeaderBlock);
+            signals.OnBlockDisconnected.Notify(genesisChainedHeaderBlock);
 
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction1));
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction2));

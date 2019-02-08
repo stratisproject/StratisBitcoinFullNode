@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public GenerateCoinsFastDateTimeProvider(ISignals signals)
         {
-            signals.OnBlockConnected += this.onBlockConnected;
+            signals.OnBlockConnected.Attach(this.onBlockConnected);
         }
 
         public long GetTime()

@@ -60,8 +60,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
         /// <inheritdoc />
         public void Dispose()
         {
-            this.signals.OnBlockConnected -= this.onBlockConnected;
-            this.signals.OnTransactionReceived -= this.onTransactionAvailable;
+            this.signals.OnBlockConnected.Detach(this.onBlockConnected);
+            this.signals.OnTransactionReceived.Detach(this.onTransactionAvailable);
 
             this.SaveWatchOnlyWallet();
         }
@@ -72,8 +72,8 @@ namespace Stratis.Bitcoin.Features.WatchOnlyWallet
             // load the watch only wallet into memory
             this.Wallet = this.LoadWatchOnlyWallet();
 
-            this.signals.OnBlockConnected += this.onBlockConnected;
-            this.signals.OnTransactionReceived += this.onTransactionAvailable;
+            this.signals.OnBlockConnected.Attach(this.onBlockConnected);
+            this.signals.OnTransactionReceived.Attach(this.onTransactionAvailable);
 
             this.LoadTransactionLookup();
         }

@@ -22,9 +22,9 @@ namespace Stratis.Bitcoin.Tests.Signals
             var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
 
             bool signaled = false;
-            this.signals.OnBlockConnected += delegate (ChainedHeaderBlock headerBlock) { signaled = true; };
+            this.signals.OnBlockConnected.Attach(headerBlock => signaled = true);
 
-            this.signals.TriggerBlockConnected(chainedHeaderBlock);
+            this.signals.OnBlockConnected.Notify(chainedHeaderBlock);
 
             Assert.True(signaled);
         }
@@ -37,9 +37,9 @@ namespace Stratis.Bitcoin.Tests.Signals
             var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
 
             bool signaled = false;
-            this.signals.OnBlockDisconnected += delegate(ChainedHeaderBlock headerBlock) { signaled = true; };
+            this.signals.OnBlockDisconnected.Attach(headerBlock => signaled = true);
 
-            this.signals.TriggerBlockDisconnected(chainedHeaderBlock);
+            this.signals.OnBlockDisconnected.Notify(chainedHeaderBlock);
 
             Assert.True(signaled);
         }
@@ -50,9 +50,9 @@ namespace Stratis.Bitcoin.Tests.Signals
             Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
 
             bool signaled = false;
-            this.signals.OnTransactionReceived += delegate(Transaction transaction1) { signaled = true; };
+            this.signals.OnTransactionReceived.Attach(transaction1 => signaled = true);
 
-            this.signals.TriggerTransactionReceived(transaction);
+            this.signals.OnTransactionReceived.Notify(transaction);
 
             Assert.True(signaled);
         }

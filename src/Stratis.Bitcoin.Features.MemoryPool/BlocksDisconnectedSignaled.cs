@@ -27,7 +27,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Initialize()
         {
-            this.signals.OnBlockDisconnected += this.onBlockDisconnected;
+            this.signals.OnBlockDisconnected.Attach(this.onBlockDisconnected);
         }
 
         private void onBlockDisconnected(ChainedHeaderBlock chainedHeaderBlock)
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Dispose()
         {
-            this.signals.OnBlockDisconnected -= this.onBlockDisconnected;
+            this.signals.OnBlockDisconnected.Detach(this.onBlockDisconnected);
         }
     }
 }
