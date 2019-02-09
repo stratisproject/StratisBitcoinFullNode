@@ -590,7 +590,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
                 catch (OperationCanceledException ex)
                 {
-                    if (ex.CancellationToken == cancellationSource.Token)
+                    if (ex.CancellationToken != null)
                     {
                         this.logger.LogTrace("Remote peer hasn't responded within 10 seconds of the handshake completion, dropping connection.");
                         this.Disconnect("Handshake timeout");
