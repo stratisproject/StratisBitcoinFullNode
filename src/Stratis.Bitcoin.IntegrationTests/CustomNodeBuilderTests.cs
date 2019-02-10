@@ -45,7 +45,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
-                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams).WithNoConnectors();
 
                 coreNode.Start();
 
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
-                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams);
+                    ProtocolVersion.PROVEN_HEADER_VERSION, configParameters: extraParams).WithNoConnectors();
 
                 coreNode.Start();
 
@@ -124,11 +124,42 @@ namespace Stratis.Bitcoin.IntegrationTests
                         .MockIBD());
 
                 var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network,
-                    ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams);
+                    ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams).WithNoConnectors();
 
                 coreNode.Start();
 
                 coreNode.ConfigParameters["some_new_unknown_param"].Should().Be("with a value");
+            }
+        }
+
+        [Fact]
+        public void CanUseCustomConfigFileFromParams()
+        {
+            var specialConf = "special.conf";
+
+            var extraParams = new NodeConfigParameters
+            {
+                { "conf", specialConf },
+            };
+
+            using (var nodeBuilder = NodeBuilder.Create(this))
+            {
+                var buildAction = new Action<IFullNodeBuilder>(builder =>
+                    builder.UseBlockStore()
+                        .UsePowConsensus()
+                        .UseMempool()
+                        .AddMining()
+                        .UseWallet()
+                        .AddRPC()
+                        .UseApi()
+                        .MockIBD());
+
+                var coreNode = nodeBuilder.CreateCustomNode(buildAction, this.network, ProtocolVersion.PROTOCOL_VERSION, configParameters: extraParams).WithNoConnectors();
+
+                coreNode.Start();
+
+                coreNode.ConfigParameters["conf"].Should().Be(specialConf);
+                File.Exists(Path.Combine(coreNode.DataFolder, specialConf)).Should().BeTrue();
             }
         }
     }

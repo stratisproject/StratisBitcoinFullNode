@@ -10,7 +10,6 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public class SmartContractNodeSetupTests
     {
-
         [Fact]
         public void Mainnet_RequireStandard_False()
         {
@@ -19,7 +18,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
-                var node = builder.CreateSmartContractPoANode(network, 0);
+                var node = builder.CreateSmartContractPoANode(network, 0).WithNoConnectors();
                 node.Start();
                 TestHelper.WaitLoop(() => node.State == CoreNodeState.Running);
                 Assert.False(node.FullNode.NodeService<MempoolSettings>().RequireStandard);

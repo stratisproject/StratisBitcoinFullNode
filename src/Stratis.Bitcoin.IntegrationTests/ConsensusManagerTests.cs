@@ -447,6 +447,39 @@ namespace Stratis.Bitcoin.IntegrationTests
             }
         }
 
+        [Fact]
+        public void ConsensusManager_Fork_Of_100_Blocks_Occurs_Node_Reorgs_And_Resyncs_ToBestHeight()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Miner).Start();
+                var minerB = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
+                var syncer = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
+
+                // Sync the network to height 10.
+                TestHelper.ConnectAndSync(syncer, minerA, minerB);
+
+                TestHelper.DisableBlockPropagation(syncer, minerA);
+                TestHelper.DisableBlockPropagation(syncer, minerB);
+
+                // Miner A mines 105 blocks to height 115.
+                TestHelper.MineBlocks(minerA, 5);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 120);
+
+                // Miner B continues mines 110 blocks to a longer chain at height 120.
+                TestHelper.MineBlocks(minerB, 10);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), waitTimeSeconds: 120);
+
+                // Miner A mines an additional 10 blocks to height 125 that will create the longest chain.
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 120);
+
+                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 115);
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 115);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 110);
+            }
+        }
+
         /// <remarks>This test assumes CoinbaseMaturity is 10 and at block 2 there is a huge premine, adjust the test if this changes.</remarks>
         [Fact(Skip = "Work in progress")]
         public void ConsensusManager_Fork_Occurs_When_Stake_Coins_Are_Spent_And_Found_In_Rewind_Data()

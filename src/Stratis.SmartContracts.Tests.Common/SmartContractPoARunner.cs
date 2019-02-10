@@ -52,6 +52,13 @@ namespace Stratis.SmartContracts.Tests.Common
                 builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
             }
 
+            if (this.NoConnectors)
+            {
+                builder.RemoveImplementation<PeerConnectorConnectNode>();
+                builder.RemoveImplementation<PeerConnectorConnectNode>();
+                builder.RemoveImplementation<PeerConnectorDiscovery>();
+            }
+
             this.FullNode = (FullNode)builder.Build();
         }
     }

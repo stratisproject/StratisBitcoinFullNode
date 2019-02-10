@@ -224,6 +224,57 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
+        public async Task CreateWalletWith12WordsChineseMnemonicAsync()
+        {
+            // Arrange.
+            string walletName = this.fixture.GetUniqueWalletName();
+            string mnemonic = new Mnemonic(Wordlist.ChineseTraditional, WordCount.Twelve).ToString();
+
+            // Act.
+            var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
+            {
+                Name = walletName,
+                Passphrase = "",
+                Password = "123456",
+                Mnemonic = mnemonic
+            }).ReceiveString();
+
+            // Assert.
+
+            // Check the mnemonic returned.
+            response = response.Replace("\"", "");
+            response.Split(" ").Length.Should().Be(12);
+            Wordlist.AutoDetectLanguage(response).Should().Be(Language.ChineseTraditional);
+            response.Should().Be(mnemonic);
+
+            // Check a wallet file has been created.
+            string walletFolderPath = this.fixture.Node.FullNode.DataFolder.WalletPath;
+            string walletPath = Path.Combine(walletFolderPath, $"{walletName}.wallet.json");
+            File.Exists(walletPath).Should().BeTrue();
+
+            // Check the wallet.
+            Features.Wallet.Wallet wallet = JsonConvert.DeserializeObject<Features.Wallet.Wallet>(File.ReadAllText(walletPath));
+            wallet.IsExtPubKeyWallet.Should().BeFalse();
+            wallet.ChainCode.Should().NotBeNullOrEmpty();
+            wallet.EncryptedSeed.Should().NotBeNullOrEmpty();
+            wallet.Name.Should().Be(walletName);
+            wallet.Network.Should().Be(this.fixture.Node.FullNode.Network);
+
+            // Check only one account is created.
+            wallet.GetAccountsByCoinType(CoinType.Stratis).Should().ContainSingle();
+
+            // Check the created account.
+            HdAccount account = wallet.GetAccountsByCoinType(CoinType.Stratis).Single();
+            account.Name.Should().Be("account 0");
+            account.ExternalAddresses.Count().Should().Be(20);
+            account.InternalAddresses.Count().Should().Be(20);
+            account.Index.Should().Be(0);
+            account.ExtendedPubKey.Should().NotBeNullOrEmpty();
+            account.GetCoinType().Should().Be(CoinType.Stratis);
+            account.HdPath.Should().Be("m/44'/105'/0'");
+        }
+
+        [Fact]
         public async Task CreateWalletWith24WordsMnemonic()
         {
             // Arrange.
@@ -820,7 +871,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
-                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName})
+                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName })
                 .GetJsonAsync<WalletBalanceModel>();
 
             response.AccountsBalances.Should().NotBeEmpty();
@@ -1160,7 +1211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = "123456",
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
-                    Recipients = new List<RecipientModel> { new RecipientModel {DestinationAddress = address, Amount = "1000" } }
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } }
                 })
                 .ReceiveJson<WalletBuildTransactionModel>();
 
