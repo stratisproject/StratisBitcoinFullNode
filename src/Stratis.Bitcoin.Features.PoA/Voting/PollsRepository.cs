@@ -57,6 +57,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.logger.LogDebug("Polls repo initialized with highest id: {0}.", this.highestPollId);
         }
 
+        /// <summary>Provides Id of the most recently added poll.</summary>
         public int GetHighestPollId()
         {
             return this.highestPollId;
@@ -67,6 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             transaction.Insert<byte[], int>(TableName, RepositoryHighestIndexKey, this.highestPollId);
         }
 
+        /// <summary>Removes polls under provided ids.</summary>
         public void RemovePolls(params int[] ids)
         {
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
@@ -86,6 +88,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>Adds new poll.</summary>
         public void AddPolls(params Poll[] polls)
         {
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
@@ -107,6 +110,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>Updates existing poll.</summary>
         public void UpdatePoll(Poll poll)
         {
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
@@ -124,6 +128,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>Loads polls under provided keys from the database.</summary>
         public List<Poll> GetPolls(params int[] ids)
         {
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
@@ -146,6 +151,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <summary>Loads all polls from the database.</summary>
         public List<Poll> GetAllPolls()
         {
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
