@@ -26,7 +26,7 @@ namespace Stratis.SmartContracts.Core.Tests
         }
 
         [Fact]
-        public void SpentOrMissingOutput_Returns_False()
+        public void MissingOutput_Returns_False()
         {
             // Construct transaction.
             Transaction transaction = this.network.CreateTransaction();
@@ -43,6 +43,34 @@ namespace Stratis.SmartContracts.Core.Tests
             GetSenderResult result = this.senderRetriever.GetSender(transaction, this.coinView.Object, blockTxs);
             Assert.False(result.Success);
             Assert.Equal(result.Error, SenderRetriever.OutputsNotInCoinView);
+        }
+
+        [Fact]
+        public void SpentOutput_Returns_False()
+        {
+            // Construct transaction.
+            Transaction transaction = this.network.CreateTransaction();
+            transaction.Inputs.Add(new TxIn(new OutPoint(uint256.One, 0)));
+
+            // Setup coinview to return as if the PrevOut is spent or does not exist.
+            var unspentOutputs = new UnspentOutputs();
+            unspentOutputs.Outputs = new TxOut[]
+            {
+                null
+            };
+            var unspentOutputArray = new UnspentOutputs[]
+            {
+                unspentOutputs
+            };
+            this.coinView.Setup(x => x.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+                .ReturnsAsync(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
+
+            var blockTxs = new List<Transaction>();
+
+            // Retriever fails but doesn't throw exception
+            GetSenderResult result = this.senderRetriever.GetSender(transaction, this.coinView.Object, blockTxs);
+            Assert.False(result.Success);
+            Assert.Equal(result.Error, SenderRetriever.OutputAlreadySpent);
         }
 
         [Fact]

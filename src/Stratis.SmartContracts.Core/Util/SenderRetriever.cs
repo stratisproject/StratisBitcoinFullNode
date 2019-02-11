@@ -11,6 +11,7 @@ namespace Stratis.SmartContracts.Core.Util
     public class SenderRetriever : ISenderRetriever
     {
         public const string InvalidOutputIndex = "Invalid index given for PrevOut.";
+        public const string OutputAlreadySpent = "Output has already been spent.";
         public const string OutputsNotInCoinView = "Unspent outputs to smart contract transaction are not present in coinview.";
         public const string UnableToGetSender ="Unable to get the sender of the transaction from previous transactions and null coinview.";
 
@@ -54,9 +55,14 @@ namespace Stratis.SmartContracts.Core.Util
                     return GetSenderResult.CreateFailure(InvalidOutputIndex);
                 }
 
-                Script script = unspentOutputs.Outputs[prevOut.N].ScriptPubKey;
+                TxOut senderOutput = unspentOutputs.Outputs[prevOut.N];
 
-                return GetAddressFromScript(script);
+                if (senderOutput == null)
+                {
+                    return GetSenderResult.CreateFailure(OutputAlreadySpent);
+                }
+
+                return GetAddressFromScript(senderOutput.ScriptPubKey);
             }
 
             return GetSenderResult.CreateFailure(UnableToGetSender);
