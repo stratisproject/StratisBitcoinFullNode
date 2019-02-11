@@ -386,19 +386,30 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     if (this.batch.Count != 0)
                     {
-                        await this.SaveBatchAsync().ConfigureAwait(false);
-
-                        lock (this.blocksCacheLock)
+                        // Ensure we can retry if an exception is thrown by SaveBatchAsync.
+                        try
                         {
-                            foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
+                            await this.SaveBatchAsync().ConfigureAwait(false);
+
+                            // If an error occurred during SaveBatchAsync then this code
+                            // which clears the batch will not execute.
+                            lock (this.blocksCacheLock)
                             {
-                                this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                                foreach (ChainedHeaderBlock chainedHeaderBlock in this.batch)
+                                {
+                                    this.pendingBlocksCache.Remove(chainedHeaderBlock.ChainedHeader.HashBlock);
+                                }
+
+                                this.batch.Clear();
                             }
 
-                            this.batch.Clear();
+                            this.currentBatchSizeBytes = 0;
                         }
-
-                        this.currentBatchSizeBytes = 0;
+                        catch (Exception err)
+                        {
+                            this.logger.LogWarning("Could not save blocks to the block repository. Will try again.");
+                            this.logger.LogTrace(err.Message);
+                        }
                     }
 
                     timerTask = null;
