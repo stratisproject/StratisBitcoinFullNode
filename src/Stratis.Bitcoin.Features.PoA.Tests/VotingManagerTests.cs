@@ -32,7 +32,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.federationManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
 
-            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager, this.resultExecutorMock.Object);
+            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager, this.resultExecutorMock.Object, new NodeStats(new DateTimeProvider()));
             this.votingManager.Initialize();
         }
 
