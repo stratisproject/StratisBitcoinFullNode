@@ -660,7 +660,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     HdAccount account = wallet.GetAccountByCoinType(accountName, this.coinType);
                     if (account == null)
-                        throw new WalletException($"No account with the name '{account}' could be found.");
+                        throw new WalletException($"No account with the name '{accountName}' could be found.");
 
                     accounts.Add(account);
                 }
