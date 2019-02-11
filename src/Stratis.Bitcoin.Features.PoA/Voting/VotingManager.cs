@@ -21,18 +21,19 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly ILogger logger;
 
-        /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="polls"/>.</summary>
+        /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="polls"/>, <see cref="pollsRepository"/>.</summary>
         private readonly object locker;
 
-        private readonly PollsRepository pollsRepository; // TODO protect using lock
-
-        /// <summary>Collection of voting data that should be included in a block when it's mined.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
-        private List<VotingData> scheduledVotingData;
+        private readonly PollsRepository pollsRepository;
 
         /// <summary>In-memory collection of pending polls.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<Poll> polls;
+
+        /// <summary>Collection of voting data that should be included in a block when it's mined.</summary>
+        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
+        private List<VotingData> scheduledVotingData;
 
         public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
             INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer)
