@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using DBreeze;
@@ -101,6 +102,28 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 }
 
                 transaction.Commit();
+            }
+        }
+
+        public List<Poll> GetPolls(params int[] ids)
+        {
+            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            {
+                var polls = new List<Poll>(ids.Length);
+
+                foreach (int id in ids)
+                {
+                    Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>(TableName, id.ToBytes());
+
+                    if (!row.Exists)
+                        throw new ArgumentException("Value under provided key doesn't exist!");
+
+                    Poll poll = this.dBreezeSerializer.Deserialize<Poll>(row.Value);
+
+                    polls.Add(poll);
+                }
+
+                return polls;
             }
         }
 

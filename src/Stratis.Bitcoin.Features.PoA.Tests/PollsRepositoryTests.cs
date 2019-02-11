@@ -56,5 +56,18 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             Assert.Equal(2, this.repository.GetHighestPollId());
         }
+
+        [Fact]
+        public void CanLoadPolls()
+        {
+            this.repository.AddPolls(new Poll() { Id = 0 });
+            this.repository.AddPolls(new Poll() { Id = 1 });
+            this.repository.AddPolls(new Poll() { Id = 2 });
+
+            Assert.True(this.repository.GetPolls(0, 1, 2).Count == 3);
+
+            Assert.Throws<ArgumentException>(() => this.repository.GetPolls(-1));
+            Assert.Throws<ArgumentException>(() => this.repository.GetPolls(9));
+        }
     }
 }
