@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Runtime.InteropServices;
 using System.Threading;
 using NBitcoin;
@@ -65,7 +64,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// Tests whether a quantity of blocks mined on X are
         /// correctly synced to an SBFN node.
         /// </summary>
-        [Retry]
+        [Fact]
         public void XMinesBlocks_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -190,7 +189,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// <summary>
         /// This test is necessary because X regards nulldata transactions as non-standard if they have a value of zero assigned.
         /// </summary>
-        [Retry]
+        [Fact]
         public void SBFNCreatesOpReturnTransaction_XSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
@@ -260,7 +259,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
             }
         }
 
-        [Retry]
+        [Fact]
         public void XMinesTransaction_SBFNSyncs()
         {
             if (!RuntimeInformation.IsOSPlatform(OSPlatform.Windows))
