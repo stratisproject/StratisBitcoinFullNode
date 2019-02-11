@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using System.Text;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
@@ -43,17 +44,19 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         private List<Poll> finishedPolls;
 
         public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo,
-            SlotsManager slotsManager, IPollResultExecutor pollResultExecutor)
+            SlotsManager slotsManager, IPollResultExecutor pollResultExecutor, INodeStats nodeStats)
         {
-            this.federationManager = federationManager;
-            this.keyValueRepo = keyValueRepo;
-            this.slotsManager = slotsManager;
-            this.pollResultExecutor = pollResultExecutor;
+            this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
+            this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
+            this.slotsManager = Guard.NotNull(slotsManager, nameof(slotsManager));
+            this.pollResultExecutor = Guard.NotNull(pollResultExecutor, nameof(pollResultExecutor));
 
             this.locker = new object();
             this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
             this.scheduledVotingData = new List<VotingData>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
         }
 
         public void Initialize()
@@ -290,6 +293,18 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
 
             return largestId + 1;
+        }
+
+        private void AddComponentStats(StringBuilder log)
+        {
+            log.AppendLine();
+            log.AppendLine("======Voting Manager======");
+
+            lock (this.locker)
+            {
+                log.AppendLine($"{this.pendingPolls.Count} polls are pending, {this.finishedPolls.Count} polls are finished.");
+                log.AppendLine($"{this.scheduledVotingData.Count} votes are scheduled to be added to the next block this node mines.");
+            }
         }
     }
 }
