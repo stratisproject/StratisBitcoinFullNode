@@ -351,6 +351,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             log.Append("...");
+            log.AppendLine();
         }
 
         /// <inheritdoc/>
