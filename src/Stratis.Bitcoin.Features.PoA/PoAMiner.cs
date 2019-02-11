@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -25,7 +27,7 @@ namespace Stratis.Bitcoin.Features.PoA
     /// Blocks can be created only for particular timestamps- once per round.
     /// Round length in seconds is equal to amount of fed members multiplied by target spacing.
     /// Miner's slot in each round is the same and is determined by the index
-    /// of current key in <see cref="PoANetwork.FederationPublicKeys"/>
+    /// of current key in <see cref="FederationManager.GetFederationMembers"/>
     /// </remarks>
     public interface IPoAMiner : IDisposable
     {
@@ -67,6 +69,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IWalletManager walletManager;
 
+        private readonly VotingManager votingManager;
+
+        private readonly VotingDataEncoder votingDataEncoder;
+
         private Task miningTask;
 
         public PoAMiner(
@@ -83,7 +89,8 @@ namespace Stratis.Bitcoin.Features.PoA
             FederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            VotingManager votingManager)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -96,9 +103,11 @@ namespace Stratis.Bitcoin.Features.PoA
             this.federationManager = federationManager;
             this.integrityValidator = integrityValidator;
             this.walletManager = walletManager;
+            this.votingManager = votingManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
+            this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
@@ -221,6 +230,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
             BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
 
+            this.AddVotingData(blockTemplate);
+
             blockTemplate.Block.Header.Time = timestamp;
 
             // Timestamp should always be greater than prev one.
@@ -274,6 +285,28 @@ namespace Stratis.Bitcoin.Features.PoA
             HdAddress address = this.walletManager.GetUnusedAddress(walletAccountReference);
 
             return address.Pubkey;
+        }
+
+        /// <summary>Adds OP_RETURN output to a coinbase transaction which contains encoded voting data.</summary>
+        /// <remarks>If there are no votes scheduled output will not be added.</remarks>
+        private void AddVotingData(BlockTemplate blockTemplate)
+        {
+            List<VotingData> scheduledVotes = this.votingManager.GetAndCleanScheduledVotes();
+
+            if (scheduledVotes.Count == 0)
+            {
+                this.logger.LogTrace("(-)[NO_DATA]");
+                return;
+            }
+
+            var votingData = new List<byte>(VotingDataEncoder.VotingOutputPrefixBytes);
+
+            byte[] encodedVotingData = this.votingDataEncoder.Encode(scheduledVotes);
+            votingData.AddRange(encodedVotingData);
+
+            var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(votingData.ToArray()));
+
+            blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
         }
 
         private void AddComponentStats(StringBuilder log)
