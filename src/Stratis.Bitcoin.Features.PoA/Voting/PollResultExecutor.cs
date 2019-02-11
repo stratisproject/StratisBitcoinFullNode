@@ -4,8 +4,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     public interface IPollResultExecutor
     {
+        /// <summary>Applies effect of <see cref="VotingData"/>.</summary>
         void ApplyChange(VotingData data);
 
+        /// <summary>Reverts effect of <see cref="VotingData"/>.</summary>
         void RevertChange(VotingData data);
     }
 
@@ -18,6 +20,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.federationManager = federationManager;
         }
 
+        /// <inheritdoc />
         public void ApplyChange(VotingData data)
         {
             switch (data.Key)
@@ -32,6 +35,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <inheritdoc />
         public void RevertChange(VotingData data)
         {
             switch (data.Key)
