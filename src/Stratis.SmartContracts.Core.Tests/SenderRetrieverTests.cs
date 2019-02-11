@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.Core.Tests
             Transaction transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn());
 
-            // Setup coinview to return as if the PrevOut is spent or does not exist.
+            // Setup coinview to return as if the PrevOut does not exist.
             var unspentOutputArray = new UnspentOutputs[0];
             this.coinView.Setup(x => x.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(unspentOutputArray, uint256.Zero));
@@ -52,7 +52,7 @@ namespace Stratis.SmartContracts.Core.Tests
             Transaction transaction = this.network.CreateTransaction();
             transaction.Inputs.Add(new TxIn(new OutPoint(uint256.One, 0)));
 
-            // Setup coinview to return as if the PrevOut is spent or does not exist.
+            // Setup coinview to return as if the PrevOut is spent.
             var unspentOutputs = new UnspentOutputs();
             unspentOutputs.Outputs = new TxOut[]
             {
