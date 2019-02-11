@@ -176,16 +176,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         }
 
         /// <summary>
-        /// Removes all the peer connectors from the node.
-        /// </summary>
-        /// <returns>This node.</returns>
-        public CoreNode WithNoConnectors()
-        {
-            this.runner.NoConnectors = true;
-            return this;
-        }
-
-        /// <summary>
         /// This does not create a physical wallet but only sets the miner secret on the node.
         /// </summary>
         /// <returns>This node.</returns>

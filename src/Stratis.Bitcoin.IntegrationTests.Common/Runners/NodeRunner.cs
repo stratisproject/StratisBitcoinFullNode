@@ -23,11 +23,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
         public bool AlwaysFlushBlocks { get; internal set; }
 
         /// <summary>
-        /// This flag removes all peer connectors from the node.
-        /// </summary>
-        public bool NoConnectors { get; internal set; }
-
-        /// <summary>
         /// By default peer discovery is turned off for integration tests.
         /// </summary>
         public bool EnablePeerDiscovery { get; internal set; }
