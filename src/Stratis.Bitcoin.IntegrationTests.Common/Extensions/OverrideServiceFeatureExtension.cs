@@ -39,12 +39,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="fullNodeBuilder">The object used to build the current node.</param>
         /// <param name="serviceToOverride">Callback routine that will override a given service.</param>
         /// <typeparam name="T">The services to be replaced.</typeparam>
+        /// <typeparam name="TFeature">The feature that the service exists in.</typeparam>
         /// <returns>The full node builder, with the replaced service.</returns>
-        public static IFullNodeBuilder ReplaceService<T>(this IFullNodeBuilder fullNodeBuilder, T serviceToOverride)
+        public static IFullNodeBuilder ReplaceService<T, TFeature>(this IFullNodeBuilder fullNodeBuilder, T serviceToOverride)
         {
             fullNodeBuilder.ConfigureFeature(features =>
             {
-                IFeatureRegistration feature = features.FeatureRegistrations.FirstOrDefault(f => f.FeatureType == typeof(BaseFeature));
+                IFeatureRegistration feature = features.FeatureRegistrations.FirstOrDefault(f => f.FeatureType == typeof(TFeature));
                 if (feature != null)
                 {
                     feature.FeatureServices(services =>

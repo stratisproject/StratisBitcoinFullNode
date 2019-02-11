@@ -41,14 +41,18 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Saves private key to default path.</summary>
         public void SavePrivateKey(Key privateKey)
         {
-            var ms = new MemoryStream();
-            var stream = new BitcoinStream(ms, true);
-            stream.ReadWrite(ref privateKey);
+            using (var ms = new MemoryStream())
+            {
+                var stream = new BitcoinStream(ms, true);
+                stream.ReadWrite(ref privateKey);
 
-            ms.Seek(0, SeekOrigin.Begin);
-            FileStream fileStream = File.Create(this.GetPrivateKeySavePath());
-            ms.CopyTo(fileStream);
-            fileStream.Close();
+                ms.Seek(0, SeekOrigin.Begin);
+
+                using (FileStream fileStream = File.Create(this.GetPrivateKeySavePath()))
+                {
+                    ms.CopyTo(fileStream);
+                }
+            }
         }
 
         /// <summary>Loads the private key from default path.</summary>
@@ -59,14 +63,14 @@ namespace Stratis.Bitcoin.Features.PoA
             if (!File.Exists(path))
                 return null;
 
-            FileStream readStream = File.OpenRead(path);
+            using (FileStream readStream = File.OpenRead(path))
+            {
+                var privateKey = new Key();
+                var stream = new BitcoinStream(readStream, false);
+                stream.ReadWrite(ref privateKey);
 
-            var privateKey = new Key();
-            var stream = new BitcoinStream(readStream, false);
-            stream.ReadWrite(ref privateKey);
-            readStream.Close();
-
-            return privateKey;
+                return privateKey;
+            }
         }
     }
 }

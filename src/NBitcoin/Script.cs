@@ -820,7 +820,7 @@ namespace NBitcoin
             return a == null ? new Script(ops) : new Script(a._Script.Concat(new Script(ops)._Script));
         }
 
-        public IEnumerable<Op> ToOps()
+        public IList<Op> ToOps()
         {
             using (var reader = new ScriptReader(this._Script))
             {

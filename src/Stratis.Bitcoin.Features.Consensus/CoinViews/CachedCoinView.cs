@@ -228,18 +228,15 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.performanceCounter.AddMissCount(miss.Count);
                 this.performanceCounter.AddHitCount(txIds.Length - miss.Count);
-            }
+            
+                FetchCoinsResponse fetchedCoins = null;
 
-            FetchCoinsResponse fetchedCoins = null;
+                if (missedTxIds.Count > 0 || this.blockHash == null)
+                {
+                    this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
+                    fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
+                }
 
-            if (missedTxIds.Count > 0 || this.blockHash == null)
-            {
-                this.logger.LogTrace("{0} cache missed transaction needs to be loaded from underlying CoinView.", missedTxIds.Count);
-                fetchedCoins = await this.Inner.FetchCoinsAsync(missedTxIds.ToArray(), cancellationToken).ConfigureAwait(false);
-            }
-
-            using (await this.lockobj.LockAsync(cancellationToken).ConfigureAwait(false))
-            {
                 if (this.blockHash == null)
                 {
                     uint256 innerblockHash = fetchedCoins.BlockHash;
@@ -400,10 +397,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                         this.cachedUtxoItems.TryAdd(unspent.TransactionId, cacheItem);
                         this.logger.LogTrace("CacheItem added to the cache during save '{0}'.", cacheItem.UnspentOutputs);
-                    }
-                    else
-                    {
-                        this.logger.LogTrace("Outputs of transaction ID '{0}' are in cache already, updating them.", unspent.TransactionId);
                     }
 
                     // If cacheItem.UnspentOutputs is null this means the trx was not stored in the disk,
