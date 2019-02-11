@@ -44,16 +44,29 @@ namespace Stratis.Bitcoin.Consensus
         private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
         private readonly Network network;
+
         private readonly ILogger logger;
+
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly IChainedHeaderTree chainedHeaderTree;
+
         private readonly IChainState chainState;
+
         private readonly IPartialValidator partialValidator;
+
         private readonly IFullValidator fullValidator;
+
         private readonly ISignals signals;
+
         private readonly IPeerBanning peerBanning;
+
         private readonly IBlockStore blockStore;
+
         private readonly IFinalizedBlockInfoRepository finalizedBlockInfo;
+
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly IBlockPuller blockPuller;
+
         private readonly IIntegrityValidator integrityValidator;
         private readonly INodeLifetime nodeLifetime;
 
@@ -78,6 +91,7 @@ namespace Stratis.Bitcoin.Consensus
             public List<OnBlockDownloadedCallback> Callbacks { get; set; }
         }
 
+        /// <remarks>All access should be protected by <see cref="blockRequestedLock"/>.</remarks>
         private readonly Dictionary<uint256, DownloadedCallbacks> callbacksByBlocksRequestedHash;
 
         /// <summary>Peers mapped by their ID.</summary>
@@ -95,8 +109,10 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly AsyncLock reorgLock;
 
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private long expectedBlockDataBytes;
 
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
         private readonly ConcurrentChain chain;
@@ -418,16 +434,18 @@ namespace Stratis.Bitcoin.Consensus
                 var peersToBan = new List<INetworkPeer>();
 
                 if (validationContext.MissingServices != null)
-                {
                     this.connectionManager.AddDiscoveredNodesRequirement(validationContext.MissingServices.Value);
-                    this.blockPuller.RequestPeerServices(validationContext.MissingServices.Value);
-
-                    this.logger.LogTrace("(-)[MISSING_SERVICES]");
-                    return;
-                }
 
                 lock (this.peerLock)
                 {
+                    if (validationContext.MissingServices != null)
+                    {
+                        this.blockPuller.RequestPeerServices(validationContext.MissingServices.Value);
+
+                        this.logger.LogTrace("(-)[MISSING_SERVICES]");
+                        return;
+                    }
+
                     List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationContext.ChainedHeaderToValidate);
 
                     this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationContext.ChainedHeaderToValidate, peerIdsToBan.Count);
@@ -998,14 +1016,14 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (request != null)
                     downloadRequests.Add(request);
+            }
 
-                lock (this.peerLock)
-                {
-                    foreach (BlockDownloadRequest downloadRequest in downloadRequests)
-                        this.toDownloadQueue.Enqueue(downloadRequest);
+            lock (this.peerLock)
+            {
+                foreach (BlockDownloadRequest downloadRequest in downloadRequests)
+                    this.toDownloadQueue.Enqueue(downloadRequest);
 
-                    this.ProcessDownloadQueueLocked();
-                }
+                this.ProcessDownloadQueueLocked();
             }
         }
 

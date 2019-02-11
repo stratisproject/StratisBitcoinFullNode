@@ -13,7 +13,7 @@ using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class HeaderTimeChecksPoARuleTests : PoARulesTestsBase
+    public class HeaderTimeChecksPoARuleTests : PoATestsBase
     {
         private readonly HeaderTimeChecksPoARule timeChecksRule;
 

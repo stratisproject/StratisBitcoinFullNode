@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Retry(1)]
+        [Fact]
         public void WalletCanReorg()
         {
             // This test has 4 parts:
@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Retry]
+        [Fact]
         public void WalletCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

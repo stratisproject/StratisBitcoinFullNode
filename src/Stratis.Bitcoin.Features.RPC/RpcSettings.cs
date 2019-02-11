@@ -5,7 +5,6 @@ using System.Net;
 using System.Text;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using NBitcoin.Networks;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
@@ -39,7 +38,7 @@ namespace Stratis.Bitcoin.Features.RPC
         public List<IPEndPoint> Bind { get; set; }
 
         /// <summary>List of IP addresses that are allowed to connect to RPC interfaces.</summary>
-        public List<IPAddress> AllowIp { get; set; }
+        public List<IPAddressBlock> AllowIp { get; set; }
 
         /// <summary>
         /// Initializes an instance of the object from the node configuration.
@@ -53,7 +52,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
             this.Bind = new List<IPEndPoint>();
             this.DefaultBindings = new List<IPEndPoint>();
-            this.AllowIp = new List<IPAddress>();
+            this.AllowIp = new List<IPAddressBlock>();
 
             // Get values from config
             this.LoadSettingsFromConfig(nodeSettings);
@@ -82,7 +81,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 {
                     this.AllowIp = config
                         .GetAll("rpcallowip", this.logger)
-                        .Select(p => IPAddress.Parse(p))
+                        .Select(p => IPAddressBlock.Parse(p))
                         .ToList();
                 }
                 catch (FormatException)
