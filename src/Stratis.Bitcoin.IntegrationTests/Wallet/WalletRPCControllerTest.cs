@@ -39,15 +39,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 RPCClient rpc = node.CreateRPCClient();
 
-                try
-                {
-                    await rpc.SendCommandAsync(RPCOperations.gettransaction, txId);
-                }
-                catch (RPCException exception)
-                {
-                    exception.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY);
-                    exception.Message.Should().Be("Invalid or non-wallet transaction id.");
-                }
+                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.gettransaction, txId); };
+                RPCException exception = getTransaction.Should().Throw<RPCException>().Which;
+                exception.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY);
+                exception.Message.Should().Be("Invalid or non-wallet transaction id.");
             }
         }
 
@@ -72,15 +67,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 RPCClient rpc = node.CreateRPCClient();
 
-                try
-                {
-                    await rpc.SendCommandAsync(RPCOperations.gettransaction, txId);
-                }
-                catch (RPCException exception)
-                {
-                    exception.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY);
-                    exception.Message.Should().Be("Invalid or non-wallet transaction id.");
-                }
+                Func<Task> getTransaction = async () => { await rpc.SendCommandAsync(RPCOperations.gettransaction, txId); };
+                RPCException exception = getTransaction.Should().Throw<RPCException>().Which;
+                exception.RPCCode.Should().Be(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY);
+                exception.Message.Should().Be("Invalid or non-wallet transaction id.");
             }
         }
 
