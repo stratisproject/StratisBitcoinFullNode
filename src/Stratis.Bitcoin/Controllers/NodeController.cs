@@ -448,7 +448,7 @@ namespace Stratis.Bitcoin.Controllers
                     }
                 }
 
-                // Only update the loggers if the setting was succesfull.
+                // Only update the loggers if the setting was successful.
                 LogManager.ReconfigExistingLoggers();
                 return this.Ok();
             }
