@@ -74,9 +74,20 @@ namespace Stratis.SmartContracts.CLR
 
                 var observer = new Observer(gasMeter,  new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
-                moduleDefinition.Rewrite(rewriter);
+                
+                if (!moduleDefinition.Rewrite(rewriter))
+                {
+                    this.logger.LogTrace("(-)[CONTRACT_REWRITE_FAILED]");
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+                }
 
                 code = moduleDefinition.ToByteCode();
+
+                if (code.Value == null || code.Value.Length == 0)
+                {
+                    this.logger.LogTrace("(-)[CONTRACT_TOBYTECODE_FAILED]");
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+                }
             }
 
             Result<IContract> contractLoadResult = this.Load(
@@ -128,8 +139,20 @@ namespace Stratis.SmartContracts.CLR
             {
                 var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
-                moduleDefinition.Rewrite(rewriter);
+
+                if (!moduleDefinition.Rewrite(rewriter))
+                {
+                    this.logger.LogTrace("(-)[CONTRACT_REWRITE_FAILED]");
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+                }
+
                 code = moduleDefinition.ToByteCode();
+
+                if (code.Value == null || code.Value.Length == 0)
+                {
+                    this.logger.LogTrace("(-)[CONTRACT_TOBYTECODE_FAILED]");
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+                }
             }
 
             Result<IContract> contractLoadResult = this.Load(
