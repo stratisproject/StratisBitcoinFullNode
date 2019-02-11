@@ -1,6 +1,7 @@
 ﻿using System.Collections.Generic;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
@@ -21,7 +22,9 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         public VotingManagerTests()
         {
             string dir = TestBase.CreateTestDir(this);
-            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+
+            DataFolder folder = new DataFolder(dir);
+
             this.resultExecutorMock = new Mock<IPollResultExecutor>();
             this.encoder = new VotingDataEncoder(this.loggerFactory);
             this.changesApplied = new List<VotingData>();
@@ -32,7 +35,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.federationManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
 
-            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager, this.resultExecutorMock.Object, new NodeStats(new DateTimeProvider()));
+            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, this.slotsManager, this.resultExecutorMock.Object,
+                new NodeStats(new DateTimeProvider()), folder, new DBreezeSerializer(this.network));
             this.votingManager.Initialize();
         }
 

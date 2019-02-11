@@ -53,6 +53,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 if (row.Exists)
                     this.highestPollId = row.Value;
             }
+
+            this.logger.LogDebug("Polls repo initialized with highest id: {0}.", this.highestPollId);
         }
 
         public int GetHighestPollId()
@@ -105,6 +107,23 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        public void UpdatePoll(Poll poll)
+        {
+            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            {
+                Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>(TableName, poll.Id.ToBytes());
+
+                if (!row.Exists)
+                    throw new ArgumentException("Value doesn't exist!");
+
+                byte[] bytes = this.dBreezeSerializer.Serialize(poll);
+
+                transaction.Insert<byte[], byte[]>(TableName, poll.Id.ToBytes(), bytes);
+
+                transaction.Commit();
+            }
+        }
+
         public List<Poll> GetPolls(params int[] ids)
         {
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
@@ -117,6 +136,25 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                     if (!row.Exists)
                         throw new ArgumentException("Value under provided key doesn't exist!");
+
+                    Poll poll = this.dBreezeSerializer.Deserialize<Poll>(row.Value);
+
+                    polls.Add(poll);
+                }
+
+                return polls;
+            }
+        }
+
+        public List<Poll> GetAllPolls()
+        {
+            using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+            {
+                var polls = new List<Poll>(this.highestPollId + 1);
+
+                for (int i = 0; i < this.highestPollId + 1; i++)
+                {
+                    Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>(TableName, i.ToBytes());
 
                     Poll poll = this.dBreezeSerializer.Deserialize<Poll>(row.Value);
 

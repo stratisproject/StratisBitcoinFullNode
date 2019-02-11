@@ -3,22 +3,15 @@ using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using Microsoft.Extensions.Logging;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
-    public class VotingManager
+    public class VotingManager : IDisposable
     {
-        /// <summary>Key for accessing list of pending polls from <see cref="IKeyValueRepository"/>.</summary>
-        private const string PendingPollsDbKey = "pendingpollskey";
-
-        /// <summary>Key for accessing list of pending polls from <see cref="IKeyValueRepository"/>.</summary>
-        private const string FinishedPollsDbKey = "finishedpollskey";
-
         private readonly FederationManager federationManager;
-
-        private readonly IKeyValueRepository keyValueRepo;
 
         private readonly VotingDataEncoder votingDataEncoder;
 
@@ -28,32 +21,30 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly ILogger logger;
 
-        /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="pendingPolls"/>.</summary>
+        /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="polls"/>.</summary>
         private readonly object locker;
+
+        private readonly PollsRepository pollsRepository; // TODO protect using lock
 
         /// <summary>Collection of voting data that should be included in a block when it's mined.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<VotingData> scheduledVotingData;
 
-        /// <summary>Collection of pending polls.</summary>
+        /// <summary>In-memory collection of pending polls.</summary>
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
-        private List<Poll> pendingPolls;
+        private List<Poll> polls;
 
-        /// <summary>Collection of finished polls.</summary>
-        /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
-        private List<Poll> finishedPolls;
-
-        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo,
-            SlotsManager slotsManager, IPollResultExecutor pollResultExecutor, INodeStats nodeStats)
+        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
+            INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer)
         {
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
-            this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
             this.slotsManager = Guard.NotNull(slotsManager, nameof(slotsManager));
             this.pollResultExecutor = Guard.NotNull(pollResultExecutor, nameof(pollResultExecutor));
 
             this.locker = new object();
             this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
             this.scheduledVotingData = new List<VotingData>();
+            this.pollsRepository = new PollsRepository(dataFolder, loggerFactory, dBreezeSerializer);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
@@ -61,25 +52,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         public void Initialize()
         {
-            this.pendingPolls = this.LoadPolls(PendingPollsDbKey);
+            this.pollsRepository.Initialize();
 
-            if (this.pendingPolls == null)
-            {
-                this.logger.LogDebug("No pending polls found in DB, initializing with empty collection.");
-
-                this.pendingPolls = new List<Poll>();
-                this.SavePolls(this.pendingPolls, PendingPollsDbKey);
-            }
-
-            this.finishedPolls = this.LoadPolls(FinishedPollsDbKey);
-
-            if (this.finishedPolls == null)
-            {
-                this.logger.LogDebug("No finished polls found in DB, initializing with empty collection.");
-
-                this.finishedPolls = new List<Poll>();
-                this.SavePolls(this.finishedPolls, FinishedPollsDbKey);
-            }
+            this.polls = this.pollsRepository.GetAllPolls();
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
@@ -121,25 +96,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        /// <summary>Saves collection of polls to the database under provided key.</summary>
-        private void SavePolls(List<Poll> polls, string key)
-        {
-            this.keyValueRepo.SaveValueJson(key, polls);
-        }
-
-        /// <summary>Loads collection of polls from the database using provided key.</summary>
-        private List<Poll> LoadPolls(string key)
-        {
-            List<Poll> polls = this.keyValueRepo.LoadValueJson<List<Poll>>(key);
-            return polls;
-        }
-
         /// <summary>Provides a collection of polls that are currently active.</summary>
         public List<Poll> GetPendingPolls()
         {
             lock (this.locker)
             {
-                return new List<Poll>(this.pendingPolls);
+                return new List<Poll>(this.polls.Where(x => x.IsActive));
             }
         }
 
@@ -148,7 +110,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             lock (this.locker)
             {
-                return new List<Poll>(this.finishedPolls);
+                return new List<Poll>(this.polls.Where(x => !x.IsActive));
             }
         }
 
@@ -174,25 +136,28 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData data in votingDataList)
                 {
-                    Poll existingPoll = this.pendingPolls.SingleOrDefault(x => x.VotingData == data);
+                    Poll existingPoll = this.polls.SingleOrDefault(x => x.VotingData == data && x.IsActive);
 
                     if (existingPoll == null)
                     {
                         existingPoll = new Poll()
                         {
-                            Id = this.GetNextPollIdLocked(),
+                            Id = this.pollsRepository.GetHighestPollId() + 1,
                             PollAppliedBlockHash = null,
                             PollStartBlockHash = chBlock.Block.GetHash(),
                             VotingData = data,
                             PubKeysHexVotedInFavor = new List<string>() { fedMemberKeyHex }
                         };
 
-                        this.pendingPolls.Add(existingPoll);
+                        this.polls.Add(existingPoll);
+                        this.pollsRepository.AddPolls(existingPoll);
+
                         this.logger.LogDebug("New poll was created.");
                     }
                     else if (!existingPoll.PubKeysHexVotedInFavor.Contains(fedMemberKeyHex))
                     {
                         existingPoll.PubKeysHexVotedInFavor.Add(fedMemberKeyHex);
+                        this.pollsRepository.UpdatePoll(existingPoll);
 
                         this.logger.LogDebug("Voted on existing poll.");
                     }
@@ -214,13 +179,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         this.pollResultExecutor.ApplyChange(data);
 
                         existingPoll.PollAppliedBlockHash = chBlock.Block.GetHash();
-                        this.pendingPolls.Remove(existingPoll);
-                        this.finishedPolls.Add(existingPoll);
+                        this.pollsRepository.UpdatePoll(existingPoll);
                     }
                 }
-
-                this.SavePolls(this.pendingPolls, PendingPollsDbKey);
-                this.SavePolls(this.finishedPolls, FinishedPollsDbKey);
             }
         }
 
@@ -244,55 +205,29 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 foreach (VotingData votingData in votingDataList)
                 {
                     // Poll that was finished in the block being disconnected.
-                    Poll pollToRevert = this.finishedPolls.SingleOrDefault(x => x.PollAppliedBlockHash == chBlock.Block.GetHash() && x.VotingData == votingData);
+                    Poll targetPoll = this.polls.Single(x => x.VotingData == votingData);
 
-                    if (pollToRevert != null)
+                    if (targetPoll.PollAppliedBlockHash == chBlock.Block.GetHash())
                     {
-                        this.pollResultExecutor.RevertChange(pollToRevert.VotingData);
+                        this.pollResultExecutor.RevertChange(targetPoll.VotingData);
 
-                        pollToRevert.PollAppliedBlockHash = null;
+                        targetPoll.PollAppliedBlockHash = null;
 
-                        this.finishedPolls.Remove(pollToRevert);
-                        this.pendingPolls.Add(pollToRevert);
-
-                        this.pendingPolls = this.pendingPolls.OrderBy(x => x.Id).ToList();
+                        this.pollsRepository.UpdatePoll(targetPoll);
                     }
 
                     // Pub key of a fed member that created voting data.
                     string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
 
-                    Poll targetPendingPoll = this.pendingPolls.Single(x => x.VotingData == votingData);
+                    targetPoll.PubKeysHexVotedInFavor.Remove(fedMemberKeyHex);
 
-                    targetPendingPoll.PubKeysHexVotedInFavor.Remove(fedMemberKeyHex);
-
-                    if (targetPendingPoll.PubKeysHexVotedInFavor.Count == 0)
-                        this.pendingPolls.Remove(targetPendingPoll);
+                    if (targetPoll.PubKeysHexVotedInFavor.Count == 0)
+                    {
+                        this.polls.Remove(targetPoll);
+                        this.pollsRepository.RemovePolls(targetPoll.Id);
+                    }
                 }
-
-                this.SavePolls(this.pendingPolls, PendingPollsDbKey);
-                this.SavePolls(this.finishedPolls, FinishedPollsDbKey);
             }
-        }
-
-        /// <summary>Provides id for the next poll that is to be created.</summary>
-        /// <remarks>Should be locked by <see cref="locker"/>.</remarks>
-        private int GetNextPollIdLocked()
-        {
-            int largestId = -1;
-
-            foreach (Poll finishedPoll in this.finishedPolls)
-            {
-                if (finishedPoll.Id > largestId)
-                    largestId = finishedPoll.Id;
-            }
-
-            foreach (Poll pendingPoll in this.pendingPolls)
-            {
-                if (pendingPoll.Id > largestId)
-                    largestId = pendingPoll.Id;
-            }
-
-            return largestId + 1;
         }
 
         private void AddComponentStats(StringBuilder log)
@@ -302,9 +237,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                log.AppendLine($"{this.pendingPolls.Count} polls are pending, {this.finishedPolls.Count} polls are finished.");
+                log.AppendLine($"{this.polls.Count(x => x.IsActive)} polls are pending, {this.polls.Count(x => !x.IsActive)} polls are finished.");
                 log.AppendLine($"{this.scheduledVotingData.Count} votes are scheduled to be added to the next block this node mines.");
             }
+        }
+
+        /// <inheritdoc />
+        public void Dispose()
+        {
+            this.pollsRepository.Dispose();
         }
     }
 }

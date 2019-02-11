@@ -101,6 +101,8 @@ namespace Stratis.Bitcoin.Features.PoA
         public override void Dispose()
         {
             this.miner.Dispose();
+
+            this.votingManager.Dispose();
         }
     }
 
