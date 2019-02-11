@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.P2P
             }
 
             // If the peer selector returns nothing, we wait 2 seconds to
-            // effectively override the connector's burst mode.
+            // effectively override the connector's initial connection interval.
             if (peer == null)
             {
                 this.logger.LogTrace("Peer selection failed, executing selection delay.");

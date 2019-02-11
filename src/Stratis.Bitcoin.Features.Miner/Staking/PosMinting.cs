@@ -368,7 +368,16 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                     continue;
                 }
 
-                // Prevent staking if not in initial block download.
+                // Don't stake if the wallet is not up-to-date with the current chain.
+                if (this.consensusManager.Tip.HashBlock != this.walletManager.WalletTipHash)
+                {
+                    this.logger.LogTrace("Waiting for wallet to catch up before mining can be started.");
+
+                    await Task.Delay(TimeSpan.FromMilliseconds(this.minerSleep), cancellationToken).ConfigureAwait(false);
+                    continue;
+                }
+
+                // Prevent staking if in initial block download.
                 if (this.initialBlockDownloadState.IsInitialBlockDownload())
                 {
                     this.logger.LogTrace("Waiting for synchronization before mining can be started.");
@@ -434,7 +443,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
                 .ToList();
 
             FetchCoinsResponse fetchedCoinSet = await this.coinView.FetchCoinsAsync(stakableUtxos.Select(t => t.Transaction.Id).Distinct().ToArray(), cancellationToken).ConfigureAwait(false);
-            Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
+            Dictionary<uint256, UnspentOutputs> utxoByTransaction = fetchedCoinSet.UnspentOutputs.Where(utxo => utxo != null).ToDictionary(utxo => utxo.TransactionId, utxo => utxo);
             fetchedCoinSet = null; // allow GC to collect as soon as possible.
 
             for (int i = 0; i < stakableUtxos.Count; i++)

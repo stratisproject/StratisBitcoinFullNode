@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         {
             return new BuildCallContractTransactionResponse()
             {
-                Message = string.Format("Contract was successfully called with method {0}.", methodName),
+                Message = string.Format("Your CALL method {0} transaction was sent. Check the receipt using the transaction ID once it has been included in a new block.", methodName),
                 Success = true,
 
                 Hex = transaction.ToHex(),
@@ -60,9 +60,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         {
             return new BuildCreateContractTransactionResponse()
             {
-                Message = "Your contract was successfully deployed.",
+                Message = "Your CREATE transaction was sent. Check the receipt using the transaction ID once it has been included in a new block..",
                 Success = true,
-
                 Hex = transaction.ToHex(),
                 Fee = transactionFee,
                 NewContractAddress = address,
