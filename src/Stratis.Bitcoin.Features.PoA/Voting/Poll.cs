@@ -15,7 +15,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>
         /// <c>true</c> if poll's result wasn't applied.
         /// <c>false</c> in case majority of fed members voted in favor and result of the poll was applied.</summary>
-        public bool IsActive => this.PollAppliedBlockHash == null;
+        public bool IsPending => this.PollAppliedBlockHash != null;
 
         public int Id;
 

@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             lock (this.locker)
             {
-                return new List<Poll>(this.polls.Where(x => x.IsActive));
+                return new List<Poll>(this.polls.Where(x => x.IsPending));
             }
         }
 
@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             lock (this.locker)
             {
-                return new List<Poll>(this.polls.Where(x => !x.IsActive));
+                return new List<Poll>(this.polls.Where(x => !x.IsPending));
             }
         }
 
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 foreach (VotingData data in votingDataList)
                 {
-                    Poll existingPoll = this.polls.SingleOrDefault(x => x.VotingData == data && x.IsActive);
+                    Poll existingPoll = this.polls.SingleOrDefault(x => x.VotingData == data && x.IsPending);
 
                     if (existingPoll == null)
                     {
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                log.AppendLine($"{this.polls.Count(x => x.IsActive)} polls are pending, {this.polls.Count(x => !x.IsActive)} polls are finished.");
+                log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished.");
                 log.AppendLine($"{this.scheduledVotingData.Count} votes are scheduled to be added to the next block this node mines.");
             }
         }
