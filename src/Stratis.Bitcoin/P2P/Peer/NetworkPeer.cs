@@ -588,11 +588,18 @@ namespace Stratis.Bitcoin.P2P.Peer
                 {
                     await this.RespondToHandShakeAsync(cancellationSource.Token).ConfigureAwait(false);
                 }
-                catch (OperationCanceledException)
+                catch (OperationCanceledException ex)
                 {
-                    this.logger.LogTrace("Remote peer haven't responded within 10 seconds of the handshake completion, dropping connection.");
-
-                    this.Disconnect("Handshake timeout");
+                    if (ex.CancellationToken == cancellationSource.Token)
+                    {
+                        this.logger.LogTrace("Remote peer hasn't responded within 10 seconds of the handshake completion, dropping connection.");
+                        this.Disconnect("Handshake timeout");
+                    }
+                    else
+                    {
+                        this.logger.LogTrace("Handshake problem, dropping connection. Problem: '{0}'.", ex.Message);
+                        this.Disconnect($"Handshake problem, reason: '{ex.Message}'.");
+                    }
 
                     this.logger.LogTrace("(-)[HANDSHAKE_TIMEDOUT]");
                     throw;
