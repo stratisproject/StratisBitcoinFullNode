@@ -7,6 +7,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
@@ -35,8 +36,9 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             FederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
-            INodeStats nodeStats) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
-                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats)
+            INodeStats nodeStats,
+            VotingManager votingManager) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
+                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager)
         {
             this.timeProvider = dateTimeProvider as EditableTimeProvider;
             this.cancellationSource = new CancellationTokenSource();
