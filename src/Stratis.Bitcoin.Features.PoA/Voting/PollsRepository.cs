@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         public void Initialize()
         {
             // Load highest index.
-            this.highestPollId = 0;
+            this.highestPollId = -1;
 
             using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
             {
