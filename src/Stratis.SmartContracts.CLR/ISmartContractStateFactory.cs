@@ -8,7 +8,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Sets up a new <see cref="ISmartContractState"/> based on the current state.
         /// </summary>        
-        ISmartContractState Create(IState state, IGasMeter gasMeter, uint160 address, BaseMessage message,
+        ISmartContractState Create(IState state, RuntimeObserver.IGasMeter gasMeter, uint160 address, BaseMessage message,
             IStateRepository repository);
     }
 }

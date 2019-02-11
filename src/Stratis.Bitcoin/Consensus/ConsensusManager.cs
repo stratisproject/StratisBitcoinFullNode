@@ -17,6 +17,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.Extensions;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -43,16 +44,29 @@ namespace Stratis.Bitcoin.Consensus
         private const int ConsensusIsConsideredToBeSyncedMargin = 5;
 
         private readonly Network network;
+
         private readonly ILogger logger;
+
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly IChainedHeaderTree chainedHeaderTree;
+
         private readonly IChainState chainState;
+
         private readonly IPartialValidator partialValidator;
+
         private readonly IFullValidator fullValidator;
+
         private readonly ISignals signals;
+
         private readonly IPeerBanning peerBanning;
+
         private readonly IBlockStore blockStore;
+
         private readonly IFinalizedBlockInfoRepository finalizedBlockInfo;
+
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly IBlockPuller blockPuller;
+
         private readonly IIntegrityValidator integrityValidator;
         private readonly INodeLifetime nodeLifetime;
 
@@ -77,6 +91,7 @@ namespace Stratis.Bitcoin.Consensus
             public List<OnBlockDownloadedCallback> Callbacks { get; set; }
         }
 
+        /// <remarks>All access should be protected by <see cref="blockRequestedLock"/>.</remarks>
         private readonly Dictionary<uint256, DownloadedCallbacks> callbacksByBlocksRequestedHash;
 
         /// <summary>Peers mapped by their ID.</summary>
@@ -94,8 +109,10 @@ namespace Stratis.Bitcoin.Consensus
 
         private readonly AsyncLock reorgLock;
 
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private long expectedBlockDataBytes;
 
+        /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
         private readonly ConcurrentChain chain;
@@ -417,16 +434,18 @@ namespace Stratis.Bitcoin.Consensus
                 var peersToBan = new List<INetworkPeer>();
 
                 if (validationContext.MissingServices != null)
-                {
                     this.connectionManager.AddDiscoveredNodesRequirement(validationContext.MissingServices.Value);
-                    this.blockPuller.RequestPeerServices(validationContext.MissingServices.Value);
-
-                    this.logger.LogTrace("(-)[MISSING_SERVICES]");
-                    return;
-                }
 
                 lock (this.peerLock)
                 {
+                    if (validationContext.MissingServices != null)
+                    {
+                        this.blockPuller.RequestPeerServices(validationContext.MissingServices.Value);
+
+                        this.logger.LogTrace("(-)[MISSING_SERVICES]");
+                        return;
+                    }
+
                     List<int> peerIdsToBan = this.chainedHeaderTree.PartialOrFullValidationFailed(validationContext.ChainedHeaderToValidate);
 
                     this.logger.LogDebug("Validation of block '{0}' failed, banning and disconnecting {1} peers.", validationContext.ChainedHeaderToValidate, peerIdsToBan.Count);
@@ -613,8 +632,7 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader);
                         this.logger.LogTrace("[DISCONNECTED_BLOCK_STATE]{0}", disconnectedBlock.ChainedHeader.Previous);
 
-                        if (disconnectedBlock.ChainedHeader.Block == null)
-                            disconnectedBlock.ChainedHeader.Block = disconnectedBlock.Block;
+                        this.chainedHeaderTree.BlockRewinded(disconnectedBlock);
                     }
                 }
 
@@ -969,7 +987,7 @@ namespace Stratis.Bitcoin.Consensus
                        if (downloadedCallbacks.Callbacks == null)
                            downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
 
-                        downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
+                       downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
                     }
 
                     bool blockIsNotConsecutive = (previousHeader != null) && (chainedHeader.Previous.HashBlock != previousHeader.HashBlock);
@@ -998,14 +1016,14 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (request != null)
                     downloadRequests.Add(request);
+            }
 
-                lock (this.peerLock)
-                {
-                    foreach (BlockDownloadRequest downloadRequest in downloadRequests)
-                        this.toDownloadQueue.Enqueue(downloadRequest);
+            lock (this.peerLock)
+            {
+                foreach (BlockDownloadRequest downloadRequest in downloadRequests)
+                    this.toDownloadQueue.Enqueue(downloadRequest);
 
-                    this.ProcessDownloadQueueLocked();
-                }
+                this.ProcessDownloadQueueLocked();
             }
         }
 
@@ -1286,7 +1304,7 @@ namespace Stratis.Bitcoin.Consensus
         /// Returns <c>true</c> if consensus' height is within <see cref="ConsensusIsConsideredToBeSyncedMargin"/>
         /// blocks from the best tip's height.
         /// </summary>
-        /// <remarks>Should be locked by <see cref="peerLock"/></remarks>
+        /// <remarks>Should be locked by <see cref="peerLock"/>.</remarks>
         private bool IsConsensusConsideredToBeSyncedLocked()
         {
             ChainedHeader bestTip = this.chainedHeaderTree.GetBestPeerTip();
@@ -1337,14 +1355,13 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.isIbd) log.AppendLine("IBD Stage");
 
-                string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
+                log.AppendLine($"Chained header tree size: {this.chainedHeaderTree.ChainedBlocksDataBytes.BytesToMegaBytes()} MB");
 
-                string unconsumedBytes = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksDataBytes);
-                string maxUnconsumedBytes = this.FormatBigNumber(this.maxUnconsumedBlocksDataBytes);
+                string unconsumedBlocks = this.FormatBigNumber(this.chainedHeaderTree.UnconsumedBlocksCount);
 
                 double filledPercentage = Math.Round((this.chainedHeaderTree.UnconsumedBlocksDataBytes / (double)this.maxUnconsumedBlocksDataBytes) * 100, 2);
 
-                log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({unconsumedBytes} / {maxUnconsumedBytes} bytes). Cache is filled by: {filledPercentage}%");
+                log.AppendLine($"Unconsumed blocks: {unconsumedBlocks} -- ({this.chainedHeaderTree.UnconsumedBlocksDataBytes.BytesToMegaBytes()} / {this.maxUnconsumedBlocksDataBytes.BytesToMegaBytes()} MB). Cache is filled by: {filledPercentage}%");
 
                 int pendingDownloadCount = this.callbacksByBlocksRequestedHash.Count;
                 int currentlyDownloadingCount = this.expectedBlockSizes.Count;
@@ -1354,7 +1371,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>Formats the big number.</summary>
-        /// <remarks><c>123456789</c> => <c>123,456,789</c></remarks>
+        /// <remarks><c>123456789</c> => <c>123,456,789</c>.</remarks>
         private string FormatBigNumber(long number)
         {
             return $"{number:#,##0}";

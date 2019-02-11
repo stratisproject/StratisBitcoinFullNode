@@ -21,11 +21,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 {
     public class TestHelper
     {
-        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
+        public static void WaitLoop(Func<bool> act, string failureReason = "Unknown Reason", int waitTimeSeconds = 60, int retryDelayInMiliseconds = 1000, CancellationToken cancellationToken = default(CancellationToken))
         {
             if (cancellationToken == default(CancellationToken))
             {
-                cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token;
+                cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
             }
 
             while (!act())
@@ -81,11 +81,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            // Check that node1 tip exists in node2 store (either in disk or in the pending list) 
+            // Check that node1 tip exists in node2 store (either in disk or in the pending list)
             if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
-            // Check that node2 tip exists in node1 store (either in disk or in the pending list) 
+            // Check that node2 tip exists in node1 store (either in disk or in the pending list)
             if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             if (node.FullNode.Chain.Tip.HashBlock != node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
                 return false;
 
-            // Check that node1 tip exists in store (either in disk or in the pending list) 
+            // Check that node1 tip exists in store (either in disk or in the pending list)
             if (node.FullNode.BlockStore().GetBlockAsync(node.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
                 return false;
 
@@ -201,7 +201,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 {
                     address = coreNode.FullNode.WalletManager().GetUnusedAddress(new WalletAccountReference(walletName, accountName));
                 }
-                
+
                 coreNode.MinerHDAddress = address;
 
                 Wallet wallet = coreNode.FullNode.WalletManager().GetWalletByName(walletName);

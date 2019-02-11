@@ -1059,15 +1059,18 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     result = this.walletManager.RemoveAllTransactions(request.WalletName);
                 }
-                else
+                else if (request.FromDate != default(DateTime))
                 {
-                    if (request.TransactionsIds == null || request.TransactionsIds.Any(trx => trx == null))
-                    {
-                        throw new WalletException("Transaction ids need to be specified if the 'all' flag is not set.");
-                    }
-
+                    result = this.walletManager.RemoveTransactionsFromDate(request.WalletName, request.FromDate);
+                }
+                else if(request.TransactionsIds != null)
+                {
                     IEnumerable<uint256> ids = request.TransactionsIds.Select(uint256.Parse);
                     result = this.walletManager.RemoveTransactionsByIdsLocked(request.WalletName, ids);
+                }
+                else
+                {
+                    throw new WalletException("A filter specifying what transactions to remove must be set.");
                 }
 
                 // If the user chose to resync the wallet after removing transactions.

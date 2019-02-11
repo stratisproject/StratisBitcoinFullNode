@@ -160,9 +160,9 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             int blockSize = block.GetSerializedSize();
             this.chainState.ConsensusTip = null;
 
-            int count = BlockStoreQueue.BatchThresholdSizeBytes / blockSize + 2;
+            int count = 5 * 1024 * 1024 / blockSize + 2;
 
-            ConcurrentChain longChain = CreateChain(count);
+            ConcurrentChain longChain = this.CreateChain(count);
             this.repositoryTipHashAndHeight = new HashHeightPair(longChain.Genesis.HashBlock, 0);
 
             var blockStoreFlushCondition = new BlockStoreQueueFlushCondition(this.chainState, this.initialBlockDownloadState.Object);

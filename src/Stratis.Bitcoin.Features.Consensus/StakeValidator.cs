@@ -412,14 +412,12 @@ namespace Stratis.Bitcoin.Features.Consensus
             byte[] array = input.ToByteArray();
 
             int missingZero = 32 - array.Length;
+
             if (missingZero < 0)
-            {
-                //throw new InvalidOperationException("Awful bug, this should never happen");
-                array = array.Skip(Math.Abs(missingZero)).ToArray();
-            }
+                return new uint256(array.Skip(Math.Abs(missingZero)).ToArray(), false);
 
             if (missingZero > 0)
-                array = new byte[missingZero].Concat(array).ToArray();
+                return new uint256(new byte[missingZero].Concat(array).ToArray(), false);
 
             return new uint256(array, false);
         }

@@ -30,15 +30,15 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Get the gas cost for a specific instruction. For v1 all instructions are priced equally.
         /// </summary>
-        public static Gas InstructionOperationCost(Instruction instruction)
+        public static RuntimeObserver.Gas InstructionOperationCost(Instruction instruction)
         {
             OpCode opcode = instruction.OpCode;
-            Gas cost;
+            RuntimeObserver.Gas cost;
 
             switch (opcode.Name)
             {
                 default:
-                    cost = (Gas)InstructionGasCost;
+                    cost = (RuntimeObserver.Gas)InstructionGasCost;
                     break;
             }
 
@@ -48,44 +48,43 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Gas cost to log an event inside a contract.
         /// </summary>
-        public static Gas LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
+        public static RuntimeObserver.Gas LogOperationCost(IEnumerable<byte[]> topics, byte[] data)
         {
             int topicCost = topics.Select(x => x.Length * LogPerTopicByteCost).Sum();
             int dataCost = data.Length * LogPerByteCost;
-            return (Gas)(ulong) (topicCost + dataCost);
+            return (RuntimeObserver.Gas)(ulong) (topicCost + dataCost);
         }
 
         /// <summary>
         /// Get cost to store this key and value.
         /// </summary>
-        public static Gas StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        public static RuntimeObserver.Gas StorageSaveOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
             int keyLen = keyBytes != null ? keyBytes.Length : 0;
             int valueLen = valueBytes != null ? valueBytes.Length : 0;
 
-            Gas cost = (Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
+            var cost = (RuntimeObserver.Gas)(ulong)(StoragePerByteSavedGasCost * keyLen + StoragePerByteSavedGasCost * valueLen);
             return cost;
         }
 
         /// <summary>
         /// Get cost to retrieve this value via key.
         /// </summary>
-        public static Gas StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
+        public static RuntimeObserver.Gas StorageRetrieveOperationCost(byte[] keyBytes, byte[] valueBytes)
         {
             int keyLen = keyBytes != null ? keyBytes.Length : 0;
             int valueLen = valueBytes != null ? valueBytes.Length : 0;
 
-            Gas cost = (Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
+            var cost = (RuntimeObserver.Gas)(ulong)(StoragePerByteRetrievedGasCost * keyLen + StoragePerByteRetrievedGasCost * valueLen);
             return cost;
         }
 
         /// <summary>
         /// TODO - Add actual costs
         /// </summary>
-        /// <param name="methodToCall"></param>
-        public static Gas MethodCallCost(MethodReference methodToCall)
+        public static RuntimeObserver.Gas MethodCallCost(MethodReference methodToCall)
         {
-            return (Gas)MethodCallGasCost;
+            return (RuntimeObserver.Gas)MethodCallGasCost;
         }
     }
 }

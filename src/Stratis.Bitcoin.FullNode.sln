@@ -6,8 +6,8 @@ MinimumVisualStudioVersion = 10.0.40219.1
 Project("{2150E333-8FDC-42A3-9474-1A3956D46DE8}") = "global", "global", "{5B331FD3-D493-46A9-928B-B786FC6F3103}"
 	ProjectSection(SolutionItems) = preProject
 		.editorconfig = .editorconfig
+		Directory.Build.props = Directory.Build.props
 		None.ruleset = None.ruleset
-		Settings.StyleCop = Settings.StyleCop
 		Stratis.ruleset = Stratis.ruleset
 		stylecop.json = stylecop.json
 	EndProjectSection
@@ -150,9 +150,9 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.Bitcoin.Features.Po
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.RuntimeObserver", "Stratis.SmartContracts.RuntimeObserver\Stratis.SmartContracts.RuntimeObserver.csproj", "{8FEFF18B-3546-4237-8FD1-9F184BC7B4C7}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.CLR.Tests", "Stratis.SmartContracts.CLR.Tests\Stratis.SmartContracts.CLR.Tests.csproj", "{E98CB412-9684-4061-8E76-B6CD12A3C32A}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.CLR.Tests", "Stratis.SmartContracts.CLR.Tests\Stratis.SmartContracts.CLR.Tests.csproj", "{E98CB412-9684-4061-8E76-B6CD12A3C32A}"
 EndProject
-Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Core.Tests", "Stratis.SmartContracts.Core.Tests\Stratis.SmartContracts.Core.Tests.csproj", "{A1CF9560-A6A0-4270-9569-0D117AFA799C}"
+Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.SmartContracts.Core.Tests", "Stratis.SmartContracts.Core.Tests\Stratis.SmartContracts.Core.Tests.csproj", "{A1CF9560-A6A0-4270-9569-0D117AFA799C}"
 EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution

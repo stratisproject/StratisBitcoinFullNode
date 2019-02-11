@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             LoggingConfiguration.RegisterFeatureNamespace<MempoolFeature>("mempool");
             LoggingConfiguration.RegisterFeatureNamespace<BlockPolicyEstimator>("estimatefee");
-
+            
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features
@@ -187,7 +187,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                         services.AddSingleton<IMempoolPersistence, MempoolPersistence>();
                         services.AddSingleton<MempoolController>();
                         services.AddSingleton<MempoolSettings>();
-                        services.AddSingleton<IStandardScriptsRegistry, StandardScriptsRegistry>();
                     });
             });
 

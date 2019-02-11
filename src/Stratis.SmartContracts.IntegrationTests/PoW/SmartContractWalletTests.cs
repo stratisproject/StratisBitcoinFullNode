@@ -94,7 +94,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
                 int vmVersion = 1;
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
                 Assert.True(compilationResult.Success);
 
@@ -247,7 +247,6 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Retry]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
-            throw new Exception();
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
             {
                 CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
@@ -598,7 +597,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 // Send a bunch of transactions to be mined in the next block - wallet will arrange them so they each use the previous change output as their input
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
-                
+
                 for (int i = 0; i < txsToLink; i++)
                 {
                     BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(compilationResult.Compilation, 1);
@@ -739,7 +738,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Investigate timeout issue.")]
         public void SendAndReceiveLocalSmartContractPropertyCallTransactionsUsingController()
         {
             using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))

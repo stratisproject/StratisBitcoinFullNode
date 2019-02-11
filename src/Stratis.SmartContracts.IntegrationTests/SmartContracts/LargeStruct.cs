@@ -1,4 +1,8 @@
 ﻿using Stratis.SmartContracts;
+
+#pragma warning disable 169
+#pragma warning disable IDE0044 // Add readonly modifier
+
 [Deploy]
 public class F : SmartContract
 {

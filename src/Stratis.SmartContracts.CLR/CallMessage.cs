@@ -7,7 +7,7 @@ namespace Stratis.SmartContracts.CLR
     /// </summary>
     public abstract class CallMessage : BaseMessage
     {
-        protected CallMessage(uint160 to, uint160 from, ulong amount, Gas gasLimit, MethodCall methodCall)
+        protected CallMessage(uint160 to, uint160 from, ulong amount, RuntimeObserver.Gas gasLimit, MethodCall methodCall)
             : base(from, amount, gasLimit)
         {
             this.To = to;

@@ -11,20 +11,20 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             ulong amount = 100UL;
             var parameters = new object[] { };
-            var gasLimit = (Gas)100_000;
+            var gasLimit = (RuntimeObserver.Gas)100_000;
 
             var fixture = new InternalExecutorTestFixture();
             
             fixture.SetGasMeterLimitAbove(gasLimit);
             
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas) 1000, uint160.One, new object());
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((RuntimeObserver.Gas) 1000, uint160.One, new object());
             
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCreateMessage>()))
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -54,20 +54,20 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             ulong amount = 100UL;
             var parameters = new object[] { };
-            var gasLimit = (Gas)100_000;
+            var gasLimit = (RuntimeObserver.Gas)100_000;
 
             var fixture = new InternalExecutorTestFixture();
 
             fixture.SetGasMeterLimitAbove(gasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, StateTransitionErrorKind.VmError);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((RuntimeObserver.Gas)1000, StateTransitionErrorKind.VmError);
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCreateMessage>()))
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -97,14 +97,14 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             ulong amount = 100UL;
             var parameters = new object[] { };
-            var gasLimit = (Gas)100_000;
+            var gasLimit = (RuntimeObserver.Gas)100_000;
 
             var fixture = new InternalExecutorTestFixture();
 
             fixture.SetGasMeterLimitBelow(gasLimit);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -117,7 +117,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             fixture.State.Verify(s => s.TransitionTo(fixture.Snapshot), Times.Never);
 
-            fixture.GasMeter.Verify(g => g.Spend(It.IsAny<Gas>()), Times.Never);
+            fixture.GasMeter.Verify(g => g.Spend(It.IsAny<RuntimeObserver.Gas>()), Times.Never);
 
             Assert.False(result.Success);
             Assert.Equal(default(Address), result.NewContractAddress);
@@ -132,19 +132,19 @@ namespace Stratis.SmartContracts.CLR.Tests
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
             var method = "Test";
             var parameters = new object[] { };
-            var gasLimit = (Gas)100_000;
+            var gasLimit = (RuntimeObserver.Gas)100_000;
 
             
             fixture.SetGasMeterLimitAbove(gasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)1000, uint160.One, new object());
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((RuntimeObserver.Gas)1000, uint160.One, new object());
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCallMessage>()))
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -179,18 +179,18 @@ namespace Stratis.SmartContracts.CLR.Tests
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
             var method = "Test";
             var parameters = new object[] { };
-            var gasLimit = (Gas)100_000;
+            var gasLimit = (RuntimeObserver.Gas)100_000;
             
             fixture.SetGasMeterLimitAbove(gasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, StateTransitionErrorKind.VmError);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((RuntimeObserver.Gas)1000, StateTransitionErrorKind.VmError);
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<InternalCallMessage>()))
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -225,12 +225,12 @@ namespace Stratis.SmartContracts.CLR.Tests
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
             var method = "Test";
             var parameters = new object[] { };
-            var gasLimit = (Gas)100_000;
+            var gasLimit = (RuntimeObserver.Gas)100_000;
 
             fixture.SetGasMeterLimitBelow(gasLimit);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -243,7 +243,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             fixture.State.Verify(s => s.TransitionTo(fixture.Snapshot), Times.Never);
 
-            fixture.GasMeter.Verify(g => g.Spend(It.IsAny<Gas>()), Times.Never);
+            fixture.GasMeter.Verify(g => g.Spend(It.IsAny<RuntimeObserver.Gas>()), Times.Never);
 
             Assert.False(result.Success);
             Assert.Null(result.ReturnValue);
@@ -257,16 +257,16 @@ namespace Stratis.SmartContracts.CLR.Tests
             ulong amount = 100UL;
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
 
-            fixture.SetGasMeterLimitAbove((Gas) InternalExecutor.DefaultGasLimit);
+            fixture.SetGasMeterLimitAbove((RuntimeObserver.Gas) InternalExecutor.DefaultGasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)1000, uint160.One, new object());
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((RuntimeObserver.Gas)1000, uint160.One, new object());
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<ContractTransferMessage>()))
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -298,16 +298,16 @@ namespace Stratis.SmartContracts.CLR.Tests
             ulong amount = 100UL;
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
 
-            fixture.SetGasMeterLimitAbove((Gas)InternalExecutor.DefaultGasLimit);
+            fixture.SetGasMeterLimitAbove((RuntimeObserver.Gas)InternalExecutor.DefaultGasLimit);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)1000, StateTransitionErrorKind.VmError);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((RuntimeObserver.Gas)1000, StateTransitionErrorKind.VmError);
 
             fixture.StateProcessor
                 .Setup(sp => sp.Apply(It.IsAny<IState>(), It.IsAny<ContractTransferMessage>()))
                 .Returns(stateTransitionResult);
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -336,13 +336,13 @@ namespace Stratis.SmartContracts.CLR.Tests
         {
             var fixture = new InternalExecutorTestFixture();
 
-            fixture.SetGasMeterLimitBelow((Gas) GasPriceList.TransferCost);
+            fixture.SetGasMeterLimitBelow((RuntimeObserver.Gas) GasPriceList.TransferCost);
 
             ulong amount = 100UL;
             var to = "0x95D34980095380851902ccd9A1Fb4C813C2cb639".HexToAddress();
 
             var internalExecutor = new InternalExecutor(
-                fixture.LoggerFactory,
+                fixture.GasMeter.Object,
                 fixture.State.Object,
                 fixture.StateProcessor.Object);
 
@@ -355,7 +355,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             fixture.State.Verify(s => s.TransitionTo(fixture.Snapshot), Times.Never);
 
-            fixture.GasMeter.Verify(g => g.Spend(It.IsAny<Gas>()), Times.Never);
+            fixture.GasMeter.Verify(g => g.Spend(It.IsAny<RuntimeObserver.Gas>()), Times.Never);
 
             Assert.False(result.Success);
             Assert.Null(result.ReturnValue);

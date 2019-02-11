@@ -73,8 +73,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             // No transfers
             var transfers = new List<TransferInfo>();
 
-            var result = new SmartContractExecutionResult();
-
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transfers, false);
 
             // Ensure no state changes were made and no transaction has been added
@@ -97,8 +95,6 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             // No transfers
             var transfers = new List<TransferInfo>();
-
-            var result = new SmartContractExecutionResult();
 
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transfers, false);
 
@@ -126,8 +122,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             {
                 new TransferInfo(contractAddress, receiverAddress, 100)
             };
-
-            var result = new SmartContractExecutionResult();
 
             // This should be impossible - contract has no existing balance and didn't get sent anything so it cannot send value.
             // TODO: Could be more informative exception
@@ -166,8 +160,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             {
                 new TransferInfo(contractAddress, receiverAddress, 75)
             };
-
-            var result = new SmartContractExecutionResult();
 
             // Condensing tx generated. 1 input from tx and 2 outputs - 1 for each contract and receiver
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
@@ -209,8 +201,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             // No transfers
             var transfers = new List<TransferInfo>();
 
-            var result = new SmartContractExecutionResult();
-
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transfers, false);
 
             // Ensure no state changes were made and no transaction has been added
@@ -248,8 +238,6 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             // no transfers
             var transferInfos = new List<TransferInfo>();
-
-            var result = new SmartContractExecutionResult();
 
             // Condensing tx generated. 2 inputs. Current tx and stored spendable output. 1 output. 
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
@@ -300,8 +288,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             {
                 new TransferInfo(contractAddress, receiverAddress, 75)
             };
-
-            var result = new SmartContractExecutionResult();
 
             // Condensing tx generated. 1 input. 2 outputs for each receiver and contract.
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
@@ -356,8 +342,6 @@ namespace Stratis.SmartContracts.CLR.Tests
                 new TransferInfo(contractAddress, receiverAddress, 75)
             };
 
-            var result = new SmartContractExecutionResult();
-
             // Condensing tx generated. 2 inputs from currently stored utxo and current tx. 2 outputs for each receiver and contract.
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);
             Assert.NotNull(internalTransaction);
@@ -388,7 +372,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             stateMock.Setup(x => x.GetCode(It.IsAny<uint160>())).Returns<byte[]>(null);
             var txContextMock = new Mock<IContractTransactionContext>();
             txContextMock.SetupGet(p => p.TxOutValue).Returns(0);
-            var result = new SmartContractExecutionResult();
 
             var transferInfos = new List<TransferInfo>
             {
@@ -438,8 +421,6 @@ namespace Stratis.SmartContracts.CLR.Tests
             };
 
             // End result should be Contract: 45, Receiver: 50, ThirdAddress: 5
-
-            var result = new SmartContractExecutionResult();
 
             // Condensing tx generated. 1 input. 3 outputs with consolidated balances.
             Transaction internalTransaction = this.transferProcessor.Process(stateMock.Object, contractAddress, txContextMock.Object, transferInfos, false);

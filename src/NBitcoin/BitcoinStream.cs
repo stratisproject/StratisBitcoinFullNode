@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text;
 using NBitcoin.Protocol;
 
 namespace NBitcoin
@@ -103,11 +104,6 @@ namespace NBitcoin
             this.ConsensusFactory = new DefaultConsensusFactory();
             this.serializing = serializing;
             this.inner = inner;
-        }
-
-        public BitcoinStream(byte[] bytes)
-            : this(new MemoryStream(bytes), false)
-        {
         }
 
         public Script ReadWrite(Script data)
@@ -250,6 +246,32 @@ namespace NBitcoin
         public void ReadWrite(ref byte[] arr)
         {
             ReadWriteBytes(ref arr);
+        }
+
+        public void ReadWrite(ref string str)
+        {
+            if (this.Serializing)
+            {
+                byte[] bytes = Encoding.ASCII.GetBytes(str);
+
+                this._VarInt.SetValue((ulong)str.Length);
+                ReadWrite(ref this._VarInt);
+
+                this.ReadWriteBytes(ref bytes);
+            }
+            else
+            {
+                this._VarInt.SetValue(0);
+                ReadWrite(ref this._VarInt);
+
+                ulong length = this._VarInt.ToLong();
+
+                byte[] bytes = new byte[length];
+
+                this.ReadWriteBytes(ref bytes, 0 , bytes.Length);
+
+                str = Encoding.ASCII.GetString(bytes);
+            }
         }
 
         public void ReadWrite(ref byte[] arr, int offset, int count)

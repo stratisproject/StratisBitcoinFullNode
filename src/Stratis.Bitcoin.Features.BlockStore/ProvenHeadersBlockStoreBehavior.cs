@@ -30,7 +30,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         {
             // Sanity check. That should never happen.
             if (!headers.All(x => x is ProvenBlockHeader))
-                throw new BlockStoreException("BlockHeader is expected to be a ProvenBlockHeader");
+                throw new BlockStoreException("UnexpectedError: BlockHeader is expected to be a ProvenBlockHeader");
 
             var provenHeadersPayload = new ProvenHeadersPayload(headers.Cast<ProvenBlockHeader>().ToArray());
 

@@ -29,8 +29,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly Network network;
 
-        private readonly MemoryCache privateKeyCache;
-
         protected readonly StandardTransactionPolicy TransactionPolicy;
 
         private readonly IWalletManager walletManager;
@@ -48,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.walletManager = walletManager;
             this.walletFeePolicy = walletFeePolicy;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.privateKeyCache = new MemoryCache(new MemoryCacheOptions() { ExpirationScanFrequency = new TimeSpan(0, 1, 0) });
+            
             this.TransactionPolicy = transactionPolicy;
         }
 
@@ -177,38 +175,6 @@ namespace Stratis.Bitcoin.Features.Wallet
             return context.TransactionFee;
         }
 
-        /// <inheritdoc />
-        [NoTrace]
-        public void CacheSecret(WalletAccountReference walletAccount, string walletPassword, TimeSpan duration)
-        {
-            Guard.NotNull(walletAccount, nameof(walletAccount));
-            Guard.NotEmpty(walletPassword, nameof(walletPassword));
-            Guard.NotNull(duration, nameof(duration));
-
-            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
-            string cacheKey = wallet.EncryptedSeed;
-
-            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
-            {
-                this.privateKeyCache.Set(cacheKey, secretValue, duration);
-            }
-            else
-            {
-                Key privateKey = Key.Parse(wallet.EncryptedSeed, walletPassword, wallet.Network);
-                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), duration);
-            }
-        }
-
-        /// <inheritdoc />
-        public void ClearCachedSecret(WalletAccountReference walletAccount)
-        {
-            Guard.NotNull(walletAccount, nameof(walletAccount));
-
-            Wallet wallet = this.walletManager.GetWalletByName(walletAccount.WalletName);
-            string cacheKey = wallet.EncryptedSeed;
-            this.privateKeyCache.Remove(cacheKey);
-        }
-
         /// <summary>
         /// Initializes the context transaction builder from information in <see cref="TransactionBuildContext"/>.
         /// </summary>
@@ -234,7 +200,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Load's all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
+        /// Loads all the private keys for each of the <see cref="HdAddress"/> in <see cref="TransactionBuildContext.UnspentOutputs"/>
         /// </summary>
         /// <param name="context">The context associated with the current transaction being built.</param>
         protected void AddSecrets(TransactionBuildContext context)
@@ -243,26 +209,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return;
 
             Wallet wallet = this.walletManager.GetWalletByName(context.AccountReference.WalletName);
-            Key privateKey;
-            // get extended private key
-            string cacheKey = wallet.EncryptedSeed;
-
-            if (this.privateKeyCache.TryGetValue(cacheKey, out SecureString secretValue))
-            {
-                privateKey = wallet.Network.CreateBitcoinSecret(secretValue.FromSecureString()).PrivateKey;
-                this.privateKeyCache.Set(cacheKey, secretValue, new TimeSpan(0, 5, 0));
-            }
-            else
-            {
-                if (string.IsNullOrEmpty(context.WalletPassword))
-                    return;
-
-                privateKey = Key.Parse(wallet.EncryptedSeed, context.WalletPassword, wallet.Network);
-                this.privateKeyCache.Set(cacheKey, privateKey.ToString(wallet.Network).ToSecureString(), new TimeSpan(0, 5, 0));
-            }
-
-            var seedExtKey = new ExtKey(privateKey, wallet.ChainCode);
-
+            ExtKey seedExtKey = this.walletManager.GetExtKey(context.AccountReference, context.WalletPassword, context.CacheSecret);
+            
             var signingKeys = new HashSet<ISecret>();
             var added = new HashSet<HdAddress>();
             foreach (UnspentOutputReference unspentOutputsItem in context.UnspentOutputs)
@@ -431,6 +379,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (string.IsNullOrEmpty(context.OpReturnData)) return;
 
             byte[] bytes = Encoding.UTF8.GetBytes(context.OpReturnData);
+            // TODO: Get the template from the network standard scripts instead
             Script opReturnScript = TxNullDataTemplate.Instance.GenerateScriptPubKey(bytes);
             context.TransactionBuilder.Send(opReturnScript, context.OpReturnAmount ?? Money.Zero);
         }
@@ -452,6 +401,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             this.SelectedInputs = new List<OutPoint>();
             this.AllowOtherInputs = false;
             this.Sign = true;
+            this.CacheSecret = true;
         }
 
         /// <summary>
@@ -547,5 +497,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Whether the transaction should be signed or not.
         /// </summary>
         public bool Sign { get; set; }
+
+        /// <summary>
+        /// Whether the secret should be cached for 5 mins after it is used or not.
+        /// </summary>
+        public bool CacheSecret { get; set; }
     }
 }

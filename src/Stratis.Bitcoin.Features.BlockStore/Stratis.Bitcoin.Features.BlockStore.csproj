@@ -16,7 +16,6 @@
     <GenerateAssemblyFileVersionAttribute>false</GenerateAssemblyFileVersionAttribute>
     <Version>3.0.0.4-beta</Version>
     <GeneratePackageOnBuild>False</GeneratePackageOnBuild>
-	<CodeAnalysisRuleSet>..\None.ruleset</CodeAnalysisRuleSet>
   </PropertyGroup>
   <ItemGroup>
     <PackageReference Include="DBreeze" Version="1.89.0" />
