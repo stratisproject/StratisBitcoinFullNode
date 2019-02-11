@@ -228,7 +228,16 @@ namespace Stratis.SmartContracts.CLR
                 return Result.Fail<IContract>("Type not found!");
             }
 
-            IContract contract = Contract.CreateUninitialized(type, contractState, address);
+            IContract contract;
+
+            try
+            {
+                contract = Contract.CreateUninitialized(type, contractState, address);
+            }
+            catch (Exception)
+            {
+                return Result.Fail<IContract>("Error instantiating contract instance");
+            }
 
             return Result.Ok(contract);
         }
