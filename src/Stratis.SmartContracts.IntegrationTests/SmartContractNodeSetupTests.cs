@@ -10,8 +10,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 {
     public class SmartContractNodeSetupTests
     {
-
-        [Fact]
+        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
         public void Mainnet_RequireStandard_False()
         {
             var network = new FakeSmartContractMain();
