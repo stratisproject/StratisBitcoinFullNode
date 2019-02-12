@@ -444,6 +444,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// Checks if repository contains reorged blocks and deletes them; saves batch on top.
         /// The last block in the list is considered to be on the current main chain and will be used to determine if a database reorg is required.
         /// </summary>
+        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
         private async Task SaveBatchAsync()
         {
             List<ChainedHeaderBlock> clearedBatch = this.GetBatchWithoutReorgedBlocks();
@@ -498,6 +499,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         /// <summary>Removes reorged blocks from the database.</summary>
         /// <param name="expectedStoreTip">Highest block that should be in the store.</param>
+        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
         private async Task RemoveReorgedBlocksFromStoreAsync(ChainedHeader expectedStoreTip)
         {
             var blocksToDelete = new List<uint256>();
