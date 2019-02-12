@@ -247,142 +247,76 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Retry]
         public void SendAndReceiveSmartContractTransactionsUsingController()
         {
-            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
+                MockChainNode sender = chain.Nodes[0];
 
-                int maturity = (int)scReceiver.FullNode.Network.Consensus.CoinbaseMaturity;
+                // Mine some coins so we have balance
+                int maturity = (int)sender.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity;
+                sender.MineBlocks(maturity + 1);
+                int spendable = GetSpendableBlocks(maturity + 1, maturity);
+                Assert.Equal(Money.COIN * spendable * 50, (long)sender.WalletSpendableBalance);
 
-                HdAddress addr = TestHelper.MineBlocks(scSender, maturity + 5).AddressUsed;
-
-                int spendable = GetSpendableBlocks(maturity + 5, maturity);
-                var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * spendable * 50, total);
-
-                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
-                SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 
                 Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
 
-                var buildRequest = new BuildCreateContractTransactionRequest
-                {
-                    AccountName = AccountName,
-                    GasLimit = gasLimit,
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
-                    ContractCode = compilationResult.Compilation.ToHexString(),
-                    FeeAmount = "0.001",
-                    Password = Password,
-                    WalletName = WalletName,
-                    Sender = addr.Address
-                };
-
-                JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
-                var response = (BuildCreateContractTransactionResponse)result.Value;
-                TestHelper.Connect(scSender, scReceiver);
-
-                SmartContractSharedSteps.SendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
-                TestHelper.MineBlocks(scReceiver, 2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                var response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, feeAmount: 0.001,
+                    gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
 
                 // Check receipt was stored and can be retrieved.
-                var receiptResponse = (ReceiptResponse)((JsonResult)senderSmartContractsController.GetReceipt(response.TransactionId.ToString())).Value;
+                var receiptResponse = sender.GetReceipt(response.TransactionId.ToString());
                 Assert.True(receiptResponse.Success);
                 Assert.Equal(response.NewContractAddress, receiptResponse.NewContractAddress);
                 Assert.Null(receiptResponse.To);
-                Assert.Equal(addr.Address, receiptResponse.From);
+                Assert.Equal(sender.MinerAddress.Address, receiptResponse.From);
 
-                string storageRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
-                {
-                    ContractAddress = response.NewContractAddress.ToString(),
-                    StorageKey = "TestSave",
-                    DataType = MethodParameterDataType.String
-                })).Value;
-                Assert.Equal("Hello, smart contract world!", storageRequestResult);
+                var storageRequestResult = sender.GetStorageValue(response.NewContractAddress, "TestSave");
+                Assert.Equal("Hello, smart contract world!", Encoding.UTF8.GetString(storageRequestResult));
 
-                string ownerRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
-                {
-                    ContractAddress = response.NewContractAddress.ToString(),
-                    StorageKey = "Owner",
-                    DataType = MethodParameterDataType.Address
-                })).Value;
+                var ownerRequestResult = sender.GetStorageValue(response.NewContractAddress, "Owner");
                 Assert.NotEmpty(ownerRequestResult);
 
-                string counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
-                {
-                    ContractAddress = response.NewContractAddress.ToString(),
-                    StorageKey = "Counter",
-                    DataType = MethodParameterDataType.Int
-                })).Value;
-                Assert.Equal("12345", counterRequestResult);
+                var counterRequestResult = sender.GetStorageValue(response.NewContractAddress, "Counter");
+                Assert.Equal(12345, BitConverter.ToInt32(counterRequestResult));
 
-                var callRequest = new BuildCallContractTransactionRequest
-                {
-                    AccountName = AccountName,
-                    GasLimit = gasLimit,
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
-                    Amount = "0",
-                    MethodName = "Increment",
-                    ContractAddress = response.NewContractAddress,
-                    FeeAmount = "0.001",
-                    Password = Password,
-                    WalletName = WalletName,
-                    Sender = addr.Address
-                };
-                result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(callRequest);
-                var callResponse = (BuildCallContractTransactionResponse)result.Value;
+                var callResponse = sender.SendCallContractTransaction("Increment", response.NewContractAddress, 0,
+                    feeAmount: 0.001,
+                    gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
 
-                SmartContractSharedSteps.SendTransaction(scSender, scReceiver, senderWalletController, callResponse.Hex);
-                TestHelper.MineBlocks(scReceiver, 2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
 
-                counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
-                {
-                    ContractAddress = response.NewContractAddress.ToString(),
-                    StorageKey = "Counter",
-                    DataType = MethodParameterDataType.Int
-                })).Value;
-                Assert.Equal("12346", counterRequestResult);
+                counterRequestResult = sender.GetStorageValue(response.NewContractAddress, "Counter");
+                Assert.Equal(12346, BitConverter.ToInt32(counterRequestResult));
 
                 // Check receipt was stored and can be retrieved.
-                receiptResponse = (ReceiptResponse)((JsonResult)senderSmartContractsController.GetReceipt(callResponse.TransactionId.ToString())).Value;
+                receiptResponse = sender.GetReceipt(callResponse.TransactionId.ToString());
                 Assert.True(receiptResponse.Success);
                 Assert.Null(receiptResponse.NewContractAddress);
                 Assert.Equal(response.NewContractAddress, receiptResponse.To);
-                Assert.Equal(addr.Address, receiptResponse.From);
+                Assert.Equal(sender.MinerAddress.Address, receiptResponse.From);
 
                 // Test serialization
                 // TODO: When refactoring integration tests, move this to the one place and test all types, from method param to storage to serialization.
 
-                var serializationRequest = new BuildCallContractTransactionRequest
-                {
-                    AccountName = AccountName,
-                    GasLimit = gasLimit,
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
-                    Amount = "0",
-                    MethodName = "TestSerializer",
-                    ContractAddress = response.NewContractAddress,
-                    FeeAmount = "0.001",
-                    Password = Password,
-                    WalletName = WalletName,
-                    Sender = addr.Address
-                };
-                result = (JsonResult)senderSmartContractsController.BuildCallSmartContractTransaction(serializationRequest);
-                var serializationResponse = (BuildCallContractTransactionResponse)result.Value;
-                SmartContractSharedSteps.SendTransaction(scSender, scReceiver, senderWalletController, serializationResponse.Hex);
-                TestHelper.MineBlocks(scReceiver, 2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                sender.SendCallContractTransaction(
+                    "TestSerializer",
+                    response.NewContractAddress,
+                    0,
+                    feeAmount: 0.001,
+                    gasPrice: SmartContractMempoolValidator.MinGasPrice,
+                    gasLimit: gasLimit);
+
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
 
                 // Would have only saved if execution completed successfully
-                counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
-                {
-                    ContractAddress = response.NewContractAddress.ToString(),
-                    StorageKey = "Int32",
-                    DataType = MethodParameterDataType.Int
-                })).Value;
-                Assert.Equal("12345", counterRequestResult);
+                counterRequestResult = sender.GetStorageValue(response.NewContractAddress, "Int32");
+                Assert.Equal(12345, BitConverter.ToInt32(counterRequestResult));
             }
         }
 
