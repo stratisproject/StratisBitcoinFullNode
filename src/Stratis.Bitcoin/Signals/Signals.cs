@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Signals
         /// <summary>Event that is executed when a block is disconnected from a consensus chain.</summary>
         EventNotifier<ChainedHeaderBlock> OnBlockDisconnected { get; }
 
-        /// <summary>Event that is executed when transaction is received from another peer.</summary>
+        /// <summary>Event that is executed when a transaction is received from another peer.</summary>
         EventNotifier<Transaction> OnTransactionReceived { get; }
     }
 
