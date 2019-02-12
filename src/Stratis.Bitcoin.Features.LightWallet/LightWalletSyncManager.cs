@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
         public void Start()
         {
             this.signals.OnTransactionReceived.Attach(this.ProcessTransaction);
-            this.signals.OnBlockConnected.Attach(this.onBlockConnected);
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
             if (!this.walletManager.ContainsWallets)
@@ -136,7 +136,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
         }
 
-        private void onBlockConnected(ChainedHeaderBlock chainedheaderblock)
+        private void OnBlockConnected(ChainedHeaderBlock chainedheaderblock)
         {
             this.ProcessBlock(chainedheaderblock.Block);
         }
@@ -151,7 +151,7 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
 
             this.signals.OnTransactionReceived.Detach(this.ProcessTransaction);
-            this.signals.OnBlockConnected.Detach(this.onBlockConnected);
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
         }
 
         /// <inheritdoc />

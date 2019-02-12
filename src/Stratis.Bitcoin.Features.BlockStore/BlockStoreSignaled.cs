@@ -69,10 +69,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         public void Initialize()
         {
-            this.signals.OnBlockConnected.Attach(this.onBlockConnected);
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
         }
 
-        private void onBlockConnected(ChainedHeaderBlock blockPair)
+        private void OnBlockConnected(ChainedHeaderBlock blockPair)
         {
             ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
@@ -246,7 +246,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.blocksToAnnounce.Dispose();
             this.dequeueLoopTask.GetAwaiter().GetResult();
 
-            this.signals.OnBlockConnected.Detach(this.onBlockConnected);
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
         }
     }
 }

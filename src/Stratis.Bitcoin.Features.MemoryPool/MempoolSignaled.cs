@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public void Start()
         {
-            this.signals.OnBlockConnected.Attach(this.onBlockConnected);
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
 
             this.asyncLoop = this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
             {
@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             startAfter: TimeSpans.TenSeconds);
         }
 
-        private void onBlockConnected(ChainedHeaderBlock chainedHeaderBlock)
+        private void OnBlockConnected(ChainedHeaderBlock chainedHeaderBlock)
         {
             ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
 
@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
 
         public void Stop()
         {
-            this.signals.OnBlockConnected.Detach(this.onBlockConnected);
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
             this.asyncLoop?.Dispose();
         }
     }

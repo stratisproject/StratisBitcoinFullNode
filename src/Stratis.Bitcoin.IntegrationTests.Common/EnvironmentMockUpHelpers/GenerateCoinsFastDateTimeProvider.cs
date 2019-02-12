@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public GenerateCoinsFastDateTimeProvider(ISignals signals)
         {
-            signals.OnBlockConnected.Attach(this.onBlockConnected);
+            signals.OnBlockConnected.Attach(this.OnBlockConnected);
         }
 
         public long GetTime()
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// Every time a new block gets generated, this date time provider will be signaled,
         /// updating the last block time by 65 seconds.
         /// </summary>
-        private void onBlockConnected(ChainedHeaderBlock value)
+        private void OnBlockConnected(ChainedHeaderBlock value)
         {
             startFrom = startFrom.AddSeconds(65);
         }
