@@ -97,7 +97,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.True(compilationResult.Success);
 
                 // Broadcast the token transaction to the network.
-                var createTransactionResponse = scSender.SendCreateContractTransaction(compilationResult.Compilation, 0, feeAmount: 0.001, gasPrice: gasPrice,
+                var createTransactionResponse = scSender.SendCreateContractTransaction(compilationResult.Compilation, 0, feeAmount: 0.001M, gasPrice: gasPrice,
                     gasLimit: gasLimit);
 
                 // Wait for the token transaction to be picked up by the mempool.
@@ -114,8 +114,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.NotNull(scReceiver.GetCode(tokenContractAddress));
 
                 // Create a call contract transaction which will transfer funds.
-                scSender.SendCallContractTransaction("Test", createTransactionResponse.NewContractAddress, 0.00001,
-                    feeAmount: 0.001, gasPrice: gasPrice, gasLimit: gasLimit);
+                scSender.SendCallContractTransaction("Test", createTransactionResponse.NewContractAddress, 0.00001M,
+                    feeAmount: 0.001M, gasPrice: gasPrice, gasLimit: gasLimit);
 
                 scSender.WaitMempoolCount(1);
 
@@ -191,7 +191,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
 
-                var response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, feeAmount: 0.001,
+                var response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, feeAmount: 0.001M,
                     gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
                 sender.WaitMempoolCount(1);
                 sender.MineBlocks(1);
@@ -213,7 +213,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Equal(12345, BitConverter.ToInt32(counterRequestResult));
 
                 var callResponse = sender.SendCallContractTransaction("Increment", response.NewContractAddress, 0,
-                    feeAmount: 0.001,
+                    feeAmount: 0.001M,
                     gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
 
                 sender.WaitMempoolCount(1);
@@ -236,7 +236,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                     "TestSerializer",
                     response.NewContractAddress,
                     0,
-                    feeAmount: 0.001,
+                    feeAmount: 0.001M,
                     gasPrice: SmartContractMempoolValidator.MinGasPrice,
                     gasLimit: gasLimit);
 
@@ -532,7 +532,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.True(compilationResult.Success);
                 Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
 
-                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, amount: 0, feeAmount: 0.001, gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, amount: 0, feeAmount: 0.001M, gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
                 sender.WaitMempoolCount(1);
                 sender.MineBlocks(1);
 
@@ -577,7 +577,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.True(compilationResult.Success);
                 Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
 
-                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, amount: 0, feeAmount: 0.001, gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, amount: 0, feeAmount: 0.001M, gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
                 sender.WaitMempoolCount(1);
                 sender.MineBlocks(1);
 
