@@ -5,11 +5,9 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -44,7 +42,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.callDataSerializer = callDataSerializer;
             this.coinType = (CoinType)network.Consensus.CoinType;
             this.addressGenerator = addressGenerator;
-
         }
 
         public BuildCallContractTransactionResponse BuildCallTx(BuildCallContractTransactionRequest request)
@@ -81,6 +78,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                if (account == null)
+                    return BuildCallContractTransactionResponse.Failed($"No account with the name '{request.AccountName}' could be found.");
+
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
@@ -139,6 +139,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                if (account == null)
+                    return BuildCreateContractTransactionResponse.Failed($"No account with the name '{request.AccountName}' could be found.");
+
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
 
@@ -176,7 +179,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
 
-                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);                
+                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);
             }
 
             return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName);
