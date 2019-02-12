@@ -140,7 +140,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 Features.Wallet.Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
                 if (account == null)
-                    throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
+                    return BuildCreateContractTransactionResponse.Failed($"No account with the name '{request.AccountName}' could be found.");
 
                 senderAddress = account.GetCombinedAddresses().FirstOrDefault(x => x.Address == request.Sender);
             }
