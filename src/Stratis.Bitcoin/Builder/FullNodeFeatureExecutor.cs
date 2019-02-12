@@ -101,6 +101,9 @@ namespace Stratis.Bitcoin.Builder
                     }
                     catch (Exception exception)
                     {
+                        if (exceptions == null)
+                            exceptions = new List<Exception>();
+
                         this.LogAndAddException(exceptions, exception);
                     }
                 }
@@ -118,6 +121,9 @@ namespace Stratis.Bitcoin.Builder
                 }
                 catch (Exception exception)
                 {
+                    if (exceptions == null)
+                        exceptions = new List<Exception>();
+
                     this.LogAndAddException(exceptions, exception);
                 }
             }
@@ -132,9 +138,6 @@ namespace Stratis.Bitcoin.Builder
 
         private void LogAndAddException(List<Exception> exceptions, Exception exception)
         {
-            if (exceptions == null)
-                exceptions = new List<Exception>();
-
             exceptions.Add(exception);
 
             this.logger.LogError("An error occurred: '{0}'", exception.ToString());
