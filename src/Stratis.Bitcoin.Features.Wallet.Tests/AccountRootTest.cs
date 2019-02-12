@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
         }
 
         [Fact]
-        public void GetAccountByNameWithNonMatchingNameThrowsException()
+        public void GetAccountByNameWithNonMatchingNameReturnsNull()
         {
             AccountRoot accountRoot = CreateAccountRootWithHdAccountHavingAddresses("Test", CoinType.Stratis);
 
