@@ -62,7 +62,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 HdAddress address = scReceiver.GetUnusedAddress();
                 scSender.SendTransaction(address.ScriptPubKey, Money.COIN * 100);
                 scReceiver.WaitMempoolCount(1);
-                Assert.Equal(Money.COIN * 100, (long)scReceiver.WalletSpendableBalance); // Balance is added (unconfirmed)
+                TestHelper.WaitLoop(() => (long) scReceiver.WalletSpendableBalance == Money.COIN * 100, waitTimeSeconds:10); // Give the wallet a bit of time to process receiving the transaction
 
                 // Transaction is in chain in last block.
                 scReceiver.MineBlocks(1);
