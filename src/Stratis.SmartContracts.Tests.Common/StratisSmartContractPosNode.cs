@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using Stratis.Bitcoin;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
@@ -10,7 +11,9 @@ using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoS;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
+using Stratis.Bitcoin.P2P;
 
 namespace Stratis.SmartContracts.Tests.Common
 {
@@ -26,21 +29,27 @@ namespace Stratis.SmartContracts.Tests.Common
         {
             var settings = new NodeSettings(this.Network, args: new string[] { "-conf=stratis.conf", "-datadir=" + this.DataFolder });
 
-            this.FullNode = (FullNode)new FullNodeBuilder()
-                .UseNodeSettings(settings)
-                .UseBlockStore()
-                .UseMempool()
-                .AddRPC()
-                .AddSmartContracts()
-                .UseSmartContractPosConsensus()
-                .UseSmartContractWallet()
-                .UseSmartContractPosPowMining()
-                .UseReflectionExecutor()
-                .MockIBD()
-                .UseTestChainedHeaderTree()
-                .OverrideDateTimeProviderFor<MiningFeature>()
-                .Build();
-        }
+            IFullNodeBuilder builder = new FullNodeBuilder()
+                            .UseNodeSettings(settings)
+                            .UseBlockStore()
+                            .UseMempool()
+                            .AddRPC()
+                            .AddSmartContracts()
+                            .UseSmartContractPosConsensus()
+                            .UseSmartContractWallet()
+                            .UseSmartContractPosPowMining()
+                            .UseReflectionExecutor()
+                            .MockIBD()
+                            .UseTestChainedHeaderTree()
+                            .OverrideDateTimeProviderFor<MiningFeature>();
 
+            if (!this.EnablePeerDiscovery)
+            {
+                builder.RemoveImplementation<PeerConnectorDiscovery>();
+                builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
+            }
+
+            this.FullNode = (FullNode)builder.Build();
+        }
     }
 }

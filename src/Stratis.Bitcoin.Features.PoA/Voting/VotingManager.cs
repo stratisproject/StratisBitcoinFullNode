@@ -23,6 +23,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly SlotsManager slotsManager;
 
+        private readonly IPollResultExecutor pollResultExecutor;
+
         private readonly ILogger logger;
 
         /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="pendingPolls"/>.</summary>
@@ -40,15 +42,17 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<Poll> finishedPolls;
 
-        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo, SlotsManager slotsManager)
+        public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo,
+            SlotsManager slotsManager, IPollResultExecutor pollResultExecutor)
         {
             this.federationManager = federationManager;
             this.keyValueRepo = keyValueRepo;
+            this.slotsManager = slotsManager;
+            this.pollResultExecutor = pollResultExecutor;
+
             this.locker = new object();
             this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
-            this.slotsManager = slotsManager;
             this.scheduledVotingData = new List<VotingData>();
-
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
@@ -76,6 +80,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
+        /// <exception cref="InvalidOperationException">Thrown in case caller is not a federation member.</exception>
         public void ScheduleVote(VotingData votingData)
         {
             if (!this.federationManager.IsFederationMember)
@@ -116,13 +121,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>Saves collection of polls to the database under provided key.</summary>
         private void SavePolls(List<Poll> polls, string key)
         {
-            this.keyValueRepo.SaveValueJson(key, polls);
+            this.keyValueRepo.SaveValue(key, polls);
         }
 
         /// <summary>Loads collection of polls from the database using provided key.</summary>
         private List<Poll> LoadPolls(string key)
         {
-            List<Poll> polls = this.keyValueRepo.LoadValueJson<List<Poll>>(key);
+            List<Poll> polls = this.keyValueRepo.LoadValue<List<Poll>>(key);
             return polls;
         }
 
@@ -146,7 +151,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         // TODO subscribe to signals
         // TODO more logs and log polls
-        private void onBlockConnected(ChainedHeaderBlock chBlock)
+        // TODO make private when signaler PR is merged
+        public void onBlockConnected(ChainedHeaderBlock chBlock)
         {
             byte[] rawVotingData = this.votingDataEncoder.ExtractRawVotingData(chBlock.Block.Transactions[0]);
 
@@ -171,6 +177,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     {
                         existingPoll = new Poll()
                         {
+                            Id = this.GetNextPollIdLocked(),
                             PollAppliedBlockHash = null,
                             PollStartBlockHash = chBlock.Block.GetHash(),
                             VotingData = data,
@@ -186,6 +193,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                         this.logger.LogDebug("Voted on existing poll.");
                     }
+                    else
+                    {
+                        this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote.", fedMemberKeyHex);
+                    }
 
                     List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
 
@@ -195,11 +206,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                     int requiredVotesCount = (fedMembersHex.Count / 2) + 1;
 
-                    if (validVotesCount > requiredVotesCount)
+                    if (validVotesCount >= requiredVotesCount)
                     {
-                        // TODO apply changes, move active poll to finished polls, set finished block hash
+                        this.pollResultExecutor.ApplyChange(data);
 
-                        // TODO to apply changes use voting data result executor that has methods like apply change and revert change
+                        existingPoll.PollAppliedBlockHash = chBlock.Block.GetHash();
+                        this.pendingPolls.Remove(existingPoll);
+                        this.finishedPolls.Add(existingPoll);
                     }
                 }
 
@@ -209,14 +222,74 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         }
 
         // TODO subscribe to signals
-        private void onBlockDisconnected(ChainedHeaderBlock chBlock)
+        // TODO make private when signaler PR is merged
+        public void onBlockDisconnected(ChainedHeaderBlock chBlock)
         {
-            // TODO it should handle reorgs and revert votes that were applied.
+            byte[] rawVotingData = this.votingDataEncoder.ExtractRawVotingData(chBlock.Block.Transactions[0]);
+
+            List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
+            votingDataList.Reverse();
+
+            if (rawVotingData == null)
+            {
+                this.logger.LogTrace("(-)[NO_VOTING_DATA]");
+                return;
+            }
+
+            lock (this.locker)
+            {
+                foreach (VotingData votingData in votingDataList)
+                {
+                    // Poll that was finished in the block being disconnected.
+                    Poll pollToRevert = this.finishedPolls.SingleOrDefault(x => x.PollAppliedBlockHash == chBlock.Block.GetHash() && x.VotingData == votingData);
+
+                    if (pollToRevert != null)
+                    {
+                        this.pollResultExecutor.RevertChange(pollToRevert.VotingData);
+
+                        pollToRevert.PollAppliedBlockHash = null;
+
+                        this.finishedPolls.Remove(pollToRevert);
+                        this.pendingPolls.Add(pollToRevert);
+
+                        this.pendingPolls = this.pendingPolls.OrderBy(x => x.Id).ToList();
+                    }
+
+                    // Pub key of a fed member that created voting data.
+                    string fedMemberKeyHex = this.slotsManager.GetPubKeyForTimestamp(chBlock.Block.Header.Time).ToHex();
+
+                    Poll targetPendingPoll = this.pendingPolls.Single(x => x.VotingData == votingData);
+
+                    targetPendingPoll.PubKeysHexVotedInFavor.Remove(fedMemberKeyHex);
+
+                    if (targetPendingPoll.PubKeysHexVotedInFavor.Count == 0)
+                        this.pendingPolls.Remove(targetPendingPoll);
+                }
+
+                this.SavePolls(this.pendingPolls, PendingPollsDbKey);
+                this.SavePolls(this.finishedPolls, FinishedPollsDbKey);
+            }
         }
 
-        // TODO tests
-        // add tests that will check reorg that adds or removes fed members
-        // test that vote of a fed member that is no longer there is not active anymore
-        // test case when we have 2 votes in a block and because 1 is executed before the other other no longer has enough votes
+        /// <summary>Provides id for the next poll that is to be created.</summary>
+        /// <remarks>Should be locked by <see cref="locker"/>.</remarks>
+        private int GetNextPollIdLocked()
+        {
+            int largestId = -1;
+
+            foreach (Poll finishedPoll in this.finishedPolls)
+            {
+                if (finishedPoll.Id > largestId)
+                    largestId = finishedPoll.Id;
+            }
+
+            foreach (Poll pendingPoll in this.pendingPolls)
+            {
+                if (pendingPoll.Id > largestId)
+                    largestId = pendingPoll.Id;
+            }
+
+            return largestId + 1;
+        }
     }
 }
