@@ -36,12 +36,6 @@ namespace Stratis.SmartContracts.CLR.Validation
         {
             foreach (MethodDefinition method in type.Methods)
             {
-                if (!method.HasBody)
-                    return;
-
-                if (method.Body.Instructions.Count == 0)
-                    return;
-
                 this.ValidateParameters(results, type, method);
 
                 foreach (var validator in this.policy.MethodDefValidators)
@@ -77,6 +71,11 @@ namespace Stratis.SmartContracts.CLR.Validation
         {
             if (!this.policy.InstructionValidators.Any() && !this.policy.MemberRefValidators.Any()) 
                 return;
+
+            if (method.Body == null)
+            {
+                return;
+            }
 
             foreach (Instruction instruction in method.Body.Instructions)
             {

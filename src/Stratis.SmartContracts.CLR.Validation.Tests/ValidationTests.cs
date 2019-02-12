@@ -323,7 +323,39 @@ public class Test
             Assert.Empty(result);
         }
 
-        //
+        [Fact]
+        public void TypePolicyValidator_Should_Validate_Own_Methods()
+        {
+            const string source = @"
+using System; 
+
+public class Test 
+{
+    static extern uint A();
+
+    public void B() {
+        var dt = DateTime.Now;
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypePolicyValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.True(result.Any());
+            Assert.True(result.All(r => r is WhitelistValidator.WhitelistValidationResult));
+        }
 
         [Fact]
         public void NestedTypeIsValueTypeValidator_Should_Allow_Value_Type()

@@ -3,6 +3,7 @@ using System.Linq;
 using Microsoft.CodeAnalysis;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Validation.Validators;
+using Stratis.SmartContracts.CLR.Validation.Validators.Method;
 using Stratis.SmartContracts.CLR.Validation.Validators.Module;
 using Stratis.SmartContracts.CLR.Validation.Validators.Type;
 using Xunit;
@@ -761,6 +762,44 @@ public class Test2 : SmartContract {
             Assert.False(result.IsValid);
             Assert.NotEmpty(result.Errors);
             Assert.True(result.Errors.All(e => e is WhitelistValidator.WhitelistValidationResult));
+        }
+
+        [Fact]
+        public void SmartContractValidator_Should_Not_Allow_PInvoke()
+        {
+            var adjustedSource = @"
+using System;
+using Stratis.SmartContracts;
+
+[Deploy]
+public class Test : SmartContract
+{
+    public Test(ISmartContractState state): base(state) 
+    {
+    }
+
+    [System.Runtime.InteropServices.DllImport(""Test.dll"")]
+    static extern uint TestPInvoke();
+
+    public void X()
+    {
+        TestPInvoke();
+    }
+}
+";
+            ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
+            Assert.True(compilationResult.Success);
+
+            byte[] assemblyBytes = compilationResult.Compilation;
+            IContractModuleDefinition decompilation = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
+
+            var moduleDefinition = decompilation.ModuleDefinition;
+
+            SmartContractValidationResult result = new SmartContractValidator().Validate(moduleDefinition);
+
+            Assert.False(result.IsValid);
+            Assert.NotEmpty(result.Errors);
+            Assert.True(result.Errors.All(e => e is PInvokeValidator.PInvokeValidationResult));
         }
     }
 }
