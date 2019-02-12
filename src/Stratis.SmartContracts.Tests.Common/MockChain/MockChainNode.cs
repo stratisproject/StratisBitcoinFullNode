@@ -156,11 +156,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         /// </summary>
         public BuildCreateContractTransactionResponse SendCreateContractTransaction(
             byte[] contractCode,
-            decimal amount,
+            double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M,
+            double feeAmount = 0.01,
             string sender = null)
         {
             var request = new BuildCreateContractTransactionRequest
@@ -202,11 +202,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
         public BuildCallContractTransactionResponse SendCallContractTransaction(
             string methodName,
             string contractAddress,
-            decimal amount,
+            double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
-            decimal feeAmount = 0.01M, 
+            double feeAmount = 0.01, 
             string sender = null)
         {
             var request = new BuildCallContractTransactionRequest
@@ -223,16 +223,14 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
                 Sender = sender ?? this.MinerAddress.Address,
                 WalletName = this.WalletName
             };
-
             JsonResult response = (JsonResult)this.smartContractsController.BuildAndSendCallSmartContractTransaction(request);
-
             return (BuildCallContractTransactionResponse)response.Value;
         }
 
         public ILocalExecutionResult CallContractMethodLocally(
             string methodName,
             string contractAddress,
-            decimal amount,
+            double amount,
             string[] parameters = null,
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
