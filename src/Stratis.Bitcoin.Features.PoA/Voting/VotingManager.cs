@@ -5,6 +5,7 @@ using System.Text;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
@@ -18,6 +19,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         private readonly SlotsManager slotsManager;
 
         private readonly IPollResultExecutor pollResultExecutor;
+
+        private readonly ISignals signals;
 
         private readonly ILogger logger;
 
@@ -36,11 +39,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         private List<VotingData> scheduledVotingData;
 
         public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
-            INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer)
+            INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals)
         {
             this.federationManager = Guard.NotNull(federationManager, nameof(federationManager));
             this.slotsManager = Guard.NotNull(slotsManager, nameof(slotsManager));
             this.pollResultExecutor = Guard.NotNull(pollResultExecutor, nameof(pollResultExecutor));
+            this.signals = Guard.NotNull(signals, nameof(signals));
 
             this.locker = new object();
             this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
@@ -56,6 +60,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.pollsRepository.Initialize();
 
             this.polls = this.pollsRepository.GetAllPolls();
+
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.signals.OnBlockDisconnected.Attach(this.OnBlockDisconnected);
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
@@ -115,10 +122,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        // TODO subscribe to signals
         // TODO more logs and log polls
-        // TODO make private when signaler PR is merged
-        public void onBlockConnected(ChainedHeaderBlock chBlock)
+        private void OnBlockConnected(ChainedHeaderBlock chBlock)
         {
             byte[] rawVotingData = this.votingDataEncoder.ExtractRawVotingData(chBlock.Block.Transactions[0]);
 
@@ -186,9 +191,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        // TODO subscribe to signals
-        // TODO make private when signaler PR is merged
-        public void onBlockDisconnected(ChainedHeaderBlock chBlock)
+        private void OnBlockDisconnected(ChainedHeaderBlock chBlock)
         {
             byte[] rawVotingData = this.votingDataEncoder.ExtractRawVotingData(chBlock.Block.Transactions[0]);
 
@@ -246,6 +249,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <inheritdoc />
         public void Dispose()
         {
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
+            this.signals.OnBlockDisconnected.Detach(this.OnBlockDisconnected);
+
             this.pollsRepository.Dispose();
         }
     }

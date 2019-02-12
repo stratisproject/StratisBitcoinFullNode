@@ -1,4 +1,5 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
@@ -15,9 +16,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
     {
         private readonly FederationManager federationManager;
 
-        public PollResultExecutor(FederationManager federationManager)
+        private readonly ILogger logger;
+
+        public PollResultExecutor(FederationManager federationManager, ILoggerFactory loggerFactory)
         {
             this.federationManager = federationManager;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
         /// <inheritdoc />
