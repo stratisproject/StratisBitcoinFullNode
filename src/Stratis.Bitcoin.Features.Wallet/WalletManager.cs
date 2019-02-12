@@ -1161,7 +1161,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // If the transaction is spent and confirmed, we remove the UTXO from the lookup dictionary.
-            if (spentTransaction.BlockHeight != null)
+            if (spentTransaction.SpendingDetails.BlockHeight != null)
             {
                 this.RemoveInputKeysLookupLock(spentTransaction);
             }
