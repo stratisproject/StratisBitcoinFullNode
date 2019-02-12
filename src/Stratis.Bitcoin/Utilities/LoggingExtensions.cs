@@ -1,4 +1,5 @@
-﻿using Microsoft.Extensions.Logging;
+﻿using System;
+using Microsoft.Extensions.Logging;
 using TracerAttributes;
 
 namespace Stratis.Bitcoin.Utilities
@@ -41,6 +42,40 @@ namespace Stratis.Bitcoin.Utilities
             }
 
             return res;
+        }
+
+        /// <summary>
+        /// Converts a string to a <see cref="NLog.LogLevel"/>.
+        /// </summary>
+        /// <param name="logLevel">Log level value to convert.</param>
+        /// <returns>NLog value of the log level.</returns>
+        public static NLog.LogLevel ToNLogLevel(this string logLevel)
+        {
+            logLevel = logLevel.ToLowerInvariant();
+
+            switch (logLevel)
+            {
+                case "trace":
+                    return NLog.LogLevel.Trace;
+                case "debug":
+                    return NLog.LogLevel.Debug;
+                case "info":
+                case "information":
+                    return NLog.LogLevel.Info;
+                case "warn":
+                case "warning":
+                    return NLog.LogLevel.Warn;
+                case "error":
+                    return NLog.LogLevel.Error;
+                case "fatal":
+                case "critical":
+                case "crit":
+                    return NLog.LogLevel.Fatal;
+                case "off":
+                    return NLog.LogLevel.Off;
+                default:
+                    throw new Exception($"Failed converting {logLevel} to a member of NLog.LogLevel.");
+            }
         }
     }
 }
