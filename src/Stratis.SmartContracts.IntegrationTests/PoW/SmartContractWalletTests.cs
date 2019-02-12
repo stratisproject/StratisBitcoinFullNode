@@ -654,67 +654,31 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
         [Fact]
         public void SendAndReceiveLocalSmartContractTransactionsUsingController()
         {
-            using (SmartContractNodeBuilder builder = SmartContractNodeBuilder.Create(this))
+            using (PoWMockChain chain = new PoWMockChain(2))
             {
-                CoreNode scSender = builder.CreateSmartContractPowNode().WithWallet().Start();
-                CoreNode scReceiver = builder.CreateSmartContractPowNode().WithWallet().Start();
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
 
-                int maturity = (int)scReceiver.FullNode.Network.Consensus.CoinbaseMaturity;
-
-                HdAddress addr = TestHelper.MineBlocks(scSender, maturity + 5).AddressUsed;
+                int maturity = (int)sender.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity;
+                sender.MineBlocks(maturity + 5);
 
                 int spendable = GetSpendableBlocks(maturity + 5, maturity);
-                var total = scSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
-                Assert.Equal(Money.COIN * spendable * 50, total);
+                Assert.Equal(Money.COIN * spendable * 50, (long)sender.WalletSpendableBalance);
 
-                SmartContractsController senderSmartContractsController = scSender.FullNode.NodeService<SmartContractsController>();
-                SmartContractWalletController senderWalletController = scSender.FullNode.NodeService<SmartContractWalletController>();
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
-
                 Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
 
-                var buildRequest = new BuildCreateContractTransactionRequest
-                {
-                    AccountName = AccountName,
-                    GasLimit = gasLimit,
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
-                    ContractCode = compilationResult.Compilation.ToHexString(),
-                    FeeAmount = "0.001",
-                    Password = Password,
-                    WalletName = WalletName,
-                    Sender = addr.Address
-                };
+                BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, amount: 0, feeAmount: 0.001, gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
 
-                JsonResult result = (JsonResult)senderSmartContractsController.BuildCreateSmartContractTransaction(buildRequest);
-                var response = (BuildCreateContractTransactionResponse)result.Value;
-                TestHelper.Connect(scSender, scReceiver);
+                var counterResult = sender.GetStorageValue(response.NewContractAddress, "Counter");
 
-                SmartContractSharedSteps.SendTransaction(scSender, scReceiver, senderWalletController, response.Hex);
-                TestHelper.MineBlocks(scReceiver, 2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                Assert.Equal(12345, BitConverter.ToInt32(counterResult));
 
-                string counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
-                {
-                    ContractAddress = response.NewContractAddress,
-                    StorageKey = "Counter",
-                    DataType = MethodParameterDataType.Int
-                })).Value;
-
-                Assert.Equal("12345", counterRequestResult);
-
-                var callRequest = new LocalCallContractRequest
-                {
-                    GasLimit = gasLimit,
-                    GasPrice = SmartContractMempoolValidator.MinGasPrice,
-                    Amount = "0",
-                    MethodName = "Increment",
-                    ContractAddress = response.NewContractAddress,
-                    Sender = addr.Address
-                };
-
-                result = (JsonResult)senderSmartContractsController.LocalCallSmartContractTransaction(callRequest);
-                var callResponse = (ILocalExecutionResult)result.Value;
+                var callResponse = sender.CallContractMethodLocally("Increment", response.NewContractAddress, 0,
+                    gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
 
                 // Check that the locally executed transaction returns the correct results
                 Assert.Equal(12346, callResponse.Return);
@@ -723,18 +687,12 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.Null(callResponse.ErrorMessage);
                 Assert.NotNull(callResponse.InternalTransfers);
 
-                TestHelper.MineBlocks(scReceiver, 2);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(scReceiver, scSender));
+                receiver.MineBlocks(2);
 
                 // Check that the on-chain storage has not changed after mining
-                counterRequestResult = (string)((JsonResult)senderSmartContractsController.GetStorage(new GetStorageRequest
-                {
-                    ContractAddress = response.NewContractAddress,
-                    StorageKey = "Counter",
-                    DataType = MethodParameterDataType.Int
-                })).Value;
+                counterResult = sender.GetStorageValue(response.NewContractAddress, "Counter");
 
-                Assert.Equal("12345", counterRequestResult);
+                Assert.Equal(12345, BitConverter.ToInt32(counterResult));
             }
         }
 
