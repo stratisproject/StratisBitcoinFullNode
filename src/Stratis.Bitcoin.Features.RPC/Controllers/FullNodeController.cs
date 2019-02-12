@@ -273,7 +273,8 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             // P2WSH
             else if (BitcoinWitScriptAddress.IsValid(address, this.Network, out Exception _))
             {
-                res.IsValid = true;
+                // We don't support P2WSH addresses yet
+                res.IsValid = false;
             }
             // P2PKH
             else if (BitcoinPubKeyAddress.IsValid(address, this.Network))
