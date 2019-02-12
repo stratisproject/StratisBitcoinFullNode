@@ -264,7 +264,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             var model = new GetTransactionModel
             {
                 Amount = totalAmount,
-                //Fee = TODO this needs to be the total fee of the transaction.
+                //Fee = TODO this still needs to be worked on.
                 Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
                 Isgenerated = isGenerated ? true : (bool?) null,
                 BlockHash = blockHash,
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         Address = paymentDetail.DestinationAddress,
                         Category = GetTransactionDetailsCategoryModel.Send,
                         Amount = -paymentDetail.Amount,
-                        Fee = Money.Zero
+                        Fee = Money.Zero // TODO this still needs to be worked on.
                     });
                 }
             }

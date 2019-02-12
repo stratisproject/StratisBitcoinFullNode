@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     public class GetTransactionModel
     {
         /// <summary>
-        /// The total amount recieve or spent in this transaction.
+        /// The total amount recieved or spent in this transaction.
         /// Can be positive (received), negative (sent) or 0 (payment to yourself).
         /// </summary>
         [JsonProperty("amount")]
