@@ -8,6 +8,8 @@ using NBitcoin;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.Wallet
@@ -25,8 +27,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
         private readonly StoreSettings storeSettings;
 
-        /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
-        private readonly INodeLifetime nodeLifetime;
+        private readonly ISignals signals;
 
         protected ChainedHeader walletTip;
 
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         private const int MaxQueueSize = 100 * 1024 * 1024;
 
         public WalletSyncManager(ILoggerFactory loggerFactory, IWalletManager walletManager, ConcurrentChain chain,
-            Network network, IBlockStore blockStore, StoreSettings storeSettings, INodeLifetime nodeLifetime)
+            Network network, IBlockStore blockStore, StoreSettings storeSettings, ISignals signals)
         {
             Guard.NotNull(loggerFactory, nameof(loggerFactory));
             Guard.NotNull(walletManager, nameof(walletManager));
@@ -53,13 +54,13 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(blockStore, nameof(blockStore));
             Guard.NotNull(storeSettings, nameof(storeSettings));
-            Guard.NotNull(nodeLifetime, nameof(nodeLifetime));
+            Guard.NotNull(signals, nameof(signals));
 
             this.walletManager = walletManager;
             this.chain = chain;
             this.blockStore = blockStore;
             this.storeSettings = storeSettings;
-            this.nodeLifetime = nodeLifetime;
+            this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.blocksQueue = new AsyncQueue<Block>(this.OnProcessBlockAsync);
 
@@ -96,11 +97,26 @@ namespace Stratis.Bitcoin.Features.Wallet
                 this.walletManager.WalletTipHash = fork.HashBlock;
                 this.walletTip = fork;
             }
+
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+            this.signals.OnTransactionReceived.Attach(this.OnTransactionAvailable);
+        }
+
+        private void OnTransactionAvailable(Transaction transaction)
+        {
+            this.ProcessTransaction(transaction);
+        }
+
+        private void OnBlockConnected(ChainedHeaderBlock chainedheaderblock)
+        {
+            this.ProcessBlock(chainedheaderblock.Block);
         }
 
         /// <inheritdoc />
         public void Stop()
         {
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
+            this.signals.OnTransactionReceived.Detach(this.OnTransactionAvailable);
         }
 
         /// <summary>Called when a <see cref="Block"/> is added to the <see cref="blocksQueue"/>.

@@ -44,8 +44,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
                             .UseTestChainedHeaderTree()
                             .MockIBD();
 
-            ConfigureInterceptors(builder);
-
             if (this.ServiceToOverride != null)
                 builder.OverrideService<BaseFeature>(this.ServiceToOverride);
 
