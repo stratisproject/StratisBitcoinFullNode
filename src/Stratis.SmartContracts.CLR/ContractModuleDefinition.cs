@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
@@ -48,26 +49,51 @@ namespace Stratis.SmartContracts.CLR
         public ModuleDefinition ModuleDefinition { get; private set; }
 
         /// <inheritdoc />
-        public void Rewrite(IILRewriter rewriter)
+        public bool Rewrite(IILRewriter rewriter)
         {
-            this.ModuleDefinition = rewriter.Rewrite(this.ModuleDefinition);
+            try
+            {
+                this.ModuleDefinition = rewriter.Rewrite(this.ModuleDefinition);
+                return true;
+            }
+            catch (Exception)
+            {
+                return false;
+            }
         }
 
         /// <inheritdoc />
         public ContractByteCode ToByteCode()
         {
-            using (var ms = new MemoryStream())
+            try
             {
-                this.ModuleDefinition.Write(ms);
+                using (var ms = new MemoryStream())
+                {
+                    this.ModuleDefinition.Write(ms);
 
-                return (ContractByteCode) ms.ToArray();
+                    return (ContractByteCode) ms.ToArray();
+                }
+            }
+            catch (Exception)
+            {
+                return new ContractByteCode(new byte[0]);
             }
         }
 
         /// <inheritdoc />
         public SmartContractValidationResult Validate(ISmartContractValidator validator)
         {
-            return validator.Validate(this.ModuleDefinition);
+            try
+            {
+                return validator.Validate(this.ModuleDefinition);
+            }
+            catch (Exception e)
+            {
+                return new SmartContractValidationResult(new[]
+                {
+                    new ModuleDefinitionValidationResult("Error validating module: " + e.Message)
+                });
+            }
         }
 
         public string GetPropertyGetterMethodName(string typeName, string propertyName)
