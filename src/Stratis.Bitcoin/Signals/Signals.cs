@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Signals
 {
     public interface ISignals
     {
-        /// <summary>Event that is executed when block is connected to consensus chain.</summary>
+        /// <summary>Event that is executed when a block is connected to a consensus chain.</summary>
         EventNotifier<ChainedHeaderBlock> OnBlockConnected { get; }
 
         /// <summary>Event that is executed when block is disconnected from consensus chain.</summary>
