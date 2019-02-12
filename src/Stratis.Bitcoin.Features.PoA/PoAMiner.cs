@@ -230,7 +230,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
             BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
 
-            this.AddVotingData(blockTemplate);
+            if (this.network.ConsensusOptions.VotingEnabled)
+                this.AddVotingData(blockTemplate);
 
             blockTemplate.Block.Header.Time = timestamp;
 
