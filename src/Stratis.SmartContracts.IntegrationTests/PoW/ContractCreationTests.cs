@@ -59,7 +59,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 Assert.False(scBlockHeader.LogsBloom.Test(Encoding.UTF8.GetBytes("RandomValue")));
 
                 // Do a create that should transfer all funds sent now.
-                const double amount = 20;
+                decimal amount = 20;
                 BuildCallContractTransactionResponse callResponse2 = sender.SendCallContractTransaction("CreateCatWithFunds", response.NewContractAddress, amount);
                 receiver.WaitMempoolCount(1);
                 receiver.MineBlocks(1);

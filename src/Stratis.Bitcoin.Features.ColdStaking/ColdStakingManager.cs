@@ -174,13 +174,7 @@ namespace Stratis.Bitcoin.Features.ColdStaking
             this.logger.LogTrace("({0}:'{1}',{2}:{3})", nameof(wallet), wallet.Name, nameof(isColdWalletAccount), isColdWalletAccount);
 
             var coinType = (CoinType)wallet.Network.Consensus.CoinType;
-            HdAccount account = null;
-            try
-            {
-                account = wallet.GetAccountByCoinType(isColdWalletAccount ? ColdWalletAccountName : HotWalletAccountName, coinType);
-            }
-            catch (Exception) { }
-
+            HdAccount account = wallet.GetAccountByCoinType(isColdWalletAccount ? ColdWalletAccountName : HotWalletAccountName, coinType);
             if (account == null)
             {
                 this.logger.LogTrace("(-)[ACCOUNT_DOES_NOT_EXIST]:null");

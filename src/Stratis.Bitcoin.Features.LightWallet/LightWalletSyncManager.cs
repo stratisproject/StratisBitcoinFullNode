@@ -8,7 +8,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Notifications.Interfaces;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -37,10 +36,6 @@ namespace Stratis.Bitcoin.Features.LightWallet
 
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
-
-        private IDisposable sub;
-
-        private IDisposable txSub;
 
         public ChainedHeader WalletTip => this.walletTip;
 
@@ -80,9 +75,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
         /// <inheritdoc />
         public void Start()
         {
-            // subscribe to receiving blocks and transactions
-            this.sub = this.signals.SubscribeForBlocksConnected(new BlockObserver(this));
-            this.txSub = this.signals.SubscribeForTransactions(new TransactionObserver(this));
+            this.signals.OnTransactionReceived.Attach(this.ProcessTransaction);
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
 
             // if there is no wallet created yet, the wallet tip is the chain tip.
             if (!this.walletManager.ContainsWallets)
@@ -142,6 +136,11 @@ namespace Stratis.Bitcoin.Features.LightWallet
             }
         }
 
+        private void OnBlockConnected(ChainedHeaderBlock chainedheaderblock)
+        {
+            this.ProcessBlock(chainedheaderblock.Block);
+        }
+
         /// <inheritdoc />
         public void Stop()
         {
@@ -151,17 +150,8 @@ namespace Stratis.Bitcoin.Features.LightWallet
                 this.asyncLoop = null;
             }
 
-            if (this.sub != null)
-            {
-                this.sub.Dispose();
-                this.sub = null;
-            }
-
-            if (this.txSub != null)
-            {
-                this.txSub.Dispose();
-                this.txSub = null;
-            }
+            this.signals.OnTransactionReceived.Detach(this.ProcessTransaction);
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
         }
 
         /// <inheritdoc />
