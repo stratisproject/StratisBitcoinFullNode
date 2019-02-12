@@ -40,6 +40,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>All access should be protected by <see cref="locker"/>.</remarks>
         private List<VotingData> scheduledVotingData;
 
+        private bool isInitialized;
+
         public VotingManager(FederationManager federationManager, ILoggerFactory loggerFactory, SlotsManager slotsManager, IPollResultExecutor pollResultExecutor,
             INodeStats nodeStats, DataFolder dataFolder, DBreezeSerializer dBreezeSerializer, ISignals signals)
         {
@@ -54,6 +56,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.scheduledVotingData = new List<VotingData>();
             this.pollsRepository = new PollsRepository(dataFolder, loggerFactory, dBreezeSerializer);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+
+            this.isInitialized = false;
         }
 
         public void Initialize()
@@ -66,12 +70,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.signals.OnBlockDisconnected.Attach(this.OnBlockDisconnected);
 
             this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
+
+            this.isInitialized = true;
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
         /// <exception cref="InvalidOperationException">Thrown in case caller is not a federation member.</exception>
         public void ScheduleVote(VotingData votingData)
         {
+            this.EnsureInitialized();
+
             if (!this.federationManager.IsFederationMember)
             {
                 this.logger.LogTrace("(-)[NOT_FED_MEMBER]");
@@ -87,6 +95,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>Provides a copy of scheduled voting data.</summary>
         public List<VotingData> GetScheduledVotes()
         {
+            this.EnsureInitialized();
+
             lock (this.locker)
             {
                 return new List<VotingData>(this.scheduledVotingData);
@@ -97,6 +107,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <remarks>Used by miner.</remarks>
         public List<VotingData> GetAndCleanScheduledVotes()
         {
+            this.EnsureInitialized();
+
             lock (this.locker)
             {
                 List<VotingData> votingData = this.scheduledVotingData;
@@ -110,6 +122,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>Provides a collection of polls that are currently active.</summary>
         public List<Poll> GetPendingPolls()
         {
+            this.EnsureInitialized();
+
             lock (this.locker)
             {
                 return new List<Poll>(this.polls.Where(x => x.IsPending));
@@ -119,6 +133,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         /// <summary>Provides a collection of polls that are already finished and their results applied.</summary>
         public List<Poll> GetFinishedPolls()
         {
+            this.EnsureInitialized();
+
             lock (this.locker)
             {
                 return new List<Poll>(this.polls.Where(x => !x.IsPending));
@@ -246,6 +262,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 log.AppendLine($"{this.polls.Count(x => x.IsPending)} polls are pending, {this.polls.Count(x => !x.IsPending)} polls are finished.");
                 log.AppendLine($"{this.scheduledVotingData.Count} votes are scheduled to be added to the next block this node mines.");
+            }
+        }
+
+        private void EnsureInitialized()
+        {
+            if (!this.isInitialized)
+            {
+                throw new Exception("VotingManager is not initialized. Check that voting is enabled in PoAConsensusOptions.");
             }
         }
 
