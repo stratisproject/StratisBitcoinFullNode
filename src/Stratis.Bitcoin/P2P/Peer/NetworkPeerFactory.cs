@@ -201,6 +201,11 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 networkPeerDisposer?.AddPeer(peer);
             }
+            catch (OperationCanceledException e)
+            {
+                peer.Dispose();
+                throw e;
+            }
             catch
             {
                 peer.Dispose();

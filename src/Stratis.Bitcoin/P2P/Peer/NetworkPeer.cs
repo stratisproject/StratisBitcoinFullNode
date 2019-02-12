@@ -416,14 +416,10 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.logger.LogTrace("Outbound connection to '{0}' established.", this.PeerEndPoint);
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
-                this.logger.LogTrace("Connection to '{0}' cancelled.", this.PeerEndPoint);
-
                 await this.SetStateAsync(NetworkPeerState.Offline).ConfigureAwait(false);
-
-                this.logger.LogTrace("(-)[CANCELLED]");
-                throw;
+                throw ex;
             }
             catch (Exception ex)
             {

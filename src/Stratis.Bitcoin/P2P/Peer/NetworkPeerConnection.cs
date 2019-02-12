@@ -190,11 +190,9 @@ namespace Stratis.Bitcoin.P2P.Peer
 
                 this.stream = this.tcpClient.GetStream();
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException e)
             {
-                this.logger.LogTrace("Connecting to '{0}' cancelled.", endPoint);
-                this.logger.LogTrace("(-)[CANCELLED]");
-                throw;
+                throw e;
             }
             catch (Exception e)
             {
@@ -250,11 +248,10 @@ namespace Stratis.Bitcoin.P2P.Peer
                     this.peer.Counter.AddWritten(bytes.Length);
                 }
             }
-            catch (OperationCanceledException)
+            catch (OperationCanceledException ex)
             {
                 this.peer.Disconnect("Connection to the peer has been terminated");
-                this.logger.LogTrace("(-)[CANCELED_EXCEPTION]");
-                throw;
+                throw ex;
             }
             catch (Exception ex)
             {
