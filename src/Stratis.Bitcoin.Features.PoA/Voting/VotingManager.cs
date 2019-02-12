@@ -22,6 +22,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         private readonly ISignals signals;
 
+        private readonly INodeStats nodeStats;
+
         private readonly ILogger logger;
 
         /// <summary>Protects access to <see cref="scheduledVotingData"/>, <see cref="polls"/>, <see cref="pollsRepository"/>.</summary>
@@ -45,14 +47,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.slotsManager = Guard.NotNull(slotsManager, nameof(slotsManager));
             this.pollResultExecutor = Guard.NotNull(pollResultExecutor, nameof(pollResultExecutor));
             this.signals = Guard.NotNull(signals, nameof(signals));
+            this.nodeStats = Guard.NotNull(nodeStats, nameof(nodeStats));
 
             this.locker = new object();
             this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
             this.scheduledVotingData = new List<VotingData>();
             this.pollsRepository = new PollsRepository(dataFolder, loggerFactory, dBreezeSerializer);
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-
-            nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
         }
 
         public void Initialize()
@@ -63,6 +64,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
             this.signals.OnBlockDisconnected.Attach(this.OnBlockDisconnected);
+
+            this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>
