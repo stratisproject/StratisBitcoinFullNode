@@ -66,8 +66,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                 keysVotedInFavor += keyHex + " ";
             }
 
-            return $"{nameof(this.IsPending)}:{this.IsPending},{nameof(this.Id)}:{this.Id},{nameof(this.PollStartBlockHash)}:{this.PollStartBlockHash?.ToString() ?? "null"}" +
-                $"{nameof(this.PollAppliedBlockHash)}:{this.PollAppliedBlockHash?.ToString() ?? "null"},{nameof(this.PubKeysHexVotedInFavor)}:{keysVotedInFavor}";
+            return $"{nameof(this.IsPending)}:{this.IsPending}, {nameof(this.Id)}:{this.Id}, {nameof(this.PollStartBlockHash)}:{this.PollStartBlockHash?.ToString() ?? "null"}, " +
+                $"{nameof(this.PollAppliedBlockHash)}:{this.PollAppliedBlockHash?.ToString() ?? "null"}, {nameof(this.PubKeysHexVotedInFavor)}:{keysVotedInFavor}";
         }
     }
 }

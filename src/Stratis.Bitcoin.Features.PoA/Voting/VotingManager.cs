@@ -118,7 +118,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                 this.scheduledVotingData = new List<VotingData>();
 
-                this.logger.LogDebug("{0} scheduled votes were taken.", votingData.Count);
+                if (votingData.Count > 0)
+                    this.logger.LogDebug("{0} scheduled votes were taken.", votingData.Count);
+
                 return votingData;
             }
         }
@@ -204,7 +206,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                     int requiredVotesCount = (fedMembersHex.Count / 2) + 1;
 
-                    this.logger.LogDebug("Fed members count: {0}, valid votes count: {1}, required votes count: {2}.", fedMemberKeyHex.Length, validVotesCount, requiredVotesCount);
+                    this.logger.LogDebug("Fed members count: {0}, valid votes count: {1}, required votes count: {2}.", fedMembersHex.Count, validVotesCount, requiredVotesCount);
 
                     if (validVotesCount < requiredVotesCount)
                         continue;
