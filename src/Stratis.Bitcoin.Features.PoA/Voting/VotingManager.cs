@@ -90,6 +90,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             {
                 this.scheduledVotingData.Add(votingData);
             }
+
+            this.logger.LogDebug("Vote was scheduled with key: {0}.", votingData.Key);
         }
 
         /// <summary>Provides a copy of scheduled voting data.</summary>
@@ -115,6 +117,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                 this.scheduledVotingData = new List<VotingData>();
 
+                this.logger.LogDebug("{0} scheduled votes were taken.", votingData.Count);
                 return votingData;
             }
         }
@@ -141,7 +144,6 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
-        // TODO more logs and log polls
         private void OnBlockConnected(ChainedHeaderBlock chBlock)
         {
             byte[] rawVotingData = this.votingDataEncoder.ExtractRawVotingData(chBlock.Block.Transactions[0]);
@@ -157,15 +159,17 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
 
+            this.logger.LogDebug("Applying {0} voting data items included in a block by '{1}'.", votingDataList.Count, fedMemberKeyHex);
+
             lock (this.locker)
             {
                 foreach (VotingData data in votingDataList)
                 {
-                    Poll existingPoll = this.polls.SingleOrDefault(x => x.VotingData == data && x.IsPending);
+                    Poll poll = this.polls.SingleOrDefault(x => x.VotingData == data && x.IsPending);
 
-                    if (existingPoll == null)
+                    if (poll == null)
                     {
-                        existingPoll = new Poll()
+                        poll = new Poll()
                         {
                             Id = this.pollsRepository.GetHighestPollId() + 1,
                             PollAppliedBlockHash = null,
@@ -174,38 +178,42 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                             PubKeysHexVotedInFavor = new List<string>() { fedMemberKeyHex }
                         };
 
-                        this.polls.Add(existingPoll);
-                        this.pollsRepository.AddPolls(existingPoll);
+                        this.polls.Add(poll);
+                        this.pollsRepository.AddPolls(poll);
 
-                        this.logger.LogDebug("New poll was created.");
+                        this.logger.LogDebug("New poll was created: '{0}'.", poll);
                     }
-                    else if (!existingPoll.PubKeysHexVotedInFavor.Contains(fedMemberKeyHex))
+                    else if (!poll.PubKeysHexVotedInFavor.Contains(fedMemberKeyHex))
                     {
-                        existingPoll.PubKeysHexVotedInFavor.Add(fedMemberKeyHex);
-                        this.pollsRepository.UpdatePoll(existingPoll);
+                        poll.PubKeysHexVotedInFavor.Add(fedMemberKeyHex);
+                        this.pollsRepository.UpdatePoll(poll);
 
-                        this.logger.LogDebug("Voted on existing poll.");
+                        this.logger.LogDebug("Voted on existing poll: '{0}'.", poll);
                     }
                     else
                     {
-                        this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote.", fedMemberKeyHex);
+                        this.logger.LogDebug("Fed member '{0}' already voted for this poll. Ignoring his vote. Poll: '{1}'.", fedMemberKeyHex, poll);
                     }
 
                     List<string> fedMembersHex = this.federationManager.GetFederationMembers().Select(x => x.ToHex()).ToList();
 
                     // It is possible that there is a vote from a federation member that was deleted from the federation.
                     // Do not count votes from entities that are not active fed members.
-                    int validVotesCount = existingPoll.PubKeysHexVotedInFavor.Count(x => fedMembersHex.Contains(x));
+                    int validVotesCount = poll.PubKeysHexVotedInFavor.Count(x => fedMembersHex.Contains(x));
 
                     int requiredVotesCount = (fedMembersHex.Count / 2) + 1;
 
-                    if (validVotesCount >= requiredVotesCount)
-                    {
-                        this.pollResultExecutor.ApplyChange(data);
+                    this.logger.LogDebug("Fed members count: {0}, valid votes count: {1}, required votes count: {2}.", fedMemberKeyHex.Length, validVotesCount, requiredVotesCount);
 
-                        existingPoll.PollAppliedBlockHash = chBlock.Block.GetHash();
-                        this.pollsRepository.UpdatePoll(existingPoll);
-                    }
+                    if (validVotesCount < requiredVotesCount)
+                        continue;
+
+                    this.logger.LogDebug("Applying poll.");
+
+                    this.pollResultExecutor.ApplyChange(data);
+
+                    poll.PollAppliedBlockHash = chBlock.Block.GetHash();
+                    this.pollsRepository.UpdatePoll(poll);
                 }
             }
         }
@@ -225,6 +233,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
+                // TODO add logs
                 foreach (VotingData votingData in votingDataList)
                 {
                     // Poll that was finished in the block being disconnected.
