@@ -14,7 +14,7 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.BlockStore
 {
-    public class BlockStoreSignaled : SignalObserver<ChainedHeaderBlock>
+    public class BlockStoreSignaled : IDisposable
     {
         private readonly IBlockStoreQueue blockStoreQueue;
 
@@ -42,6 +42,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <summary>Task that runs <see cref="DequeueContinuouslyAsync"/>.</summary>
         private readonly Task dequeueLoopTask;
 
+        private readonly ISignals signals;
+
         public BlockStoreSignaled(
             IBlockStoreQueue blockStoreQueue,
             StoreSettings storeSettings,
@@ -49,7 +51,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             IConnectionManager connection,
             INodeLifetime nodeLifetime,
             ILoggerFactory loggerFactory,
-            IInitialBlockDownloadState initialBlockDownloadState)
+            IInitialBlockDownloadState initialBlockDownloadState,
+            ISignals signals)
         {
             this.blockStoreQueue = blockStoreQueue;
             this.chainState = chainState;
@@ -58,12 +61,18 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.storeSettings = storeSettings;
             this.initialBlockDownloadState = initialBlockDownloadState;
+            this.signals = signals;
 
             this.blocksToAnnounce = new AsyncQueue<ChainedHeader>();
             this.dequeueLoopTask = this.DequeueContinuouslyAsync();
         }
 
-        protected override void OnNextCore(ChainedHeaderBlock blockPair)
+        public void Initialize()
+        {
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+        }
+
+        private void OnBlockConnected(ChainedHeaderBlock blockPair)
         {
             ChainedHeader chainedHeader = blockPair.ChainedHeader;
             if (chainedHeader == null)
@@ -231,13 +240,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         }
 
         /// <inheritdoc />
-        protected override void Dispose(bool disposing)
+        public void Dispose()
         {
             // Let current batch sending task finish.
             this.blocksToAnnounce.Dispose();
             this.dequeueLoopTask.GetAwaiter().GetResult();
 
-            base.Dispose(disposing);
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
         }
     }
 }

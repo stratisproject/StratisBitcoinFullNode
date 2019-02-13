@@ -25,6 +25,7 @@ using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -57,9 +58,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         public bool CookieAuth { get; set; }
 
         public Mnemonic Mnemonic { get; set; }
-
-        private Action<ChainedHeaderBlock> builderConnectInterceptor;
-        private Action<ChainedHeaderBlock> builderDisconnectInterceptor;
 
         private bool builderAlwaysFlushBlocks;
         private bool builderEnablePeerDiscovery;
@@ -120,7 +118,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderConnectInterceptor = interceptor;
+            this.FullNode.NodeService<ISignals>().OnBlockConnected.Attach(interceptor);
+
             return this;
         }
 
@@ -131,7 +130,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderDisconnectInterceptor = interceptor;
+            this.FullNode.NodeService<ISignals>().OnBlockDisconnected.Attach(interceptor);
+
             return this;
         }
 
@@ -258,11 +258,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.runner.AlwaysFlushBlocks = this.builderAlwaysFlushBlocks;
                 this.runner.EnablePeerDiscovery = this.builderEnablePeerDiscovery;
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
-
-                // Interceptors--------------------------------------
-                this.runner.ConnectInterceptor = this.builderConnectInterceptor;
-                this.runner.DisconnectInterceptor = this.builderDisconnectInterceptor;
-                // --------------------------------------------------
 
                 this.runner.BuildNode();
                 this.runner.Start();

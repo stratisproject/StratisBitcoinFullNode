@@ -83,7 +83,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -127,7 +127,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -171,7 +171,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -230,7 +230,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -275,7 +275,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -326,7 +326,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 25;
+            decimal amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction("MethodThatDoesntExist", preResponse.NewContractAddress, amount);
@@ -372,7 +372,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -417,7 +417,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -470,7 +470,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -525,7 +525,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -575,7 +575,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 25;
+            decimal amount = 25;
             ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -619,7 +619,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 25;
+            decimal amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             string[] parameters = new string[] { string.Format("{0}#{1}", (int)MethodParameterDataType.Int, 100001) };
@@ -667,7 +667,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 0;
+            decimal amount = 0;
 
             ulong gasLimit = SmartContractFormatRule.GasLimitCallMinimum + 1;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
@@ -704,7 +704,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             var gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
             const ulong txGasPerBlockLimit = SmartContractFormatRule.GasLimitMaximum * 10;
             const int txCount = 25;
-            double amount = 0;
+            decimal amount = 0;
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/InfiniteLoop.cs");
             Assert.True(compilationResult.Success);
