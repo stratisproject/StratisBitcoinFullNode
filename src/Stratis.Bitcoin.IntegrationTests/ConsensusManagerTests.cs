@@ -150,22 +150,18 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var network = new StratisConsensusOptionsOverrideTest();
 
-                // MinerA requires an physical wallet to stake with.
+                // MinerA requires a physical wallet to stake with.
                 var minerA = builder.CreateStratisPosNode(network, "minerA").OverrideDateTimeProvider().WithWallet().Start();
                 var minerB = builder.CreateStratisPosNode(network, "minerB").OverrideDateTimeProvider().Start();
-                var syncer = builder.CreateStratisPosNode(network, "syncer").OverrideDateTimeProvider().Start();
 
                 // MinerA mines to height 55.
                 TestHelper.MineBlocks(minerA, 55);
 
-                // Sync the network to height 55.
-                TestHelper.Connect(syncer, minerA);
-                TestHelper.Connect(syncer, minerB);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 600);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), waitTimeSeconds: 600);
+                // Connect and sync minerA and minerB.
+                TestHelper.ConnectAndSync(minerA, minerB);
 
                 // Disconnect Miner A and B.
-                TestHelper.DisconnectAll(syncer, minerA, minerB);
+                TestHelper.Disconnect(minerA, minerB);
 
                 // Miner A stakes a coin that increases the network height to 56.
                 var minter = minerA.FullNode.NodeService<IPosMinting>();
@@ -180,44 +176,24 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Update the network consensus options so that the GetStakeMinConfirmations returns a higher value
                 // to ensure that the InvalidStakeDepth exception can be thrown.
-                minerA.FullNode.Network.Consensus.Options = new ConsensusOptionsTest();
                 minerB.FullNode.Network.Consensus.Options = new ConsensusOptionsTest();
-                syncer.FullNode.Network.Consensus.Options = new ConsensusOptionsTest();
 
-                // Syncer now connects to both miners causing a InvalidStakeDepth exception to be thrown
-                // on Miner A.
-                TestHelper.Connect(syncer, minerA);
-                TestHelper.Connect(syncer, minerB);
+                // Ensure the correct height before the connect.
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 56);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 55);
 
-                // Wait until syncer has disconnected either minerA and/or minerB due to a InvalidStakeDepth exception.
-                TestHelper.WaitLoop(() => syncer.FullNode.ConnectionManager.ConnectedPeers.Count(p => !p.Inbound) < 2);
+                // Connect minerA to minerB, this will cause an InvalidStakeDepth exception to be thrown on minerB.
+                TestHelper.Connect(minerA, minerB);
 
-                // Determine which node was disconnected.
-                CoreNode survived = null;
-                CoreNode notSurvived = null;
-                if (TestHelper.IsNodeConnectedTo(syncer, minerA))
-                {
-                    survived = minerA;
-                    notSurvived = minerB;
-                }
-                else
-                {
-                    survived = minerB;
-                    notSurvived = minerA;
-                }
+                // Wait until minerA has disconnected minerB due to the InvalidStakeDepth exception.
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
 
-                // Ensure that Syncer is synced with MinerB.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, survived));
-
-                // Ensure that Syncer is not connected to MinerA.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, notSurvived));
-
-                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 55);
-                Assert.True(survived.FullNode.ConsensusManager().Tip.Height == 55);
+                Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 56);
+                Assert.True(minerB.FullNode.ConsensusManager().Tip.Height == 55);
             }
         }
 
-        [Retry]
+        [Fact]
         public void ConsensusManager_Fork_Occurs_Node_Gets_Disconnected_Due_To_MaxReorgViolation()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -226,58 +202,35 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 var minerA = builder.CreateStratisPowNode(network).WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPowNode(network).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPowNode(network).Start();
 
-                // MinerA mines to height 20.
-                TestHelper.MineBlocks(minerA, 20);
+                // MinerA mines height 10.
+                TestHelper.MineBlocks(minerA, 10);
 
-                // Sync the network to height 20.
-                TestHelper.Connect(syncer, minerA);
-                TestHelper.Connect(syncer, minerB);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+                // Connect and sync minerA and minerB.
+                TestHelper.ConnectAndSync(minerA, minerB);
 
-                // Disconnect Miner A and B.
-                TestHelper.Disconnect(syncer, minerA);
-                TestHelper.Disconnect(syncer, minerB);
+                // Disconnect minerA from minerB.
+                TestHelper.Disconnect(minerA, minerB);
 
-                // Ensure syncer does not have any connections.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnected(syncer));
+                // MinerA continues to mine to height 20 (10 + 10).
+                TestHelper.MineBlocks(minerA, 10);
 
-                // MinerA continues to mine to height 45.
-                TestHelper.MineBlocks(minerA, 25);
+                // MinerB continues to mine to height 40 (10 + 30).
+                TestHelper.MineBlocks(minerB, 30);
 
-                // MinerB continues to mine to height 65.
-                TestHelper.MineBlocks(minerB, 45);
+                // Ensure the correct height before the connect.
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 20);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 40);
 
-                // Syncer now connects to both miners causing a MaxReorgViolation exception to be thrown
-                // on Miner B.
-                TestHelper.Connect(syncer, minerA);
-                TestHelper.Connect(syncer, minerB);
+                // Connect minerA to minerB.
+                TestHelper.Connect(minerA, minerB);
 
-                // Determine which node was disconnected.
-                CoreNode survived = null;
-                CoreNode notSurvived = null;
-                if (TestHelper.IsNodeConnectedTo(syncer, minerA))
-                {
-                    survived = minerA;
-                    notSurvived = minerB;
-                }
-                else
-                {
-                    survived = minerB;
-                    notSurvived = minerA;
-                }
+                // Wait until the nodes become disconnected due to the MaxReorgViolation.
+                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
 
-                // Ensure that Syncer is synced with MinerB.
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, survived));
-
-                // Ensure that Syncer is not connected to MinerA.
-                TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, notSurvived));
-
-                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 45);
-                Assert.True(survived.FullNode.ConsensusManager().Tip.Height == 45);
-
+                // Check that the heights did not change.
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 20);
+                TestHelper.WaitLoop(() => minerB.FullNode.ConsensusManager().Tip.Height == 40);
             }
         }
 

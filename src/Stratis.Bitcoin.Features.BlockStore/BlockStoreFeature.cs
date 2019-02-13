@@ -25,8 +25,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
         private readonly Network network;
         private readonly ConcurrentChain chain;
 
-        private readonly Signals.Signals signals;
-
         private readonly BlockStoreSignaled blockStoreSignaled;
 
         private readonly IConnectionManager connectionManager;
@@ -53,7 +51,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             Network network,
             ConcurrentChain chain,
             IConnectionManager connectionManager,
-            Signals.Signals signals,
             BlockStoreSignaled blockStoreSignaled,
             ILoggerFactory loggerFactory,
             StoreSettings storeSettings,
@@ -67,7 +64,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.network = network;
             this.chain = chain;
             this.blockStoreQueue = blockStoreQueue;
-            this.signals = signals;
             this.blockStoreSignaled = blockStoreSignaled;
             this.connectionManager = connectionManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -130,9 +126,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             if (!this.network.Consensus.IsProofOfStake)
                 this.connectionManager.Parameters.Services |= NetworkPeerServices.NODE_WITNESS;
 
-            this.signals.SubscribeForBlocksConnected(this.blockStoreSignaled);
-
-            return;
+            this.blockStoreSignaled.Initialize();
         }
 
         /// <inheritdoc />
