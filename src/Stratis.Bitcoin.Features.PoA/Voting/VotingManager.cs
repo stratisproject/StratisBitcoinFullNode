@@ -72,6 +72,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             this.nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component, 1200);
 
             this.isInitialized = true;
+            this.logger.LogDebug("VotingManager initialized.");
         }
 
         /// <summary>Schedules a vote for the next time when the block will be mined.</summary>

@@ -89,15 +89,15 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.federationManager.Initialize();
 
+            if ((this.network.Consensus.Options as PoAConsensusOptions).VotingEnabled)
+            {
+                this.votingManager.Initialize();
+            }
+
             if (this.federationManager.IsFederationMember)
             {
                 // Enable mining because we are a federation member.
                 this.miner.InitializeMining();
-            }
-
-            if ((this.network.Consensus.Options as PoAConsensusOptions).VotingEnabled)
-            {
-                this.votingManager.Initialize();
             }
 
             return Task.CompletedTask;
