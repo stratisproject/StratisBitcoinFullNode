@@ -1,11 +1,11 @@
 ﻿using System;
 using System.Net;
-using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
     /// <summary>
     /// The class of an object representing a block of ip addresses.
+    /// See https://www.mediawiki.org/wiki/Help:Range_blocks.
     /// </summary>
     public class IPAddressBlock
     {
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.RPC
         }
 
         /// <summary>
-        /// Determines if the passed ip address occurs in this range.
+        /// Determines if the passed ip address occurs in the CIDR range defined by this object.
         /// </summary>
         /// <param name="address">The ip adddress.</param>
         /// <returns><c>True</c> if the ip address occurs in this range and <c>false</c> otherwise.</returns>
@@ -79,15 +79,20 @@ namespace Stratis.Bitcoin.Features.RPC
             if (this.MaskLength == (blockAddrBytes.Length * 8))
                 return this.BlockAddress.Equals(address);
 
+            // Determine the number of initial bytes in the block address that should match the ip address.
+            int maskBytesLength = this.MaskLength / 8;
             byte[] addressBytes = address.GetAddressBytes();
-            int bytesToKeep = this.MaskLength / 8;
+            for (int i = 0; i < maskBytesLength; i++)
+                if (addressBytes[i] != blockAddrBytes[i])
+                    return false;
+
+            // Deal with fractional bytes.
             if ((this.MaskLength % 8) != 0)
-                addressBytes[bytesToKeep++] &= (byte)~(0xff >> (this.MaskLength % 8));
+                if (((addressBytes[maskBytesLength] ^ blockAddrBytes[maskBytesLength]) & (byte)~(0xff >> (this.MaskLength % 8))) != 0)
+                    return false;
 
-            while (bytesToKeep < addressBytes.Length)
-                addressBytes[bytesToKeep++] = 0;
-
-            return Utils.ArrayEqual(addressBytes, blockAddrBytes);
+            // We don't care about mismatches in the rest of the bytes.
+            return true;
         }
 
         /// <summary>
