@@ -52,6 +52,10 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
 
+        /// <summary>Timestamp tracking the last time a resync was triggered due to a header failing to connect.
+        /// This is generally due to the previous block hash referred to by the header not being in the tree.</summary>
+        private DateTime lastHeaderConnectResync;
+
         /// <summary>Interval in minutes for the <see cref="autosyncTimer"/>.</summary>
         private const int AutosyncIntervalMinutes = 10;
 
@@ -452,11 +456,21 @@ namespace Stratis.Bitcoin.Consensus
             }
             catch (ConnectHeaderException)
             {
+                // This is typically thrown when the the first header refers to a previous block hash that is not in
+                // the header tree currently. This is not regarded as bannable, as it could be a legitimate reorg.
                 this.logger.LogDebug("Unable to connect headers.");
                 this.cachedHeaders.Clear();
 
-                // Resync in case can't connect.
-                await this.ResyncAsync().ConfigureAwait(false);
+                // Resync in case we can't connect the header.
+                // We do not want to do this too frequently, as it is possible for an infinite loop to arise if a node
+                // continues to supply headers that cannot be connected. In lieu of more pervasive rate limiting this
+                // quick check should reduce the bandwidth consumption of spurious resync requests.
+                // Resyncs will eventually be triggered by timer elsewhere so a peer will not remain stuck indefinitely.
+                if ((DateTime.Now - this.lastHeaderConnectResync) > TimeSpans.Second)
+                {
+                    this.lastHeaderConnectResync = DateTime.Now;
+                    await this.ResyncAsync().ConfigureAwait(false);
+                }
             }
             catch (ConsensusRuleException exception)
             {
