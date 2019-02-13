@@ -141,20 +141,15 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    uint timeNow = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
-
-                    if (timeNow <= this.consensusManager.Tip.Header.Time)
+                    if ((uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() <= this.consensusManager.Tip.Header.Time)
                     {
                         await this.TaskDelayAsync(500).ConfigureAwait(false);
                         continue;
                     }
 
-                    // TODO handle cases when block was applied or removed and federation changed
-                    uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+                    uint miningTimestamp =  await this.WaitUntilCanMineAsync().ConfigureAwait(false);
 
-                    await this.WaitUntilWeCanMineAsync(myTimestamp).ConfigureAwait(false);
-
-                    ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
+                    ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(miningTimestamp).ConfigureAwait(false);
 
                     if (chainedHeader == null)
                     {
@@ -178,24 +173,23 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        /// <summary>
-        /// Doesn't let the node progress until the given time slot.
-        /// </summary>
-        /// <param name="myTimestamp">The next time slot this node should mine at.</param>
-        protected virtual async Task WaitUntilWeCanMineAsync(uint myTimestamp)
+        private async Task<uint> WaitUntilCanMineAsync()
         {
-            int waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
-
-            this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
-
-            // Accounts for different IDateTimeProvider implementations. The standard implementation would progress
-            // after one iteration, but for other cases where we are emulating time, this may loop more than once.
-            while (waitingTime > 0)
+            while (!this.cancellation.IsCancellationRequested)
             {
-                await this.TaskDelayAsync(waitingTime * 1000, this.cancellation.Token).ConfigureAwait(false);
+                uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
-                waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
+                uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+
+                int estimatedWaitingTime = (int)(myTimestamp - timeNow) - 1;
+
+                if (estimatedWaitingTime > 0)
+                    await this.TaskDelayAsync(500, this.cancellation.Token).ConfigureAwait(false);
+                else
+                    return myTimestamp;
             }
+
+            throw new OperationCanceledException();
         }
 
         /// <summary>
