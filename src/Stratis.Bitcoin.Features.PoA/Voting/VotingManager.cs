@@ -217,6 +217,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                     poll.PollAppliedBlockHash = chBlock.Block.GetHash();
                     this.pollsRepository.UpdatePoll(poll);
+
+                    this.logger.LogDebug("New poll state: '{0}'.", poll);
                 }
             }
         }
