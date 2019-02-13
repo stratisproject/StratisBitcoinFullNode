@@ -149,6 +149,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
+                    // TODO handle cases when block was applied or removed and federation changed
                     uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
                     await this.WaitUntilWeCanMineAsync(myTimestamp).ConfigureAwait(false);

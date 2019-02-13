@@ -123,9 +123,9 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.SaveFederationKeys(this.federationMembers);
 
                 this.logger.LogInformation("Federation member '{0}' was added!", pubKey.ToHex());
-
-                this.OnFedMemberAdded.Notify(pubKey);
             }
+
+            this.OnFedMemberAdded.Notify(pubKey);
         }
 
         public void RemoveFederationMember(PubKey pubKey)
@@ -137,9 +137,9 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.SaveFederationKeys(this.federationMembers);
 
                 this.logger.LogInformation("Federation member '{0}' was removed!", pubKey.ToHex());
-
-                this.OnFedMemberKicked.Notify(pubKey);
             }
+
+            this.OnFedMemberKicked.Notify(pubKey);
         }
 
         private void SaveFederationKeys(List<PubKey> pubKeys)
