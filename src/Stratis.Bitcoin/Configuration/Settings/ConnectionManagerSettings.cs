@@ -154,8 +154,8 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 throw new ConfigurationException("The 'maxoutboundconnections' must be greater than zero.");
 
             this.MaxInboundConnections = config.GetOrDefault<int>("maxinboundconnections", nodeSettings.Network.DefaultMaxInboundConnections, this.logger);
-            if (this.MaxInboundConnections <= 0)
-                throw new ConfigurationException("The 'maxinboundconnections' must be greater than zero.");
+            if (this.MaxInboundConnections < 0)
+                throw new ConfigurationException("The 'maxinboundconnections' must be greater or equal to zero.");
 
             this.InitialConnectionTarget = config.GetOrDefault("initialconnectiontarget", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
