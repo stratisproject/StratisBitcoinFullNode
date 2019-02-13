@@ -1016,6 +1016,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
             {
                 Wallet wallet = this.walletManager.GetWallet(request.WalletName);
                 HdAccount account = wallet.GetAccountByCoinType(request.AccountName, this.coinType);
+                if (account == null)
+                    throw new WalletException($"No account with the name '{request.AccountName}' could be found.");
 
                 var model = new AddressesModel
                 {
