@@ -581,15 +581,15 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 sender.WaitMempoolCount(1);
                 sender.MineBlocks(1);
 
-                var callResponse = sender.CallContractMethodLocally("Counter", response.NewContractAddress, 0,
+                var localCallResponse = sender.CallContractMethodLocally("Counter", response.NewContractAddress, 0,
                     gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
 
                 // Check that the locally executed transaction returns the correct results
-                Assert.Equal(12345, callResponse.Return);
-                Assert.False(callResponse.Revert);
-                Assert.True(callResponse.GasConsumed > 0);
-                Assert.Null(callResponse.ErrorMessage);
-                Assert.NotNull(callResponse.InternalTransfers);
+                Assert.Equal(12345, localCallResponse.Return);
+                Assert.False(localCallResponse.Revert);
+                Assert.True(localCallResponse.GasConsumed > 0);
+                Assert.Null(localCallResponse.ErrorMessage);
+                Assert.NotNull(localCallResponse.InternalTransfers);
 
                 receiver.MineBlocks(2);
 
@@ -597,6 +597,14 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 var counterResult = sender.GetStorageValue(response.NewContractAddress, "Counter");
 
                 Assert.Equal(12345, BitConverter.ToInt32(counterResult));
+
+                // Call increment and check return value on receipt
+                BuildCallContractTransactionResponse callResponse = sender.SendCallContractTransaction("Increment", response.NewContractAddress, 0);
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
+
+                ReceiptResponse receipt = sender.GetReceipt(callResponse.TransactionId.ToString());
+                Assert.Equal("12346", receipt.ReturnValue);
             }
         }
 
