@@ -183,10 +183,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
                 int estimatedWaitingTime = (int)(myTimestamp - timeNow) - 1;
 
-                if (estimatedWaitingTime > 0)
-                    await this.TaskDelayAsync(500, this.cancellation.Token).ConfigureAwait(false);
-                else
+                if (estimatedWaitingTime <= 0)
                     return myTimestamp;
+
+                await this.TaskDelayAsync(500, this.cancellation.Token).ConfigureAwait(false);
             }
 
             throw new OperationCanceledException();

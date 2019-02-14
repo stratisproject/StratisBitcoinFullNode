@@ -89,7 +89,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.federationManager.Initialize();
 
-            if ((this.network.Consensus.Options as PoAConsensusOptions).VotingEnabled)
+            if (((PoAConsensusOptions)this.network.Consensus.Options).VotingEnabled)
             {
                 this.votingManager.Initialize();
             }
