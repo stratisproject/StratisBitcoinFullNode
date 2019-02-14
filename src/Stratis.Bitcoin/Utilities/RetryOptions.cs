@@ -25,11 +25,6 @@ namespace Stratis.Bitcoin.Utilities
             if (retryCount < 1)
                 throw new ArgumentOutOfRangeException(nameof(retryCount), "Retry count cannot be less or equal to 0.");
 
-            if (exceptionTypeTypes.Length == 0)
-            {
-                this.ExceptionTypes = new[] { typeof(Exception) };
-            }
-
             this.RetryCount = retryCount;
             this.Delay = delay;
             this.ExceptionTypes = exceptionTypeTypes;
