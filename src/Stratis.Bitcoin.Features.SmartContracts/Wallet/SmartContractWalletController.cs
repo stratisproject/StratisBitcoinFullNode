@@ -64,10 +64,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         }
 
         /// <summary>
-        /// Gets the account addresses for a wallet.
+        /// Gets a smart contract account address.
+        /// This is a single address to use for all smart contract interactions.
+        /// Smart contracts send funds to and store data at this address. For example, an ERC-20 token
+        /// would store tokens allocated to a user at this address, although the actual data
+        /// could, in fact, be anything. The address stores a history of smart contract create/call transactions.   
+        /// It also holds a UTXO list/balance based on UTXOs sent to it from smart contracts or user wallets.
+        /// Once a smart contract has written data to this address, you need to use the address to
+        /// provide gas and fees for smart contract calls involving that stored data (for that smart contract deployment).
+        /// In the case of specific ERC-20 tokens allocated to you, using this address would be
+        /// a requirement if you were to, for example, send some of the tokens to an exchange.  
+        /// It is therefore recommended that in order to keep an intact history and avoid complications,
+        /// you use the single smart contract address provided by this function for all interactions with smart contracts.
+        /// In addition, a smart comtract address can be used to identify a contract deployer.
+        /// Some methods, such as a withdrawal method on an escrow smart contract, should only be executed
+        /// by the deployer, and in this case, it is the smart contract account address that identifies the deployer.
+        ///  
+        /// Note that this account differs from "account 0", which is the "default
+        /// holder of multiple addresses". Other address holding accounts can be created,
+        /// but they should not be confused with the smart contract account, which is represented
+        /// by a single address.
         /// </summary>
-        /// <param name="walletName">The name of the wallet to get the account addresses for.</param>
-        [Route("account-addresses")]
+        /// 
+        /// <param name="walletName">The name of the wallet to retrieve a smart contract account address for.</param>
+        /// 
+        /// <returns>A smart contract account address to use for the wallet.</returns>
+        [Route("SC-account-address")]
         [HttpGet]
         public IActionResult GetAccountAddresses(string walletName)
         {
@@ -99,9 +121,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         }
 
         /// <summary>
-        /// Gets the balance at a specific wallet address.
+        /// Gets the balance at a specific wallet address in STRAT.
+        /// This method gets the UTXOs at the address that the wallet can spend.
+        /// The function can be used to query the balance at a smart contract account address
+        /// supplied by /api/SmartContractWallet/SC-account-address.
         /// </summary>
+        ///
         /// <param name="walletName">The address at which to retrieve the balance.</param>
+        /// 
+        /// <returns>The balance at a specific wallet address in STRAT.</returns>
         [Route("address-balance")]
         [HttpGet]
         public IActionResult GetAddressBalance(string address)
@@ -113,11 +141,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
 
         /// <summary>
-        /// Gets the history of a specifc wallet.
+        /// Gets the history of a specifc wallet address.
+        /// This includes the smart contract create and call transactions
+        /// This method can be used to query the balance at a smart contract account address
+        /// supplied by /api/SmartContractWallet/SC-account-address. Indeed,
+        /// it is advisable to use /api/SmartContractWallet/SC-account-address
+        /// to generate an address for all smart contract interactions.
+        /// If this has been done, and that address is supplied to this method,
+        /// a list of all smart contract interactions for a wallet will be returned.
         /// </summary>
-        /// <param name="walletName">The name of the wallet to get the history for.</param>
-        /// <param name="address"></param>
-        [Route("wallet-history")]
+        /// 
+        /// <param name="walletName">The name of the wallet holding the address.</param>
+        /// <param name="address">The address to retrieve the history for.</param>
+        /// 
+        /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specifc wallet address.</returns>
+        [Route("address-history")]
         [HttpGet]
         public IActionResult GetHistory(string walletName, string address)
         {
@@ -224,14 +262,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-
+         
         /// <summary>
-        /// Builds a transaction to create a smart contract. Although the transaction is created, the smart contract is not
-        /// deployed on the network, and no gas or fees are consumed.
-        /// Instead the created transaction is returned as a JSON object.
+        /// Builds a transaction to create a smart contract and then broadcasts the transaction to the network.
+        /// If the deployment is successful, methods on the smart contract can be subsequently called.
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
-        [Route("build-SC-creation-TX")]
+        /// 
+        /// <returns>A hash of the transaction used to create the smart contract. The result of the transaction broadcast is not returned,
+        /// and you should check for a transaction receipt to see if it was successful.</returns>
+        [Route("build-SC-creation-TX-and-broadcast-to-network")]
         [HttpPost]
         public IActionResult Create([FromBody] BuildCreateContractTransactionRequest request)
         {
@@ -251,12 +292,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         }
 
         /// <summary>
-        /// Builds a transaction to call a smart contract method. Although the transaction is created, the
-        /// call is not made, and no gas or fees are consumed.
-        /// Instead the created transaction is returned as a JSON object.
+        /// Builds a transaction to call a smart contract method and then broadcasts the transaction to the network.
+        /// If the call is successful, any changes to the smart contract balance or persistant data are propagated
+        /// accross the network.
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
-        [Route("build-SC-method-call-TX")]
+        ///
+        /// <returns>The transaction used to call a smart contract method. The result of the transaction broadcast is not returned,
+        /// and you should check for a transaction receipt to see if it was successful.</returns>
+        [Route("build-SC-method-call-TX-and-broadcast-to-network")]
         [HttpPost]
         public IActionResult Call([FromBody] BuildCallContractTransactionRequest request)
         {
@@ -278,7 +323,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// Broadcasts a transaction, which either creates a smart contract or calls a method on a smart contract.
         /// If the contract deployment or method call are successful gas and fees are consumed.
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to send the transaction.</param>
+        /// 
+        /// <returns>A model of the transaction which the Broadcast Manager broadcasts. The result of the transaction broadcast is not returned,
+        /// and you should check for a transaction receipt to see if it was successful.</returns>
         [Route("broadcast-SC-TX-to-network")]
         [HttpPost]
         public IActionResult SendTransaction([FromBody] SendTransactionRequest request)

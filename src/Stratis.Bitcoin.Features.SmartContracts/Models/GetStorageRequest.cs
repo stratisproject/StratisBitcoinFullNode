@@ -4,7 +4,7 @@ using Stratis.SmartContracts.CLR.Serialization;
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
     /// <summary>
-    /// A class containing the necessary parameters to perform the data request.
+    /// A class containing the necessary parameters to perform a retrieve stored data request.
     /// </summary>
     public class GetStorageRequest
     {
@@ -15,13 +15,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string ContractAddress { get; set; }
 
         /// <summary>
-        /// The key for the piece of data to retieve.
+        /// The key for the piece of stored data to retrieve.
         /// </summary>
         [Required(ErrorMessage = "A key for the stored data is required.")]
         public string StorageKey { get; set; }
 
         /// <summary>
-        /// The type of the piece of data to retrieve.
+        /// The stored data type.
         /// </summary>
         [Required(ErrorMessage = "The type of the data is required.")]
         public MethodParameterDataType DataType { get; set; }

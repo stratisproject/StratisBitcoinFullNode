@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Features.Wallet.Validations;
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
     /// <summary>
-    /// A class containing the necessary parameters to perform a smart contract methods call request.
+    /// A class containing the necessary parameters to perform a local smart contract method call request.
     /// </summary>
     public class LocalCallContractRequest 
     {
@@ -24,12 +24,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string MethodName { get; set; }
 
         /// <summary>
-        /// The amount of STRAT to send to the smart contract address.
+        /// The amount of funds to send to the smart contract address. 
+        /// No funds are actually sent, but the Amount field allows
+        /// certain scenarios, where the funds sent dictates the result, to be checked.
         /// </summary>
         public string Amount { get; set; }
 
         /// <summary>
-        /// The gas price in Satoshi to use. This is used to calculate the expected expenditure 
+        /// The gas price in Satoshi to use. This is used to calculate the expected expenditure
         /// if the method is run by a miner mining a call transaction rather than
         /// locally.  
         /// </summary>
@@ -37,16 +39,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public ulong GasPrice { get; set; }
 
         /// <summary>
-        /// The limit of the gas charge in Satoshi. This limit cannnot be exceeded when the method is 
-        /// run locally although the gas expenditure is theorectical rather than actual.
+        /// The limit of the gas charge in Satoshi. Although the gas expenditure is theorectical rather than actual,
+        /// this limit cannnot be exceeded even when the method run locally.
         /// </summary>
         [Range(SmartContractFormatRule.GasLimitCallMinimum, SmartContractFormatRule.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
 
         /// <summary>
-        /// A STRAT address containing the funds to cover transaction fees, gas, and any funds specified in the
-        /// Amoount field.
+        /// A wallet address containing the funds to cover transaction fees, gas, and any funds specified in the
+        /// Amount field. It is recommended that you generate (using /api/SmartContractWallet/SC-account-address) or use an existing
+        /// smart contract account address to provide the funds.
+        /// Note that because the method call is local no funds are spent. However, the concept of the sender is still valid and may need to be checked.
+        /// For example, some methods, such as a withdrawal method on an escrow smart contract, should only be executed
+        /// by the deployer, and in this case, it is the Sender address that identifies the deployer.
         /// </summary>
         [IsBitcoinAddress]
         public string Sender { get; set; }

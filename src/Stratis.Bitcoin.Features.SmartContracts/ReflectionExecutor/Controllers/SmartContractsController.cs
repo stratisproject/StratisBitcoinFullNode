@@ -79,9 +79,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets the bytecode for a smart contract as hexadecimal string.
+        /// Gets the bytecode for a smart contract as a hexadecimal string. The bytecode is decompiled to
+        /// C# source, which is returned as well. Be aware, it is the bytecode which is being executed,
+        /// so this is the "source of truth".
         /// </summary>
-        /// <param name="address">The address of the smart contract to retrieve as bytecode.</param>
+        ///
+        /// <param name="address">The address of the smart contract to retrieve as bytecode and C# source.</param>
+        ///
+        /// <returns>A response object containing the bytecode and the decompiled C# code.</returns>
         [Route("SC-bytecode")]
         [HttpGet]
         public IActionResult GetCode([FromQuery]string address)
@@ -96,7 +101,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     Message = string.Format("No contract execution code exists at {0}", address)
                 });
             }
-
+            
             Result<string> sourceResult = this.contractDecompiler.GetSource(contractCode);
 
             return Json(new GetCodeResponse
@@ -108,9 +113,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets the balance of a smart contract in STRAT.
+        /// Gets the balance of a smart contract in STRAT. This method only works for smart contract addresses. 
         /// </summary>
+        /// 
         /// <param name="address">The address of the smart contract to retrieve the balance for.</param>
+        /// 
+        /// <returns>The balance of a smart contract in STRAT.</returns>
         [Route("SC-balance")]
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
@@ -122,9 +130,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets a single piece of data persisted by a smart contract.
+        /// Gets a single piece of stored smart contract data. The data is held in the SmartContract.PersistedData property,
+        /// which stores data as key–value pairs.
         /// </summary>
-        [Route("SC-persisted-data")]
+        /// 
+        /// <param name="request">An object containing the necessary parameters to perform a retrieve stored data request.</param>
+        ///
+        /// <returns>A single piece of stored smart contract data.</returns>
+        [Route("SC-stored-data")]
         [HttpGet]
         public IActionResult GetStorage([FromQuery] GetStorageRequest request)
         {
@@ -154,9 +167,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets a smart contract's receipt.
+        /// Gets a smart contract transaction receipt. Receipts contain information about how a smart contract transaction was executed.
+        /// This includes the value returned from a smart contract call and how much gas was used.  
         /// </summary>
-        /// <param name="address">The address of the smart contract to get the receipt for.</param>
+        /// 
+        /// <param name="txHash">A hash of the smart contract transaction (the transaction ID).</param>
+        /// 
+        /// <returns>The receipt for the smart contract.</returns> 
         [Route("SC-receipt")]
         [HttpGet]
         public IActionResult GetReceipt([FromQuery] string txHash)
@@ -183,11 +200,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
 
         /// <summary>
-        /// Searches for a smart contract's receipt.
+        /// Searches a smart contract's receipts for those which match a specific event. The SmartContract.Log() function
+        /// is capable of storing C# structs, and structs are used to store information about different events occurring 
+        /// on the smart contract. For example, a "TransferLog" struct could contain "From" and "To" fields and be used to log
+        /// when a smart contract makes a transfer of funds from one wallet to another. The log entries are held inside the smart contract,
+        /// indexed using the name of the struct, and are linked to individual transaction receipts.
+        /// Therefore, it is possible to return a smart contract's transaction receipts
+        /// which match a specific event (as defined by the struct name).  
         /// </summary>
-        /// <param name="contractAddress">The address of the smart contract to get the data for.</param>
-        /// <param name="eventName"></param>
-        [Route("search-for-SC-receipt")]
+        /// 
+        /// <param name="contractAddress">The address of the smart contract to retrieve the receipts for.</param>
+        /// <param name="eventName">The name of the event struct to retrieve matching receipts for.</param>
+        /// 
+        /// <returns>A list of receipts for transactions relating to a specific smart contract and a specific event in that smart contract.</returns>
+        [Route("search-SC-receipts-for-event")]
         [HttpGet]
         public async Task<IActionResult> ReceiptSearch([FromQuery] string contractAddress, [FromQuery] string eventName)
         {
@@ -236,8 +262,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// Builds a transaction to create a smart contract. Although the transaction is created, the smart contract is not
         /// deployed on the network, and no gas or fees are consumed.
         /// Instead the created transaction is returned as a JSON object.
+        /// Transactions built using this method can be deployed using /api/SmartContractWallet/broadcast-SC-TX-to-network.
+        /// However, unless there is a need to closely examine the transaction before deploying it, you should use
+        /// api/SmartContracts/smartbuild-SC-creation-TX-and-broadcast-to-network.
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        /// 
+        /// <returns>A transaction ready to create a smart contract.</returns>
         [Route("build-SC-creation-TX")]
         [HttpPost]
         public IActionResult BuildCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
@@ -252,8 +284,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// Builds a transaction to call a smart contract method. Although the transaction is created, the
         /// call is not made, and no gas or fees are consumed.
         /// Instead the created transaction is returned as a JSON object.
+        /// Transactions built using this method can be deployed using /api/SmartContractWallet/broadcast-SC-TX-to-network
+        /// However, unless there is a need to closely examine the transaction before deploying it, you should use
+        /// api/SmartContracts/build-SC-call-TX-and-broadcast-to-network.
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        /// 
+        /// <returns>A transaction ready to call a method on a smart contract.</returns>
         [Route("build-SC-method-call-TX")]
         [HttpPost]
         public IActionResult BuildCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
@@ -268,7 +306,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// Builds a transaction to create a smart contract and then broadcasts the transaction to the network.
         /// If the deployment is successful, methods on the smart contract can be subsequently called.
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        /// 
+        /// <returns>The transaction used to create the smart contract. The result of the transaction broadcast is not returned
+        /// and you should check for a transaction receipt to see if it was successful.</returns>
         [Route("build-SC-creation-TX-and-broadcast-to-network")]
         [HttpPost]
         public IActionResult BuildAndSendCreateSmartContractTransaction([FromBody] BuildCreateContractTransactionRequest request)
@@ -290,10 +332,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         /// <summary>
         /// Builds a transaction to call a smart contract method and then broadcasts the transaction to the network.
-        /// If the call is successful, any changes to smart contract balance or persistant data are propagated
+        /// If the call is successful, any changes to the smart contract balance or persistant data are propagated
         /// accross the network.
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        ///
+        /// <returns>The transaction used to call a smart contract method. The result of the transaction broadcast is not returned
+        /// and you should check for a transaction receipt to see if it was successful.</returns>
         [Route("build-SC-method-call-TX-and-broadcast-to-network")]
         [HttpPost]
         public IActionResult BuildAndSendCallSmartContractTransaction([FromBody] BuildCallContractTransactionRequest request)
@@ -316,9 +362,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         /// Makes a local call to a method on a smart contract that has been successfully deployed. A transaction 
         /// is not created as the call is never propagated across the network. All persistant data held by the   
         /// smart contract is copied before the call is made. Only this copy is altered by the call
-        /// and the actual data is unaffected.
+        /// and the actual data is unaffected. Even if an amount of STRAT are specified to send with the call,
+        /// no STRAT are in fact sent.
+        /// The purpose of this function is to query and test methods. 
         /// </summary>
+        /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
+        /// 
+        /// <results>The result of the local call to the smart contract method.</results>
         [Route("make-local-SC-method-call")]
         [HttpPost]
         public IActionResult LocalCallSmartContractTransaction([FromBody] LocalCallContractRequest request)
@@ -379,9 +430,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets all addresses owned by a wallet which have a balance associated with them.
+        /// Gets all addresses owned by a wallet which have a balance associated with them. This
+        /// method effectively returns the balance of all the UTXOs associated with a wallet.
+        /// In a case where multiple UTXOs are associated with one address, the amounts
+        /// are tallied to give a total for that address.
         /// </summary>
+        ///
         /// <param name="walletName">The name of the wallet to retrieve the addresses from.</param>
+        /// 
+        /// <returns>The addresses owned by a wallet which have a balance associated with them.</returns>
         [Route("all-wallet-addresses-with-a-balance")]
         [HttpGet]
         public IActionResult GetAddressesWithBalances([FromQuery] string walletName)

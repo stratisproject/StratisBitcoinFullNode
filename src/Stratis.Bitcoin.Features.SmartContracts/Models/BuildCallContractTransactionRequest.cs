@@ -7,7 +7,7 @@ using Stratis.Bitcoin.Utilities.ValidationAttributes;
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
     /// <summary>
-    /// A class containing the necessary parameters to perform a smart contract methods call request.
+    /// A class containing the necessary parameters to perform a smart contract method call request.
     /// </summary>
     public class BuildCallContractTransactionRequest
     {
@@ -76,16 +76,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public ulong GasLimit { get; set; }
 
         /// <summary>
-        /// A STRAT address containing the funds to cover transaction fees, gas, and any funds specified in the
-        /// Amount field.
+        /// A wallet address containing the funds to cover transaction fees, gas, and any funds specified in the
+        /// Amount field. It is recommended that you generate (using /api/SmartContractWallet/SC-account-address) or use an existing
+        /// smart contract account address to provide the funds.
+        /// For example, some methods, such as a withdrawal method on an escrow smart contract, should only be executed
+        /// by the deployer, and in this case, it is the Sender address that identifies the deployer.
         /// </summary>
         [Required(ErrorMessage = "Sender is required.")]
         [IsBitcoinAddress]
         public string Sender { get; set; }
 
         /// <summary>
-        /// An array of strings containing the parameters to pass to the method when it is called. For information the
-        /// format of a parameters string, please refer to 
+        /// An array of strings containing the parameters to pass to the method when it is called. More information the
+        /// format of a parameters string is available
+        /// <a target="_blank" href="https://academy.stratisplatform.com/SmartContracts/working-with-contracts.html#parameter-serialization">here</a>.
         /// </summary>
         public string[] Parameters { get; set; }
 
