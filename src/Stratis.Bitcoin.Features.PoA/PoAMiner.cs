@@ -147,7 +147,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    uint miningTimestamp =  await this.WaitUntilCanMineAsync().ConfigureAwait(false);
+                    uint miningTimestamp =  await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(miningTimestamp).ConfigureAwait(false);
 
@@ -173,7 +173,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        private async Task<uint> WaitUntilCanMineAsync()
+        private async Task<uint> WaitUntilMiningSlotAsync()
         {
             while (!this.cancellation.IsCancellationRequested)
             {
