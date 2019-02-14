@@ -72,8 +72,6 @@ namespace Stratis.Bitcoin.Connection
             get { return this.connectedPeers; }
         }
 
-        private NetworkPeerServices discoveredNodeRequiredService = NetworkPeerServices.Network;
-
         public List<NetworkPeerServer> Servers { get; }
 
         /// <summary>Maintains a list of connected peers and ensures their proper disposal.</summary>
@@ -211,14 +209,14 @@ namespace Stratis.Bitcoin.Connection
 
         public void AddDiscoveredNodesRequirement(NetworkPeerServices services)
         {
-            this.discoveredNodeRequiredService |= services;
-
             IPeerConnector peerConnector = this.PeerConnectors.FirstOrDefault(pc => pc is PeerConnectorDiscovery);
             if ((peerConnector != null) && !peerConnector.Requirements.RequiredServices.HasFlag(services))
             {
-                peerConnector.Requirements.RequiredServices |= NetworkPeerServices.NODE_WITNESS;
+                peerConnector.Requirements.RequiredServices |= services;
                 foreach (INetworkPeer peer in peerConnector.ConnectorPeers)
                 {
+                    if (peer.Inbound) continue;
+
                     if (!peer.PeerVersion.Services.HasFlag(services))
                         peer.Disconnect("The peer does not support the required services requirement.");
                 }

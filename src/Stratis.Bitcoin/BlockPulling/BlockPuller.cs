@@ -263,6 +263,10 @@ namespace Stratis.Bitcoin.BlockPulling
                 foreach (KeyValuePair<int, IBlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
                 {
                     INetworkPeer peer = peerIdToBehavior.Value.AttachedPeer;
+
+                    // In-bound peers should not be removed based on network peer requirements.
+                    if (peer.Inbound) continue;
+
                     string reason = string.Empty;
 
                     if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion, out reason))
