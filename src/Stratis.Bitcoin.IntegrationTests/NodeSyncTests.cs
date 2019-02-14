@@ -205,59 +205,6 @@ namespace Stratis.Bitcoin.IntegrationTests
         }
 
         /// <summary>
-        /// This tests simulates scenario 2 from issue 636.
-        /// <para>
-        /// The test mines a block and roughly at the same time, but just after that, a new block at the same height
-        /// arrives from the puller. Then another block comes from the puller extending the chain without the block we mined.
-        /// </para>
-        /// </summary>
-        /// <seealso cref="https://github.com/stratisproject/StratisBitcoinFullNode/issues/636"/>
-        [Fact]
-        [Trait("Unstable", "True")]
-        public void Pos_PullerVsMinerRaceCondition()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                var stratisRegTest = new StratisRegTest();
-
-                // This represents local node.
-                CoreNode stratisMinerLocal = builder.CreateStratisPosNode(stratisRegTest).OverrideDateTimeProvider().WithDummyWallet().Start();
-
-                // This represents remote, which blocks are received by local node using its puller.
-                CoreNode stratisMinerRemote = builder.CreateStratisPosNode(stratisRegTest).OverrideDateTimeProvider().WithDummyWallet().Start();
-
-                // Let's mine block Ap and Bp.
-                TestHelper.MineBlocks(stratisMinerRemote, 2);
-
-                // Wait for block repository for block sync to work.
-                TestHelper.ConnectAndSync(stratisMinerLocal, stratisMinerRemote);
-
-                // Now disconnect the peers and mine block C2p on remote.
-                TestHelper.Disconnect(stratisMinerLocal, stratisMinerRemote);
-
-                // Mine block C2p.
-                TestHelper.MineBlocks(stratisMinerRemote, 1);
-                Thread.Sleep(2000);
-
-                // Now reconnect nodes and mine block C1s before C2p arrives.
-                TestHelper.Connect(stratisMinerLocal, stratisMinerRemote);
-                TestHelper.MineBlocks(stratisMinerLocal, 1);
-
-                // Mine block Dp.
-                uint256 dpHash = TestHelper.MineBlocks(stratisMinerRemote, 1, false).BlockHashes[0];
-
-                // Now we wait until the local node's chain tip has correct hash of Dp.
-                TestHelper.WaitLoop(() => stratisMinerLocal.FullNode.Chain.Tip.HashBlock.Equals(dpHash));
-
-                // Then give it time to receive the block from the puller.
-                Thread.Sleep(2500);
-
-                // Check that local node accepted the Dp as consensus tip.
-                Assert.Equal(stratisMinerLocal.FullNode.ChainBehaviorState.ConsensusTip.HashBlock, dpHash);
-            }
-        }
-
-        /// <summary>
         /// This test simulates scenario from issue #862.
         /// <para>
         /// Connection scheme:
@@ -302,36 +249,6 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.MineBlocks(connectorNode, 1);
 
                 TestHelper.WaitForNodeToSync(nodes.ToArray());
-            }
-        }
-
-        [Fact]
-        [Trait("Unstable", "True")]
-        public void Pos_NodesCanConnect_AndSync_AndMineBlocks()
-        {
-            using (NodeBuilder builder = NodeBuilder.Create(this))
-            {
-                var minerA = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var minerB = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-                var syncer = builder.CreateStratisPosNode(this.posNetwork).WithDummyWallet().Start();
-
-                // MinerA mines to height 1.
-                TestHelper.MineBlocks(minerA, 1);
-
-                // Sync the network to height 1.
-                TestHelper.ConnectAndSync(syncer, minerA);
-
-                // MinerA mines to height 2.
-                TestHelper.MineBlocks(minerA, 1);
-
-                // Sync minerB to height 2.
-                TestHelper.ConnectAndSync(syncer, minerB);
-
-                // MinerB mines to height 3.
-                TestHelper.MineBlocks(minerB, 1);
-
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
             }
         }
     }

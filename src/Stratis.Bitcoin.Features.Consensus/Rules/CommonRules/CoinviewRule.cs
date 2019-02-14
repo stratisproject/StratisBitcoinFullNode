@@ -51,12 +51,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 {
                     if (!tx.IsCoinBase && !view.HaveInputs(tx))
                     {
+                        this.Logger.LogTrace("Transaction '{0}' has not inputs", tx.GetHash());
                         this.Logger.LogTrace("(-)[BAD_TX_NO_INPUT]");
                         ConsensusErrors.BadTransactionMissingInput.Throw();
                     }
 
                     if (!this.IsTxFinal(tx, context))
                     {
+                        this.Logger.LogTrace("Transaction '{0}' is not final", tx.GetHash());
                         this.Logger.LogTrace("(-)[BAD_TX_NON_FINAL]");
                         ConsensusErrors.BadTransactionNonFinal.Throw();
                     }

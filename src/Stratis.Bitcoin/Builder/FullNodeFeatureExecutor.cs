@@ -82,38 +82,49 @@ namespace Stratis.Bitcoin.Builder
         /// <exception cref="AggregateException">Thrown in case one or more callbacks threw an exception.</exception>
         private void Execute(Action<IFullNodeFeature> callback, bool disposing = false)
         {
-            List<Exception> exceptions = null;
-
             if (this.node.Services == null)
             {
                 this.logger.LogTrace("(-)[NO_SERVICES]");
                 return;
             }
 
-            IEnumerable<IFullNodeFeature> features = this.node.Services.Features;
+            List<Exception> exceptions = null;
 
             if (disposing)
-                features = features.Reverse();
-
-            foreach (IFullNodeFeature feature in features)
             {
+                // When the node is shutting down, we need to dispose all features, so we don't break on exception.
+                foreach (IFullNodeFeature feature in this.node.Services.Features.Reverse())
+                {
+                    try
+                    {
+                        callback(feature);
+                    }
+                    catch (Exception exception)
+                    {
+                        if (exceptions == null)
+                            exceptions = new List<Exception>();
+
+                        this.LogAndAddException(exceptions, exception);
+                    }
+                }
+            }
+            else
+            {
+                // When the node is starting we don't continue initialization when an exception occurs.
                 try
                 {
-                    callback(feature);
+                    // Initialize features that are flagged to start before the base feature.
+                    foreach (IFullNodeFeature feature in this.node.Services.Features.OrderByDescending(f => f.InitializeBeforeBase))
+                    {
+                        callback(feature);
+                    }
                 }
-                catch (Exception ex)
+                catch (Exception exception)
                 {
                     if (exceptions == null)
                         exceptions = new List<Exception>();
 
-                    exceptions.Add(ex);
-
-                    this.logger.LogError("An error occurred: '{0}'", ex.ToString());
-
-                    // If we are starting up we need to exit here and stop the node from
-                    // starting up further.
-                    if (!disposing)
-                        break;
+                    this.LogAndAddException(exceptions, exception);
                 }
             }
 
@@ -123,6 +134,13 @@ namespace Stratis.Bitcoin.Builder
                 this.logger.LogTrace("(-)[EXECUTION_FAILED]");
                 throw new AggregateException(exceptions);
             }
+        }
+
+        private void LogAndAddException(List<Exception> exceptions, Exception exception)
+        {
+            exceptions.Add(exception);
+
+            this.logger.LogError("An error occurred: '{0}'", exception.ToString());
         }
     }
 }

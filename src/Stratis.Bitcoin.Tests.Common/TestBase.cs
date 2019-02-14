@@ -6,6 +6,7 @@ using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
+using Xunit;
 
 namespace Stratis.Bitcoin.Tests.Common
 {
@@ -141,7 +142,7 @@ namespace Stratis.Bitcoin.Tests.Common
 
         public ProvenBlockHeader CreateNewProvenBlockHeaderMock(PosBlock posBlock = null)
         {
-            PosBlock block = posBlock == null ? CreatePosBlock() : posBlock;
+            PosBlock block = posBlock == null ? this.CreatePosBlock() : posBlock;
             ProvenBlockHeader provenBlockHeader = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
             return provenBlockHeader;
@@ -196,10 +197,11 @@ namespace Stratis.Bitcoin.Tests.Common
         /// Builds a chain of proven headers.
         /// </summary>
         /// <param name="blockCount">The amount of blocks to chain.</param>
+        /// <param name="startingHeader">Build the chain from this header, if not start from genesis.</param>
         /// <returns>Tip of a created chain of headers.</returns>
-        public ChainedHeader BuildProvenHeaderChain(int blockCount)
+        public ChainedHeader BuildProvenHeaderChain(int blockCount, ChainedHeader startingHeader = null)
         {
-            ChainedHeader currentHeader = ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
+            startingHeader = startingHeader ?? ChainedHeadersHelper.CreateGenesisChainedHeader(this.Network);
 
             for (int i = 1; i < blockCount; i++)
             {
@@ -207,17 +209,17 @@ namespace Stratis.Bitcoin.Tests.Common
                 ProvenBlockHeader header = ((PosConsensusFactory)this.Network.Consensus.ConsensusFactory).CreateProvenBlockHeader(block);
 
                 header.Nonce = RandomUtils.GetUInt32();
-                header.HashPrevBlock = currentHeader.HashBlock;
+                header.HashPrevBlock = startingHeader.HashBlock;
                 header.Bits = Target.Difficulty1;
 
-                ChainedHeader prevHeader = currentHeader;
-                currentHeader = new ChainedHeader(header, header.GetHash(), i);
+                ChainedHeader prevHeader = startingHeader;
+                startingHeader = new ChainedHeader(header, header.GetHash(), prevHeader.Height + 1);
 
-                currentHeader.SetPrivatePropertyValue("Previous", prevHeader);
-                prevHeader.Next.Add(currentHeader);
+                startingHeader.SetPrivatePropertyValue("Previous", prevHeader);
+                prevHeader.Next.Add(startingHeader);
             }
 
-            return currentHeader;
+            return startingHeader;
         }
 
         public ChainedHeader BuildProvenHeaderChainFromBlocks(List<Block> posBlocks)
@@ -239,6 +241,20 @@ namespace Stratis.Bitcoin.Tests.Common
             }
 
             return currentHeader;
+        }
+
+        public void CompareCollections(List<ChainedHeader> chainedHeaders, SortedDictionary<int, ProvenBlockHeader> sortedDictionary)
+        {
+            Assert.Equal(chainedHeaders.Count, sortedDictionary.Count);
+
+            for (int i = 0; i < chainedHeaders.Count; i++)
+            {
+                Assert.Equal(chainedHeaders[i].HashBlock, sortedDictionary.ElementAt(i).Value.GetHash());
+                if (i > 0)
+                {
+                    Assert.Equal(sortedDictionary.ElementAt(i - 1).Value.GetHash(), sortedDictionary.ElementAt(i).Value.HashPrevBlock);
+                }
+            }
         }
 
         public SortedDictionary<int, ProvenBlockHeader> ConvertToDictionaryOfProvenHeaders(ChainedHeader tip)

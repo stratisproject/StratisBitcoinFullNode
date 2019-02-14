@@ -1,4 +1,7 @@
 ﻿using System;
+using System.Collections;
+using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using DBreeze.Utils;
 using NBitcoin;
@@ -24,28 +27,25 @@ namespace Stratis.Bitcoin.Utilities
         /// <returns>Binary data representing the serialized object.</returns>
         public byte[] Serialize(object obj)
         {
-            var serializable = obj as IBitcoinSerializable;
-            if (serializable != null)
+            if (obj is IBitcoinSerializable serializable)
                 return serializable.ToBytes(this.Network.Consensus.ConsensusFactory);
 
-            var u256 = obj as uint256;
-            if (u256 != null)
+            if (obj is uint256 u256)
                 return u256.ToBytes();
 
-            var u160 = obj as uint160;
-            if (u160 != null)
+            if (obj is uint160 u160)
                 return u160.ToBytes();
 
-            var u32 = obj as uint?;
-            if (u32 != null)
+            if (obj is uint u32)
                 return u32.ToBytes();
 
-            var arr = obj as object[];
-            if (arr != null)
+            if (obj is IEnumerable<object> collection)
             {
-                var serializedItems = new byte[arr.Length][];
+                object[] array = obj as object[] ?? collection.ToArray();
+
+                var serializedItems = new byte[array.Length][];
                 int itemIndex = 0;
-                foreach (object arrayObject in arr)
+                foreach (object arrayObject in array)
                 {
                     byte[] serializedObject = this.Serialize(arrayObject);
                     serializedItems[itemIndex] = serializedObject;

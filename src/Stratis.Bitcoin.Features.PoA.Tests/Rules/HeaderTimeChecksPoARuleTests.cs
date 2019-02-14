@@ -6,23 +6,21 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.PoA.ConsensusRules;
+using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests.Rules
 {
-    public class HeaderTimeChecksPoARuleTests : PoARulesTestsBase
+    public class HeaderTimeChecksPoARuleTests : PoATestsBase
     {
         private readonly HeaderTimeChecksPoARule timeChecksRule;
 
         public HeaderTimeChecksPoARuleTests()
         {
             this.timeChecksRule = new HeaderTimeChecksPoARule();
-            this.timeChecksRule.Parent = this.rulesEngine;
-            this.timeChecksRule.Logger = this.loggerFactory.CreateLogger(this.timeChecksRule.GetType().FullName);
-            this.timeChecksRule.Initialize();
+            this.InitRule(this.timeChecksRule);
         }
 
         [Fact]

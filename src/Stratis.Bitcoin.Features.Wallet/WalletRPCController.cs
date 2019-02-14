@@ -7,11 +7,13 @@ using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Newtonsoft.Json;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;
 
@@ -19,9 +21,6 @@ namespace Stratis.Bitcoin.Features.Wallet
 {
     public class WalletRPCController : FeatureController
     {
-        // <summary>As per RPC method definition this should be the max allowable expiry duration.</summary>
-        private const int maxDurationInSeconds = 1073741824;
-
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
@@ -37,13 +36,23 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>Wallet transaction handler.</summary>
         private readonly IWalletTransactionHandler walletTransactionHandler;
 
-        public WalletRPCController(IWalletManager walletManager, IWalletTransactionHandler walletTransactionHandler, IFullNode fullNode, IBroadcasterManager broadcasterManager, ILoggerFactory loggerFactory) : base(fullNode: fullNode)
+        private readonly WalletSettings walletSettings;
+
+        public WalletRPCController(IWalletManager walletManager, 
+            IWalletTransactionHandler walletTransactionHandler, 
+            IFullNode fullNode, 
+            IBroadcasterManager broadcasterManager,
+            IConsensusManager consensusManager,
+            ConcurrentChain chain,
+            ILoggerFactory loggerFactory,
+            WalletSettings walletSettings) : base(fullNode: fullNode, consensusManager: consensusManager, chain: chain)
         {
             this.walletManager = walletManager;
             this.walletTransactionHandler = walletTransactionHandler;
             this.fullNode = fullNode;
             this.broadcasterManager = broadcasterManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.walletSettings = walletSettings;
         }
 
         [ActionName("walletpassphrase")]
@@ -55,12 +64,9 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             WalletAccountReference account = this.GetAccount();
 
-            // Length of expiry of the unlocking, restricted to max duration.
-            TimeSpan duration = new TimeSpan(0, 0, Math.Min(timeout, maxDurationInSeconds));
-
             try
             {
-                this.walletTransactionHandler.CacheSecret(account, passphrase, duration);
+                this.walletManager.UnlockWallet(passphrase, account.WalletName, timeout);
             }
             catch (SecurityException exception)
             {
@@ -74,7 +80,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         public bool LockWallet()
         {
             WalletAccountReference account = this.GetAccount();
-            this.walletTransactionHandler.ClearCachedSecret(account);
+            this.walletManager.LockWallet(account.WalletName);
             return true; // NOTE: Have to return a value or else RPC middleware doesn't serialize properly.
         }
 
@@ -86,7 +92,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             TransactionBuildContext context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = this.GetAccount(),
-                Recipients = new[] { new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList()
+                Recipients = new [] {new Recipient { Amount = Money.Coins(amount), ScriptPubKey = address.ScriptPubKey } }.ToList(),
+                CacheSecret = false
             };
 
             try
@@ -166,57 +173,145 @@ namespace Stratis.Bitcoin.Features.Wallet
             if (!string.IsNullOrEmpty(accountName) && !accountName.Equals("*"))
                 throw new RPCServerException(RPCErrorCode.RPC_METHOD_DEPRECATED, "Account has been deprecated, must be excluded or set to \"*\"");
 
-            var account = this.GetAccount();
+            WalletAccountReference account = this.GetAccount();
 
             Money balance = this.walletManager.GetSpendableTransactionsInAccount(account, minConfirmations).Sum(x => x.Transaction.Amount);
             return balance?.ToUnit(MoneyUnit.BTC) ?? 0;
         }
 
         /// <summary>
-        /// RPC method to return transaction info from the wallet.
-        /// Uses the first wallet and account.
+        /// RPC method to return transaction info from the wallet. Will only work fully if 'txindex' is set.
+        /// Uses the default wallet if specified, or the first wallet found.
         /// </summary>
-        /// <param name="txid">Transaction identifier to find.</param>
+        /// <param name="txid">Identifier of the transaction to find.</param>
         /// <returns>Transaction information.</returns>
         [ActionName("gettransaction")]
-        [ActionDescription("Gets a transaction from the wallet.")]
-        public GetTransactionModel GetTransaction(string txid)
+        [ActionDescription("Get detailed information about an in-wallet transaction.")]
+        public async Task<GetTransactionModel> GetTransactionAsync(string txid)
         {
-            uint256 trxid;
-            if (!uint256.TryParse(txid, out trxid))
+            if (!uint256.TryParse(txid, out uint256 trxid))
                 throw new ArgumentException(nameof(txid));
 
-            var accountReference = this.GetAccount();
-            var account = this.walletManager.GetAccounts(accountReference.WalletName)
-                                            .Where(i => i.Name.Equals(accountReference.AccountName))
-                                            .Single();
+            WalletAccountReference accountReference = this.GetAccount();
+            HdAccount account = this.walletManager.GetAccounts(accountReference.WalletName).Single(a => a.Name == accountReference.AccountName);
 
-            var transaction = account.GetTransactionsById(trxid)?.Single();
+            // Get the transaction from the wallet by looking into received and send transactions.
+            List<HdAddress> addresses = account.GetCombinedAddresses().ToList();
+            List<TransactionData> receivedTransactions = addresses.Where(r => !r.IsChangeAddress() && r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.Id == trxid)).ToList();
+            List<TransactionData> sendTransactions = addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.SpendingDetails != null && t.SpendingDetails.TransactionId == trxid)).ToList();
 
-            if (transaction == null)
-                return null;
+            if (!receivedTransactions.Any() && !sendTransactions.Any())
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "Invalid or non-wallet transaction id.");
+
+            // Get the block hash from the transaction in the wallet.
+            TransactionData transactionFromWallet = null;
+            uint256 blockHash = null;
+            int? blockHeight;
+
+            if (receivedTransactions.Any())
+            {
+                blockHeight = receivedTransactions.First().BlockHeight;
+                blockHash = receivedTransactions.First().BlockHash;
+                transactionFromWallet = receivedTransactions.First();
+            }
+            else
+            {
+                blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
+                blockHash = blockHeight != null ? this.Chain.GetBlock(blockHeight.Value).HashBlock : null;
+            }
+
+            // Get the block containing the transaction (if it has  been confirmed).
+            ChainedHeaderBlock chainedHeaderBlock = null;
+            if (blockHash != null)
+            {
+                await this.ConsensusManager.GetOrDownloadBlocksAsync(new List<uint256> {blockHash}, b => { chainedHeaderBlock = b; });
+            }
+
+            Block block = null;
+            Transaction transactionFromStore = null;
+            if (chainedHeaderBlock != null)
+            {
+                block = chainedHeaderBlock.Block;
+                transactionFromStore = block.Transactions.Single(t => t.GetHash() == trxid);
+            }
+
+            DateTimeOffset transactionTime;
+            bool isGenerated;
+            string hex;
+            if (transactionFromStore != null)
+            {
+                transactionTime = Utils.UnixTimeToDateTime(transactionFromStore.Time);
+                isGenerated = transactionFromStore.IsCoinBase || transactionFromStore.IsCoinStake;
+                hex = transactionFromStore.ToHex();
+
+            }
+            else if(transactionFromWallet != null)
+            {
+                transactionTime = transactionFromWallet.CreationTime;
+                isGenerated = transactionFromWallet.IsCoinBase == true || transactionFromWallet.IsCoinStake == true;
+                hex = transactionFromWallet.Hex;
+            }
+            else
+            {
+                transactionTime = sendTransactions.First().SpendingDetails.CreationTime;
+                isGenerated = false;
+                hex = null; // TODO get from mempool
+            }
+
+            long amountSent = sendTransactions.Select(s => s.SpendingDetails).SelectMany(sds => sds.Payments).GroupBy(p => p.DestinationAddress).Select(g => g.First()).Sum(p => p.Amount);
+            long totalAmount = receivedTransactions.Sum(t => t.Amount) - amountSent;
 
             var model = new GetTransactionModel
             {
-                Amount = transaction.Amount,
-                BlockHash = transaction.BlockHash,
-                TransactionId = transaction.Id,
-                TransactionTime = transaction.CreationTime.ToUnixTimeSeconds(),
+                Amount = totalAmount,
+                //Fee = TODO this still needs to be worked on.
+                Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
+                Isgenerated = isGenerated ? true : (bool?) null,
+                BlockHash = blockHash,
+                BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == trxid),
+                BlockTime = block?.Header.BlockTime,
+                TransactionId = uint256.Parse(txid),
+                TransactionTime = transactionTime,
+                TimeReceived = transactionTime,
                 Details = new List<GetTransactionDetailsModel>(),
-                Hex = transaction.Hex == null ? string.Empty : transaction.Hex
+                Hex = hex
             };
 
-            if (transaction.SpendingDetails?.Payments != null)
+            // Send transactions details.
+            foreach (PaymentDetails paymentDetail in sendTransactions.Select(s => s.SpendingDetails).SelectMany(sd => sd.Payments))
             {
-                foreach (var paymentDetail in transaction.SpendingDetails.Payments)
+                // Only a single item should appear per destination address.
+                if (model.Details.SingleOrDefault(d => d.Address == paymentDetail.DestinationAddress) == null)
                 {
                     model.Details.Add(new GetTransactionDetailsModel
                     {
                         Address = paymentDetail.DestinationAddress,
-                        Category = "send",
-                        Amount = paymentDetail.Amount
+                        Category = GetTransactionDetailsCategoryModel.Send,
+                        Amount = -paymentDetail.Amount,
+                        Fee = Money.Zero // TODO this still needs to be worked on.
                     });
                 }
+            }
+
+            // Receive transactions details.
+            foreach (TransactionData trxInWallet in receivedTransactions)
+            {
+                GetTransactionDetailsCategoryModel category;
+                if (isGenerated)
+                {
+                    category = model.Confirmations > this.FullNode.Network.Consensus.CoinbaseMaturity ? GetTransactionDetailsCategoryModel.Generate : GetTransactionDetailsCategoryModel.Immature;
+                }
+                else
+                {
+                    category = GetTransactionDetailsCategoryModel.Receive;
+                }
+
+                model.Details.Add(new GetTransactionDetailsModel
+                {
+                    Address = addresses.First(a => a.Transactions.Contains(trxInWallet)).Address,
+                    Category = category,
+                    Amount = trxInWallet.Amount
+                });
             }
 
             return model;
@@ -231,7 +326,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 JsonConvert.DeserializeObject<List<string>>(addressesJson).ForEach(i => addresses.Add(BitcoinAddress.Create(i, this.fullNode.Network)));
             }
-            var accountReference = this.GetAccount();
+
+            WalletAccountReference accountReference = this.GetAccount();
             IEnumerable<UnspentOutputReference> spendableTransactions = this.walletManager.GetSpendableTransactionsInAccount(accountReference, minConfirmations);
 
             var unspentCoins = new List<UnspentCoinModel>();
@@ -314,14 +410,15 @@ namespace Stratis.Bitcoin.Features.Wallet
                 recipients.Add(recipient);
             }
 
-            var accountReference = this.GetAccount();
+            WalletAccountReference accountReference = this.GetAccount();
 
             var context = new TransactionBuildContext(this.fullNode.Network)
             {
                 AccountReference = accountReference,
                 MinConfirmations = minConf,
-                Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.                
-                Recipients = recipients
+                Shuffle = true, // We shuffle transaction outputs by default as it's better for anonymity.
+                Recipients = recipients,
+                CacheSecret = false
             };
 
             // Set fee type for transaction build context.
@@ -360,15 +457,28 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <summary>
+        /// Gets the first account from the "default" wallet if it specified, otherwise returns the first available account in the existing wallets.
+        /// </summary>
+        /// <returns>Reference to the default wallet account, or the first available if no default wallet is specified.</returns>
         private WalletAccountReference GetAccount()
         {
-            //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
-            string walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+            string walletName;
+
+            if (this.walletSettings.IsDefaultWalletEnabled())
+            {
+                walletName = this.walletManager.GetWalletsNames().FirstOrDefault(w => w == this.walletSettings.DefaultWalletName);
+            }
+            else
+            {
+                //TODO: Support multi wallet like core by mapping passed RPC credentials to a wallet/account
+                walletName = this.walletManager.GetWalletsNames().FirstOrDefault();
+            }
+
             if (walletName == null)
                 throw new RPCServerException(RPCErrorCode.RPC_INVALID_REQUEST, "No wallet found");
 
             HdAccount account = this.walletManager.GetAccounts(walletName).FirstOrDefault();
-
             return new WalletAccountReference(walletName, account.Name);
         }
     }

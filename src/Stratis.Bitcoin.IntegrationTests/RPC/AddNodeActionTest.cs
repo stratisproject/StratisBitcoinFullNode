@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
             var controller = fullNode.Services.ServiceProvider.GetService<ConnectionManagerController>();
 
-            Assert.ThrowsAny<SocketException>(() => { controller.AddNodeRPC("0.0.0.0", "onetry"); });
+            Assert.True(controller.AddNodeRPC("0.0.0.0", "add"));
             Assert.Throws<ArgumentException>(() => { controller.AddNodeRPC("0.0.0.0", "notarealcommand"); });
             Assert.ThrowsAny<SocketException>(() => { controller.AddNodeRPC("a.b.c.d", "onetry"); });
             Assert.True(controller.AddNodeRPC("0.0.0.0", "remove"));

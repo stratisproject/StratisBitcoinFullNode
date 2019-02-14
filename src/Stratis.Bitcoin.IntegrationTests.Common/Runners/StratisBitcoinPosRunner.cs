@@ -1,5 +1,6 @@
 ﻿using NBitcoin;
 using NBitcoin.Protocol;
+using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.Api;
@@ -41,16 +42,10 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.Runners
             if (this.OverrideDateTimeProvider)
                 builder.OverrideDateTimeProviderFor<MiningFeature>();
 
-            if (this.InterceptorDisconnect != null)
-                builder = builder.InterceptBlockDisconnected(this.InterceptorDisconnect);
-
-            if (this.InterceptorConnect != null)
-                builder = builder.InterceptBlockConnected(this.InterceptorConnect);
-
             if (!this.EnablePeerDiscovery)
             {
                 builder.RemoveImplementation<PeerConnectorDiscovery>();
-                builder.ReplaceService<IPeerDiscovery>(new PeerDiscoveryDisabled());
+                builder.ReplaceService<IPeerDiscovery, BaseFeature>(new PeerDiscoveryDisabled());
             }
 
             this.FullNode = (FullNode)builder.Build();
