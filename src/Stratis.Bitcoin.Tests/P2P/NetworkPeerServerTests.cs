@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var endpointDiscovered = new IPEndPoint(IPAddress.Parse(ip), portNumber);
 
             // Include the external client as a NodeServerEndpoint.
-            connectionManagerSettings.Listen.Add(new NodeServerEndpoint(endpointDiscovered, isWhiteListed));
+            connectionManagerSettings.ListenOn.Add(new NodeServerEndpoint(endpointDiscovered, isWhiteListed));
 
             // Act 
             var result = networkPeerServer.InvokeMethod("AllowClientConnection", client);
