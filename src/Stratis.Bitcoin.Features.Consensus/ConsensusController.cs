@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
@@ -6,6 +7,7 @@ using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Controllers;
@@ -63,12 +65,12 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             try
             {
-               var rule = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>();
+               ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>().Parent;
 
                 // Ensure threshold conditions cached.
-                ThresholdState[] thresholdStates = rule.Parent.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
+                ThresholdState[] thresholdStates = ruleEngine.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
 
-                object metrics = rule.Parent.NodeDeployments.BIP9.GetThresholdStateMetrics(this.ChainState.ConsensusTip.Previous, thresholdStates);
+                List<ThresholdStateModel> metrics = ruleEngine.NodeDeployments.BIP9.GetThresholdStateMetrics(this.ChainState.ConsensusTip.Previous, thresholdStates);
 
                 return this.Json(metrics);
             }
@@ -135,6 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             catch (Exception e)
             {
+                this.logger.LogTrace("(-)[EXCEPTION]");
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }

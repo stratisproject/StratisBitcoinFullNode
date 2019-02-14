@@ -1,4 +1,5 @@
 ﻿using System;
+using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Base.Deployments.Models
 {
@@ -7,40 +8,64 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
     /// </summary>
     public class ThresholdStateModel
     {
-        public int DeploymentIndex { get; }
+        /// <summary>
+        /// BIP9 deployment index for this soft fork.
+        /// </summary>
+        [JsonProperty(PropertyName = "deploymentIndex")]
+        public int DeploymentIndex { get; set; }
 
+        /// <summary>
+        /// Activation state of this deployment at this block height.
+        /// </summary>
+        [JsonProperty(PropertyName = "stateValue")]
         public ThresholdState? StateValue { get; set; }
 
+        /// <summary>
+        /// Readable name of threshold state.
+        /// </summary>
+        [JsonProperty(PropertyName = "thresholdState")]
         public string ThresholdState { get; set; }
 
-        public int Height { get; }
+        /// <summary>
+        /// Height of the the block with this threshold state.
+        /// </summary>
+        [JsonProperty(PropertyName = "height")]
+        public int Height { get; set; }
 
-        public int PeriodStartsHeight { get; }
+        /// <summary>
+        /// Height at start of activation window.
+        /// </summary>
+        [JsonProperty(PropertyName = "periodStartsHeight")]
+        public int PeriodStartsHeight { get; set; }
 
-        public int PeriodEndsHeight { get; }
+        /// <summary>
+        /// Height at end of activation window.
+        /// </summary>
+        [JsonProperty(PropertyName = "periodEndsHeight")]
+        public int PeriodEndsHeight { get; set; }
 
+        /// <summary>
+        /// Activation votes for this BIP9 deployment.
+        /// </summary>
+        [JsonProperty(PropertyName = "votes")]
         public int Votes { get; set; }
 
-        public int Threshold { get; }
+        /// <summary>
+        /// Activation vote threshold for this BIP9 deployment.
+        /// </summary>
+        [JsonProperty(PropertyName = "threshold")]
+        public int Threshold { get; set; }
 
-        public DateTime? TimeStart { get; }
+        /// <summary>
+        /// Start time for vote counting for this BIP9 deployment.
+        /// </summary>
+        [JsonProperty(PropertyName = "timeStart")]
+        public DateTime? TimeStart { get; set; }
 
-        public DateTime? TimeTimeOut { get; }
-
-        public ThresholdStateModel(int deploymentIndex, int votes, DateTime? timeStart, DateTime? timeTimeOut, int threshold, int height, int periodStartsHeight, int periodEndsHeight, ThresholdState stateValue, string thresholdState)
-        {
-            this.DeploymentIndex = deploymentIndex;
-            this.Votes = votes;
-            this.TimeStart = timeStart;
-            this.TimeTimeOut = timeTimeOut;
-            this.Threshold = threshold;
-            this.Height = height;
-            this.PeriodStartsHeight = periodStartsHeight;
-            this.PeriodEndsHeight = periodEndsHeight;
-            this.StateValue = stateValue;
-            this.ThresholdState = thresholdState;
-        }
-
-        public ThresholdStateModel() { }
+        /// <summary>
+        /// End time for vote counting for this BIP9 deployment.
+        /// </summary>
+        [JsonProperty(PropertyName = "timeTimeOut")]
+        public DateTime? TimeTimeOut { get; set; }
     }
 }

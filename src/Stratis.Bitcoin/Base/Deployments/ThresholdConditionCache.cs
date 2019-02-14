@@ -59,21 +59,15 @@ namespace Stratis.Bitcoin.Base.Deployments
             return array;
         }
 
-        public object GetThresholdStateMetrics(ChainedHeader indexPrev, ThresholdState[] thresholdStates)
+        public List<ThresholdStateModel> GetThresholdStateMetrics(ChainedHeader indexPrev, ThresholdState[] thresholdStates)
         {
-            var nonNullDeployments = new List<int>();
-            for (int i = 0; i < this.consensus.BIP9Deployments.Length; i++)
-            {
-                if (this.consensus.BIP9Deployments[i] != null) // Only use network defined deployments.
-                    nonNullDeployments.Add(i);
-            }
-
             var thresholdStateModels = new List<ThresholdStateModel>();
             ThresholdState[] array = new ThresholdState[this.consensus.BIP9Deployments.Length];
 
             for (int deploymentIndex = 0; deploymentIndex < array.Length; deploymentIndex++)
             {
-                if (!nonNullDeployments.Contains(deploymentIndex)) continue;
+                if (this.consensus.BIP9Deployments[deploymentIndex] == null) continue;
+
                 DateTime? timeStart = this.consensus.BIP9Deployments[deploymentIndex]?.StartTime.Date;
                 DateTime? timeTimeout = this.consensus.BIP9Deployments[deploymentIndex]?.Timeout.Date;
                 int threshold = this.consensus.RuleChangeActivationThreshold;
@@ -96,7 +90,19 @@ namespace Stratis.Bitcoin.Base.Deployments
                     indexPrev = indexPrev.Previous;
                 }
 
-                thresholdStateModels.Add(new ThresholdStateModel(deploymentIndex, votes, timeStart, timeTimeout, threshold, currentHeight, periodStartsHeader.Height, periodEndsHeight, thresholdStates[deploymentIndex], ((ThresholdState)thresholdStates[deploymentIndex]).ToString()));
+                thresholdStateModels.Add(new ThresholdStateModel()
+                {
+                    DeploymentIndex = deploymentIndex,
+                    Votes = votes,
+                    TimeStart = timeStart,
+                    TimeTimeOut = timeTimeout,
+                    Threshold = threshold,
+                    Height = currentHeight,
+                    PeriodStartsHeight = periodStartsHeader.Height,
+                    PeriodEndsHeight = periodEndsHeight,
+                    StateValue = thresholdStates[deploymentIndex],
+                    ThresholdState = ((ThresholdState) thresholdStates[deploymentIndex]).ToString()
+                });
             }
 
             return thresholdStateModels;
