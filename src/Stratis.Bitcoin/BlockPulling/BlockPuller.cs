@@ -263,7 +263,6 @@ namespace Stratis.Bitcoin.BlockPulling
                 foreach (KeyValuePair<int, IBlockPullerBehavior> peerIdToBehavior in this.pullerBehaviorsByPeerId)
                 {
                     INetworkPeer peer = peerIdToBehavior.Value.AttachedPeer;
-
                     string reason = string.Empty;
 
                     if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion, peer.Inbound, out reason))
