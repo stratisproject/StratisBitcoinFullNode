@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Threading;
 using System.Threading.Tasks;
+using FluentAssertions.Common;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -16,11 +18,15 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public class TestPoAMiner : PoAMiner
     {
-        public bool FastMiningEnabled { get; private set; } = false;
-
         private readonly EditableTimeProvider timeProvider;
 
-        private CancellationTokenSource cancellationSource;
+        private AsyncQueue<uint> timestampQueue;
+
+        private CancellationTokenSource cancellation;
+
+        private readonly SlotsManager slotsManager;
+
+        private readonly IConsensusManager consensusManager;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -41,39 +47,45 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager)
         {
             this.timeProvider = dateTimeProvider as EditableTimeProvider;
-            this.cancellationSource = new CancellationTokenSource();
+
+            this.timestampQueue = new AsyncQueue<uint>();
+            this.cancellation = new CancellationTokenSource();
+            this.slotsManager = slotsManager;
+            this.consensusManager = consensusManager;
         }
 
-        public void EnableFastMining()
+        protected override async Task<uint> WaitUntilMiningSlotAsync()
         {
-            this.FastMiningEnabled = true;
-            this.cancellationSource.Cancel();
+            uint nextTimestamp = await this.timestampQueue.DequeueAsync(this.cancellation.Token).ConfigureAwait(false);
+            long timeToAdd = nextTimestamp - this.timeProvider.GetAdjustedTimeAsUnixTimestamp();
+
+            this.timeProvider.AdjustedTimeOffset += TimeSpan.FromSeconds(timeToAdd);
+
+            return nextTimestamp;
         }
 
-        public void DisableFastMining()
+        public async Task MineBlocksAsync(int count)
         {
-            this.FastMiningEnabled = false;
-            this.cancellationSource = new CancellationTokenSource();
-        }
+            int nextHeight = this.consensusManager.Tip.Height;
 
-        protected override async Task TaskDelayAsync(TimeSpan delay, CancellationToken cancellation = default(CancellationToken))
-        {
-            if (this.FastMiningEnabled)
+            for (int i = 0; i < count; i++)
             {
-                this.timeProvider.AdjustedTimeOffset += delay;
-            }
-            else
-            {
-                try
-                {
-                    CancellationToken token = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationSource.Token, cancellation).Token;
+                nextHeight++;
 
-                    await base.TaskDelayAsync(delay, token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
-                {
-                }
+                uint timeNow = (uint)this.timeProvider.GetAdjustedTimeAsUnixTimestamp();
+
+                uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+
+                this.timestampQueue.Enqueue(myTimestamp);
+
+                TestHelper.WaitLoop(() => this.consensusManager.Tip.Height >= nextHeight);
             }
+        }
+
+        public override void Dispose()
+        {
+            this.cancellation.Cancel();
+            base.Dispose();
         }
     }
 }

@@ -141,12 +141,6 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    if ((uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() <= this.consensusManager.Tip.Header.Time)
-                    {
-                        await this.TaskDelayAsync(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
-                        continue;
-                    }
-
                     uint miningTimestamp =  await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
 
                     ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(miningTimestamp).ConfigureAwait(false);
@@ -173,11 +167,17 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        private async Task<uint> WaitUntilMiningSlotAsync()
+        protected virtual async Task<uint> WaitUntilMiningSlotAsync()
         {
             while (!this.cancellation.IsCancellationRequested)
             {
                 uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+
+                if (timeNow <= this.consensusManager.Tip.Header.Time)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+                    continue;
+                }
 
                 uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
@@ -186,29 +186,10 @@ namespace Stratis.Bitcoin.Features.PoA
                 if (estimatedWaitingTime <= 0)
                     return myTimestamp;
 
-                await this.TaskDelayAsync(TimeSpan.FromMilliseconds(500), this.cancellation.Token).ConfigureAwait(false);
+                await Task.Delay(TimeSpan.FromMilliseconds(500), this.cancellation.Token).ConfigureAwait(false);
             }
 
             throw new OperationCanceledException();
-        }
-
-        /// <summary>
-        /// Retrieve the amount of seconds the node should wait until its turn to mine.
-        /// </summary>
-        /// <param name="myTimestamp">The next time slot this node should mine at.</param>
-        private int GetWaitingTimeInSeconds(uint myTimestamp)
-        {
-            uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
-            return (int)(myTimestamp - timeNow) - 1;
-        }
-
-        /// <summary>
-        /// Pauses execution for the given time. A wrapper for <see cref="Task.Delay(int)"/>.
-        /// </summary>
-        /// <param name="delay">Time to sleep for.</param>
-        protected virtual async Task TaskDelayAsync(TimeSpan delay, CancellationToken cancellation = default(CancellationToken))
-        {
-            await Task.Delay(delay, cancellation).ConfigureAwait(false);
         }
 
         protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
@@ -351,7 +332,7 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <inheritdoc/>
-        public void Dispose()
+        public virtual void Dispose()
         {
             this.cancellation.Cancel();
             this.miningTask?.GetAwaiter().GetResult();

@@ -1,4 +1,5 @@
 ﻿using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
@@ -35,14 +36,14 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         }
 
         [Fact]
-        public void NodeCanMine()
+        public async Task NodeCanMineAsync()
         {
             var network = new TestPoANetwork();
 
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
                 CoreNode node = builder.CreatePoANode(network, network.FederationKey1).Start();
-                node.EnableFastMining();
+                await node.MineBlocksAsync(2).ConfigureAwait(false);
 
                 var tipBefore = node.GetTip().Height;
                 TestHelper.WaitLoop(() => node.GetTip().Height >= tipBefore + 5);
@@ -50,7 +51,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         }
 
         [Fact]
-        public void PremineIsReceived()
+        public async Task PremineIsReceivedAsync()
         {
             TestPoANetwork network = new TestPoANetwork();
 
@@ -58,13 +59,14 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             {
                 string walletName = "mywallet";
                 CoreNode node = builder.CreatePoANode(network, network.FederationKey1).WithWallet("pass", walletName).Start();
-                node.EnableFastMining();
 
                 IWalletManager walletManager = node.FullNode.NodeService<IWalletManager>();
                 long balanceOnStart = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
                 Assert.Equal(0, balanceOnStart);
 
-                TestHelper.WaitLoop(() => node.GetTip().Height >= network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity + 1);
+                long toMineCount = network.Consensus.PremineHeight + network.Consensus.CoinbaseMaturity + 1 - node.GetTip().Height;
+
+                await node.MineBlocksAsync((int) toMineCount).ConfigureAwait(false);
 
                 long balanceAfterPremine = walletManager.GetBalances(walletName, "account 0").Sum(x => x.AmountConfirmed);
 
