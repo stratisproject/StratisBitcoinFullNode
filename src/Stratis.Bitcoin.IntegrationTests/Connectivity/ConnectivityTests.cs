@@ -172,6 +172,35 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
             }
         }
 
+        [Fact]
+        public void NodeServer_Disabled_When_ConnectNode_Args_Specified()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-connect", "0" }
+                };
+
+                CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork, configParameters: nodeConfig).Start();
+                CoreNode node2 = builder.CreateStratisPowNode(this.powNetwork).Start();
+
+                Assert.False(node1.FullNode.ConnectionManager.Servers.Any());
+
+                try
+                {
+                    // Manually call AddNode so that we can catch the exception.
+                    node2.CreateRPCClient().AddNode(node1.Endpoint, true);
+                }
+                catch (Exception ex)
+                {
+                    Assert.IsType<RPCException>(ex);
+                }
+
+                Assert.False(TestHelper.IsNodeConnectedTo(node2, node1));
+            }
+        }
+
         private CoreNode BanNode(CoreNode sourceNode, CoreNode nodeToBan)
         {
             sourceNode.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeToBan.Endpoint, IPAddress.Loopback);
