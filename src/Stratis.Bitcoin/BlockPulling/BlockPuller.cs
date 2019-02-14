@@ -264,12 +264,9 @@ namespace Stratis.Bitcoin.BlockPulling
                 {
                     INetworkPeer peer = peerIdToBehavior.Value.AttachedPeer;
 
-                    // In-bound peers should not be removed based on network peer requirements.
-                    if (peer.Inbound) continue;
-
                     string reason = string.Empty;
 
-                    if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion, out reason))
+                    if ((peer == null) || !this.networkPeerRequirement.Check(peer.PeerVersion, !peer.Inbound, out reason))
                     {
                         this.logger.LogDebug("Peer Id {0} does not meet requirements, reason: {1}", peerIdToBehavior.Key, reason);
                         peerIdsToRemove.Add(peerIdToBehavior.Key);
@@ -321,7 +318,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 }
                 else
                 {
-                    bool supportsRequirments = this.networkPeerRequirement.Check(peer.PeerVersion, out string reason);
+                    bool supportsRequirments = this.networkPeerRequirement.Check(peer.PeerVersion, !peer.Inbound, out string reason);
 
                     if (supportsRequirments)
                     {

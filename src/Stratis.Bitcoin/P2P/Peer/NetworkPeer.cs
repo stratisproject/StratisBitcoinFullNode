@@ -67,9 +67,10 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// Checks a version payload from a peer against the requirements.
         /// </summary>
         /// <param name="version">Version payload to check.</param>
+        /// <param name="checkServices">Set to <c>true</c> to check the services and <c>false</c> to omit this check.</param>
         /// <param name="reason">The reason the check failed.</param>
         /// <returns><c>true</c> if the version payload satisfies the protocol requirements, <c>false</c> otherwise.</returns>
-        public virtual bool Check(VersionPayload version, out string reason)
+        public virtual bool Check(VersionPayload version, bool checkServices, out string reason)
         {
             reason = string.Empty;
             if (this.MinVersion != null)
@@ -736,7 +737,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                                 return;
                             }
 
-                            if (!this.Inbound && !requirements.Check(versionPayload, out string reason))
+                            if (!requirements.Check(versionPayload, !this.Inbound, out string reason))
                             {
                                 this.logger.LogTrace("(-)[UNSUPPORTED_REQUIREMENTS]");
                                 this.Disconnect("The peer does not support the required services requirement, reason: " + reason);
