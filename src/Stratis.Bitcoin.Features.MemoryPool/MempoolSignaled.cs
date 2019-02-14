@@ -11,10 +11,8 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.MemoryPool
 {
-    /// <summary>
-    /// Mempool observer on chained header block notifications.
-    /// </summary>
-    public class MempoolSignaled : SignalObserver<ChainedHeaderBlock>
+    /// <summary>Mempool observer on chained header block notifications.</summary>
+    public class MempoolSignaled
     {
         /// <summary>The async loop we need to wait upon before we can shut down this manager.</summary>
         private IAsyncLoop asyncLoop;
@@ -45,6 +43,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Global application life cycle control - triggers when application shuts down.</summary>
         private readonly INodeLifetime nodeLifetime;
 
+        private readonly ISignals signals;
+
         /// <summary>
         /// Constructs an instance of a MempoolSignaled object.
         /// Starts the block notification loop to memory pool behaviors for connected nodes.
@@ -59,15 +59,16 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <param name="validator">The mempool validator.</param>
         /// <param name="mempoolOrphans">The mempool orphan list.</param>
         public MempoolSignaled(
-            MempoolManager manager, 
-            ConcurrentChain chain, 
+            MempoolManager manager,
+            ConcurrentChain chain,
             IConnectionManager connection,
-            INodeLifetime nodeLifetime, 
+            INodeLifetime nodeLifetime,
             IAsyncLoopFactory asyncLoopFactory,
             MempoolSchedulerLock mempoolLock,
             ITxMempool memPool,
             IMempoolValidator validator,
-            MempoolOrphans mempoolOrphans)
+            MempoolOrphans mempoolOrphans,
+            ISignals signals)
         {
             this.manager = manager;
             this.chain = chain;
@@ -78,18 +79,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.memPool = memPool;
             this.validator = validator;
             this.mempoolOrphans = mempoolOrphans;
-        }
-
-        /// <inheritdoc />
-        protected override void OnNextCore(ChainedHeaderBlock chainedHeaderBlock)
-        {
-            ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
-
-            Task task = this.RemoveForBlock(chainedHeaderBlock.Block, blockHeader?.Height ?? -1);
-
-            // wait for the mempool code to complete
-            // until the signaler becomes async
-            task.GetAwaiter().GetResult();
+            this.signals = signals;
         }
 
         /// <summary>
@@ -118,6 +108,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// </summary>
         public void Start()
         {
+            this.signals.OnBlockConnected.Attach(this.OnBlockConnected);
+
             this.asyncLoop = this.asyncLoopFactory.Run("MemoryPool.RelayWorker", async token =>
             {
                 IReadOnlyNetworkPeerCollection peers = this.connection.ConnectedPeers;
@@ -125,7 +117,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                     return;
 
                 // Announce the blocks on each nodes behavior which supports relaying.
-                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false).Select(x => x.Behavior<MempoolBehavior>());               
+                IEnumerable<MempoolBehavior> behaviors = peers.Where(x => x.PeerVersion?.Relay ?? false).Select(x => x.Behavior<MempoolBehavior>());
                 foreach (MempoolBehavior behavior in behaviors)
                     await behavior.SendTrickleAsync().ConfigureAwait(false);
             },
@@ -134,8 +126,20 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             startAfter: TimeSpans.TenSeconds);
         }
 
+        private void OnBlockConnected(ChainedHeaderBlock chainedHeaderBlock)
+        {
+            ChainedHeader blockHeader = chainedHeaderBlock.ChainedHeader;
+
+            Task task = this.RemoveForBlock(chainedHeaderBlock.Block, blockHeader?.Height ?? -1);
+
+            // wait for the mempool code to complete
+            // until the signaler becomes async
+            task.GetAwaiter().GetResult();
+        }
+
         public void Stop()
         {
+            this.signals.OnBlockConnected.Detach(this.OnBlockConnected);
             this.asyncLoop?.Dispose();
         }
     }

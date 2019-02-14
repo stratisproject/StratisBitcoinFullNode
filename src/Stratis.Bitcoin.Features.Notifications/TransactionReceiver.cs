@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
+using Stratis.Bitcoin.Signals;
 
 namespace Stratis.Bitcoin.Features.Notifications
 {
@@ -17,20 +18,20 @@ namespace Stratis.Bitcoin.Features.Notifications
     /// </summary>
     public class TransactionReceiver : NetworkPeerBehavior
     {
-        private readonly TransactionNotification transactionNotification;
+        private readonly ISignals signals;
 
         private readonly TransactionNotificationProgress notifiedTransactions;
 
         private readonly ILogger logger;
 
-        public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILoggerFactory loggerFactory)
-            : this(transactionNotification, notifiedTransactions, loggerFactory.CreateLogger(typeof(TransactionReceiver).FullName))
+        public TransactionReceiver(ISignals signals, TransactionNotificationProgress notifiedTransactions, ILoggerFactory loggerFactory)
+            : this(signals, notifiedTransactions, loggerFactory.CreateLogger(typeof(TransactionReceiver).FullName))
         {
         }
 
-        public TransactionReceiver(TransactionNotification transactionNotification, TransactionNotificationProgress notifiedTransactions, ILogger logger)
+        public TransactionReceiver(ISignals signals, TransactionNotificationProgress notifiedTransactions, ILogger logger)
         {
-            this.transactionNotification = transactionNotification;
+            this.signals = signals;
             this.notifiedTransactions = notifiedTransactions;
             this.logger = logger;
         }
@@ -91,7 +92,7 @@ namespace Stratis.Bitcoin.Features.Notifications
             }
 
             // send the transaction to the notifier
-            this.transactionNotification.Notify(transaction);
+            this.signals.OnTransactionReceived.Notify(transaction);
             this.notifiedTransactions.TransactionsReceived.TryAdd(trxHash, trxHash);
         }
 
@@ -116,7 +117,7 @@ namespace Stratis.Bitcoin.Features.Notifications
 
         public override object Clone()
         {
-            return new TransactionReceiver(this.transactionNotification, this.notifiedTransactions, this.logger);
+            return new TransactionReceiver(this.signals, this.notifiedTransactions, this.logger);
         }
     }
 }
