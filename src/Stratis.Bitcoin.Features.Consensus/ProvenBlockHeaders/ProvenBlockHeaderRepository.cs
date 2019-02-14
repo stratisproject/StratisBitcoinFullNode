@@ -4,6 +4,7 @@ using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
+using DBreeze.Exceptions;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -149,18 +150,24 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
 
-                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                {
-                    transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
+                RetryStrategy.Run<TableNotOperableException>(
+                    RetryOptions.Default,
+                    () =>
+                    {
+                        using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                        {
+                            transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
 
-                    this.InsertHeaders(transaction, headers);
+                            this.InsertHeaders(transaction, headers);
 
-                    this.SetTip(transaction, newTip);
+                            this.SetTip(transaction, newTip);
 
-                    transaction.Commit();
+                            transaction.Commit();
 
-                    this.TipHashHeight = newTip;
-                }
+                            this.TipHashHeight = newTip;
+                        }
+                    },
+                    this.logger);
             });
 
             return task;
