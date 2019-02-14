@@ -82,7 +82,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 }
             }
 
-            if ((this.RequiredServices & version.Services) != this.RequiredServices)
+            if (checkServices && ((this.RequiredServices & version.Services) != this.RequiredServices))
             {
                 reason = "network service not supported";
                 return false;
