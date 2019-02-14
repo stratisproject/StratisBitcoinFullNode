@@ -56,11 +56,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             this.cancellationSource = new CancellationTokenSource();
         }
 
-        protected override async Task TaskDelayAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
+        protected override async Task TaskDelayAsync(TimeSpan delay, CancellationToken cancellation = default(CancellationToken))
         {
             if (this.FastMiningEnabled)
             {
-                this.timeProvider.AdjustedTimeOffset += TimeSpan.FromMilliseconds(delayMs);
+                this.timeProvider.AdjustedTimeOffset += delay;
             }
             else
             {
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 {
                     CancellationToken token = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationSource.Token, cancellation).Token;
 
-                    await base.TaskDelayAsync(delayMs, token).ConfigureAwait(false);
+                    await base.TaskDelayAsync(delay, token).ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
                 {

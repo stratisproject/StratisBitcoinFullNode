@@ -143,7 +143,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
                     if ((uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp() <= this.consensusManager.Tip.Header.Time)
                     {
-                        await this.TaskDelayAsync(500).ConfigureAwait(false);
+                        await this.TaskDelayAsync(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
                         continue;
                     }
 
@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 if (estimatedWaitingTime <= 0)
                     return myTimestamp;
 
-                await this.TaskDelayAsync(500, this.cancellation.Token).ConfigureAwait(false);
+                await this.TaskDelayAsync(TimeSpan.FromMilliseconds(500), this.cancellation.Token).ConfigureAwait(false);
             }
 
             throw new OperationCanceledException();
@@ -205,10 +205,10 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>
         /// Pauses execution for the given time. A wrapper for <see cref="Task.Delay(int)"/>.
         /// </summary>
-        /// <param name="delayMs">Milliseconds to sleep for.</param>
-        protected virtual async Task TaskDelayAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
+        /// <param name="delay">Time to sleep for.</param>
+        protected virtual async Task TaskDelayAsync(TimeSpan delay, CancellationToken cancellation = default(CancellationToken))
         {
-            await Task.Delay(delayMs, cancellation).ConfigureAwait(false);
+            await Task.Delay(delay, cancellation).ConfigureAwait(false);
         }
 
         protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
