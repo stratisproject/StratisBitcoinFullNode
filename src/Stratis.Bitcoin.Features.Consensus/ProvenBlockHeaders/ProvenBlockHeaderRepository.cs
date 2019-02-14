@@ -150,8 +150,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
 
-                RetryStrategy.Run<TableNotOperableException>(
-                    RetryOptions.Default,
+                RetryStrategy.Run(
+                    DBreezeRetryOptions.Default,
                     () =>
                     {
                         using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
