@@ -25,5 +25,19 @@ namespace Stratis.Bitcoin.Features.PoA
             this.SlotsManager = slotsManager;
             this.poaHeaderValidator = poaHeaderValidator;
         }
+
+        public override ValidationContext HeaderValidation(ChainedHeader header)
+        {
+            ValidationContext result = base.HeaderValidation(header);
+
+            if ((result.Error == PoAConsensusErrors.InvalidHeaderSignature) &&
+                ((PoAConsensusOptions) this.Network.Consensus.Options).VotingEnabled &&
+                header.Height > this.ChainState.ConsensusTip.Height + 1)
+            {
+                result.InsufficientHeaderInformation = true;
+            }
+
+            return result;
+        }
     }
 }
