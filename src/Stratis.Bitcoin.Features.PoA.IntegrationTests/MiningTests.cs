@@ -43,10 +43,12 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             using (PoANodeBuilder builder = PoANodeBuilder.CreatePoANodeBuilder(this))
             {
                 CoreNode node = builder.CreatePoANode(network, network.FederationKey1).Start();
-                await node.MineBlocksAsync(2).ConfigureAwait(false);
 
-                var tipBefore = node.GetTip().Height;
-                TestHelper.WaitLoop(() => node.GetTip().Height >= tipBefore + 5);
+                int tipBefore = node.GetTip().Height;
+
+                await node.MineBlocksAsync(5).ConfigureAwait(false);
+
+                Assert.True(node.GetTip().Height >= tipBefore + 5);
             }
         }
 
