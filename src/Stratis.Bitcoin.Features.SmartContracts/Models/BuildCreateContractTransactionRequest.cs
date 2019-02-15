@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string AccountName { get; set; }
 
         /// <summary>
-        /// The amount of STRAT to send to the smart contract address on creation.
+        /// The amount of STRAT (or sidechain coin) to send to the smart contract address on creation.
         /// </summary>
         [Required(ErrorMessage = "An amount is required.")]
         public string Amount { get; set; }
 
         /// <summary>
-        /// The fees in STRAT to cover the smart contract creation transaction.
+        /// The fees in STRAT (or sidechain coin) to cover the smart contract creation transaction.
         /// </summary>
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
@@ -54,13 +54,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string ContractCode { get; set; }
 
         /// <summary>
-        /// The gas price in Satoshi to charge when the smart contract constructor is run by the miner mining the сreation transaction. 
+        /// The gas price in Satoshi to charge when the smart contract constructor is run by the miner mining the creation transaction. 
         /// </summary>
         [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatRule.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
          
         /// <summary>
-        /// The limit of the gas charge in Satoshi. This limit cannnot be exceeded when the method is 
+        /// The limit of the gas charge in Satoshi. This limit cannot be exceeded when the method is 
         /// run by the miner mining the creation transaction. If the gas spent exceeds this value, 
         /// execution of the smart contract stops.
         /// </summary>
@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         /// Amount field. It is recommended that you generate (using /api/SmartContractWallet/SC-account-address) or use an existing
         /// smart contract account address to provide the funds.
         /// For example, some methods, such as a withdrawal method on an escrow smart contract, should only be executed
-        /// by the deployer, and in this case, it is the Sender address that indentifies the deployer.
+        /// by the deployer, and in this case, it is the Sender address that identifies the deployer.
         /// </summary>
         [Required(ErrorMessage = "Sender is required.")]
         [IsBitcoinAddress]

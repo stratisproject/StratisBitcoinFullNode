@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// a requirement if you were to, for example, send some of the tokens to an exchange.  
         /// It is therefore recommended that in order to keep an intact history and avoid complications,
         /// you use the single smart contract address provided by this function for all interactions with smart contracts.
-        /// In addition, a smart comtract address can be used to identify a contract deployer.
+        /// In addition, a smart contract address can be used to identify a contract deployer.
         /// Some methods, such as a withdrawal method on an escrow smart contract, should only be executed
         /// by the deployer, and in this case, it is the smart contract account address that identifies the deployer.
         ///  
@@ -121,7 +121,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         }
 
         /// <summary>
-        /// Gets the balance at a specific wallet address in STRAT.
+        /// Gets the balance at a specific wallet address in STRAT (or the sidechain coin).
         /// This method gets the UTXOs at the address that the wallet can spend.
         /// The function can be used to query the balance at a smart contract account address
         /// supplied by /api/SmartContractWallet/SC-account-address.
@@ -129,7 +129,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         ///
         /// <param name="walletName">The address at which to retrieve the balance.</param>
         /// 
-        /// <returns>The balance at a specific wallet address in STRAT.</returns>
+        /// <returns>The balance at a specific wallet address in STRAT (or the sidechain coin).</returns>
         [Route("address-balance")]
         [HttpGet]
         public IActionResult GetAddressBalance(string address)
@@ -141,7 +141,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
 
         /// <summary>
-        /// Gets the history of a specifc wallet address.
+        /// Gets the history of a specific wallet address.
         /// This includes the smart contract create and call transactions
         /// This method can be used to query the balance at a smart contract account address
         /// supplied by /api/SmartContractWallet/SC-account-address. Indeed,
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <param name="walletName">The name of the wallet holding the address.</param>
         /// <param name="address">The address to retrieve the history for.</param>
         /// 
-        /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specifc wallet address.</returns>
+        /// <returns>A list of smart contract create and call transaction items as well as transaction items at a specific wallet address.</returns>
         [Route("address-history")]
         [HttpGet]
         public IActionResult GetHistory(string walletName, string address)
@@ -293,8 +293,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
         /// <summary>
         /// Builds a transaction to call a smart contract method and then broadcasts the transaction to the network.
-        /// If the call is successful, any changes to the smart contract balance or persistant data are propagated
-        /// accross the network.
+        /// If the call is successful, any changes to the smart contract balance or persistent data are propagated
+        /// across the network.
         /// </summary>
         /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>

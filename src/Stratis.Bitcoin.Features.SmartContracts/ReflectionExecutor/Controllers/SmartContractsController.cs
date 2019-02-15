@@ -113,12 +113,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets the balance of a smart contract in STRAT. This method only works for smart contract addresses. 
+        /// Gets the balance of a smart contract in Satoshi. This method only works for smart contract addresses. 
         /// </summary>
         /// 
         /// <param name="address">The address of the smart contract to retrieve the balance for.</param>
         /// 
-        /// <returns>The balance of a smart contract in STRAT.</returns>
+        /// <returns>The balance of a smart contract in Satoshi.</returns>
         [Route("SC-balance")]
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
@@ -332,8 +332,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         /// <summary>
         /// Builds a transaction to call a smart contract method and then broadcasts the transaction to the network.
-        /// If the call is successful, any changes to the smart contract balance or persistant data are propagated
-        /// accross the network.
+        /// If the call is successful, any changes to the smart contract balance or persistent data are propagated
+        /// across the network.
         /// </summary>
         /// 
         /// <param name="request">An object containing the necessary parameters to build the transaction.</param>
@@ -360,10 +360,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
         /// <summary>
         /// Makes a local call to a method on a smart contract that has been successfully deployed. A transaction 
-        /// is not created as the call is never propagated across the network. All persistant data held by the   
+        /// is not created as the call is never propagated across the network. All persistent data held by the   
         /// smart contract is copied before the call is made. Only this copy is altered by the call
-        /// and the actual data is unaffected. Even if an amount of STRAT are specified to send with the call,
-        /// no STRAT are in fact sent.
+        /// and the actual data is unaffected. Even if an amount of funds are specified to send with the call,
+        /// no funds are in fact sent.
         /// The purpose of this function is to query and test methods. 
         /// </summary>
         /// 

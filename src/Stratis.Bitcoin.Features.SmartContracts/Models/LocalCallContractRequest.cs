@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string MethodName { get; set; }
 
         /// <summary>
-        /// The amount of funds to send to the smart contract address. 
+        /// The amount of STRAT (or sidechain coin) to send to the smart contract address. 
         /// No funds are actually sent, but the Amount field allows
         /// certain scenarios, where the funds sent dictates the result, to be checked.
         /// </summary>
@@ -39,8 +39,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public ulong GasPrice { get; set; }
 
         /// <summary>
-        /// The limit of the gas charge in Satoshi. Although the gas expenditure is theorectical rather than actual,
-        /// this limit cannnot be exceeded even when the method run locally.
+        /// The limit of the gas charge in Satoshi. Although the gas expenditure is theoretical rather than actual,
+        /// this limit cannot be exceeded even when the method run locally.
         /// </summary>
         [Range(SmartContractFormatRule.GasLimitCallMinimum, SmartContractFormatRule.GasLimitMaximum)]
         public ulong GasLimit { get; set; }

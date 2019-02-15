@@ -44,13 +44,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string MethodName { get; set; }
 
         /// <summary>
-        /// The amount of STRAT to send to the smart contract address.
+        /// The amount of STRAT (or sidechain coin) to send to the smart contract address.
         /// </summary>
         [Required(ErrorMessage = "An amount is required but this can be set to 0.")]
         public string Amount { get; set; }
 
         /// <summary>
-        /// The fees in STRAT to cover the method call transaction.
+        /// The fees in STRAT (or sidechain coin) to cover the method call transaction.
         /// </summary>
         [MoneyFormat(isRequired: true, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public ulong GasPrice { get; set; }
 
         /// <summary>
-        /// The limit of the gas charge in Satoshi. This limit cannnot be exceeded when the method is 
+        /// The limit of the gas charge in Satoshi. This limit cannot be exceeded when the method is 
         /// run by the miner mining the call transaction. If the gas spent exceeds this value, 
         /// execution of the smart contract stops.
         /// </summary>
