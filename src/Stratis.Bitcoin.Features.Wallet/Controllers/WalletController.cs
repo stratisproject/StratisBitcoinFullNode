@@ -714,7 +714,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Recipients = recipients
+                    Recipients = recipients,
+                    Sign = false
                 };
 
                 return this.Json(this.walletTransactionHandler.EstimateFee(context));
