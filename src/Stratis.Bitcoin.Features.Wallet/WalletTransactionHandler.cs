@@ -170,7 +170,11 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public Money EstimateFee(TransactionBuildContext context)
         {
-            this.InitializeTransactionBuilder(context);
+            Guard.NotNull(context, nameof(context));
+            Guard.NotNull(context.Recipients, nameof(context.Recipients));
+            Guard.NotNull(context.AccountReference, nameof(context.AccountReference));
+            
+            this.AddFee(context);
 
             return context.TransactionFee;
         }
