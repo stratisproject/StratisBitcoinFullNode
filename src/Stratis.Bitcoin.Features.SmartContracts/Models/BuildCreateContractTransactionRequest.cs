@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         /// <summary>
         /// The gas price in Satoshi to charge when the smart contract constructor is run by the miner mining the creation transaction. 
         /// </summary>
-        [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatRule.GasPriceMaximum)]
+        [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatLogic.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
          
         /// <summary>
@@ -64,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         /// run by the miner mining the creation transaction. If the gas spent exceeds this value, 
         /// execution of the smart contract stops.
         /// </summary>
-        [Range(SmartContractFormatRule.GasLimitCreateMinimum, SmartContractFormatRule.GasLimitMaximum)]
+        [Range(SmartContractFormatLogic.GasLimitCreateMinimum, SmartContractFormatLogic.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
         /// <summary>

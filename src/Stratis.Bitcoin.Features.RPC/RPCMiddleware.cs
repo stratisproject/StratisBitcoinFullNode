@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     httpContext.Request.Body.Position = 0;
 
                     JToken token = string.IsNullOrEmpty(requestBody) ? null : JToken.Parse(requestBody);
-                    
+
                     if (token is JArray)
                     {
                         // Batch request, invoke each request and accumulate responses.
@@ -77,6 +77,11 @@ namespace Stratis.Bitcoin.Features.RPC
                 ex = exx;
             }
 
+            await this.HandleRpcInvokeExceptionAsync(httpContext, ex);
+        }
+
+        private async Task HandleRpcInvokeExceptionAsync(HttpContext httpContext, Exception ex)
+        {
             if (ex is ArgumentException || ex is FormatException)
             {
                 JObject response = CreateError(RPCErrorCode.RPC_MISC_ERROR, "Argument error: " + ex.Message);
@@ -152,10 +157,18 @@ namespace Stratis.Bitcoin.Features.RPC
                 contextFeatures.Set<IHttpRequestLifetimeFeature>(new HttpRequestLifetimeFeature());
 
                 var context = this.httpContextFactory.Create(contextFeatures);
-                await this.next.Invoke(context).ConfigureAwait(false);
+
+                try
+                {
+                    await this.next.Invoke(context).ConfigureAwait(false);
+                }
+                catch (Exception ex)
+                {
+                    await this.HandleRpcInvokeExceptionAsync(context, ex);
+                }
 
                 responseMemoryStream.Position = 0;
-                var response = await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
+                var response = (responseMemoryStream.Length == 0) ? CreateError(RPCErrorCode.RPC_METHOD_NOT_FOUND, "Method not found") : await JObject.LoadAsync(new JsonTextReader(new StreamReader(responseMemoryStream)));
                 responses.Add(response);
             }
 

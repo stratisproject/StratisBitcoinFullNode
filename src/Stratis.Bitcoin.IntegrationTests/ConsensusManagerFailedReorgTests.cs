@@ -82,9 +82,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
                 }
 
+                minerA.Start();
                 minerA.SetConnectInterceptor(interceptorConnect);
                 minerA.SetDisconnectInterceptor(interceptorDisconnect);
-                minerA.Start();
 
                 // Miner B syncs with Miner A
                 TestHelper.ConnectAndSync(minerB, minerA);
@@ -199,9 +199,9 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
                 }
 
+                minerA.Restart();
                 minerA.SetConnectInterceptor(interceptorConnect);
                 minerA.SetDisconnectInterceptor(interceptorDisconnect);
-                minerA.Restart();
 
                 TestHelper.Connect(minerA, minerB);
 
@@ -257,7 +257,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 = invalid
                 await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(8, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
-                // Reconnect syncer to minerB causing the following to happen: 
+                // Reconnect syncer to minerB causing the following to happen:
                 // Reorg from blocks 9 to 5.
                 // Connect blocks 5 to 10
                 // Block 8 fails.
@@ -351,7 +351,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         /// <summary>
         /// The chain that will be reconnected to has 4 blocks and 4 headers from fork point:
-        /// 
+        ///
         /// 6 -> Full Block
         /// 7 -> Full Block
         /// 8 -> Full Block

@@ -16,6 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string To { get; }
         public string NewContractAddress { get; }
         public bool Success { get; }
+        public string ReturnValue { get; }
         public string Bloom { get; }
         public string Error { get; }
         public LogResponse[] Logs { get; }
@@ -28,6 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
             this.From = receipt.From.ToBase58Address(network);
             this.To = receipt.To?.ToBase58Address(network);
             this.NewContractAddress = receipt.NewContractAddress?.ToBase58Address(network);
+            this.ReturnValue = receipt.Result;
             this.Success = receipt.Success;
             this.Bloom = receipt.Bloom.ToString();
             this.Error = receipt.ErrorMessage;

@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.CLR;
 using Block = NBitcoin.Block;
@@ -15,7 +16,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
     /// <summary>
     /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
     /// </summary>
-    public class SmartContractFormatRule : FullValidationConsensusRule, ISmartContractMempoolRule
+    public class SmartContractFormatLogic : IContractTransactionValidationLogic
     {
         public const ulong GasLimitMaximum = 100_000;
 
@@ -27,78 +28,32 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
 
         public const ulong GasPriceMaximum = 10_000;
 
-        private readonly ICallDataSerializer callDataSerializer;
-
-        public SmartContractFormatRule(ICallDataSerializer callDataSerializer)
+        public void CheckContractTransaction(ContractTxData txData, Money suppliedBudget)
         {
-            this.callDataSerializer = callDataSerializer;
-        }
-
-        public override Task RunAsync(RuleContext context)
-        {
-            Block block = context.ValidationContext.BlockToValidate;
-
-            foreach (Transaction transaction in block.Transactions.Where(x => !x.IsCoinBase && !x.IsCoinStake))
-            {
-                if (!transaction.IsSmartContractExecTransaction())
-                    return Task.CompletedTask;
-
-                this.CheckTransaction(transaction, null);
-            }
-
-            return Task.CompletedTask;
-        }
-
-        public void CheckTransaction(MempoolValidationContext context)
-        {
-            CheckTransaction(context.Transaction, context.Fees);
-        }
-
-        private void CheckTransaction(Transaction transaction, Money suppliedBudget)
-        {
-            if (!transaction.IsSmartContractExecTransaction())
-                return;
-
-            TxOut scTxOut = transaction.TryGetSmartContractTxOut();
-
-            if (scTxOut == null)
-            {
-                new ConsensusError("no-smart-contract-tx-out", "No smart contract TxOut").Throw();
-            }
-
-            Result<ContractTxData> callDataDeserializationResult = this.callDataSerializer.Deserialize(scTxOut.ScriptPubKey.ToBytes());
-
-            if (callDataDeserializationResult.IsFailure)
-            {
-                new ConsensusError("invalid-calldata-format", string.Format("Invalid {0} format", typeof(ContractTxData).Name)).Throw();
-            }
-
-            ContractTxData callData = callDataDeserializationResult.Value;
-
-            if (callData.GasPrice < GasPriceMinimum)
+            if (txData.GasPrice < GasPriceMinimum)
             {
                 // Supplied gas price is too low.
                 this.ThrowGasPriceLessThanMinimum();
             }
 
-            if (callData.GasPrice > GasPriceMaximum)
+            if (txData.GasPrice > GasPriceMaximum)
             {
                 // Supplied gas price is too high.
                 this.ThrowGasPriceMoreThanMaximum();
             }
 
-            if (callData.IsCreateContract && callData.GasLimit < GasLimitCreateMinimum)
+            if (txData.IsCreateContract && txData.GasLimit < GasLimitCreateMinimum)
             {
                 this.ThrowGasLessThenCreateFee();
             }
 
-            if (!callData.IsCreateContract && callData.GasLimit < GasLimitCallMinimum)
+            if (!txData.IsCreateContract && txData.GasLimit < GasLimitCallMinimum)
             {
                 // Supplied gas limit is too low.
                 this.ThrowGasLessThanBaseFee();
             }
 
-            if (callData.GasLimit > GasLimitMaximum)
+            if (txData.GasLimit > GasLimitMaximum)
             {
                 // Supplied gas limit is too high - at a certain point we deem that a contract is taking up too much time.
                 this.ThrowGasGreaterThanHardLimit();
@@ -108,7 +63,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.R
             if (suppliedBudget != null)
             {
                 // Note carrier.GasCostBudget cannot overflow given values are within constraints above.
-                if (suppliedBudget < new Money(callData.GasCostBudget))
+                if (suppliedBudget < new Money(txData.GasCostBudget))
                 {
                     // Supplied satoshis are less than the budget we said we had for the contract execution
                     SmartContractConsensusErrors.FeeTooSmallForGas.Throw();

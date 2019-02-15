@@ -35,16 +35,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         /// if the method is run by a miner mining a call transaction rather than
         /// locally.  
         /// </summary>
-        [Range(SmartContractFormatRule.GasPriceMinimum, SmartContractFormatRule.GasPriceMaximum)]
+        [Range(SmartContractFormatLogic.GasPriceMinimum, SmartContractFormatLogic.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
 
         /// <summary>
         /// The limit of the gas charge in Satoshi. Although the gas expenditure is theoretical rather than actual,
         /// this limit cannot be exceeded even when the method run locally.
         /// </summary>
-        [Range(SmartContractFormatRule.GasLimitCallMinimum, SmartContractFormatRule.GasLimitMaximum)]
+        [Range(SmartContractFormatLogic.GasLimitCallMinimum, SmartContractFormatLogic.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
-
 
         /// <summary>
         /// A wallet address containing the funds to cover transaction fees, gas, and any funds specified in the

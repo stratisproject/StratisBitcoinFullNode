@@ -44,12 +44,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
                 }
 
-                minerA.SetDisconnectInterceptor(interceptor);
-
                 // Start the nodes.
                 minerA.Start();
                 minerB.Start();
                 syncer.Start();
+
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // minerB and syncer syncs with minerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);
@@ -114,17 +114,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                         TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 10));
                         TestHelper.Disconnect(minerA, minerB);
                         minerADisconnectedFromMinerB = true;
-
-                        return;
                     }
                 }
-
-                minerA.SetDisconnectInterceptor(interceptor);
 
                 // Start the nodes.
                 minerA.Start();
                 minerB.Start();
                 syncer.Start();
+
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // MinerB/Syncer syncs with MinerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);

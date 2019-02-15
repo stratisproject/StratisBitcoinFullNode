@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
     public class SlotsManagerTests
     {
         private SlotsManager slotsManager;
-        private PoANetwork network;
+        private TestPoANetwork network;
         private PoAConsensusOptions consensusOptions;
         private FederationManager federationManager;
 
@@ -43,14 +43,17 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             List<PubKey> fedKeys = this.federationManager.GetFederationMembers();
             uint roundStart = this.consensusOptions.TargetSpacingSeconds * (uint)fedKeys.Count * 5;
 
-            Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart));
-            Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 1));
-            Assert.Equal(fedKeys[2], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 2));
-            Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 3));
-            Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 4));
-            Assert.Equal(fedKeys[2], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 5));
-            Assert.Equal(fedKeys[0], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 6));
-            Assert.Equal(fedKeys[1], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * 7));
+
+            int currentFedIndex = -1;
+
+            for (int i = 0; i < 20; i++)
+            {
+                currentFedIndex++;
+                if (currentFedIndex > fedKeys.Count - 1)
+                    currentFedIndex = 0;
+
+                Assert.Equal(fedKeys[currentFedIndex], this.slotsManager.GetPubKeyForTimestamp(roundStart + this.consensusOptions.TargetSpacingSeconds * (uint)i));
+            }
         }
 
         [Fact]
