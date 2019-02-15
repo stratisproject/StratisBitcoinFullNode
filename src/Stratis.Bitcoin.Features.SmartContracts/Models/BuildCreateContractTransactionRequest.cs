@@ -30,10 +30,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         [Required(ErrorMessage = "Contract code is required.")]
         public string ContractCode { get; set; }
 
-        [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatRule.GasPriceMaximum)]
+        [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatLogic.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
 
-        [Range(SmartContractFormatRule.GasLimitCreateMinimum, SmartContractFormatRule.GasLimitMaximum)]
+        [Range(SmartContractFormatLogic.GasLimitCreateMinimum, SmartContractFormatLogic.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
         [Required(ErrorMessage = "Sender is required.")]

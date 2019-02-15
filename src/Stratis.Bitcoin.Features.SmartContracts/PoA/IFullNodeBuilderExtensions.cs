@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.SmartContracts.CLR;
 using Stratis.Bitcoin.Features.PoA.Voting;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
@@ -34,6 +35,37 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
                         new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
+        /// Configures the node with the smart contract proof of authority consensus model.
+        /// </summary>
+        public static IFullNodeBuilder UseSignedContractPoAConsensus(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<ConsensusFeature>()
+                    .DependOn<SmartContractFeature>()
+                    .FeatureServices(services =>
+                    {
+                        services.AddSingleton<DBreezeCoinView>();
+                        services.AddSingleton<ICoinView, CachedCoinView>();
+                        services.AddSingleton<ConsensusController>();
+                        services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
+                        services.AddSingleton<VotingManager>();
+                        services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+
+                        // Replace serializer
+                        fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
+
+                        new SignedContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
                     });
             });
 
