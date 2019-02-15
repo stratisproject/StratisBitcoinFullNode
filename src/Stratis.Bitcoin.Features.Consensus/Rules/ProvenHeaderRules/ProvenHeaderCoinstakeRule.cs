@@ -236,8 +236,19 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
         private uint256 GetPreviousStakeModifier(ChainedHeader chainedHeader)
         {
-            var previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
+            if (chainedHeader.Previous.Height == 0)
+            {
+                this.Logger.LogTrace("(-)[GENESIS]");
+                return uint256.Zero;
+            }
 
+            if (chainedHeader.Previous.Height == this.LastCheckpointHeight)
+            {
+                this.Logger.LogTrace("(-)[FROM_CHECKPOINT]");
+                return this.LastCheckpoint.StakeModifierV2;
+            }
+
+            var previousProvenHeader = chainedHeader.Previous.Header as ProvenBlockHeader;
             if (previousProvenHeader != null)
             {
                 if (previousProvenHeader.StakeModifierV2 == null)
@@ -249,18 +260,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
                 //Stake modifier acquired from prev PH.
                 this.Logger.LogTrace("(-)[PREV_PH]");
                 return previousProvenHeader.StakeModifierV2;
-            }
-
-            if (chainedHeader.Previous.Height == 0)
-            {
-                this.Logger.LogTrace("(-)[GENESIS]");
-                return uint256.Zero;
-            }
-
-            if (chainedHeader.Previous.Height == this.LastCheckpointHeight)
-            {
-                this.Logger.LogTrace("(-)[FROM_CHECKPOINT]");
-                return this.LastCheckpoint.StakeModifierV2;
             }
 
             uint256 previousStakeModifier = this.PosParent.StakeChain.Get(chainedHeader.Previous.HashBlock)?.StakeModifierV2;
