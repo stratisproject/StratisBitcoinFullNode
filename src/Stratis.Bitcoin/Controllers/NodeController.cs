@@ -45,6 +45,9 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>The settings for the node.</summary>
         private readonly NodeSettings nodeSettings;
 
+        /// <summary>Network peer banning behaviour.</summary>
+        private readonly IPeerBanning peerBanning;
+
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
 
@@ -69,14 +72,21 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory,
-            IDateTimeProvider dateTimeProvider, IChainState chainState,
-            NodeSettings nodeSettings, IConnectionManager connectionManager,
-            ConcurrentChain chain, Network network, IPooledTransaction pooledTransaction = null,
-            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+        public NodeController(
+            ConcurrentChain chain,
+            IChainState chainState,
+            IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
+            IFullNode fullNode,
+            ILoggerFactory loggerFactory,
+            NodeSettings nodeSettings,
+            Network network,
+            IPeerBanning peerBanning,
+            IBlockStore blockStore = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
-            IBlockStore blockStore = null)
+            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+            IPooledTransaction pooledTransaction = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
@@ -87,19 +97,21 @@ namespace Stratis.Bitcoin.Controllers
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
+            this.chain = chain;
+            this.chainState = chainState;
+            this.connectionManager = connectionManager;
+            this.dateTimeProvider = dateTimeProvider;
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.dateTimeProvider = dateTimeProvider;
-            this.chainState = chainState;
-            this.nodeSettings = nodeSettings;
-            this.connectionManager = connectionManager;
-            this.chain = chain;
             this.network = network;
-            this.pooledTransaction = pooledTransaction;
-            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.nodeSettings = nodeSettings;
+            this.peerBanning = peerBanning;
+
+            this.blockStore = blockStore;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
-            this.blockStore = blockStore;
+            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.pooledTransaction = pooledTransaction;
         }
 
         /// <summary>
@@ -163,6 +175,49 @@ namespace Stratis.Bitcoin.Controllers
             }
 
             return this.Json(model);
+        }
+
+        /// <summary>
+        /// Bans and disconnects a connected peer.
+        /// </summary>
+        /// <param name="viewModel">The model that represents the peer to ban.</param>
+        [Route("banpeer")]
+        [HttpPost]
+        public IActionResult BanPeer([FromBody] BanPeerViewModel viewModel)
+        {
+            try
+            {
+                var endpoint = new IPEndPoint(IPAddress.Parse(viewModel.PeerAddress), 0);
+                this.peerBanning.BanAndDisconnectPeer(endpoint, viewModel.BanDurationSeconds, "Banned via api.");
+                return this.Ok();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
+        }
+
+        /// <summary>
+        /// Un-bans a peer.
+        /// </summary>
+        /// <param name="viewModel">The model that represents the peer to un-ban.</param>
+        [Route("unbanpeer")]
+        [HttpPost]
+        public IActionResult UnBanPeer([FromBody] UnBanPeerViewModel viewModel)
+        {
+            try
+            {
+                var endpoint = new IPEndPoint(IPAddress.Parse(viewModel.PeerAddress), 0);
+                this.peerBanning.UnBanPeer(endpoint);
+
+                return this.Ok();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>
