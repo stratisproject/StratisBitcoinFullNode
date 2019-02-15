@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Linq;
-using System.Text;
+﻿using System.Collections.Generic;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using NBitcoin;
@@ -12,6 +9,9 @@ using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
+    /// <summary>
+    /// Checks that smart contract transactions are in a valid format and the data is serialized correctly.
+    /// </summary>
     public class ContractTransactionValidationRule : PartialValidationConsensusRule, ISmartContractMempoolRule
     {
         private readonly ICallDataSerializer callDataSerializer;
