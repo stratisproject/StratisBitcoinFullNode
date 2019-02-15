@@ -66,28 +66,38 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         }
 
         /// <summary>
-        /// This method will try to map an white-bind endpoint to a list of already bound endpoints.
-        /// </summary>
-        /// <remarks>
-        /// The method will try to compare a local endpoint to the port of the white-bind endpoint, and if found will return the local endpoint that matches.
-        /// Otherwise try to compare by a match of the entire endpoint.
+        /// Determines if two endpoints are equivalent by treating 0.0.0.0 and [::] as "any ip" for matching purposes.
         /// </remarks>
         public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkEndpoints, out IPEndPoint localEndpoint)
         {
-            IEnumerable<IPEndPoint> localEndpoints = networkEndpoints.Where(x => x.Address.IsLocal());
+            bool anyIP = whiteBindEndpoint.Address.AnyIP();
 
-            foreach (IPEndPoint ipEndPoint in localEndpoints)
+            foreach (IPEndPoint ipEndPoint in networkEndpoints)
             {
-                if (ipEndPoint.Port == whiteBindEndpoint.Port)
+                if ((anyIP || ipEndPoint.Address.AnyIP()) && (ipEndPoint.Port == whiteBindEndpoint.Port))
+                {
+                    localEndpoint = ipEndPoint;
+                    return true;
+                }
+
+                if (ipEndPoint.Equals(whiteBindEndpoint))
                 {
                     localEndpoint = ipEndPoint;
                     return true;
                 }
             }
 
-            localEndpoint = networkEndpoints.FirstOrDefault(e => e.Equals(whiteBindEndpoint));
+            localEndpoint = null;
 
-            return localEndpoint != null;
+            return false;
+        }
+
+        private static bool AnyIP(this IPAddress address)
+        {
+            if (address.IsIPv4())
+                return address.Equals(IPAddress.Parse("0.0.0.0"));
+
+            return address.Equals(IPAddress.Parse("[::]"));
         }
     }
 }

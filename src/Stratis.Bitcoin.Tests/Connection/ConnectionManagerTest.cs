@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Tests.Connection
             IPEndPoint endpointA = null;
             IPEndPoint endpointB = null;
             IPEndPoint endpointOut = null;
-            
+
             var connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
             var networkEndpoints = connectionManagerSettings.Listen.Select(x => x.Endpoint).ToList();
 
@@ -48,13 +48,13 @@ namespace Stratis.Bitcoin.Tests.Connection
             Assert.True(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
             Assert.Equal(endpointB, endpointOut);
 
-            // IPV6: [::1]:16178 != [::]:16178
+            // IPV6: [::1]:16178 == [::]:16178
             endpointA = new IPEndPoint(IPAddress.Parse("[::1]"), 16178);
             endpointB = new IPEndPoint(IPAddress.Parse("[::]"), 16178);
             networkEndpoints = new List<IPEndPoint>() { endpointB };
             connectionManagerSettings.Port = 16178;
-            Assert.False(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
-            
+            Assert.True(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
+
             // 127.0.0.1:16178 != 0.0.0.0:44556
             endpointA = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 16178);
             endpointB = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 44556);
