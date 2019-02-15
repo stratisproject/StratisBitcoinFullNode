@@ -715,6 +715,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
                     Recipients = recipients,
+                    OpReturnData = request.OpReturnData,
+                    OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount) ? null : Money.Parse(request.OpReturnAmount),
                     Sign = false
                 };
 
