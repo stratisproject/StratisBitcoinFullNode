@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.Tests.Common
         {
             string dataFolder = this.GetNextDataFolderName();
 
-            CoreNode node = this.CreateNode(new SignedContractPoARunner(dataFolder, network, this.PoATimeProvider), "poa.conf");
+            CoreNode node = this.CreateNode(new SignedContractPoARunner(dataFolder, network, this.TimeProvider), "poa.conf");
 
             var settings = new NodeSettings(network, args: new string[] { "-conf=poa.conf", "-datadir=" + dataFolder });
 
