@@ -34,7 +34,12 @@ namespace Stratis.Bitcoin.Utilities
                     if (retryOptions.ExceptionTypes.All(et => et != ex.GetType()) || i >= retryOptions.RetryCount) throw;
 
                     if (logger != null) logger.LogError("Failed to commit transaction. Retrying.", ex);
-                    Task.Delay(retryOptions.Delay).GetAwaiter().GetResult();
+
+                    // Check strategy type and if it is a backoff type, use exponential delay. 
+                    TimeSpan delay = retryOptions.Type == RetryStrategyType.Simple
+                        ? retryOptions.Delay
+                        : TimeSpan.FromMilliseconds((int)(retryOptions.Delay.TotalMilliseconds * Math.Pow(2, i)));
+                    Task.Delay(delay).GetAwaiter().GetResult();
                 }
             }
         }
