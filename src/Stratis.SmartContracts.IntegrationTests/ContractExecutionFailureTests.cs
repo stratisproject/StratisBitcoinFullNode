@@ -526,7 +526,8 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
 
             decimal amount = 25;
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum;
+
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/RecursiveLoopCreate.cs");
@@ -576,7 +577,8 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
             decimal amount = 25;
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum;
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum;
+
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             BuildCallContractTransactionResponse response = this.node1.SendCallContractTransaction(nameof(RecursiveLoopCall.Call), preResponse.NewContractAddress, amount, gasLimit: gasLimit);
@@ -669,7 +671,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
             decimal amount = 0;
 
-            ulong gasLimit = SmartContractFormatRule.GasLimitCallMinimum + 1;
+            ulong gasLimit = SmartContractFormatLogic.GasLimitCallMinimum + 1;
             Money senderBalanceBefore = this.node1.WalletSpendableBalance;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
@@ -701,8 +703,8 @@ namespace Stratis.SmartContracts.IntegrationTests
         public void ContractTransaction_Call_Method_Reach_Limit_Of_GasPerBlock_Transaction_NotIncluded_To_Block()
         {
             const ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
-            var gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
-            const ulong txGasPerBlockLimit = SmartContractFormatRule.GasLimitMaximum * 10;
+            var gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+            const ulong txGasPerBlockLimit = SmartContractFormatLogic.GasLimitMaximum * 10;
             const int txCount = 25;
             decimal amount = 0;
 

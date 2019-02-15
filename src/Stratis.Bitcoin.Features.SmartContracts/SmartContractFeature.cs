@@ -120,6 +120,61 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
 
         /// <summary>
+        /// Adds the smart contract feature to the node, also requiring executed contracts to be signed.
+        /// </summary>
+        public static IFullNodeBuilder AddSignedSmartContracts(this IFullNodeBuilder fullNodeBuilder)
+        {
+            LoggingConfiguration.RegisterFeatureNamespace<SmartContractFeature>("smartcontracts");
+
+            fullNodeBuilder.ConfigureFeature(features =>
+            {
+                features
+                    .AddFeature<SmartContractFeature>()
+                    .FeatureServices(services =>
+                    {
+                        // STATE ----------------------------------------------------------------------------
+                        services.AddSingleton<DBreezeContractStateStore>();
+                        services.AddSingleton<NoDeleteContractStateSource>();
+                        services.AddSingleton<IStateRepositoryRoot, StateRepositoryRoot>();
+
+                        // CONSENSUS ------------------------------------------------------------------------
+                        services.AddSingleton<IMempoolValidator, SmartContractMempoolValidator>();
+                        services.AddSingleton<StandardTransactionPolicy, SmartContractTransactionPolicy>();
+
+                        // CONTRACT EXECUTION ---------------------------------------------------------------
+                        services.AddSingleton<IInternalExecutorFactory, InternalExecutorFactory>();
+                        services.AddSingleton<IVirtualMachine, ReflectionVirtualMachine>();
+                        services.AddSingleton<IAddressGenerator, AddressGenerator>();
+                        services.AddSingleton<ILoader, ContractAssemblyLoader>();
+                        services.AddSingleton<IContractModuleDefinitionReader, ContractModuleDefinitionReader>();
+                        services.AddSingleton<IStateFactory, StateFactory>();
+                        services.AddSingleton<SmartContractTransactionPolicy>();
+                        services.AddSingleton<IStateProcessor, StateProcessor>();
+                        services.AddSingleton<ISmartContractStateFactory, SmartContractStateFactory>();
+                        services.AddSingleton<ILocalExecutor, LocalExecutor>();
+
+                        // RECEIPTS -------------------------------------------------------------------------
+                        services.AddSingleton<IReceiptRepository, PersistentReceiptRepository>();
+
+                        // UTILS ----------------------------------------------------------------------------
+                        services.AddSingleton<ISenderRetriever, SenderRetriever>();
+                        services.AddSingleton<IVersionProvider, SmartContractVersionProvider>();
+
+                        services.AddSingleton<IMethodParameterSerializer, MethodParameterByteSerializer>();
+                        services.AddSingleton<IMethodParameterStringSerializer, MethodParameterStringSerializer>();
+                        services.AddSingleton<ICallDataSerializer, CallDataSerializer>();
+
+                        // Registers the ScriptAddressReader concrete type and replaces the IScriptAddressReader implementation
+                        // with SmartContractScriptAddressReader, which depends on the ScriptAddressReader concrete type.
+                        services.AddSingleton<ScriptAddressReader>();
+                        services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), typeof(SmartContractScriptAddressReader), ServiceLifetime.Singleton));
+                    });
+            });
+
+            return fullNodeBuilder;
+        }
+
+        /// <summary>
         /// This node will be configured with the reflection contract executor.
         /// <para>
         /// Should we require another executor, we will need to create a separate daemon and network.
