@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             }
         }
 
-        [Fact]
+        [Fact(Skip = "Investigate PeerConnector shutdown timeout issue")]
         public void WalletCanRecoverOnStartup()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

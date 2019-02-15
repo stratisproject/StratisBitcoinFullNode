@@ -1,4 +1,5 @@
-﻿using System.IO;
+﻿using System.Collections.Generic;
+using System.IO;
 using System.Runtime.CompilerServices;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -12,6 +13,7 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
@@ -53,9 +55,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             return rule;
         }
 
-        public SmartContractFormatRule CreateSmartContractFormatRule()
+        public ContractTransactionValidationRule CreateContractValidationRule()
         {
-            var rule = new SmartContractFormatRule(this.CallDataSerializer);
+            var rule = new ContractTransactionValidationRule(this.CallDataSerializer, new List<IContractTransactionValidationLogic>
+            {
+                new SmartContractFormatLogic()
+            });
             rule.Parent = this.Consensus;
             rule.Logger = this.LoggerFactory.CreateLogger(rule.GetType().FullName);
             rule.Initialize();
