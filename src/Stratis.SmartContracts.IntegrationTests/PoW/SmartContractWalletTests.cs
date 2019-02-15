@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
-                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 // Create a transfer token contract.
                 var compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -189,7 +189,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
 
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+                ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2;
 
                 var response = sender.SendCreateContractTransaction(compilationResult.Compilation, 0, feeAmount: 0.001M,
                     gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
@@ -530,7 +530,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+
+                ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2;
 
                 BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, amount: 0, feeAmount: 0.001M, gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
                 sender.WaitMempoolCount(1);
@@ -575,7 +576,8 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs");
                 Assert.True(compilationResult.Success);
-                Gas gasLimit = (Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+
+                ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2;
 
                 BuildCreateContractTransactionResponse response = sender.SendCreateContractTransaction(compilationResult.Compilation, amount: 0, feeAmount: 0.001M, gasPrice: SmartContractMempoolValidator.MinGasPrice, gasLimit: gasLimit);
                 sender.WaitMempoolCount(1);
