@@ -9,7 +9,7 @@ namespace Stratis.Bitcoin.Utilities
         {
             this.RetryCount = 1;
             this.Delay = TimeSpan.FromMilliseconds(100);
-            this.ExceptionTypes = new[] { typeof(Exception) };
+            this.ExceptionTypes = Array.Empty<Type>();
         }
 
         public RetryOptions(short retryCount, TimeSpan delay, params Type[] exceptionTypeTypes)
