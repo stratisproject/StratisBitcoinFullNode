@@ -367,6 +367,15 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     this.cachedHeaders.AddRange(headers);
                     this.logger.LogDebug("All {0} items were not consumed and added to cache.", headers.Count);
+                    this.logger.LogTrace("(-)[HEADERS_NOT_CONSUMED]");
+
+                    return;
+                }
+
+                if (result.Consumed == this.BestReceivedTip)
+                {
+                    this.logger.LogDebug("No new headers where presented");
+                    this.logger.LogTrace("(-)[NO_NEW_HEADERS_PRESENTED]");
 
                     return;
                 }
