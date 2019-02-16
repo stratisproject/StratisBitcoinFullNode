@@ -13,7 +13,7 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public TargetSpacingDateTimeProvider(Network network)
         {
-            this.backing = DateTime.Now;
+            this.backing = DateTimeOffset.FromUnixTimeSeconds(network.GenesisTime + 1).UtcDateTime;
             this.spacing = (network.Consensus.Options as PoAConsensusOptions).TargetSpacingSeconds;
         }
 
