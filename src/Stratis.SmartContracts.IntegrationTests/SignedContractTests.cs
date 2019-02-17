@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
 
-        [Fact]
+        [Retry]
         public void Create_Signed_Contract()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -50,7 +50,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void Create_NoSignature_Fails()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -68,7 +68,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void Create_InvalidSignature_Fails()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -86,7 +86,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public async Task Create_NoSignature_Mempool_Rejects()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -125,7 +125,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public async Task Create_InvalidSignature_Mempool_Rejects()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
