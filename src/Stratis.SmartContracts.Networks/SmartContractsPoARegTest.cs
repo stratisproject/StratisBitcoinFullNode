@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.Networks
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
-                targetSpacingSeconds: 3
+                targetSpacingSeconds: 4 // Low waiting time for PoA turn-taking, but goes into 16 so the intervals fall on the same time
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
