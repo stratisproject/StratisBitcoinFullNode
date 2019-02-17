@@ -190,26 +190,43 @@ namespace Stratis.Bitcoin.Features.RPC
 
         private bool Authorized(HttpContext httpContext)
         {
-            if (!this.authorization.IsAuthorized(httpContext.Connection.RemoteIpAddress))
+            IPAddress ip = httpContext.Connection.RemoteIpAddress;
+
+            if (!this.authorization.IsAuthorized(ip))
+            {
+                this.logger.LogWarning("IP '{0}' not authorised.", ip);
                 return false;
-            StringValues auth;
-            if (!httpContext.Request.Headers.TryGetValue("Authorization", out auth) || auth.Count != 1)
+            }
+
+            if (!httpContext.Request.Headers.TryGetValue("Authorization", out StringValues auth) || auth.Count != 1)
+            {
+                this.logger.LogWarning("No 'Authorization' header found.");
                 return false;
+            }
+
             string[] splittedAuth = auth[0].Split(' ');
-            if (splittedAuth.Length != 2 ||
-               splittedAuth[0] != "Basic")
+            if (splittedAuth.Length != 2 || splittedAuth[0] != "Basic")
+            {
+                this.logger.LogWarning("Basic access authentication must be used when accessing RPC.");
                 return false;
+            }
 
             try
             {
                 string user = Encoders.ASCII.EncodeData(Encoders.Base64.DecodeData(splittedAuth[1]));
+
                 if (!this.authorization.IsAuthorized(user))
+                {
+                    this.logger.LogWarning("User with credentials '{0}' is not authorised.", user);
                     return false;
+                }
             }
-            catch
+            catch(Exception ex)
             {
+                this.logger.LogError("Exception occurred during authorisation: {0}.", ex.Message);
                 return false;
             }
+
             return true;
         }
 
