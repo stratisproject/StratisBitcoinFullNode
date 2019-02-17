@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -53,24 +54,27 @@ namespace Stratis.Bitcoin.Features.RPC
                 // Allows streams to be read multiple times.
                 httpContext.Request.EnableRewind();
 
-                using (var body = new StreamReader(httpContext.Request.Body, Encoding.UTF8, true, 1024, true))
+                // Read the request.
+                byte[] requestBuffer = new byte[httpContext.Request.ContentLength.Value];
+                await httpContext.Request.Body.ReadAsync(requestBuffer, 0, requestBuffer.Length);
+                var requestBody = Encoding.UTF8.GetString(requestBuffer);
+                httpContext.Request.Body.Position = 0;
+
+                this.logger.LogDebug("RPC request: {0}", requestBody);
+
+                JToken token = string.IsNullOrEmpty(requestBody) ? null : JToken.Parse(requestBody);
+
+                if (token is JArray)
                 {
-                    string requestBody = body.ReadToEnd();
-                    httpContext.Request.Body.Position = 0;
-
-                    JToken token = string.IsNullOrEmpty(requestBody) ? null : JToken.Parse(requestBody);
-
-                    if (token is JArray)
-                    {
-                        // Batch request, invoke each request and accumulate responses.
-                        await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
-                    }
-                    else
-                    {
-                        // Single request, invoke the request.
-                        await this.next.Invoke(httpContext);
-                    }
+                    // Batch request, invoke each request and accumulate responses.
+                    await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
                 }
+                else
+                {
+                    // Single request, invoke the request.
+                    await this.next.Invoke(httpContext);
+                }
+
             }
             catch (Exception exx)
             {
