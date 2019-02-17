@@ -466,7 +466,7 @@ namespace Stratis.Bitcoin.Consensus
                 // continues to supply headers that cannot be connected. In lieu of more pervasive rate limiting this
                 // quick check should reduce the bandwidth consumption of spurious resync requests.
                 // Resyncs will eventually be triggered by timer elsewhere so a peer will not remain stuck indefinitely.
-                if ((DateTime.Now - this.lastHeaderConnectResync) > TimeSpans.Second)
+                if ((DateTime.Now - this.lastHeaderConnectResync) > TimeSpans.Minute)
                 {
                     this.lastHeaderConnectResync = DateTime.Now;
                     await this.ResyncAsync().ConfigureAwait(false);
