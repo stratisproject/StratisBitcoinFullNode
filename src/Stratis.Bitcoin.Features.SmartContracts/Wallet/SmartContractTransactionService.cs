@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
+using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
 using Stratis.Bitcoin.Features.Wallet;
@@ -8,6 +9,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractSigning;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -147,7 +149,31 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             ulong totalFee = (request.GasPrice * request.GasLimit) + Money.Parse(request.FeeAmount);
             var walletAccountReference = new WalletAccountReference(request.WalletName, request.AccountName);
-            var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(this.callDataSerializer.Serialize(txData)) };
+
+            byte[] serializedTxData = this.callDataSerializer.Serialize(txData);
+
+            Result<ContractTxData> deserialized = this.callDataSerializer.Deserialize(serializedTxData);
+
+            // We also want to ensure we're sending valid data: AKA it can be deserialized.
+            if (deserialized.IsFailure)
+            {
+                return BuildCreateContractTransactionResponse.Failed("Invalid data. If network requires code signing, check the code contains a signature.");
+            }
+
+            // HACK
+            // If requiring a signature, also check the signature.
+            if (this.network is ISignedCodePubKeyHolder holder)
+            {
+                var signedTxData = (SignedCodeContractTxData) deserialized.Value;
+                bool validSig =new ContractSigner().Verify(holder.SigningContractPubKey, signedTxData.ContractExecutionCode, signedTxData.CodeSignature);
+
+                if (!validSig)
+                {
+                    return BuildCreateContractTransactionResponse.Failed("Signature in code does not come from required signing key.");
+                }
+            }
+
+            var recipient = new Recipient { Amount = request.Amount ?? "0", ScriptPubKey = new Script(serializedTxData) };
             var context = new TransactionBuildContext(this.network)
             {
                 AccountReference = walletAccountReference,
