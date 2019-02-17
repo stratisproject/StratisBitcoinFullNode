@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
@@ -42,7 +39,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Compile file
                 byte[] toSend = new CSharpContractSigner(new ContractSigner()).PackageSignedCSharpFile(this.network.SigningContractPrivKey, "SmartContracts/StorageDemo.cs");
-                
+
                 // Send create with value, and ensure balance is stored.
                 BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(toSend, 30);
                 node1.WaitMempoolCount(1);

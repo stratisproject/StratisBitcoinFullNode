@@ -46,6 +46,7 @@ namespace Stratis.SmartContracts.Tests.Common
                 .UseReflectionExecutor()
                 .ReplaceTimeProvider(this.dateTimeProvider)
                 .MockIBD()
+                .AddFastMiningCapability()
                 .Build();
         }
     }
