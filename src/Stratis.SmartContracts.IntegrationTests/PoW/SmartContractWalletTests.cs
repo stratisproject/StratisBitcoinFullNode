@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -442,6 +443,40 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 sender.MineBlocks(1);
 
                 Assert.Equal((ulong)30 * 100_000_000, sender.GetContractBalance(sendResponse.NewContractAddress));
+            }
+        }
+
+        /// <summary>
+        /// https://github.com/jbevain/cecil/issues/555
+        /// </summary>
+        [Fact]
+        public void MockChain_AssemblyDoesntHang()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
+
+                // Mine some coins so we have balance
+                int maturity = (int)sender.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity;
+                sender.MineBlocks(maturity + 1);
+                int spendable = GetSpendableBlocks(maturity + 1, maturity);
+                Assert.Equal(Money.COIN * spendable * 50, (long)sender.WalletSpendableBalance);
+
+                // Get hanging file
+                byte[] bytes = File.ReadAllBytes("Modules/Hang");
+
+                // Send create with value, and ensure balance is stored.
+                BuildCreateContractTransactionResponse sendResponse = sender.SendCreateContractTransaction(bytes, 30);
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
+
+                // Code didn't actually deploy.
+                ReceiptResponse receipt = sender.GetReceipt(sendResponse.TransactionId.ToString());
+                Assert.False(receipt.Success);
+
+                // Can still progress - node didn't hang.
+                sender.MineBlocks(1);
             }
         }
 

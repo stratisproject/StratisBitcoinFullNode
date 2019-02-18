@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using Mono.Cecil;
@@ -67,7 +68,17 @@ namespace Stratis.SmartContracts.CLR
         /// <inheritdoc />
         public SmartContractValidationResult Validate(ISmartContractValidator validator)
         {
-            return validator.Validate(this.ModuleDefinition);
+            try
+            {
+                return validator.Validate(this.ModuleDefinition);
+            }
+            catch (Exception e)
+            {
+                return new SmartContractValidationResult(new[]
+                {
+                    new ModuleDefinitionValidationResult("Error validating module: " + e.Message)
+                });
+            }
         }
 
         public string GetPropertyGetterMethodName(string typeName, string propertyName)
