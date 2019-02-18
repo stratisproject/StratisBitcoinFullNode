@@ -121,8 +121,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables(ProvenBlockHeaderTable);
-
                     transaction.ValuesLazyLoadingIsOn = false;
 
                     Row<byte[], byte[]> row = transaction.Select<byte[], byte[]>(ProvenBlockHeaderTable, blockHeight.ToBytes());

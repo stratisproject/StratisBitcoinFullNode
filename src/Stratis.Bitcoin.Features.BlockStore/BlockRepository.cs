@@ -320,7 +320,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 // however we need to find how byte arrays are sorted in DBreeze.
                 using (DBreeze.Transactions.Transaction transaction = this.DBreeze.GetTransaction())
                 {
-                    transaction.SynchronizeTables(BlockTableName, TransactionTableName);
+                    transaction.SynchronizeTables(BlockTableName, TransactionTableName, CommonTableName);
                     this.OnInsertBlocks(transaction, blocks);
 
                     // Commit additions

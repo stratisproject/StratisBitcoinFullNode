@@ -38,6 +38,8 @@ namespace Stratis.SmartContracts.Core.Receipts
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
+                t.ValuesLazyLoadingIsOn = false;
+
                 byte[] result = t.Select<byte[], byte[]>(TableName, hash.ToBytes()).Value;
 
                 if (result == null)

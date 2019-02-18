@@ -138,7 +138,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Pruning
             {
                 using (DBreeze.Transactions.Transaction dbreezeTransaction = this.blockRepository.DBreeze.GetTransaction())
                 {
-                    dbreezeTransaction.SynchronizeTables(BlockRepository.BlockTableName, BlockRepository.TransactionTableName);
+                    dbreezeTransaction.SynchronizeTables(BlockRepository.BlockTableName, BlockRepository.TransactionTableName, BlockRepository.CommonTableName);
 
                     var tempBlocks = dbreezeTransaction.SelectDictionary<byte[], byte[]>(BlockRepository.BlockTableName);
 

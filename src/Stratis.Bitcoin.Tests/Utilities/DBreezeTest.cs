@@ -169,6 +169,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             {
                 using (DBreeze.Transactions.Transaction transaction = engine.GetTransaction())
                 {
+                    transaction.ValuesLazyLoadingIsOn = false;
                     var data2 = new uint256[data.Length];
                     int i = 0;
                     foreach (Row<int, byte[]> row in transaction.SelectForward<int, byte[]>("Table"))

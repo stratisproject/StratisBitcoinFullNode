@@ -23,6 +23,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
+                transaction.ValuesLazyLoadingIsOn = false;
 
                 Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>("Common", new byte[0]);
                 Row<byte[], bool> txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
@@ -53,6 +54,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
+                transaction.ValuesLazyLoadingIsOn = false;
 
                 Row<byte[], byte[]> blockRow = transaction.Select<byte[], byte[]>("Common", new byte[0]);
                 Row<byte[], bool> txIndexRow = transaction.Select<byte[], bool>("Common", new byte[1]);
@@ -122,6 +124,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 block.Transactions.Add(trans);
 
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
+                transaction.SynchronizeTables("Block", "Transaction", "Common");
                 transaction.Insert<byte[], byte[]>("Block", block.Header.GetHash().ToBytes(), block.ToBytes());
                 transaction.Insert<byte[], byte[]>("Transaction", trans.GetHash().ToBytes(), block.Header.GetHash().ToBytes());
                 transaction.Insert<byte[], byte[]>("Common", new byte[0], this.DBreezeSerializer.Serialize(new HashHeightPair(uint256.Zero, 1)));
@@ -190,6 +193,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
+                transaction.SynchronizeTables("Transaction", "Common");
                 transaction.Insert<byte[], byte[]>("Transaction", new uint256(26).ToBytes(), new uint256(42).ToBytes());
                 transaction.Insert<byte[], byte[]>("Common", new byte[0], this.DBreezeSerializer.Serialize(new HashHeightPair(uint256.Zero, 1)));
                 transaction.Insert<byte[], bool>("Common", new byte[1], true);
@@ -247,6 +251,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction trans = engine.GetTransaction();
+                trans.ValuesLazyLoadingIsOn = false;
 
                 Row<byte[], byte[]> blockHashKeyRow = trans.Select<byte[], byte[]>("Common", new byte[0]);
                 Dictionary<byte[], byte[]> blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
@@ -290,6 +295,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction trans = engine.GetTransaction();
+                trans.ValuesLazyLoadingIsOn = false;
 
                 Row<byte[], bool> txIndexRow = trans.Select<byte[], bool>("Common", new byte[1]);
                 Assert.False(txIndexRow.Value);
@@ -410,6 +416,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction transaction = engine.GetTransaction();
+                transaction.SynchronizeTables("Block", "Transaction", "Common");
                 transaction.Insert<byte[], byte[]>("Block", block.GetHash().ToBytes(), block.ToBytes());
                 transaction.Insert<byte[], byte[]>("Transaction", block.Transactions[0].GetHash().ToBytes(), block.GetHash().ToBytes());
                 transaction.Insert<byte[], bool>("Common", new byte[1], true);
@@ -427,6 +434,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction trans = engine.GetTransaction();
+                trans.SynchronizeTables("Common", "Block", "Transaction");
 
                 Row<byte[], byte[]> blockHashKeyRow = trans.Select<byte[], byte[]>("Common", new byte[0]);
                 Dictionary<byte[], byte[]> blockDict = trans.SelectDictionary<byte[], byte[]>("Block");
@@ -468,6 +476,8 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
+                dbreezeTransaction.ValuesLazyLoadingIsOn = false;
+
                 Dictionary<byte[], byte[]> blockDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Block");
                 Dictionary<byte[], byte[]> transDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Transaction");
 
@@ -495,6 +505,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
+                dbreezeTransaction.SynchronizeTables("Block", "Transaction");
                 dbreezeTransaction.Insert<byte[], byte[]>("Block", block.GetHash().ToBytes(), block.ToBytes());
                 dbreezeTransaction.Insert<byte[], byte[]>("Transaction", transaction.GetHash().ToBytes(), block.GetHash().ToBytes());
                 dbreezeTransaction.Commit();
@@ -514,6 +525,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             using (var engine = new DBreezeEngine(dir))
             {
                 DBreeze.Transactions.Transaction dbreezeTransaction = engine.GetTransaction();
+                dbreezeTransaction.ValuesLazyLoadingIsOn = false;
                 Dictionary<byte[], byte[]> blockDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Block");
                 Dictionary<byte[], byte[]> transDict = dbreezeTransaction.SelectDictionary<byte[], byte[]>("Transaction");
 

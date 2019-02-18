@@ -24,6 +24,7 @@ namespace Stratis.SmartContracts.Core.State
         {
             using (DBreeze.Transactions.Transaction t = this.engine.GetTransaction())
             {
+                t.ValuesLazyLoadingIsOn = false;
                 Row<byte[], byte[]> row = t.Select<byte[], byte[]>(this.table, key);
 
                 if (row.Exists)
