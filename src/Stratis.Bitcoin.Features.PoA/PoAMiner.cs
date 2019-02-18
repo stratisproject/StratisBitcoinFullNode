@@ -192,9 +192,17 @@ namespace Stratis.Bitcoin.Features.PoA
             throw new OperationCanceledException();
         }
 
-        protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
+        private async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
         {
             ChainedHeader tip = this.consensusManager.Tip;
+
+            // Timestamp should always be greater than prev one.
+            if (timestamp <= tip.Header.Time)
+            {
+                // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
+                this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
+                return null;
+            }
 
             Script walletScriptPubKey = this.GetScriptPubKeyFromWallet();
 
@@ -210,14 +218,6 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.AddVotingData(blockTemplate);
 
             blockTemplate.Block.Header.Time = timestamp;
-
-            // Timestamp should always be greater than prev one.
-            if (blockTemplate.Block.Header.Time <= tip.Header.Time)
-            {
-                // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
-                this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
-                return null;
-            }
 
             // Update merkle root.
             blockTemplate.Block.UpdateMerkleRoot();

@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.PoA
             return (headerUnixTimestamp % this.consensusOptions.TargetSpacingSeconds) == 0;
         }
 
-        private uint GetRoundLengthSeconds(int federationMembersCount)
+        public uint GetRoundLengthSeconds(int federationMembersCount)
         {
             uint roundLength = (uint)(federationMembersCount * this.consensusOptions.TargetSpacingSeconds);
 

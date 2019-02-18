@@ -28,6 +28,8 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
         private readonly IConsensusManager consensusManager;
 
+        private readonly FederationManager federationManager;
+
         public TestPoAMiner(
             IConsensusManager consensusManager,
             IDateTimeProvider dateTimeProvider,
@@ -52,6 +54,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             this.cancellation = new CancellationTokenSource();
             this.slotsManager = slotsManager;
             this.consensusManager = consensusManager;
+            this.federationManager = federationManager;
         }
 
         protected override async Task<uint> WaitUntilMiningSlotAsync()
@@ -73,6 +76,9 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             for (int i = 0; i < count; i++)
             {
                 nextHeight++;
+
+                this.timeProvider.AdjustedTimeOffset += TimeSpan.FromSeconds(
+                    this.slotsManager.GetRoundLengthSeconds(this.federationManager.GetFederationMembers().Count));
 
                 uint timeNow = (uint)this.timeProvider.GetAdjustedTimeAsUnixTimestamp();
 
