@@ -84,6 +84,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
 
         private readonly CancellationTokenSource cancellation;
 
+        private readonly INodeLifetime nodeLifetime;
+
         /// <inheritdoc/>
         public ChainedHeader BlockStoreCacheTip { get; private set; }
 
@@ -94,7 +96,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             StoreSettings storeSettings,
             IBlockRepository blockRepository,
             ILoggerFactory loggerFactory,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            INodeLifetime nodeLifetime)
         {
             Guard.NotNull(blockStoreQueueFlushCondition, nameof(blockStoreQueueFlushCondition));
             Guard.NotNull(chain, nameof(chain));
@@ -113,6 +116,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.pendingBlocksCache = new Dictionary<uint256, ChainedHeaderBlock>();
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = new CancellationTokenSource();
+            this.nodeLifetime = nodeLifetime;
 
             this.BatchThresholdSizeBytes = storeSettings.MaxCacheSize * 1024 * 1024;
 
@@ -407,8 +411,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
                         }
                         catch (Exception err)
                         {
-                            this.logger.LogWarning("Could not save blocks to the block repository. Will try again.");
-                            this.logger.LogTrace(err.Message);
+                            this.logger.LogError("Could not save blocks to the block repository. Exiting due to '{0}'.", err.Message);
+                            this.nodeLifetime.StopApplication();
                         }
                     }
 
