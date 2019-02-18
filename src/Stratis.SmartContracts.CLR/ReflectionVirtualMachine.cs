@@ -54,6 +54,7 @@ namespace Stratis.SmartContracts.CLR
             Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
             if (moduleResult.IsFailure)
             {
+                this.logger.LogTrace(moduleResult.Error);
                 this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
                 return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, "Contract bytecode is not valid IL.");
             }
