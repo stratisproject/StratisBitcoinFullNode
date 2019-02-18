@@ -19,7 +19,7 @@ namespace NBitcoin
             }
         }
 
-        public ulong ReadenBytesPerSecond
+        public ulong ReadBytesPerSecond
         {
             get
             {
@@ -62,7 +62,7 @@ namespace NBitcoin
 
         public override string ToString()
         {
-            return "Read : " + ToKBSec(this.ReadenBytesPerSecond) + ", Write : " + ToKBSec(this.WrittenBytesPerSecond);
+            return "Read : " + ToKBSec(this.ReadBytesPerSecond) + ", Write : " + ToKBSec(this.WrittenBytesPerSecond);
         }
 
         private string ToKBSec(ulong bytesPerSec)
