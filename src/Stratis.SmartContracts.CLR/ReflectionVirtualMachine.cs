@@ -81,13 +81,14 @@ namespace Stratis.SmartContracts.CLR
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
                 }
 
-                code = moduleDefinition.ToByteCode();
+                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
 
-                if (code.Value == null || code.Value.Length == 0)
+                if (!getCodeResult.IsSuccess)
                 {
-                    this.logger.LogTrace("(-)[CONTRACT_TOBYTECODE_FAILED]");
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
                 }
+
+                code = getCodeResult.Value;
             }
 
             Result<IContract> contractLoadResult = this.Load(
@@ -145,13 +146,14 @@ namespace Stratis.SmartContracts.CLR
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
                 }
 
-                code = moduleDefinition.ToByteCode();
+                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
 
-                if (code.Value == null || code.Value.Length == 0)
+                if (!getCodeResult.IsSuccess)
                 {
-                    this.logger.LogTrace("(-)[CONTRACT_TOBYTECODE_FAILED]");
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
                 }
+
+                code = getCodeResult.Value;
             }
 
             Result<IContract> contractLoadResult = this.Load(
@@ -255,6 +257,23 @@ namespace Stratis.SmartContracts.CLR
             }
 
             return false;
+        }
+
+        private Result<ContractByteCode> GetByteCode(IContractModuleDefinition moduleDefinition)
+        {
+            try
+            {
+                ContractByteCode code = moduleDefinition.ToByteCode();
+
+                return Result.Ok(code);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogTrace("(-)[CONTRACT_TOBYTECODE_FAILED]");
+
+                return Result.Fail<ContractByteCode>("Exception occurred while serializing module: " + e.ToString());
+            }
         }
 
         private void LogErrorMessage(string error)

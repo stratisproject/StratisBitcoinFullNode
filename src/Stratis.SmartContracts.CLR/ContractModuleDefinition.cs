@@ -57,18 +57,11 @@ namespace Stratis.SmartContracts.CLR
         /// <inheritdoc />
         public ContractByteCode ToByteCode()
         {
-            try
+            using (var ms = new MemoryStream())
             {
-                using (var ms = new MemoryStream())
-                {
-                    this.ModuleDefinition.Write(ms);
+                this.ModuleDefinition.Write(ms);
 
-                    return (ContractByteCode) ms.ToArray();
-                }
-            }
-            catch (Exception)
-            {
-                return new ContractByteCode(new byte[0]);
+                return (ContractByteCode) ms.ToArray();
             }
         }
 
