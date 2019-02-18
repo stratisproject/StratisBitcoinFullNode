@@ -71,31 +71,5 @@ public class ModuleDefinitionTest : SmartContract
 
             Assert.False(result.IsValid);
         }
-
-        [Fact]
-        public void Rewrite_Invalid_ModuleDefinition_Catches_Exceptions()
-        {
-            var contractModule = new ContractModuleDefinition(null, null);
-
-            var rewriter = new Mock<IILRewriter>();
-            rewriter
-                .Setup(r => r.Rewrite(It.IsAny<ModuleDefinition>()))
-                .Throws(new Exception("Invalid operation"));
-
-            var result = contractModule.Rewrite(rewriter.Object);
-
-            Assert.False(result);
-        }
-
-        [Fact]
-        public void ToBytes_Invalid_ModuleDefinition_Catches_Exceptions()
-        {
-            var contractModule = new ContractModuleDefinition(null, null);
-
-            // This show throw a NRE because the ModuleDefinition is null
-            var result = contractModule.ToByteCode();
-
-            Assert.Empty(result.Value);
-        }
     }
 }
