@@ -374,7 +374,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 if (result.Consumed == this.BestReceivedTip)
                 {
-                    this.logger.LogDebug("No new headers where presented");
+                    this.logger.LogDebug("No new headers were presented");
                     this.logger.LogTrace("(-)[NO_NEW_HEADERS_PRESENTED]");
 
                     return;
