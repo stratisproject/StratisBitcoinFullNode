@@ -76,8 +76,12 @@ namespace Stratis.Bitcoin.Controllers
                 {
                     case "add":
                         {
-                            var banDuration = viewModel.BanDurationSeconds != null ? viewModel.BanDurationSeconds.Value : this.connectionManager.ConnectionSettings.BanTimeSeconds;
+                            int banDuration = this.connectionManager.ConnectionSettings.BanTimeSeconds;
+                            if (viewModel.BanDurationSeconds != null && viewModel.BanDurationSeconds.Value > 0)
+                                banDuration = viewModel.BanDurationSeconds.Value;
+
                             this.peerBanning.BanAndDisconnectPeer(endpoint, banDuration, "Banned via the API.");
+
                             break;
                         }
 
