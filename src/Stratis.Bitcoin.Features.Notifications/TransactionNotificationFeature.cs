@@ -44,7 +44,6 @@ namespace Stratis.Bitcoin.Features.Notifications
                 .FeatureServices(services =>
                     {
                         services.AddSingleton<TransactionNotificationProgress>();
-                        services.AddSingleton<TransactionNotification>();
                         services.AddSingleton<TransactionReceiver>();
                         services.AddSingleton<NotificationsController>();
                     });

@@ -36,7 +36,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CreateWithAllParameters.cs");
@@ -137,7 +137,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 25;
+            decimal amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
@@ -201,7 +201,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.mockChain.MineBlocks(1);
             Assert.NotNull(this.node1.GetCode(preResponse.NewContractAddress));
 
-            double amount = 25;
+            decimal amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             const char testChar = 'c';
@@ -259,7 +259,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             // Ensure fixture is funded.
             this.mockChain.MineBlocks(1);
 
-            double amount = 25;
+            decimal amount = 25;
             uint256 currentHash = this.node1.GetLastBlock().GetHash();
 
             ContractCompilationResult compilationResult = ContractCompiler.CompileFile("SmartContracts/CreateWithAllArrays.cs");

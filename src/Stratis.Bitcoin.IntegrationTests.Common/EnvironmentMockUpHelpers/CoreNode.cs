@@ -25,6 +25,7 @@ using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -52,14 +53,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public string Config { get; }
 
-        public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
+        public NodeConfigParameters ConfigParameters { get; set; }
 
         public bool CookieAuth { get; set; }
 
         public Mnemonic Mnemonic { get; set; }
-
-        private Action<ChainedHeaderBlock> builderConnectInterceptor;
-        private Action<ChainedHeaderBlock> builderDisconnectInterceptor;
 
         private bool builderAlwaysFlushBlocks;
         private bool builderEnablePeerDiscovery;
@@ -81,7 +79,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
-            this.ConfigParameters.Import(configParameters);
+
+            this.ConfigParameters = new NodeConfigParameters();
+            if (configParameters != null)
+                this.ConfigParameters.Import(configParameters);
+
             var randomFoundPorts = new int[3];
             IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());
@@ -120,7 +122,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetConnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderConnectInterceptor = interceptor;
+            this.FullNode.NodeService<ISignals>().OnBlockConnected.Attach(interceptor);
+
             return this;
         }
 
@@ -131,7 +134,8 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// <returns>This node.</returns>
         public CoreNode SetDisconnectInterceptor(Action<ChainedHeaderBlock> interceptor)
         {
-            this.builderDisconnectInterceptor = interceptor;
+            this.FullNode.NodeService<ISignals>().OnBlockDisconnected.Attach(interceptor);
+
             return this;
         }
 
@@ -258,11 +262,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                 this.runner.AlwaysFlushBlocks = this.builderAlwaysFlushBlocks;
                 this.runner.EnablePeerDiscovery = this.builderEnablePeerDiscovery;
                 this.runner.OverrideDateTimeProvider = this.builderOverrideDateTimeProvider;
-
-                // Interceptors--------------------------------------
-                this.runner.ConnectInterceptor = this.builderConnectInterceptor;
-                this.runner.DisconnectInterceptor = this.builderDisconnectInterceptor;
-                // --------------------------------------------------
 
                 this.runner.BuildNode();
                 this.runner.Start();
