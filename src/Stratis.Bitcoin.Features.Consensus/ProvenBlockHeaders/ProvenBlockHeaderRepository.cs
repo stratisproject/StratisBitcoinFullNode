@@ -150,24 +150,18 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 this.logger.LogTrace("({0}.Count():{1})", nameof(headers), headers.Count());
 
-                RetryStrategy.Run(
-                    DBreezeRetryOptions.Default,
-                    () =>
-                    {
-                        using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
-                        {
-                            transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
+                using (DBreeze.Transactions.Transaction transaction = this.dbreeze.GetTransaction())
+                {
+                    transaction.SynchronizeTables(BlockHashHeightTable, ProvenBlockHeaderTable);
 
-                            this.InsertHeaders(transaction, headers);
+                    this.InsertHeaders(transaction, headers);
 
-                            this.SetTip(transaction, newTip);
+                    this.SetTip(transaction, newTip);
 
-                            transaction.Commit();
+                    transaction.Commit();
 
-                            this.TipHashHeight = newTip;
-                        }
-                    },
-                    this.logger);
+                    this.TipHashHeight = newTip;
+                }
             });
 
             return task;
