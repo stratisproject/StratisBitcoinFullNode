@@ -58,7 +58,7 @@ namespace Stratis.SmartContracts.Networks
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
-                targetSpacingSeconds: 16,
+                targetSpacingSeconds: 60,
                 votingEnabled: true
             );
 
