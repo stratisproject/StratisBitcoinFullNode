@@ -72,15 +72,21 @@ namespace Stratis.Bitcoin.Controllers
             try
             {
                 var endpoint = new IPEndPoint(IPAddress.Parse(viewModel.PeerAddress), 0);
-
                 switch (viewModel.BanCommand.ToLowerInvariant())
                 {
                     case "add":
-                        this.peerBanning.BanAndDisconnectPeer(endpoint, viewModel.BanDurationSeconds, "Banned via the API.");
-                        break;
+                        {
+                            var banDuration = viewModel.BanDurationSeconds != null ? viewModel.BanDurationSeconds.Value : this.connectionManager.ConnectionSettings.BanTimeSeconds;
+                            this.peerBanning.BanAndDisconnectPeer(endpoint, banDuration, "Banned via the API.");
+                            break;
+                        }
+
                     case "remove":
-                        this.peerBanning.UnBanPeer(endpoint);
-                        break;
+                        {
+                            this.peerBanning.UnBanPeer(endpoint);
+                            break;
+                        }
+
                     default:
                         throw new Exception("Only 'add' or 'remove' are valid 'setban' commands.");
                 }

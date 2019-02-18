@@ -1,17 +1,10 @@
-﻿using System;
-
-namespace Stratis.Bitcoin.Controllers.Models
+﻿namespace Stratis.Bitcoin.Controllers.Models
 {
     /// <summary>
     /// Represents the model that will ban and disconnect a connected peer.
     /// </summary>
     public sealed class SetBanPeerViewModel
     {
-        public SetBanPeerViewModel()
-        {
-            this.BanDurationSeconds = TimeSpan.FromHours(24).Seconds;
-        }
-
         /// <summary>
         /// Whether to add or remove the node from the banned list.
         /// <para>
@@ -23,7 +16,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         /// <summary>
         /// The duration in seconds the peer will be banned.
         /// </summary>
-        public int BanDurationSeconds { get; set; }
+        public int? BanDurationSeconds { get; set; }
 
         /// <summary>
         /// The IP address of the connected peer to ban.
