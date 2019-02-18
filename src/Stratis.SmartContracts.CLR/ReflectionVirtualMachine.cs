@@ -75,10 +75,9 @@ namespace Stratis.SmartContracts.CLR
 
                 var observer = new Observer(gasMeter,  new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
-                
-                if (!moduleDefinition.Rewrite(rewriter))
+
+                if (!this.Rewrite(moduleDefinition, rewriter))
                 {
-                    this.logger.LogTrace("(-)[CONTRACT_REWRITE_FAILED]");
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
                 }
 
@@ -141,9 +140,8 @@ namespace Stratis.SmartContracts.CLR
                 var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
 
-                if (!moduleDefinition.Rewrite(rewriter))
+                if (!this.Rewrite(moduleDefinition, rewriter))
                 {
-                    this.logger.LogTrace("(-)[CONTRACT_REWRITE_FAILED]");
                     return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
                 }
 
@@ -241,6 +239,22 @@ namespace Stratis.SmartContracts.CLR
             }
 
             return Result.Ok(contract);
+        }
+
+        private bool Rewrite(IContractModuleDefinition moduleDefinition, IILRewriter rewriter)
+        {
+            try
+            {
+                moduleDefinition.Rewrite(rewriter);
+                return true;
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogTrace("(-)[CONTRACT_REWRITE_FAILED]");
+            }
+
+            return false;
         }
 
         private void LogErrorMessage(string error)

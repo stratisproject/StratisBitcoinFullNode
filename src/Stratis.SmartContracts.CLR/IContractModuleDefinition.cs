@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.CLR
         /// <summary>
         /// Rewrite the ModuleDefintion using an ILRewriter.
         /// </summary>
-        bool Rewrite(IILRewriter rewriter);
+        void Rewrite(IILRewriter rewriter);
 
         /// <summary>
         /// Returns the name of the property getter method for the property with this name on the given type,

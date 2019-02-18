@@ -49,17 +49,9 @@ namespace Stratis.SmartContracts.CLR
         public ModuleDefinition ModuleDefinition { get; private set; }
 
         /// <inheritdoc />
-        public bool Rewrite(IILRewriter rewriter)
+        public void Rewrite(IILRewriter rewriter)
         {
-            try
-            {
-                this.ModuleDefinition = rewriter.Rewrite(this.ModuleDefinition);
-                return true;
-            }
-            catch (Exception)
-            {
-                return false;
-            }
+            this.ModuleDefinition = rewriter.Rewrite(this.ModuleDefinition);
         }
 
         /// <inheritdoc />
