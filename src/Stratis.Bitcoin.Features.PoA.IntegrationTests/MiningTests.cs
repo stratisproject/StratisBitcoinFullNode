@@ -24,14 +24,12 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
                 Assert.True(node.FullNode.NodeService<FederationManager>().IsFederationMember);
                 Assert.Equal(node.FullNode.NodeService<FederationManager>().FederationMemberKey, key);
-                Assert.True(node.FullNode.NodeService<IPoAMiner>().IsMining());
 
                 // Create second node as normal node.
                 CoreNode node2 = builder.CreatePoANode(network).Start();
 
                 Assert.False(node2.FullNode.NodeService<FederationManager>().IsFederationMember);
                 Assert.Equal(node2.FullNode.NodeService<FederationManager>().FederationMemberKey, null);
-                Assert.False(node2.FullNode.NodeService<IPoAMiner>().IsMining());
             }
         }
 

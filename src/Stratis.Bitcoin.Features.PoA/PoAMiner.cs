@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IDateTimeProvider dateTimeProvider;
 
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         private readonly PoANetwork network;
 
@@ -113,7 +113,7 @@ namespace Stratis.Bitcoin.Features.PoA
         }
 
         /// <inheritdoc />
-        public void InitializeMining()
+        public virtual void InitializeMining()
         {
             if (this.miningTask == null)
             {
@@ -167,7 +167,7 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        protected virtual async Task<uint> WaitUntilMiningSlotAsync()
+        private async Task<uint> WaitUntilMiningSlotAsync()
         {
             while (!this.cancellation.IsCancellationRequested)
             {
@@ -192,7 +192,7 @@ namespace Stratis.Bitcoin.Features.PoA
             throw new OperationCanceledException();
         }
 
-        private async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
+        protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
         {
             ChainedHeader tip = this.consensusManager.Tip;
 

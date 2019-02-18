@@ -1,7 +1,7 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
-using FluentAssertions.Common;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Connection;
@@ -19,8 +19,6 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
     public class TestPoAMiner : PoAMiner
     {
         private readonly EditableTimeProvider timeProvider;
-
-        private AsyncQueue<uint> timestampQueue;
 
         private CancellationTokenSource cancellation;
 
@@ -50,33 +48,20 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
         {
             this.timeProvider = dateTimeProvider as EditableTimeProvider;
 
-            this.timestampQueue = new AsyncQueue<uint>();
             this.cancellation = new CancellationTokenSource();
             this.slotsManager = slotsManager;
             this.consensusManager = consensusManager;
             this.federationManager = federationManager;
         }
 
-        protected override async Task<uint> WaitUntilMiningSlotAsync()
+        public override void InitializeMining()
         {
-            uint nextTimestamp = await this.timestampQueue.DequeueAsync(this.cancellation.Token).ConfigureAwait(false);
-
-            var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
-            dateTime = dateTime.AddSeconds(nextTimestamp);
-
-            this.timeProvider.AdjustedTimeOffset += dateTime.TimeOfDay;
-
-            return nextTimestamp;
         }
 
         public async Task MineBlocksAsync(int count)
         {
-            int nextHeight = this.consensusManager.Tip.Height;
-
             for (int i = 0; i < count; i++)
             {
-                nextHeight++;
-
                 this.timeProvider.AdjustedTimeOffset += TimeSpan.FromSeconds(
                     this.slotsManager.GetRoundLengthSeconds(this.federationManager.GetFederationMembers().Count));
 
@@ -84,9 +69,23 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 
                 uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
 
-                this.timestampQueue.Enqueue(myTimestamp);
+                this.timeProvider.AdjustedTimeOffset += TimeSpan.FromSeconds(myTimestamp - timeNow);
 
-                TestHelper.WaitLoop(() => this.consensusManager.Tip.Height >= nextHeight);
+                ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
+
+                if (chainedHeader == null)
+                {
+                    i--;
+                    this.timeProvider.AdjustedTimeOffset += TimeSpan.FromHours(1);
+                    continue;
+                }
+
+                var builder = new StringBuilder();
+                builder.AppendLine("<<==============================================================>>");
+                builder.AppendLine($"Block was mined {chainedHeader}.");
+                builder.AppendLine("<<==============================================================>>");
+                this.logger.LogInformation(builder.ToString());
+
             }
         }
 
