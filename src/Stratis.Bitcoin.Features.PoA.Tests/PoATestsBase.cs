@@ -19,7 +19,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
     public class PoATestsBase
     {
         protected readonly ChainedHeader currentHeader;
-        protected readonly PoANetwork network;
+        protected readonly TestPoANetwork network;
         protected readonly PoAConsensusOptions consensusOptions;
 
         protected PoAConsensusRuleEngine rulesEngine;
@@ -30,10 +30,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly ConcurrentChain chain;
         protected readonly FederationManager federationManager;
 
-        public PoATestsBase(PoANetwork network = null)
+        public PoATestsBase(TestPoANetwork network = null)
         {
             this.loggerFactory = new LoggerFactory();
-            this.network = network == null ? new PoANetwork() : network;
+            this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
 
             this.chain = new ConcurrentChain(this.network);
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public static FederationManager CreateFederationManager(object caller)
         {
-            return CreateFederationManager(caller, new PoANetwork(), new ExtendedLoggerFactory());
+            return CreateFederationManager(caller, new TestPoANetwork(), new ExtendedLoggerFactory());
         }
 
         public void InitRule(ConsensusRuleBase rule)

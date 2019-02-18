@@ -9,6 +9,11 @@ namespace Stratis.Bitcoin.Builder.Feature
     public interface IFullNodeFeature : IDisposable
     {
         /// <summary>
+        /// Instructs the <see cref="FullNodeFeatureExecutor"/> to start this feature before the <see cref="Base.BaseFeature"/>.
+        /// </summary>
+        bool InitializeBeforeBase { get; set; }
+
+        /// <summary>
         /// Triggered when the FullNode host has fully started.
         /// </summary>
         Task InitializeAsync();
@@ -33,6 +38,9 @@ namespace Stratis.Bitcoin.Builder.Feature
     /// </summary>
     public abstract class FullNodeFeature : IFullNodeFeature
     {
+        /// <inheritdoc />
+        public bool InitializeBeforeBase { get; set; }
+
         /// <inheritdoc />
         public abstract Task InitializeAsync();
 

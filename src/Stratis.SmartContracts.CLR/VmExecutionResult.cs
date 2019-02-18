@@ -8,7 +8,8 @@ namespace Stratis.SmartContracts.CLR
         OutOfResources,
         ValidationFailed,
         LoadFailed,
-        InvocationFailed
+        InvocationFailed,
+        RewriteFailed
     }
     
     public class VmExecutionResult

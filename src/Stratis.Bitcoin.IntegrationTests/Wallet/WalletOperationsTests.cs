@@ -224,11 +224,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         }
 
         [Fact]
-        public async Task CreateWalletWith12WordsChineseMnemonic()
+        public async Task CreateWalletWith12WordsChineseMnemonicAsync()
         {
             // Arrange.
             string walletName = this.fixture.GetUniqueWalletName();
-            string mnemonic = new Mnemonic(Wordlist.ChineseTraditional , WordCount.Twelve).ToString();
+            string mnemonic = new Mnemonic(Wordlist.ChineseTraditional, WordCount.Twelve).ToString();
 
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api".AppendPathSegment("wallet/create").PostJsonAsync(new WalletCreationRequest
@@ -871,7 +871,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             // Act.
             var response = await $"http://localhost:{this.fixture.Node.ApiPort}/api"
                 .AppendPathSegment("wallet/balance")
-                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName})
+                .SetQueryParams(new { walletName = this.fixture.walletWithFundsName })
                 .GetJsonAsync<WalletBalanceModel>();
 
             response.AccountsBalances.Should().NotBeEmpty();
@@ -1211,7 +1211,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                     Password = "123456",
                     ShuffleOutputs = true,
                     AllowUnconfirmed = true,
-                    Recipients = new List<RecipientModel> { new RecipientModel {DestinationAddress = address, Amount = "1000" } }
+                    Recipients = new List<RecipientModel> { new RecipientModel { DestinationAddress = address, Amount = "1000" } }
                 })
                 .ReceiveJson<WalletBuildTransactionModel>();
 

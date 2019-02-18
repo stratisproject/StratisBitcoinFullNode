@@ -109,8 +109,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             uint160 addressNumeric = address.ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
-            
-            return Json(balance);
+            Money moneyBalance = Money.Satoshis(balance);
+            return Json(moneyBalance.ToString(false));
         }
 
         [Route("storage")]

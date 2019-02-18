@@ -27,7 +27,11 @@ namespace Stratis.Bitcoin.Features.PoA
         /// <summary>Key for accessing list of public keys that represent federation members from <see cref="IKeyValueRepository"/>.</summary>
         private const string federationMembersDbKey = "fedmemberskeys";
 
+        /// <summary>All access should be protected by <see cref="locker"/>.</summary>
         private List<PubKey> federationMembers;
+
+        /// <summary>Protects access to <see cref="federationMembers"/>.</summary>
+        private readonly object locker;
 
         public FederationManager(NodeSettings nodeSettings, Network network, ILoggerFactory loggerFactory, IKeyValueRepository keyValueRepo)
         {
@@ -36,12 +40,8 @@ namespace Stratis.Bitcoin.Features.PoA
             this.keyValueRepo = Guard.NotNull(keyValueRepo, nameof(keyValueRepo));
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.locker = new object();
         }
-
-        // TODO
-        /*
-         * Subscribe to VotingManager and track when new member is added or deleted. Update keys and then persist.
-         */
 
         public void Initialize()
         {
@@ -92,7 +92,40 @@ namespace Stratis.Bitcoin.Features.PoA
         /// </remarks>
         public List<PubKey> GetFederationMembers()
         {
-            return this.federationMembers;
+            lock (this.locker)
+            {
+                return new List<PubKey>(this.federationMembers);
+            }
+        }
+
+        public void AddFederationMember(PubKey pubKey)
+        {
+            lock (this.locker)
+            {
+                if (this.federationMembers.Contains(pubKey))
+                {
+                    this.logger.LogTrace("(-)[ALREADY_EXISTS]");
+                    return;
+                }
+
+                this.federationMembers.Add(pubKey);
+
+                this.SaveFederationKeys(this.federationMembers);
+
+                this.logger.LogInformation("Federation member '{0}' was added!", pubKey.ToHex());
+            }
+        }
+
+        public void RemoveFederationMember(PubKey pubKey)
+        {
+            lock (this.locker)
+            {
+                this.federationMembers.Remove(pubKey);
+
+                this.SaveFederationKeys(this.federationMembers);
+
+                this.logger.LogInformation("Federation member '{0}' was removed!", pubKey.ToHex());
+            }
         }
 
         private void SaveFederationKeys(List<PubKey> pubKeys)

@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         private readonly IInitialBlockDownloadState initialBlockDownloadState;
 
         /// <summary>Peer notifications available to subscribe to.</summary>
-        private readonly Signals.Signals signals;
+        private readonly Signals.ISignals signals;
 
         /// <summary>Instance logger for the memory pool behavior component.</summary>
         private readonly ILogger logger;
@@ -95,7 +95,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             MempoolOrphans orphans,
             IConnectionManager connectionManager,
             IInitialBlockDownloadState initialBlockDownloadState,
-            Signals.Signals signals,
+            Signals.ISignals signals,
             ILoggerFactory loggerFactory,
             Network network)
         {
@@ -390,7 +390,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 await this.validator.SanityCheck();
                 this.RelayTransaction(trxHash);
 
-                this.signals.SignalTransaction(trx);
+                this.signals.OnTransactionReceived.Notify(trx);
 
                 long mmsize = state.MempoolSize;
                 long memdyn = state.MempoolDynamicSize;

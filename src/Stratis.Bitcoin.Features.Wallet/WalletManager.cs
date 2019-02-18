@@ -522,6 +522,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+                if (account == null)
+                    throw new WalletException($"No account with the name '{accountReference.AccountName}' could be found.");
                 extPubKey = account.ExtendedPubKey;
             }
 
@@ -559,6 +561,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 // Get the account.
                 HdAccount account = wallet.GetAccountByCoinType(accountReference.AccountName, this.coinType);
+                if (account == null)
+                    throw new WalletException($"No account with the name '{accountReference.AccountName}' could be found.");
 
                 List<HdAddress> unusedAddresses = isChange ?
                     account.InternalAddresses.Where(acc => !acc.Transactions.Any()).ToList() :
@@ -606,7 +610,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var accounts = new List<HdAccount>();
                 if (!string.IsNullOrEmpty(accountName))
                 {
-                    accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
+                    HdAccount account = wallet.GetAccountByCoinType(accountName, this.coinType);
+                    if (account == null)
+                        throw new WalletException($"No account with the name '{accountName}' could be found.");
+
+                    accounts.Add(account);
                 }
                 else
                 {
@@ -650,7 +658,11 @@ namespace Stratis.Bitcoin.Features.Wallet
                 var accounts = new List<HdAccount>();
                 if (!string.IsNullOrEmpty(accountName))
                 {
-                    accounts.Add(wallet.GetAccountByCoinType(accountName, this.coinType));
+                    HdAccount account = wallet.GetAccountByCoinType(accountName, this.coinType);
+                    if (account == null)
+                        throw new WalletException($"No account with the name '{accountName}' could be found.");
+
+                    accounts.Add(account);
                 }
                 else
                 {
@@ -717,7 +729,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotEmpty(walletName, nameof(walletName));
 
             Wallet wallet = this.GetWalletByName(walletName);
-            
+
             return wallet;
         }
 
@@ -815,7 +827,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             {
                 res = wallet.GetAllSpendableTransactions(this.coinType, this.chain.Tip.Height, confirmations, accountFilter).ToArray();
             }
-            
+
             return res;
         }
 
@@ -839,7 +851,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network, confirmations).ToArray();
             }
-            
+
             return res;
         }
 
@@ -1149,7 +1161,7 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
 
             // If the transaction is spent and confirmed, we remove the UTXO from the lookup dictionary.
-            if (spentTransaction.BlockHeight != null)
+            if (spentTransaction.SpendingDetails.BlockHeight != null)
             {
                 this.RemoveInputKeysLookupLock(spentTransaction);
             }
@@ -1298,7 +1310,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Create a folder if none exists and persist the file.
             this.SaveWallet(walletFile);
-            
+
             return walletFile;
         }
 
@@ -1332,7 +1344,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             // Create a folder if none exists and persist the file.
             this.SaveWallet(walletFile);
-            
+
             return walletFile;
         }
 
