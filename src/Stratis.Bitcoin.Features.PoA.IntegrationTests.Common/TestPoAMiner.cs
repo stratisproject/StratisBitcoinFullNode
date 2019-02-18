@@ -57,9 +57,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
         protected override async Task<uint> WaitUntilMiningSlotAsync()
         {
             uint nextTimestamp = await this.timestampQueue.DequeueAsync(this.cancellation.Token).ConfigureAwait(false);
-            long timeToAdd = nextTimestamp - this.timeProvider.GetAdjustedTimeAsUnixTimestamp();
 
-            this.timeProvider.AdjustedTimeOffset += TimeSpan.FromSeconds(timeToAdd);
+            var dateTime = new DateTime(1970, 1, 1, 0, 0, 0, 0, DateTimeKind.Utc);
+            dateTime = dateTime.AddSeconds(nextTimestamp);
+
+            this.timeProvider.AdjustedTimeOffset += dateTime.TimeOfDay;
 
             return nextTimestamp;
         }
