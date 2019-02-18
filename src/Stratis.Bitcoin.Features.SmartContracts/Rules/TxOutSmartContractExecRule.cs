@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             int smartContractExecCount = transaction.Outputs.Count(o => o.ScriptPubKey.IsSmartContractExec());
 
             if ((transaction.IsCoinBase)  && smartContractExecCount >= 1)
-                new ConsensusError("smartcontractexec-in-coinbase", "coinbase or coinstake contains smartcontractexec output").Throw();
+                new ConsensusError("smartcontractexec-in-coinbase", "coinbase contains smartcontractexec output").Throw();
 
             if (smartContractExecCount > 1)
                 new ConsensusError("multiple-smartcontractexec-outputs", "transaction contains multiple smartcontractexec outputs").Throw();
