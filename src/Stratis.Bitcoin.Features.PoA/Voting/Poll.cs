@@ -13,19 +13,22 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         }
 
         /// <summary>
-        /// <c>true</c> if poll's result wasn't applied.
-        /// <c>false</c> in case majority of fed members voted in favor and result of the poll was applied.</summary>
-        public bool IsPending => (this.PollAppliedBlockHash == null) || (this.PollAppliedBlockHash == uint256.Zero);
+        /// <c>true</c> if poll still didn't get enough votes.
+        /// <c>false</c> in case majority of fed members voted in favor and result of the poll was scheduled to be applied after max reorg blocks are mined.</summary>
+        public bool IsPending => (this.PollVotedInFavorBlockHash == null) || (this.PollVotedInFavorBlockHash == uint256.Zero);
 
         public int Id;
 
-        /// <summary>Hash of a block where the poll's result was applied. <c>null</c> if it wasn't applied.</summary>
-        public uint256 PollAppliedBlockHash;
+        /// <summary>Hash of a block where the poll got sufficient amount of votes. <c>null</c> if it number of votes is still insufficient.</summary>
+        public uint256 PollVotedInFavorBlockHash;
 
         public VotingData VotingData;
 
         /// <summary>Hash of a block where the poll was started.</summary>
         public uint256 PollStartBlockHash;
+
+        /// <summary>Hash of a block where the poll's changes were applied.</summary>
+        public uint256 PollExecutedBlockHash;
 
         /// <summary>List of fed member's public keys that voted in favor.</summary>
         public List<string> PubKeysHexVotedInFavor;
@@ -39,9 +42,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         public void ReadWrite(BitcoinStream stream)
         {
             stream.ReadWrite(ref this.Id);
-            stream.ReadWrite(ref this.PollAppliedBlockHash);
+            stream.ReadWrite(ref this.PollVotedInFavorBlockHash);
             stream.ReadWrite(ref this.VotingData);
             stream.ReadWrite(ref this.PollStartBlockHash);
+            stream.ReadWrite(ref this.PollExecutedBlockHash);
 
             if (stream.Serializing)
             {
@@ -61,7 +65,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         public override string ToString()
         {
             return $"{nameof(this.IsPending)}:{this.IsPending}, {nameof(this.Id)}:{this.Id}, {nameof(this.PollStartBlockHash)}:{this.PollStartBlockHash?.ToString() ?? "null"}, " +
-                $"{nameof(this.PollAppliedBlockHash)}:{this.PollAppliedBlockHash?.ToString() ?? "null"}, {nameof(this.PubKeysHexVotedInFavor)}:{string.Join(" ", this.PubKeysHexVotedInFavor)}";
+                $"{nameof(this.PollVotedInFavorBlockHash)}:{this.PollVotedInFavorBlockHash?.ToString() ?? "null"}, {nameof(this.PubKeysHexVotedInFavor)}:{string.Join(" ", this.PubKeysHexVotedInFavor)}";
         }
     }
 }

@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                     Data = RandomUtils.GetBytes(50),
                     Key = VoteKey.AddFederationMember
                 },
-                PollAppliedBlockHash = uint256.One,
+                PollVotedInFavorBlockHash = uint256.One,
                 PollStartBlockHash = uint256.One,
                 PubKeysHexVotedInFavor = new List<string>()
                 {
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             Assert.Equal(poll.Id, deserializedPoll.Id);
             Assert.Equal(poll.VotingData, deserializedPoll.VotingData);
-            Assert.Equal(poll.PollAppliedBlockHash, deserializedPoll.PollAppliedBlockHash);
+            Assert.Equal(poll.PollVotedInFavorBlockHash, deserializedPoll.PollVotedInFavorBlockHash);
             Assert.Equal(poll.PollStartBlockHash, deserializedPoll.PollStartBlockHash);
             Assert.Equal(poll.PubKeysHexVotedInFavor.Count, deserializedPoll.PubKeysHexVotedInFavor.Count);
 

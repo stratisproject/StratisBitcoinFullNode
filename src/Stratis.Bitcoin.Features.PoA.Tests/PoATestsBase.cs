@@ -108,6 +108,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 targetSpacingSeconds: 60,
                 votingEnabled: baseOptions.VotingEnabled
             );
+
+            this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), 5);
         }
     }
 }

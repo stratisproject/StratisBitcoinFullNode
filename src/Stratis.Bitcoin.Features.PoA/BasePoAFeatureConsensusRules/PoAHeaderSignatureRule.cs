@@ -14,6 +14,10 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 
         private SlotsManager slotsManager;
 
+        private uint maxReorg;
+
+        private bool votingEnabled;
+
         /// <inheritdoc />
         public override void Initialize()
         {
@@ -23,6 +27,9 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 
             this.slotsManager = engine.SlotsManager;
             this.validator = engine.poaHeaderValidator;
+
+            this.maxReorg = this.Parent.Network.Consensus.MaxReorgLength;
+            this.votingEnabled = ((PoAConsensusOptions) this.Parent.Network.Consensus.Options).VotingEnabled;
         }
 
         public override void Run(RuleContext context)
@@ -33,6 +40,9 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 
             if (!this.validator.VerifySignature(pubKey, header))
             {
+                if (this.votingEnabled)
+                    context.ValidationContext.InsufficientHeaderInformation = true;
+
                 this.Logger.LogTrace("(-)[INVALID_SIGNATURE]");
                 PoAConsensusErrors.InvalidHeaderSignature.Throw();
             }

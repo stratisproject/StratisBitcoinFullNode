@@ -311,6 +311,16 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             File.WriteAllText(this.Config, configParameters.ToString());
         }
 
+        public void ConnectTo(CoreNode node)
+        {
+            this.FullNode.NodeService<IPeerAddressManager>().AddPeer(node.Endpoint, IPAddress.Loopback);
+        }
+
+        public void DisconnectFrom(CoreNode node)
+        {
+            this.FullNode.NodeService<IPeerAddressManager>().RemovePeer(node.Endpoint);
+        }
+
         public void Restart()
         {
             this.Kill();
