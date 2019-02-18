@@ -51,18 +51,11 @@ namespace Stratis.Bitcoin.Features.RPC
             Exception ex = null;
             try
             {
-                // Allows streams to be read multiple times.
-                httpContext.Request.EnableRewind();
+                string request = await this.ReadRequestAsync(httpContext.Request).ConfigureAwait(false);
 
-                // Read the request.
-                byte[] requestBuffer = new byte[httpContext.Request.ContentLength.Value];
-                await httpContext.Request.Body.ReadAsync(requestBuffer, 0, requestBuffer.Length);
-                var requestBody = Encoding.UTF8.GetString(requestBuffer);
-                httpContext.Request.Body.Position = 0;
+                this.logger.LogDebug("RPC request: {0}", request);
 
-                this.logger.LogDebug("RPC request: {0}", requestBody);
-
-                JToken token = string.IsNullOrEmpty(requestBody) ? null : JToken.Parse(requestBody);
+                JToken token = string.IsNullOrEmpty(request) ? null : JToken.Parse(request);
 
                 if (token is JArray)
                 {
@@ -82,6 +75,22 @@ namespace Stratis.Bitcoin.Features.RPC
             }
 
             await this.HandleRpcInvokeExceptionAsync(httpContext, ex);
+        }
+
+        private async Task<string> ReadRequestAsync(HttpRequest request)
+        {
+            // Allows streams to be read multiple times.
+            request.EnableRewind();
+
+            // Read the request.
+            byte[] requestBuffer = new byte[request.ContentLength.Value];
+            await request.Body.ReadAsync(requestBuffer, 0, requestBuffer.Length).ConfigureAwait(false);
+
+            string requestBody = Encoding.UTF8.GetString(requestBuffer);
+
+            request.Body.Position = 0;
+
+            return requestBody;
         }
 
         private async Task HandleRpcInvokeExceptionAsync(HttpContext httpContext, Exception ex)
@@ -225,7 +234,7 @@ namespace Stratis.Bitcoin.Features.RPC
                     return false;
                 }
             }
-            catch(Exception ex)
+            catch (Exception ex)
             {
                 this.logger.LogError("Exception occurred during authorisation: {0}.", ex.Message);
                 return false;
