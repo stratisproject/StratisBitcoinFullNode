@@ -43,37 +43,5 @@ namespace Stratis.Bitcoin.Utilities
                 }
             }
         }
-
-        /// <summary>
-        /// Execute logic that should be retried if failure defined by <c>TException</c> occurs.
-        /// </summary>
-        /// <param name="retryOptions">Retry options, including number of retries and delay between them.</param>
-        /// <param name="actionToExecute">Logic to be executed.</param>
-        /// <param name="logger">Optional logger.</param>
-        public static TReturn Run<TReturn>(RetryOptions retryOptions, Func<TReturn> actionToExecute, ILogger logger = null)
-        {
-            if (retryOptions == null || retryOptions.RetryCount == 0)
-            {
-                return actionToExecute();
-            }
-
-            for (int i = 0; i <= retryOptions.RetryCount; i++)
-            {
-                try
-                {
-                    TReturn result = actionToExecute();
-                    return result;
-                }
-                catch (Exception ex)
-                {
-                    if (retryOptions.ExceptionTypes.All(et => et != ex.GetType()) || i >= retryOptions.RetryCount) throw;
-
-                    if (logger != null) logger.LogError("Failed to commit transaction. Retrying.", ex);
-                    Task.Delay(retryOptions.Delay).GetAwaiter().GetResult();
-                }
-            }
-
-            throw new InvalidOperationException("Retry strategy execution failed.");
-        }
     }
 }
