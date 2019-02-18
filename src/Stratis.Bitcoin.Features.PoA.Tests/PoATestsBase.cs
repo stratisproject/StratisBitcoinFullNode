@@ -105,7 +105,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 maxBlockSigopsCost: baseOptions.MaxBlockSigopsCost,
                 maxStandardTxSigopsCost: baseOptions.MaxStandardTxSigopsCost,
                 federationPublicKeys: federationPublicKeys,
-                targetSpacingSeconds: 60
+                targetSpacingSeconds: 60,
+                votingEnabled: baseOptions.VotingEnabled
             );
         }
     }

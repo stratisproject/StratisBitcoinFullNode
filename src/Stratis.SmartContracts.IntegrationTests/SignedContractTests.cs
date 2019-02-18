@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
@@ -31,7 +28,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
 
-        [Fact]
+        [Retry]
         public void Create_Signed_Contract()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -42,7 +39,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Compile file
                 byte[] toSend = new CSharpContractSigner(new ContractSigner()).PackageSignedCSharpFile(this.network.SigningContractPrivKey, "SmartContracts/StorageDemo.cs");
-                
+
                 // Send create with value, and ensure balance is stored.
                 BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(toSend, 30);
                 node1.WaitMempoolCount(1);
@@ -53,7 +50,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void Create_NoSignature_Fails()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -71,7 +68,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void Create_InvalidSignature_Fails()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -89,7 +86,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public async Task Create_NoSignature_Mempool_Rejects()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -128,7 +125,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public async Task Create_InvalidSignature_Mempool_Rejects()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())

@@ -52,9 +52,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly VotingManager votingManager;
 
+        private readonly Network network;
+
         public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
-            IPoAMiner miner, VotingManager votingManager)
+            IPoAMiner miner, VotingManager votingManager, Network network)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
@@ -65,6 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.loggerFactory = loggerFactory;
             this.miner = miner;
             this.votingManager = votingManager;
+            this.network = network;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
         }
@@ -86,13 +89,16 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.federationManager.Initialize();
 
+            if (((PoAConsensusOptions)this.network.Consensus.Options).VotingEnabled)
+            {
+                this.votingManager.Initialize();
+            }
+
             if (this.federationManager.IsFederationMember)
             {
                 // Enable mining because we are a federation member.
                 this.miner.InitializeMining();
             }
-
-            this.votingManager.Initialize();
 
             return Task.CompletedTask;
         }
@@ -101,6 +107,8 @@ namespace Stratis.Bitcoin.Features.PoA
         public override void Dispose()
         {
             this.miner.Dispose();
+
+            this.votingManager.Dispose();
         }
     }
 
