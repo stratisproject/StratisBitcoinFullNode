@@ -56,10 +56,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             await baseRunAsync(context);
 
-            if (new uint256(this.mutableStateRepository.Root) != ((ISmartContractBlockHeader)block.Header).HashStateRoot)
+            var blockHeader = (ISmartContractBlockHeader) block.Header;
+
+            if (new uint256(this.mutableStateRepository.Root) != blockHeader.HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
-            ValidateAndStoreReceipts(((ISmartContractBlockHeader)block.Header).ReceiptRoot);
+            ValidateAndStoreReceipts(blockHeader.ReceiptRoot);
+            ValidateLogsBloom(blockHeader.LogsBloom);
 
             // Push to underlying database
             this.mutableStateRepository.Commit();
@@ -133,6 +136,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// </summary>
         public void ValidateRefunds(TxOut refund, Transaction coinbaseTransaction)
         {
+            // Check that this refund exists before trying to retrieve in case of incorrect block coming in
+            if (this.refundCounter >= coinbaseTransaction.Outputs.Count)
+                SmartContractConsensusErrors.MissingRefundOutput.Throw();
+
             TxOut refundToMatch = coinbaseTransaction.Outputs[this.refundCounter];
             if (refund.Value != refundToMatch.Value || refund.ScriptPubKey != refundToMatch.ScriptPubKey)
             {
@@ -232,10 +239,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (receiptRoot != expectedReceiptRoot)
                 SmartContractConsensusErrors.UnequalReceiptRoots.Throw();
 
-            // TODO: Could also check for equality of logsBloom?
-
             this.ContractCoinviewRule.ReceiptRepository.Store(this.receipts);
-            this.receipts.Clear();
+        }
+
+        private void ValidateLogsBloom(Bloom blockBloom)
+        {
+            Bloom logsBloom = new Bloom();
+
+            foreach (Receipt receipt in this.receipts)
+            {
+                logsBloom.Or(receipt.Bloom);
+            }
+
+            if (logsBloom != blockBloom)
+                SmartContractConsensusErrors.UnequalLogsBloom.Throw();
         }
 
         public bool CheckInput(Func<Transaction, int, TxOut, PrecomputedTransactionData, TxIn, DeploymentFlags, bool> baseCheckInput, Transaction tx, int inputIndexCopy, TxOut txout, PrecomputedTransactionData txData, TxIn input, DeploymentFlags flags)

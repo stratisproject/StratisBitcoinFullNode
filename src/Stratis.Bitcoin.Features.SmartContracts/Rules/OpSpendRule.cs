@@ -1,15 +1,15 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
     /// <summary>
-    /// If OP_SPEND, check that the transaction before is a contract call
+    /// If a transaction's inputs contain an OP_SPEND opcode in the scriptsig, check that the transaction
+    /// that occurs directly before contains OP_CREATE or OP_CALL in its outputs. In conjunction with
+    /// <see cref="MempoolOpSpendRule"/>, ensures that only a contract execution transaction is able to
+    /// create OP_SPEND inputs.
     /// </summary>
     public class OpSpendRule : FullValidationConsensusRule
     {
@@ -17,25 +17,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             Block block = context.ValidationContext.BlockToValidate;
 
-            IEnumerable<Transaction> opSpendTransactions = block.Transactions.Where(tx =>
-                tx.IsSmartContractSpendTransaction());
-
-            foreach (Transaction opSpendTransaction in opSpendTransactions)
+            for (var i = 0; i < block.Transactions.Count; i++)
             {
-                var thisIndex = block.Transactions.IndexOf(opSpendTransaction);
+                var transaction = block.Transactions[i];
 
-                if (thisIndex <= 0)
+                // If the inputs to the transaction do not contain an OP_SPEND, continue.
+                if (!transaction.IsSmartContractSpendTransaction())
+                    continue;
+
+                // If i == 0, there can be no previous OP_CALL or OP_CREATE, so OP_SPEND is invalid.
+                if (i == 0)
                 {
                     this.Throw();
                 };
 
-                Transaction previousTransaction = block.Transactions[thisIndex - 1];
+                Transaction previousTransaction = block.Transactions[i - 1];
 
-                // This previously would only check that the contract was a call. However we also have to check for create as inside the constructor
-                // we could make a call to another contract and that could send funds!
-                var previousWasOpCall = previousTransaction.Outputs.Any(o => SmartContractScript.IsSmartContractExec(o.ScriptPubKey));
-
-                if (!previousWasOpCall)
+                // Check for OP_CREATE and OP_CALL outputs because both opcodes can be followed by an OP_SPEND input.
+                if (!previousTransaction.IsSmartContractExecTransaction())
                 {
                     this.Throw();
                 }
