@@ -33,6 +33,11 @@ namespace Stratis.Bitcoin.Connection
         void BanAndDisconnectPeer(IPEndPoint endpoint, string reason = null);
 
         /// <summary>
+        /// Clears the node's banned peer list.
+        /// </summary>
+        void ClearBannedPeers();
+
+        /// <summary>
         /// Check if a peer is banned.
         /// </summary>
         /// <param name="endpoint">The endpoint to check if it was banned.</param>
@@ -115,6 +120,19 @@ namespace Stratis.Bitcoin.Connection
         public void BanAndDisconnectPeer(IPEndPoint endpoint, string reason = null)
         {
             this.BanAndDisconnectPeer(endpoint, this.connectionManager.ConnectionSettings.BanTimeSeconds, reason);
+        }
+
+        /// <inheritdoc />
+        public void ClearBannedPeers()
+        {
+            foreach (var peer in this.peerAddressManager.Peers)
+            {
+                if (this.IsBanned(peer.Endpoint))
+                {
+                    peer.UnBan();
+                    this.logger.LogDebug("Peer '{0}' was un-banned.", peer.Endpoint);
+                }
+            }
         }
 
         /// <inheritdoc />

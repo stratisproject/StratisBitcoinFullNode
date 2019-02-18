@@ -12,10 +12,10 @@ using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
 {
-    public sealed class NodeControllerApiTests
+    public sealed class NetworkControllerApiTests
     {
         [Fact]
-        public async Task Can_BanAndDisconnect_Peer_From_Api_Async()
+        public async Task Can_BanAndDisconnect_Peer_From_ApiAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -38,13 +38,14 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
                 TestHelper.Connect(nodeA, nodeB);
 
-                var banPeerModel = new BanPeerViewModel()
+                var banPeerModel = new SetBanPeerViewModel()
                 {
                     BanDurationSeconds = 100,
+                    BanCommand = "add",
                     PeerAddress = nodeBIp
                 };
 
-                await $"http://localhost:{nodeA.ApiPort}/api".AppendPathSegment("node/banpeer").PostJsonAsync(banPeerModel);
+                await $"http://localhost:{nodeA.ApiPort}/api".AppendPathSegment("network/setban").PostJsonAsync(banPeerModel);
 
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(nodeA, nodeB));
 
@@ -59,7 +60,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         }
 
         [Fact]
-        public async Task Can_UnBan_Peer_From_Api_Async()
+        public async Task Can_UnBan_Peer_From_ApiAsync()
         {
             using (var builder = NodeBuilder.Create(this))
             {
@@ -78,12 +79,39 @@ namespace Stratis.Bitcoin.IntegrationTests.API
                 peerBanning.BanAndDisconnectPeer(nodeB_EndPoint);
                 Assert.True(peerBanning.IsBanned(nodeB_EndPoint));
 
-                var unBanPeerModel = new UnBanPeerViewModel()
+                var unBanPeerModel = new SetBanPeerViewModel()
                 {
+                    BanCommand = "remove",
                     PeerAddress = nodeB_Ip
                 };
 
-                await $"http://localhost:{nodeA.ApiPort}/api".AppendPathSegment("node/unbanpeer").PostJsonAsync(unBanPeerModel);
+                await $"http://localhost:{nodeA.ApiPort}/api".AppendPathSegment("network/setban").PostJsonAsync(unBanPeerModel);
+
+                Assert.False(peerBanning.IsBanned(nodeB_EndPoint));
+            }
+        }
+
+        [Fact]
+        public async Task Can_ClearAll_Banned_PeersAsync()
+        {
+            using (var builder = NodeBuilder.Create(this))
+            {
+                var network = new StratisRegTest();
+
+                var nodeA = builder.CreateStratisPosNode(network).Start();
+
+                var nodeB_Ip = "127.0.0.2";
+                var nodeB_IpAddress = IPAddress.Parse(nodeB_Ip);
+                var nodeB_EndPoint = new IPEndPoint(nodeB_IpAddress, 0);
+
+                var nodeAaddressManager = nodeA.FullNode.NodeService<IPeerAddressManager>();
+                nodeAaddressManager.AddPeer(new IPEndPoint(nodeB_IpAddress, 0), IPAddress.Loopback);
+
+                var peerBanning = nodeA.FullNode.NodeService<IPeerBanning>();
+                peerBanning.BanAndDisconnectPeer(nodeB_EndPoint);
+                Assert.True(peerBanning.IsBanned(nodeB_EndPoint));
+
+                await $"http://localhost:{nodeA.ApiPort}/api".AppendPathSegment("network/clearbanned").PostJsonAsync(null);
 
                 Assert.False(peerBanning.IsBanned(nodeB_EndPoint));
             }

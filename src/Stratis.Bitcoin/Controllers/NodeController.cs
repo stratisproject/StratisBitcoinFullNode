@@ -45,9 +45,6 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>The settings for the node.</summary>
         private readonly NodeSettings nodeSettings;
 
-        /// <summary>Network peer banning behaviour.</summary>
-        private readonly IPeerBanning peerBanning;
-
         /// <summary>The connection manager.</summary>
         private readonly IConnectionManager connectionManager;
 
@@ -81,7 +78,6 @@ namespace Stratis.Bitcoin.Controllers
             ILoggerFactory loggerFactory,
             NodeSettings nodeSettings,
             Network network,
-            IPeerBanning peerBanning,
             IBlockStore blockStore = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
@@ -105,7 +101,6 @@ namespace Stratis.Bitcoin.Controllers
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.nodeSettings = nodeSettings;
-            this.peerBanning = peerBanning;
 
             this.blockStore = blockStore;
             this.getUnspentTransaction = getUnspentTransaction;
@@ -175,49 +170,6 @@ namespace Stratis.Bitcoin.Controllers
             }
 
             return this.Json(model);
-        }
-
-        /// <summary>
-        /// Bans and disconnects a connected peer.
-        /// </summary>
-        /// <param name="viewModel">The model that represents the peer to ban.</param>
-        [Route("banpeer")]
-        [HttpPost]
-        public IActionResult BanPeer([FromBody] BanPeerViewModel viewModel)
-        {
-            try
-            {
-                var endpoint = new IPEndPoint(IPAddress.Parse(viewModel.PeerAddress), 0);
-                this.peerBanning.BanAndDisconnectPeer(endpoint, viewModel.BanDurationSeconds, "Banned via api.");
-                return this.Ok();
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
-        }
-
-        /// <summary>
-        /// Un-bans a peer.
-        /// </summary>
-        /// <param name="viewModel">The model that represents the peer to un-ban.</param>
-        [Route("unbanpeer")]
-        [HttpPost]
-        public IActionResult UnBanPeer([FromBody] UnBanPeerViewModel viewModel)
-        {
-            try
-            {
-                var endpoint = new IPEndPoint(IPAddress.Parse(viewModel.PeerAddress), 0);
-                this.peerBanning.UnBanPeer(endpoint);
-
-                return this.Ok();
-            }
-            catch (Exception e)
-            {
-                this.logger.LogError("Exception occurred: {0}", e.ToString());
-                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
-            }
         }
 
         /// <summary>

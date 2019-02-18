@@ -218,6 +218,11 @@ namespace Stratis.Bitcoin.Tests.Base
                 this.WasBanningCalled = true;
             }
 
+            public void ClearBannedPeers()
+            {
+                throw new NotImplementedException();
+            }
+
             public bool IsBanned(IPEndPoint endpoint)
             {
                 return this.WasBanningCalled;
