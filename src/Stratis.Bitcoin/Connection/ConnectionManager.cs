@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Connection
                 peerHeights += $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
 
                 // TODO: Need a snapshot cache so that not only currently connected peers are summed
-                string peerTraffic = $"R/S MB: {(peer.Counter.ReadBytes / 1048576.0):0.##}/{(peer.Counter.WrittenBytes / 1048576.0):0.##}";
+                string peerTraffic = $"R/S MB: {peer.Counter.ReadBytes.BytesToMegaBytes()}/{peer.Counter.WrittenBytes.BytesToMegaBytes()}";
                 totalRead += peer.Counter.ReadBytes;
                 totalWritten += peer.Counter.WrittenBytes;
 
@@ -254,7 +254,7 @@ namespace Stratis.Bitcoin.Connection
             int inbound = this.ConnectedPeers.Count(x => x.Inbound);
 
             builder.AppendLine();
-            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}] [recv: {totalRead} sent: {totalWritten}]");
+            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}] [recv: {totalRead.BytesToMegaBytes()} MB sent: {totalWritten.BytesToMegaBytes()} MB]");
             builder.AppendLine(peerBuilder.ToString());
         }
 
