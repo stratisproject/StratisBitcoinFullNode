@@ -4,7 +4,6 @@ using System.Linq;
 using System.Threading.Tasks;
 using DBreeze;
 using DBreeze.DataTypes;
-using DBreeze.Exceptions;
 using DBreeze.Utils;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
