@@ -15,6 +15,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
@@ -309,16 +310,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             configParameters.SetDefaultValueIfUndefined("agentprefix", "node" + this.ProtocolPort);
             configParameters.Import(this.ConfigParameters);
             File.WriteAllText(this.Config, configParameters.ToString());
-        }
-
-        public void ConnectTo(CoreNode node)
-        {
-            this.FullNode.NodeService<IPeerAddressManager>().AddPeer(node.Endpoint, IPAddress.Loopback);
-        }
-
-        public void DisconnectFrom(CoreNode node)
-        {
-            this.FullNode.NodeService<IPeerAddressManager>().RemovePeer(node.Endpoint);
         }
 
         public void Restart()

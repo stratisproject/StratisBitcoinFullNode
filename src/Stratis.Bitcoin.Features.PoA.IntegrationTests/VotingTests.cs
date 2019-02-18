@@ -4,10 +4,13 @@ using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
@@ -38,7 +41,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         {
             int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
 
-            this.node1.ConnectTo(this.node2);
+            TestHelper.Connect(this.node1, this.node2);
 
             await this.node1.MineBlocksAsync(3);
 
@@ -72,8 +75,9 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
             Assert.Equal(originalFedMembersCount + 1, this.node2.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
 
-            this.node3.ConnectTo(this.node1);
-            this.node3.ConnectTo(this.node2);
+            TestHelper.Connect(this.node2, this.node3);
+
+            // TODO ensure reorg reverts applying adding fed members
 
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
         }
