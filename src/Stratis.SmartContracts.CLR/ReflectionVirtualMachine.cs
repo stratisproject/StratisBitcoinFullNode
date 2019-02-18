@@ -233,9 +233,9 @@ namespace Stratis.SmartContracts.CLR
             {
                 contract = Contract.CreateUninitialized(type, contractState, address);
             }
-            catch (Exception)
+            catch (Exception e)
             {
-                return Result.Fail<IContract>("Error instantiating contract instance");
+                return Result.Fail<IContract>("Exception occurred while instantiating contract instance: " + e.ToString());
             }
 
             return Result.Ok(contract);
