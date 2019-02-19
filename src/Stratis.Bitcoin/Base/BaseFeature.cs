@@ -361,7 +361,7 @@ namespace Stratis.Bitcoin.Base
                     services.AddSingleton<INodeLifetime, NodeLifetime>();
                     services.AddSingleton<IPeerBanning, PeerBanning>();
                     services.AddSingleton<FullNodeFeatureExecutor>();
-                    services.AddSingleton<Signals.Signals>().AddSingleton<ISignals, Signals.Signals>(provider => provider.GetService<Signals.Signals>());
+                    services.AddSingleton<ISignals, Signals.Signals>();
                     services.AddSingleton<FullNode>().AddSingleton((provider) => { return provider.GetService<FullNode>() as IFullNode; });
                     services.AddSingleton<ConcurrentChain>(new ConcurrentChain(fullNodeBuilder.Network));
                     services.AddSingleton<IDateTimeProvider>(DateTimeProvider.Default);

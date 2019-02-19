@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             ConcurrentChain chain,
             IInitialBlockDownloadState initialBlockDownloadState,
             IPeerBanning peerBanning,
-            Signals.Signals signals,
+            Signals.ISignals signals,
             ILoggerFactory loggerFactory,
             ICheckpoints checkpoints,
             IProvenBlockHeaderStore provenBlockHeaderStore,

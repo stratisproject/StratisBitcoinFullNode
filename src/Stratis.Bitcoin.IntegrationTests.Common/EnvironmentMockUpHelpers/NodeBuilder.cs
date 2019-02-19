@@ -93,9 +93,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             throw new FileNotFoundException($"Could not load the file {path}.");
         }
 
-        protected CoreNode CreateNode(NodeRunner runner, string configFile = "bitcoin.conf", bool useCookieAuth = false)
+        protected CoreNode CreateNode(NodeRunner runner, string configFile = "bitcoin.conf", bool useCookieAuth = false, NodeConfigParameters configParameters = null)
         {
-            var node = new CoreNode(runner, this.ConfigParameters, configFile, useCookieAuth);
+            var node = new CoreNode(runner, configParameters, configFile, useCookieAuth);
             this.Nodes.Add(node);
             return node;
         }
@@ -120,10 +120,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
         /// </summary>
         /// <param name="network">The network the node will run on.</param>
         /// <param name="agent">Overrides the node's agent prefix.</param>
+        /// <param name="configParameters">Adds to the nodes configuration parameters.</param>
         /// <returns>The constructed PoW node.</returns>
-        public CoreNode CreateStratisPowNode(Network network, string agent = null)
+        public CoreNode CreateStratisPowNode(Network network, string agent = null, NodeConfigParameters configParameters = null)
         {
-            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network, agent));
+            return CreateNode(new StratisBitcoinPowRunner(this.GetNextDataFolderName(), network, agent), configParameters: configParameters);
         }
 
         public CoreNode CreateStratisCustomPowNode(Network network, NodeConfigParameters configParameters)

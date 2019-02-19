@@ -27,9 +27,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
     /// <seealso cref="https://github.com/bitcoin/bitcoin/blob/6dbcc74a0e0a7d45d20b03bb4eb41a027397a21d/src/txmempool.cpp"/>
     public class MempoolFeature : FullNodeFeature
     {
-        /// <summary>Node notifications available to subscribe to.</summary>
-        private readonly Signals.Signals signals;
-
         /// <summary>Connection manager for managing node connections.</summary>
         private readonly IConnectionManager connectionManager;
 
@@ -48,45 +45,30 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary>Instance logger for the memory pool component.</summary>
         private readonly ILogger logger;
 
-        /// <summary>Settings for the memory pool component.</summary>
-        private readonly MempoolSettings mempoolSettings;
-
-        /// <summary>Settings for the node.</summary>
-        private readonly NodeSettings nodeSettings;
-
         /// <summary>
         /// Constructs a memory pool feature.
         /// </summary>
         /// <param name="connectionManager">Connection manager for managing node connections.</param>
-        /// <param name="signals">Node notifications available to subscribe to.</param>
         /// <param name="mempoolSignaled">Observes block signal notifications from signals.</param>
         /// <param name="blocksDisconnectedSignaled">Observes reorged headers signal notifications from signals.</param>
         /// <param name="mempoolBehavior">Memory pool node behavior for managing attached node messages.</param>
         /// <param name="mempoolManager">Memory pool manager for managing external access to memory pool.</param>
-        /// <param name="nodeSettings">User defined node settings.</param>
         /// <param name="loggerFactory">Logger factory for creating instance logger.</param>
-        /// <param name="mempoolSettings">Mempool settings.</param>
         public MempoolFeature(
             IConnectionManager connectionManager,
-            Signals.Signals signals,
             MempoolSignaled mempoolSignaled,
             BlocksDisconnectedSignaled blocksDisconnectedSignaled,
             MempoolBehavior mempoolBehavior,
             MempoolManager mempoolManager,
-            NodeSettings nodeSettings,
             ILoggerFactory loggerFactory,
-            MempoolSettings mempoolSettings,
             INodeStats nodeStats)
         {
-            this.signals = signals;
             this.connectionManager = connectionManager;
             this.mempoolSignaled = mempoolSignaled;
             this.blocksDisconnectedSignaled = blocksDisconnectedSignaled;
             this.mempoolBehavior = mempoolBehavior;
             this.mempoolManager = mempoolManager;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.mempoolSettings = mempoolSettings;
-            this.nodeSettings = nodeSettings;
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
@@ -107,10 +89,9 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             await this.mempoolManager.LoadPoolAsync().ConfigureAwait(false);
 
             this.connectionManager.Parameters.TemplateBehaviors.Add(this.mempoolBehavior);
-            this.signals.SubscribeForBlocksConnected(this.mempoolSignaled);
             this.mempoolSignaled.Start();
 
-            this.signals.SubscribeForBlocksDisconnected(this.blocksDisconnectedSignaled);
+            this.blocksDisconnectedSignaled.Initialize();
         }
 
         /// <summary>
@@ -147,6 +128,8 @@ namespace Stratis.Bitcoin.Features.MemoryPool
                 this.logger.LogWarning("Memory Pool Not Saved!");
             }
 
+            this.blocksDisconnectedSignaled.Dispose();
+
             this.mempoolSignaled.Stop();
         }
     }
@@ -165,7 +148,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         {
             LoggingConfiguration.RegisterFeatureNamespace<MempoolFeature>("mempool");
             LoggingConfiguration.RegisterFeatureNamespace<BlockPolicyEstimator>("estimatefee");
-            
+
             fullNodeBuilder.ConfigureFeature(features =>
             {
                 features

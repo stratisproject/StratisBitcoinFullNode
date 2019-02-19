@@ -7,10 +7,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
     /// <summary>Information about active poll.</summary>
     public class Poll : IBitcoinSerializable
     {
+        public Poll()
+        {
+            this.PubKeysHexVotedInFavor = new List<string>();
+        }
+
         /// <summary>
         /// <c>true</c> if poll's result wasn't applied.
         /// <c>false</c> in case majority of fed members voted in favor and result of the poll was applied.</summary>
-        public bool IsActive => this.PollAppliedBlockHash == null;
+        public bool IsPending => (this.PollAppliedBlockHash == null) || (this.PollAppliedBlockHash == uint256.Zero);
 
         public int Id;
 
@@ -51,6 +56,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
                 this.PubKeysHexVotedInFavor = arr.ToList();
             }
+        }
+
+        public override string ToString()
+        {
+            return $"{nameof(this.IsPending)}:{this.IsPending}, {nameof(this.Id)}:{this.Id}, {nameof(this.PollStartBlockHash)}:{this.PollStartBlockHash?.ToString() ?? "null"}, " +
+                $"{nameof(this.PollAppliedBlockHash)}:{this.PollAppliedBlockHash?.ToString() ?? "null"}, {nameof(this.PubKeysHexVotedInFavor)}:{string.Join(" ", this.PubKeysHexVotedInFavor)}";
         }
     }
 }
