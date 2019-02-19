@@ -157,12 +157,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollVotedInFavorBlockHash == newFinalizedHash).ToList())
+                foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollVotedInFavorBlockData.Hash == newFinalizedHash).ToList())
                 {
                     this.logger.LogDebug("Applying poll '{0}'.", poll);
                     this.pollResultExecutor.ApplyChange(poll.VotingData);
 
-                    poll.PollExecutedBlockHash = chBlock.ChainedHeader.HashBlock;
+                    poll.PollExecutedBlockData = new HashHeightPair(chBlock.ChainedHeader);
                     this.pollsRepository.UpdatePoll(poll);
                 }
             }
@@ -193,9 +193,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                         poll = new Poll()
                         {
                             Id = this.pollsRepository.GetHighestPollId() + 1,
-                            PollVotedInFavorBlockHash = null,
-                            PollExecutedBlockHash = null,
-                            PollStartBlockHash = chBlock.Block.GetHash(),
+                            PollVotedInFavorBlockData = null,
+                            PollExecutedBlockData = null,
+                            PollStartBlockData = new HashHeightPair(chBlock.ChainedHeader),
                             VotingData = data,
                             PubKeysHexVotedInFavor = new List<string>() { fedMemberKeyHex }
                         };
@@ -230,7 +230,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     if (validVotesCount < requiredVotesCount)
                         continue;
 
-                    poll.PollVotedInFavorBlockHash = chBlock.Block.GetHash();
+                    poll.PollVotedInFavorBlockData = new HashHeightPair(chBlock.ChainedHeader);
                     this.pollsRepository.UpdatePoll(poll);
                 }
             }
@@ -240,12 +240,12 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             lock (this.locker)
             {
-                foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollExecutedBlockHash == chBlock.ChainedHeader.HashBlock).ToList())
+                foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollExecutedBlockData.Hash == chBlock.ChainedHeader.HashBlock).ToList())
                 {
-                    this.logger.LogDebug("Reverting poll '{0}'.", poll);
+                    this.logger.LogDebug("Reverting poll execution '{0}'.", poll);
                     this.pollResultExecutor.RevertChange(poll.VotingData);
 
-                    poll.PollExecutedBlockHash = null;
+                    poll.PollExecutedBlockData = null;
                     this.pollsRepository.UpdatePoll(poll);
                 }
             }
@@ -263,15 +263,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             lock (this.locker)
             {
-                // TODO add logs
                 foreach (VotingData votingData in votingDataList)
                 {
                     // Poll that was finished in the block being disconnected.
                     Poll targetPoll = this.polls.Single(x => x.VotingData == votingData);
 
-                    if (targetPoll.PollVotedInFavorBlockHash == chBlock.Block.GetHash())
+                    this.logger.LogDebug("Reverting poll voting in favor: '{0}'.", targetPoll);
+
+                    if (targetPoll.PollVotedInFavorBlockData == new HashHeightPair(chBlock.ChainedHeader))
                     {
-                        targetPoll.PollVotedInFavorBlockHash = null;
+                        targetPoll.PollVotedInFavorBlockData = null;
 
                         this.pollsRepository.UpdatePoll(targetPoll);
                     }
@@ -285,6 +286,8 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
                     {
                         this.polls.Remove(targetPoll);
                         this.pollsRepository.RemovePolls(targetPoll.Id);
+
+                        this.logger.LogDebug("Poll with Id {0} was removed.", targetPoll.Id);
                     }
                 }
             }

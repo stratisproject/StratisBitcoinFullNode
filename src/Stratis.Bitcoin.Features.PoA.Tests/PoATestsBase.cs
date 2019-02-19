@@ -11,6 +11,7 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -29,6 +30,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly ConsensusSettings consensusSettings;
         protected readonly ConcurrentChain chain;
         protected readonly FederationManager federationManager;
+        protected readonly VotingManager votingManager;
+        protected readonly Mock<IPollResultExecutor> resultExecutorMock;
 
         public PoATestsBase(TestPoANetwork network = null)
         {
@@ -45,9 +48,19 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 
-            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain,
-                new NodeDeployments(this.network, this.chain), this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object,
-                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator);
+            var dataFolder = new DataFolder(this.network.RootFolderName);
+            var finalizedBlockRepo = new FinalizedBlockInfoRepository(new KeyValueRepository(dataFolder, new DBreezeSerializer(network)), this.loggerFactory);
+
+            this.resultExecutorMock = new Mock<IPollResultExecutor>();
+
+            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, this.slotsManager, this.resultExecutorMock.Object, new NodeStats(timeProvider),
+                 dataFolder, new DBreezeSerializer(network), new Signals.Signals(), finalizedBlockRepo);
+
+            this.votingManager.Initialize();
+
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain, new NodeDeployments(this.network, this.chain),
+                this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, new ChainState(), new InvalidBlockHashStore(timeProvider),
+                new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager);
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(50, null, false, null, this.network);
 

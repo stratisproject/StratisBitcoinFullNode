@@ -77,10 +77,12 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
             TestHelper.Connect(this.node2, this.node3);
 
-            // TODO ensure reorg reverts applying adding fed members
-
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
         }
+
+
+        // TODO ensure reorg reverts applying adding fed members
+        // TODO ensure that we can sync maxReorg * 3 headers from the federation updated (member added or removed)
 
         public void Dispose()
         {

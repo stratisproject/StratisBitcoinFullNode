@@ -13,8 +13,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 {
     public class VotingManagerTests : PoATestsBase
     {
-        private readonly VotingManager votingManager;
-        private readonly Mock<IPollResultExecutor> resultExecutorMock;
         private readonly VotingDataEncoder encoder;
 
         private readonly List<VotingData> changesApplied;
@@ -28,7 +26,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             DataFolder folder = new DataFolder(dir);
 
-            this.resultExecutorMock = new Mock<IPollResultExecutor>();
+
             this.encoder = new VotingDataEncoder(this.loggerFactory);
             this.changesApplied = new List<VotingData>();
             this.changesReverted = new List<VotingData>();
@@ -40,8 +38,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.signals = new Signals.Signals();
 
-            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, this.slotsManager, this.resultExecutorMock.Object,
-                new NodeStats(new DateTimeProvider()), folder, new DBreezeSerializer(this.network), this.signals);
             this.votingManager.Initialize();
         }
 
