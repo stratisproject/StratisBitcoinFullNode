@@ -84,6 +84,8 @@ namespace Stratis.Bitcoin.Consensus
             // Is the last requested hash the same as this request.
             if (this.getHeaderLastRequestHash == getHeaders.BlockLocator.Blocks.Last())
             {
+                this.logger.LogInformation($"{this.AttachedPeer.PeerEndPoint} block locator matches.");
+
                 // Was this hash requested less than 60 seconds ago.
                 if (this.getHeaderLastRequestedTimestamp > this.dateTimeProvider.GetUtcNow().AddSeconds(-60))
                 {
@@ -100,7 +102,8 @@ namespace Stratis.Bitcoin.Consensus
                 // ban and disconnect the peer for 1 hour.
                 if (this.getHeaderRequestCount > GetHeaderRequestCountThreshold)
                 {
-                    this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"{this.AttachedPeer.PeerEndPoint} banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
+                    // if (this.peerBanning.IsBanned(this.AttachedPeer.PeerEndPoint))
+                    this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
                     this.logger.LogInformation($"{this.AttachedPeer.PeerEndPoint} was banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
                 }
             }
