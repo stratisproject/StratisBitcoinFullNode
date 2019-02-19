@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Controllers
         {
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
             int vmVersion = 1;
-            var gasLimit = (Stratis.SmartContracts.RuntimeObserver.Gas)(SmartContractFormatRule.GasLimitMaximum / 2);
+            var gasLimit = (Stratis.SmartContracts.RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
             var contractTxData = new ContractTxData(vmVersion, gasPrice, gasLimit, new byte[]{0, 1, 2, 3});
             var callDataSerializer = new CallDataSerializer(new ContractPrimitiveSerializer(new SmartContractsRegTest()));
             var contractCreateScript = new Script(callDataSerializer.Serialize(contractTxData));

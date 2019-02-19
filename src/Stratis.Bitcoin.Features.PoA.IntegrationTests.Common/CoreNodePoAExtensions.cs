@@ -1,12 +1,13 @@
-﻿using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+﻿using System.Threading.Tasks;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public static class CoreNodePoAExtensions
     {
-        public static void EnableFastMining(this CoreNode node)
+        public static async Task MineBlocksAsync(this CoreNode node, int count)
         {
-            (node.FullNode.NodeService<IPoAMiner>() as TestPoAMiner).EnableFastMining();
+            await (node.FullNode.NodeService<IPoAMiner>() as TestPoAMiner).MineBlocksAsync(count);
         }
     }
 }

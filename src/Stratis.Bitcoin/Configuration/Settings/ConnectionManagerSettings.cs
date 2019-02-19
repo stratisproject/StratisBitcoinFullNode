@@ -148,8 +148,15 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
+
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
+            if (this.MaxOutboundConnections <= 0)
+                throw new ConfigurationException("The 'maxoutboundconnections' must be greater than zero.");
+
             this.MaxInboundConnections = config.GetOrDefault<int>("maxinboundconnections", nodeSettings.Network.DefaultMaxInboundConnections, this.logger);
+            if (this.MaxInboundConnections < 0)
+                throw new ConfigurationException("The 'maxinboundconnections' must be greater or equal to zero.");
+
             this.InitialConnectionTarget = config.GetOrDefault("initialconnectiontarget", 1, this.logger);
             this.SyncTimeEnabled = config.GetOrDefault<bool>("synctime", true, this.logger);
             this.RelayTxes = !config.GetOrDefault("blocksonly", DefaultBlocksOnly, this.logger);

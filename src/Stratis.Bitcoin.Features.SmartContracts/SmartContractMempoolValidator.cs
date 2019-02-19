@@ -7,10 +7,12 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core.ContractSigning;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -33,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         private readonly List<ISmartContractMempoolRule> feeTxRules;
         private readonly ICallDataSerializer callDataSerializer;
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
             // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
@@ -58,9 +60,21 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 p2pkhRule
             };
 
+            // TODO: Tidy this up. Rules should be injected? Shouldn't be generating here based on Network.
+            var txChecks = new List<IContractTransactionValidationLogic>
+            {
+                new SmartContractFormatLogic()
+            };
+
+            if (network is ISignedCodePubKeyHolder holder)
+            {
+                txChecks.Add(new ContractSignedCodeLogic(new ContractSigner(), holder.SigningContractPubKey));
+            }
+
+
             this.feeTxRules = new List<ISmartContractMempoolRule>()
             {
-                new SmartContractFormatRule(callDataSerializer)
+                new ContractTransactionValidationRule(this.callDataSerializer, txChecks)
             };
         }
 

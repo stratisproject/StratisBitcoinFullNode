@@ -83,7 +83,8 @@ namespace Stratis.Bitcoin.Features.PoA
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPublicKeys,
-                targetSpacingSeconds: 16
+                targetSpacingSeconds: 16,
+                votingEnabled: true
             );
 
             var buriedDeployments = new BuriedDeploymentsArray

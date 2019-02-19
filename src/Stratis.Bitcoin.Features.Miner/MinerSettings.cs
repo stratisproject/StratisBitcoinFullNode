@@ -23,7 +23,7 @@ namespace Stratis.Bitcoin.Features.Miner
         /// Enable the node to stake.
         /// </summary>
         public bool Stake { get; private set; }
-        
+
         /// <summary>
         /// Enable splitting coins when staking.
         /// </summary>
@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Miner
             this.MinimumStakingCoinValue = config.GetOrDefault("minimumstakingcoinvalue", MinimumStakingCoinValueDefaultValue, this.logger);
             this.MinimumStakingCoinValue = this.MinimumStakingCoinValue == 0 ? 1 : this.MinimumStakingCoinValue;
         }
-        
+
         /// <summary>
         /// Displays mining help information on the console.
         /// </summary>

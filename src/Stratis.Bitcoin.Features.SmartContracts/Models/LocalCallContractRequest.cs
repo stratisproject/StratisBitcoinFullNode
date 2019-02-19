@@ -16,10 +16,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
 
         public string Amount { get; set; }
 
-        [Range(SmartContractFormatRule.GasPriceMinimum, SmartContractFormatRule.GasPriceMaximum)]
+        [Range(SmartContractFormatLogic.GasPriceMinimum, SmartContractFormatLogic.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
 
-        [Range(SmartContractFormatRule.GasLimitCallMinimum, SmartContractFormatRule.GasLimitMaximum)]
+        [Range(SmartContractFormatLogic.GasLimitCallMinimum, SmartContractFormatLogic.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
         [IsBitcoinAddress]
