@@ -124,7 +124,7 @@ namespace Stratis.Bitcoin.Consensus
             }
             else
             {
-                this.getHeaderLastRequestHash = getHeaders.BlockLocator.Blocks.Last();
+                this.getHeaderLastRequestHash = getHeaders.BlockLocator.Blocks.First();
                 this.getHeaderRequestCount = 0;
             }
         }
