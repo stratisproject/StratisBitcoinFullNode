@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -9,6 +10,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Interfaces;
@@ -25,7 +27,7 @@ namespace Stratis.Bitcoin.Features.PoA
     /// Blocks can be created only for particular timestamps- once per round.
     /// Round length in seconds is equal to amount of fed members multiplied by target spacing.
     /// Miner's slot in each round is the same and is determined by the index
-    /// of current key in <see cref="PoANetwork.FederationPublicKeys"/>
+    /// of current key in <see cref="FederationManager.GetFederationMembers"/>
     /// </remarks>
     public interface IPoAMiner : IDisposable
     {
@@ -42,7 +44,7 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IDateTimeProvider dateTimeProvider;
 
-        private readonly ILogger logger;
+        protected readonly ILogger logger;
 
         private readonly PoANetwork network;
 
@@ -67,6 +69,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly IWalletManager walletManager;
 
+        private readonly VotingManager votingManager;
+
+        private readonly VotingDataEncoder votingDataEncoder;
+
         private Task miningTask;
 
         public PoAMiner(
@@ -83,7 +89,8 @@ namespace Stratis.Bitcoin.Features.PoA
             FederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
-            INodeStats nodeStats)
+            INodeStats nodeStats,
+            VotingManager votingManager)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -96,15 +103,17 @@ namespace Stratis.Bitcoin.Features.PoA
             this.federationManager = federationManager;
             this.integrityValidator = integrityValidator;
             this.walletManager = walletManager;
+            this.votingManager = votingManager;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
+            this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
 
         /// <inheritdoc />
-        public void InitializeMining()
+        public virtual void InitializeMining()
         {
             if (this.miningTask == null)
             {
@@ -132,19 +141,9 @@ namespace Stratis.Bitcoin.Features.PoA
                         continue;
                     }
 
-                    uint timeNow = (uint) this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
+                    uint miningTimestamp =  await this.WaitUntilMiningSlotAsync().ConfigureAwait(false);
 
-                    if (timeNow <= this.consensusManager.Tip.Header.Time)
-                    {
-                        await this.TaskDelayAsync(500).ConfigureAwait(false);
-                        continue;
-                    }
-
-                    uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
-
-                    await this.WaitUntilWeCanMineAsync(myTimestamp).ConfigureAwait(false);
-
-                    ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
+                    ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(miningTimestamp).ConfigureAwait(false);
 
                     if (chainedHeader == null)
                     {
@@ -168,48 +167,42 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        /// <summary>
-        /// Doesn't let the node progress until the given time slot.
-        /// </summary>
-        /// <param name="myTimestamp">The next time slot this node should mine at.</param>
-        protected virtual async Task WaitUntilWeCanMineAsync(uint myTimestamp)
+        private async Task<uint> WaitUntilMiningSlotAsync()
         {
-            int waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
-
-            this.logger.LogInformation("Waiting {0} seconds until block can be mined.", waitingTime);
-
-            // Accounts for different IDateTimeProvider implementations. The standard implementation would progress
-            // after one iteration, but for other cases where we are emulating time, this may loop more than once.
-            while (waitingTime > 0)
+            while (!this.cancellation.IsCancellationRequested)
             {
-                await this.TaskDelayAsync(waitingTime * 1000, this.cancellation.Token).ConfigureAwait(false);
+                uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
 
-                waitingTime = this.GetWaitingTimeInSeconds(myTimestamp);
+                if (timeNow <= this.consensusManager.Tip.Header.Time)
+                {
+                    await Task.Delay(TimeSpan.FromMilliseconds(500)).ConfigureAwait(false);
+                    continue;
+                }
+
+                uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+
+                int estimatedWaitingTime = (int)(myTimestamp - timeNow) - 1;
+
+                if (estimatedWaitingTime <= 0)
+                    return myTimestamp;
+
+                await Task.Delay(TimeSpan.FromMilliseconds(500), this.cancellation.Token).ConfigureAwait(false);
             }
-        }
 
-        /// <summary>
-        /// Retrieve the amount of seconds the node should wait until its turn to mine.
-        /// </summary>
-        /// <param name="myTimestamp">The next time slot this node should mine at.</param>
-        private int GetWaitingTimeInSeconds(uint myTimestamp)
-        {
-            uint timeNow = (uint)this.dateTimeProvider.GetAdjustedTimeAsUnixTimestamp();
-            return (int)(myTimestamp - timeNow) - 1;
-        }
-
-        /// <summary>
-        /// Pauses execution for the given time. A wrapper for <see cref="Task.Delay(int)"/>.
-        /// </summary>
-        /// <param name="delayMs">Milliseconds to sleep for.</param>
-        protected virtual async Task TaskDelayAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
-        {
-            await Task.Delay(delayMs, cancellation).ConfigureAwait(false);
+            throw new OperationCanceledException();
         }
 
         protected async Task<ChainedHeader> MineBlockAtTimestampAsync(uint timestamp)
         {
             ChainedHeader tip = this.consensusManager.Tip;
+
+            // Timestamp should always be greater than prev one.
+            if (timestamp <= tip.Header.Time)
+            {
+                // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
+                this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
+                return null;
+            }
 
             Script walletScriptPubKey = this.GetScriptPubKeyFromWallet();
 
@@ -221,15 +214,10 @@ namespace Stratis.Bitcoin.Features.PoA
 
             BlockTemplate blockTemplate = this.blockDefinition.Build(tip, walletScriptPubKey);
 
-            blockTemplate.Block.Header.Time = timestamp;
+            if (this.network.ConsensusOptions.VotingEnabled)
+                this.AddVotingData(blockTemplate);
 
-            // Timestamp should always be greater than prev one.
-            if (blockTemplate.Block.Header.Time <= tip.Header.Time)
-            {
-                // Can happen only when target spacing had crazy low value or key was compromised and someone is mining with our key.
-                this.logger.LogWarning("Somehow another block was connected with greater timestamp. Dropping current block.");
-                return null;
-            }
+            blockTemplate.Block.Header.Time = timestamp;
 
             // Update merkle root.
             blockTemplate.Block.UpdateMerkleRoot();
@@ -276,6 +264,28 @@ namespace Stratis.Bitcoin.Features.PoA
             return address.Pubkey;
         }
 
+        /// <summary>Adds OP_RETURN output to a coinbase transaction which contains encoded voting data.</summary>
+        /// <remarks>If there are no votes scheduled output will not be added.</remarks>
+        private void AddVotingData(BlockTemplate blockTemplate)
+        {
+            List<VotingData> scheduledVotes = this.votingManager.GetAndCleanScheduledVotes();
+
+            if (scheduledVotes.Count == 0)
+            {
+                this.logger.LogTrace("(-)[NO_DATA]");
+                return;
+            }
+
+            var votingData = new List<byte>(VotingDataEncoder.VotingOutputPrefixBytes);
+
+            byte[] encodedVotingData = this.votingDataEncoder.Encode(scheduledVotes);
+            votingData.AddRange(encodedVotingData);
+
+            var votingOutputScript = new Script(OpcodeType.OP_RETURN, Op.GetPushOp(votingData.ToArray()));
+
+            blockTemplate.Block.Transactions[0].AddOutput(Money.Zero, votingOutputScript);
+        }
+
         private void AddComponentStats(StringBuilder log)
         {
             log.AppendLine();
@@ -318,10 +328,11 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             log.Append("...");
+            log.AppendLine();
         }
 
         /// <inheritdoc/>
-        public void Dispose()
+        public virtual void Dispose()
         {
             this.cancellation.Cancel();
             this.miningTask?.GetAwaiter().GetResult();
