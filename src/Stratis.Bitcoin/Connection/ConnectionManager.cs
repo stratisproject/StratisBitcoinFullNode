@@ -227,6 +227,8 @@ namespace Stratis.Bitcoin.Connection
 
         private void AddComponentStats(StringBuilder builder)
         {
+            long totalRead = 0;
+            long totalWritten = 0;
             var peerBuilder = new StringBuilder();
             foreach (INetworkPeer peer in this.ConnectedPeers)
             {
@@ -235,18 +237,24 @@ namespace Stratis.Bitcoin.Connection
                 string peerHeights = $"(r/s):{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
                 peerHeights += $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
 
+                // TODO: Need a snapshot cache so that not only currently connected peers are summed
+                string peerTraffic = $"R/S MB: {peer.Counter.ReadBytes.BytesToMegaBytes()}/{peer.Counter.WrittenBytes.BytesToMegaBytes()}";
+                totalRead += peer.Counter.ReadBytes;
+                totalWritten += peer.Counter.WrittenBytes;
+
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 peerBuilder.AppendLine(
                     "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
                     (" connected:" + (peer.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7)
                     + peerHeights.PadRight(LoggingConfiguration.ColumnLength + 7)
+                    + peerTraffic.PadRight(LoggingConfiguration.ColumnLength + 7)
                     + " agent:" + agent);
             }
 
             int inbound = this.ConnectedPeers.Count(x => x.Inbound);
 
             builder.AppendLine();
-            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}]");
+            builder.AppendLine($"======Connection====== agent {this.Parameters.UserAgent} [in:{inbound} out:{this.ConnectedPeers.Count() - inbound}] [recv: {totalRead.BytesToMegaBytes()} MB sent: {totalWritten.BytesToMegaBytes()} MB]");
             builder.AppendLine(peerBuilder.ToString());
         }
 

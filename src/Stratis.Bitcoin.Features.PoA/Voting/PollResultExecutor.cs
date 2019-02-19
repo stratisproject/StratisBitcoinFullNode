@@ -1,11 +1,14 @@
-﻿using NBitcoin;
+﻿using Microsoft.Extensions.Logging;
+using NBitcoin;
 
 namespace Stratis.Bitcoin.Features.PoA.Voting
 {
     public interface IPollResultExecutor
     {
+        /// <summary>Applies effect of <see cref="VotingData"/>.</summary>
         void ApplyChange(VotingData data);
 
+        /// <summary>Reverts effect of <see cref="VotingData"/>.</summary>
         void RevertChange(VotingData data);
     }
 
@@ -13,11 +16,15 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
     {
         private readonly FederationManager federationManager;
 
-        public PollResultExecutor(FederationManager federationManager)
+        private readonly ILogger logger;
+
+        public PollResultExecutor(FederationManager federationManager, ILoggerFactory loggerFactory)
         {
             this.federationManager = federationManager;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
         }
 
+        /// <inheritdoc />
         public void ApplyChange(VotingData data)
         {
             switch (data.Key)
@@ -32,6 +39,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
             }
         }
 
+        /// <inheritdoc />
         public void RevertChange(VotingData data)
         {
             switch (data.Key)
@@ -50,12 +58,16 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             var key = new PubKey(pubKeyBytes);
 
+            this.logger.LogDebug("Adding new fed member: '{0}'.", key.ToHex());
+
             this.federationManager.AddFederationMember(key);
         }
 
         private void RemoveFederationMember(byte[] pubKeyBytes)
         {
             var key = new PubKey(pubKeyBytes);
+
+            this.logger.LogDebug("Kicking fed member: '{0}'.", key.ToHex());
 
             this.federationManager.RemoveFederationMember(key);
         }

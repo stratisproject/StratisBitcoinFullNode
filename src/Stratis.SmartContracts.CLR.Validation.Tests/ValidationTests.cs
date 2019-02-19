@@ -323,35 +323,67 @@ public class Test
             Assert.Empty(result);
         }
 
-        //
+        [Fact]
+        public void TypePolicyValidator_Should_Validate_Own_Methods()
+        {
+            const string source = @"
+using System; 
+
+public class Test 
+{
+    static extern uint A();
+
+    public void B() {
+        var dt = DateTime.Now;
+    }
+}";
+
+            var typeDefinition = CompileToTypeDef(source);
+
+            var policy = new WhitelistPolicy()
+                .Namespace("System", AccessPolicy.Denied, t =>
+                    t.Type("Object", AccessPolicy.Allowed)
+                        .Type("Void", AccessPolicy.Allowed)
+                        .Type("String", AccessPolicy.Denied));
+
+            var validationPolicy = new ValidationPolicy()
+                .WhitelistValidator(policy);
+
+            var validator = new TypePolicyValidator(validationPolicy);
+
+            var result = validator.Validate(typeDefinition).ToList();
+
+            Assert.True(result.Any());
+            Assert.True(result.All(r => r is WhitelistValidator.WhitelistValidationResult));
+        }
 
         [Fact]
-        public void NestedTypesAreValueTypesValidator_Should_Allow_Nested_Value_Type()
+        public void NestedTypeIsValueTypeValidator_Should_Allow_Value_Type()
         {
             const string source = @"public class Test {public struct A{}}";
 
             var typeDefinition = CompileToTypeDef(source);
 
-            var validator = new NestedTypesAreValueTypesValidator();
+            var validator = new NestedTypeIsValueTypeValidator();
 
-            var result = validator.Validate(typeDefinition).ToList();
+            var result = validator.Validate(typeDefinition.NestedTypes.First()).ToList();
 
             Assert.Empty(result);
         }
-        
+
         [Fact]
-        public void NestedTypesAreValueTypesValidator_Should_Not_Allow_Nested_Reference_Type()
+        public void NestedTypeIsValueTypeValidator_Should_Not_Allow_Reference_Type()
         {
-            const string source = @"public class Test{class A {} }";
+            const string source = @"public class Test {class A {}}";
 
             var typeDefinition = CompileToTypeDef(source);
 
-            var validator = new NestedTypesAreValueTypesValidator();
-           
-            var result = validator.Validate(typeDefinition).ToList();
+            var validator = new NestedTypeIsValueTypeValidator();
+
+            var result = validator.Validate(typeDefinition.NestedTypes.First()).ToList();
 
             Assert.Single(result);
-            Assert.IsType<NestedTypesAreValueTypesValidator.NestedTypeIsValueTypeValidationResult>(result.Single());
+            Assert.IsType<NestedTypeIsValueTypeValidator.NestedTypeIsValueTypeValidationResult>(result.Single());
         }
 
         [Fact]

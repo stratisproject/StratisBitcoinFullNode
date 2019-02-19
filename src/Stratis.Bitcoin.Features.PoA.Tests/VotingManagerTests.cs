@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 using Xunit;
@@ -18,10 +20,14 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         private readonly List<VotingData> changesApplied;
         private readonly List<VotingData> changesReverted;
 
+        private readonly ISignals signals;
+
         public VotingManagerTests()
         {
             string dir = TestBase.CreateTestDir(this);
-            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
+
+            DataFolder folder = new DataFolder(dir);
+
             this.resultExecutorMock = new Mock<IPollResultExecutor>();
             this.encoder = new VotingDataEncoder(this.loggerFactory);
             this.changesApplied = new List<VotingData>();
@@ -32,7 +38,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.federationManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
 
-            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager, this.resultExecutorMock.Object);
+            this.signals = new Signals.Signals();
+
+            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, this.slotsManager, this.resultExecutorMock.Object,
+                new NodeStats(new DateTimeProvider()), folder, new DBreezeSerializer(this.network), this.signals);
             this.votingManager.Initialize();
         }
 
@@ -95,12 +104,12 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         private void TriggerOnBlockConnected(ChainedHeaderBlock block)
         {
-            this.votingManager.onBlockConnected(block);
+            this.signals.OnBlockConnected.Notify(block);
         }
 
         private void TriggerOnBlockDisconnected(ChainedHeaderBlock block)
         {
-            this.votingManager.onBlockDisconnected(block);
+            this.signals.OnBlockDisconnected.Notify(block);
         }
     }
 }

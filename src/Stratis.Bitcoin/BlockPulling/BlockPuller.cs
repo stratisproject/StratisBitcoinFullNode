@@ -965,7 +965,7 @@ namespace Stratis.Bitcoin.BlockPulling
                 foreach (DownloadJob downloadJob in this.downloadJobsQueue)
                     unassignedDownloads += downloadJob.Headers.Count;
 
-                statsBuilder.AppendLine($"Queueued downloads: {unassignedDownloads}");
+                statsBuilder.AppendLine($"Queued downloads: {unassignedDownloads}");
             }
 
             double avgBlockSizeBytes = this.GetAverageBlockSizeBytes();

@@ -30,7 +30,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.serializer = new ContractPrimitiveSerializer(this.node1.CoreNode.FullNode.Network);
         }
 
-        [Fact]
+        [Retry]
         public void CreateContract_OneOfEachParameterType()
         {
             // Ensure fixture is funded.
@@ -123,7 +123,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.Error);
         }
 
-        [Fact]
+        [Retry]
         public void CallContract_SerializeEachParameterType()
         {
             // Ensure fixture is funded.
@@ -187,7 +187,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.Error);
         }
 
-        [Fact]
+        [Retry]
         public void Internal_CallContract_SerializeEachParameterType()
         {
             // Ensure fixture is funded.
@@ -253,7 +253,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.Error);
         }
 
-        [Fact]
+        [Retry]
         public void SerializeArrays_ForEachMethodParamType()
         {
             // Ensure fixture is funded.
