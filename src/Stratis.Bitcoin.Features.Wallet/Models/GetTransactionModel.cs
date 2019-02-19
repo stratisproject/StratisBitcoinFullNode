@@ -16,13 +16,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// Can be positive (received), negative (sent) or 0 (payment to yourself).
         /// </summary>
         [JsonProperty("amount")]
-        public Money Amount { get; set; }
+        public decimal Amount { get; set; }
 
         /// <summary>
         /// The amount of the fee. This is negative and only available for the 'send' category of transactions.
         /// </summary>
         [JsonProperty("fee", NullValueHandling = NullValueHandling.Ignore)]
-        public Money Fee { get; set; }
+        public decimal? Fee { get; set; }
 
         /// <summary>
         /// The number of confirmations.
@@ -53,8 +53,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// The time in seconds since epoch (1 Jan 1970 GMT).
         /// </summary>
         [JsonProperty(PropertyName = "blocktime", NullValueHandling = NullValueHandling.Ignore)]
-        [JsonConverter(typeof(DateTimeOffsetConverter))]
-        public DateTimeOffset? BlockTime { get; set; }
+        public long? BlockTime { get; set; }
 
         /// <summary>
         /// The transaction id.
@@ -67,15 +66,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// The transaction time in seconds since epoch (1 Jan 1970 GMT).
         /// </summary>
         [JsonProperty("time")]
-        [JsonConverter(typeof(DateTimeOffsetConverter))]
-        public DateTimeOffset TransactionTime { get; set; }
+        public long TransactionTime { get; set; }
 
         /// <summary>
         /// The time received in seconds since epoch (1 Jan 1970 GMT).
         /// </summary>
-        [JsonProperty(PropertyName = "timereceived", NullValueHandling = NullValueHandling.Ignore)]
-        [JsonConverter(typeof(DateTimeOffsetConverter))]
-        public DateTimeOffset TimeReceived { get; set; }
+        [JsonProperty(PropertyName = "timereceived")]
+        public long TimeReceived { get; set; }
 
         /// <summary>
         /// Details of the transaction.
@@ -111,13 +108,13 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// Can be positive (received) or negative (sent).
         /// </summary>
         [JsonProperty("amount")]
-        public Money Amount { get; set; }
+        public decimal Amount { get; set; }
 
         /// <summary>
         /// The amount of the fee. This is negative and only available for the 'send' category of transactions.
         /// </summary>
         [JsonProperty("fee", NullValueHandling = NullValueHandling.Ignore)]
-        public Money Fee { get; set; }
+        public decimal? Fee { get; set; }
     }
 
     [JsonConverter(typeof(StringEnumConverter))]
