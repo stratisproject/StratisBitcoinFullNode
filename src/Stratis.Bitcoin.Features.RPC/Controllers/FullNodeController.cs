@@ -139,7 +139,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             else
             {
                 // Retrieve the block specified by the block hash.
-                await this.ConsensusManager.GetOrDownloadBlocksAsync(new List<uint256> { hash }, block => { chainedHeaderBlock = block; });
+                chainedHeaderBlock = await this.ConsensusManager.GetBlockDataAsync(hash);
 
                 if (chainedHeaderBlock == null)
                 {
