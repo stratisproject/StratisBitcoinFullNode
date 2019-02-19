@@ -448,7 +448,7 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var connectionManagerSettings = new ConnectionManagerSettings(nodeSettings)
             {
-                ListenOn = new List<NodeServerEndpoint>()
+                Bind = new List<NodeServerEndpoint>()
             };
 
             var networkPeer = new Mock<INetworkPeer>();
