@@ -14,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -53,7 +54,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 string request = await this.ReadRequestAsync(httpContext.Request).ConfigureAwait(false);
 
-                this.logger.LogDebug("RPC request: {0}", request);
+                this.logger.LogDebug("RPC request: {0}", string.IsNullOrEmpty(request) ? request : JToken.Parse(request).ToString(Formatting.Indented));
 
                 JToken token = string.IsNullOrEmpty(request) ? null : JToken.Parse(request);
 
@@ -67,7 +68,6 @@ namespace Stratis.Bitcoin.Features.RPC
                     // Single request, invoke the request.
                     await this.next.Invoke(httpContext);
                 }
-
             }
             catch (Exception exx)
             {
@@ -77,8 +77,14 @@ namespace Stratis.Bitcoin.Features.RPC
             await this.HandleRpcInvokeExceptionAsync(httpContext, ex);
         }
 
+        [NoTrace]
         private async Task<string> ReadRequestAsync(HttpRequest request)
         {
+            if (request.ContentLength == null || request.ContentLength == 0)
+            {
+                return string.Empty;
+            }
+
             // Allows streams to be read multiple times.
             request.EnableRewind();
 
