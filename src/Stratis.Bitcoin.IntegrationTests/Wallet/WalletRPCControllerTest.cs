@@ -116,6 +116,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 details.Amount.Should().Be((decimal)4.00000000);
                 details.Fee.Should().BeNull();
                 details.Category.Should().Be(GetTransactionDetailsCategoryModel.Generate);
+                details.OutputIndex.Should().Be(0);
             }
         }
 
@@ -160,6 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 details.Amount.Should().Be((decimal)4.00000000);
                 details.Fee.Should().BeNull();
                 details.Category.Should().Be(GetTransactionDetailsCategoryModel.Immature);
+                details.OutputIndex.Should().Be(0);
             }
         }
 
@@ -190,7 +192,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         AccountName = "account 0",
                         FeeType = "low",
                         Password = "password",
-                        ShuffleOutputs = true,
+                        ShuffleOutputs = false,
                         AllowUnconfirmed = true,
                         Recipients = unusedaddresses.Select(address => new RecipientModel
                         {
@@ -242,7 +244,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Assert.
                 GetTransactionModel resultSendingWallet = txSendingWallet.Result.ToObject<GetTransactionModel>();
-                resultSendingWallet.Amount.Should().Be((decimal) -1.00000000);
+                resultSendingWallet.Amount.Should().Be((decimal)-1.00000000);
                 //resultSendingWallet.Fee.Should().Be(new Money(100000000)); // TODO Uncomment when is available.
                 resultSendingWallet.Confirmations.Should().Be(0);
                 resultSendingWallet.TransactionId.Should().Be(txId);
@@ -258,6 +260,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 detailsSendingWallet.Amount.Should().Be((decimal)-1.00000000);
                 //detailsSendingWallet.Fee.Should().Be(new Money(100000000)); // TODO Uncomment when is available.
                 detailsSendingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Send);
+                detailsSendingWallet.OutputIndex.Should().Be(1); // The output at index 0 is the change.
 
                 GetTransactionModel resultReceivingWallet = txReceivingWallet.Result.ToObject<GetTransactionModel>();
                 resultReceivingWallet.Amount.Should().Be((decimal)1.00000000);
@@ -276,6 +279,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 detailsReceivingWallet.Amount.Should().Be((decimal)1.00000000);
                 detailsReceivingWallet.Fee.Should().BeNull();
                 detailsReceivingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Receive);
+                detailsReceivingWallet.OutputIndex.Should().Be(1);
             }
         }
 
@@ -306,7 +310,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         AccountName = "account 0",
                         FeeType = "low",
                         Password = "password",
-                        ShuffleOutputs = true,
+                        ShuffleOutputs = false,
                         AllowUnconfirmed = true,
                         Recipients = unusedaddresses.Select(address => new RecipientModel
                         {
@@ -367,6 +371,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 detailsSendingWallet.Amount.Should().Be((decimal)-1.00000000);
                 //detailsSendingWallet.Fee.Should().Be(new Money(-100000000)); // TODO Uncomment when is available.
                 detailsSendingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Send);
+                detailsSendingWallet.OutputIndex.Should().Be(1);
 
                 GetTransactionModel resultReceivingWallet = txReceivingWallet.Result.ToObject<GetTransactionModel>();
                 resultReceivingWallet.Amount.Should().Be((decimal)1.00000000);
@@ -386,6 +391,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 detailsReceivingWallet.Amount.Should().Be((decimal)1.00000000);
                 detailsReceivingWallet.Fee.Should().BeNull();
                 detailsReceivingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Receive);
+                detailsReceivingWallet.OutputIndex.Should().Be(1);
             }
         }
 
@@ -416,7 +422,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         AccountName = "account 0",
                         FeeType = "low",
                         Password = "password",
-                        ShuffleOutputs = true,
+                        ShuffleOutputs = false,
                         AllowUnconfirmed = true,
                         Recipients = unusedaddresses.Select(address => new RecipientModel
                         {
@@ -473,12 +479,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 resultSendingWallet.Details.Count.Should().Be(2);
 
                 GetTransactionDetailsModel detailsSendingWalletFirstRecipient = resultSendingWallet.Details.Single(d => d.Address == unusedaddresses.First());
+                detailsSendingWalletFirstRecipient.Address.Should().Be(unusedaddresses.First());
                 detailsSendingWalletFirstRecipient.Amount.Should().Be((decimal)-1.00000000);
                 //detailsSendingWalletFirstRecipient.Fee.Should().Be(new Money(-100000000)); // TODO Uncomment when is available.
+                detailsSendingWalletFirstRecipient.Category.Should().Be(GetTransactionDetailsCategoryModel.Send);
+                detailsSendingWalletFirstRecipient.OutputIndex.Should().Be(1); // Output at index 0 contains the change.
 
                 GetTransactionDetailsModel detailsSendingWalletSecondRecipient = resultSendingWallet.Details.Single(d => d.Address == unusedaddresses.Last());
+                detailsSendingWalletSecondRecipient.Address.Should().Be(unusedaddresses.Last());
                 detailsSendingWalletSecondRecipient.Amount.Should().Be((decimal)-1.00000000);
                 //detailsSendingWalletSecondRecipient.Fee.Should().Be(new Money(-100000000)); // TODO Uncomment when is available.
+                detailsSendingWalletSecondRecipient.Category.Should().Be(GetTransactionDetailsCategoryModel.Send);
+                detailsSendingWalletSecondRecipient.OutputIndex.Should().Be(2);
 
                 // Checking receiver.
                 GetTransactionModel resultReceivingWallet = txReceivingWallet.Result.ToObject<GetTransactionModel>();
@@ -499,12 +511,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 firstDetailsReceivingWallet.Amount.Should().Be((decimal)1.00000000);
                 firstDetailsReceivingWallet.Fee.Should().BeNull();
                 firstDetailsReceivingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Receive);
-
+                firstDetailsReceivingWallet.OutputIndex.Should().Be(1); // Output at index 0 contains the change.
+                
                 GetTransactionDetailsModel secondDetailsReceivingWallet = resultReceivingWallet.Details.Single(d => d.Address == unusedaddresses.Last());
                 secondDetailsReceivingWallet.Address.Should().Be(unusedaddresses.Last());
                 secondDetailsReceivingWallet.Amount.Should().Be((decimal)1.00000000);
                 secondDetailsReceivingWallet.Fee.Should().BeNull();
                 secondDetailsReceivingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Receive);
+                secondDetailsReceivingWallet.OutputIndex.Should().Be(2);
             }
         }
 
@@ -534,7 +548,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         AccountName = "account 0",
                         FeeType = "low",
                         Password = "password",
-                        ShuffleOutputs = true,
+                        ShuffleOutputs = false,
                         AllowUnconfirmed = true,
                         Recipients = unusedaddresses.Select(address => new RecipientModel
                         {
@@ -590,11 +604,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 detailsReceivingWallet.Address.Should().Be(unusedaddresses.Single());
                 detailsReceivingWallet.Amount.Should().Be((decimal)1.00000000);
                 detailsReceivingWallet.Fee.Should().BeNull();
+                detailsReceivingWallet.OutputIndex.Should().Be(1);
 
                 GetTransactionDetailsModel secondDetailsReceivingWallet = resultSendingWallet.Details.Single(d => d.Category == GetTransactionDetailsCategoryModel.Send);
                 secondDetailsReceivingWallet.Address.Should().Be(unusedaddresses.Single());
                 secondDetailsReceivingWallet.Amount.Should().Be((decimal)-1.00000000);
                 //secondDetailsReceivingWallet.Fee.Should().Be(new Money(-100000000)); // TODO Uncomment when is available.
+                secondDetailsReceivingWallet.OutputIndex.Should().Be(1);
             }
         }
 
@@ -624,7 +640,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                         AccountName = "account 0",
                         FeeType = "low",
                         Password = "password",
-                        ShuffleOutputs = true,
+                        ShuffleOutputs = false,
                         AllowUnconfirmed = true,
                         Recipients = unusedaddresses.Select(address => new RecipientModel
                         {
@@ -680,6 +696,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 detailsSendingWallet.Address.Should().Be(unusedaddresses.Single());
                 detailsSendingWallet.Amount.Should().Be((decimal)-98000002.00000000);
                 detailsSendingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Send);
+                detailsSendingWallet.OutputIndex.Should().Be(1);
             }
         }
     }

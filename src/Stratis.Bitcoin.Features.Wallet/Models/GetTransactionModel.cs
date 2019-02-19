@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Runtime.Serialization;
 using NBitcoin;
 using Newtonsoft.Json;
@@ -115,6 +114,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         /// </summary>
         [JsonProperty("fee", NullValueHandling = NullValueHandling.Ignore)]
         public decimal? Fee { get; set; }
+
+        /// <summary>
+        /// The index of the output being sent or received.
+        /// </summary>
+        [JsonProperty("vout", NullValueHandling = NullValueHandling.Ignore)]
+        public int? OutputIndex { get; set; }
     }
 
     [JsonConverter(typeof(StringEnumConverter))]

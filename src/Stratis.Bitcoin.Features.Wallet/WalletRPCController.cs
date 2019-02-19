@@ -289,6 +289,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         Category = GetTransactionDetailsCategoryModel.Send,
                         Amount = -paymentDetail.Amount.ToDecimal(MoneyUnit.BTC),
                         Fee = null, // TODO this still needs to be worked on.
+                        OutputIndex = paymentDetail.OutputIndex
                     });
                 }
             }
@@ -311,6 +312,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     Address = addresses.First(a => a.Transactions.Contains(trxInWallet)).Address,
                     Category = category,
                     Amount = trxInWallet.Amount.ToDecimal(MoneyUnit.BTC),
+                    OutputIndex = trxInWallet.Index
                 });
             }
 
