@@ -390,7 +390,6 @@ namespace Stratis.Bitcoin.Features.BlockStore
                 {
                     if (this.batch.Count != 0)
                     {
-                        // Ensure we can retry if an exception is thrown by SaveBatchAsync.
                         try
                         {
                             await this.SaveBatchAsync().ConfigureAwait(false);
