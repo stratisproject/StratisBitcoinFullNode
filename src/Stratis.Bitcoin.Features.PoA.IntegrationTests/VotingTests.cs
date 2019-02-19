@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         }
 
         [Fact]
-        // Checks that node can sync from scratch if federation voted in favor of kicking a fed member.
+        // Checks that node can sync from scratch if federation voted in favor of kicking a fed member that is syncing.
         public async Task CanSyncIfFedMemberKickedAsync()
         {
             int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             await this.node2.MineBlocksAsync(1);
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            await this.node1.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength * 2); // TODO 3
+            await this.node1.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength * 3);
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
             Assert.Equal(originalFedMembersCount - 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
@@ -130,10 +130,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
         }
 
-
         // TODO ensure reorg reverts applying adding fed members
-
-        // TODO if im fed member and kicked- make sure node doesn't stop
 
         public void Dispose()
         {

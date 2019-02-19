@@ -35,6 +35,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly Mock<IPollResultExecutor> resultExecutorMock;
         protected readonly ISignals signals;
         protected readonly DBreezeSerializer dBreezeSerializer;
+        protected readonly ChainState chainState;
 
         public PoATestsBase(TestPoANetwork network = null)
         {
@@ -64,8 +65,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.votingManager.Initialize();
 
+            this.chainState = new ChainState();
+
             this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain, new NodeDeployments(this.network, this.chain),
-                this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, new ChainState(), new InvalidBlockHashStore(timeProvider),
+                this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, this.chainState, new InvalidBlockHashStore(timeProvider),
                 new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager);
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(50, null, false, null, this.network);
