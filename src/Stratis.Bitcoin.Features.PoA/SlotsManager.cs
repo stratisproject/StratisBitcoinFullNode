@@ -55,7 +55,7 @@ namespace Stratis.Bitcoin.Features.PoA
         public uint GetMiningTimestamp(uint currentTime)
         {
             if (!this.federationManager.IsFederationMember)
-                throw new Exception("Not a federation member!");
+                throw new NotAFederationMemberException();
 
             List<PubKey> federationMembers = this.federationManager.GetFederationMembers();
 

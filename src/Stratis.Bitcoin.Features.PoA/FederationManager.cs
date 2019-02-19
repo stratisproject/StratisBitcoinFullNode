@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.PoA
     public class FederationManager
     {
         /// <summary><c>true</c> in case current node is a federation member.</summary>
-        public bool IsFederationMember { get; private set; }
+        public bool IsFederationMember => this.federationMembers.Contains(this.FederationMemberKey?.PubKey);
 
         /// <summary>Key of current federation member. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
         public Key FederationMemberKey { get; private set; }
@@ -74,7 +74,6 @@ namespace Stratis.Bitcoin.Features.PoA
             // Load key.
             Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
 
-            this.IsFederationMember = key != null;
             this.FederationMemberKey = key;
 
             if (this.FederationMemberKey == null)
@@ -88,8 +87,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 string message = "Key provided is not registered on the network!";
 
-                this.logger.LogCritical(message);
-                throw new Exception(message);
+                this.logger.LogWarning(message);
             }
 
             this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: '{0}'.", this.FederationMemberKey.PubKey);

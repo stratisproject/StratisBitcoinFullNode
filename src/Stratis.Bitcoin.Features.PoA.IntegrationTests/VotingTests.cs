@@ -81,7 +81,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         }
 
         [Fact]
-        // Checks that node can sync if the chain changed expanded federation.
+        // Checks that node can sync from scratch if federation voted in favor of adding a new fed member.
         public async Task CanSyncIfFedMemberAddedAsync()
         {
             int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
@@ -106,32 +106,32 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         }
 
         [Fact]
-        // Checks that node can sync if the chain shrinked the federation. TODO
+        // Checks that node can sync from scratch if federation voted in favor of kicking a fed member.
         public async Task CanSyncIfFedMemberKickedAsync()
         {
             int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
 
             TestHelper.Connect(this.node1, this.node2);
 
-            var model = new HexPubKeyModel() { PubKeyHex = this.network.FederationKey2.ToHex(this.network) };
+            var model = new HexPubKeyModel() { PubKeyHex = this.network.FederationKey2.PubKey.ToHex() };
             this.node1.FullNode.NodeService<VotingController>().VoteKickFedMember(model);
             this.node2.FullNode.NodeService<VotingController>().VoteKickFedMember(model);
 
             await this.node2.MineBlocksAsync(1);
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            await this.node1.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength * 3);
+            await this.node1.MineBlocksAsync((int)this.network.Consensus.MaxReorgLength * 2); // TODO 3
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            //Assert.Equal(originalFedMembersCount - 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+            Assert.Equal(originalFedMembersCount - 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
 
-            //TestHelper.Connect(this.node2, this.node3);
+            TestHelper.Connect(this.node2, this.node3);
 
-            //CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
         }
 
 
         // TODO ensure reorg reverts applying adding fed members
-        // TODO ensure that we can sync maxReorg * 3 headers from the federation updated (member added or removed)
 
         // TODO if im fed member and kicked- make sure node doesn't stop
 
