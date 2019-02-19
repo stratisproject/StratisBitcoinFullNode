@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         public bool IsPending => this.PollVotedInFavorBlockData == null;
 
         /// <summary><c>true</c> if poll wasn't executed yet; <c>false</c> otherwise.</summary>
-        public bool IsExecuted => this.PollExecutedBlockData == null;
+        public bool IsExecuted => this.PollExecutedBlockData != null;
 
         public int Id;
 
