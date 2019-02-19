@@ -12,12 +12,33 @@ using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Consensus
 {
+    /// <summary>
+    /// Bans and disconnects peers that sends a <see cref="GetHeadersPayload"/> request, more than <see cref="GetHeaderRequestCountThreshold"/> times,
+    /// within a certain time frame.
+    /// </summary>
+    /// <remarks>
+    /// This behavior is a tempory work around to peers that spam the node with too many <see cref="GetHeadersPayload"/> requests.
+    /// It will be changed in the future once a more in-depth and thorough implementation has been agreed upon.
+    /// </remarks>
     public sealed class RateLimitingBehavior : NetworkPeerBehavior
     {
+        /// <summary>How long the offending peer will be banned for.</summary>
         private const int BanDurationSeconds = 3600;
 
         /// <summary>Provider of time functions.</summary>
         private readonly IDateTimeProvider dateTimeProvider;
+
+        /// <summary>The last header that was requested.</summary>
+        private uint256 getHeaderLastRequestHash;
+
+        /// <summary>The last time the header was requested.</summary>
+        private DateTimeOffset? getHeaderLastRequestedTimestamp;
+
+        /// <summary>The amount of times the same request has been made.</summary>
+        private int getHeaderRequestCount;
+
+        /// <summary>The threshold after which the node will be banned and disconnected.</summary>
+        private const int GetHeaderRequestCountThreshold = 3;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -27,11 +48,6 @@ namespace Stratis.Bitcoin.Consensus
 
         /// <summary>Contract for peer banning behavior.</summary>
         private readonly IPeerBanning peerBanning;
-
-        private int getHeaderRequestCount;
-        private const int GetHeaderRequestCountThreshold = 3;
-        private uint256 getHeaderLastRequestHash;
-        private DateTimeOffset? getHeaderLastRequestedTimestamp;
 
         public RateLimitingBehavior(
             IDateTimeProvider dateTimeProvider,
@@ -60,7 +76,7 @@ namespace Stratis.Bitcoin.Consensus
         }
 
         /// <summary>
-        /// Processes and incoming message from the peer.
+        /// Processes an incoming message from the peer.
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
@@ -82,9 +98,9 @@ namespace Stratis.Bitcoin.Consensus
         private void AssessPeerGetHeaderFrequency(GetHeadersPayload getHeaders)
         {
             // Is the last requested hash the same as this request.
-            if (this.getHeaderLastRequestHash == getHeaders.BlockLocator.Blocks.Last())
+            if (this.getHeaderLastRequestHash == getHeaders.BlockLocator.Blocks.First())
             {
-                this.logger.LogInformation($"{this.AttachedPeer.PeerEndPoint} block locator matches previous, count {this.getHeaderRequestCount}");
+                this.logger.LogDebug($"{this.AttachedPeer.PeerEndPoint} block locator matches previous, count {this.getHeaderRequestCount}");
 
                 // Was this hash requested less than 60 seconds ago.
                 if (this.getHeaderLastRequestedTimestamp > this.dateTimeProvider.GetUtcNow().AddSeconds(-60))
@@ -102,9 +118,8 @@ namespace Stratis.Bitcoin.Consensus
                 // ban and disconnect the peer for 1 hour.
                 if (this.getHeaderRequestCount > GetHeaderRequestCountThreshold)
                 {
-                    // if (this.peerBanning.IsBanned(this.AttachedPeer.PeerEndPoint))
                     this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
-                    this.logger.LogInformation($"{this.AttachedPeer.PeerEndPoint} was banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
+                    this.logger.LogDebug($"{this.AttachedPeer.PeerEndPoint} banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
                 }
             }
             else
