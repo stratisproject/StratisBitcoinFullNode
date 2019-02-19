@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Consensus
             // Is the last requested hash the same as this request.
             if (this.getHeaderLastRequestHash == getHeaders.BlockLocator.Blocks.Last())
             {
-                this.logger.LogInformation($"{this.AttachedPeer.PeerEndPoint} block locator matches.");
+                this.logger.LogInformation($"{this.AttachedPeer.PeerEndPoint} block locator matches previous, count {this.getHeaderRequestCount}");
 
                 // Was this hash requested less than 60 seconds ago.
                 if (this.getHeaderLastRequestedTimestamp > this.dateTimeProvider.GetUtcNow().AddSeconds(-60))
