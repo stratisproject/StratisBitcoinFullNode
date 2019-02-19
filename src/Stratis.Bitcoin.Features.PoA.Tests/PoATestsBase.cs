@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -32,12 +33,16 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly FederationManager federationManager;
         protected readonly VotingManager votingManager;
         protected readonly Mock<IPollResultExecutor> resultExecutorMock;
+        protected readonly ISignals signals;
+        protected readonly DBreezeSerializer dBreezeSerializer;
 
         public PoATestsBase(TestPoANetwork network = null)
         {
+            this.signals = new Signals.Signals();
             this.loggerFactory = new LoggerFactory();
             this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
+            this.dBreezeSerializer = new DBreezeSerializer(this.network);
 
             this.chain = new ConcurrentChain(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
@@ -48,13 +53,14 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 
-            var dataFolder = new DataFolder(this.network.RootFolderName);
-            var finalizedBlockRepo = new FinalizedBlockInfoRepository(new KeyValueRepository(dataFolder, new DBreezeSerializer(network)), this.loggerFactory);
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            var finalizedBlockRepo = new FinalizedBlockInfoRepository(new KeyValueRepository(dataFolder, this.dBreezeSerializer), this.loggerFactory);
+            finalizedBlockRepo.LoadFinalizedBlockInfoAsync(this.network).GetAwaiter().GetResult();
 
             this.resultExecutorMock = new Mock<IPollResultExecutor>();
 
             this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, this.slotsManager, this.resultExecutorMock.Object, new NodeStats(timeProvider),
-                 dataFolder, new DBreezeSerializer(network), new Signals.Signals(), finalizedBlockRepo);
+                 dataFolder, this.dBreezeSerializer, this.signals, finalizedBlockRepo);
 
             this.votingManager.Initialize();
 
@@ -122,7 +128,7 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 votingEnabled: baseOptions.VotingEnabled
             );
 
-            this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), 5);
+            this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), (uint)5);
         }
     }
 }

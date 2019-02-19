@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.PoA
     public class FederationManager
     {
         /// <summary><c>true</c> in case current node is a federation member.</summary>
-        public bool IsFederationMember => this.federationMembers.Contains(this.FederationMemberKey?.PubKey);
+        public bool IsFederationMember { get; private set; }
 
         /// <summary>Key of current federation member. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
         public Key FederationMemberKey { get; private set; }
@@ -75,6 +75,7 @@ namespace Stratis.Bitcoin.Features.PoA
             Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
 
             this.FederationMemberKey = key;
+            this.SetIsFederationMember();
 
             if (this.FederationMemberKey == null)
             {
@@ -91,6 +92,11 @@ namespace Stratis.Bitcoin.Features.PoA
             }
 
             this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: '{0}'.", this.FederationMemberKey.PubKey);
+        }
+
+        private void SetIsFederationMember()
+        {
+            this.IsFederationMember = this.federationMembers.Contains(this.FederationMemberKey?.PubKey);
         }
 
         /// <summary>Provides up to date list of federation members.</summary>
@@ -119,6 +125,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.federationMembers.Add(pubKey);
 
                 this.SaveFederationKeys(this.federationMembers);
+                this.SetIsFederationMember();
 
                 this.logger.LogInformation("Federation member '{0}' was added!", pubKey.ToHex());
             }
@@ -133,6 +140,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.federationMembers.Remove(pubKey);
 
                 this.SaveFederationKeys(this.federationMembers);
+                this.SetIsFederationMember();
 
                 this.logger.LogInformation("Federation member '{0}' was removed!", pubKey.ToHex());
             }
