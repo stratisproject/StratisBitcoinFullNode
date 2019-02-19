@@ -240,7 +240,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             lock (this.locker)
             {
-                foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollExecutedBlockData.Hash == chBlock.ChainedHeader.HashBlock).ToList())
+                foreach (Poll poll in this.polls.Where(x => !x.IsPending && x.PollExecutedBlockData?.Hash == chBlock.ChainedHeader.HashBlock).ToList())
                 {
                     this.logger.LogDebug("Reverting poll execution '{0}'.", poll);
                     this.pollResultExecutor.RevertChange(poll.VotingData);

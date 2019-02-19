@@ -23,8 +23,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
 
         private readonly CoreNode node1, node2, node3;
 
+        private readonly PubKey testPubKey;
+
         public VotingTests()
         {
+            this.testPubKey = new Mnemonic("lava frown leave virtual wedding ghost sibling able liar wide wisdom mammal").DeriveExtKey().PrivateKey.PubKey;
             this.network = new TestPoANetwork();
 
             this.builder = PoANodeBuilder.CreatePoANodeBuilder(this);
@@ -106,7 +109,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         }
 
         [Fact]
-        // Checks that node can sync from scratch if federation voted in favor of kicking a fed member that is syncing.
+        // Checks that node can sync from scratch if federation voted in favor of kicking a fed member.
         public async Task CanSyncIfFedMemberKickedAsync()
         {
             int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
@@ -130,7 +133,76 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
         }
 
-        // TODO ensure reorg reverts applying adding fed members
+        [Fact]
+        public async Task CanAddAndRemoveSameFedMemberAsync()
+        {
+            int originalFedMembersCount = this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count;
+
+            TestHelper.Connect(this.node1, this.node2);
+            TestHelper.Connect(this.node2, this.node3);
+
+            await this.AllVoteAndMineAsync(this.testPubKey, true);
+
+            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+
+            await this.AllVoteAndMineAsync(this.testPubKey, false);
+
+            Assert.Equal(originalFedMembersCount, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+
+            await this.AllVoteAndMineAsync(this.testPubKey, true);
+
+            Assert.Equal(originalFedMembersCount + 1, this.node1.FullNode.NodeService<FederationManager>().GetFederationMembers().Count);
+        }
+
+        [Fact]
+        public async Task ReorgRevertsAppliedChangesAsync()
+        {
+            TestHelper.Connect(this.node1, this.node2);
+
+            var model = new HexPubKeyModel() { PubKeyHex = this.testPubKey.ToHex() };
+
+            this.node1.FullNode.NodeService<VotingController>().VoteAddFedMember(model);
+            this.node1.FullNode.NodeService<VotingController>().VoteKickFedMember(model);
+            await this.node1.MineBlocksAsync(1);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
+
+            this.node2.FullNode.NodeService<VotingController>().VoteAddFedMember(model);
+            await this.node2.MineBlocksAsync(1);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
+
+            Assert.Single(this.node2.FullNode.NodeService<VotingManager>().GetPendingPolls());
+            Assert.Single(this.node2.FullNode.NodeService<VotingManager>().GetFinishedPolls());
+
+            await this.node3.MineBlocksAsync(4);
+            TestHelper.Connect(this.node2, this.node3);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
+
+            Assert.Empty(this.node2.FullNode.NodeService<VotingManager>().GetPendingPolls());
+            Assert.Empty(this.node2.FullNode.NodeService<VotingManager>().GetFinishedPolls());
+        }
+
+        private async Task AllVoteAndMineAsync(PubKey key, bool add)
+        {
+            await this.VoteAndMineBlockAsync(key, add, this.node1);
+            await this.VoteAndMineBlockAsync(key, add, this.node2);
+            await this.VoteAndMineBlockAsync(key, add, this.node3);
+
+            await this.node1.MineBlocksAsync((int) this.network.Consensus.MaxReorgLength + 1);
+        }
+
+        private async Task VoteAndMineBlockAsync(PubKey key, bool add, CoreNode node)
+        {
+            var model = new HexPubKeyModel() { PubKeyHex = key.ToHex() };
+
+            if (add)
+                node.FullNode.NodeService<VotingController>().VoteAddFedMember(model);
+            else
+                node.FullNode.NodeService<VotingController>().VoteKickFedMember(model);
+
+            await node.MineBlocksAsync(1);
+
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
+        }
 
         public void Dispose()
         {
