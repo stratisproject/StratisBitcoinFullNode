@@ -33,7 +33,8 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 maxBlockSigopsCost: baseOptions.MaxBlockSigopsCost,
                 maxStandardTxSigopsCost: baseOptions.MaxStandardTxSigopsCost,
                 federationPublicKeys: federationPublicKeys,
-                targetSpacingSeconds: baseOptions.TargetSpacingSeconds
+                targetSpacingSeconds: 60,
+                votingEnabled: baseOptions.VotingEnabled
             );
         }
     }
