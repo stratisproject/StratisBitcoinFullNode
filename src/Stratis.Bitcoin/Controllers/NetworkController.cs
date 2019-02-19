@@ -38,6 +38,7 @@ namespace Stratis.Bitcoin.Controllers
         /// Disconnects a connected peer.
         /// </summary>
         /// <param name="viewModel">The model that represents the peer to disconnect.</param>
+        /// <returns><see cref="OkResult"/></returns>
         [Route("disconnect")]
         [HttpPost]
         public IActionResult DisconnectPeer([FromBody] DisconnectPeerViewModel viewModel)
@@ -65,6 +66,7 @@ namespace Stratis.Bitcoin.Controllers
         /// Adds or remove a peer from the node's banned peers list.
         /// </summary>
         /// <param name="viewModel">The model that represents the peer to add or remove from the banned list.</param>
+        /// <returns><see cref="OkResult"/></returns>
         [Route("setban")]
         [HttpPost]
         public IActionResult SetBan([FromBody] SetBanPeerViewModel viewModel)
@@ -107,9 +109,14 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Clears the node of all banned peers.
         /// </summary>
+        /// <param name="corsProtection">This body parameter is here to prevent a CORS call from triggering method execution.</param>
+        /// <remarks>
+        /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
+        /// </remarks>
+        /// <returns><see cref="OkResult"/></returns>
         [Route("clearbanned")]
         [HttpPost]
-        public IActionResult ClearBannedPeers()
+        public IActionResult ClearBannedPeers([FromBody] bool corsProtection = true)
         {
             try
             {
@@ -123,6 +130,5 @@ namespace Stratis.Bitcoin.Controllers
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-
     }
 }
