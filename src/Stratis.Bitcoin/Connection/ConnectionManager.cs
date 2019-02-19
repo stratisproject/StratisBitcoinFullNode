@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Connection
             }
 
             /// <summary>Node server is only started if there are no peers in the -connect args.</summary>
-            if (this.ConnectionSettings.Listen && !this.ConnectionSettings.Connect.Any())
+            if ((this.ConnectionSettings.Listen && !this.ConnectionSettings.Connect.Any()) || (this.ConnectionSettings.ForceListen))
                 this.StartNodeServer();
 
             // If external IP address supplied this overrides all.
