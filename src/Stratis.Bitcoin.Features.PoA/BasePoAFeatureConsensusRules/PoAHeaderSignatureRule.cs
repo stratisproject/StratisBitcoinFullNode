@@ -53,6 +53,11 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
 
             if (!this.validator.VerifySignature(pubKey, header))
             {
+                // In case voting is enabled it is possible that federation was modified and another fed member signed
+                // the header. Since voting changes are applied after max reorg blocks are passed we can tell exactly
+                // how federation will look like max reorg blocks ahead. Code below tries to construct federation that is
+                // expected to exist at the moment block that corresponds to header being validated was produced. Then
+                // this federation is used to estimate who was expected to sign a block and then the signature is verified.
                 if (this.votingEnabled)
                 {
                     ChainedHeader currentHeader = context.ValidationContext.ChainedHeaderToValidate;
@@ -62,7 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
                     List<PubKey> modifiedFederation = this.federationManager.GetFederationMembers();
 
                     foreach (Poll poll in this.votingManager.GetFinishedPolls().Where(x => !x.IsExecuted &&
-                        (x.VotingData.Key == VoteKey.AddFederationMember || x.VotingData.Key == VoteKey.KickFederationMember)))
+                        ((x.VotingData.Key == VoteKey.AddFederationMember) || (x.VotingData.Key == VoteKey.KickFederationMember))))
                     {
                         if (currentHeader.Height - poll.PollVotedInFavorBlockData.Height <= this.maxReorg)
                             // Not applied yet.
@@ -83,8 +88,11 @@ namespace Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules
                         this.Logger.LogDebug("Signature verified using updated federation.");
                         return;
                     }
-                    else if (mightBeInsufficient)
+
+                    if (mightBeInsufficient)
                     {
+                        // Mark header as insufficient to avoid banning the peer that presented it.
+                        // When we advance consensus we will be able to validate it.
                         context.ValidationContext.InsufficientHeaderInformation = true;
                     }
                 }
