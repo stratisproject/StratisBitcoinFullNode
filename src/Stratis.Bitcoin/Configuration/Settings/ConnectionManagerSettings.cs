@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine($"#port={network.DefaultPort}");
             builder.AppendLine($"#Accept connections from the outside.");
             builder.AppendLine($"#listen=<0 or 1>");
-            builder.AppendLine($"#Forces the node to listen for incoming connections.");
+            builder.AppendLine($"#This can be used to accept incoming connections when -connect is specified.");
             builder.AppendLine($"#forcelisten=<0 or 1>");
             builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"#connect=<ip:port>");
@@ -224,7 +224,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             var builder = new StringBuilder();
             builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
             builder.AppendLine($"-listen=<0 or 1>          Accept connections from the outside (defaulted to 1 unless -connect args specified).");
-            builder.AppendLine($"-forcelisten=<0 or 1>     Forces the node to listen for incoming connections even though -connect args are specified.");
+            builder.AppendLine($"-forcelisten=<0 or 1>     This can be used to accept incoming connections when -connect is specified.");
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
@@ -256,7 +256,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public bool Listen { get; set; }
 
         /// <summary>
-        /// Forces the node to listen for incoming connections even though -connect args are specified.
+        /// This can be used to accept incoming connections when -connect is specified.
         /// <para>
         /// Defaulted to false.
         /// </para>
