@@ -2,6 +2,7 @@
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using NBitcoin;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.P2P.Peer;
@@ -22,15 +23,20 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
+        /// <summary>The network the node is running on.</summary>
+        private readonly Network network;
+
         /// <summary>Network peer banning behaviour.</summary>
         private readonly IPeerBanning peerBanning;
 
         public NetworkController(
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
+            Network network,
             IPeerBanning peerBanning)
         {
             this.connectionManager = connectionManager;
+            this.network = network;
             this.peerBanning = peerBanning;
         }
 
@@ -45,7 +51,7 @@ namespace Stratis.Bitcoin.Controllers
         {
             try
             {
-                var endpoint = viewModel.PeerAddress.ToIPEndPoint(0);
+                var endpoint = viewModel.PeerAddress.ToIPEndPoint(this.network.DefaultPort);
                 INetworkPeer peer = this.connectionManager.ConnectedPeers.FindByEndpoint(endpoint);
                 if (peer != null)
                 {
@@ -73,7 +79,7 @@ namespace Stratis.Bitcoin.Controllers
         {
             try
             {
-                var endpoint = new IPEndPoint(IPAddress.Parse(viewModel.PeerAddress), 0);
+                var endpoint = new IPEndPoint(IPAddress.Parse(viewModel.PeerAddress), this.network.DefaultPort);
                 switch (viewModel.BanCommand.ToLowerInvariant())
                 {
                     case "add":
