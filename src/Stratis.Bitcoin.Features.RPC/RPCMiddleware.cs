@@ -1,5 +1,6 @@
 ﻿using System;
 using System.IO;
+using System.Net;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Http;
@@ -13,6 +14,7 @@ using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.RPC
 {
@@ -50,26 +52,21 @@ namespace Stratis.Bitcoin.Features.RPC
             Exception ex = null;
             try
             {
-                // Allows streams to be read multiple times.
-                httpContext.Request.EnableRewind();
+                string request = await this.ReadRequestAsync(httpContext.Request).ConfigureAwait(false);
 
-                using (var body = new StreamReader(httpContext.Request.Body, Encoding.UTF8, true, 1024, true))
+                this.logger.LogDebug("RPC request: {0}", string.IsNullOrEmpty(request) ? request : JToken.Parse(request).ToString(Formatting.Indented));
+
+                JToken token = string.IsNullOrEmpty(request) ? null : JToken.Parse(request);
+
+                if (token is JArray)
                 {
-                    string requestBody = body.ReadToEnd();
-                    httpContext.Request.Body.Position = 0;
-
-                    JToken token = string.IsNullOrEmpty(requestBody) ? null : JToken.Parse(requestBody);
-
-                    if (token is JArray)
-                    {
-                        // Batch request, invoke each request and accumulate responses.
-                        await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
-                    }
-                    else
-                    {
-                        // Single request, invoke the request.
-                        await this.next.Invoke(httpContext);
-                    }
+                    // Batch request, invoke each request and accumulate responses.
+                    await this.InvokeAsyncBatchAsync(httpContext, token as JArray);
+                }
+                else
+                {
+                    // Single request, invoke the request.
+                    await this.next.Invoke(httpContext);
                 }
             }
             catch (Exception exx)
@@ -78,6 +75,28 @@ namespace Stratis.Bitcoin.Features.RPC
             }
 
             await this.HandleRpcInvokeExceptionAsync(httpContext, ex);
+        }
+
+        [NoTrace]
+        private async Task<string> ReadRequestAsync(HttpRequest request)
+        {
+            if (request.ContentLength == null || request.ContentLength == 0)
+            {
+                return string.Empty;
+            }
+
+            // Allows streams to be read multiple times.
+            request.EnableRewind();
+
+            // Read the request.
+            byte[] requestBuffer = new byte[request.ContentLength.Value];
+            await request.Body.ReadAsync(requestBuffer, 0, requestBuffer.Length).ConfigureAwait(false);
+
+            string requestBody = Encoding.UTF8.GetString(requestBuffer);
+
+            request.Body.Position = 0;
+
+            return requestBody;
         }
 
         private async Task HandleRpcInvokeExceptionAsync(HttpContext httpContext, Exception ex)
@@ -190,26 +209,43 @@ namespace Stratis.Bitcoin.Features.RPC
 
         private bool Authorized(HttpContext httpContext)
         {
-            if (!this.authorization.IsAuthorized(httpContext.Connection.RemoteIpAddress))
+            IPAddress ip = httpContext.Connection.RemoteIpAddress;
+
+            if (!this.authorization.IsAuthorized(ip))
+            {
+                this.logger.LogWarning("IP '{0}' not authorised.", ip);
                 return false;
-            StringValues auth;
-            if (!httpContext.Request.Headers.TryGetValue("Authorization", out auth) || auth.Count != 1)
+            }
+
+            if (!httpContext.Request.Headers.TryGetValue("Authorization", out StringValues auth) || auth.Count != 1)
+            {
+                this.logger.LogWarning("No 'Authorization' header found.");
                 return false;
+            }
+
             string[] splittedAuth = auth[0].Split(' ');
-            if (splittedAuth.Length != 2 ||
-               splittedAuth[0] != "Basic")
+            if (splittedAuth.Length != 2 || splittedAuth[0] != "Basic")
+            {
+                this.logger.LogWarning("Basic access authentication must be used when accessing RPC.");
                 return false;
+            }
 
             try
             {
                 string user = Encoders.ASCII.EncodeData(Encoders.Base64.DecodeData(splittedAuth[1]));
+
                 if (!this.authorization.IsAuthorized(user))
+                {
+                    this.logger.LogWarning("User with credentials '{0}' is not authorised.", user);
                     return false;
+                }
             }
-            catch
+            catch (Exception ex)
             {
+                this.logger.LogError("Exception occurred during authorisation: {0}.", ex.Message);
                 return false;
             }
+
             return true;
         }
 

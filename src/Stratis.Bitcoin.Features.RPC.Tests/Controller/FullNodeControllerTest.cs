@@ -12,6 +12,7 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers.Models;
 using Stratis.Bitcoin.Features.RPC.Controllers;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
@@ -80,7 +81,7 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
         }
 
         [Fact]
-        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ReturnsNullAsync()
+        public async Task GetRawTransactionAsync_TransactionCannotBeFound_ThrowsExceptionAsync()
         {
             var txId = new uint256(12142124);
             this.pooledTransaction.Setup(p => p.GetTransaction(txId))
@@ -91,9 +92,15 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
                 .ReturnsAsync((Transaction)null)
                 .Verifiable();
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            RPCServerException exception = await Assert.ThrowsAsync<RPCServerException>(async () =>
+            {
+                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            });
 
-            Assert.Null(result);
+            Assert.NotNull(exception);
+            Assert.Equal("No such mempool transaction. Use -txindex to enable blockchain transaction queries.", exception.Message);
+            this.blockStore.Verify();
+
             this.pooledTransaction.Verify();
             this.blockStore.Verify();
         }
@@ -146,15 +153,21 @@ namespace Stratis.Bitcoin.Features.RPC.Tests.Controller
             this.controller = new FullNodeController(this.LoggerFactory.Object, null, this.pooledGetUnspentTransaction.Object, this.getUnspentTransaction.Object, this.networkDifficulty.Object,
                 this.fullNode.Object, this.nodeSettings, this.network, this.chain, this.chainState.Object, this.connectionManager.Object, this.consensusManager.Object, this.blockStore.Object);
 
-            TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
-
-            Assert.Null(result);
+            RPCServerException exception = await Assert.ThrowsAsync<RPCServerException>(async () =>
+            {
+                TransactionModel result = await this.controller.GetRawTransactionAsync(txId.ToString(), 0).ConfigureAwait(false);
+            });
+            
+            Assert.NotNull(exception);
+            Assert.Equal("No such mempool transaction. Use -txindex to enable blockchain transaction queries.", exception.Message);
             this.blockStore.Verify();
         }
 
         [Fact]
         public async Task GetTaskAsync_Verbose_ReturnsTransactionVerboseModelAsync()
         {
+            // Add the 'txindex' setting, otherwise the transactions won't be found.
+            this.nodeSettings.ConfigReader.MergeInto(new TextFileConfiguration("-txindex=1"));
             this.chainState.Setup(c => c.ConsensusTip)
                 .Returns(this.chain.Tip);
             ChainedHeader block = this.chain.GetBlock(1);

@@ -161,7 +161,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Wait for the transaction to arrive
                 TestHelper.WaitLoop(() => stratisHotStake.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisHotStake.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), false));
+                Assert.NotNull(stratisHotStake.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), null, false));
                 TestHelper.WaitLoop(() => stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
 
                 long receivetotal = stratisHotStake.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
