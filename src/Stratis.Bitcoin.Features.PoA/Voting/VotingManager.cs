@@ -252,14 +252,14 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             byte[] rawVotingData = this.votingDataEncoder.ExtractRawVotingData(chBlock.Block.Transactions[0]);
 
-            List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
-            votingDataList.Reverse();
-
             if (rawVotingData == null)
             {
                 this.logger.LogTrace("(-)[NO_VOTING_DATA]");
                 return;
             }
+
+            List<VotingData> votingDataList = this.votingDataEncoder.Decode(rawVotingData);
+            votingDataList.Reverse();
 
             lock (this.locker)
             {
