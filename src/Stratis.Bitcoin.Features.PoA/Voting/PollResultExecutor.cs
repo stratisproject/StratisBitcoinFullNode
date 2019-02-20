@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             var key = new PubKey(pubKeyBytes);
 
-            this.logger.LogDebug("Adding new fed member: '{0}'.", key.ToHex());
+            this.logger.LogInformation("Adding new fed member: '{0}'.", key.ToHex());
 
             this.federationManager.AddFederationMember(key);
         }
@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             var key = new PubKey(pubKeyBytes);
 
-            this.logger.LogDebug("Kicking fed member: '{0}'.", key.ToHex());
+            this.logger.LogInformation("Kicking fed member: '{0}'.", key.ToHex());
 
             this.federationManager.RemoveFederationMember(key);
         }
