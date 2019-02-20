@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using Moq;
 using NBitcoin;
 using Stratis.SmartContracts.CLR.Exceptions;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -110,8 +111,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Func<ulong> getBalance = () => 1;
 
             this.state = Mock.Of<ISmartContractState>(
-                g => g.GasMeter == gasMeter.Object
-                     && g.InternalTransactionExecutor == internalTxExecutor.Object
+                g => g.InternalTransactionExecutor == internalTxExecutor.Object
                      && g.InternalHashHelper == internalHashHelper.Object
                      && g.PersistentState == persistentState.Object
                      && g.Block == block.Object

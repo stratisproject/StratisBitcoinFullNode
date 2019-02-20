@@ -5,6 +5,7 @@ using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -15,11 +16,11 @@ namespace Stratis.SmartContracts.CLR.Tests
         public void Call_Contract_Success()
         {
             var parameters = new object[] { };
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)1000, uint160.One, "TestMethod", parameters);
+            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
 
             VmExecutionResult vmExecutionResult = VmExecutionResult.Ok(new object(), null);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((RuntimeObserver.Gas)100, uint160.One, vmExecutionResult.Success.Result);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Ok((Gas)100, uint160.One, vmExecutionResult.Success.Result);
 
             var fixture = new ExecutorFixture(contractTxData);
             IState snapshot = fixture.State.Object.Snapshot();
@@ -79,9 +80,9 @@ namespace Stratis.SmartContracts.CLR.Tests
         public void Call_Contract_Failure()
         {
             var parameters = new object[] { };
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)1000, uint160.One, "TestMethod", parameters);
+            var contractTxData = new ContractTxData(1, 1, (Gas)1000, uint160.One, "TestMethod", parameters);
 
-            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((RuntimeObserver.Gas)100, StateTransitionErrorKind.VmError);
+            StateTransitionResult stateTransitionResult = StateTransitionResult.Fail((Gas)100, StateTransitionErrorKind.VmError);
 
             var fixture = new ExecutorFixture(contractTxData);
             IState snapshot = fixture.State.Object.Snapshot();
