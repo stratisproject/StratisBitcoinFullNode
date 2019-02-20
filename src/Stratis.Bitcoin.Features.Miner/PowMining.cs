@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Features.Miner
 
             // Genesis on a regtest network is a special case. We need to regard ourselves as outside of IBD to
             // bootstrap the mining.
-            if (this.network.IsRegTest() && (context.ChainTip.Height == 0))
+            if (context.ChainTip.Height == 0)
                 return true;
 
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
