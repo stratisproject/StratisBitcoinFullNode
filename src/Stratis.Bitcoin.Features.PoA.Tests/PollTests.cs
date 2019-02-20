@@ -4,6 +4,7 @@ using System.IO;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
@@ -21,8 +22,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                     Data = RandomUtils.GetBytes(50),
                     Key = VoteKey.AddFederationMember
                 },
-                PollAppliedBlockHash = uint256.One,
-                PollStartBlockHash = uint256.One,
+                PollVotedInFavorBlockData = new HashHeightPair(uint256.One, 1),
+                PollStartBlockData = new HashHeightPair(uint256.One, 1),
                 PubKeysHexVotedInFavor = new List<string>()
                 {
                     "qwe",
@@ -52,8 +53,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             Assert.Equal(poll.Id, deserializedPoll.Id);
             Assert.Equal(poll.VotingData, deserializedPoll.VotingData);
-            Assert.Equal(poll.PollAppliedBlockHash, deserializedPoll.PollAppliedBlockHash);
-            Assert.Equal(poll.PollStartBlockHash, deserializedPoll.PollStartBlockHash);
+            Assert.Equal(poll.PollVotedInFavorBlockData, deserializedPoll.PollVotedInFavorBlockData);
+            Assert.Equal(poll.PollStartBlockData, deserializedPoll.PollStartBlockData);
             Assert.Equal(poll.PubKeysHexVotedInFavor.Count, deserializedPoll.PubKeysHexVotedInFavor.Count);
 
             for (int i = 0; i < poll.PubKeysHexVotedInFavor.Count; i++)

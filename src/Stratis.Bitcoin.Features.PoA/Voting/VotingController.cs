@@ -51,7 +51,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                return this.Json(this.votingManager.GetPendingPolls());
+                string polls = string.Join(Environment.NewLine, this.votingManager.GetPendingPolls().Select(x => x.ToString()).ToList());
+
+                return this.Ok(polls);
             }
             catch (Exception e)
             {
@@ -66,7 +68,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                return this.Json(this.votingManager.GetFinishedPolls());
+                string polls = string.Join(Environment.NewLine, this.votingManager.GetFinishedPolls().Select(x => x.ToString()).ToList());
+
+                return this.Ok(polls);
             }
             catch (Exception e)
             {
