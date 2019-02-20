@@ -83,15 +83,8 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="message">Received message to process.</param>
         private Task OnMessageReceived(INetworkPeer peer, IncomingMessage message)
         {
-            switch (message.Message.Payload)
-            {
-                case GetHeadersPayload getHeaders:
-                    this.HandleGetHeaders(getHeaders);
-                    break;
-
-                default:
-                    break;
-            }
+            if (message.Message.Payload is GetHeadersPayload getHeadersPayload)
+                this.HandleGetHeaders(getHeadersPayload);
 
             return Task.CompletedTask;
         }
@@ -133,7 +126,7 @@ namespace Stratis.Bitcoin.Consensus
 
                 // If the same header was requested more than 3 times in the last 60 seconds,
                 // ban and disconnect the peer for 1 hour.
-                if (this.getHeaderRequestCount > GetHeaderRequestCountThreshold)
+                if (this.getHeaderRequestCount >= GetHeaderRequestCountThreshold)
                 {
                     this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
                     this.logger.LogDebug("{0} banned via {1} for {2} seconds.", this.AttachedPeer.PeerEndPoint, this.GetType().Name, BanDurationSeconds);
