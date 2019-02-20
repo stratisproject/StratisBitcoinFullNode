@@ -69,8 +69,11 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         public override string ToString()
         {
-            return $"{nameof(this.IsPending)}:{this.IsPending}, {nameof(this.Id)}:{this.Id}, {nameof(this.PollStartBlockData)}:{this.PollStartBlockData?.ToString() ?? "null"}, " +
-                $"{nameof(this.PollVotedInFavorBlockData)}:{this.PollVotedInFavorBlockData?.ToString() ?? "null"}, {nameof(this.PubKeysHexVotedInFavor)}:{string.Join(" ", this.PubKeysHexVotedInFavor)}";
+            return $"{nameof(this.Id)}:{this.Id}, {nameof(this.IsPending)}:{this.IsPending}, {nameof(this.IsExecuted)}:{this.IsExecuted}, " +
+                   $"{nameof(this.PollStartBlockData)}:{this.PollStartBlockData?.ToString() ?? "null"}, " +
+                   $"{nameof(this.PollVotedInFavorBlockData)}:{this.PollVotedInFavorBlockData?.ToString() ?? "null"}, " +
+                   $"{nameof(this.PollExecutedBlockData)}:{this.PollExecutedBlockData?.ToString() ?? "null"}, " +
+                   $"{nameof(this.PubKeysHexVotedInFavor)}:{string.Join(" ", this.PubKeysHexVotedInFavor)}";
         }
     }
 }
