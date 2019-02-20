@@ -1034,7 +1034,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <summary>
         /// The index of the output of the destination address.
         /// </summary>
-        [JsonProperty(PropertyName = "outputIndex")]
+        [JsonProperty(PropertyName = "outputIndex", NullValueHandling = NullValueHandling.Ignore)]
         public int? OutputIndex { get; set; }
 
         /// <summary>
