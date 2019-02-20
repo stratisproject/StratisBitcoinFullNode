@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         [NoTrace]
         private void AddBenchStats(StringBuilder log)
         {
-            log.AppendLine("======CashedCoinView Bench======");
+            log.AppendLine("======CachedCoinView Bench======");
 
             log.AppendLine("Cache entries".PadRight(20) + this.cacheEntryCount);
 

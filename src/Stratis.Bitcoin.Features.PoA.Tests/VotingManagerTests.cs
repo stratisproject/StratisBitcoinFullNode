@@ -1,18 +1,16 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using Moq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
-using Stratis.Bitcoin.Utilities;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.Tests
 {
     public class VotingManagerTests : PoATestsBase
     {
-        private readonly VotingManager votingManager;
-        private readonly Mock<IPollResultExecutor> resultExecutorMock;
         private readonly VotingDataEncoder encoder;
 
         private readonly List<VotingData> changesApplied;
@@ -20,9 +18,6 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         public VotingManagerTests()
         {
-            string dir = TestBase.CreateTestDir(this);
-            var keyValueRepo = new KeyValueRepository(dir, new DBreezeSerializer(this.network));
-            this.resultExecutorMock = new Mock<IPollResultExecutor>();
             this.encoder = new VotingDataEncoder(this.loggerFactory);
             this.changesApplied = new List<VotingData>();
             this.changesReverted = new List<VotingData>();
@@ -30,15 +25,14 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
             this.resultExecutorMock.Setup(x => x.ApplyChange(It.IsAny<VotingData>())).Callback((VotingData data) => this.changesApplied.Add(data));
             this.resultExecutorMock.Setup(x => x.RevertChange(It.IsAny<VotingData>())).Callback((VotingData data) => this.changesReverted.Add(data));
 
-            this.federationManager.SetPrivatePropertyValue(nameof(FederationManager.IsFederationMember), true);
-
-            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, keyValueRepo, this.slotsManager, this.resultExecutorMock.Object);
             this.votingManager.Initialize();
         }
 
         [Fact]
         public void CanScheduleAndRemoveVotes()
         {
+            this.federationManager.SetPrivatePropertyValue(nameof(this.federationManager.IsFederationMember), true);
+
             this.votingManager.ScheduleVote(new VotingData());
 
             Assert.Single(this.votingManager.GetScheduledVotes());
@@ -63,12 +57,10 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             for (int i = 0; i < votesRequired; i++)
             {
-                Assert.Empty(this.changesApplied);
-
                 this.TriggerOnBlockConnected(this.CreateBlockWithVotingData(new List<VotingData>() { votingData }, i + 1));
             }
 
-            Assert.Single(this.changesApplied);
+            Assert.Single(this.votingManager.GetFinishedPolls());
         }
 
         private ChainedHeaderBlock CreateBlockWithVotingData(List<VotingData> data, int height)
@@ -95,12 +87,12 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
         private void TriggerOnBlockConnected(ChainedHeaderBlock block)
         {
-            this.votingManager.onBlockConnected(block);
+            this.signals.OnBlockConnected.Notify(block);
         }
 
         private void TriggerOnBlockDisconnected(ChainedHeaderBlock block)
         {
-            this.votingManager.onBlockDisconnected(block);
+            this.signals.OnBlockDisconnected.Notify(block);
         }
     }
 }

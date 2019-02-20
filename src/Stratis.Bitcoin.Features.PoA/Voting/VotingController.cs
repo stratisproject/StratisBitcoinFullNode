@@ -2,11 +2,9 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Text;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -53,7 +51,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                return this.Json(this.votingManager.GetPendingPolls());
+                string polls = string.Join(Environment.NewLine, this.votingManager.GetPendingPolls().Select(x => x.ToString()).ToList());
+
+                return this.Ok(polls);
             }
             catch (Exception e)
             {
@@ -68,7 +68,9 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         {
             try
             {
-                return this.Json(this.votingManager.GetFinishedPolls());
+                string polls = string.Join(Environment.NewLine, this.votingManager.GetFinishedPolls().Select(x => x.ToString()).ToList());
+
+                return this.Ok(polls);
             }
             catch (Exception e)
             {

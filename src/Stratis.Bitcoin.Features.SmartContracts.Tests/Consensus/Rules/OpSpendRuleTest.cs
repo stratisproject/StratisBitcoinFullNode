@@ -40,9 +40,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 },
                 new Transaction()
                 {
-                    Outputs =
+                    Inputs =
                     {
-                        new TxOut(new Money(1000), new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
+                        new TxIn(new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
                     }
                 }
             };
@@ -51,7 +51,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         }
 
         [Fact]
-        public void OpSpend_PreviousTransactionNone_FailureAsync()
+        public async Task OpSpend_PreviousTransactionNone_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
@@ -63,18 +63,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             {
                 new Transaction()
                 {
-                    Outputs =
+                    Inputs =
                     {
-                        new TxOut(new Money(1000), new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
+                        new TxIn(new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
                     }
                 }
             };
 
-            Task<ConsensusErrorException> error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
         }
 
         [Fact]
-        public void OpSpend_PreviousTransactionOther_FailureAsync()
+        public async Task OpSpend_PreviousTransactionOther_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             OpSpendRule rule = testContext.CreateRule<OpSpendRule>();
@@ -107,14 +107,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 },
                 new Transaction()
                 {
-                    Outputs =
+                    Inputs =
                     {
-                        new TxOut(new Money(1000), new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
+                        new TxIn(new Script(new [] { (byte) ScOpcodeType.OP_SPEND}))
                     }
                 }
             };
 
-            Task<ConsensusErrorException> error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
         }
     }
 }

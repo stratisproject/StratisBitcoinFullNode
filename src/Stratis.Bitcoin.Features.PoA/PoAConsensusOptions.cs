@@ -16,6 +16,9 @@ namespace Stratis.Bitcoin.Features.PoA
 
         public uint TargetSpacingSeconds { get; protected set; }
 
+        /// <summary>Adds capability of voting for adding\kicking federation members and other things.</summary>
+        public bool VotingEnabled { get; protected set; }
+
         /// <summary>Initializes values for networks that use block size rules.</summary>
         public PoAConsensusOptions(
             uint maxBlockBaseSize,
@@ -24,11 +27,13 @@ namespace Stratis.Bitcoin.Features.PoA
             int maxBlockSigopsCost,
             int maxStandardTxSigopsCost,
             List<PubKey> federationPublicKeys,
-            uint targetSpacingSeconds)
+            uint targetSpacingSeconds,
+            bool votingEnabled)
                 : base(maxBlockBaseSize, maxStandardVersion, maxStandardTxWeight, maxBlockSigopsCost, maxStandardTxSigopsCost)
         {
             this.GenesisFederationPublicKeys = federationPublicKeys;
             this.TargetSpacingSeconds = targetSpacingSeconds;
+            this.VotingEnabled = votingEnabled;
         }
     }
 }

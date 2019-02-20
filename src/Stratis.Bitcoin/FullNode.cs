@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin
         public IInitialBlockDownloadState InitialBlockDownloadState { get; private set; }
 
         /// <summary>Provider of notification about newly available blocks and transactions.</summary>
-        public Signals.Signals Signals { get; set; }
+        public Signals.ISignals Signals { get; set; }
 
         /// <summary>ASP.NET Core host for RPC server.</summary>
         public IWebHost RPCHost { get; set; }
@@ -168,7 +168,7 @@ namespace Stratis.Bitcoin
             this.Settings = this.Services.ServiceProvider.GetService<NodeSettings>();
             this.ChainBehaviorState = this.Services.ServiceProvider.GetService<IChainState>();
             this.Chain = this.Services.ServiceProvider.GetService<ConcurrentChain>();
-            this.Signals = this.Services.ServiceProvider.GetService<Signals.Signals>();
+            this.Signals = this.Services.ServiceProvider.GetService<Signals.ISignals>();
             this.InitialBlockDownloadState = this.Services.ServiceProvider.GetService<IInitialBlockDownloadState>();
             this.NodeStats = this.Services.ServiceProvider.GetService<INodeStats>();
 
