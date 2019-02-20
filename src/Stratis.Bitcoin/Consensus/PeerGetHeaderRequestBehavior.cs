@@ -17,6 +17,7 @@ namespace Stratis.Bitcoin.Consensus
     /// within a certain time frame.
     /// </summary>
     /// <remarks>
+    /// TODO:
     /// This behavior is a tempory work around to peers that spam the node with too many <see cref="GetHeadersPayload"/> requests.
     /// It will be changed in the future once a more in-depth and thorough implementation has been agreed upon.
     /// </remarks>
@@ -85,7 +86,7 @@ namespace Stratis.Bitcoin.Consensus
             switch (message.Message.Payload)
             {
                 case GetHeadersPayload getHeaders:
-                    this.AssessPeerGetHeaderFrequency(getHeaders);
+                    this.HandleGetHeaders(getHeaders);
                     break;
 
                 default:
@@ -95,10 +96,24 @@ namespace Stratis.Bitcoin.Consensus
             return Task.CompletedTask;
         }
 
-        private void AssessPeerGetHeaderFrequency(GetHeadersPayload getHeaders)
+        /// <summary>
+        /// Determines whether or not a peer asked for the same set of headers within 60 seconds.
+        /// <para>
+        /// If the same set of headers was requested more than <see cref="GetHeaderRequestCountThreshold"/>, it will be banned
+        /// and disconnected.
+        /// </para>
+        /// </summary>
+        private void HandleGetHeaders(GetHeadersPayload getHeaders)
         {
+            var blockLocatorHash = getHeaders.BlockLocator.Blocks.FirstOrDefault();
+            if (blockLocatorHash == null)
+            {
+                this.logger.LogTrace("(-)[EMPTY_BLOCKLOCATOR]");
+                return;
+            }
+
             // Is the last requested hash the same as this request.
-            if (this.getHeaderLastRequestHash == getHeaders.BlockLocator.Blocks.First())
+            if (this.getHeaderLastRequestHash == blockLocatorHash)
             {
                 this.logger.LogDebug($"{this.AttachedPeer.PeerEndPoint} block locator matches previous, count {this.getHeaderRequestCount}");
 
@@ -111,6 +126,8 @@ namespace Stratis.Bitcoin.Consensus
                 {
                     this.getHeaderLastRequestedTimestamp = this.dateTimeProvider.GetUtcNow();
                     this.getHeaderRequestCount = 0;
+
+                    this.logger.LogTrace("(-)[LAST_REQUESTED_WINDOW_ELAPSED]");
                     return;
                 }
 
@@ -119,12 +136,12 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.getHeaderRequestCount > GetHeaderRequestCountThreshold)
                 {
                     this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
-                    this.logger.LogDebug($"{this.AttachedPeer.PeerEndPoint} banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
+                    this.logger.LogDebug("{0} banned via {1} for {2} seconds.", this.AttachedPeer.PeerEndPoint, this.GetType().Name, BanDurationSeconds);
                 }
             }
             else
             {
-                this.getHeaderLastRequestHash = getHeaders.BlockLocator.Blocks.First();
+                this.getHeaderLastRequestHash = blockLocatorHash;
                 this.getHeaderRequestCount = 0;
             }
         }
