@@ -358,7 +358,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     using (DBreeze.Transactions.Transaction transaction = this.CreateTransaction())
                     {
                         transaction.ValuesLazyLoadingIsOn = false;
-                        int firstBlockToRewind = Math.Max(currentHeight - MaxBlocksToRewind, (int)targetHeight + 1);
+                        int firstBlockToRewind = Math.Max(currentHeight - MaxBlocksToRewind + 1, (int)targetHeight + 1);
 
                         for (int height = firstBlockToRewind; height <= currentHeight; height++)
                         {
@@ -391,7 +391,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                             var byteListComparer = new ByteListComparer();
 
-                            foreach (int key in keysToRemove.OrderBy(k => k.ToBytes(false), byteListComparer))
+                            foreach (int key in keysToRemove.OrderBy(k => k))
                                 transaction.RemoveKey("Rewind", key);
 
                             foreach (uint256 txId in transactionsToRemove.OrderBy(t => t.ToBytes(false), byteListComparer))
