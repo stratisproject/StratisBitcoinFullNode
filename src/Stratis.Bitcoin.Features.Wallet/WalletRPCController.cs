@@ -447,6 +447,10 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 return transaction.GetHash();
             }
+            catch (SecurityException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, exception.Message);
+            }
             catch (WalletException exception)
             {
                 throw new RPCServerException(RPCErrorCode.RPC_WALLET_ERROR, exception.Message);
