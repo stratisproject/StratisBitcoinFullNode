@@ -475,7 +475,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
             using (await this.lockobj.LockAsync().ConfigureAwait(false))
             {
-                uint256 hash = await this.inner.RewindAsync().ConfigureAwait(false);
+                uint256 hash = await this.inner.RewindAsync(targetHeight).ConfigureAwait(false);
 
                 foreach (KeyValuePair<uint256, CacheItem> cachedUtxoItem in this.cachedUtxoItems)
                 {
