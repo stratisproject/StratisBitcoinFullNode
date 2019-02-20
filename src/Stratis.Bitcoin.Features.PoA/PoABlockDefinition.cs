@@ -19,8 +19,9 @@ namespace Stratis.Bitcoin.Features.PoA
             ILoggerFactory loggerFactory,
             ITxMempool mempool,
             MempoolSchedulerLock mempoolLock,
-            Network network)
-            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(NodeSettings.Default(network)), network)
+            Network network,
+            NodeSettings nodeSettings)
+            : base(consensusManager, dateTimeProvider, loggerFactory, mempool, mempoolLock, new MinerSettings(nodeSettings), network)
         {
         }
 

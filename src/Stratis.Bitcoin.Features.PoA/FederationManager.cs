@@ -4,6 +4,7 @@ using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
@@ -15,6 +16,12 @@ namespace Stratis.Bitcoin.Features.PoA
 
         /// <summary>Key of current federation member. <c>null</c> if <see cref="IsFederationMember"/> is <c>false</c>.</summary>
         public Key FederationMemberKey { get; private set; }
+
+        /// <summary>Event that is executed when a new federation member is added.</summary>
+        public EventNotifier<PubKey> OnFedMemberAdded { get; }
+
+        /// <summary>Event that is executed when federation member is kicked.</summary>
+        public EventNotifier<PubKey> OnFedMemberKicked { get; }
 
         private readonly NodeSettings settings;
 
@@ -41,6 +48,9 @@ namespace Stratis.Bitcoin.Features.PoA
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.locker = new object();
+
+            this.OnFedMemberAdded = new EventNotifier<PubKey>();
+            this.OnFedMemberKicked = new EventNotifier<PubKey>();
         }
 
         public void Initialize()
@@ -52,7 +62,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 this.logger.LogDebug("Federation members are not stored in the db. Loading genesis federation members.");
 
-                this.federationMembers = this.network.ConsensusOptions.GenesisFederationPublicKeys;
+                this.federationMembers = new List<PubKey>(this.network.ConsensusOptions.GenesisFederationPublicKeys);
 
                 this.SaveFederationKeys(this.federationMembers);
             }
@@ -64,8 +74,8 @@ namespace Stratis.Bitcoin.Features.PoA
             // Load key.
             Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
 
-            this.IsFederationMember = key != null;
             this.FederationMemberKey = key;
+            this.SetIsFederationMember();
 
             if (this.FederationMemberKey == null)
             {
@@ -78,11 +88,15 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 string message = "Key provided is not registered on the network!";
 
-                this.logger.LogCritical(message);
-                throw new Exception(message);
+                this.logger.LogWarning(message);
             }
 
             this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: '{0}'.", this.FederationMemberKey.PubKey);
+        }
+
+        private void SetIsFederationMember()
+        {
+            this.IsFederationMember = this.federationMembers.Contains(this.FederationMemberKey?.PubKey);
         }
 
         /// <summary>Provides up to date list of federation members.</summary>
@@ -111,9 +125,12 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.federationMembers.Add(pubKey);
 
                 this.SaveFederationKeys(this.federationMembers);
+                this.SetIsFederationMember();
 
                 this.logger.LogInformation("Federation member '{0}' was added!", pubKey.ToHex());
             }
+
+            this.OnFedMemberAdded.Notify(pubKey);
         }
 
         public void RemoveFederationMember(PubKey pubKey)
@@ -123,9 +140,12 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.federationMembers.Remove(pubKey);
 
                 this.SaveFederationKeys(this.federationMembers);
+                this.SetIsFederationMember();
 
                 this.logger.LogInformation("Federation member '{0}' was removed!", pubKey.ToHex());
             }
+
+            this.OnFedMemberKicked.Notify(pubKey);
         }
 
         private void SaveFederationKeys(List<PubKey> pubKeys)

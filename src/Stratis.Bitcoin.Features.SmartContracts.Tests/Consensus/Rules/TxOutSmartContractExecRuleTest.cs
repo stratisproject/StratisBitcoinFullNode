@@ -97,5 +97,52 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             context.ValidationContext.BlockToValidate.Transactions = transactions;
             await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
         }
+
+        [Fact]
+        public async Task TxOutSmartContractExec_CoinbaseWithSmartContracts_ValidationFailAsync()
+        {
+            TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
+            TxOutSmartContractExecRule rule = testContext.CreateRule<TxOutSmartContractExecRule>();
+
+            var context = new RuleContext(new ValidationContext(), testContext.DateTimeProvider.GetTimeOffset());
+            context.ValidationContext.BlockToValidate = testContext.Network.Consensus.ConsensusFactory.CreateBlock();
+            context.ValidationContext.BlockToValidate.Header.HashPrevBlock = testContext.Chain.Tip.HashBlock;
+
+            var transactions = new List<Transaction>
+            {
+                new Transaction()
+                {
+                    Outputs =
+                    {
+                        new TxOut(Money.Zero, new Script(new [] { (byte)ScOpcodeType.OP_CALLCONTRACT }))
+                    },
+                    Inputs =
+                    {
+                        TxIn.CreateCoinbase(0)
+                    }
+                }
+            };
+
+            context.ValidationContext.BlockToValidate.Transactions = transactions;
+            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+
+            transactions = new List<Transaction>
+            {
+                new Transaction()
+                {
+                    Outputs =
+                    {
+                        new TxOut(Money.Zero, new Script()),
+                    },
+                    Inputs =
+                    {
+                        TxIn.CreateCoinbase(0)
+                    }
+                }
+            };
+
+            context.ValidationContext.BlockToValidate.Transactions = transactions;
+            await rule.RunAsync(context);
+        }
     }
 }

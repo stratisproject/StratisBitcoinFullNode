@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.Networks;
@@ -81,15 +82,9 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public void MineBlocks(int num)
         {
-            int currentHeight = this.nodes[0].CoreNode.GetTip().Height;
+            this.nodes[0].CoreNode.MineBlocksAsync(num).GetAwaiter().GetResult();
 
-            for (int i = 0; i < num; i++)
-            {
-                this.builder.PoATimeProvider.NextSpacing();
-                TestHelper.WaitLoop(() => this.nodes[0].CoreNode.GetTip().Height == currentHeight + 1);
-                currentHeight++;
-                WaitForAllNodesToSync();
-            }
+            this.WaitForAllNodesToSync();
         }
     }
 }

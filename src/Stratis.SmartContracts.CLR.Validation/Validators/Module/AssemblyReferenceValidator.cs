@@ -33,4 +33,20 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Module
             return errors;
         }
     }
+
+    public class ModuleReferenceValidator : IModuleDefinitionValidator
+    {
+        public IEnumerable<ValidationResult> Validate(ModuleDefinition module)
+        {
+            if (module.HasModuleReferences)
+            {
+                return new[]
+                {
+                    new ModuleDefinitionValidationResult("Module references are not allowed")
+                };
+            }
+
+            return Enumerable.Empty<ValidationResult>();
+        }
+    }
 }

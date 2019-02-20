@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Networks;
@@ -153,7 +152,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         /// In this test we supply a higher gas limit in our carrier than what we budgeted for in our transaction
         /// </summary>
         [Fact]
-        public void SmartContractFormatRule_FailureAsync()
+        public async Task SmartContractFormatRule_FailureAsync()
         {
             TestRulesContext testContext = TestRulesContextFactory.CreateAsync(this.network);
             ContractTransactionValidationRule rule = testContext.CreateContractValidationRule();
@@ -191,10 +190,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
             context.ValidationContext.BlockToValidate.Transactions = new List<Transaction>
             {
+                new Transaction(), // Include an empty transaction to ensure we're checking multiple.
                 transaction
             };
 
-            Task<ConsensusErrorException> error = Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
+            await Assert.ThrowsAsync<ConsensusErrorException>(async () => await rule.RunAsync(context));
         }
     }
 }

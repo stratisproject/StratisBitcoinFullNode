@@ -433,7 +433,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         }
 
         [Fact]
-        public async Task RetrieveTransactionByIdFromCacheAsync()
+        public async Task RetrieveTransactionByIdFromCacheReturnsNullWhenNotIndexedAsync()
         {
             List<ChainedHeaderBlock> chainedHeaderBlocks = this.AddBlocksToBlockStoreQueue();
 
@@ -445,7 +445,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
                 Transaction txToFind = chainedHeaderBlocks[blockIndex].Block.Transactions.First();
 
                 Transaction foundTx = await this.blockStoreQueue.GetTransactionByIdAsync(txToFind.GetHash());
-                Assert.Equal(txToFind, foundTx);
+                Assert.Null(foundTx);
             }
         }
 
