@@ -102,7 +102,6 @@ namespace Stratis.SmartContracts.CLR.Tests
 
         public ContractTests()
         {
-            var gasMeter = new Mock<IGasMeter>();
             var internalTxExecutor = new Mock<IInternalTransactionExecutor>();
             var internalHashHelper = new Mock<IInternalHashHelper>();
             var persistentState = new Mock<IPersistentState>();
