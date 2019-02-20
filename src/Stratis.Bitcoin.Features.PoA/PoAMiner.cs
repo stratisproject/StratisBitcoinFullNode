@@ -126,7 +126,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 try
                 {
                     // Don't mine in IBD in case we are connected to any node.
-                    if ((this.ibdState.IsInitialBlockDownload() && this.connectionManager.ConnectedPeers.Any()) || !this.federationManager.IsFederationMember)
+                    if (this.ibdState.IsInitialBlockDownload() || !this.connectionManager.ConnectedPeers.Any() || !this.federationManager.IsFederationMember)
                     {
                         int attemptDelayMs = 30_000;
                         await Task.Delay(attemptDelayMs, this.cancellation.Token).ConfigureAwait(false);
