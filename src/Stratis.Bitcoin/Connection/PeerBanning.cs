@@ -71,6 +71,12 @@ namespace Stratis.Bitcoin.Connection
         {
             Guard.NotNull(endpoint, nameof(endpoint));
 
+            if (banTimeSeconds < 0)
+            {
+                this.logger.LogTrace("(-)[NO_BAN]");
+                return;
+            }
+
             reason = reason ?? "unknown";
 
             // Find all connected peers from the same IP and disconnect them.
@@ -98,7 +104,8 @@ namespace Stratis.Bitcoin.Connection
             foreach (var peerAddress in peerAddresses)
             {
                 peerAddress.BanTimeStamp = this.dateTimeProvider.GetUtcNow();
-                peerAddress.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds(banTimeSeconds);
+                peerAddress.BanUntil = this.dateTimeProvider.GetUtcNow().AddSeconds(
+                    (banTimeSeconds == 0) ? this.connectionManager.ConnectionSettings.BanTimeSeconds : banTimeSeconds);
                 peerAddress.BanReason = reason;
 
                 this.logger.LogDebug("Peer '{0}' banned for reason '{1}', until {2}.", endpoint, reason, peerAddress.BanUntil.ToString());

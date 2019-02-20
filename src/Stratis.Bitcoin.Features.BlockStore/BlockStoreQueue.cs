@@ -181,9 +181,13 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public async Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
+            // Only look for transactions if they're indexed.
+            if (!this.storeSettings.TxIndex)
+                return default(Transaction);
+
             uint256 blockId = await this.GetBlockIdByTransactionIdAsync(trxid).ConfigureAwait(false);
             if (blockId == null)
-                return null;
+                return default(Transaction);
 
             Block block = await this.GetBlockAsync(blockId).ConfigureAwait(false);
 
