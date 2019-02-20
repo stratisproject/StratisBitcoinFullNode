@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 this.logger.LogInformation("Rewinding coin db from {0}", consensusTipHash);
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                consensusTipHash = await breezeCoinView.RewindAsync().ConfigureAwait(false);
+                consensusTipHash = await breezeCoinView.RewindAsync(chainTip.Height).ConfigureAwait(false);
             }
         }
 
