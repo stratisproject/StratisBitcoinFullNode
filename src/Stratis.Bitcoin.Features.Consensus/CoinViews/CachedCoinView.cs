@@ -228,7 +228,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                 this.performanceCounter.AddMissCount(miss.Count);
                 this.performanceCounter.AddHitCount(txIds.Length - miss.Count);
-            
+
                 FetchCoinsResponse fetchedCoins = null;
 
                 if (missedTxIds.Count > 0 || this.blockHash == null)
@@ -463,7 +463,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public async Task<uint256> RewindAsync()
+        public async Task<uint256> RewindAsync(int? targetHeight = null)
         {
             if (this.innerBlockHash == null)
             {

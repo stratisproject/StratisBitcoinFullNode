@@ -58,8 +58,9 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// and restoring recently spent outputs as UTXOs.
         /// </para>
         /// </summary>
+        /// <param name="targetHeight">The target height. This is a hint and may be ignored by the implementation in favor of rewinding a single block at a time.</param>
         /// <returns>Hash of the block header which is now the tip of the rewound coinview.</returns>
-        Task<uint256> RewindAsync();
+        Task<uint256> RewindAsync(int? targetHeight = null);
 
         /// <summary>
         /// Gets the rewind data by block height.

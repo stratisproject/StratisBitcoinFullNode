@@ -53,8 +53,9 @@ namespace Stratis.Bitcoin.Consensus
         /// and restoring the chain to an earlier state.
         /// </para>
         /// </summary>
+        /// <param name="targetHeight">The target height. This is a hint and may be ignored by the implementation in favor of rewinding a single block at a time.</param>
         /// <returns>Hash of the block header which is now the tip of the chain.</returns>
-        Task<RewindState> RewindAsync();
+        Task<RewindState> RewindAsync(int? targetHeight = null);
 
         /// <summary>Execute header validation rules.</summary>
         /// <param name="header">The chained header that is going to be validated.</param>
