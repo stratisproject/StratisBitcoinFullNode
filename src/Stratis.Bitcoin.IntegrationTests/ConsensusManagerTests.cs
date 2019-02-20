@@ -268,8 +268,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner A mines to height 25.
                 TestHelper.MineBlocks(minerA, 10);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerA), waitTimeSeconds: 120);
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerB), waitTimeSeconds: 120);
 
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 25);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 25);
@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
 
                 // Make sure syncer rolled back.
-                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 20);
+                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 20);
 
                 // Check syncer is still synced with Miner A.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
@@ -468,11 +468,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner B continues mines 110 blocks to a longer chain at height 120.
                 TestHelper.MineBlocks(minerB, 10);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), waitTimeSeconds: 120);
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerB), waitTimeSeconds: 120);
 
                 // Miner A mines an additional 10 blocks to height 125 that will create the longest chain.
                 TestHelper.MineBlocks(minerA, 10);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 120);
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerA), waitTimeSeconds: 120);
 
                 Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 115);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.Height == 115);

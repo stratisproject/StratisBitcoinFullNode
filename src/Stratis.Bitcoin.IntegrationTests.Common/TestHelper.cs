@@ -42,9 +42,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
             }
         }
 
-        public static void WaitLoopMessage(Func<(bool success, string message)> act)
+        public static void WaitLoopMessage(Func<(bool success, string message)> act, int waitTimeSeconds = 60)
         {
-            var cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : 60 * 1000).Token;
+            var cancellationToken = new CancellationTokenSource(Debugger.IsAttached ? 15 * 60 * 1000 : waitTimeSeconds * 1000).Token;
 
             var (success, message) = act();
 
@@ -103,6 +103,47 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 return false;
 
             return true;
+        }
+
+        public static (bool Passed, string Message) AreNodesSyncedMessage(CoreNode node1, CoreNode node2, bool ignoreMempool = false)
+        {
+            if (node1.runner is BitcoinCoreRunner || node2.runner is BitcoinCoreRunner)
+            {
+                return (node1.CreateRPCClient().GetBestBlockHash() == node2.CreateRPCClient().GetBestBlockHash(), "[BEST_BLOCK_HASH_DOES_MATCH]");
+            }
+
+            // If the nodes are at genesis they are considered synced.
+            if (node1.FullNode.Chain.Tip.Height == 0 && node2.FullNode.Chain.Tip.Height == 0)
+                return (true, "[TIPS_ARE_AT_GENESIS]");
+
+            if (node1.FullNode.Chain.Tip.HashBlock != node2.FullNode.Chain.Tip.HashBlock)
+                return (false, $"[CHAIN_TIP_HASH_DOES_NOT_MATCH_{node1.FullNode.Chain.Tip}_{node2.FullNode.Chain.Tip}]");
+
+            if (node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock != node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock)
+                return (false, $"[CONSENSUS_TIP_HASH_DOES_MATCH]_{node1.FullNode.ChainBehaviorState.ConsensusTip}_{node2.FullNode.ChainBehaviorState.ConsensusTip}]");
+
+            // Check that node1 tip exists in node2 store (either in disk or in the pending list)
+            if (node1.FullNode.BlockStore().GetBlockAsync(node2.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                return (false, "[NODE2_TIP_NOT_IN_NODE1_STORE]");
+
+            // Check that node2 tip exists in node1 store (either in disk or in the pending list)
+            if (node2.FullNode.BlockStore().GetBlockAsync(node1.FullNode.ChainBehaviorState.ConsensusTip.HashBlock).Result == null)
+                return (false, "[NODE1_TIP_NOT_IN_NODE2_STORE]");
+
+            if (!ignoreMempool)
+            {
+                if (node1.FullNode.MempoolManager().InfoAll().Count != node2.FullNode.MempoolManager().InfoAll().Count)
+                    return (false, "[NODE1_MEMPOOL_COUNT_NOT_EQUAL_NODE2_MEMPOOL_COUNT]");
+            }
+
+            if ((node1.FullNode.WalletManager().ContainsWallets) && (node2.FullNode.WalletManager().ContainsWallets))
+                if (node1.FullNode.WalletManager().WalletTipHash != node2.FullNode.WalletManager().WalletTipHash)
+                    return (false, "[WALLET_TIP_HASH_DOESNOT_MATCH]");
+
+            if (node1.CreateRPCClient().GetBestBlockHash() != node2.CreateRPCClient().GetBestBlockHash())
+                return (false, "[RPC_CLIENT_BEST_BLOCK_HASH_DOES_NOT_MATCH]");
+
+            return (true, string.Empty);
         }
 
         public static bool IsNodeSynced(CoreNode node)
