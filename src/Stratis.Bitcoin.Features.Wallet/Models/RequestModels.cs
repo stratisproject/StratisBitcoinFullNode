@@ -26,60 +26,85 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// Object used to create a new wallet
+    /// A class containing the necessary parameters for a block search request.
     /// </summary>
     public class WalletCreationRequest : RequestModel
     {
+        /// <summary>
+        /// The mnemonic used to create the HD wallet.
+        /// </summary>
         public string Mnemonic { get; set; }
 
         /// <summary>
-        /// This password is used to encrypt the wallet for secure storage. The password is required.
+        /// A password used to encrypt the wallet for secure storage.
         /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
         /// <summary>
-        /// This passphrase is used as an additional seed (word) joined together with the <see cref="Mnemonic"/>.
+        /// An additional seed (word) joined together with the <see cref="Mnemonic"/>.
         /// </summary>
         /// <remarks>
-        /// Empty string is a valid passphrase.
+        /// The passphrase can be an empty string.
         /// </remarks>
         [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
+        /// <summary>
+        /// The name of the wallet.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet to create is missing.")]
         public string Name { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a load wallet request.
+    /// </summary>
     public class WalletLoadRequest : RequestModel
     {
+        /// <summary>
+        /// The password that was used to create the wallet.
+        /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
+        /// <summary>
+        /// The name of the wallet.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
     }
 
+    /// <summary>
+    /// A class containing the necessary parameters for a wallet recovery request.
+    /// </summary>
     public class WalletRecoveryRequest : RequestModel
     {
+
+        /// <summary>
+        /// The mnemonic that was used to create the wallet.
+        /// </summary>
         [Required(ErrorMessage = "A mnemonic is required.")]
         public string Mnemonic { get; set; }
 
         /// <summary>
-        /// Supply the password that was used to create the wallet.
+        /// The password that was used to create the wallet.
         /// </summary>
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
 
         /// <summary>
-        /// Supply the passphrase that was used when account was created.
+        /// The passphrase that was used to create the wallet.
         /// </summary>
         /// <remarks>
-        /// If the wallet was created before <see cref="Passphrase"/> was available, set the passphrase to be the same as the password.
+        /// If the wallet was created before <see cref="Passphrase"/> was available as a parameter, set the passphrase to be the same as the password.
         /// </remarks>
         [Required(ErrorMessage = "A passphrase is required.", AllowEmptyStrings = true)]
         public string Passphrase { get; set; }
 
+        /// <summary>
+        /// The name of the wallet.
+        /// </summary>
         [Required(ErrorMessage = "The name of the wallet is missing.")]
         public string Name { get; set; }
 
@@ -397,15 +422,21 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
     }
 
     /// <summary>
-    /// Request object for adding an address to the address book.
+    /// A class containing the necessary parameters to perform an add address book entry request.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.Features.Wallet.Models.RequestModel" />
     public class AddressBookEntryRequest : RequestModel
     {
+        /// <summary>
+        /// A label to attach to the address book entry.
+        /// </summary>
         [Required(ErrorMessage = "A label is required.")]
         [MaxLength(200)]
         public string Label { get; set; }
 
+        /// <summary>
+        /// The address to enter in the address book.
+        /// </summary>
         [Required(ErrorMessage = "An address is required.")]
         [IsBitcoinAddress()]
         public string Address { get; set; }

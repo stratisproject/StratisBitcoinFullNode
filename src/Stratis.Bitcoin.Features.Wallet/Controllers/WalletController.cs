@@ -73,11 +73,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Generates a new mnemonic. The call can optionally specify a language and the number of words in the mnemonic.
+        /// Generates a mnemonic to use for an HD wallet.
         /// </summary>
-        /// <param name="language">The language for the words in the mnemonic. Options are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional. The default is 'English'.</param>
-        /// <param name="wordCount">The number of words in the mnemonic. Options are: 12,15,18,21 or 24. the default is 12.</param>
-        /// <returns>A JSON object containing the mnemonic generated.</returns>
+        /// <param name="language">The language for the words in the mnemonic. The options are: English, French, Spanish, Japanese, ChineseSimplified and ChineseTraditional. Defaults to English.</param>
+        /// <param name="wordCount">The number of words in the mnemonic. The options are: 12,15,18,21 or 24. Defaults to 12.</param>
+        /// <returns>A JSON object containing the generated mnemonic.</returns>
         [Route("mnemonic")]
         [HttpGet]
         public IActionResult GenerateMnemonic([FromQuery] string language = "English", int wordCount = 12)
@@ -129,9 +129,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Creates a new wallet on the local machine.
+        /// Creates a new wallet on this full node.
         /// </summary>
-        /// <param name="request">The object containing the parameters used to create the wallet.</param>
+        /// <param name="request">An object containing the necessary parameters to create a wallet.</param>
         /// <returns>A JSON object containing the mnemonic created for the new wallet.</returns>
         [Route("create")]
         [HttpPost]
@@ -170,9 +170,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Loads a wallet previously created by the user.
+        /// Loads a previously created wallet.
         /// </summary>
-        /// <param name="request">The name of the wallet to load.</param>
+        /// <param name="request">An object containing the necessary parameters to load an existing wallet</param>
         [Route("load")]
         [HttpPost]
         public IActionResult Load([FromBody]WalletLoadRequest request)
@@ -209,9 +209,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         }
 
         /// <summary>
-        /// Recovers a wallet.
+        /// Recovers an existing wallet.
         /// </summary>
-        /// <param name="request">The object containing the parameters used to recover a wallet.</param>
+        /// <param name="request">An object containing the parameters used to recover a wallet.</param>
         [Route("recover")]
         [HttpPost]
         public IActionResult Recover([FromBody]WalletRecoveryRequest request)
