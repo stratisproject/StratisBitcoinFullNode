@@ -193,8 +193,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var blockStoreFlushConditionMock = new Mock<IBlockStoreQueueFlushCondition>();
             blockStoreFlushConditionMock.Setup(s => s.ShouldFlush).Returns(false);
-            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushConditionMock.Object, new StoreSettings(NodeSettings.Default(this.network)),
-                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushConditionMock.Object, new StoreSettings(NodeSettings.Default(this.network)), this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
 
@@ -228,8 +227,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var blockStoreFlushConditionMock = new Mock<IBlockStoreQueueFlushCondition>();
             blockStoreFlushConditionMock.Setup(s => s.ShouldFlush).Returns(false);
-            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushConditionMock.Object, new StoreSettings(NodeSettings.Default(this.network)),
-                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushConditionMock.Object, new StoreSettings(NodeSettings.Default(this.network)), this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
             this.chainState.ConsensusTip = this.chain.Tip;
@@ -271,8 +269,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             var blockStoreFlushConditionMock = new Mock<IBlockStoreQueueFlushCondition>();
             blockStoreFlushConditionMock.Setup(s => s.ShouldFlush).Returns(false);
-            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushConditionMock.Object, new StoreSettings(NodeSettings.Default(this.network)),
-                this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
+            this.blockStoreQueue = new BlockStoreQueue(this.chain, this.chainState, blockStoreFlushConditionMock.Object, new StoreSettings(NodeSettings.Default(this.network)), this.blockRepositoryMock.Object, new LoggerFactory(), new Mock<INodeStats>().Object);
 
             await this.blockStoreQueue.InitializeAsync().ConfigureAwait(false);
 
