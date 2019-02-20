@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         /// <inheritdoc />
-        public Task<uint256> RewindAsync()
+        public Task<uint256> RewindAsync(int? targetHeight = null)
         {
             throw new NotImplementedException();
         }
