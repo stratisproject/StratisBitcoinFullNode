@@ -326,7 +326,6 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         {
             Task<uint256> task = Task.Run(() =>
             {
-                uint256 res = null;
                 int currentHeight;
 
                 using (DBreeze.Transactions.Transaction transaction = this.CreateTransaction())
@@ -338,11 +337,10 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     {
                         transaction.SynchronizeTables("BlockHash", "Coins", "Rewind");
                         transaction.RemoveAllKeys("Coins", true);
+                        transaction.RemoveAllKeys("Rewind", true);
                         this.SetBlockHash(transaction, this.network.GenesisHash);
 
-                        res = this.network.GenesisHash;
-
-                        return res;
+                        return this.network.GenesisHash;
                     }
                 }
 
@@ -409,9 +407,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     }
                 }
 
-                res = firstRewindData.PreviousBlockHash;
-
-                return res;
+                return firstRewindData.PreviousBlockHash;
             });
 
             return task;
