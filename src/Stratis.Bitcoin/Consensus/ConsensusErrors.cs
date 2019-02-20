@@ -83,7 +83,7 @@
         public static ConsensusError BadTransactionCoinstakeSpending => new ConsensusError("bad-txns-spend-of-coinstake", "coinstake is already spent");
         public static ConsensusError UtxoNotFoundInRewindData => new ConsensusError("utxo-not-found-in-rewind-data", "utxo not found in rewind data");
         public static ConsensusError InvalidPreviousProvenHeader => new ConsensusError("proven-header-invalid-previous-header", "previous header in chain is expected to be of proven header type");
-        public static ConsensusError InvalidPreviousProvenHeaderStakeModifier => new ConsensusError("proven-header-invalid-previous-header-stack-modifier", "previous proven header's StackModifier is null");
+        public static ConsensusError InvalidPreviousProvenHeaderStakeModifier => new ConsensusError("proven-header-invalid-previous-header-stake-modifier", "previous proven header's StakeModifier is null");
 
         public static ConsensusError BadColdstakeAmount => new ConsensusError("bad-coldstake-amount", "coldstake is negative");
         public static ConsensusError BadColdstakeInputs => new ConsensusError("bad-coldstake-inputs", "coldstake inputs contain mismatching scriptpubkeys");

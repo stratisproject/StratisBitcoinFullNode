@@ -13,20 +13,16 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Broadcasting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
-using Stratis.Bitcoin.Features.Wallet.Notifications;
 using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
     public sealed class SmartContractWalletFeature : FullNodeFeature
     {
-        private IDisposable blockSubscriberDisposable;
         private readonly BroadcasterBehavior broadcasterBehavior;
         private readonly ConcurrentChain chain;
         private readonly IConnectionManager connectionManager;
         private readonly ILogger logger;
-        private readonly Signals.Signals signals;
-        private IDisposable transactionSubscriberDisposable;
         private readonly IWalletManager walletManager;
         private readonly IWalletSyncManager walletSyncManager;
 
@@ -44,7 +40,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             ConcurrentChain chain,
             IConnectionManager connectionManager,
             ILoggerFactory loggerFactory,
-            Signals.Signals signals,
             IWalletManager walletManager,
             IWalletSyncManager walletSyncManager,
             INodeStats nodeStats)
@@ -52,7 +47,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             this.broadcasterBehavior = broadcasterBehavior;
             this.chain = chain;
             this.connectionManager = connectionManager;
-            this.signals = signals;
             this.logger = loggerFactory.CreateLogger(this.GetType().Name);
             this.walletManager = walletManager;
             this.walletSyncManager = walletSyncManager;
@@ -95,9 +89,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <inheritdoc />
         public override Task InitializeAsync()
         {
-            this.blockSubscriberDisposable = this.signals.SubscribeForBlocksConnected(new BlockObserver(this.walletSyncManager));
-            this.transactionSubscriberDisposable = this.signals.SubscribeForTransactions(new TransactionObserver(this.walletSyncManager));
-
             this.walletManager.Start();
             this.walletSyncManager.Start();
 
@@ -110,9 +101,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         /// <inheritdoc />
         public override void Dispose()
         {
-            this.blockSubscriberDisposable.Dispose();
-            this.transactionSubscriberDisposable.Dispose();
-
             this.walletManager.Stop();
             this.walletSyncManager.Stop();
         }

@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
@@ -20,13 +21,13 @@ namespace Stratis.SmartContracts.Tests.Common
 {
     public sealed class SmartContractPoARunner : NodeRunner
     {
-        private readonly IDateTimeProvider dateTimeProvider;
+        private readonly IDateTimeProvider timeProvider;
 
-        public SmartContractPoARunner(string dataDir, Network network, TargetSpacingDateTimeProvider timeProvider)
+        public SmartContractPoARunner(string dataDir, Network network, EditableTimeProvider timeProvider)
             : base(dataDir, null)
         {
             this.Network = network;
-            this.dateTimeProvider = timeProvider;
+            this.timeProvider = timeProvider;
         }
 
         public override void BuildNode()
@@ -43,8 +44,9 @@ namespace Stratis.SmartContracts.Tests.Common
                             .UseSmartContractPoAMining()
                             .UseSmartContractWallet()
                             .UseReflectionExecutor()
-                            .ReplaceTimeProvider(this.dateTimeProvider)
-                            .MockIBD();
+                            .ReplaceTimeProvider(this.timeProvider)
+                            .MockIBD()
+                            .AddFastMiningCapability();
 
             if (!this.EnablePeerDiscovery)
             {
