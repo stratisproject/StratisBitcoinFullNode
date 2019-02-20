@@ -145,8 +145,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
-            this.Listen = config.GetOrDefault<bool>("listen", true, this.logger);
-            this.ForceListen = config.GetOrDefault<bool>("forcelisten", false, this.logger);
+
+            // Listen option will default to true in case there are no connect option specified.
+            // When running the node with connect option listen flag has to be explicitly passed to the node to enable listen flag.
+            this.Listen = config.GetOrDefault<bool>("listen", !this.Connect.Any(), this.logger);
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
             if (this.MaxOutboundConnections <= 0)
                 throw new ConfigurationException("The 'maxoutboundconnections' must be greater than zero.");
@@ -224,7 +226,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
             var builder = new StringBuilder();
             builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
             builder.AppendLine($"-listen=<0 or 1>          Accept connections from the outside (defaulted to 1 unless -connect args specified).");
-            builder.AppendLine($"-forcelisten=<0 or 1>     This can be used to accept incoming connections when -connect is specified.");
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
@@ -254,14 +255,6 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// </para>
         /// </summary>
         public bool Listen { get; set; }
-
-        /// <summary>
-        /// This can be used to accept incoming connections when -connect is specified.
-        /// <para>
-        /// Defaulted to false.
-        /// </para>
-        /// </summary>
-        public bool ForceListen { get; set; }
 
         /// <summary>List of network interfaces on which the node should listen on.</summary>
         public List<NodeServerEndpoint> Bind { get; set; }

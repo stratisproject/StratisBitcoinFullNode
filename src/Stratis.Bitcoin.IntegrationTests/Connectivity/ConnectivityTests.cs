@@ -208,7 +208,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
             {
                 var nodeConfig = new NodeConfigParameters
                 {
-                    { "-connect", "0" }
+                    { "-listen", "0" }
                 };
 
                 CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork, configParameters: nodeConfig).Start();
@@ -231,14 +231,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         }
 
         [Fact]
-        public void NodeServer_Enabled_When_ConnectNode_Args_Specified_And_ForceListen_Specified()
+        public void NodeServer_Enabled_When_ConnectNode_Args_Specified_And_Listen_Specified()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
                 var nodeConfig = new NodeConfigParameters
                 {
                     { "-connect", "0" },
-                    { "-forcelisten", "1" }
+                    { "-listen", "1" }
                 };
 
                 CoreNode node1 = builder.CreateStratisPowNode(this.powNetwork, configParameters: nodeConfig).Start();
