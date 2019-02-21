@@ -59,7 +59,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 }
                 catch (OperationCanceledException e)
                 {
-                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message}");
+                    Assert.False(true, $"{message}{Environment.NewLine}{e.Message} [{e.InnerException?.Message}]");
                 }
             }
         }
