@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
         /// we need to check that the returned value falls within a given threshold period. We arbitrarily choose an interval
         /// and assume that the subsequent calls to DateTime.UtcNow will always take less time than that.
         /// </summary>
-        public const int TimeIntervalThreshholdSeconds = 2;
+        public const int TimeIntervalThresholdSeconds = 2;
 
         [Fact]
         public void GetUtcNowReturnsCurrentUtcDateTime()
