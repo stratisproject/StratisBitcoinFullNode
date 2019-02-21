@@ -406,12 +406,27 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         /// <param name="connectToNode">The node that will be connected to.</param>
         public static void Connect(CoreNode thisNode, CoreNode connectToNode)
         {
-            if (IsNodeConnectedTo(thisNode, connectToNode))
-                return;
+            var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
 
-            thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+            WaitLoop(() =>
+            {
+                try
+                {
+                    if (IsNodeConnectedTo(thisNode, connectToNode))
+                        return true;
 
-            WaitLoop(() => IsNodeConnectedTo(thisNode, connectToNode), waitTimeSeconds: 30, retryDelayInMiliseconds: 5000);
+                    thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+
+                    return true;
+                }
+                catch (Exception)
+                {
+                    // The connect request failed, probably due to a web exception so try again.
+                }
+
+                return false;
+
+            }, retryDelayInMiliseconds: 5000, cancellationToken: cancellation.Token);
         }
 
         /// <summary>
