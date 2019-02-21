@@ -181,6 +181,10 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// <inheritdoc/>
         public Task<Transaction> GetTransactionByIdAsync(uint256 trxid)
         {
+            // Only look for transactions if they're indexed.
+            if (!this.storeSettings.TxIndex)
+                return Task.FromResult(default(Transaction));
+
             lock (this.blocksCacheLock)
             {
                 foreach (ChainedHeaderBlock chainedHeaderBlock in this.pendingBlocksCache.Values)

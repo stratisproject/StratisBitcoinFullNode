@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
 using Mono.Cecil.Cil;
@@ -38,7 +39,7 @@ namespace Stratis.SmartContracts.CLR.Validation
             {
                 this.ValidateParameters(results, type, method);
 
-                foreach (var validator in this.policy.MethodDefValidators)
+                foreach (IMethodDefinitionValidator validator in this.policy.MethodDefValidators)
                 {
                     results.AddRange(validator.Validate(method));
                 }
@@ -55,9 +56,9 @@ namespace Stratis.SmartContracts.CLR.Validation
             if (!this.policy.ParameterValidators.Any())
                 return;
 
-            foreach (var parameter in method.Parameters)
+            foreach (ParameterDefinition parameter in method.Parameters)
             {
-                foreach (var validator in this.policy.ParameterValidators)
+                foreach (IParameterDefinitionValidator validator in this.policy.ParameterValidators)
                 {
                     results.AddRange(validator.Validate(parameter));
                 }
@@ -79,7 +80,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
             foreach (Instruction instruction in method.Body.Instructions)
             {
-                foreach (var validator in this.policy.InstructionValidators)
+                foreach (IInstructionValidator validator in this.policy.InstructionValidators)
                 {
                     results.AddRange(validator.Validate(instruction, method));
 
@@ -103,7 +104,7 @@ namespace Stratis.SmartContracts.CLR.Validation
             if (!(instruction.Operand is MemberReference reference))
                 return;
 
-            foreach (var validator in this.policy.MemberRefValidators)
+            foreach (IMemberReferenceValidator validator in this.policy.MemberRefValidators)
             {
                 results.AddRange(validator.Validate(reference));
             }
@@ -128,9 +129,9 @@ namespace Stratis.SmartContracts.CLR.Validation
             if (!this.policy.FieldDefValidators.Any()) 
                 return;
 
-            foreach (var field in type.Fields)
+            foreach (FieldDefinition field in type.Fields)
             {
-                foreach (var validator in this.policy.FieldDefValidators)
+                foreach (IFieldDefinitionValidator validator in this.policy.FieldDefValidators)
                 {
                     results.AddRange(validator.Validate(field));
                 }
@@ -145,7 +146,7 @@ namespace Stratis.SmartContracts.CLR.Validation
             if (!this.policy.TypeDefValidators.Any()) 
                 return;
 
-            foreach (var (validator, shouldValidateTypeFilter) in this.policy.TypeDefValidators)
+            foreach ((ITypeDefinitionValidator validator, Func<TypeDefinition, bool> shouldValidateTypeFilter) in this.policy.TypeDefValidators)
             {
                 if (shouldValidateTypeFilter(type))
                 {

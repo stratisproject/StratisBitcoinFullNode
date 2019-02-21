@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
         public Task<Transaction> GetAsync(uint256 txId)
         {
-            return this._Client.GetRawTransactionAsync(txId, false);
+            return this._Client.GetRawTransactionAsync(txId, null, false);
         }
 
         public Task BroadcastAsync(Transaction tx)

@@ -8,6 +8,7 @@ using NBitcoin;
 using NBitcoin.Protocol;
 using NLog;
 using Stratis.Bitcoin.Builder;
+using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -136,6 +137,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
                .AddMining()
                .UseWallet()
                .AddRPC()
+               .UseApi()
                .UseTestChainedHeaderTree()
                .MockIBD());
 
