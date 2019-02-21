@@ -245,7 +245,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
         {
             RLPCollection collection = (RLPCollection) RLP.Decode(bytes)[0];
 
-            var ret = Activator.CreateInstance(type);
+            object ret = Activator.CreateInstance(type);
 
             FieldInfo[] fields = type.GetFields();
 
@@ -266,7 +266,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
             RLPCollection collection = (RLPCollection)RLP.Decode(bytes)[0];
 
-            var ret = Array.CreateInstance(elementType, collection.Count);
+            Array ret = Array.CreateInstance(elementType, collection.Count);
 
             for(int i=0; i< collection.Count; i++)
             {

@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 try
                 {
-                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
                     txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
                 }
                 catch (MethodParameterStringSerializerException exception)
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 try
                 {
-                    var methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
+                    object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
                     txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
                 }
                 catch (MethodParameterStringSerializerException exception)
