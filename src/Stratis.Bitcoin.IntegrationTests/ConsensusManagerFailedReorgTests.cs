@@ -203,7 +203,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 minerA.SetConnectInterceptor(interceptorConnect);
                 minerA.SetDisconnectInterceptor(interceptorDisconnect);
 
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // Wait until Miner A disconnected its own chain so that it can connect to
                 // Miner B's longer chain.
@@ -263,7 +263,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 // Block 8 fails.
                 // Reorg from 7 to 5
                 // Reconnect blocks 6 to 9
-                TestHelper.Connect(syncer, minerB);
+                TestHelper.ConnectNoCheck(syncer, minerB);
 
                 TestHelper.AreNodesSynced(minerA, syncer);
 
@@ -335,7 +335,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerBTip = await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(14, (coreNode, block) => BlockBuilder.InvalidDuplicateCoinbase(coreNode, block)).BuildAsync();
 
                 // Reconnect Miner A to Miner B.
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // Miner A will disconnect Miner B
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
@@ -397,7 +397,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 await TestHelper.BuildBlocks.OnNode(minerC).Amount(5).Invalid(13, (coreNode, block) => BlockBuilder.InvalidCoinbaseReward(coreNode, block)).BuildAsync();
 
                 // Reconnect MinerA to MinerC.
-                TestHelper.Connect(minerA, minerC);
+                TestHelper.ConnectNoCheck(minerA, minerC);
 
                 // MinerC should be disconnected from MinerA
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerC));

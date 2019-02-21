@@ -11,6 +11,8 @@ using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Utilities;
 
@@ -29,12 +31,19 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
         protected readonly ConsensusSettings consensusSettings;
         protected readonly ConcurrentChain chain;
         protected readonly FederationManager federationManager;
+        protected readonly VotingManager votingManager;
+        protected readonly Mock<IPollResultExecutor> resultExecutorMock;
+        protected readonly ISignals signals;
+        protected readonly DBreezeSerializer dBreezeSerializer;
+        protected readonly ChainState chainState;
 
         public PoATestsBase(TestPoANetwork network = null)
         {
+            this.signals = new Signals.Signals();
             this.loggerFactory = new LoggerFactory();
             this.network = network == null ? new TestPoANetwork() : network;
             this.consensusOptions = this.network.ConsensusOptions;
+            this.dBreezeSerializer = new DBreezeSerializer(this.network);
 
             this.chain = new ConcurrentChain(this.network);
             IDateTimeProvider timeProvider = new DateTimeProvider();
@@ -45,9 +54,22 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
 
             this.poaHeaderValidator = new PoABlockHeaderValidator(this.loggerFactory);
 
-            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain,
-                new NodeDeployments(this.network, this.chain), this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object,
-                new ChainState(), new InvalidBlockHashStore(timeProvider), new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator);
+            var dataFolder = new DataFolder(TestBase.CreateTestDir(this));
+            var finalizedBlockRepo = new FinalizedBlockInfoRepository(new KeyValueRepository(dataFolder, this.dBreezeSerializer), this.loggerFactory);
+            finalizedBlockRepo.LoadFinalizedBlockInfoAsync(this.network).GetAwaiter().GetResult();
+
+            this.resultExecutorMock = new Mock<IPollResultExecutor>();
+
+            this.votingManager = new VotingManager(this.federationManager, this.loggerFactory, this.slotsManager, this.resultExecutorMock.Object, new NodeStats(timeProvider),
+                 dataFolder, this.dBreezeSerializer, this.signals, finalizedBlockRepo);
+
+            this.votingManager.Initialize();
+
+            this.chainState = new ChainState();
+
+            this.rulesEngine = new PoAConsensusRuleEngine(this.network, this.loggerFactory, new DateTimeProvider(), this.chain, new NodeDeployments(this.network, this.chain),
+                this.consensusSettings, new Checkpoints(this.network, this.consensusSettings), new Mock<ICoinView>().Object, this.chainState, new InvalidBlockHashStore(timeProvider),
+                new NodeStats(timeProvider), this.slotsManager, this.poaHeaderValidator, this.votingManager, this.federationManager);
 
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(50, null, false, null, this.network);
 
@@ -108,6 +130,8 @@ namespace Stratis.Bitcoin.Features.PoA.Tests
                 targetSpacingSeconds: 60,
                 votingEnabled: baseOptions.VotingEnabled
             );
+
+            this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), (uint)5);
         }
     }
 }

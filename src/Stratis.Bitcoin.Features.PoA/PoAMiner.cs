@@ -33,8 +33,6 @@ namespace Stratis.Bitcoin.Features.PoA
     {
         /// <summary>Starts mining loop.</summary>
         void InitializeMining();
-
-        bool IsMining();
     }
 
     /// <inheritdoc cref="IPoAMiner"/>
@@ -121,11 +119,6 @@ namespace Stratis.Bitcoin.Features.PoA
             }
         }
 
-        public bool IsMining()
-        {
-            return this.miningTask != null;
-        }
-
         private async Task CreateBlocksAsync()
         {
             while (!this.cancellation.IsCancellationRequested)
@@ -133,9 +126,9 @@ namespace Stratis.Bitcoin.Features.PoA
                 try
                 {
                     // Don't mine in IBD in case we are connected to any node.
-                    if (this.ibdState.IsInitialBlockDownload() && this.connectionManager.ConnectedPeers.Any())
+                    if (this.ibdState.IsInitialBlockDownload() || !this.connectionManager.ConnectedPeers.Any() || !this.federationManager.IsFederationMember)
                     {
-                        int attemptDelayMs = 20_000;
+                        int attemptDelayMs = 30_000;
                         await Task.Delay(attemptDelayMs, this.cancellation.Token).ConfigureAwait(false);
 
                         continue;
@@ -179,7 +172,18 @@ namespace Stratis.Bitcoin.Features.PoA
                     continue;
                 }
 
-                uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+                uint myTimestamp;
+
+                try
+                {
+                    myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+                }
+                catch (NotAFederationMemberException)
+                {
+                    this.logger.LogWarning("This node is no longer a federation member!");
+
+                    throw new OperationCanceledException();
+                }
 
                 int estimatedWaitingTime = (int)(myTimestamp - timeNow) - 1;
 

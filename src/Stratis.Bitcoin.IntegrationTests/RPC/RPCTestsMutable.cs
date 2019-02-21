@@ -171,6 +171,28 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
         }
 
         [Fact]
+        public void TestRpcSendManyWithLockedWalletFails()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest150Miner).Start();
+
+                RPCClient rpcClient = node.CreateRPCClient();
+
+                var addresses = new Dictionary<string, decimal>
+                {
+                    { new Key().GetBitcoinSecret(network).GetAddress().ToString(), 1.0m },
+                    { new Key().GetBitcoinSecret(network).GetAddress().ToString(), 2.0m }
+                };
+
+                var addressesJson = JsonConvert.SerializeObject(addresses);
+                Action action = () => rpcClient.SendCommand(RPCOperations.sendmany, string.Empty, addressesJson);
+                action.Should().Throw<RPCException>().Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED);
+            }
+        }
+
+        [Fact]
         public void TestRpcSendManyWithInvalidParametersFails()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))

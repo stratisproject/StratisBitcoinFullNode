@@ -19,9 +19,9 @@ namespace Stratis.SmartContracts.Core
             if (hex.StartsWith("0x"))
                 toHex = hex.Substring(2);
 
-            int NumberChars = toHex.Length;
-            byte[] bytes = new byte[NumberChars / 2];
-            for (int i = 0; i < NumberChars; i += 2)
+            int numberChars = toHex.Length;
+            byte[] bytes = new byte[numberChars / 2];
+            for (int i = 0; i < numberChars; i += 2)
                 bytes[i / 2] = Convert.ToByte(toHex.Substring(i, 2), 16);
             return bytes;
         }

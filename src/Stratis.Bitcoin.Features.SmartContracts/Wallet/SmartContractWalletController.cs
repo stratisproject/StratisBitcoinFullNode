@@ -72,16 +72,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             try
             {
-                var addresses = this.GetAccountAddressesWithBalance(walletName)
+                IEnumerable<string> addresses = this.GetAccountAddressesWithBalance(walletName)
                     .Select(a => a.Address);
 
                 if (!addresses.Any())
                 {
-                    var account = this.walletManager.GetAccounts(walletName).First();
+                    HdAccount account = this.walletManager.GetAccounts(walletName).First();
 
                     var walletAccountReference = new WalletAccountReference(walletName, account.Name);
 
-                    var nextAddress = this.walletManager.GetUnusedAddress(walletAccountReference);
+                    HdAddress nextAddress = this.walletManager.GetUnusedAddress(walletAccountReference);
 
                     return this.Json(new[] { nextAddress.Address });
                 }
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         [HttpGet]
         public IActionResult GetAddressBalance(string address)
         {
-            var balance = this.walletManager.GetAddressBalance(address);
+            AddressBalance balance = this.walletManager.GetAddressBalance(address);
 
             return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.Satoshi));
         }
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 var transactionItems = new List<ContractTransactionItem>();
 
-                var account = this.walletManager.GetAccounts(walletName).First();
+                HdAccount account = this.walletManager.GetAccounts(walletName).First();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
                 IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(walletName, account.Name);

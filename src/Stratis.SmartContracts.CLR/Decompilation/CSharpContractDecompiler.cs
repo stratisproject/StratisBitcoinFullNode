@@ -21,7 +21,7 @@ namespace Stratis.SmartContracts.CLR.Decompilation
             {
                 try
                 {
-                    var modDefinition = ModuleDefinition.ReadModule(memStream);
+                    ModuleDefinition modDefinition = ModuleDefinition.ReadModule(memStream);
                     var decompiler = new CSharpDecompiler(modDefinition, new DecompilerSettings { });
                     string cSharp = decompiler.DecompileWholeModuleAsString();
                     return Result.Ok(cSharp);
