@@ -1,4 +1,9 @@
-﻿using Xunit;
+﻿using FluentAssertions;
+using NBitcoin;
+using Stratis.Bitcoin.Networks;
+using Stratis.Features.FederatedPeg.NetworkHelpers;
+using Stratis.Sidechains.Networks;
+using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {
