@@ -116,7 +116,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
         /// </summary>
         /// <remarks>Takes a while to run as block generation cannot
         /// be sped up for this test.</remarks>
-        [Fact(Skip = "Awaiting fix for issue #2468")]
+        [Fact]
         public void SBFNMinesTransaction_XSyncs()
         {
             // TODO: Currently fails due to issue #2468 (coinbase
@@ -156,12 +156,18 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
 
                 TestHelper.MineBlocks(stratisNode, 11);
 
-                // It takes a reasonable amount of time for blocks to be generated without
-                // the datetime provider substitution.
-                var longCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(15)).Token;
-                var shortCancellationToken = new CancellationTokenSource(TimeSpan.FromMinutes(1)).Token;
+                var stratisBestBlockHash = default(uint256);
+                var stratisXBestBlockHash = default(uint256);
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: longCancellationToken);
+                // Wait for the nodes to settle on the same tip.
+                TestHelper.WaitLoop(() =>
+                    {
+                        stratisBestBlockHash = stratisNodeRpc.GetBestBlockHash();
+                        stratisXBestBlockHash = stratisXRpc.GetBestBlockHash();
+
+                        return stratisBestBlockHash == stratisXBestBlockHash;
+                    },
+                    waitTimeSeconds: 15 * 60);
 
                 // Send transaction to arbitrary address from SBFN side.
                 var alice = new Key().GetBitcoinSecret(network);
@@ -169,20 +175,28 @@ namespace Stratis.Bitcoin.IntegrationTests.Compatibility
                 stratisNodeRpc.WalletPassphrase("password", 60);
                 stratisNodeRpc.SendToAddress(aliceAddress, Money.Coins(1.0m));
 
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 1, waitTimeSeconds: 60);
 
                 // Transaction should percolate through to X's mempool.
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, cancellationToken: shortCancellationToken);
+                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 1, waitTimeSeconds: 60);
 
                 // Now SBFN must mine the block.
                 TestHelper.MineBlocks(stratisNode, 1);
 
-                // We expect that X will sync correctly.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetBestBlockHash() == stratisXRpc.GetBestBlockHash(), cancellationToken: shortCancellationToken);
+                // Wait for the nodes to settle on the same tip.
+                TestHelper.WaitLoop(() =>
+                    {
+                        stratisBestBlockHash = stratisNodeRpc.GetBestBlockHash();
+                        stratisXBestBlockHash = stratisXRpc.GetBestBlockHash();
+
+                        return stratisBestBlockHash == stratisXBestBlockHash;
+                    },
+                    waitTimeSeconds: 15 * 60);
 
                 // Sanity check - mempools should both become empty.
-                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
-                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, cancellationToken: shortCancellationToken);
+                TestHelper.WaitLoop(() => stratisNodeRpc.GetRawMempool().Length == 0, waitTimeSeconds: 60);
+
+                TestHelper.WaitLoop(() => stratisXRpc.GetRawMempool().Length == 0, waitTimeSeconds: 60);
             }
         }
 
