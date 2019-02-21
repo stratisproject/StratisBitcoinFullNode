@@ -193,6 +193,11 @@ namespace Stratis.Bitcoin.Base
 
             connectionParameters.TemplateBehaviors.Add(new PingPongBehavior());
             connectionParameters.TemplateBehaviors.Add(new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
+
+            // TODO: Once a proper rate limiting strategy has been implemented, this check will be removed.
+            if (!this.network.IsRegTest())
+                connectionParameters.TemplateBehaviors.Add(new RateLimitingBehavior(this.dateTimeProvider, this.loggerFactory, this.peerBanning));
+
             connectionParameters.TemplateBehaviors.Add(new PeerBanningBehavior(this.loggerFactory, this.peerBanning, this.nodeSettings));
             connectionParameters.TemplateBehaviors.Add(new BlockPullerBehavior(this.blockPuller, this.initialBlockDownloadState, this.dateTimeProvider, this.loggerFactory));
             connectionParameters.TemplateBehaviors.Add(new ConnectionManagerBehavior(this.connectionManager, this.loggerFactory));

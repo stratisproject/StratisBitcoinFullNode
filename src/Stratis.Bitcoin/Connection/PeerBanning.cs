@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Net;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
@@ -123,15 +124,15 @@ namespace Stratis.Bitcoin.Connection
         {
             Guard.NotNull(endpoint, nameof(endpoint));
 
-            PeerAddress peerAddress = this.peerAddressManager.FindPeer(endpoint);
+            List<PeerAddress> peerAddresses = this.peerAddressManager.FindPeersByIp(endpoint);
 
-            if (peerAddress == null)
+            if (peerAddresses.Count == 0)
             {
                 this.logger.LogTrace("(-)[PEERNOTFOUND]");
                 return false;
             }
 
-            return peerAddress.BanUntil > this.dateTimeProvider.GetUtcNow();
+            return peerAddresses.Any(p => p.BanUntil > this.dateTimeProvider.GetUtcNow());
         }
     }
 }
