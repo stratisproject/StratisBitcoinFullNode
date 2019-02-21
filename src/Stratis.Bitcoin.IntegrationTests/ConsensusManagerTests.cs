@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 55));
 
                 // Connect minerA to minerB, this will cause an InvalidStakeDepth exception to be thrown on minerB.
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // Wait until minerA has disconnected minerB due to the InvalidStakeDepth exception.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
@@ -220,7 +220,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 40));
 
                 // Connect minerA to minerB.
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // Wait until the nodes become disconnected due to the MaxReorgViolation.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
@@ -265,8 +265,8 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner A mines to height 25.
                 TestHelper.MineBlocks(minerA, 10);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB));
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerA), waitTimeSeconds: 120);
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerB), waitTimeSeconds: 120);
 
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 25));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 25));
@@ -298,7 +298,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 20));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 10));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 20));
-                
+
                 // Inject a rule that will fail at block 15 of the new chain.
                 var engine = syncer.FullNode.NodeService<IConsensusRuleEngine>() as ConsensusRuleEngine;
                 syncerNetwork.Consensus.FullValidationRules.Insert(1, new FailValidation(15));
@@ -314,7 +314,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
 
                 // Make sure syncer rolled back.
-                Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 20));
+                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 20);
 
                 // Check syncer is still synced with Miner A.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 11));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerB, 10));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 11));
-                
+
                 // Syncer jumps chain and reorgs to minerB's longer chain of 12
                 TestHelper.MineBlocks(minerB, 2);
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 11));
@@ -434,7 +434,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 engine.Register();
 
                 // Connect syncer to Miner A, reorg should fail.
-                TestHelper.Connect(syncer, minerA);
+                TestHelper.ConnectNoCheck(syncer, minerA);
 
                 // Syncer should disconnect from miner A after the failed block.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerA));
@@ -453,7 +453,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 var minerB = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
                 var syncer = builder.CreateStratisPowNode(this.powNetwork).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Listener).Start();
 
-                // Sync the network to height 10.
+                // Sync the network to height 100.
                 TestHelper.ConnectAndSync(syncer, minerA, minerB);
 
                 TestHelper.DisableBlockPropagation(syncer, minerA);
@@ -465,11 +465,11 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 // Miner B continues mines 110 blocks to a longer chain at height 120.
                 TestHelper.MineBlocks(minerB, 10);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerB), waitTimeSeconds: 120);
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerB), waitTimeSeconds: 120);
 
                 // Miner A mines an additional 10 blocks to height 125 that will create the longest chain.
                 TestHelper.MineBlocks(minerA, 10);
-                TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA), waitTimeSeconds: 120);
+                TestHelper.WaitLoopMessage(() => TestHelper.AreNodesSyncedMessage(syncer, minerA), waitTimeSeconds: 120);
 
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(syncer, 115));
                 Assert.True(TestHelper.IsNodeSyncedAtHeight(minerA, 115));
@@ -604,9 +604,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
                 TestHelper.ConnectAndSync(minerA, minerB);
 
-                TestHelper.WaitLoop(() =>
-                    minerA.FullNode.ConsensusManager().Tip.HashBlock ==
-                    minerB.FullNode.ConsensusManager().Tip.HashBlock);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.HashBlock == minerB.FullNode.ConsensusManager().Tip.HashBlock);
                 Assert.True(minerA.FullNode.ConsensusManager().Tip.HashBlock == minerB.FullNode.ConsensusManager().Tip.HashBlock);
             }
         }
