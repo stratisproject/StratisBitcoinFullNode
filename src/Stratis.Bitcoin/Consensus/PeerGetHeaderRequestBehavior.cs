@@ -83,8 +83,15 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="message">Received message to process.</param>
         private Task OnMessageReceived(INetworkPeer peer, IncomingMessage message)
         {
-            if (message.Message.Payload is GetHeadersPayload getHeadersPayload)
-                this.HandleGetHeaders(getHeadersPayload);
+            switch (message.Message.Payload)
+            {
+                case GetHeadersPayload getHeaders:
+                    this.HandleGetHeaders(getHeaders);
+                    break;
+
+                default:
+                    break;
+            }
 
             return Task.CompletedTask;
         }
