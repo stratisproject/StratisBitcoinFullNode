@@ -849,6 +849,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>
         ///   <c>true</c> if it is a change address; otherwise, <c>false</c>.
         /// </returns>
+        [NoTrace]
         public bool IsChangeAddress()
         {
             return HdOperations.IsChangeAddress(this.HdPath);
