@@ -1126,7 +1126,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         DestinationScriptPubKey = paidToOutput.ScriptPubKey,
                         DestinationAddress = destinationAddress,
-                        Amount = paidToOutput.Value
+                        Amount = paidToOutput.Value,
+                        OutputIndex = transaction.Outputs.IndexOf(paidToOutput)
                     });
                 }
 

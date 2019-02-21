@@ -56,70 +56,70 @@ namespace Stratis.SmartContracts.CLR
 
         public char GetChar(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToChar(bytes);
         }
 
         public Address GetAddress(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
             
             return this.Serializer.ToAddress(bytes);
         }
 
         public bool GetBool(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToBool(bytes);
         }
 
         public int GetInt32(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToInt32(bytes);
         }
 
         public uint GetUInt32(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToUInt32(bytes);
         }
 
         public long GetInt64(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToInt64(bytes);
         }
 
         public ulong GetUInt64(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToUInt64(bytes);
         }
 
         public string GetString(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToString(bytes);
         }
 
         public T GetStruct<T>(string key) where T : struct
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToStruct<T>(bytes);
         }
 
         public T[] GetArray<T>(string key)
         {
-            var bytes = this.GetBytes(key);
+            byte[] bytes = this.GetBytes(key);
 
             return this.Serializer.ToArray<T>(bytes);
         }

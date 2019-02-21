@@ -32,9 +32,9 @@ namespace Stratis.SmartContracts.CLR.Validation
 
             var results = new List<ValidationResult>();
 
-            foreach (var param in methodDef.Parameters)
+            foreach (ParameterDefinition param in methodDef.Parameters)
             {
-                (var valid, var message) = IsValidParam(methodDef, param);
+                (bool valid, string message) = IsValidParam(methodDef, param);
 
                 if (!valid)
                 {

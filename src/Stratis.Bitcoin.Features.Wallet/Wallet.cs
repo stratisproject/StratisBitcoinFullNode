@@ -1026,10 +1026,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Script DestinationScriptPubKey { get; set; }
 
         /// <summary>
-        /// The Base58 representation of the destination  address.
+        /// The Base58 representation of the destination address.
         /// </summary>
         [JsonProperty(PropertyName = "destinationAddress")]
         public string DestinationAddress { get; set; }
+
+        /// <summary>
+        /// The index of the output of the destination address.
+        /// </summary>
+        [JsonProperty(PropertyName = "outputIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? OutputIndex { get; set; }
 
         /// <summary>
         /// The transaction amount.
