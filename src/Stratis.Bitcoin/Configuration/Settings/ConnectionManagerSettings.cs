@@ -149,6 +149,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
             // Listen option will default to true in case there are no connect option specified.
             // When running the node with connect option listen flag has to be explicitly passed to the node to enable listen flag.
             this.Listen = config.GetOrDefault<bool>("listen", !this.Connect.Any(), this.logger);
+
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
             if (this.MaxOutboundConnections <= 0)
                 throw new ConfigurationException("The 'maxoutboundconnections' must be greater than zero.");
@@ -249,9 +250,16 @@ namespace Stratis.Bitcoin.Configuration.Settings
         public List<IPEndPoint> AddNode { get; set; }
 
         /// <summary>
-        /// Accept connections from the outside.
+        /// Accepts incoming connections by starting the node server.
         /// <para>
-        /// Defaulted to true unless -connect specified.
+        /// Set to true if no -connect args specified or explicility set to -listen=1.
+        /// </para>
+        /// <para>
+        /// E.g.
+        /// -listen=1 -connect=127.0.0.0 -> Listen = true
+        /// -listen -connect=127.0.0.0 -> Listen = true
+        /// -listen=0 -connect=127.0.0.0 -> Listen = false
+        /// -connect=127.0.0.0 -> Listen = false
         /// </para>
         /// </summary>
         public bool Listen { get; set; }
