@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Consensus
         private int getHeaderRequestCount;
 
         /// <summary>The threshold after which the node will be banned and disconnected.</summary>
-        private const int GetHeaderRequestCountThreshold = 10;
+        private const int GetHeaderRequestCountThreshold = 50;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
@@ -135,7 +135,7 @@ namespace Stratis.Bitcoin.Consensus
                 // ban and disconnect the peer for 1 hour.
                 if (this.getHeaderRequestCount >= GetHeaderRequestCountThreshold)
                 {
-                    this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via {this.GetType().Name} for {BanDurationSeconds} seconds.");
+                    this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via rate limiting for {BanDurationSeconds} seconds.");
                     this.logger.LogDebug("{0} banned via {1} for {2} seconds.", this.AttachedPeer.PeerEndPoint, this.GetType().Name, BanDurationSeconds);
                 }
             }
