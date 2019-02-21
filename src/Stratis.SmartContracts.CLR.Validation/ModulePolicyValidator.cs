@@ -37,7 +37,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
         private void ValidateModule(List<ValidationResult> results, ModuleDefinition module)
         {
-            foreach (var validator in this.policy.ModuleDefValidators)
+            foreach (IModuleDefinitionValidator validator in this.policy.ModuleDefValidators)
             {
                 results.AddRange(validator.Validate(module));
             }
