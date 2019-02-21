@@ -416,8 +416,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                         return true;
 
                     thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
-
-                    return true;
                 }
                 catch (Exception)
                 {
@@ -426,7 +424,33 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
 
                 return false;
 
-            }, retryDelayInMiliseconds: 5000, cancellationToken: cancellation.Token);
+            }, retryDelayInMiliseconds: 500, cancellationToken: cancellation.Token);
+        }
+
+        /// <summary>
+        /// This connect method will only retry the connection if an RPC exception occurred.
+        /// <para>
+        /// In cases where we expect the node to disconnect, this should be used.
+        /// </para>
+        /// </summary>
+        /// <param name="thisNode">The node the connection will be established from.</param>
+        /// <param name="connectToNode">The node that will be connected to.</param>
+        public static void ConnectNoCheck(CoreNode thisNode, CoreNode connectToNode)
+        {
+            var cancellation = new CancellationTokenSource((int)TimeSpan.FromSeconds(30).TotalMilliseconds);
+
+            WaitLoop(() =>
+            {
+                try
+                {
+                    thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
+                    return true;
+                }
+                catch (Exception)
+                {
+                    return false;
+                }
+            }, retryDelayInMiliseconds: 500, cancellationToken: cancellation.Token);
         }
 
         /// <summary>

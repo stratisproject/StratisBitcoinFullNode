@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Consensus
         private int getHeaderRequestCount;
 
         /// <summary>The threshold after which the node will be banned and disconnected.</summary>
-        private const int GetHeaderRequestCountThreshold = 50;
+        private const int GetHeaderRequestCountThreshold = 10;
 
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
