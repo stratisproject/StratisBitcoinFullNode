@@ -317,7 +317,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(syncer, minerB));
 
                 // Make sure syncer rolled back.
-                Assert.True(syncer.FullNode.ConsensusManager().Tip.Height == 20);
+                TestHelper.WaitLoop(() => syncer.FullNode.ConsensusManager().Tip.Height == 20);
 
                 // Check syncer is still synced with Miner A.
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(syncer, minerA));
