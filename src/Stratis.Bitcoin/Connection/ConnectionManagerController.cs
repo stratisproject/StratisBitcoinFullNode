@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Linq;
 using System.Net;
+using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using Stratis.Bitcoin.Controllers;
@@ -20,53 +21,85 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>Instance logger.</summary>
         private readonly ILogger logger;
 
-        public ConnectionManagerController(IConnectionManager connectionManager,
-            ILoggerFactory loggerFactory) : base(connectionManager: connectionManager)
+        /// <summary>Network peer banning functionality.</summary>
+        private readonly IPeerBanning peerBanning;
+
+        public ConnectionManagerController(
+            IConnectionManager connectionManager,
+            IPeerBanning peerBanning,
+            ILoggerFactory loggerFactory)
+            : base(connectionManager: connectionManager)
         {
             Guard.NotNull(this.ConnectionManager, nameof(this.ConnectionManager));
+
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
+            this.peerBanning = peerBanning;
         }
 
         /// <summary>
         /// RPC method for adding a node connection.
         /// </summary>
-        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <param name="endpointStr">The endpoint in string format.</param>
+        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <returns><c>true</c> if successful.</returns>
         /// <exception cref="ArgumentException">Thrown if unsupported command given.</exception>
         [ActionName("addnode")]
         [ApiExplorerSettings(IgnoreApi = true)]
         [ActionDescription("Adds a node to the connection manager.")]
-        public bool AddNodeRPC(string endpointStr, string command)
+        public async Task<AddNodeRpcResult> AddNodeRPCAsync(string endpointStr, string command)
         {
+            var result = new AddNodeRpcResult();
+
             IPEndPoint endpoint = endpointStr.ToIPEndPoint(this.ConnectionManager.Network.DefaultPort);
             switch (command)
             {
                 case "add":
-                    this.ConnectionManager.AddNodeAddress(endpoint);
-                    break;
+                    {
+                        if (this.peerBanning.IsBanned(endpoint))
+                            result.ErrorMessage = $"{endpoint} is banned.";
+                        else
+                        {
+                            this.ConnectionManager.AddNodeAddress(endpoint);
+                            result.Success = true;
+                        }
+
+                        break;
+                    }
 
                 case "remove":
-                    this.ConnectionManager.RemoveNodeAddress(endpoint);
-                    break;
+                    {
+                        this.ConnectionManager.RemoveNodeAddress(endpoint);
+                        result.Success = true;
+                        break;
+                    }
 
                 case "onetry":
-                    this.ConnectionManager.ConnectAsync(endpoint).GetAwaiter().GetResult();
-                    break;
+                    {
+                        if (this.peerBanning.IsBanned(endpoint))
+                            result.ErrorMessage = $"{endpoint} is banned.";
+                        else
+                        {
+                            await this.ConnectionManager.ConnectAsync(endpoint);
+                            result.Success = true;
+                        }
+
+                        break;
+                    }
 
                 default:
-                    throw new ArgumentException("command");
+                    result.ErrorMessage = "An invalid command was specified, only 'add', 'remove' or 'onetry' is supported.";
+                    break;
             }
 
-            return true;
+            return result;
         }
 
         /// <summary>
         /// Adds a node to the connection manager.
         /// API wrapper for RPC call.
         /// </summary>
-        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <param name="endpoint">The endpoint in string format.</param>
+        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <returns>Json formatted <c>True</c> indicating success. Returns <see cref="IActionResult"/> formatted exception if fails.</returns>
         /// <exception cref="ArgumentException">Thrown if either command not supported/empty or if endpoint is invalid/empty.</exception>
         [Route("api/[controller]/addnode")]
@@ -78,7 +111,7 @@ namespace Stratis.Bitcoin.Connection
                 Guard.NotEmpty(endpoint, nameof(endpoint));
                 Guard.NotEmpty(command, nameof(command));
 
-                return this.Json(this.AddNodeRPC(endpoint, command));
+                return this.Json(this.AddNodeRPCAsync(endpoint, command));
             }
             catch (Exception e)
             {

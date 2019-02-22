@@ -433,6 +433,13 @@ namespace Stratis.Bitcoin.Connection
                 this.ConnectionSettings.AddNode.Remove(m);
         }
 
+        /// <summary>
+        /// Attempts to establish a connection with another peer immediately.
+        /// <para>
+        /// Usually called via RPC.
+        /// </para>
+        /// </summary>
+        /// <param name="ipEndpoint">The endpoint of the peer to connect to.</param>
         public async Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint)
         {
             NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
