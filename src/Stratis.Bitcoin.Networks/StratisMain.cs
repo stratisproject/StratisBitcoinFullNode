@@ -186,7 +186,7 @@ namespace Stratis.Bitcoin.Networks
             this.SeedNodes = new List<NetworkAddress>
             {
                 new NetworkAddress(IPAddress.Parse("51.140.231.125"), 16178), // danger cloud node
-                new NetworkAddress(IPAddress.Parse("86.20.236.108"), 16178), // beard cloud node
+                new NetworkAddress(IPAddress.Parse("13.70.81.5"), 16178), // beard cloud node
                 new NetworkAddress(IPAddress.Parse("191.235.85.131"), 16178), // fassa cloud node
                 new NetworkAddress(IPAddress.Parse("46.22.163.55"), 16178), // majic public node
                 new NetworkAddress(IPAddress.Parse("86.173.103.49"), 16178 ), // lukasz public node
