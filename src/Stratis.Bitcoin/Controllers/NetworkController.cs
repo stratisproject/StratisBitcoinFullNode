@@ -37,6 +37,7 @@ namespace Stratis.Bitcoin.Controllers
         {
             this.connectionManager = connectionManager;
             this.network = network;
+            this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.peerBanning = peerBanning;
         }
 
