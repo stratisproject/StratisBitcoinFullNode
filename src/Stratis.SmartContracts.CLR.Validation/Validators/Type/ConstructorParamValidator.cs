@@ -53,7 +53,7 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Type
 
             ParameterDefinition firstArg = constructor.Parameters.FirstOrDefault();
 
-            var valid = firstArg != null && IsSmartContractState(firstArg);
+            bool valid = firstArg != null && IsSmartContractState(firstArg);
 
             if (!valid)
             {
