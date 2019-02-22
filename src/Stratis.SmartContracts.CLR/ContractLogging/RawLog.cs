@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
 using NBitcoin;
@@ -50,10 +51,10 @@ namespace Stratis.SmartContracts.CLR.ContractLogging
         /// <returns></returns>
         private (List<byte[]>, List<byte[]>) Serialize(IContractPrimitiveSerializer serializer)
         {
-            var logType = this.LogStruct.GetType();
+            Type logType = this.LogStruct.GetType();
 
             // first topic is the log type name
-            var logTypeName = serializer.Serialize(logType.Name);
+            byte[] logTypeName = serializer.Serialize(logType.Name);
             
             var topics = new List<byte[]> { logTypeName };
 

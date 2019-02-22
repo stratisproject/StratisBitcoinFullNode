@@ -24,9 +24,9 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
             var result = new List<byte[]>();
 
-            foreach (var param in methodParameters)
+            foreach (object param in methodParameters)
             {
-                var encoded = this.Encode(param);
+                byte[] encoded = this.Encode(param);
 
                 result.Add(encoded);
             }
@@ -44,7 +44,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
             var results = new List<object>();
 
-            foreach (var encodedParam in encodedParamBytes)
+            foreach (byte[] encodedParam in encodedParamBytes)
             {
                 object result = this.Decode(encodedParam);
 

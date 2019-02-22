@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 this.logger.LogDebug("Federation members are not stored in the db. Loading genesis federation members.");
 
-                this.federationMembers = this.network.ConsensusOptions.GenesisFederationPublicKeys;
+                this.federationMembers = new List<PubKey>(this.network.ConsensusOptions.GenesisFederationPublicKeys);
 
                 this.SaveFederationKeys(this.federationMembers);
             }
@@ -74,8 +74,8 @@ namespace Stratis.Bitcoin.Features.PoA
             // Load key.
             Key key = new KeyTool(this.settings.DataFolder).LoadPrivateKey();
 
-            this.IsFederationMember = key != null;
             this.FederationMemberKey = key;
+            this.SetIsFederationMember();
 
             if (this.FederationMemberKey == null)
             {
@@ -88,11 +88,15 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 string message = "Key provided is not registered on the network!";
 
-                this.logger.LogCritical(message);
-                throw new Exception(message);
+                this.logger.LogWarning(message);
             }
 
             this.logger.LogInformation("Federation key pair was successfully loaded. Your public key is: '{0}'.", this.FederationMemberKey.PubKey);
+        }
+
+        private void SetIsFederationMember()
+        {
+            this.IsFederationMember = this.federationMembers.Contains(this.FederationMemberKey?.PubKey);
         }
 
         /// <summary>Provides up to date list of federation members.</summary>
@@ -121,6 +125,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.federationMembers.Add(pubKey);
 
                 this.SaveFederationKeys(this.federationMembers);
+                this.SetIsFederationMember();
 
                 this.logger.LogInformation("Federation member '{0}' was added!", pubKey.ToHex());
             }
@@ -135,6 +140,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 this.federationMembers.Remove(pubKey);
 
                 this.SaveFederationKeys(this.federationMembers);
+                this.SetIsFederationMember();
 
                 this.logger.LogInformation("Federation member '{0}' was removed!", pubKey.ToHex());
             }

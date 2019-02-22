@@ -39,7 +39,7 @@ namespace Stratis.SmartContracts.CLR.Compilation
             AssemblyDefinition def;
             if (!this.libraries.TryGetValue(name.Name, out def))
             {
-                var path = Path.Combine(BaseDirectory, $"{name.Name}.dll");
+                string path = Path.Combine(BaseDirectory, $"{name.Name}.dll");
 
                 if (File.Exists(path))
                 {
@@ -74,7 +74,7 @@ namespace Stratis.SmartContracts.CLR.Compilation
             {
                 return;
             }
-            foreach (var def in this.libraries.Values)
+            foreach (AssemblyDefinition def in this.libraries.Values)
             {
                 def.Dispose();
             }
