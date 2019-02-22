@@ -115,6 +115,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Starts waiting for incoming messages.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         public void StartReceiveMessages(CancellationToken cancellationToken = default(CancellationToken))
         {
             this.receiveMessageTask = this.ReceiveMessagesAsync(cancellationToken);
@@ -123,6 +124,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <summary>
         /// Reads messages from the connection stream.
         /// </summary>
+        /// <param name="cancellationToken">Optional cancellation token.</param>
         private async Task ReceiveMessagesAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
             CancellationTokenSource cts = null;
@@ -132,8 +134,7 @@ namespace Stratis.Bitcoin.P2P.Peer
                 // Check if valid cancellation was passed in and link it to the existing cancellation token source
                 if (cancellationToken != default(CancellationToken))
                 {
-                    cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken,
-                        this.CancellationSource.Token);
+                    cts = CancellationTokenSource.CreateLinkedTokenSource(cancellationToken, this.CancellationSource.Token);
                     cancellationToken = cts.Token;
                 }
                 else
