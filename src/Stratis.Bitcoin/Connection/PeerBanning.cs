@@ -109,10 +109,6 @@ namespace Stratis.Bitcoin.Connection
             List<PeerAddress> peerAddresses = this.peerAddressManager.FindPeersByIp(endpoint);
             if (peerAddresses.Count == 0)
             {
-                this.logger.LogTrace("{0} not found in the address manager.");
-            }
-            else
-            {
                 this.peerAddressManager.AddPeer(endpoint, IPAddress.Loopback);
                 peerAddresses.Add(this.peerAddressManager.FindPeer(endpoint));
 
