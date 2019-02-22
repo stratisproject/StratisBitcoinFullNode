@@ -1445,7 +1445,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Reloads the transactions we're tracking in memory for faster lookups.
+        /// Reloads the UTXOs we're tracking in memory for faster lookups.
         /// </summary>
         public void RefreshInputKeysLookupLock()
         {
