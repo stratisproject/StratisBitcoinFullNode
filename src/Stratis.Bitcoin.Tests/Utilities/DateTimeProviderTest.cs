@@ -21,7 +21,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             var now = DateTime.UtcNow;
 
-            Assert.True(now >= result && now < result.AddSeconds(TimeIntervalThreshholdSeconds));
+            Assert.True(now >= result && now < result.AddSeconds(TimeIntervalThresholdSeconds));
         }
 
         [Fact]
@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
 
             var now = DateTimeOffset.UtcNow;
 
-            Assert.True(now >= result && now < result.AddSeconds(TimeIntervalThreshholdSeconds));
+            Assert.True(now >= result && now < result.AddSeconds(TimeIntervalThresholdSeconds));
         }
 
         [Fact]
@@ -40,7 +40,7 @@ namespace Stratis.Bitcoin.Tests.Utilities
             long timeStamp = DateTimeProvider.Default.GetTime();
 
             var now = DateTime.UtcNow.ToUnixTimestamp();
-            Assert.True(now >= timeStamp && now < timeStamp + TimeIntervalThreshholdSeconds);
+            Assert.True(now >= timeStamp && now < timeStamp + TimeIntervalThresholdSeconds);
         }
     }
 }
