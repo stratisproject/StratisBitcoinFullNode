@@ -4,7 +4,7 @@ using Newtonsoft.Json;
 namespace Stratis.Bitcoin.Base.Deployments.Models
 {
     /// <summary>
-    /// Class representing the activation states with the count of blocks in each state.
+    /// Class representing information about the current activation state of a deployment.
     /// </summary>
     public class ThresholdStateModel
     {
@@ -35,17 +35,17 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         /// <summary>
         /// Height at start of activation window.
         /// </summary>
-        [JsonProperty(PropertyName = "periodStartsHeight")]
-        public int PeriodStartsHeight { get; set; }
+        [JsonProperty(PropertyName = "periodStartHeight")]
+        public int PeriodStartHeight { get; set; }
 
         /// <summary>
         /// Height at end of activation window.
         /// </summary>
-        [JsonProperty(PropertyName = "periodEndsHeight")]
-        public int PeriodEndsHeight { get; set; }
+        [JsonProperty(PropertyName = "periodEndHeight")]
+        public int PeriodEndHeight { get; set; }
 
         /// <summary>
-        /// Activation votes for this BIP9 deployment.
+        /// Number of blocks with flags set for this BIP9 deployment in the last confirmation window.
         /// </summary>
         [JsonProperty(PropertyName = "votes")]
         public int Votes { get; set; }

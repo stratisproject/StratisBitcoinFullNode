@@ -7,6 +7,9 @@ using TracerAttributes;
 
 namespace Stratis.Bitcoin.Base.Deployments
 {
+    /// <summary>
+    /// This class tracks the current activation state of each BIP9 deployment.
+    /// </summary>
     public class ThresholdConditionCache
     {
         // What block version to use for new blocks (pre versionbits).
@@ -59,6 +62,12 @@ namespace Stratis.Bitcoin.Base.Deployments
             return array;
         }
 
+        /// <summary>
+        /// Computes the metrics of all BIP9 deployments for a given block.
+        /// </summary>
+        /// <param name="indexPrev">The block at which to compute the metrics.</param>
+        /// <param name="thresholdStates">The current state of each BIP9 deployment.</param>
+        /// <returns>A <see cref="ThresholdStateModel" /> object containg the metrics.</returns>
         public List<ThresholdStateModel> GetThresholdStateMetrics(ChainedHeader indexPrev, ThresholdState[] thresholdStates)
         {
             var thresholdStateModels = new List<ThresholdStateModel>();
@@ -98,8 +107,8 @@ namespace Stratis.Bitcoin.Base.Deployments
                     TimeTimeOut = timeTimeout,
                     Threshold = threshold,
                     Height = currentHeight,
-                    PeriodStartsHeight = periodStartsHeader.Height,
-                    PeriodEndsHeight = periodEndsHeight,
+                    PeriodStartHeight = periodStartsHeader.Height,
+                    PeriodEndHeight = periodEndsHeight,
                     StateValue = thresholdStates[deploymentIndex],
                     ThresholdState = ((ThresholdState) thresholdStates[deploymentIndex]).ToString()
                 });

@@ -1,6 +1,5 @@
 ﻿using System;
 using System.Collections.Generic;
-using System.Linq;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
@@ -9,7 +8,6 @@ using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
@@ -55,17 +53,16 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// Get the threshold states of softforks currently being deployed.
         /// Allowable states are: Defined, Started, LockedIn, Failed, Active.
         /// </summary>
-        /// <returns>Json formatted type with Deployment Index <see cref="int"/>, 
-        /// State Value <see cref="ThresholdState"/>, human readable Threshold State <see cref="string"/>
-        /// Returns <see cref="IActionResult"/> formatted error if fails.
-        /// </returns>.
+        /// <returns>A <see cref="JsonResult"/> object derived from a list of
+        /// <see cref="ThresholdStateModel"/> objects - one per deployment.
+        /// Returns an <see cref="ErrorResult"/> if the method fails.</returns>
         [Route("api/[controller]/deploymentflags")]
         [HttpGet]
         public IActionResult DeploymentFlags()
         {
             try
             {
-               ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>().Parent;
+                ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>().Parent;
 
                 // Ensure threshold conditions cached.
                 ThresholdState[] thresholdStates = ruleEngine.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
@@ -80,7 +77,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }
         }
-        
+
         /// <summary>
         /// Get the hash of the block at the consensus tip.
         /// API wrapper of RPC call.
