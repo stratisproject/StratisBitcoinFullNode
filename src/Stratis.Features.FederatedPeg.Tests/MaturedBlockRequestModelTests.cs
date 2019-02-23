@@ -1,0 +1,19 @@
+﻿using Stratis.Features.FederatedPeg.Tests.Utils;
+
+namespace Stratis.Features.FederatedPeg.Tests
+{
+    public class MaturedBlockRequestModelTests
+    {
+        [Fact]
+        public void ShouldSerialiseAsJson()
+        {
+            var maturedBlockDeposits = new MaturedBlockRequestModel(TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
+            string asJson = maturedBlockDeposits.ToString();
+
+            MaturedBlockRequestModel reconverted = JsonConvert.DeserializeObject<MaturedBlockRequestModel>(asJson);
+
+            reconverted.BlockHeight.Should().Be(maturedBlockDeposits.BlockHeight);
+            reconverted.MaxBlocksToSend.Should().Be(maturedBlockDeposits.MaxBlocksToSend);
+        }
+    }
+}
