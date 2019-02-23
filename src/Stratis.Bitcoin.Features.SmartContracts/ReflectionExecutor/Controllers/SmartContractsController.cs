@@ -109,8 +109,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             uint160 addressNumeric = address.ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
-            
-            return Json(balance);
+            Money moneyBalance = Money.Satoshis(balance);
+            return Json(moneyBalance.ToString(false));
         }
 
         [Route("storage")]
@@ -135,10 +135,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             }
 
             // Interpret the storage bytes as an object of the given type
-            var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
+            object interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
 
             // Use MethodParamStringSerializer to serialize the interpreted object to a string
-            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue, this.network);
+            string serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue, this.network);
             return Json(serialized);
         }
 

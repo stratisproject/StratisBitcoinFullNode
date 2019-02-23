@@ -4,17 +4,15 @@ using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.CLR;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 {
     /// <summary>
-    /// Validates that the supplied transaction satoshis are greater than the gas budget satoshis in the contract invocation
+    /// Validates that a smart contract transaction can be deserialized correctly, and that it conforms to gas
+    /// price and gas limit rules.
     /// </summary>
     public class SmartContractFormatLogic : IContractTransactionValidationLogic
     {

@@ -5,8 +5,6 @@ using System.Reflection;
 using FluentAssertions;
 using FluentAssertions.Common;
 using Microsoft.AspNetCore.Mvc;
-using Microsoft.Extensions.DependencyInjection;
-using Stratis.Bitcoin.Features.Api;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.API
@@ -28,7 +26,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
                 postMethods.ForEach(method => method.GetParameters()
                     .Count(HasAnyFromBodyAttribute())
-                    .Should().BeGreaterOrEqualTo(1, 
+                    .Should().BeGreaterOrEqualTo(1,
                     $"HttpPost method {controller.FullName}.{method.Name} should have at least one "
                     + $"[FromBody] parameter to prevent CORS calls from executing it. "
                     + $"Cf. https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"));

@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Text;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -7,7 +8,9 @@ using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
 using Stratis.Bitcoin.Features.Miner;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 
@@ -15,11 +18,15 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
     public class TestPoAMiner : PoAMiner
     {
-        public bool FastMiningEnabled { get; private set; } = false;
-
         private readonly EditableTimeProvider timeProvider;
 
-        private CancellationTokenSource cancellationSource;
+        private CancellationTokenSource cancellation;
+
+        private readonly SlotsManager slotsManager;
+
+        private readonly IConsensusManager consensusManager;
+
+        private readonly FederationManager federationManager;
 
         public TestPoAMiner(
             IConsensusManager consensusManager,
@@ -35,43 +42,57 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
             FederationManager federationManager,
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
-            INodeStats nodeStats) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
-                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats)
+            INodeStats nodeStats,
+            VotingManager votingManager) : base(consensusManager, dateTimeProvider, network, nodeLifetime, loggerFactory, ibdState, blockDefinition, slotsManager,
+                connectionManager, poaHeaderValidator, federationManager, integrityValidator, walletManager, nodeStats, votingManager)
         {
             this.timeProvider = dateTimeProvider as EditableTimeProvider;
-            this.cancellationSource = new CancellationTokenSource();
+
+            this.cancellation = new CancellationTokenSource();
+            this.slotsManager = slotsManager;
+            this.consensusManager = consensusManager;
+            this.federationManager = federationManager;
         }
 
-        public void EnableFastMining()
+        public override void InitializeMining()
         {
-            this.FastMiningEnabled = true;
-            this.cancellationSource.Cancel();
         }
 
-        public void DisableFastMining()
+        public async Task MineBlocksAsync(int count)
         {
-            this.FastMiningEnabled = false;
-            this.cancellationSource = new CancellationTokenSource();
-        }
-
-        protected override async Task TaskDelayAsync(int delayMs, CancellationToken cancellation = default(CancellationToken))
-        {
-            if (this.FastMiningEnabled)
+            for (int i = 0; i < count; i++)
             {
-                this.timeProvider.AdjustedTimeOffset += TimeSpan.FromMilliseconds(delayMs);
-            }
-            else
-            {
-                try
-                {
-                    CancellationToken token = CancellationTokenSource.CreateLinkedTokenSource(this.cancellationSource.Token, cancellation).Token;
+                this.timeProvider.AdjustedTimeOffset += TimeSpan.FromSeconds(
+                    this.slotsManager.GetRoundLengthSeconds(this.federationManager.GetFederationMembers().Count));
 
-                    await base.TaskDelayAsync(delayMs, token).ConfigureAwait(false);
-                }
-                catch (OperationCanceledException)
+                uint timeNow = (uint)this.timeProvider.GetAdjustedTimeAsUnixTimestamp();
+
+                uint myTimestamp = this.slotsManager.GetMiningTimestamp(timeNow);
+
+                this.timeProvider.AdjustedTimeOffset += TimeSpan.FromSeconds(myTimestamp - timeNow);
+
+                ChainedHeader chainedHeader = await this.MineBlockAtTimestampAsync(myTimestamp).ConfigureAwait(false);
+
+                if (chainedHeader == null)
                 {
+                    i--;
+                    this.timeProvider.AdjustedTimeOffset += TimeSpan.FromHours(1);
+                    continue;
                 }
+
+                var builder = new StringBuilder();
+                builder.AppendLine("<<==============================================================>>");
+                builder.AppendLine($"Block was mined {chainedHeader}.");
+                builder.AppendLine("<<==============================================================>>");
+                this.logger.LogInformation(builder.ToString());
+
             }
+        }
+
+        public override void Dispose()
+        {
+            this.cancellation.Cancel();
+            base.Dispose();
         }
     }
 }
