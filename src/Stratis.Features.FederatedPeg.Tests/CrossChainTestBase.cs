@@ -1,4 +1,28 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests
+﻿using System;
+using System.Collections.Generic;
+using System.Diagnostics;
+using System.IO;
+using System.Linq;
+using System.Runtime.Serialization;
+using System.Threading;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Networks;
+using NSubstitute;
+using Stratis.Bitcoin;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Interfaces;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Wallet;
+using Stratis.Sidechains.Networks;
+using Xunit;
+
+namespace Stratis.Features.FederatedPeg.Tests
 {
     public class CrossChainTestBase
     {

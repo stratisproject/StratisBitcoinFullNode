@@ -1,4 +1,14 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests.Utils
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using NBitcoin;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.SourceChain;
+using Stratis.Features.FederatedPeg.TargetChain;
+
+namespace Stratis.Features.FederatedPeg.Tests.Utils
 {
     public static class TestingValues
     {

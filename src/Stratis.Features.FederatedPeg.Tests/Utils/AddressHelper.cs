@@ -1,4 +1,8 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests.Utils
+﻿using System.Linq;
+using NBitcoin;
+using Stratis.Features.FederatedPeg.NetworkHelpers;
+
+namespace Stratis.Features.FederatedPeg.Tests.Utils
 {
     public class AddressHelper
     {

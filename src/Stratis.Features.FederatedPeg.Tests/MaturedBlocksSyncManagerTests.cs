@@ -1,4 +1,14 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.RestClients;
+using Stratis.Features.FederatedPeg.TargetChain;
+using Xunit;
+
+namespace Stratis.Features.FederatedPeg.Tests
 {
     public class MaturedBlocksSyncManagerTests
     {

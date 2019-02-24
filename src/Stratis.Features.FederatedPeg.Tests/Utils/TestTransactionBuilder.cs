@@ -1,4 +1,6 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests.Utils
+﻿using NBitcoin;
+
+namespace Stratis.Features.FederatedPeg.Tests.Utils
 {
     public class TestTransactionBuilder
     {

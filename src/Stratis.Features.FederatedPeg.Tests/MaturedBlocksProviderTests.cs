@@ -1,4 +1,18 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests
+﻿using System.Collections.Generic;
+using System.Linq;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NSubstitute;
+using NSubstitute.Core;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.SourceChain;
+using Xunit;
+
+namespace Stratis.Features.FederatedPeg.Tests
 {
     public class MaturedBlocksProviderTests
     {

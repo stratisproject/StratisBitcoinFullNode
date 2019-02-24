@@ -1,4 +1,19 @@
-﻿using Stratis.Features.FederatedPeg.Tests.Utils;
+﻿using System.Collections.Generic;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NSubstitute;
+using Stratis.Bitcoin;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Signals;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Notifications;
+using Stratis.Features.FederatedPeg.RestClients;
+using Stratis.Features.FederatedPeg.SourceChain;
+using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
+using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {

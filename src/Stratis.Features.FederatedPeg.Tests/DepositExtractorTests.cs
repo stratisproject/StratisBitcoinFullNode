@@ -1,4 +1,16 @@
-﻿using Stratis.Features.FederatedPeg.Tests.Utils;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Text;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NSubstitute;
+using Stratis.Bitcoin;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.SourceChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
+using Stratis.Sidechains.Networks;
+using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {

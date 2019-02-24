@@ -1,4 +1,11 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests.Utils
+﻿using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using NSubstitute;
+using NSubstitute.ExceptionExtensions;
+
+namespace Stratis.Features.FederatedPeg.Tests.Utils
 {
     public static class TestingHttpClient
     {

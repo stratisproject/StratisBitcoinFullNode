@@ -1,4 +1,28 @@
-﻿using Stratis.Features.FederatedPeg.Tests.Utils;
+﻿using System.Collections.Generic;
+using System.Linq;
+using System.Net;
+using FluentAssertions;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NBitcoin.Protocol;
+using NSubstitute;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.BlockStore;
+using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Primitives;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Bitcoin.Utilities.JsonErrors;
+using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.SourceChain;
+using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
+using Stratis.Sidechains.Networks;
+using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 {

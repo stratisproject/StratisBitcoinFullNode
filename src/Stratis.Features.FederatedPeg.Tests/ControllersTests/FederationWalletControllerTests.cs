@@ -1,4 +1,25 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
+﻿using System;
+using System.Collections.Generic;
+using System.Linq;
+using Microsoft.AspNetCore.Mvc;
+using Microsoft.Extensions.Logging;
+using NBitcoin;
+using NSubstitute;
+using Stratis.Bitcoin.Connection;
+using Stratis.Bitcoin.Features.Wallet;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.Utilities;
+using Stratis.Features.FederatedPeg.Controllers;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Wallet;
+using Xunit;
+
+namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
 {
     public class FederationWalletControllerTests
     {

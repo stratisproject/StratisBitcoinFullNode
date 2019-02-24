@@ -1,4 +1,24 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests
+﻿using System.Collections.Generic;
+using System.IO;
+using System.Linq;
+using System.Net;
+using System.Threading;
+using NBitcoin;
+using Newtonsoft.Json;
+using NSubstitute;
+using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Features.Wallet.Models;
+using Stratis.Bitcoin.Networks;
+using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.Payloads;
+using Stratis.Features.FederatedPeg.SourceChain;
+using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Wallet;
+using Xunit;
+
+namespace Stratis.Features.FederatedPeg.Tests
 {
     public class CrossChainTransferStoreStratisTests : CrossChainTransferStoreTests
     {

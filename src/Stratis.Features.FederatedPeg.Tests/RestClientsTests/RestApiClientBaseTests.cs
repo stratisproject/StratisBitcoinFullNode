@@ -1,4 +1,15 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
+﻿using System;
+using System.Net;
+using System.Net.Http;
+using System.Threading;
+using System.Threading.Tasks;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.RestClients;
+using Xunit;
+
+namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
 {
     public class RestApiClientBaseTests
     {
@@ -13,7 +24,7 @@
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.logger = Substitute.For<ILogger>();
             this.loggerFactory.CreateLogger(null).ReturnsForAnyArgs(this.logger);
-            this.httpClientFactory = new Features.FederationGateway.HttpClientFactory();
+            this.httpClientFactory = new HttpClientFactory();
         }
 
         [Fact]

@@ -1,4 +1,8 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests
+﻿using System;
+using System.Linq;
+using System.Reflection;
+
+namespace Stratis.Features.FederatedPeg.Tests
 {
     public static class SubstituteExtensions
     {

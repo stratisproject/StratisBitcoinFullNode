@@ -1,4 +1,13 @@
-﻿namespace Stratis.Features.FederatedPeg.Tests
+﻿using System.Collections.Generic;
+using System.Linq;
+using FluentAssertions;
+using NBitcoin;
+using NSubstitute;
+using Stratis.Features.FederatedPeg.Interfaces;
+using Stratis.Features.FederatedPeg.Models;
+using Xunit;
+
+namespace Stratis.Features.FederatedPeg.Tests
 {
     public class LeaderProviderTests
     {

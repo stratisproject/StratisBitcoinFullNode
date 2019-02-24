@@ -1,4 +1,9 @@
-﻿using Stratis.Features.FederatedPeg.Tests.Utils;
+﻿using FluentAssertions;
+using NBitcoin;
+using Newtonsoft.Json;
+using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.Tests.Utils;
+using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
 {

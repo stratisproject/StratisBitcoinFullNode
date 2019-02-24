@@ -1,3 +1,10 @@
+using System;
+using FluentAssertions;
+using Microsoft.Extensions.Logging;
+using NSubstitute;
+using Stratis.Features.FederatedPeg.TargetChain;
+using Xunit;
+
 namespace Stratis.Features.FederatedPeg.Tests
 {
     public class LeaderReceiverTests : IDisposable
