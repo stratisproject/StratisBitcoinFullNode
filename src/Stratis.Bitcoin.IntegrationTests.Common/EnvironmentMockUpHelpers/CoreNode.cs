@@ -15,6 +15,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
@@ -53,7 +54,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
         public string Config { get; }
 
-        public NodeConfigParameters ConfigParameters { get; } = new NodeConfigParameters();
+        public NodeConfigParameters ConfigParameters { get; set; }
 
         public bool CookieAuth { get; set; }
 
@@ -79,7 +80,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
             this.creds = new NetworkCredential(pass, pass);
             this.Config = Path.Combine(this.runner.DataFolder, configfile);
             this.CookieAuth = useCookieAuth;
-            this.ConfigParameters.Import(configParameters);
+
+            this.ConfigParameters = new NodeConfigParameters();
+            if (configParameters != null)
+                this.ConfigParameters.Import(configParameters);
+
             var randomFoundPorts = new int[3];
             IpHelper.FindPorts(randomFoundPorts);
             this.ConfigParameters.SetDefaultValueIfUndefined("port", randomFoundPorts[0].ToString());

@@ -54,6 +54,7 @@ namespace Stratis.SmartContracts.CLR
             Result<IContractModuleDefinition> moduleResult = this.moduleDefinitionReader.Read(contractCode);
             if (moduleResult.IsFailure)
             {
+                this.logger.LogTrace(moduleResult.Error);
                 this.logger.LogTrace("(-)[CONTRACT_BYTECODE_INVALID]");
                 return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, "Contract bytecode is not valid IL.");
             }
@@ -74,9 +75,20 @@ namespace Stratis.SmartContracts.CLR
 
                 var observer = new Observer(gasMeter,  new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
-                moduleDefinition.Rewrite(rewriter);
 
-                code = moduleDefinition.ToByteCode();
+                if (!this.Rewrite(moduleDefinition, rewriter))
+                {
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+                }
+
+                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+
+                if (!getCodeResult.IsSuccess)
+                {
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+                }
+
+                code = getCodeResult.Value;
             }
 
             Result<IContract> contractLoadResult = this.Load(
@@ -87,16 +99,12 @@ namespace Stratis.SmartContracts.CLR
 
             if (!contractLoadResult.IsSuccess)
             {
-                LogErrorMessage(contractLoadResult.Error);
-
-                this.logger.LogTrace("(-)[LOAD_CONTRACT_FAILED]");
-
                 return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
             }
 
             IContract contract = contractLoadResult.Value;
 
-            LogExecutionContext(this.logger, contract.State.Block, contract.State.Message, contract.Address);
+            this.LogExecutionContext(contract.State.Block, contract.State.Message, contract.Address);
 
             // Set the code and the Type before the method is invoked
             repository.SetCode(contract.Address, contractCode);
@@ -128,8 +136,20 @@ namespace Stratis.SmartContracts.CLR
             {
                 var observer = new Observer(gasMeter, new MemoryMeter(MemoryUnitLimit));
                 var rewriter = new ObserverRewriter(observer);
-                moduleDefinition.Rewrite(rewriter);
-                code = moduleDefinition.ToByteCode();
+
+                if (!this.Rewrite(moduleDefinition, rewriter))
+                {
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Rewrite module failed");
+                }
+
+                Result<ContractByteCode> getCodeResult = this.GetByteCode(moduleDefinition);
+
+                if (!getCodeResult.IsSuccess)
+                {
+                    return VmExecutionResult.Fail(VmExecutionErrorKind.RewriteFailed, "Serialize module failed");
+                }
+
+                code = getCodeResult.Value;
             }
 
             Result<IContract> contractLoadResult = this.Load(
@@ -140,16 +160,12 @@ namespace Stratis.SmartContracts.CLR
 
             if (!contractLoadResult.IsSuccess)
             {
-                LogErrorMessage(contractLoadResult.Error);
-
-                this.logger.LogTrace("(-)[LOAD_CONTRACT_FAILED]");
-
                 return VmExecutionResult.Fail(VmExecutionErrorKind.LoadFailed, contractLoadResult.Error);
             }
 
             IContract contract = contractLoadResult.Value;
 
-            LogExecutionContext(this.logger, contract.State.Block, contract.State.Message, contract.Address);
+            this.LogExecutionContext(contract.State.Block, contract.State.Message, contract.Address);
 
             IContractInvocationResult invocationResult = contract.Invoke(methodCall);
 
@@ -193,6 +209,8 @@ namespace Stratis.SmartContracts.CLR
 
             if (!assemblyLoadResult.IsSuccess)
             {
+                this.logger.LogTrace(assemblyLoadResult.Error);
+
                 return Result.Fail<IContract>(assemblyLoadResult.Error);
             }
 
@@ -202,27 +220,70 @@ namespace Stratis.SmartContracts.CLR
 
             if (type == null)
             {
-                return Result.Fail<IContract>("Type not found!");
+                const string typeNotFoundError = "Type not found!";
+
+                this.logger.LogTrace(typeNotFoundError);
+
+                return Result.Fail<IContract>(typeNotFoundError);
             }
 
-            IContract contract = Contract.CreateUninitialized(type, contractState, address);
+            IContract contract;
+
+            try
+            {
+                contract = Contract.CreateUninitialized(type, contractState, address);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+
+                return Result.Fail<IContract>("Exception occurred while instantiating contract instance");
+            }
 
             return Result.Ok(contract);
         }
 
-        private void LogErrorMessage(string error)
+        private bool Rewrite(IContractModuleDefinition moduleDefinition, IILRewriter rewriter)
         {
-            this.logger.LogTrace("{0}", error);
+            try
+            {
+                moduleDefinition.Rewrite(rewriter);
+                return true;
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogTrace("(-)[CONTRACT_REWRITE_FAILED]");
+            }
+
+            return false;
         }
 
-        internal void LogExecutionContext(ILogger logger, IBlock block, IMessage message, uint160 contractAddress)
+        private Result<ContractByteCode> GetByteCode(IContractModuleDefinition moduleDefinition)
+        {
+            try
+            {
+                ContractByteCode code = moduleDefinition.ToByteCode();
+
+                return Result.Ok(code);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                this.logger.LogTrace("(-)[CONTRACT_TOBYTECODE_FAILED]");
+
+                return Result.Fail<ContractByteCode>("Exception occurred while serializing module");
+            }
+        }
+
+        internal void LogExecutionContext(IBlock block, IMessage message, uint160 contractAddress)
         {
             var builder = new StringBuilder();
 
             builder.Append(string.Format("{0}:{1},{2}:{3},", nameof(block.Coinbase), block.Coinbase, nameof(block.Number), block.Number));
             builder.Append(string.Format("{0}:{1},", nameof(contractAddress), contractAddress.ToAddress()));
             builder.Append(string.Format("{0}:{1},{2}:{3},{4}:{5}", nameof(message.ContractAddress), message.ContractAddress, nameof(message.Sender), message.Sender, nameof(message.Value), message.Value));
-            logger.LogTrace("{0}", builder.ToString());
+            this.logger.LogTrace("{0}", builder.ToString());
         }
     }
 }

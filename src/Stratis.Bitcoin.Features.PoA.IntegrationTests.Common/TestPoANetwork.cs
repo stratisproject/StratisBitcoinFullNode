@@ -1,5 +1,6 @@
 ﻿using System.Collections.Generic;
 using NBitcoin;
+using Stratis.Bitcoin.Tests.Common;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
 {
@@ -33,8 +34,11 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests.Common
                 maxBlockSigopsCost: baseOptions.MaxBlockSigopsCost,
                 maxStandardTxSigopsCost: baseOptions.MaxStandardTxSigopsCost,
                 federationPublicKeys: federationPublicKeys,
-                targetSpacingSeconds: baseOptions.TargetSpacingSeconds
+                targetSpacingSeconds: 60,
+                votingEnabled: baseOptions.VotingEnabled
             );
+
+            this.Consensus.SetPrivatePropertyValue(nameof(this.Consensus.MaxReorgLength), (uint)5);
         }
     }
 }

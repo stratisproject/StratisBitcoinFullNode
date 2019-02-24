@@ -1094,7 +1094,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 foreach (JToken item in tx)
                 {
-                    Transaction result = GetRawTransaction(uint256.Parse(item.ToString()), false);
+                    Transaction result = GetRawTransaction(uint256.Parse(item.ToString()), null, false);
                     if (result != null)
                         yield return result;
                 }
@@ -1139,16 +1139,18 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <summary>
         /// getrawtransaction only returns on txn which are not entirely spent unless you run bitcoinq with txindex=1.
         /// </summary>
-        /// <param name="txid"></param>
-        /// <returns></returns>
-        public Transaction GetRawTransaction(uint256 txid, bool throwIfNotFound = true)
+        /// <param name="txid">The transaction id to retrieve.</param>
+        /// <param name="blockHash">The optional block hash in which to look.</param>
+        /// <param name="throwIfNotFound">Whether to throw an exception if not found.</param>
+        /// <returns>The transaction </returns>
+        public Transaction GetRawTransaction(uint256 txid, uint256 blockHash = null, bool throwIfNotFound = true)
         {
-            return GetRawTransactionAsync(txid, throwIfNotFound).GetAwaiter().GetResult();
+            return GetRawTransactionAsync(txid, blockHash, throwIfNotFound).GetAwaiter().GetResult();
         }
 
-        public async Task<Transaction> GetRawTransactionAsync(uint256 txid, bool throwIfNotFound = true)
+        public async Task<Transaction> GetRawTransactionAsync(uint256 txid, uint256 blockHash = null, bool throwIfNotFound = true)
         {
-            RPCResponse response = await SendCommandAsync(new RPCRequest(RPCOperations.getrawtransaction, new[] { txid.ToString() }), throwIfNotFound).ConfigureAwait(false);
+            RPCResponse response = await SendCommandAsync(new RPCRequest(RPCOperations.getrawtransaction, new[] { txid.ToString(), blockHash?.ToString() }), throwIfNotFound).ConfigureAwait(false);
 
             if (throwIfNotFound)
                 response.ThrowIfError();
