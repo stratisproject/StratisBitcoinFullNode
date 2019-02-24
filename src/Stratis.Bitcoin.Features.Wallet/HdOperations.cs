@@ -1,6 +1,7 @@
 ﻿using System;
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Features.Wallet
 {
@@ -37,6 +38,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="hdPath">The HD path of the account for which to get the extended private key.</param>
         /// <param name="network">The network for which to generate this extended private key.</param>
         /// <returns></returns>
+        [NoTrace]
         public static ISecret GetExtendedPrivateKey(Key privateKey, byte[] chainCode, string hdPath, Network network)
         {
             Guard.NotNull(privateKey, nameof(privateKey));
@@ -173,6 +175,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>A value indicating if the HD path corresponds to a change address.</returns>
         /// <exception cref="FormatException">An exception is thrown if the HD path is not well-formed.</exception>
         /// <remarks>Refer to <seealso cref="https://github.com/bitcoin/bips/blob/master/bip-0044.mediawiki#path-levels"/> for the format of the HD path.</remarks>
+        [NoTrace]
         public static bool IsChangeAddress(string hdPath)
         {
             Guard.NotEmpty(hdPath, nameof(hdPath));
