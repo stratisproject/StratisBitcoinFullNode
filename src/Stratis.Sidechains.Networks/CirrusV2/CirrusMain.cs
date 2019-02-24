@@ -3,17 +3,14 @@ using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using NBitcoin.DataEncoders;
-using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.SmartContracts.Networks.Policies;
 
-namespace Stratis.Sidechains.Networks
+namespace Stratis.Sidechains.Networks.CirrusV2
 {
-    /// <summary>
-    /// Right now, ripped nearly straight from <see cref="PoANetwork"/>.
-    /// </summary>
-    public class FederatedPegMain : PoANetwork
+    public class CirrusMain : PoANetwork, ISignedCodePubKeyHolder
     {
         /// <summary> The name of the root folder containing the different federated peg blockchains.</summary>
         private const string NetworkRootFolderName = "cirrus";
@@ -21,11 +18,16 @@ namespace Stratis.Sidechains.Networks
         /// <summary> The default name used for the federated peg configuration file. </summary>
         private const string NetworkDefaultConfigFilename = "cirrus.conf";
 
-        internal FederatedPegMain()
+        public PubKey SigningContractPubKey { get; }
+
+        internal CirrusMain()
         {
-            this.Name = "CirrusMain";
+            // TODO: Replace with real secret key.
+            this.SigningContractPubKey = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey.PubKey;
+
+            this.Name = nameof(CirrusMain);
             this.CoinTicker = "CRS";
-            this.Magic = 0x522357A0;
+            this.Magic = 0x522357A0; //
             this.DefaultPort = 16179;
             this.DefaultMaxOutboundConnections = 16;
             this.DefaultMaxInboundConnections = 109;
@@ -41,14 +43,14 @@ namespace Stratis.Sidechains.Networks
             var consensusFactory = new SmartContractPoAConsensusFactory();
 
             // Create the genesis block.
-            this.GenesisTime = 1545310504;
+            this.GenesisTime = 1545310504; // TODO: Update depending on when we launch.
             this.GenesisNonce = 761900;
             this.GenesisBits = new Target(new uint256("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff"));
             this.GenesisVersion = 1;
             this.GenesisReward = Money.Zero;
 
             string coinbaseText = "https://www.abc.net.au/news/science/2018-12-07/encryption-bill-australian-technology-industry-fuming-mad/10589962";
-            Block genesisBlock = FederatedPegNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
+            Block genesisBlock = CirrusNetwork.CreateGenesis(consensusFactory, this.GenesisTime, this.GenesisNonce, this.GenesisBits, this.GenesisVersion, this.GenesisReward, coinbaseText);
 
             this.Genesis = genesisBlock;
 

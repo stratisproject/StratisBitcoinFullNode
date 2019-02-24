@@ -5,6 +5,7 @@ using NBitcoin.DataEncoders;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.SmartContracts.Networks.Policies;
 
 namespace Stratis.Sidechains.Networks
 {
@@ -69,7 +70,8 @@ namespace Stratis.Sidechains.Networks
                 maxBlockSigopsCost: 20_000,
                 maxStandardTxSigopsCost: 20_000 / 5,
                 federationPublicKeys: federationPubKeys,
-                targetSpacingSeconds: 16
+                targetSpacingSeconds: 16,
+                votingEnabled: false
             );
 
             var buriedDeployments = new BuriedDeploymentsArray
@@ -139,6 +141,8 @@ namespace Stratis.Sidechains.Networks
 
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
+
+            this.StandardScriptsRegistry = new SmartContractsStandardScriptsRegistry();
 
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x00008460b940e3e9c7415a07a54cb569a9f69adf790961f11de0c42aa6470708"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0xb68311ebfee717754de683570de6e792a2149776381ed49df9cdf3383e59749d"));
