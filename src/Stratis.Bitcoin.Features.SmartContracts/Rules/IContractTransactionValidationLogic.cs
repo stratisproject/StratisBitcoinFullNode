@@ -1,9 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
-using Stratis.SmartContracts.CLR;
+﻿using NBitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {

@@ -1,7 +1,6 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
 using Mono.Cecil;
-using Mono.Cecil.Cil;
 
 namespace Stratis.SmartContracts.CLR.Validation.Validators
 {

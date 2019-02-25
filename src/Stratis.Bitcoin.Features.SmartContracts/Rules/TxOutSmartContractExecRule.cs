@@ -5,7 +5,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
-using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {

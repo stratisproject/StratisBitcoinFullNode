@@ -1,8 +1,8 @@
 ﻿using System.Linq;
 using NBitcoin;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Models
 {
