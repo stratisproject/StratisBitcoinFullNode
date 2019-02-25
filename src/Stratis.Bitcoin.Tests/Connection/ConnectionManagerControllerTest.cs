@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
     public class ConnectionManagerControllerTest : LogsTestBase
     {
         private readonly Mock<IConnectionManager> connectionManager;
-        private ConnectionManagerController controller;
+        private readonly ConnectionManagerController controller;
         private readonly Mock<ILoggerFactory> mockLoggerFactory;
 
         public ConnectionManagerControllerTest()
@@ -32,14 +32,11 @@ namespace Stratis.Bitcoin.Tests.Controllers
             string endpoint = "0.0.0.0";
             string command = "notarealcommand";
 
-            IActionResult result = await this.controller.AddNodeAPI(endpoint, command);
+            var result = (JsonResult)await this.controller.AddNodeApiAsync(endpoint, command);
 
-            var errorResult = Assert.IsType<ErrorResult>(result);
-            var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
-            Assert.Single(errorResponse.Errors);
-            ErrorModel error = errorResponse.Errors[0];
-            Assert.Equal(400, error.Status);
-            Assert.StartsWith("System.ArgumentException", error.Description);
+            var rpcResult = Assert.IsType<AddNodeRpcResult>(result.Value);
+            Assert.Equal("An invalid command was specified, only 'add', 'remove' or 'onetry' is supported.", rpcResult.ErrorMessage);
+            Assert.False(rpcResult.Success);
         }
 
         [Fact]
@@ -48,7 +45,7 @@ namespace Stratis.Bitcoin.Tests.Controllers
             string endpoint = "-1.0.0.0";
             string command = "onetry";
 
-            IActionResult result = await this.controller.AddNodeAPI(endpoint, command);
+            IActionResult result = await this.controller.AddNodeApiAsync(endpoint, command);
 
             var errorResult = Assert.IsType<ErrorResult>(result);
             var errorResponse = Assert.IsType<ErrorResponse>(errorResult.Value);
@@ -63,9 +60,9 @@ namespace Stratis.Bitcoin.Tests.Controllers
             string endpoint = "0.0.0.0";
             string command = "remove";
 
-            var json = (JsonResult)await this.controller.AddNodeAPI(endpoint, command);
+            var jsonResult = (JsonResult)await this.controller.AddNodeApiAsync(endpoint, command);
 
-            Assert.True((bool)json.Value);
+            Assert.True(((AddNodeRpcResult)jsonResult.Value).Success);
         }
     }
 }

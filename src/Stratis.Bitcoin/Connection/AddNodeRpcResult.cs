@@ -1,7 +1,7 @@
 ﻿namespace Stratis.Bitcoin.Connection
 {
     /// <summary>
-    /// A model that represents the result of calling the <see cref="ConnectionManagerController.AddNodeAPI(string, string)"/> API method.
+    /// A model that represents the result of calling the <see cref="ConnectionManagerController.AddNodeApiAsync(string, string)"/> API method.
     /// </summary>
     public sealed class AddNodeRpcResult
     {
