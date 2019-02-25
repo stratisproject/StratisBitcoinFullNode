@@ -30,37 +30,37 @@ namespace Stratis.SmartContracts.CLR.Serialization
                 return bytes;
 
             if (o is Array array)
-                return Serialize(array);
+                return this.Serialize(array);
 
             if (o is byte b1)
                 return new byte[] { b1 };
 
             if (o is char c)
-                return Serialize(c);
+                return this.Serialize(c);
 
             if (o is Address address)
-                return Serialize(address);
+                return this.Serialize(address);
 
             if (o is bool b)
-                return Serialize(b);
+                return this.Serialize(b);
 
             if (o is int i)
-                return Serialize(i);
+                return this.Serialize(i);
 
             if (o is long l)
-                return Serialize(l);
+                return this.Serialize(l);
 
             if (o is uint u)
-                return Serialize(u);
+                return this.Serialize(u);
 
             if (o is ulong ul)
-                return Serialize(ul);
+                return this.Serialize(ul);
 
             if (o is string s)
-                return Serialize(s);
+                return this.Serialize(s);
 
             if (o.GetType().IsValueType)
-                return SerializeStruct(o);
+                return this.SerializeStruct(o);
                 
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", o.GetType().Name));
         }
@@ -116,7 +116,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
             foreach (FieldInfo field in o.GetType().GetFields())
             {
                 object value = field.GetValue(o);
-                byte[] serialized = Serialize(value);
+                byte[] serialized = this.Serialize(value);
                 toEncode.Add(RLP.EncodeElement(serialized));
             }
 
@@ -134,7 +134,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
             for(int i=0; i< array.Length; i++)
             {
                 object value = array.GetValue(i);
-                byte[] serialized = Serialize(value);
+                byte[] serialized = this.Serialize(value);
                 toEncode.Add(RLP.EncodeElement(serialized));
             }
 
@@ -143,7 +143,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public T Deserialize<T>(byte[] stream)
         {
-            object deserialized = Deserialize(typeof(T), stream);
+            object deserialized = this.Deserialize(typeof(T), stream);
 
             return (T) deserialized;
         }
@@ -157,37 +157,37 @@ namespace Stratis.SmartContracts.CLR.Serialization
                 return stream;
 
             if (type.IsArray)
-                return DeserializeArray(type.GetElementType(), stream);
+                return this.DeserializeArray(type.GetElementType(), stream);
 
             if (type == typeof(byte))
                 return stream[0];
 
             if (type == typeof(char))
-                return ToChar(stream);
+                return this.ToChar(stream);
 
             if (type == typeof(Address))
-                return ToAddress(stream);
+                return this.ToAddress(stream);
 
             if (type == typeof(bool))
-                return ToBool(stream);
+                return this.ToBool(stream);
 
             if (type == typeof(int))
-                return ToInt32(stream);
+                return this.ToInt32(stream);
 
             if (type == typeof(long))
-                return ToInt64(stream);
+                return this.ToInt64(stream);
 
             if (type == typeof(string))
-                return ToString(stream);
+                return this.ToString(stream);
 
             if (type == typeof(uint))
-                return ToUInt32(stream);
+                return this.ToUInt32(stream);
 
             if (type == typeof(ulong))
-                return ToUInt64(stream);
+                return this.ToUInt64(stream);
 
             if (type.IsValueType)
-                return DeserializeStruct(type, stream);
+                return this.DeserializeStruct(type, stream);
                 
             throw new ContractPrimitiveSerializationException(string.Format("{0} is not supported.", type.Name));
         }
@@ -252,7 +252,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
             for (int i = 0; i < fields.Length; i++)
             {
                 byte[] fieldBytes = collection[i].RLPData;
-                fields[i].SetValue(ret, Deserialize(fields[i].FieldType, fieldBytes));
+                fields[i].SetValue(ret, this.Deserialize(fields[i].FieldType, fieldBytes));
             }
 
             return ret;
@@ -270,7 +270,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
             for(int i=0; i< collection.Count; i++)
             {
-                ret.SetValue(Deserialize(elementType, collection[i].RLPData), i);
+                ret.SetValue(this.Deserialize(elementType, collection[i].RLPData), i);
             }
 
             return ret;
