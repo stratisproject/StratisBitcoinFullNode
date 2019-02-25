@@ -62,7 +62,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         {
             try
             {
-                ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules.GetRule<SetActivationDeploymentsFullValidationRule>().Parent;
+                ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules as ConsensusRuleEngine;
 
                 // Ensure threshold conditions cached.
                 ThresholdState[] thresholdStates = ruleEngine.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
