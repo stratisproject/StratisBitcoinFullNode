@@ -104,14 +104,15 @@ namespace Stratis.Bitcoin.Connection
         /// <exception cref="ArgumentException">Thrown if either command not supported/empty or if endpoint is invalid/empty.</exception>
         [Route("api/[controller]/addnode")]
         [HttpGet]
-        public IActionResult AddNodeAPI([FromQuery] string endpoint, string command)
+        public async Task<IActionResult> AddNodeAPI([FromQuery] string endpoint, string command)
         {
             try
             {
                 Guard.NotEmpty(endpoint, nameof(endpoint));
                 Guard.NotEmpty(command, nameof(command));
 
-                return this.Json(this.AddNodeRPCAsync(endpoint, command));
+                var result = await this.AddNodeRPCAsync(endpoint, command);
+                return this.Json(result);
             }
             catch (Exception e)
             {
