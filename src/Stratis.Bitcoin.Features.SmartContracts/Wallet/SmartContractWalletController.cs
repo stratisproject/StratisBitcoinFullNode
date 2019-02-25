@@ -72,16 +72,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             try
             {
-                var addresses = this.GetAccountAddressesWithBalance(walletName)
+                IEnumerable<string> addresses = this.GetAccountAddressesWithBalance(walletName)
                     .Select(a => a.Address);
 
                 if (!addresses.Any())
                 {
-                    var account = this.walletManager.GetAccounts(walletName).First();
+                    HdAccount account = this.walletManager.GetAccounts(walletName).First();
 
                     var walletAccountReference = new WalletAccountReference(walletName, account.Name);
 
-                    var nextAddress = this.walletManager.GetUnusedAddress(walletAccountReference);
+                    HdAddress nextAddress = this.walletManager.GetUnusedAddress(walletAccountReference);
 
                     return this.Json(new[] { nextAddress.Address });
                 }
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
         [HttpGet]
         public IActionResult GetAddressBalance(string address)
         {
-            var balance = this.walletManager.GetAddressBalance(address);
+            AddressBalance balance = this.walletManager.GetAddressBalance(address);
 
             return this.Json(balance.AmountConfirmed.ToUnit(MoneyUnit.Satoshi));
         }
@@ -117,7 +117,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 var transactionItems = new List<ContractTransactionItem>();
 
-                var account = this.walletManager.GetAccounts(walletName).First();
+                HdAccount account = this.walletManager.GetAccounts(walletName).First();
 
                 // Get a list of all the transactions found in an account (or in a wallet if no account is specified), with the addresses associated with them.
                 IEnumerable<AccountHistory> accountsHistory = this.walletManager.GetHistory(walletName, account.Name);
@@ -221,13 +221,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return BadRequest(Json(response));
+                return this.BadRequest(this.Json(response));
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-            return Json(response.TransactionId);
+            return this.Json(response.TransactionId);
         }
 
         [Route("call")]
@@ -239,13 +239,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
             if (!response.Success)
-                return BadRequest(Json(response));
+                return this.BadRequest(this.Json(response));
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-            return Json(response);
+            return this.Json(response);
         }
 
         [Route("send-transaction")]
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 {
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
 
-                    string address = GetAddressFromScriptPubKey(output);
+                    string address = this.GetAddressFromScriptPubKey(output);
                     model.Outputs.Add(new TransactionOutputModel
                     {
                         Address = address,

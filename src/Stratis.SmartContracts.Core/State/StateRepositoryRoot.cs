@@ -28,7 +28,7 @@ namespace Stratis.SmartContracts.Core.State
         {
             get
             {
-                return GetRoot();
+                return this.GetRoot();
             }
         }
 
@@ -62,8 +62,8 @@ namespace Stratis.SmartContracts.Core.State
             WriteCache<AccountState> accountStateCache = new WriteCache<AccountState>(accountStateCodec, WriteCache<AccountState>.CacheType.SIMPLE);
 
             var storageCaches = new RootStorageCaches(this);
-            ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.COUNTING);
-            ISource<byte[], byte[]> unspentCache = new WriteCache<byte[]>(stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
+            ISource<byte[], byte[]> codeCache = new WriteCache<byte[]>(this.stateDS, WriteCache<byte[]>.CacheType.COUNTING);
+            ISource<byte[], byte[]> unspentCache = new WriteCache<byte[]>(this.stateDS, WriteCache<byte[]>.CacheType.SIMPLE);
             SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]> unspentCacheCodec = new SourceCodec<byte[], ContractUnspentOutput, byte[], byte[]>(unspentCache, new Serializers.NoSerializer<byte[]>(), Serializers.ContractOutputSerializer);
             this.Init(accountStateCache, codeCache, storageCaches, unspentCacheCodec);
         }

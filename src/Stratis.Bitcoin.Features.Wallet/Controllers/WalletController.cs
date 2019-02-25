@@ -375,7 +375,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     var transactionItems = new List<TransactionItemModel>();
 
-                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).ToList();
+                    // Sorting the history items by descending dates. That includes received and sent dates.
+                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime).ToList();
                     items = string.IsNullOrEmpty(request.SearchQuery) ? items.Take(200).ToList() : items;
 
                     // Represents a sublist containing only the transactions that have already been spent.
@@ -714,7 +715,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                     AccountReference = new WalletAccountReference(request.WalletName, request.AccountName),
                     FeeType = FeeParser.Parse(request.FeeType),
                     MinConfirmations = request.AllowUnconfirmed ? 0 : 1,
-                    Recipients = recipients
+                    Recipients = recipients,
+                    OpReturnData = request.OpReturnData,
+                    OpReturnAmount = string.IsNullOrEmpty(request.OpReturnAmount) ? null : Money.Parse(request.OpReturnAmount),
+                    Sign = false
                 };
 
                 return this.Json(this.walletTransactionHandler.EstimateFee(context));

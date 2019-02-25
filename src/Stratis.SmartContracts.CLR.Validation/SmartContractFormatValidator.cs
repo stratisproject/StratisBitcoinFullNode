@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System.Collections.Generic;
+using System.Linq;
 using Mono.Cecil;
 
 namespace Stratis.SmartContracts.CLR.Validation
@@ -14,7 +15,7 @@ namespace Stratis.SmartContracts.CLR.Validation
 
             var validator = new ModulePolicyValidator(policy);
 
-            var results = validator.Validate(moduleDefinition).ToList();
+            List<ValidationResult> results = validator.Validate(moduleDefinition).ToList();
 
             return new SmartContractValidationResult(results);
         }
