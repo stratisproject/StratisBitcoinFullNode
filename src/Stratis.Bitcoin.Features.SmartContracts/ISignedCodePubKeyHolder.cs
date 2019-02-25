@@ -7,6 +7,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
     /// </summary>
     public interface ISignedCodePubKeyHolder
     {
+        /// <summary>
+        /// The public key for the private key that contracts must be signed by.
+        /// </summary>
         PubKey SigningContractPubKey { get; }
     }
 }
