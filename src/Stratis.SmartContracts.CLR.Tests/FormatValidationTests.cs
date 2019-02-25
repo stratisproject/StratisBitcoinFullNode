@@ -95,13 +95,13 @@ namespace Stratis.SmartContracts.CLR.Tests
             ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
             Assert.True(compilationResult.Success);
 
-            var validator = new NestedTypesAreValueTypesValidator();
+            var validator = new SmartContractFormatValidator();
 
             byte[] assemblyBytes = compilationResult.Compilation;
             IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
-            IEnumerable<ValidationResult> result = validator.Validate(decomp.ContractType);
+            var result = validator.Validate(decomp.ModuleDefinition);
 
-            Assert.Empty(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]
@@ -134,13 +134,13 @@ namespace Stratis.SmartContracts.CLR.Tests
             ContractCompilationResult compilationResult = ContractCompiler.Compile(adjustedSource);
             Assert.True(compilationResult.Success);
 
-            var validator = new NestedTypesAreValueTypesValidator();
+            var validator = new SmartContractFormatValidator();
 
             byte[] assemblyBytes = compilationResult.Compilation;
             IContractModuleDefinition decomp = ContractDecompiler.GetModuleDefinition(assemblyBytes).Value;
-            IEnumerable<ValidationResult> result = validator.Validate(decomp.ContractType);
+            var result = validator.Validate(decomp.ModuleDefinition);
 
-            Assert.Empty(result);
+            Assert.True(result.IsValid);
         }
 
         [Fact]

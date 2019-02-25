@@ -8,8 +8,6 @@ namespace Stratis.SmartContracts.Core.State
     /// </summary>
     public abstract class AbstractCachedSource<Key, Value> : AbstractChainedSource<Key, Value, Key, Value>, ICachedSource<Key, Value>
     {
-        private object aLock = new object();
-
         public interface IEntry<V>
         {
             V Value();

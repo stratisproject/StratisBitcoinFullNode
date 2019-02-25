@@ -1,10 +1,13 @@
 ﻿using System;
 using System.Diagnostics;
+using System.Linq;
 using System.Net;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NLog;
+using NLog.Config;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration;
@@ -16,6 +19,8 @@ using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
+using ILogger = Microsoft.Extensions.Logging.ILogger;
+using LogLevel = NLog.LogLevel;
 
 namespace Stratis.Bitcoin.Controllers
 {
@@ -64,14 +69,20 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory,
-            IDateTimeProvider dateTimeProvider, IChainState chainState,
-            NodeSettings nodeSettings, IConnectionManager connectionManager,
-            ConcurrentChain chain, Network network, IPooledTransaction pooledTransaction = null,
-            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+        public NodeController(
+            ConcurrentChain chain,
+            IChainState chainState,
+            IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
+            IFullNode fullNode,
+            ILoggerFactory loggerFactory,
+            NodeSettings nodeSettings,
+            Network network,
+            IBlockStore blockStore = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
-            IBlockStore blockStore = null)
+            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+            IPooledTransaction pooledTransaction = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
@@ -82,19 +93,20 @@ namespace Stratis.Bitcoin.Controllers
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
+            this.chain = chain;
+            this.chainState = chainState;
+            this.connectionManager = connectionManager;
+            this.dateTimeProvider = dateTimeProvider;
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.dateTimeProvider = dateTimeProvider;
-            this.chainState = chainState;
-            this.nodeSettings = nodeSettings;
-            this.connectionManager = connectionManager;
-            this.chain = chain;
             this.network = network;
-            this.pooledTransaction = pooledTransaction;
-            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.nodeSettings = nodeSettings;
+
+            this.blockStore = blockStore;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
-            this.blockStore = blockStore;
+            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.pooledTransaction = pooledTransaction;
         }
 
         /// <summary>
@@ -114,7 +126,7 @@ namespace Stratis.Bitcoin.Controllers
                 Agent = this.connectionManager.ConnectionSettings.Agent,
                 ProcessId = Process.GetCurrentProcess().Id,
                 Network = this.fullNode.Network.Name,
-                ConsensusHeight = this.chainState.ConsensusTip.Height,
+                ConsensusHeight = this.chainState.ConsensusTip?.Height,
                 DataDirectoryPath = this.nodeSettings.DataDir,
                 Testnet = this.network.IsTest(),
                 RelayFee = this.nodeSettings.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
@@ -397,6 +409,61 @@ namespace Stratis.Bitcoin.Controllers
             this.fullNode?.NodeLifetime.StopApplication();
 
             return this.Ok();
+        }
+
+        /// <summary>
+        /// Changes the log levels for the specified loggers.
+        /// </summary>
+        /// <param name="request">The request containing the loggers to modify.</param>
+        /// <returns><see cref="OkResult"/></returns>
+        [HttpPut]
+        [Route("loglevels")]
+        public IActionResult UpdateLogLevel([FromBody] LogRulesRequest request)
+        {
+            Guard.NotNull(request, nameof(request));
+
+            // Checks the request is valid.
+            if (!this.ModelState.IsValid)
+            {
+                return ModelStateErrors.BuildErrorResponse(this.ModelState);
+            }
+
+            try
+            {
+                foreach (LogRuleRequest logRuleRequest in request.LogRules)
+                {
+                    LogLevel nLogLevel = logRuleRequest.LogLevel.ToNLogLevel();
+                    LoggingRule rule = LogManager.Configuration.LoggingRules.SingleOrDefault(r => r.LoggerNamePattern == logRuleRequest.RuleName);
+
+                    if (rule == null)
+                    {
+                        throw new Exception($"Logger name `{logRuleRequest.RuleName}` doesn't exist.");
+                    }
+
+                    // Log level ordinals go from 1 to 6 (trace to fatal).
+                    // When we set a log level, we enable every log level above and disable all the ones below.
+                    foreach (LogLevel level in LogLevel.AllLoggingLevels)
+                    {
+                        if (level.Ordinal >= nLogLevel.Ordinal)
+                        {
+                            rule.EnableLoggingForLevel(level);
+                        }
+                        else
+                        {
+                            rule.DisableLoggingForLevel(level);
+                        }
+                    }
+                }
+
+                // Only update the loggers if the setting was successful.
+                LogManager.ReconfigExistingLoggers();
+                return this.Ok();
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>

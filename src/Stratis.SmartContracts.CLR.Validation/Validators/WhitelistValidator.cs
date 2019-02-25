@@ -67,7 +67,7 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators
             {
                 results.AddRange(this.ValidateReference(parent, generic.ElementType));
 
-                foreach (var argument in generic.GenericArguments)
+                foreach (TypeReference argument in generic.GenericArguments)
                 {
                     results.AddRange(this.ValidateReference(parent, argument));
                 }
@@ -97,12 +97,12 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators
                 yield break;
             }
 
-            var result = this.whitelistPolicyFilter.Filter(type.Namespace, type.Name, memberName);
+            PolicyValidationResult result = this.whitelistPolicyFilter.Filter(type.Namespace, type.Name, memberName);
 
             switch (result.Kind)
             {
                 case PolicyValidatorResultKind.DeniedNamespace:
-                    var ns = string.IsNullOrWhiteSpace(type.Namespace) ? "\"\"" : type.Namespace;
+                    string ns = string.IsNullOrWhiteSpace(type.Namespace) ? "\"\"" : type.Namespace;
                     yield return new DeniedNamespaceValidationResult(
                         parent.FullName,
                         "Whitelist", 

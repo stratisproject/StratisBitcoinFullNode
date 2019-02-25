@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         public void CheckTransaction(MempoolValidationContext context)
         {
             if (context.Transaction.Inputs.Any(x => x.ScriptSig.IsSmartContractSpend()) || context.Transaction.Outputs.Any(x => x.ScriptPubKey.IsSmartContractSpend()))
-                Throw();
+                this.Throw();
         }
 
         private void Throw()

@@ -424,7 +424,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
 
             commands.Count.Should().Be(27);
             commands.Should().Contain(x => x.Command == "stop");
-            commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>]");
+            commands.Should().Contain(x => x.Command == "getrawtransaction <txid> [<verbose>] [<blockhash>]");
             commands.Should().Contain(x => x.Command == "gettxout <txid> <vout> [<includemempool>]");
             commands.Should().Contain(x => x.Command == "getblockcount");
             commands.Should().Contain(x => x.Command == "getinfo");

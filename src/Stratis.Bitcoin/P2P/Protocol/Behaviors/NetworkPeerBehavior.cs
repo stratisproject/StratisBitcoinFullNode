@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.Utilities;
 using TracerAttributes;

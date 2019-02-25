@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         /// <param name="accountName">The name of the account to retrieve.</param>
         /// <param name="coinType">The type of the coin this account is for.</param>
-        /// <returns>The requested account.</returns>
+        /// <returns>The requested account or <c>null</c> if the account does not exist.</returns>
         public HdAccount GetAccountByCoinType(string accountName, CoinType coinType)
         {
             AccountRoot accountRoot = this.AccountsRoot.SingleOrDefault(a => a.CoinType == coinType);
@@ -264,6 +264,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="password">The password used to encrypt/decrypt sensitive info.</param>
         /// <param name="address">The address to get the private key for.</param>
         /// <returns>The extended private key.</returns>
+        [NoTrace]
         public ISecret GetExtendedPrivateKeyForAddress(string password, HdAddress address)
         {
             Guard.NotEmpty(password, nameof(password));
@@ -356,19 +357,10 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// Gets the account matching the name passed as a parameter.
         /// </summary>
         /// <param name="accountName">The name of the account to get.</param>
-        /// <returns>The HD account specified by the parameter.</returns>
-        /// <exception cref="WalletException">An exception thrown if no account could be found.</exception>
+        /// <returns>The HD account specified by the parameter or <c>null</c> if the account does not exist.</returns>
         public HdAccount GetAccountByName(string accountName)
         {
-            if (this.Accounts == null)
-                throw new WalletException($"No account with the name '{accountName}' could be found.");
-
-            // Get the requested account.
-            HdAccount account = this.Accounts.SingleOrDefault(a => a.Name == accountName);
-            if (account == null)
-                throw new WalletException($"No account with the name '{accountName}' could be found.");
-
-            return account;
+            return this.Accounts?.SingleOrDefault(a => a.Name == accountName);
         }
 
         /// <summary>
@@ -857,6 +849,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>
         ///   <c>true</c> if it is a change address; otherwise, <c>false</c>.
         /// </returns>
+        [NoTrace]
         public bool IsChangeAddress()
         {
             return HdOperations.IsChangeAddress(this.HdPath);
@@ -1035,10 +1028,16 @@ namespace Stratis.Bitcoin.Features.Wallet
         public Script DestinationScriptPubKey { get; set; }
 
         /// <summary>
-        /// The Base58 representation of the destination  address.
+        /// The Base58 representation of the destination address.
         /// </summary>
         [JsonProperty(PropertyName = "destinationAddress")]
         public string DestinationAddress { get; set; }
+
+        /// <summary>
+        /// The index of the output of the destination address.
+        /// </summary>
+        [JsonProperty(PropertyName = "outputIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? OutputIndex { get; set; }
 
         /// <summary>
         /// The transaction amount.

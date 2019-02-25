@@ -44,12 +44,12 @@ namespace Stratis.Bitcoin.IntegrationTests
                     }
                 }
 
-                minerA.SetDisconnectInterceptor(interceptor);
-
                 // Start the nodes.
                 minerA.Start();
                 minerB.Start();
                 syncer.Start();
+
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // minerB and syncer syncs with minerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 await TestHelper.BuildBlocks.OnNode(minerB).Amount(5).Invalid(13, (node, block) => BlockBuilder.InvalidCoinbaseReward(node, block)).BuildAsync();
 
                 // Reconnect minerA to minerB.
-                TestHelper.Connect(minerA, minerB);
+                TestHelper.ConnectNoCheck(minerA, minerB);
 
                 // minerB should be disconnected from minerA.
                 TestHelper.WaitLoop(() => !TestHelper.IsNodeConnectedTo(minerA, minerB));
@@ -114,17 +114,15 @@ namespace Stratis.Bitcoin.IntegrationTests
                         TestHelper.WaitLoop(() => TestHelper.IsNodeSyncedAtHeight(minerA, 10));
                         TestHelper.Disconnect(minerA, minerB);
                         minerADisconnectedFromMinerB = true;
-
-                        return;
                     }
                 }
-
-                minerA.SetDisconnectInterceptor(interceptor);
 
                 // Start the nodes.
                 minerA.Start();
                 minerB.Start();
                 syncer.Start();
+
+                minerA.SetDisconnectInterceptor(interceptor);
 
                 // MinerB/Syncer syncs with MinerA.
                 TestHelper.ConnectAndSync(minerA, minerB, syncer);
