@@ -62,16 +62,19 @@ namespace Stratis.Bitcoin.Consensus
             this.peerBanning = peerBanning;
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new RateLimitingBehavior(this.dateTimeProvider, this.loggerFactory, this.peerBanning);
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceived, true);
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceived);
