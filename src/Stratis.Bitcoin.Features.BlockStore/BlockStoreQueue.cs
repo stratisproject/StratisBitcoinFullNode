@@ -540,7 +540,8 @@ namespace Stratis.Bitcoin.Features.BlockStore
             // Let current batch saving task finish.
             this.cancellation.Cancel();
 
-            if (this.saveAsyncLoopException == null)
+            // Wait for the asynchronous loop to finish if it is running.
+            if (this.dequeueLoopTask.Status == TaskStatus.Running)
                 this.dequeueLoopTask?.GetAwaiter().GetResult();
 
             // Only dispose this after the dequeue loop is done with it.
