@@ -10,6 +10,7 @@ using Microsoft.AspNetCore.Http;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.VisualStudio.TestPlatform.CommunicationUtilities;
 using NBitcoin;
+using Newtonsoft.Json;
 using Newtonsoft.Json.Linq;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Controllers.Models;
@@ -295,7 +296,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void calling_addnode_connects_two_nodes()
         {
             this.send_api_get_request($"{AddnodeUri}?endpoint={this.secondStratisPowApiNode.Endpoint.ToString()}&command=onetry");
-            this.responseText.Should().Be("true");
+            this.responseText.Should().Be(JsonConvert.SerializeObject(new AddNodeRpcResult() { Success = true }));
 
             TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(this.firstStratisPowApiNode, this.secondStratisPowApiNode));
         }
