@@ -2,7 +2,6 @@
 using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Threading;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using Stratis.Bitcoin.Connection;
@@ -52,6 +51,7 @@ namespace Stratis.Bitcoin.IntegrationTests
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: base.Consensus.PowLimit,
                 minimumChainWork: null,
