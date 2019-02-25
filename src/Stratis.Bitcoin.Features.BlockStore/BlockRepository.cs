@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </para>
         /// </summary>
         /// <remarks>TODO: This will need to be revisited once DBreeze has been fixed or replaced with a solution that works.</remarks>
-        /// <param name="hashes">List of block hashes to be deleted.</param>        
+        /// <param name="hashes">List of block hashes to be deleted.</param>
         Task DeleteBlocksAsync(List<uint256> hashes);
 
         /// <summary>
@@ -51,6 +51,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
         /// </summary>
         /// <param name="newTip">Hash and height of the new repository's tip.</param>
         /// <param name="hashes">List of all block hashes to be deleted.</param>
+        /// <exception cref="DBreeze.Exceptions.DBreezeException">Thrown if an error occurs during database operations.</exception>
         Task DeleteAsync(HashHeightPair newTip, List<uint256> hashes);
 
         /// <summary>
