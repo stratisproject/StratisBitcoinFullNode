@@ -29,7 +29,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                CheckTransactionInsideBlock(transaction, this.PowParent.UtxoSet, processedTxs);
+                this.CheckTransactionInsideBlock(transaction, this.PowParent.UtxoSet, processedTxs);
                 processedTxs.Add(transaction);
             }
 
