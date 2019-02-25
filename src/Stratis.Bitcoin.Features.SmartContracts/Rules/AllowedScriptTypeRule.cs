@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                CheckTransaction(transaction);
+                this.CheckTransaction(transaction);
             }
 
             return Task.CompletedTask;
@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
         public void CheckTransaction(MempoolValidationContext context)
         {
-            CheckTransaction(context.Transaction);
+            this.CheckTransaction(context.Transaction);
         }
 
         private void CheckTransaction(Transaction transaction)
@@ -38,12 +38,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             {
                 foreach (TxOut output in transaction.Outputs)
                 {
-                    CheckOutput(output);
+                    this.CheckOutput(output);
                 }
 
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    CheckInput(input);
+                    this.CheckInput(input);
                 }
             }
         }
