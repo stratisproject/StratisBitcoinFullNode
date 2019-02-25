@@ -196,6 +196,12 @@ namespace Stratis.Bitcoin.Features.Miner
             this.miningCancellationTokenSource.Token.ThrowIfCancellationRequested();
 
             context.ChainTip = this.consensusManager.Tip;
+
+            // Genesis on a regtest network is a special case. We need to regard ourselves as outside of IBD to
+            // bootstrap the mining.
+            if (context.ChainTip.Height == 0)
+                return true;
+
             if (this.initialBlockDownloadState.IsInitialBlockDownload())
             {
                 Task.Delay(TimeSpan.FromMinutes(1), this.nodeLifetime.ApplicationStopping).GetAwaiter().GetResult();
