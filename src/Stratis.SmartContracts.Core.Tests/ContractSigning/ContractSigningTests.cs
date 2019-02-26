@@ -1,6 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
 using NBitcoin;
 using Stratis.SmartContracts.Core.ContractSigning;
 using Xunit;

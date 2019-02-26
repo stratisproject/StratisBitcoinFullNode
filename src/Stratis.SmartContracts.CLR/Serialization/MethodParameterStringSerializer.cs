@@ -110,12 +110,12 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public object[] Deserialize(string[] parameters)
         {
-            return StringToObjects(this.EscapeAndJoin(parameters));
+            return this.StringToObjects(this.EscapeAndJoin(parameters));
         }
 
         public object[] Deserialize(string parameters)
         {
-            return StringToObjects(parameters);
+            return this.StringToObjects(parameters);
         }
 
         private object[] StringToObjects(string parameters)

@@ -1,5 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using NBitcoin;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -34,7 +33,7 @@ namespace Stratis.SmartContracts.Core.Util
                         }
 
                         Script script = btx.Outputs[prevOut.N].ScriptPubKey;
-                        return GetAddressFromScript(script);
+                        return this.GetAddressFromScript(script);
                     }
                 }
             }
@@ -62,7 +61,7 @@ namespace Stratis.SmartContracts.Core.Util
                     return GetSenderResult.CreateFailure(OutputAlreadySpent);
                 }
 
-                return GetAddressFromScript(senderOutput.ScriptPubKey);
+                return this.GetAddressFromScript(senderOutput.ScriptPubKey);
             }
 
             return GetSenderResult.CreateFailure(UnableToGetSender);
@@ -71,7 +70,7 @@ namespace Stratis.SmartContracts.Core.Util
         public GetSenderResult GetSender(Transaction tx, MempoolCoinView coinView)
         {
             TxOut output = coinView.GetOutputFor(tx.Inputs[0]);
-            return GetAddressFromScript(output.ScriptPubKey);
+            return this.GetAddressFromScript(output.ScriptPubKey);
         }
 
         /// <inheritdoc />

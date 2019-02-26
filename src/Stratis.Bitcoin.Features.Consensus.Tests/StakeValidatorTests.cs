@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using System.Threading;
 using Moq;
 using NBitcoin;
@@ -10,6 +9,7 @@ using NBitcoin.Policy;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
@@ -20,12 +20,12 @@ namespace Stratis.Bitcoin.Tests.Consensus
     public class StakeValidatorTests : LogsTestBase
     {
         private StakeValidator stakeValidator;
-        private Mock<IStakeChain> stakeChain;
-        private ConcurrentChain concurrentChain;
-        private Mock<ICoinView> coinView;
-        private Mock<IConsensus> consensus;
+        private readonly Mock<IStakeChain> stakeChain;
+        private readonly ConcurrentChain concurrentChain;
+        private readonly Mock<ICoinView> coinView;
+        private readonly Mock<IConsensus> consensus;
 
-        public StakeValidatorTests() : base(KnownNetworks.StratisRegTest)
+        public StakeValidatorTests() : base(new StratisRegTest())
         {
             this.stakeChain = new Mock<IStakeChain>();
             this.concurrentChain = new ConcurrentChain(this.Network);
@@ -394,7 +394,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             Assert.Equal(expectedTarget, result);
         }
 
-
         [Fact]
         public void GetNextTargetRequired_PoS_NoChainedHeaderProvided_ReturnsConsensusPowLimit()
         {
@@ -442,7 +441,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetNextTargetRequired_PoS_FirstBlock_NoPreviousPoSBlock_ReturnsPosLimitV2()
         {
-
             var headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5, includePrevBlock: true, network: this.Network);
 
             var stakeBlockStake = new BlockStake();
@@ -457,12 +455,10 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.consensus.Setup(c => c.ProofOfStakeLimitV2)
                 .Returns(posV2Limit.ToBigInteger());
 
-
             var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, headers.Last(), this.consensus.Object, true);
 
             Assert.Equal(posV2Limit, result);
         }
-
 
         [Fact]
         public void GetNextTargetRequired_PoW_SecondBlock_NoPreviousPoWBlock_ReturnsPowLimit()
@@ -494,7 +490,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
         [Fact]
         public void GetNextTargetRequired_PoS_SecondBlock_NoPreviousPoSBlock_ReturnsPosLimitV2()
         {
-
             var headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5, includePrevBlock: true, network: this.Network);
 
             var stakeBlockStakePos = new BlockStake();
@@ -517,46 +512,13 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.consensus.Setup(c => c.ProofOfStakeLimitV2)
                 .Returns(posV2Limit.ToBigInteger());
 
-
             var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, headers.Last(), this.consensus.Object, true);
 
             Assert.Equal(posV2Limit, result);
         }
 
         [Fact]
-        public void GetNextTargetRequired_PoW_BlocksExist_PowNoRetargetEnabled_ReturnsFirstBlockHeaderBits()
-        {
-            var headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5, includePrevBlock: true, network: this.Network);
-            IncrementHeaderBits(headers, Target.Difficulty1);
-
-            var stakeBlockStakePos = new BlockStake();
-            stakeBlockStakePos.Flags ^= BlockFlag.BLOCK_PROOF_OF_STAKE;
-            var stakeBlockStakePow = new BlockStake();
-
-            this.stakeChain.SetupSequence(s => s.Get(It.IsAny<uint256>()))
-                .Returns(stakeBlockStakePos)
-                .Returns(stakeBlockStakePow) // should be returned
-                .Returns(stakeBlockStakePow)
-                .Returns(stakeBlockStakePos)
-                .Returns(stakeBlockStakePos)
-                .Returns(stakeBlockStakePos);
-
-            var powLimit = new Target(new uint256("00000000efff0000000000000000000000000000000000000000000000000000"));
-            this.consensus.Setup(c => c.PowLimit)
-                .Returns(powLimit);
-
-            this.consensus.Setup(c => c.PowNoRetargeting)
-                .Returns(true);
-
-            var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, headers.Last(), this.consensus.Object, false);
-
-            var expectedTarget = headers.Last().Previous.Header.Bits;
-
-            Assert.Equal(expectedTarget, result);
-        }
-
-        [Fact]
-        public void GetNextTargetRequired_PoS_BlocksExist_PowNoRetargetEnabled_ReturnsFirstBlockHeaderBits()
+        public void GetNextTargetRequired_PoS_BlocksExist_PosNoRetargetEnabled_ReturnsFirstBlockHeaderBits()
         {
             var headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5, includePrevBlock: true, network: this.Network);
             IncrementHeaderBits(headers, Target.Difficulty1);
@@ -581,9 +543,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.consensus.Setup(c => c.ProofOfStakeLimitV2)
                 .Returns(posV2Limit.ToBigInteger());
 
-            this.consensus.Setup(c => c.PowNoRetargeting)
-                .Returns(true);
-
+            this.consensus.Setup(c => c.PosNoRetargeting).Returns(true);
 
             var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, headers.Last(), this.consensus.Object, true);
 
@@ -591,7 +551,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Assert.Equal(expectedTarget, result);
         }
-
 
         [Fact]
         public void GetNextTargetRequired_PoW_BlocksExist_PowNoRetargetDisabled_CalculatesRetarget()
@@ -634,7 +593,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         }
 
         [Fact]
-        public void GetNextTargetRequired_PoS_BlocksExist_PowNoRetargetDisabled_CalculatesRetarget()
+        public void GetNextTargetRequired_PoS_BlocksExist_PosNoRetargetDisabled_CalculatesRetarget()
         {
             var headers = ChainedHeadersHelper.CreateConsecutiveHeaders(5, includePrevBlock: true, network: this.Network);
 
@@ -667,8 +626,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.consensus.Setup(c => c.ProofOfStakeLimitV2)
                 .Returns(posV2Limit.ToBigInteger());
 
-            this.consensus.Setup(c => c.PowNoRetargeting)
-                .Returns(false);
+            this.consensus.Setup(c => c.PosNoRetargeting).Returns(false);
 
             var result = this.stakeValidator.GetNextTargetRequired(this.stakeChain.Object, headers.Last(), this.consensus.Object, true);
 
@@ -705,7 +663,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckProofOfStake(context, chainedHeader, new BlockStake(), transaction, 15));
             Assert.Equal(ConsensusErrors.ReadTxPrevFailed.Code, exception.ConsensusError.Code);
         }
-    
+
         [Fact]
         public void CheckProofOfStake_InvalidSignature_ThrowsConsensusError()
         {
@@ -719,7 +677,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             var unspentoutputs = new UnspentOutputs[]
             {
                 new UnspentOutputs(transaction.Inputs[0].PrevOut.Hash, new NBitcoin.BitcoinCore.Coins(transaction, 15))
-                {                    
+                {
                     Outputs = new TxOut[] { new TxOut() }
                 }
             };
@@ -891,7 +849,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.stakeValidator.CheckStakeKernelHash(new PosRuleContext(), headerbits, uint256.Zero, stakingCoins, outpoint, transactionTime);
         }
 
-
         [Fact]
         public void ComputeStakeModifierV2_PrevChainedHeaderNull_ReturnsZero()
         {
@@ -915,7 +872,6 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Assert.Equal(new uint256("f9a82ef89e0bf841dd9a6b5cea0131a61ea3e2e4a3d1ab56eca5a8ee4da1dade"), result);
         }
-
 
         [Fact]
         public void ComputeStakeModifierV2_UsingBlockStakeAndChangedKernel_CalculatesStakeModifierHash()

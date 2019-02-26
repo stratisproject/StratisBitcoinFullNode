@@ -41,15 +41,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             this.Connect = new List<IPEndPoint>();
             this.AddNode = new List<IPEndPoint>();
-            this.Listen = new List<NodeServerEndpoint>();
+            this.Bind = new List<NodeServerEndpoint>();
             this.Whitelist = new List<IPEndPoint>();
 
             TextFileConfiguration config = nodeSettings.ConfigReader;
 
             try
             {
-                this.Connect.AddRange(config.GetAll("connect", this.logger)
-                    .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                this.Connect.AddRange(config.GetAll("connect", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -58,8 +57,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.AddNode.AddRange(config.GetAll("addnode", this.logger)
-                        .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                this.AddNode.AddRange(config.GetAll("addnode", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -70,7 +68,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.Listen.AddRange(config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
+                this.Bind.AddRange(config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
             }
             catch (FormatException)
             {
@@ -81,14 +79,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
 
-                List<IPEndPoint> networkEndpoints = this.Listen.Select(x => x.Endpoint).ToList();
+                List<IPEndPoint> networkEndpoints = this.Bind.Select(x => x.Endpoint).ToList();
 
                 foreach (IPEndPoint whiteBindEndpoint in whitebindEndpoints)
                 {
                     if (whiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
                     {
                         // White-list white-bind endpoint if we are currently listening to it.
-                        NodeServerEndpoint listenToThisEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
+                        NodeServerEndpoint listenToThisEndpoint = this.Bind.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
 
                         if (listenToThisEndpoint != null)
                             listenToThisEndpoint.Whitelisted = true;
@@ -96,7 +94,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
                     else
                     {
                         // Add to list of network interfaces if we are not.
-                        this.Listen.Add(new NodeServerEndpoint(whiteBindEndpoint, true));
+                        this.Bind.Add(new NodeServerEndpoint(whiteBindEndpoint, true));
                     }
                 }
             }
@@ -105,13 +103,13 @@ namespace Stratis.Bitcoin.Configuration.Settings
                 throw new ConfigurationException("Invalid 'whitebind' parameter");
             }
 
-            if (this.Listen.Count == 0)
+            if (this.Bind.Count == 0)
             {
-                this.Listen.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
+                this.Bind.Add(new NodeServerEndpoint(new IPEndPoint(IPAddress.Parse("0.0.0.0"), this.Port), false));
             }
             else
             {
-                var ports = this.Listen.Select(l => l.Endpoint.Port).ToList();
+                var ports = this.Bind.Select(l => l.Endpoint.Port).ToList();
 
                 if (ports.Count != ports.Distinct().Count())
                 {
@@ -121,8 +119,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.Whitelist.AddRange(config.GetAll("whitelist", this.logger)
-                    .Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
+                this.Whitelist.AddRange(config.GetAll("whitelist", this.logger).Select(c => c.ToIPEndPoint(nodeSettings.Network.DefaultPort)));
             }
             catch (FormatException)
             {
@@ -148,6 +145,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             }
 
             this.BanTimeSeconds = config.GetOrDefault<int>("bantime", nodeSettings.Network.IsTest() ? DefaultMisbehavingBantimeSecondsTestnet : DefaultMisbehavingBantimeSeconds, this.logger);
+
+            // Listen option will default to true in case there are no connect option specified.
+            // When running the node with connect option listen flag has to be explicitly passed to the node to enable listen flag.
+            this.Listen = config.GetOrDefault<bool>("listen", !this.Connect.Any(), this.logger);
 
             this.MaxOutboundConnections = config.GetOrDefault<int>("maxoutboundconnections", nodeSettings.Network.DefaultMaxOutboundConnections, this.logger);
             if (this.MaxOutboundConnections <= 0)
@@ -182,6 +183,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             builder.AppendLine("####ConnectionManager Settings####");
             builder.AppendLine($"#The default network port to connect to. Default { network.DefaultPort }.");
             builder.AppendLine($"#port={network.DefaultPort}");
+            builder.AppendLine($"#Accept connections from the outside.");
+            builder.AppendLine($"#listen=<0 or 1>");
+            builder.AppendLine($"#This can be used to accept incoming connections when -connect is specified.");
+            builder.AppendLine($"#forcelisten=<0 or 1>");
             builder.AppendLine($"#Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"#connect=<ip:port>");
             builder.AppendLine($"#Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
@@ -221,6 +226,7 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             var builder = new StringBuilder();
             builder.AppendLine($"-port=<port>              The default network port to connect to. Default { network.DefaultPort }.");
+            builder.AppendLine($"-listen=<0 or 1>          Accept connections from the outside (defaulted to 1 unless -connect args specified).");
             builder.AppendLine($"-connect=<ip:port>        Specified node to connect to. Can be specified multiple times.");
             builder.AppendLine($"-addnode=<ip:port>        Add a node to connect to and attempt to keep the connection open. Can be specified multiple times.");
             builder.AppendLine($"-whitebind=<ip:port>      Bind to given address and whitelist peers connecting to it. Use [host]:port notation for IPv6. Can be specified multiple times.");
@@ -243,8 +249,23 @@ namespace Stratis.Bitcoin.Configuration.Settings
         /// <summary>List of end points that the node should try to connect to.</summary>
         public List<IPEndPoint> AddNode { get; set; }
 
+        /// <summary>
+        /// Accepts incoming connections by starting the node server.
+        /// <para>
+        /// Set to true if no -connect args specified or explicility set to -listen=1.
+        /// </para>
+        /// <para>
+        /// E.g.
+        /// -listen=1 -connect=127.0.0.0 -> Listen = true
+        /// -listen -connect=127.0.0.0 -> Listen = true
+        /// -listen=0 -connect=127.0.0.0 -> Listen = false
+        /// -connect=127.0.0.0 -> Listen = false
+        /// </para>
+        /// </summary>
+        public bool Listen { get; set; }
+
         /// <summary>List of network interfaces on which the node should listen on.</summary>
-        public List<NodeServerEndpoint> Listen { get; set; }
+        public List<NodeServerEndpoint> Bind { get; set; }
 
         /// <summary>External (or public) IP address of the node.</summary>
         public IPEndPoint ExternalEndpoint { get; internal set; }

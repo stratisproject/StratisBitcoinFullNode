@@ -2,7 +2,6 @@
 using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
-using MemoryDictionarySource = Stratis.Patricia.MemoryDictionarySource;
 
 namespace Stratis.SmartContracts.Core.Tests
 {

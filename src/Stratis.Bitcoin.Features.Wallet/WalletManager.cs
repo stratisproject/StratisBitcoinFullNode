@@ -877,6 +877,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                 }
 
                 this.UpdateLastBlockSyncedHeight(fork);
+
+                // Reload the addresses and inputs lookup dictionaries.
+                this.RefreshInputKeysLookupLock();
             }
         }
 
@@ -1441,6 +1444,30 @@ namespace Stratis.Bitcoin.Features.Wallet
             }
         }
 
+        /// <summary>
+        /// Reloads the UTXOs we're tracking in memory for faster lookups.
+        /// </summary>
+        public void RefreshInputKeysLookupLock()
+        {
+            lock (this.lockObject)
+            {
+                this.outpointLookup = new Dictionary<OutPoint, TransactionData>();
+
+                foreach (Wallet wallet in this.Wallets)
+                {
+                    foreach (HdAddress address in wallet.GetAllAddressesByCoinType(this.coinType, a => true))
+                    {
+                        // Get the UTXOs that are unspent or spent but not confirmed.
+                        // We only exclude from the list the confirmed spent UTXOs.
+                        foreach (TransactionData transaction in address.Transactions.Where(t => t.SpendingDetails?.BlockHeight == null))
+                        {
+                            this.outpointLookup[new OutPoint(transaction.Id, transaction.Index)] = transaction;
+                        }
+                    }
+                }
+            }
+        }
+
         /// <inheritdoc />
         public IEnumerable<string> GetWalletsNames()
         {
@@ -1518,6 +1545,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         }
                     }
                 }
+
+                // Reload the addresses and inputs lookup dictionaries.
+                this.RefreshInputKeysLookupLock();
             }
 
             if (result.Any())
@@ -1547,6 +1577,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         address.Transactions.Clear();
                     }
                 }
+
+                // Reload the addresses and inputs lookup dictionaries.
+                this.RefreshInputKeysLookupLock();
             }
 
             if (removedTransactions.Any())
@@ -1580,6 +1613,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                         }
                     }
                 }
+
+                // Reload the addresses and inputs lookup dictionaries.
+                this.RefreshInputKeysLookupLock();
             }
 
             if (removedTransactions.Any())

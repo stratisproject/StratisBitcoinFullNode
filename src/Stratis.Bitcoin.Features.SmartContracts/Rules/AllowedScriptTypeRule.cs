@@ -1,12 +1,9 @@
-﻿using System.Collections.Generic;
-using System.Linq;
-using System.Threading.Tasks;
+﻿using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
-using Block = NBitcoin.Block;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
@@ -21,7 +18,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                CheckTransaction(transaction);
+                this.CheckTransaction(transaction);
             }
 
             return Task.CompletedTask;
@@ -29,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
         public void CheckTransaction(MempoolValidationContext context)
         {
-            CheckTransaction(context.Transaction);
+            this.CheckTransaction(context.Transaction);
         }
 
         private void CheckTransaction(Transaction transaction)
@@ -41,12 +38,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             {
                 foreach (TxOut output in transaction.Outputs)
                 {
-                    CheckOutput(output);
+                    this.CheckOutput(output);
                 }
 
                 foreach (TxIn input in transaction.Inputs)
                 {
-                    CheckInput(input);
+                    this.CheckInput(input);
                 }
             }
         }

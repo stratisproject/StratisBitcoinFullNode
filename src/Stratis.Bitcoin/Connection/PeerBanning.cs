@@ -34,11 +34,22 @@ namespace Stratis.Bitcoin.Connection
         void BanAndDisconnectPeer(IPEndPoint endpoint, string reason = null);
 
         /// <summary>
+        /// Clears the node's banned peer list.
+        /// </summary>
+        void ClearBannedPeers();
+
+        /// <summary>
         /// Check if a peer is banned.
         /// </summary>
         /// <param name="endpoint">The endpoint to check if it was banned.</param>
         /// <returns><c>true</c> if the peer was banned.</returns>
         bool IsBanned(IPEndPoint endpoint);
+
+        /// <summary>
+        /// Un-bans a banned peer.
+        /// </summary>
+        /// <param name="endpoint">The endpoint of the peer to un-ban.</param>
+        void UnBanPeer(IPEndPoint endpoint);
     }
 
     /// <summary>
@@ -98,8 +109,10 @@ namespace Stratis.Bitcoin.Connection
             List<PeerAddress> peerAddresses = this.peerAddressManager.FindPeersByIp(endpoint);
             if (peerAddresses.Count == 0)
             {
-                this.logger.LogTrace("(-)[NO_PEERS_TO_BAN]");
-                return;
+                this.peerAddressManager.AddPeer(endpoint, IPAddress.Loopback);
+                peerAddresses.Add(this.peerAddressManager.FindPeer(endpoint));
+
+                this.logger.LogTrace("{0} added to the address manager.");
             }
 
             foreach (var peerAddress in peerAddresses)
@@ -120,6 +133,19 @@ namespace Stratis.Bitcoin.Connection
         }
 
         /// <inheritdoc />
+        public void ClearBannedPeers()
+        {
+            foreach (var peer in this.peerAddressManager.Peers)
+            {
+                if (this.IsBanned(peer.Endpoint))
+                {
+                    peer.UnBan();
+                    this.logger.LogDebug("Peer '{0}' was un-banned.", peer.Endpoint);
+                }
+            }
+        }
+
+        /// <inheritdoc />
         public bool IsBanned(IPEndPoint endpoint)
         {
             Guard.NotNull(endpoint, nameof(endpoint));
@@ -133,6 +159,24 @@ namespace Stratis.Bitcoin.Connection
             }
 
             return peerAddresses.Any(p => p.BanUntil > this.dateTimeProvider.GetUtcNow());
+        }
+
+        /// <inheritdoc />
+        public void UnBanPeer(IPEndPoint endpoint)
+        {
+            // Find all peers from the same IP and un-ban them.
+            List<PeerAddress> peerAddresses = this.peerAddressManager.FindPeersByIp(endpoint);
+            if (peerAddresses.Count == 0)
+            {
+                this.logger.LogTrace("(-)[NO_PEERS_TO_UNBAN]");
+                return;
+            }
+
+            foreach (var peerAddress in peerAddresses)
+            {
+                peerAddress.UnBan();
+                this.logger.LogDebug("Peer '{0}' was un-banned.", endpoint);
+            }
         }
     }
 }
