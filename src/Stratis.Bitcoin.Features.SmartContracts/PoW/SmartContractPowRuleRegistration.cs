@@ -6,9 +6,9 @@ using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoW.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
-using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 {

@@ -1,10 +1,9 @@
 ﻿using CSharpFunctionalExtensions;
-using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.CLR
 {

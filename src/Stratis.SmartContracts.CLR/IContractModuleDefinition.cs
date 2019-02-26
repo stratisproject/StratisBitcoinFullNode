@@ -1,8 +1,8 @@
 ﻿using System;
 using Mono.Cecil;
-using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
+using Stratis.SmartContracts.CLR.Validation;
 
 namespace Stratis.SmartContracts.CLR
 {

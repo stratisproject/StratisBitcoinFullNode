@@ -1,6 +1,5 @@
 ﻿using System;
 using NBitcoin;
-using Stratis.Bitcoin.IntegrationTests.Common;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {

@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-
-namespace Stratis.SmartContracts.RuntimeObserver
+﻿namespace Stratis.SmartContracts.RuntimeObserver
 {
     public interface IMemoryMeter
     {
