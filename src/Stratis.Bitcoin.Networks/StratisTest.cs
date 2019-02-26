@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Networks
             {
                 [StratisBIP9Deployments.ColdStaking] = new BIP9DeploymentsParameters(2,
                     new DateTime(2018, 11, 1, 0, 0, 0, DateTimeKind.Utc),
-                    new DateTime(2019, 2, 1, 0, 0, 0, DateTimeKind.Utc))
+                    new DateTime(2019, 6, 1, 0, 0, 0, DateTimeKind.Utc))
             };
 
             this.Consensus = new NBitcoin.Consensus(
