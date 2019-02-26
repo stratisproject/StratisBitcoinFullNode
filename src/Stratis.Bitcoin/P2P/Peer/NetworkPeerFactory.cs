@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.P2P.Peer
         /// <param name="parameters">Parameters of the established connection, or <c>null</c> to use default parameters.</param>
         /// <param name="networkPeerDisposer">Maintains a list of connected peers and ensures their proper disposal. Or <c>null</c> if case disposal should be handled from user code.</param>
         /// <returns>New network peer that is connected via the established connection.</returns>
-        INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, NetworkPeerDisposer networkPeerDisposer = null, CancellationToken cancellationToken = default(CancellationToken));
+        INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters, NetworkPeerDisposer networkPeerDisposer = null);
 
         /// <summary>
         /// Creates a new network peer which is connected to a specified counterparty.
@@ -142,8 +142,9 @@ namespace Stratis.Bitcoin.P2P.Peer
         }
 
         /// <inheritdoc/>
-        public INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters = null, NetworkPeerDisposer networkPeerDisposer = null, CancellationToken cancellationToken = default(CancellationToken))
+        public INetworkPeer CreateNetworkPeer(TcpClient client, NetworkPeerConnectionParameters parameters, NetworkPeerDisposer networkPeerDisposer = null)
         {
+            Guard.NotNull(parameters, nameof(parameters));
             Guard.NotNull(client, nameof(client));
 
             Action<INetworkPeer> onDisconnected = null;
@@ -151,7 +152,7 @@ namespace Stratis.Bitcoin.P2P.Peer
             if (networkPeerDisposer != null)
                 onDisconnected = networkPeerDisposer.OnPeerDisconnectedHandler;
 
-            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, cancellationToken, onDisconnected, this.onSendingMessage);
+            var peer = new NetworkPeer((IPEndPoint)client.Client.RemoteEndPoint, this.network, parameters, client, this.dateTimeProvider, this, this.loggerFactory, this.selfEndpointTracker, onDisconnected, this.onSendingMessage);
 
             networkPeerDisposer?.AddPeer(peer);
 
