@@ -53,7 +53,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         // TODO: Will depend on decision made on backlog issue https://github.com/stratisproject/FederatedSidechains/issues/124
         /*
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ExtractWithdrawalsFromBlock_Should_Find_Withdrawals_From_Multisig()
         {
             var block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -75,7 +75,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 targetScript);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ExtractWithdrawalsFromBlock_Should_Handle_Transaction_with_no_inputs()
         {
             var block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -102,7 +102,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 targetScript);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ExtractWithdrawalsFromBlock_Should_Only_Find_Withdrawals_From_Multisig()
         {
             var block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -146,7 +146,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 targetScript);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ExtractWithdrawalsFromBlock_Should_Find_Multiple_Withdrawals_From_Multisig()
         {
             var block = this.network.Consensus.ConsensusFactory.CreateBlock();

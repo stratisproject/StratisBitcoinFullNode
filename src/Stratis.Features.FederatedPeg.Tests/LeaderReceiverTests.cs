@@ -3,6 +3,7 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NSubstitute;
 using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -25,7 +26,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.leaderProvider = Substitute.For<ILeaderProvider>();
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ReceiveLeaders_Should_Push_Items_Into_The_LeaderProvidersStream()
         {
             this.leaderReceiver = new LeaderReceiver(this.loggerFactory);

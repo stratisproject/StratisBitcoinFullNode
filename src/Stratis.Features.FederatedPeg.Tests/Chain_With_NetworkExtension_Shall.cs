@@ -2,6 +2,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Networks;
 using Stratis.Features.FederatedPeg.NetworkHelpers;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -10,7 +11,7 @@ namespace Stratis.Features.FederatedPeg.Tests
     [Collection("FederatedPegTests")]
     public class Chain_With_NetworkExtension_Shall
     {
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void correctly_identify_mainchain()
         {
             var stratisRegTest = new StratisRegTest();
@@ -29,7 +30,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             chain.Should().NotBe(Chain.Sidechain);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void correctly_identify_sidechain()
         {	
             Network apexRegTest = FederatedPegNetwork.NetworksSelector.Regtest();

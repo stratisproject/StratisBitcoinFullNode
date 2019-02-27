@@ -15,6 +15,7 @@ using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.Payloads;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Features.FederatedPeg.Wallet;
 using Xunit;
 
@@ -36,7 +37,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Test that after synchronizing with the chain the store tip equals the chain tip.
         /// </summary>
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StartSynchronizesWithWallet()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -57,7 +58,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Test that after synchronizing with the chain the store tip equals the chain tip.
         /// </summary>
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StartSynchronizesWithWalletAndSurvivesRestart()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -97,7 +98,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
         /// </summary>
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StoringDepositsWhenWalletBalanceSufficientSucceedsWithDeterministicTransactions()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -194,7 +195,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Recording deposits when the wallet UTXOs are sufficient succeeds with deterministic transactions.
         /// </summary>
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StoringDepositsWhenWalletBalanceInSufficientSucceedsWithSuspendStatus()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -306,7 +307,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Tests whether the store merges signatures as expected.
         /// </summary>
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StoreMergesSignaturesAsExpected()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));
@@ -402,7 +403,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         /// <summary>
         /// Check that partial transactions present in the store cause partial transaction requests made to peers.
         /// </summary>
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StoredPartialTransactionsTriggerSignatureRequest()
         {
             var dataFolder = new DataFolder(CreateTestDir(this));

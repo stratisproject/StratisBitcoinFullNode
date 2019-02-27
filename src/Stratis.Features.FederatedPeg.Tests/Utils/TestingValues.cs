@@ -12,6 +12,12 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
 {
     public static class TestingValues
     {
+
+        /// <summary>
+        /// Utility to run tests when developing. Set to null to run sidechains tests.
+        /// </summary>
+        public const string SkipTests = "Currently skipping all sidechains tests until they are stable. Make TestingValues.SkipTests null to prevent skipping.";
+
         private static readonly Random Random = new Random(DateTime.Now.Millisecond);
 
         public static uint256 GetUint256()

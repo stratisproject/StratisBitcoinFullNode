@@ -9,7 +9,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 {
     public class WithdrawalTests
     {
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ShouldSerialiseAsJson()
         {
             IWithdrawal withdrawal = TestingValues.GetWithdrawal();
