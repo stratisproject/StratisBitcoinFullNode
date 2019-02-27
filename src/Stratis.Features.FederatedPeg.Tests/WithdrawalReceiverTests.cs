@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
         private IDisposable streamSubscription;
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ReceiveWithdrawals_Should_Push_An_Item_In_NewWithdrawalsOnTargetChainStream()
         {
             this.withdrawalReceiver = new WithdrawalReceiver();

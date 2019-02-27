@@ -88,7 +88,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.signals);
         }
 
-        [Retry(3)]
+        [Retry(3, Skip = TestingValues.SkipTests)]
         // This test requires retries because we are asserting result of a background thread that calls API.
         // This will work in real life but in tests it produces a race condition and therefore requires retries.
         public async Task BlockObserverShouldNotTryToExtractDepositsBeforeMinimumDepositConfirmationsAsync()
@@ -109,7 +109,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             await this.federationGatewayClient.ReceivedWithAnyArgs(1).PushCurrentBlockTipAsync(null);
         }
 
-        [Retry(3)]
+        [Retry(3, Skip = TestingValues.SkipTests)]
         // This test requires retries because we are asserting result of a background thread that calls API.
         // This will work in real life but in tests it produces a race condition and therefore requires retries.
         public void BlockObserverShouldTryToExtractDepositsAfterMinimumDepositConfirmations()
@@ -123,7 +123,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationGatewayClient.ReceivedWithAnyArgs(1).PushCurrentBlockTipAsync(null);
         }
 
-        [Retry(3)]
+        [Retry(3, Skip = TestingValues.SkipTests)]
         // This test requires retries because we are asserting result of a background thread that calls API.
         // This will work in real life but in tests it produces a race condition and therefore requires retries.
         public async Task BlockObserverShouldSendBlockTipAsync()
@@ -137,7 +137,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             await this.federationGatewayClient.ReceivedWithAnyArgs(1).PushCurrentBlockTipAsync(null);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void BlockObserverShouldExtractWithdrawals()
         {
             ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder().chainedHeaderBlock;
@@ -147,7 +147,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.withdrawalExtractor.ReceivedWithAnyArgs(1).ExtractWithdrawalsFromBlock(null, 0);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void BlockObserverShouldSendExtractedWithdrawalsToWithdrawalReceiver()
         {
             ChainedHeaderBlock chainedHeaderBlock = this.ChainHeaderBlockBuilder().chainedHeaderBlock;

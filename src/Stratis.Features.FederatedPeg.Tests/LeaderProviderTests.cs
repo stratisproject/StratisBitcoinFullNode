@@ -5,6 +5,7 @@ using NBitcoin;
 using NSubstitute;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -24,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.leaderProvider = new LeaderProvider(this.federationGatewaySettings);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void UpdatingBlockHeightCarriesOutLeaderPubKeysRoundRobin()
         {
             var output = new PubKey[10];

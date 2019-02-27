@@ -44,7 +44,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
             return client;
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public async Task SendBlockTip_Should_Be_Able_To_Send_IBlockTipAsync()
         {
             var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());
@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Tests.RestClientsTests
             this.logger.Received(0).Log<object>(LogLevel.Error, 0, Arg.Any<object>(), Arg.Any<Exception>(), Arg.Any<Func<object, Exception, string>>());
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public async Task SendBlockTip_Should_Log_Error_When_Failing_To_Send_IBlockTipAsync()
         {
             var blockTip = new BlockTipModel(TestingValues.GetUint256(), TestingValues.GetPositiveInt(), TestingValues.GetPositiveInt());

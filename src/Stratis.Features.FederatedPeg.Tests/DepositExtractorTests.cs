@@ -58,7 +58,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.fullNode);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ExtractDepositsFromBlock_Should_Only_Find_Deposits_To_Multisig()
         {
             Block block = this.network.Consensus.ConsensusFactory.CreateBlock();
@@ -100,7 +100,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             extractedTransaction.BlockHash.Should().Be(block.GetHash());
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void ExtractDepositsFromBlock_Should_Create_One_Deposit_Per_Transaction_To_Multisig()
         {
             Block block = this.network.Consensus.ConsensusFactory.CreateBlock();

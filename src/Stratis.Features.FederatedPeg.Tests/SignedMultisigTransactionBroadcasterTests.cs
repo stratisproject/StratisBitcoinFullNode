@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Xunit;
 
@@ -90,7 +91,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 this.nodeSettings.Network);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public async Task When_Not_The_CurrentLeader_Dont_Call_GetSignedTransactionsAsync()
         {
             this.federationGatewaySettings.PublicKey.Returns("dummykey");
@@ -112,7 +113,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.store.DidNotReceive();
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public async Task When_CurrentLeader_Call_GetSignedTransactionsAsync()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);
@@ -144,7 +145,7 @@ namespace Stratis.Features.FederatedPeg.Tests
                 Arg.Any<Func<object, Exception, string>>());
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public async Task When_CurrentLeader_BroadcastsTransactionAsync()
         {
             this.federationGatewaySettings.PublicKey.Returns(PublicKey);

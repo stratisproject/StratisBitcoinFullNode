@@ -16,6 +16,7 @@ using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.TargetChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Features.FederatedPeg.Wallet;
 using Xunit;
 
@@ -63,7 +64,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             this.walletManager.GetWallet().Returns(this.fedWallet);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void GetGeneralInfo()
         {
             this.connectionManager.ConnectedPeers.Returns(info => new NetworkPeerCollection());
@@ -76,7 +77,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.Equal(this.fedWallet.Network, model.Network);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void GetBalance()
         {
             this.fedWallet.MultiSigAddress = new MultiSigAddress();
@@ -89,7 +90,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.Equal(0, model.AccountsBalances.First().AmountConfirmed.Satoshi);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void GetHistory()
         {
             var withdrawals = new List<WithdrawalModel>() {new WithdrawalModel(), new WithdrawalModel()};
@@ -102,7 +103,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.Equal(withdrawals.Count, model.Count);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void Sync()
         {
             ChainedHeader header = this.chain.Tip;
@@ -115,7 +116,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.True(called);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void EnableFederation()
         {
             bool called = false;
@@ -126,7 +127,7 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             Assert.True(called);
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void RemoveTransactions()
         {
             var hashSet = new HashSet<(uint256, DateTimeOffset)>();

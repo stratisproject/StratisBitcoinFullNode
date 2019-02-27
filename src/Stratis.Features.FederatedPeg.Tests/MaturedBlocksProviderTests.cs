@@ -10,6 +10,7 @@ using Stratis.Bitcoin.Tests.Common;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.SourceChain;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
 namespace Stratis.Features.FederatedPeg.Tests
@@ -33,7 +34,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.consensusManager = Substitute.For<IConsensusManager>();
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void GetMaturedBlocksAsyncReturnsDeposits()
         {
             List<ChainedHeader> headers = ChainedHeadersHelper.CreateConsecutiveHeaders(10, null, true);
