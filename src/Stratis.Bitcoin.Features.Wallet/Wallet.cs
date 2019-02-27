@@ -632,16 +632,6 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Gets a collection of transactions with spendable outputs.
-        /// </summary>
-        /// <returns></returns>
-        public IEnumerable<TransactionData> GetSpendableTransactions()
-        {
-            IEnumerable<HdAddress> addresses = this.GetCombinedAddresses();
-            return addresses.Where(r => r.Transactions != null).SelectMany(a => a.Transactions.Where(t => t.IsSpendable()));
-        }
-
-        /// <summary>
         /// Get the accounts total spendable value for both confirmed and unconfirmed UTXO.
         /// </summary>
         public (Money ConfirmedAmount, Money UnConfirmedAmount) GetSpendableAmount()
