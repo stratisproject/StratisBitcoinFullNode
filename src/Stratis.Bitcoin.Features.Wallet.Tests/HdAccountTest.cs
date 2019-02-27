@@ -251,7 +251,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.InternalAddresses.Add(new HdAddress { Index = 6, Transactions = null });
             account.InternalAddresses.Add(new HdAddress { Index = 6, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(19), Index = 12, SpendingDetails = new SpendingDetails() } } });
 
-            IEnumerable<UnspentOutputReference> result = account.GetSpendableTransactions(100, new StratisTest(), 0);
+            IEnumerable<UnspentOutputReference> result = account.GetSpendableTransactions(100, 10, 0);
 
             Assert.Equal(2, result.Count());
             Assert.Equal(8, result.ElementAt(0).Transaction.Index);
@@ -267,7 +267,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             account.ExternalAddresses.Add(new HdAddress { Index = 2, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 7, SpendingDetails = new SpendingDetails() } } });
             account.InternalAddresses.Add(new HdAddress { Index = 4, Transactions = new List<TransactionData> { new TransactionData { Id = new uint256(15), Index = 10, SpendingDetails = new SpendingDetails() } } });
 
-            IEnumerable<UnspentOutputReference> result = account.GetSpendableTransactions(100, new StratisTest(), 0);
+            IEnumerable<UnspentOutputReference> result = account.GetSpendableTransactions(100, 10, 0);
 
             Assert.Empty(result);
         }
