@@ -1,5 +1,4 @@
 ﻿using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {

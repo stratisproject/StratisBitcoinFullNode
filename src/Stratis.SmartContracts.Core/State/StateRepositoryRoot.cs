@@ -1,5 +1,6 @@
 ﻿using Stratis.Patricia;
 using Stratis.SmartContracts.Core.State.AccountAbstractionLayer;
+
 namespace Stratis.SmartContracts.Core.State
 {
     /// <summary>

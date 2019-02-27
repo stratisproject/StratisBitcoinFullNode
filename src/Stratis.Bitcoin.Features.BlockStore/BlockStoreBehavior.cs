@@ -111,6 +111,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceivedAsync);
         }
 
+        [NoTrace]
         private async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             try
@@ -130,6 +131,7 @@ namespace Stratis.Bitcoin.Features.BlockStore
             }
         }
 
+        [NoTrace]
         protected virtual async Task ProcessMessageAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
