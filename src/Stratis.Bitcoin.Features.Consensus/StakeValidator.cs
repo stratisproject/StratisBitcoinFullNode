@@ -174,6 +174,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.logger.LogTrace("(-)[NO_POW_RETARGET]:'{0}'", lastPowPosBlock.Header.Bits);
                 return lastPowPosBlock.Header.Bits;
             }
+
             if (proofOfStake && consensus.PosNoRetargeting)
             {
                 this.logger.LogTrace("(-)[NO_POS_RETARGET]:'{0}'", lastPowPosBlock.Header.Bits);
