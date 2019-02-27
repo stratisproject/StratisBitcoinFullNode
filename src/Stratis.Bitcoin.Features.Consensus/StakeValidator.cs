@@ -169,7 +169,13 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
 
             // This is used in tests to allow quickly mining blocks.
-            if (consensus.PosNoRetargeting)
+            if (!proofOfStake && consensus.PowNoRetargeting) 
+            {
+                this.logger.LogTrace("(-)[NO_POW_RETARGET]:'{0}'", lastPowPosBlock.Header.Bits);
+                return lastPowPosBlock.Header.Bits;
+            }
+
+            if (proofOfStake && consensus.PosNoRetargeting)
             {
                 this.logger.LogTrace("(-)[NO_POS_RETARGET]:'{0}'", lastPowPosBlock.Header.Bits);
                 return lastPowPosBlock.Header.Bits;
