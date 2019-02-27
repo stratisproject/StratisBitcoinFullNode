@@ -857,7 +857,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 return new List<TransactionData>();
             }
 
-            return this.Transactions.Where(t => t.IsSpendable());
+            return this.Transactions.Where(t => !t.IsSpent());
         }
 
         /// <summary>
@@ -977,31 +977,30 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Indicates an output is spendable.
+        /// Indicates whether an output has been spent.
         /// </summary>
+        /// <returns>A value indicating whether an output has been spent.</returns>
         [NoTrace]
-        public bool IsSpendable()
+        public bool IsSpent()
         {
-            return this.SpendingDetails == null;
+            return this.SpendingDetails != null;
         }
 
+        /// <summary>
+        /// Checks if the output is not spent, with the option to choose whether only confirmed ones are considered. 
+        /// </summary>
+        /// <param name="confirmedOnly">A value indicating whether we only want confirmed amount.</param>
+        /// <returns>The total amount that has not been spent.</returns>
         [NoTrace]
         public Money SpendableAmount(bool confirmedOnly)
         {
-            // This method only returns a UTXO that has no spending output.
-            // If a spending output exists (even if its not confirmed) this will return as zero balance.
-            if (this.IsSpendable())
+            // The spendable balance is 0 if the output is spent or it needs to be confirmed to be considered.
+            if (this.IsSpent() || (confirmedOnly && !this.IsConfirmed()))
             {
-                // If the 'confirmedOnly' flag is set check that the UTXO is confirmed.
-                if (confirmedOnly && !this.IsConfirmed())
-                {
-                    return Money.Zero;
-                }
-
-                return this.Amount;
+                return Money.Zero;
             }
 
-            return Money.Zero;
+            return this.Amount;
         }
     }
 

@@ -349,8 +349,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                             ScriptPubKeyHex = spendableTx.Transaction.ScriptPubKey.ToHex(),
                             RedeemScriptHex = null, // TODO: Currently don't support P2SH wallet addresses, review if we do.
                             Confirmations = spendableTx.Confirmations,
-                            IsSpendable = spendableTx.Transaction.IsSpendable(),
-                            IsSolvable = spendableTx.Transaction.IsSpendable() // If it's spendable we assume it's solvable.
+                            IsSpendable = !spendableTx.Transaction.IsSpent(),
+                            IsSolvable = !spendableTx.Transaction.IsSpent() // If it's spendable we assume it's solvable.
                         });
                     }
                 }
