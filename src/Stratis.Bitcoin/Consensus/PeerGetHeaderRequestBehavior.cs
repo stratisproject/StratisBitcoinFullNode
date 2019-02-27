@@ -9,6 +9,7 @@ using Stratis.Bitcoin.P2P.Protocol;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -61,16 +62,19 @@ namespace Stratis.Bitcoin.Consensus
             this.peerBanning = peerBanning;
         }
 
+        [NoTrace]
         public override object Clone()
         {
             return new RateLimitingBehavior(this.dateTimeProvider, this.loggerFactory, this.peerBanning);
         }
 
+        [NoTrace]
         protected override void AttachCore()
         {
             this.AttachedPeer.MessageReceived.Register(this.OnMessageReceived, true);
         }
 
+        [NoTrace]
         protected override void DetachCore()
         {
             this.AttachedPeer.MessageReceived.Unregister(this.OnMessageReceived);
@@ -81,6 +85,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
+        [NoTrace]
         private Task OnMessageReceived(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
@@ -136,7 +141,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (this.getHeaderRequestCount >= GetHeaderRequestCountThreshold)
                 {
                     this.peerBanning.BanAndDisconnectPeer(this.AttachedPeer.PeerEndPoint, BanDurationSeconds, $"Banned via rate limiting for {BanDurationSeconds} seconds.");
-                    this.logger.LogDebug("{0} banned via {1} for {2} seconds.", this.AttachedPeer.PeerEndPoint, this.GetType().Name, BanDurationSeconds);
+                    this.logger.LogDebug("{0} banned via rate limiting for {1} seconds.", this.AttachedPeer.PeerEndPoint, BanDurationSeconds);
                 }
             }
             else

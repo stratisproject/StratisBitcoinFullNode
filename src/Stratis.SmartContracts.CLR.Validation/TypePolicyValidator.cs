@@ -117,7 +117,7 @@ namespace Stratis.SmartContracts.CLR.Validation
         {
             foreach (TypeDefinition nestedType in type.NestedTypes)
             {
-                results.AddRange(Validate(nestedType));
+                results.AddRange(this.Validate(nestedType));
             }
         }
 

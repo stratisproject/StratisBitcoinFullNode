@@ -1,5 +1,4 @@
-﻿using System;
-using Stratis.SmartContracts.CLR.Validation.Policy;
+﻿using Stratis.SmartContracts.CLR.Validation.Policy;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Validation.Tests

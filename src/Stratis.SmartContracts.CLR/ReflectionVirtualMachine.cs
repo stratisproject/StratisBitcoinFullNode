@@ -3,13 +3,13 @@ using System.Text;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Exceptions;
 using Stratis.SmartContracts.CLR.ILRewrite;
 using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Metering;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
