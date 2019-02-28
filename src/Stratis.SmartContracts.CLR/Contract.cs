@@ -139,7 +139,7 @@ namespace Stratis.SmartContracts.CLR
             if (methodToInvoke.IsPrivate)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodIsPrivate);
 
-            EnsureInitialized();
+            this.EnsureInitialized();
 
             return this.InvokeInternal(methodToInvoke, invokeParams);
         }
@@ -151,7 +151,7 @@ namespace Stratis.SmartContracts.CLR
             if (this.ReceiveHandler == null)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodDoesNotExist);
 
-            EnsureInitialized();
+            this.EnsureInitialized();
 
             return this.InvokeInternal(this.ReceiveHandler, null);
         }

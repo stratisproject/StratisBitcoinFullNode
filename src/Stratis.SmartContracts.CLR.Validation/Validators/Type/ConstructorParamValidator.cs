@@ -57,7 +57,7 @@ namespace Stratis.SmartContracts.CLR.Validation.Validators.Type
 
             if (!valid)
             {
-                return new [] { CreateError(typeDef) };
+                return new [] { this.CreateError(typeDef) };
             }
 
             return Enumerable.Empty<ValidationResult>();

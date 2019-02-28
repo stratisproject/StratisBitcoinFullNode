@@ -39,14 +39,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
         {
             object result = null;
 
-            if (IsBlock<T>())
-                result = (T)(object)CreateBlock();
+            if (this.IsBlock<T>())
+                result = (T)(object)this.CreateBlock();
 
-            if (IsBlockHeader<T>())
-                result = (T)(object)CreateBlockHeader();
+            if (this.IsBlockHeader<T>())
+                result = (T)(object)this.CreateBlockHeader();
 
-            if (IsTransaction<T>())
-                result = (T)(object)CreateTransaction();
+            if (this.IsTransaction<T>())
+                result = (T)(object)this.CreateTransaction();
 
             return (T)result;
         }

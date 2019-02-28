@@ -1,8 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using Stratis.SmartContracts.CLR.Exceptions;
-using Stratis.SmartContracts.RuntimeObserver;
+﻿using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.Metering
 {

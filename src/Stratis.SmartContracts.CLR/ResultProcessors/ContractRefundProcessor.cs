@@ -38,7 +38,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
             if (refund > 0)
             {
                 fee -= refund;
-                ret = CreateRefund(sender, refund);
+                ret = this.CreateRefund(sender, refund);
             }
 
             return (fee, ret);

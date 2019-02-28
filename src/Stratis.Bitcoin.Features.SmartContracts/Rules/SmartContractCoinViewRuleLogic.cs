@@ -10,11 +10,11 @@ using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
-using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
@@ -61,8 +61,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (new uint256(this.mutableStateRepository.Root) != blockHeader.HashStateRoot)
                 SmartContractConsensusErrors.UnequalStateRoots.Throw();
 
-            ValidateAndStoreReceipts(blockHeader.ReceiptRoot);
-            ValidateLogsBloom(blockHeader.LogsBloom);
+            this.ValidateAndStoreReceipts(blockHeader.ReceiptRoot);
+            this.ValidateLogsBloom(blockHeader.LogsBloom);
 
             // Push to underlying database
             this.mutableStateRepository.Commit();
@@ -79,14 +79,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             if (this.generatedTransaction != null)
             {
-                ValidateGeneratedTransaction(transaction);
+                this.ValidateGeneratedTransaction(transaction);
                 baseUpdateUTXOSet(context, transaction);
                 this.blockTxsProcessed.Add(transaction);
                 return;
             }
 
             // If we are here, was definitely submitted by someone
-            ValidateSubmittedTransaction(transaction);
+            this.ValidateSubmittedTransaction(transaction);
 
             TxOut smartContractTxOut = transaction.Outputs.FirstOrDefault(txOut => SmartContractScript.IsSmartContractExec(txOut.ScriptPubKey));
             if (smartContractTxOut == null)
@@ -98,7 +98,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             }
 
             // Someone submitted a smart contract transaction.
-            ExecuteContractTransaction(context, transaction);
+            this.ExecuteContractTransaction(context, transaction);
 
             baseUpdateUTXOSet(context, transaction);
             this.blockTxsProcessed.Add(transaction);
@@ -154,7 +154,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// </summary>
         public void ExecuteContractTransaction(RuleContext context, Transaction transaction)
         {
-            IContractTransactionContext txContext = GetSmartContractTransactionContext(context, transaction);
+            IContractTransactionContext txContext = this.GetSmartContractTransactionContext(context, transaction);
             this.CheckFeeAccountsForGas(txContext.Data, txContext.MempoolFee);
             IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.mutableStateRepository, txContext);
 
@@ -180,7 +180,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             if (result.Refund != null)
             {
-                ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
+                this.ValidateRefunds(result.Refund, context.ValidationContext.BlockToValidate.Transactions[0]);
             }
 
             if (result.InternalTransaction != null)
