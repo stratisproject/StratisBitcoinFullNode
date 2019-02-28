@@ -11,6 +11,8 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
