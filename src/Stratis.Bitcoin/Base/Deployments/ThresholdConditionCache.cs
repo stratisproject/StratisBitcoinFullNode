@@ -114,6 +114,7 @@ namespace Stratis.Bitcoin.Base.Deployments
                 thresholdStateModels.Add(new ThresholdStateModel()
                 {
                     DeploymentIndex = deploymentIndex,
+                    ConfirmationPeriod = period,
                     Blocks = totalBlocks,
                     Votes = votes,
                     HexVersions = hexVersions,

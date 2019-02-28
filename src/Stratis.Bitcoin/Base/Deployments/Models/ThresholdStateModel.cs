@@ -34,6 +34,12 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         public int Height { get; set; }
 
         /// <summary>
+        /// The number of blocks in the each confirmation window.
+        /// </summary>
+        [JsonProperty(PropertyName = "confirmationPeriod")]
+        public int ConfirmationPeriod { get; set; }
+
+        /// <summary>
         /// Height at start of activation window.
         /// </summary>
         [JsonProperty(PropertyName = "periodStartHeight")]
