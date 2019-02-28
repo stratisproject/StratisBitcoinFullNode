@@ -1,4 +1,6 @@
 ﻿using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -22,9 +24,10 @@ namespace Stratis.Bitcoin.Tests.Signals
             var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
 
             bool signaled = false;
-            this.signals.OnBlockConnected.Attach(headerBlock => signaled = true);
-
-            this.signals.OnBlockConnected.Notify(chainedHeaderBlock);
+            using (SubscriptionToken sub = this.signals.Subscribe<BlockConnected>(headerBlock => signaled = true))
+            {
+                this.signals.Publish(new BlockConnected(chainedHeaderBlock));
+            }
 
             Assert.True(signaled);
         }
@@ -37,9 +40,10 @@ namespace Stratis.Bitcoin.Tests.Signals
             var chainedHeaderBlock = new ChainedHeaderBlock(block, header);
 
             bool signaled = false;
-            this.signals.OnBlockDisconnected.Attach(headerBlock => signaled = true);
-
-            this.signals.OnBlockDisconnected.Notify(chainedHeaderBlock);
+            using (SubscriptionToken sub = this.signals.Subscribe<BlockDisconnected>(headerBlock => signaled = true))
+            {
+                this.signals.Publish(new BlockDisconnected(chainedHeaderBlock));
+            }
 
             Assert.True(signaled);
         }
@@ -50,9 +54,10 @@ namespace Stratis.Bitcoin.Tests.Signals
             Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
 
             bool signaled = false;
-            this.signals.OnTransactionReceived.Attach(transaction1 => signaled = true);
-
-            this.signals.OnTransactionReceived.Notify(transaction);
+            using (SubscriptionToken sub = this.signals.Subscribe<TransactionReceived>(transaction1 => signaled = true))
+            {
+                this.signals.Publish(new TransactionReceived(transaction));
+            }
 
             Assert.True(signaled);
         }

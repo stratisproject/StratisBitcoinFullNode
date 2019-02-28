@@ -2,6 +2,7 @@
 using Microsoft.Extensions.Logging;
 using Moq;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Tests.Common;
 using Xunit;
@@ -27,7 +28,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             var transaction2 = new Transaction();
             block.Transactions = new List<Transaction> { transaction1, transaction2 };
 
-            signals.OnBlockDisconnected.Notify(genesisChainedHeaderBlock);
+            signals.Publish(new BlockDisconnected(genesisChainedHeaderBlock));
 
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction1));
             mempoolValidatorMock.Verify(x => x.AcceptToMemoryPool(It.IsAny<MempoolValidationState>(), transaction2));
