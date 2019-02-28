@@ -50,7 +50,7 @@ namespace Stratis.Bitcoin.P2P
         /// </para>
         /// </summary>
         /// <param name="enableThrottle">If <c>true</c> then the selector will filter results from the last 60 seconds (true by default).</param>
-        IEnumerable<PeerAddress> Connected(bool enableThrottle);
+        IEnumerable<PeerAddress> Connected(bool enableThrottle = true);
 
         /// <summary>Returns peers that are not banned.</summary>
         IEnumerable<PeerAddress> NotBanned();
@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.P2P
         /// </para>
         /// </summary>
         /// <param name="enableThrottle">If <c>true</c> then the selector will filter results from the last 60 seconds (true by default).</param>
-        IEnumerable<PeerAddress> Handshaked(bool enableThrottle);
+        IEnumerable<PeerAddress> Handshaked(bool enableThrottle = true);
 
         /// <summary>
         /// <para>
