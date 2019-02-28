@@ -1,5 +1,4 @@
-﻿using System;
-using Stratis.SmartContracts;
+﻿using Stratis.SmartContracts;
 
 [Deploy]
 public sealed class NestedLoop : SmartContract

@@ -120,6 +120,7 @@ namespace Stratis.Bitcoin.Features.PoA
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(60),
                 powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: null,
                 minimumChainWork: null,

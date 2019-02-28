@@ -13,7 +13,7 @@ namespace Stratis.Bitcoin.Networks
         public BitcoinRegTest()
         {
             this.Name = "RegTest";
-            this.AdditionalNames = new List<string> {"reg"};
+            this.AdditionalNames = new List<string> { "reg" };
             this.Magic = 0xDAB5BFFA;
             this.DefaultPort = 18444;
             this.DefaultMaxOutboundConnections = 8;
@@ -71,6 +71,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: false,
                 powNoRetargeting: true,
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: uint256.Zero,

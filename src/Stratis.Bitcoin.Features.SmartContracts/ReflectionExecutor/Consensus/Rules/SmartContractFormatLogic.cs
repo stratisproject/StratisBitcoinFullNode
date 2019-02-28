@@ -1,10 +1,5 @@
-using System.Linq;
-using System.Threading.Tasks;
-using CSharpFunctionalExtensions;
 using NBitcoin;
 using Stratis.Bitcoin.Consensus;
-using Stratis.Bitcoin.Consensus.Rules;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 

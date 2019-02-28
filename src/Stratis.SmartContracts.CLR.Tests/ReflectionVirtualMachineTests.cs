@@ -7,7 +7,6 @@ using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Metering;
 using Stratis.SmartContracts.Core.State;
 using Xunit;
-using Block = Stratis.SmartContracts.Block;
 
 namespace Stratis.SmartContracts.CLR.Tests
 {
