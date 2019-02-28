@@ -245,7 +245,7 @@ namespace Stratis.Bitcoin.Connection
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 peerBuilder.AppendLine(
-                    (peer.Inbound ? "IN " : "OUT ") + "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength * 2)
+                    (peer.Inbound ? "IN  " : "OUT ") + "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15)
                     + peerHeights.PadRight(LoggingConfiguration.ColumnLength + 14)
                     + peerTraffic.PadRight(LoggingConfiguration.ColumnLength + 7)
                     + " agent:" + agent);
