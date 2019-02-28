@@ -53,10 +53,6 @@ namespace Stratis.Bitcoin.Consensus
         /// <summary>Timer that periodically tries to sync.</summary>
         private Timer autosyncTimer;
 
-        /// <summary>Timestamp tracking the last time a resync was triggered due to a header failing to connect.
-        /// This is generally due to the previous block hash referred to by the header not being in the tree.</summary>
-        private DateTime lastHeaderConnectResync;
-
         /// <summary>Interval in minutes for the <see cref="autosyncTimer"/>.</summary>
         private const int AutosyncIntervalMinutes = 10;
 
@@ -325,7 +321,7 @@ namespace Stratis.Bitcoin.Consensus
                     uint256 cachedHeader = this.cachedHeaders.Last().GetHash();
                     uint256 prevNewHeader = headers.First().HashPrevBlock;
 
-                    // ensure headers can connect to cached headers.
+                    // Ensure headers can connect to cached headers.
                     if (cachedHeader == prevNewHeader)
                     {
                         this.cachedHeaders.AddRange(headers);
@@ -336,21 +332,16 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // Workaround for special case when peer announces new block but we don't want to clean the cache.
-                    if (headers.Count == 1 && this.BestReceivedTip != null)
+                    // For example, we are busy syncing and have D E F in the cache (assume A B C are already in the
+                    // CHT). The peer now advertises new block M because we haven't completed IBD yet.
+                    // We do not want to clear the currently useful cache unnecessarily.
+                    if (this.CheckIfUnsolicitedFutureHeader(headers))
                     {
-                        // Distance of header from the peer expected tip.
-                        double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
-
-                        if (this.chain.Network.MaxTipAge < distanceSeconds)
-                        {
-                            // A single header that is not connected to last header is likely an
-                            // unsolicited header that is a result of the peer tip being extended.
-                            // If the header time is far in the future we ignore it.
-                            this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
-                            return;
-                        }
+                        this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                        return;
                     }
 
+                    // The header(s) could not be connected and were not an unsolicited block advertisement.
                     this.cachedHeaders.Clear();
                     await this.ResyncAsync().ConfigureAwait(false);
 
@@ -458,19 +449,23 @@ namespace Stratis.Bitcoin.Consensus
             }
             catch (ConnectHeaderException)
             {
-                // This is typically thrown when the the first header refers to a previous block hash that is not in
+                // This is typically thrown when the first header refers to a previous block hash that is not in
                 // the header tree currently. This is not regarded as bannable, as it could be a legitimate reorg.
                 this.logger.LogDebug("Unable to connect headers.");
-                this.cachedHeaders.Clear();
 
-                // Resync in case we can't connect the header.
-                // We do not want to do this too frequently, as it is possible for an infinite loop to arise if a node
-                // continues to supply headers that cannot be connected. In lieu of more pervasive rate limiting this
-                // quick check should reduce the bandwidth consumption of spurious resync requests.
-                // Resyncs will eventually be triggered by timer elsewhere so a peer will not remain stuck indefinitely.
-                if ((DateTime.Now - this.lastHeaderConnectResync) > TimeSpans.Minute)
+                if (this.CheckIfUnsolicitedFutureHeader(headers))
                 {
-                    this.lastHeaderConnectResync = DateTime.Now;
+                    // However, during IBD it is much more likely that the unconnectable header is an unsolicited
+                    // block advertisement. In that case we just ignore the failed header and don't modify the cache.
+                    // TODO: Review more closely what Bitcoin Core does here - they seem to allow 8 unconnectable headers before
+                    // applying partial DoS points to a peer. Incorporate that into rate limiting code?
+                    this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                }
+                else
+                {
+                    this.cachedHeaders.Clear();
+
+                    // Resync in case we can't connect the header.
                     await this.ResyncAsync().ConfigureAwait(false);
                 }
             }
@@ -496,6 +491,27 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             return result;
+        }
+
+        private bool CheckIfUnsolicitedFutureHeader(List<BlockHeader> headers)
+        {
+            if (headers.Count == 1 && this.BestReceivedTip != null)
+            {
+                // Distance of header from the peer expected tip.
+                double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
+
+                if (this.chain.Network.MaxTipAge < distanceSeconds)
+                {
+                    // A single header that is not connected to last header is likely an
+                    // unsolicited header that is a result of the peer tip being extended.
+                    // If the header time is far in the future we ignore it.
+                    return true;
+                }
+            }
+
+            // If there was more than one header received, or the single received header was not far in the future,
+            // then we may need to take further action.
+            return false;
         }
 
         /// <summary>Sync when handshake is finished.</summary>
