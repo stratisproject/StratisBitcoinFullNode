@@ -61,5 +61,25 @@ namespace Stratis.Bitcoin.Tests.Signals
 
             Assert.True(signaled);
         }
+
+        [Fact]
+        public void SignalUnsubscribingPreventTriggeringPreviouslySubscribedAction()
+        {
+            Transaction transaction = KnownNetworks.StratisMain.CreateTransaction();
+
+            bool signaled = false;
+            using (SubscriptionToken sub = this.signals.Subscribe<TransactionReceived>(transaction1 => signaled = true))
+            {
+                this.signals.Publish(new TransactionReceived(transaction));
+            }
+
+            Assert.True(signaled);
+
+            signaled = false; // reset the flag
+            this.signals.Publish(new TransactionReceived(transaction));
+            //expect signaled be false
+            Assert.True(!signaled);
+
+        }
     }
 }
