@@ -83,6 +83,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
+            Guard.NotNull(withdrawalTransactionBuilder, nameof(withdrawalTransactionBuilder));
 
             this.network = network;
             this.chain = chain;
