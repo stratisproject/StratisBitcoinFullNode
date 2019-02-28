@@ -659,5 +659,10 @@ namespace Stratis.Bitcoin.Consensus
         {
             return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
         }
+
+        internal int GetCachedItemsCount()
+        {
+            return this.cachedHeaders.Count;
+        }
     }
 }
