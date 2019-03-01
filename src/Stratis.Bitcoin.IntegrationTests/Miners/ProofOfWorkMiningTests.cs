@@ -1,8 +1,10 @@
 ﻿using System.Collections.Generic;
 using System.Linq;
+using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Xunit;
 
@@ -22,7 +24,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode miner = builder.CreateStratisPowNode(this.regTest).WithDummyWallet().Start();
+                CoreNode miner = builder.CreateStratisPowNode(this.regTest).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode syncerA = builder.CreateStratisPowNode(this.regTest).Start();
                 CoreNode syncerB = builder.CreateStratisPowNode(this.regTest).Start();
                 CoreNode syncerC = builder.CreateStratisPowNode(this.regTest).Start();
@@ -35,29 +37,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
                 // Ensure miner has 3 connections.
                 TestHelper.WaitLoop(() => miner.FullNode.ConnectionManager.ConnectedPeers.Count() == 3);
 
-                // Mine 3 blocks.
-                TestHelper.MineBlocks(miner, 3);
-
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncerA));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncerB));
                 TestHelper.WaitLoop(() => TestHelper.AreNodesSynced(miner, syncerC));
 
-                Assert.True(new[] { syncerA, syncerB, syncerC }.All(n => n.FullNode.ConsensusManager().Tip.Height == 3));
+                Assert.True(new[] { syncerA, syncerB, syncerC }.All(n => n.FullNode.ConsensusManager().Tip.Height == 10));
             }
         }
 
         [Fact]
-        public void MiningAndPropagatingPOW_MineBlockNotPushedToConsensusCode_SupercededByBetterBlockOnReorg_InitialBlockRejected()
+        public async Task MiningAndPropagatingPOW_MineBlockNotPushedToConsensusCode_SupercededByBetterBlockOnReorg_InitialBlockRejectedAsync()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode node1 = builder.CreateStratisPowNode(this.regTest).WithDummyWallet().Start();
+                CoreNode node1 = builder.CreateStratisPowNode(this.regTest).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10NoWallet).WithDummyWallet().Start();
                 CoreNode node2 = builder.CreateStratisPowNode(this.regTest).WithDummyWallet().Start();
 
-                TestHelper.MineBlocks(node1, 5);
-
                 TestHelper.ConnectAndSync(node1, node2);
-                Assert.True(node1.FullNode.ConsensusManager().Tip.Height == 5);
+                Assert.True(node1.FullNode.ConsensusManager().Tip.Height == 10);
 
                 TestHelper.Disconnect(node1, node2);
 
@@ -69,14 +66,14 @@ namespace Stratis.Bitcoin.IntegrationTests.Miners
 
                 // Nodes 1 syncs with node 2 up to height 7.
                 TestHelper.ConnectAndSync(node1, node2);
-                Assert.True(node1.FullNode.ConsensusManager().Tip.Height == 7);
+                Assert.True(node1.FullNode.ConsensusManager().Tip.Height == 12);
 
                 // Call BlockMinedAsync manually with the block that was supposed to have been submitted at height 6.
-                node1.FullNode.ConsensusManager().BlockMinedAsync(manualBlock).GetAwaiter().GetResult();
+                await node1.FullNode.ConsensusManager().BlockMinedAsync(manualBlock);
 
                 // Verify that the manually added block is NOT in the consensus chain.
                 var chainedHeaderToValidate = node1.FullNode.ConsensusManager().Tip.Previous;
-                Assert.True(chainedHeaderToValidate.Height == 6);
+                Assert.True(chainedHeaderToValidate.Height == 11);
                 Assert.False(chainedHeaderToValidate.HashBlock == manualBlock.GetHash());
             }
         }
