@@ -227,7 +227,7 @@ namespace Stratis.Bitcoin.P2P.Peer
 
             var clientLocalEndPoint = tcpClient.Client.LocalEndPoint as IPEndPoint;
 
-            bool endpointCanBeWhiteListed = this.connectionManagerSettings.Listen.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
+            bool endpointCanBeWhiteListed = this.connectionManagerSettings.Bind.Where(x => x.Whitelisted).Any(x => x.Endpoint.Contains(clientLocalEndPoint));
 
             if (endpointCanBeWhiteListed)
             {
