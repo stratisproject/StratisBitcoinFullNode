@@ -33,6 +33,8 @@ Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "Stratis.FederatedPeg.Integr
 EndProject
 Project("{9A19103F-16F7-4668-BE54-9A1E7A4F7556}") = "XUnitRetry", "XUnitRetry\XUnitRetry.csproj", "{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "StratisFederationApp", "StratisFederationApp\StratisFederationApp.csproj", "{E4040D73-6D3B-4B0C-B12A-E5BCB64114F8}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -91,6 +93,10 @@ Global
 		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C}.Release|Any CPU.Build.0 = Release|Any CPU
+		{E4040D73-6D3B-4B0C-B12A-E5BCB64114F8}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{E4040D73-6D3B-4B0C-B12A-E5BCB64114F8}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{E4040D73-6D3B-4B0C-B12A-E5BCB64114F8}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{E4040D73-6D3B-4B0C-B12A-E5BCB64114F8}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
@@ -103,6 +109,7 @@ Global
 		{A8CA48FA-A725-412D-9EC4-1BA7BA7177B2} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 		{7764E567-47B8-481C-A078-7B3E427F217E} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
 		{512E5291-4A27-46AE-8AFC-9D04CCE0E63C} = {EEF9F276-23FB-4CC2-AF47-0E646EB2F6F1}
+		{E4040D73-6D3B-4B0C-B12A-E5BCB64114F8} = {4B9DEF95-A336-404B-908D-E1BFA1DB2DA9}
 	EndGlobalSection
 	GlobalSection(ExtensibilityGlobals) = postSolution
 		SolutionGuid = {034BDA2C-1CEE-4128-B444-CE1D425CB11C}
