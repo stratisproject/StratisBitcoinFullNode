@@ -105,6 +105,8 @@ namespace Stratis.Bitcoin.Connection
                 peer.Disconnect($"The peer was banned, reason: {reason}");
             }
 
+            this.logger.LogTrace("{0} peers got disconnected for {1}.", peers.Count, endpoint);
+
             // Find all peers from the same IP and ban them.
             List<PeerAddress> peerAddresses = this.peerAddressManager.FindPeersByIp(endpoint);
             if (peerAddresses.Count == 0)
@@ -112,7 +114,7 @@ namespace Stratis.Bitcoin.Connection
                 this.peerAddressManager.AddPeer(endpoint, IPAddress.Loopback);
                 peerAddresses.Add(this.peerAddressManager.FindPeer(endpoint));
 
-                this.logger.LogTrace("{0} added to the address manager.");
+                this.logger.LogTrace("{0} added to the address manager.", endpoint);
             }
 
             foreach (var peerAddress in peerAddresses)
