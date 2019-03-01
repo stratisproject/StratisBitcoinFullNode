@@ -64,15 +64,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly IBlockRepository blockRepository;
         private readonly CancellationTokenSource cancellation;
         private readonly IFederationWalletManager federationWalletManager;
-        private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
-        private readonly IFederationGatewaySettings federationGatewaySettings;
+        private readonly IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
 
         /// <summary>Provider of time functions.</summary>
         private readonly object lockObj;
 
         public CrossChainTransferStore(Network network, DataFolder dataFolder, ConcurrentChain chain, IFederationGatewaySettings settings, IDateTimeProvider dateTimeProvider,
             ILoggerFactory loggerFactory, IWithdrawalExtractor withdrawalExtractor, IFullNode fullNode, IBlockRepository blockRepository,
-            IFederationWalletManager federationWalletManager, IFederationWalletTransactionHandler federationWalletTransactionHandler, DBreezeSerializer dBreezeSerializer)
+            IFederationWalletManager federationWalletManager, IWithdrawalTransactionBuilder withdrawalTransactionBuilder, DBreezeSerializer dBreezeSerializer)
         {
             Guard.NotNull(network, nameof(network));
             Guard.NotNull(dataFolder, nameof(dataFolder));
@@ -84,14 +83,13 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(blockRepository, nameof(blockRepository));
             Guard.NotNull(federationWalletManager, nameof(federationWalletManager));
-            Guard.NotNull(federationWalletTransactionHandler, nameof(federationWalletTransactionHandler));
+            Guard.NotNull(withdrawalTransactionBuilder, nameof(withdrawalTransactionBuilder));
 
             this.network = network;
             this.chain = chain;
             this.blockRepository = blockRepository;
             this.federationWalletManager = federationWalletManager;
-            this.federationWalletTransactionHandler = federationWalletTransactionHandler;
-            this.federationGatewaySettings = settings;
+            this.withdrawalTransactionBuilder = withdrawalTransactionBuilder;
             this.withdrawalExtractor = withdrawalExtractor;
             this.dBreezeSerializer = dBreezeSerializer;
             this.lockObj = new object();
@@ -323,53 +321,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
-        private Transaction BuildDeterministicTransaction(uint256 depositId, uint blockTime, Recipient recipient)
-        {
-            try
-            {
-                this.logger.LogInformation("BuildDeterministicTransaction depositId(opReturnData)={0} recipient.ScriptPubKey={1} recipient.Amount={2}", depositId, recipient.ScriptPubKey, recipient.Amount);
-
-                // Build the multisig transaction template.
-                uint256 opReturnData = depositId;
-                string walletPassword = this.federationWalletManager.Secret.WalletPassword;
-                bool sign = (walletPassword ?? "") != "";
-                var multiSigContext = new TransactionBuildContext(new[] { recipient }.ToList(), opReturnData: opReturnData.ToBytes())
-                {
-                    OrderCoinsDeterministic = true,
-                    TransactionFee = this.federationGatewaySettings.TransactionFee,
-                    MinConfirmations = this.federationGatewaySettings.MinCoinMaturity,
-                    Shuffle = false,
-                    IgnoreVerify = true,
-                    WalletPassword = walletPassword,
-                    Sign = sign,
-                };
-
-                Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
-
-                // Build the transaction.
-                if (this.network.Consensus.IsProofOfStake)
-                {
-                    transaction.Time = blockTime;
-
-                    if (sign)
-                    {
-                        transaction = multiSigContext.TransactionBuilder.SignTransaction(transaction);
-                    }
-                }
-
-                this.logger.LogInformation("transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
-
-                return transaction;
-            }
-            catch (Exception error)
-            {
-                this.logger.LogError("Could not create transaction for deposit {0}: {1}", depositId, error.Message);
-            }
-
-            this.logger.LogTrace("(-)[FAIL]");
-            return null;
-        }
-
         /// <summary>Rolls back the database if an operation running in the context of a database transaction fails.</summary>
         /// <param name="dbreezeTransaction">Database transaction to roll back.</param>
         /// <param name="exception">Exception to report and re-raise.</param>
@@ -480,7 +431,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                                 uint blockTime = maturedDeposit.BlockInfo.BlockTime;
 
-                                transaction = this.BuildDeterministicTransaction(deposit.Id, blockTime, recipient);
+                                transaction = this.withdrawalTransactionBuilder.BuildWithdrawalTransaction(deposit.Id, blockTime, recipient);
 
                                 if (transaction != null)
                                 {
