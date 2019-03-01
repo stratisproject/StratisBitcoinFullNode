@@ -250,7 +250,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
             {
                 CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).Start();
-                CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
 
                 // Sync all nodes.
                 TestHelper.ConnectAndSync(stratisReceiver, stratisSender);
