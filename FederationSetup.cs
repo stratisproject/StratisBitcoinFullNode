@@ -34,9 +34,12 @@ namespace FederationSetup
             builder.AppendLine("              text:    A bit of text or a url to be included in the genesis block.");
             builder.AppendLine("              Example:    g -text=\"https://www.coindesk.com/apple-co-founder-backs-dorsey-bitcoin-become-webs-currency/\"");
             builder.AppendLine("p       Create private and public keys for federation members.");  // ask members to create public and private -p (for the specfic network)  - 1 pubpriv for signing transactions and 1 for pubpriv key for mining
-            builder.AppendLine("        args: [-passphrase=<passphrase>] (optional - space character not allowed)");
-            builder.AppendLine("              passphrase: a passphrase used to derive the private key from the transaction signing mnenmonic");
-            builder.AppendLine("              Example: p -passphrase=h@rd2Gu3ss!");
+            builder.AppendLine("        args: [-passphrase=<passphrase>] [-datadir=<datadir>] [-ismultisig=<bool>] (optional - space character not allowed)");
+            builder.AppendLine("              passphrase:   a passphrase used to derive the private key from the transaction signing mnenmonic");
+            builder.AppendLine("              datadir:      optional arg, directory where private key is saved");
+            builder.AppendLine("              ismultisig:   optional arg, controls output");
+            builder.AppendLine("              Example:      p -passphrase=h@rd2Gu3ss!");
+            builder.AppendLine("              Example:      p -passphrase=h@rd2Gu3ss! -datadir=c:\\dev -ismultisig=true");
             builder.AppendLine("m       Create multi signature addresses for the federation wallets.");
             builder.AppendLine("        args: [-network=<network>] [-quorum=<quorum>] [-fedpubkeys=<pubkey1, pubkey2, ..>]");
             builder.AppendLine("              network:    mainnet, testnet or regtest.");

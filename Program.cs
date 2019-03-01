@@ -2,6 +2,7 @@
 using System.IO;
 using System.Linq;
 using System.Reflection;
+using System.Text.RegularExpressions;
 using NBitcoin;
 using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Configuration;
@@ -30,6 +31,12 @@ namespace FederationSetup
 
         static void Main(string[] args)
         {
+            if (args.Length > 0)
+            {
+                SwitchCommand(args, args[0], string.Join(" ", args));
+                return;
+            }
+
             Console.SetIn(new StreamReader(Console.OpenStandardInput(), Console.InputEncoding, false, bufferSize: 1024));
 
             // Start with the banner and the help message.
@@ -52,44 +59,49 @@ namespace FederationSetup
                     else
                     {
                         args = null;
-                        command = null;
                     }
 
                     Console.WriteLine();
 
-                    switch (command)
-                    {
-                        case SwitchExit:
-                        {
-                            return;
-                        }
-                        case SwitchMenu:
-                        {
-                            HandleSwitchMenuCommand(args);
-                            break;
-                        }
-                        case SwitchMineGenesisBlock:
-                        {
-                            HandleSwitchMineGenesisBlockCommand(userInput);
-                            break;
-                        }
-                        case SwitchGenerateFedPublicPrivateKeys:
-                        {
-                            HandleSwitchGenerateFedPublicPrivateKeysCommand(args);
-                            break;
-                        }
-                        case SwitchGenerateMultiSigAddresses:
-                        {
-                            HandleSwitchGenerateMultiSigAddressesCommand(args);
-                            break;
-                        }
-                    }
+                    SwitchCommand(args, command, userInput);
                 }
                 catch (Exception ex)
                 {
                     FederationSetup.OutputErrorLine($"An error occurred: {ex.Message}");
                     Console.WriteLine();
                     FederationSetup.OutputMenu();
+                }
+            }
+        }
+
+        private static void SwitchCommand(string[] args, string command, string userInput)
+        {
+            switch (command)
+            {
+                case SwitchExit:
+                {
+                   Environment.Exit(0);
+                   break;
+                }
+                case SwitchMenu:
+                {
+                    HandleSwitchMenuCommand(args);
+                    break;
+                }
+                case SwitchMineGenesisBlock:
+                {
+                    HandleSwitchMineGenesisBlockCommand(userInput);
+                    break;
+                }
+                case SwitchGenerateFedPublicPrivateKeys:
+                {
+                    HandleSwitchGenerateFedPublicPrivateKeysCommand(args);
+                    break;
+                }
+                case SwitchGenerateMultiSigAddresses:
+                {
+                    HandleSwitchGenerateMultiSigAddressesCommand(args);
+                    break;
                 }
             }
         }
@@ -124,19 +136,41 @@ namespace FederationSetup
 
         private static void HandleSwitchGenerateFedPublicPrivateKeysCommand(string[] args)
         {
-            if (args.Length != 1 && args.Length != 2)
+            if (args.Length != 1 && args.Length != 2 && args.Length != 3 && args.Length != 4)
                 throw new ArgumentException("Please enter the exact number of argument required.");
 
             string passphrase = null;
-            if (args.Length == 2)
+            string dataDirPath = null;
+            string isMultisig = null;
+
+            dataDirPath = Array.Find(args, element =>
+                element.StartsWith("-datadir=", StringComparison.Ordinal));
+
+            passphrase = Array.Find(args, element =>
+                element.StartsWith("-passphrase=", StringComparison.Ordinal));
+
+            isMultisig = Array.Find(args, element =>
+                element.StartsWith("-ismultisig=", StringComparison.Ordinal));
+
+            if (String.IsNullOrEmpty(passphrase))
+                throw new ArgumentException("The -passphrase=\"<passphrase>\" argument is missing.");
+
+            passphrase = passphrase.Replace("-passphrase=", string.Empty);
+
+            //ToDo wont allow for datadir with equal sign
+            dataDirPath = String.IsNullOrEmpty(dataDirPath)
+                ? Environment.GetFolderPath(Environment.SpecialFolder.MyDocuments)
+                : dataDirPath.Replace("-datadir=", String.Empty);
+
+            if (String.IsNullOrEmpty(isMultisig) || isMultisig.Replace("-ismultisig=", String.Empty) == "true")
             {
-                int index = args[1].IndexOf("-passphrase=");
-                if (index < 0)
-                    throw new ArgumentException("The -passphrase=\"<passphrase>\" argument is missing.");
-                passphrase = args[1].Replace("-passphrase=", string.Empty);
+                GeneratePublicPrivateKeys(passphrase, dataDirPath);
+            }
+            else
+            {
+                GeneratePublicPrivateKeys(passphrase, dataDirPath, isMultiSigOutput: false);
             }
 
-            GeneratePublicPrivateKeys(passphrase);
             FederationSetup.OutputSuccess();
         }
 
@@ -162,31 +196,44 @@ namespace FederationSetup
             Console.WriteLine(new MultisigAddressCreator().CreateMultisigAddresses(mainChain, sideChain, federatedPublicKeys.Select(f => new PubKey(f)).ToArray(), quorum));
         }
 
-        private static void GeneratePublicPrivateKeys(string passphrase)
+        private static void GeneratePublicPrivateKeys(string passphrase, String keyPath, bool isMultiSigOutput = true)
         {
             // Generate keys for signing.
             var mnemonicForSigningKey = new Mnemonic(Wordlist.English, WordCount.Twelve);
             PubKey signingPubKey = mnemonicForSigningKey.DeriveExtKey(passphrase).PrivateKey.PubKey;
 
             // Generate keys for migning.
-            var tool = new KeyTool(new DataFolder(Path.GetDirectoryName(Assembly.GetEntryAssembly().Location)));
+            var tool = new KeyTool(keyPath);
+
             Key key = tool.GeneratePrivateKey();
 
             string savePath = tool.GetPrivateKeySavePath();
             tool.SavePrivateKey(key);
             PubKey miningPubKey = key.PubKey;
 
+            Console.WriteLine($"Your Masternode Public Key: {Encoders.Hex.EncodeData(miningPubKey.ToBytes(false))}");
             Console.WriteLine($"-----------------------------------------------------------------------------");
-            Console.WriteLine($"-- Please give the following 2 public keys to the federation administrator --");
-            Console.WriteLine($"-----------------------------------------------------------------------------");
-            Console.WriteLine($"1. Your signing pubkey: {Encoders.Hex.EncodeData(signingPubKey.ToBytes(false))}");
-            Console.WriteLine($"2. Your mining pubkey: {Encoders.Hex.EncodeData(miningPubKey.ToBytes(false))}");
-            Console.WriteLine(Environment.NewLine);
-            Console.WriteLine($"------------------------------------------------------------------------------------------");
-            Console.WriteLine($"-- Please keep the following 12 words for yourself and note them down in a secure place --");
-            Console.WriteLine($"------------------------------------------------------------------------------------------");
-            Console.WriteLine($"Your signing mnemonic: {string.Join(" ", mnemonicForSigningKey.Words)}");
-            if(passphrase != null) { Console.WriteLine($"Your passphrase: {passphrase}");}
+
+            if (isMultiSigOutput)
+            {
+                Console.WriteLine(
+                    $"Your Masternode Signing Key: {Encoders.Hex.EncodeData(signingPubKey.ToBytes(false))}");
+                Console.WriteLine(Environment.NewLine);
+                Console.WriteLine(
+                    $"------------------------------------------------------------------------------------------");
+                Console.WriteLine(
+                    $"-- Please keep the following 12 words for yourself and note them down in a secure place --");
+                Console.WriteLine(
+                    $"------------------------------------------------------------------------------------------");
+                Console.WriteLine($"Your signing mnemonic: {string.Join(" ", mnemonicForSigningKey.Words)}");
+            }
+
+            if (passphrase != null)
+            {
+                Console.WriteLine(Environment.NewLine);
+                Console.WriteLine($"Your passphrase: {passphrase}");
+            }
+
             Console.WriteLine(Environment.NewLine);
             Console.WriteLine($"------------------------------------------------------------------------------------------------------------");
             Console.WriteLine($"-- Please save the following file in a secure place, you'll need it when the federation has been created. --");
