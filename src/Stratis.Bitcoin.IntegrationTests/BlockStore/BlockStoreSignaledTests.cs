@@ -80,10 +80,8 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
-
-                TestHelper.MineBlocks(stratisNodeSync, 10);
 
                 // Change the second node's list of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
@@ -127,13 +125,11 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisNodeSync = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 CoreNode stratisNode1 = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisNode2 = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisNode3 = builder.CreateStratisPowNode(this.network).Start();
-
-                TestHelper.MineBlocks(stratisNodeSync, 10);
 
                 // Change the other nodes' lists of default behaviours include the test behaviour in it.
                 // We leave the other behaviors alone for this test because we want to see what messages the node gets under normal operation.
