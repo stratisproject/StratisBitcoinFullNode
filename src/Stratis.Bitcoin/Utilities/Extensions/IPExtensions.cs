@@ -82,6 +82,9 @@ namespace Stratis.Bitcoin.Utilities.Extensions
             return address.Equals(IPAddress.Parse("[::]"));
         }
 
+        /// <summary>
+        /// This method determines if any of a list of network end points can be mapped to this whitebind endpoint.
+        /// </summary>
         public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkEndpoints, out IPEndPoint localEndpoint)
         {
             localEndpoint = networkEndpoints.SingleOrDefault(ep => whiteBindEndpoint.Contains(ep));

@@ -70,17 +70,14 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
 
-                var anyIPs = whitebindEndpoints.Where(x => x.Address.AnyIP()).ToList();
-
-                this.Bind = anyIPs.Select(x => new NodeServerEndpoint(x, true)).ToList();
+                this.Bind = whitebindEndpoints.Where(x => x.Address.AnyIP()).Select(x => new NodeServerEndpoint(x, true)).ToList();
 
                 foreach (IPEndPoint endPoint in whitebindEndpoints.Where(x => !x.Address.AnyIP()))
                 {
-                    if (endPoint.CanBeMappedTo(anyIPs, out _))
+                    if (this.Bind.Select(x => x.Endpoint).Any(x => x.Contains(endPoint)))
                         continue;
 
-                    if (!this.Bind.Select(x => x.Endpoint).Contains(endPoint))
-                        this.Bind.Add(new NodeServerEndpoint(endPoint, true));
+                    this.Bind.Add(new NodeServerEndpoint(endPoint, true));
                 }
             }
             catch (FormatException)
@@ -92,8 +89,10 @@ namespace Stratis.Bitcoin.Configuration.Settings
             {
                 foreach (NodeServerEndpoint endPoint in config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)))
                 {
-                    if (!this.Bind.Select(x => x.Endpoint).Contains(endPoint.Endpoint))
-                        this.Bind.Add(endPoint);
+                    if (this.Bind.Select(x => x.Endpoint).Any(x => x.Contains(endPoint.Endpoint)))
+                        continue;
+
+                    this.Bind.Add(endPoint);
                 }
             }
             catch (FormatException)
