@@ -112,7 +112,18 @@ namespace Stratis.Bitcoin.Consensus
                     this.BestReceivedTip = result.Consumed;
                     this.UpdateBestSentHeader(this.BestReceivedTip);
 
-                    int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+                    uint256 consumedHeaderHash = result.Consumed.Header.GetHash();
+                    int consumedCount = 0;
+
+                    for (int i = this.cachedHeaders.Count - 1; i >= 0; i--)
+                    {
+                        if (this.cachedHeaders[i].GetHash() == consumedHeaderHash)
+                        {
+                            consumedCount = i;
+                            break;
+                        }
+                    }
+
                     this.cachedHeaders.RemoveRange(0, consumedCount);
                     int cacheSize = this.cachedHeaders.Count;
 
