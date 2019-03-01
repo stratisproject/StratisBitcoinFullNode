@@ -307,7 +307,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Mempool
 
                 var mempoolValidationState = new MempoolValidationState(true);
 
-                //int maturity = (int)node1.FullNode.Network.Consensus.CoinbaseMaturity;
                 TestHelper.MineBlocks(node1, 20);
                 TestHelper.ConnectAndSync(node1, node2);
 
