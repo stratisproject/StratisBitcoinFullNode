@@ -9,20 +9,10 @@ using Stratis.Features.FederatedPeg.RestClients;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
-    /// <summary>
-    /// Handles block syncing between gateways on 2 chains. This node will request
-    /// blocks from another chain to look for cross chain deposit transactions.
-    /// </summary>
-    public interface IMaturedBlocksSyncManager : IDisposable
-    {
-        /// <summary>Starts requesting blocks from another chain.</summary>
-        void Initialize();
-    }
-
     /// <inheritdoc cref="IMaturedBlocksSyncManager"/>
     public class MaturedBlocksSyncManager : IMaturedBlocksSyncManager
     {
-        private readonly ICrossChainTransferStore store;
+        private readonly IDepositRepository depositRepository;
 
         private readonly IFederationGatewayClient federationGatewayClient;
 
@@ -42,9 +32,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <remarks>Needed to give other node some time to start before bombing it with requests.</remarks>
         private const int InitializationDelayMs = 10_000;
 
-        public MaturedBlocksSyncManager(ICrossChainTransferStore store, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory)
+        public MaturedBlocksSyncManager(DepositRepository depositStore, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory)
         {
-            this.store = store;
+            this.depositRepository = depositStore;
             this.federationGatewayClient = federationGatewayClient;
 
             this.cancellation = new CancellationTokenSource();
@@ -54,7 +44,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <inheritdoc />
         public void Initialize()
         {
-            this.blockRequestingTask = RequestMaturedBlocksContinouslyAsync();
+            this.blockRequestingTask = this.RequestMaturedBlocksContinouslyAsync();
         }
 
         /// <summary>Continuously requests matured blocks from another chain.</summary>
@@ -90,55 +80,29 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <exception cref="OperationCanceledException">Thrown when <paramref name="cancellationToken"/> is cancelled.</exception>
         protected async Task<bool> SyncBatchOfBlocksAsync(CancellationToken cancellationToken = default(CancellationToken))
         {
-            int blocksToRequest = 1;
-
-            // TODO why are we asking for max of 1 block and if it's not suspended then 1000? investigate this logic in maturedBlocksProvider
-            if (!this.store.HasSuspended())
-                blocksToRequest = MaxBlocksToRequest;
-
             // TODO investigate if we can ask for blocks that are reorgable. If so it's a problem and an attack vector.
-            // API method that provides blocks should't give us blocks that are not mature!
-            var model = new MaturedBlockRequestModel(this.store.NextMatureDepositHeight, blocksToRequest);
+            int blocksToRequest = MaxBlocksToRequest;
+            int blockToStartFrom = this.depositRepository.GetSyncedBlockNumber();
 
-            this.logger.LogDebug("Request model created: {0}:{1}, {2}:{3}.", nameof(model.BlockHeight), model.BlockHeight,
-                nameof(model.MaxBlocksToSend), model.MaxBlocksToSend);
+            var model = new MaturedBlockRequestModel(blockToStartFrom, blocksToRequest);
 
-            // Ask for blocks.
             IList<MaturedBlockDepositsModel> matureBlockDeposits = await this.federationGatewayClient.GetMaturedBlockDepositsAsync(model, cancellationToken).ConfigureAwait(false);
-
-            bool delayRequired = true;
 
             if (matureBlockDeposits != null)
             {
-                // Log what we've received.
-                foreach (MaturedBlockDepositsModel maturedBlockDeposit in matureBlockDeposits)
+                if (matureBlockDeposits.Count == 0)
                 {
-                    foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
-                    {
-                        this.logger.LogDebug("New deposit received BlockNumber={0}, TargetAddress='{1}', depositId='{2}', Amount='{3}'.",
-                            deposit.BlockNumber, deposit.TargetAddress, deposit.Id, deposit.Amount);
-                    }
+                    // We're fully synced. May need to do something in the future?
+                    return true;
                 }
 
-                if (matureBlockDeposits.Count > 0)
-                {
-                    bool success = await this.store.RecordLatestMatureDepositsAsync(matureBlockDeposits).ConfigureAwait(false);
-
-                    // If we received a portion of blocks we can ask for new portion without any delay.
-                    if (success)
-                        delayRequired = false;
-                }
-                else
-                {
-                    this.logger.LogDebug("Considering ourselves fully synced since no blocks were received");
-
-                    // If we've received nothing we assume we are at the tip and should flush.
-                    // Same mechanic as with syncing headers protocol.
-                    await this.store.SaveCurrentTipAsync().ConfigureAwait(false);
-                }
+                // We found new deposits. Add them to the store.
+                await this.depositRepository.SaveDepositsAsync(matureBlockDeposits);
             }
 
-            return delayRequired;
+            // TODO: Do we need to update the most recently highest block
+
+            return true;
         }
 
         /// <inheritdoc />
