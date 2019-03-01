@@ -1,5 +1,4 @@
 ﻿using System.Collections.Generic;
-using System.Threading.Tasks;
 using Stratis.Features.FederatedPeg.Models;
 
 namespace Stratis.Features.FederatedPeg.Interfaces
@@ -14,6 +13,6 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// Save deposits to disk.
         /// </summary>
-        Task<bool> SaveDepositsAsync(IList<MaturedBlockDepositsModel> maturedBlockDeposits);
+        void SaveDeposits(IList<MaturedBlockDepositsModel> maturedBlockDeposits);
     }
 }

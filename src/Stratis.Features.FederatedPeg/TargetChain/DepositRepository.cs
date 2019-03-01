@@ -1,13 +1,14 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
-using System.Threading.Tasks;
+using System.Linq;
 using DBreeze;
 using DBreeze.DataTypes;
 using DBreeze.Transactions;
 using Stratis.Bitcoin.Configuration;
+using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
+using Stratis.Features.FederatedPeg.SourceChain;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -23,13 +24,16 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private static readonly byte[] SyncedUpToBlockKey = new byte[] { 1 };
 
         private readonly DBreezeEngine db;
+        private readonly DBreezeSerializer serializer;
 
-        public DepositRepository(DataFolder dataFolder, IFederationGatewaySettings settings)
+        public DepositRepository(DataFolder dataFolder, IFederationGatewaySettings settings, DBreezeSerializer serializer)
         {
             string depositStoreName = "federatedTransfers" + settings.MultiSigAddress; // TODO: Unneccessary?
             string folder = Path.Combine(dataFolder.RootPath, depositStoreName);
             Directory.CreateDirectory(folder);
             this.db = new DBreezeEngine(folder);
+
+            this.serializer = serializer;
         }
 
         /// <inheritdoc />
@@ -45,9 +49,27 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
-        public async Task<bool> SaveDepositsAsync(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
+        public void SaveDeposits(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
         {
-            throw new NotImplementedException();
+            using (Transaction dbreezeTransaction = this.db.GetTransaction())
+            {
+                IEnumerable<IDeposit> allDeposits = maturedBlockDeposits.SelectMany(x => x.Deposits);
+
+                foreach (IDeposit deposit in allDeposits)
+                {
+                    this.PutDeposit(dbreezeTransaction, (Deposit) deposit);
+                }
+
+                dbreezeTransaction.Commit();
+            }
+        }
+
+        private void PutDeposit(Transaction dbreezeTransaction, Deposit deposit)
+        {
+            Guard.NotNull(deposit, nameof(deposit));
+
+            byte[] depositBytes = this.serializer.Serialize(deposit);
+            dbreezeTransaction.Insert<byte[], byte[]>(DepositTableName, deposit.Id.ToBytes(), depositBytes);
         }
     }
 }
