@@ -31,7 +31,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
                 // Send back funds
                 if (transactionContext.TxOutValue > 0)
                 {
-                    return CreateRefundTransaction(transactionContext);
+                    return this.CreateRefundTransaction(transactionContext);
                 }
 
                 return null;

@@ -201,7 +201,7 @@ namespace Stratis.SmartContracts.Core.Receipts
         /// </summary>
         public uint256 GetHash()
         {
-            return new uint256(HashHelper.Keccak256(ToConsensusBytesRlp()));
+            return new uint256(HashHelper.Keccak256(this.ToConsensusBytesRlp()));
         }
 
         #endregion

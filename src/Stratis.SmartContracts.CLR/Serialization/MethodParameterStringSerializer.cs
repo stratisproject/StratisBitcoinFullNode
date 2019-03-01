@@ -32,7 +32,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
         {
             var sb = new List<string>();
 
-            foreach (var obj in methodParameters)
+            foreach (object obj in methodParameters)
             {
                 sb.Add(this.SerializeObject(obj));
             }
@@ -42,7 +42,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         private string SerializeObject(object obj)
         {
-            var prefix = Prefix.ForObject(obj);
+            Prefix prefix = Prefix.ForObject(obj);
 
             string serialized = Serialize(obj, this.network);
 
@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public static string Serialize(object obj, Network network)
         {
-            var primitiveType = GetPrimitiveType(obj);
+            MethodParameterDataType primitiveType = GetPrimitiveType(obj);
 
             // ToString works fine for all of our data types except byte arrays and addresses
             string serialized;
@@ -110,12 +110,12 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public object[] Deserialize(string[] parameters)
         {
-            return StringToObjects(this.EscapeAndJoin(parameters));
+            return this.StringToObjects(this.EscapeAndJoin(parameters));
         }
 
         public object[] Deserialize(string parameters)
         {
-            return StringToObjects(parameters);
+            return this.StringToObjects(parameters);
         }
 
         private object[] StringToObjects(string parameters)
@@ -124,7 +124,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
             var processedParameters = new List<object>();
 
-            foreach (var parameter in split)
+            foreach (string parameter in split)
             {
                 try
                 {
@@ -217,7 +217,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
                     reconstructed.Add(hashes[i]);
                 }
 
-                var result = string.Join('#', reconstructed).Replace("#", @"\#");
+                string result = string.Join('#', reconstructed).Replace("#", @"\#");
                 return hashes[0].Insert(hashes[0].Length, "#" + result);
             });
 

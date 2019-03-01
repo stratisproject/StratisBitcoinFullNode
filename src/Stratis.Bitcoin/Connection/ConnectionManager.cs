@@ -132,7 +132,8 @@ namespace Stratis.Bitcoin.Connection
             this.consensusManager = consensusManager;
             this.AddExternalIpToSelfEndpoints();
 
-            this.peerDiscovery.DiscoverPeers(this);
+            if (this.ConnectionSettings.Listen)
+                this.peerDiscovery.DiscoverPeers(this);
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
             {
@@ -140,8 +141,7 @@ namespace Stratis.Bitcoin.Connection
                 peerConnector.StartConnectAsync();
             }
 
-            /// <summary>Node server is only started if there are no peers in the -connect args.</summary>
-            if (!this.ConnectionSettings.Connect.Any())
+            if (this.ConnectionSettings.Listen)
                 this.StartNodeServer();
 
             // If external IP address supplied this overrides all.
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Connection
             else
             {
                 // If external IP address not supplied take first routable bind address and set score to 10.
-                IPEndPoint nodeServerEndpoint = this.ConnectionSettings.Listen?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
+                IPEndPoint nodeServerEndpoint = this.ConnectionSettings.Bind?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
                 if (nodeServerEndpoint != null)
                 {
                     this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(nodeServerEndpoint, false, 10);
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Connection
             var logs = new StringBuilder();
             logs.AppendLine("Node listening on:");
 
-            foreach (NodeServerEndpoint listen in this.ConnectionSettings.Listen)
+            foreach (NodeServerEndpoint listen in this.ConnectionSettings.Bind)
             {
                 NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
                 NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint, this.Parameters.Version);

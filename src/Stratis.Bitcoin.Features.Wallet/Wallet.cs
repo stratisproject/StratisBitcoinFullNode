@@ -264,6 +264,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <param name="password">The password used to encrypt/decrypt sensitive info.</param>
         /// <param name="address">The address to get the private key for.</param>
         /// <returns>The extended private key.</returns>
+        [NoTrace]
         public ISecret GetExtendedPrivateKeyForAddress(string password, HdAddress address)
         {
             Guard.NotEmpty(password, nameof(password));
@@ -848,6 +849,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <returns>
         ///   <c>true</c> if it is a change address; otherwise, <c>false</c>.
         /// </returns>
+        [NoTrace]
         public bool IsChangeAddress()
         {
             return HdOperations.IsChangeAddress(this.HdPath);

@@ -1,11 +1,15 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using Stratis.Bitcoin.Base;
+using Stratis.Bitcoin.Base.Deployments;
+using Stratis.Bitcoin.Base.Deployments.Models;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
+using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 
@@ -43,6 +47,35 @@ namespace Stratis.Bitcoin.Features.Consensus
         public uint256 GetBestBlockHashRPC()
         {
             return this.ChainState.ConsensusTip?.HashBlock;
+        }
+
+        /// <summary>
+        /// Get the threshold states of softforks currently being deployed.
+        /// Allowable states are: Defined, Started, LockedIn, Failed, Active.
+        /// </summary>
+        /// <returns>A <see cref="JsonResult"/> object derived from a list of
+        /// <see cref="ThresholdStateModel"/> objects - one per deployment.
+        /// Returns an <see cref="ErrorResult"/> if the method fails.</returns>
+        [Route("api/[controller]/deploymentflags")]
+        [HttpGet]
+        public IActionResult DeploymentFlags()
+        {
+            try
+            {
+                ConsensusRuleEngine ruleEngine = this.ConsensusManager.ConsensusRules as ConsensusRuleEngine;
+
+                // Ensure threshold conditions cached.
+                ThresholdState[] thresholdStates = ruleEngine.NodeDeployments.BIP9.GetStates(this.ChainState.ConsensusTip.Previous);
+
+                List<ThresholdStateModel> metrics = ruleEngine.NodeDeployments.BIP9.GetThresholdStateMetrics(this.ChainState.ConsensusTip.Previous, thresholdStates);
+
+                return this.Json(metrics);
+            }
+            catch (Exception e)
+            {
+                this.logger.LogError("Exception occurred: {0}", e.ToString());
+                return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
+            }
         }
 
         /// <summary>
@@ -101,6 +134,7 @@ namespace Stratis.Bitcoin.Features.Consensus
             }
             catch (Exception e)
             {
+                this.logger.LogTrace("(-)[EXCEPTION]");
                 this.logger.LogError("Exception occurred: {0}", e.ToString());
                 return ErrorHelpers.BuildErrorResponse(HttpStatusCode.BadRequest, e.Message, e.ToString());
             }

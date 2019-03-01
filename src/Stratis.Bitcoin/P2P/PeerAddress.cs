@@ -305,6 +305,17 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <summary>
+        /// Un-bans a peer by resetting the <see cref="BanReason"/>, <see cref="BanScore"/>, <see cref="BanTimeStamp"/> and <see cref="BanUntil"/> properties.
+        /// </summary>
+        public void UnBan()
+        {
+            this.BanReason = null;
+            this.BanScore = null;
+            this.BanTimeStamp = null;
+            this.BanUntil = null;
+        }
+
+        /// <summary>
         /// Creates a new peer address instance.
         /// </summary>
         /// <param name="endPoint">The end point of the peer.</param>

@@ -5,7 +5,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.SmartContracts.Core;
-using SmartContractScript = Stratis.SmartContracts.Core.SmartContractScript;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 {
@@ -20,7 +19,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             foreach (Transaction transaction in block.Transactions)
             {
-                CheckTransaction(transaction);
+                this.CheckTransaction(transaction);
             }
 
             return Task.CompletedTask;
@@ -28,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
         public void CheckTransaction(MempoolValidationContext context)
         {
-            CheckTransaction(context.Transaction);
+            this.CheckTransaction(context.Transaction);
         }
 
         private void CheckTransaction(Transaction transaction)
