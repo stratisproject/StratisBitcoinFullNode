@@ -81,6 +81,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Behaviors
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
+        [NoTrace]
         protected override async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)

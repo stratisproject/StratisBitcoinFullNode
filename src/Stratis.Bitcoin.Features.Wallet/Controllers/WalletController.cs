@@ -375,7 +375,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     var transactionItems = new List<TransactionItemModel>();
 
-                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).ToList();
+                    // Sorting the history items by descending dates. That includes received and sent dates.
+                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime).ToList();
                     items = string.IsNullOrEmpty(request.SearchQuery) ? items.Take(200).ToList() : items;
 
                     // Represents a sublist containing only the transactions that have already been spent.

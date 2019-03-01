@@ -72,7 +72,7 @@
         public static ConsensusError BlockTimestampTooEarly => new ConsensusError("block-timestamp-to-early", "block timestamp too early");
         public static ConsensusError BadBlockSignature => new ConsensusError("bad-block-signature", "bad block signature");
         public static ConsensusError BlockTimeBeforeTrx => new ConsensusError("block-time-before-trx", "block timestamp earlier than transaction timestamp");
-        public static ConsensusError ProofOfWorkTooHigh => new ConsensusError("proof-of-work-too-heigh", "proof of work too high");
+        public static ConsensusError ProofOfWorkTooHigh => new ConsensusError("proof-of-work-too-high", "proof of work too high");
 
         public static ConsensusError CheckpointViolation => new ConsensusError("checkpoint-violation", "block header hash does not match the checkpointed value");
 

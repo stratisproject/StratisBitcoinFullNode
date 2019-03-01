@@ -27,9 +27,9 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         /// <exception cref="ConsensusErrors.BadDiffBits">Thrown if proof of stake is incorrect.</exception>
         public override void Run(RuleContext context)
         {
-            if (this.Parent.Network.Consensus.PowNoRetargeting)
+            if (this.Parent.Network.Consensus.PosNoRetargeting)
             {
-                this.Logger.LogTrace("(-)[POW_NO_RETARGETING]");
+                this.Logger.LogTrace("(-)[POS_NO_RETARGETING]");
                 return;
             }
 

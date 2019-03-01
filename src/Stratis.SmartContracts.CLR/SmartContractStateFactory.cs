@@ -1,7 +1,7 @@
 ﻿using NBitcoin;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.CLR.ContractLogging;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.SmartContracts.CLR
 {

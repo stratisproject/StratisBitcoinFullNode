@@ -37,9 +37,10 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IBlockRepository blockRepository;
         protected IFullNode fullNode;
         protected IFederationWalletManager federationWalletManager;
-        protected IFederationWalletTransactionHandler federationWalletTransactionHandler;
         protected IFederationGatewaySettings federationGatewaySettings;
         protected IFederationWalletSyncManager federationWalletSyncManager;
+        protected IFederationWalletTransactionHandler federationWalletTransactionHandler;
+        protected IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         protected DataFolder dataFolder;
         protected IWalletFeePolicy walletFeePolicy;
         protected IAsyncLoopFactory asyncLoopFactory;
@@ -76,9 +77,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.opReturnDataReader = new OpReturnDataReader(this.loggerFactory, this.network);
             this.blockRepository = Substitute.For<IBlockRepository>();
             this.fullNode = Substitute.For<IFullNode>();
+            this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
-            this.federationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
+            this.federationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
             this.nodeLifetime = new NodeLifetime();
             this.connectionManager = Substitute.For<IConnectionManager>();
@@ -180,7 +182,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             // Starts and creates the wallet.
             this.federationWalletManager.Start();
             this.wallet = this.federationWalletManager.GetWallet();
+
+            // TODO: The transaction builder, cross-chain store and fed wallet tx handler should be tested individually.
             this.federationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
+            this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.federationWalletTransactionHandler, this.federationGatewaySettings);
 
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
@@ -204,7 +209,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected ICrossChainTransferStore CreateStore()
         {
             return new CrossChainTransferStore(this.network, this.dataFolder, this.chain, this.federationGatewaySettings, this.dateTimeProvider,
-                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.federationWalletTransactionHandler, this.dBreezeSerializer);
+                this.loggerFactory, this.withdrawalExtractor, this.fullNode, this.blockRepository, this.federationWalletManager, this.withdrawalTransactionBuilder, this.dBreezeSerializer);
         }
 
         /// <summary>

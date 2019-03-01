@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.PreMempoolChecks(context);
 
-            foreach (ISmartContractMempoolRule rule in preTxRules)
+            foreach (ISmartContractMempoolRule rule in this.preTxRules)
             {
                 rule.CheckTransaction(context);
             }
@@ -94,12 +94,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.CheckFee(context);
 
-            foreach (ISmartContractMempoolRule rule in feeTxRules)
+            foreach (ISmartContractMempoolRule rule in this.feeTxRules)
             {
                 rule.CheckTransaction(context);
             }
 
-            CheckMinGasLimit(context);
+            this.CheckMinGasLimit(context);
         }
 
         private void CheckMinGasLimit(MempoolValidationContext context)

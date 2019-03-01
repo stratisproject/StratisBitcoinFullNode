@@ -16,9 +16,9 @@ using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.CLR;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -221,13 +221,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return BadRequest(Json(response));
+                return this.BadRequest(this.Json(response));
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-            return Json(response.TransactionId);
+            return this.Json(response.TransactionId);
         }
 
         [Route("call")]
@@ -239,13 +239,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
             if (!response.Success)
-                return BadRequest(Json(response));
+                return this.BadRequest(this.Json(response));
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-            return Json(response);
+            return this.Json(response);
         }
 
         [Route("send-transaction")]
@@ -274,7 +274,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 {
                     bool isUnspendable = output.ScriptPubKey.IsUnspendable;
 
-                    string address = GetAddressFromScriptPubKey(output);
+                    string address = this.GetAddressFromScriptPubKey(output);
                     model.Outputs.Add(new TransactionOutputModel
                     {
                         Address = address,

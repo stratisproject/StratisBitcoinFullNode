@@ -110,6 +110,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
                 powTargetTimespan: TimeSpan.FromDays(14), // two weeks
                 powTargetSpacing: TimeSpan.FromMinutes(1),
                 powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: false,
                 powNoRetargeting: true,
                 powLimit: null,
                 minimumChainWork: null,
