@@ -656,6 +656,7 @@ namespace Stratis.Bitcoin.Consensus
             {
                 if (this.TryFindLastValidatedHeader(headers, out ChainedHeader lastAlreadyValidatedHeader))
                 {
+                    this.logger.LogTrace("Some headers were already validated.");
                     this.AddOrReplacePeerTip(networkPeerId, lastAlreadyValidatedHeader.Header.GetHash());
                 }
 

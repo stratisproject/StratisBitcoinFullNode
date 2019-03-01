@@ -112,17 +112,7 @@ namespace Stratis.Bitcoin.Consensus
                     this.BestReceivedTip = result.Consumed;
                     this.UpdateBestSentHeader(this.BestReceivedTip);
 
-                    uint256 consumedHeaderHash = result.Consumed.Header.GetHash();
-                    int consumedCount = 0;
-
-                    for (int i = this.cachedHeaders.Count - 1; i >= 0; i--)
-                    {
-                        if (this.cachedHeaders[i].GetHash() == consumedHeaderHash)
-                        {
-                            consumedCount = i + 1;
-                            break;
-                        }
-                    }
+                    int consumedCount = this.GetConsumedHeadersCountLockedAsync(this.cachedHeaders, result.Consumed.Header);
 
                     this.cachedHeaders.RemoveRange(0, consumedCount);
                     int cacheSize = this.cachedHeaders.Count;
@@ -390,7 +380,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (result.Consumed.HashBlock != headers.Last().GetHash())
                 {
                     // Some headers were not consumed, add to cache.
-                    int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
+                    int consumedCount = this.GetConsumedHeadersCountLockedAsync(headers, result.Consumed.Header);
                     this.cachedHeaders.AddRange(headers.Skip(consumedCount));
 
                     this.logger.LogDebug("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
@@ -674,6 +664,28 @@ namespace Stratis.Bitcoin.Consensus
         internal int GetCachedItemsCount()
         {
             return this.cachedHeaders.Count;
+        }
+
+        /// <summary>
+        /// Gets the count of consumed headers in a <paramref name="headers"/> list, giving a <paramref name="consumedHeader"/> reference.
+        /// All items up to <paramref name="consumedHeader"/> are considered consumed.
+        /// </summary>
+        /// <param name="headers">List of headers to use to get the consumed count.</param>
+        /// <param name="consumedHeader">The consumed header reference.</param>
+        /// <returns>The number of consumed cached items.</returns>
+        private int GetConsumedHeadersCountLockedAsync(List<BlockHeader> headers, BlockHeader consumedHeader)
+        {
+            uint256 consumedHeaderHash = consumedHeader.GetHash();
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                if (headers[i].GetHash() == consumedHeaderHash)
+                {
+                    return i + 1;
+                }
+            }
+
+            return 0;
         }
     }
 }
