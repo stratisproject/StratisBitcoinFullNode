@@ -459,7 +459,7 @@ namespace Stratis.Bitcoin.Consensus
                     // block advertisement. In that case we just ignore the failed header and don't modify the cache.
                     // TODO: Review more closely what Bitcoin Core does here - they seem to allow 8 unconnectable headers before
                     // applying partial DoS points to a peer. Incorporate that into rate limiting code?
-                    this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                    this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT_2]");
                 }
                 else
                 {
