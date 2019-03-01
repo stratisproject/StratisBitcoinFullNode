@@ -66,7 +66,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
-        // TODO: Use a separate object in the DepositRepository.
+        // TODO: Use a separate object for deposits in the DepositRepository - not a shared one with what the controllers use
 
         private void PutDeposit(Transaction dbreezeTransaction, Deposit deposit)
         {
