@@ -119,7 +119,7 @@ namespace Stratis.Bitcoin.Consensus
                     {
                         if (this.cachedHeaders[i].GetHash() == consumedHeaderHash)
                         {
-                            consumedCount = i;
+                            consumedCount = i + 1;
                             break;
                         }
                     }
