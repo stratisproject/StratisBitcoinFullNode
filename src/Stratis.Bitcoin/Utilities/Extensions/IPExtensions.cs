@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net;
-using System.Net.Sockets;
 using NBitcoin;
 using TracerAttributes;
 
@@ -66,38 +64,29 @@ namespace Stratis.Bitcoin.Utilities.Extensions
         }
 
         /// <summary>
-        /// Determines if two endpoints are equivalent by treating 0.0.0.0 and [::] as "any ip" for matching purposes.
+        /// Determines if an endpoint includes another endpoint.
         /// </remarks>
-        public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkEndpoints, out IPEndPoint localEndpoint)
+        public static bool Contains(this IPEndPoint whiteBindEndpoint, IPEndPoint localEndpoint)
         {
-            bool anyIP = whiteBindEndpoint.Address.AnyIP();
+            if (whiteBindEndpoint.Address.AnyIP())
+                return whiteBindEndpoint.Port == localEndpoint.Port;
 
-            foreach (IPEndPoint ipEndPoint in networkEndpoints)
-            {
-                if ((anyIP || ipEndPoint.Address.AnyIP()) && (ipEndPoint.Port == whiteBindEndpoint.Port))
-                {
-                    localEndpoint = ipEndPoint;
-                    return true;
-                }
-
-                if (ipEndPoint.Equals(whiteBindEndpoint))
-                {
-                    localEndpoint = ipEndPoint;
-                    return true;
-                }
-            }
-
-            localEndpoint = null;
-
-            return false;
+            return localEndpoint.Equals(whiteBindEndpoint);
         }
 
-        private static bool AnyIP(this IPAddress address)
+        public static bool AnyIP(this IPAddress address)
         {
             if (address.IsIPv4())
                 return address.Equals(IPAddress.Parse("0.0.0.0"));
 
             return address.Equals(IPAddress.Parse("[::]"));
+        }
+
+        public static bool CanBeMappedTo(this IPEndPoint whiteBindEndpoint, List<IPEndPoint> networkEndpoints, out IPEndPoint localEndpoint)
+        {
+            localEndpoint = networkEndpoints.SingleOrDefault(ep => whiteBindEndpoint.Contains(ep));
+
+            return localEndpoint != null;
         }
     }
 }

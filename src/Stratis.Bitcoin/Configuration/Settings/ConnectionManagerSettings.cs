@@ -70,39 +70,37 @@ namespace Stratis.Bitcoin.Configuration.Settings
 
             try
             {
-                this.Listen.AddRange(config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)));
-            }
-            catch (FormatException)
-            {
-                throw new ConfigurationException("Invalid 'bind' parameter");
-            }
-
-            try
-            {
                 IEnumerable<IPEndPoint> whitebindEndpoints = config.GetAll("whitebind", this.logger).Select(s => s.ToIPEndPoint(this.Port));
 
-                List<IPEndPoint> networkEndpoints = this.Listen.Select(x => x.Endpoint).ToList();
+                var anyIPs = whitebindEndpoints.Where(x => x.Address.AnyIP()).ToList();
 
-                foreach (IPEndPoint whiteBindEndpoint in whitebindEndpoints)
+                this.Listen = anyIPs.Select(x => new NodeServerEndpoint(x, true)).ToList();
+
+                foreach (IPEndPoint endPoint in whitebindEndpoints.Where(x => !x.Address.AnyIP()))
                 {
-                    if (whiteBindEndpoint.CanBeMappedTo(networkEndpoints, out IPEndPoint outEndpoint))
-                    {
-                        // White-list white-bind endpoint if we are currently listening to it.
-                        NodeServerEndpoint listenToThisEndpoint = this.Listen.SingleOrDefault(x => x.Endpoint.Equals(outEndpoint));
+                    if (endPoint.CanBeMappedTo(anyIPs, out _))
+                        continue;
 
-                        if (listenToThisEndpoint != null)
-                            listenToThisEndpoint.Whitelisted = true;
-                    }
-                    else
-                    {
-                        // Add to list of network interfaces if we are not.
-                        this.Listen.Add(new NodeServerEndpoint(whiteBindEndpoint, true));
-                    }
+                    if (!this.Listen.Select(x => x.Endpoint).Contains(endPoint))
+                        this.Listen.Add(new NodeServerEndpoint(endPoint, true));
                 }
             }
             catch (FormatException)
             {
                 throw new ConfigurationException("Invalid 'whitebind' parameter");
+            }
+
+            try
+            {
+                foreach (NodeServerEndpoint endPoint in config.GetAll("bind").Select(c => new NodeServerEndpoint(c.ToIPEndPoint(this.Port), false)))
+                {
+                    if (!this.Listen.Select(x => x.Endpoint).Contains(endPoint.Endpoint))
+                        this.Listen.Add(endPoint);
+                }
+            }
+            catch (FormatException)
+            {
+                throw new ConfigurationException("Invalid 'bind' parameter");
             }
 
             if (this.Listen.Count == 0)
