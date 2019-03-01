@@ -32,7 +32,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         /// <remarks>Needed to give other node some time to start before bombing it with requests.</remarks>
         private const int InitializationDelayMs = 10_000;
 
-        public MaturedBlocksSyncManager(DepositRepository depositStore, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory)
+        public MaturedBlocksSyncManager(IDepositRepository depositStore, IFederationGatewayClient federationGatewayClient, ILoggerFactory loggerFactory)
         {
             this.depositRepository = depositStore;
             this.federationGatewayClient = federationGatewayClient;

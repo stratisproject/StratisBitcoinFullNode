@@ -3,12 +3,13 @@ using System.IO;
 using System.Linq;
 using DBreeze;
 using DBreeze.DataTypes;
-using DBreeze.Transactions;
+using NBitcoin;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
 using Stratis.Features.FederatedPeg.SourceChain;
+using Transaction = DBreeze.Transactions.Transaction;
 
 namespace Stratis.Features.FederatedPeg.TargetChain
 {
@@ -49,6 +50,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
+        /// <inheritdoc />
         public void SaveDeposits(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
         {
             using (Transaction dbreezeTransaction = this.db.GetTransaction())
@@ -64,12 +66,28 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             }
         }
 
+        // TODO: Use a separate object in the DepositRepository.
+
         private void PutDeposit(Transaction dbreezeTransaction, Deposit deposit)
         {
             Guard.NotNull(deposit, nameof(deposit));
 
             byte[] depositBytes = this.serializer.Serialize(deposit);
             dbreezeTransaction.Insert<byte[], byte[]>(DepositTableName, deposit.Id.ToBytes(), depositBytes);
+        }
+
+        /// <inheritdoc />
+        public Deposit GetDeposit(uint256 depositId)
+        {
+            using (Transaction dbreezeTransaction = this.db.GetTransaction())
+            {
+                Row<byte[], byte[]> row = dbreezeTransaction.Select<byte[], byte[]>(DepositTableName, depositId.ToBytes());
+
+                if (!row.Exists)
+                    return null;
+
+                return this.serializer.Deserialize<Deposit>(row.Value);
+            }
         }
     }
 }
