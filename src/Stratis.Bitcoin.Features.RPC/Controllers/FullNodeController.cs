@@ -5,6 +5,7 @@ using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
@@ -349,6 +350,58 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 return block;
 
             return new BlockModel(block, this.Chain);
+        }
+
+        [ActionName("getnetworkinfo")]
+        [ActionDescription("Returns an object containing various state info regarding P2P networking.")]
+        public NetworkInfoModel GetNetworkInfo()
+        {
+            var networkInfoModel = new NetworkInfoModel
+            {
+                Version = this.FullNode?.Version?.ToUint() ?? 0,
+                SubVersion = this.Settings?.Agent,
+                ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                IsLocalRelay = this.ConnectionManager?.Parameters?.IsRelay ?? false,            
+                TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
+                Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
+                IsNetworkActive = true,
+                RelayFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
+                IncrementalFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0 // set to same as min relay fee
+            };
+
+            var services = this.ConnectionManager?.Parameters?.Services;
+            if (services != null)
+            {
+                networkInfoModel.LocalServices = Encoders.Hex.EncodeData(BitConverter.GetBytes((ulong)services));
+            }
+
+            return networkInfoModel;
+        }
+
+        [ActionName("getblockchaininfo")]
+        [ActionDescription("Returns an object containing various state info regarding blockchain processing.")]
+        public BlockchainInfoModel GetBlockchainInfo()
+        {
+            var blockchainInfo = new BlockchainInfoModel
+            {
+                Chain = this.Network?.Name,
+                Blocks = (uint)(this.ChainState?.ConsensusTip?.Height ?? 0),
+                Headers = (uint)(this.Chain?.Height ?? 0),
+                BestBlockHash = this.ChainState?.ConsensusTip?.HashBlock,
+                Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
+                MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0, 
+                VerificationProgress = 0.0,
+                IsInitialBlockDownload = !this.ChainState?.IsAtBestChainTip ?? true,
+                Chainwork = this.ChainState?.ConsensusTip?.ChainWork,
+                IsPruned = false
+            };
+
+            if (blockchainInfo.Headers > 0)
+            {
+                blockchainInfo.VerificationProgress = (double)blockchainInfo.Blocks / blockchainInfo.Headers;
+            }
+
+            return blockchainInfo;
         }
 
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)
