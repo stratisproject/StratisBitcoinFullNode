@@ -51,5 +51,42 @@ namespace Stratis.Features.FederatedPeg.Tests
             Assert.Equal(model.Deposits[0].BlockNumber, retrievedDeposit.BlockNumber);
             Assert.Equal(model.Deposits[0].TargetAddress, retrievedDeposit.TargetAddress);
         }
+
+        [Fact]
+        public void DepositsSavedWhenStoredTwice()
+        {
+            var model = new MaturedBlockDepositsModel(null, new List<IDeposit>
+            {
+                new Deposit(123, Money.Coins((decimal) 2.56), "mtXWDB6k5yC5v7TcwKZHB89SUp85yCKshy", 26, 123456)
+            });
+            var modelList = new List<MaturedBlockDepositsModel>
+            {
+                model
+            };
+
+            this.depositRepository.SaveDeposits(modelList);
+
+            Deposit retrievedDeposit = this.depositRepository.GetDeposit(model.Deposits[0].Id);
+
+            Assert.Equal(model.Deposits[0].Id, retrievedDeposit.Id);
+            Assert.Equal(model.Deposits[0].Amount, retrievedDeposit.Amount);
+            Assert.Equal(model.Deposits[0].BlockHash, retrievedDeposit.BlockHash);
+            Assert.Equal(model.Deposits[0].BlockNumber, retrievedDeposit.BlockNumber);
+            Assert.Equal(model.Deposits[0].TargetAddress, retrievedDeposit.TargetAddress);
+
+            // Storing the same deposits twice isn't problematic - the API may query for this.
+
+            this.depositRepository.SaveDeposits(modelList);
+
+            retrievedDeposit = this.depositRepository.GetDeposit(model.Deposits[0].Id);
+
+            Assert.Equal(model.Deposits[0].Id, retrievedDeposit.Id);
+            Assert.Equal(model.Deposits[0].Amount, retrievedDeposit.Amount);
+            Assert.Equal(model.Deposits[0].BlockHash, retrievedDeposit.BlockHash);
+            Assert.Equal(model.Deposits[0].BlockNumber, retrievedDeposit.BlockNumber);
+            Assert.Equal(model.Deposits[0].TargetAddress, retrievedDeposit.TargetAddress);
+        }
+
+
     }
 }
