@@ -97,10 +97,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 }
 
                 // We found new deposits. Add them to the store.
-                this.depositRepository.SaveDeposits(matureBlockDeposits);
-            }
+                bool success = this.depositRepository.SaveDeposits(matureBlockDeposits);
 
-            // TODO: Do we need to update the most recently highest block
+                // All were pushed, so no delay needed.
+                if (success)
+                    return false;
+            }
 
             return true;
         }
