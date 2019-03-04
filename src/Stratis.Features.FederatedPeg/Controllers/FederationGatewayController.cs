@@ -36,7 +36,6 @@ namespace Stratis.Features.FederatedPeg.Controllers
 
         private readonly Network network;
 
-        //private readonly ILeaderProvider leaderProvider;
 
         private readonly IMaturedBlocksProvider maturedBlocksProvider;
 
