@@ -399,8 +399,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         public List<Wallet.UnspentOutputReference> UnspentOutputs { get; set; }
 
-        public Network Network { get; set; }
-
         /// <summary>
         /// The change address, where any remaining funds will be sent to.
         /// </summary>
