@@ -42,28 +42,71 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             using (Transaction dbreezeTransaction = this.db.GetTransaction())
             {
-                Row<byte[], int> row = dbreezeTransaction.Select<byte[], int>(DepositTableName, SyncedUpToBlockKey);
-                if (row.Exists)
-                    return row.Value;
-
-                return 0;
+                return this.GetSyncedBlockNumberInternal(dbreezeTransaction);
             }
         }
 
+        private int GetSyncedBlockNumberInternal(Transaction dbreezeTransaction)
+        {
+            Row<byte[], int> row = dbreezeTransaction.Select<byte[], int>(DepositTableName, SyncedUpToBlockKey);
+            if (row.Exists)
+                return row.Value;
+
+            return -1;
+        }
+
+        private void PutSyncedBlockNumber(Transaction dbreezeTransaction, int syncedBlockNumber)
+        {
+            dbreezeTransaction.Insert<byte[], int>(DepositTableName, SyncedUpToBlockKey, syncedBlockNumber);
+        }
+
         /// <inheritdoc />
-        public void SaveDeposits(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
+        public bool SaveDeposits(IList<MaturedBlockDepositsModel> maturedBlockDeposits)
         {
             using (Transaction dbreezeTransaction = this.db.GetTransaction())
             {
-                IEnumerable<IDeposit> allDeposits = maturedBlockDeposits.SelectMany(x => x.Deposits);
+                // Ensure that we're only adding new blocks worth of deposits.
+                int syncedBlockNum = this.GetSyncedBlockNumberInternal(dbreezeTransaction);
+                int nextSyncNum = syncedBlockNum + 1;
+                maturedBlockDeposits = maturedBlockDeposits
+                    .OrderBy(a => a.BlockInfo.BlockHeight)
+                    .SkipWhile(m => m.BlockInfo.BlockHeight < nextSyncNum).ToArray();
 
-                foreach (IDeposit deposit in allDeposits)
+                // Ensure we're not skipping any blocks
+                if (maturedBlockDeposits.Count == 0 || maturedBlockDeposits.First().BlockInfo.BlockHeight != nextSyncNum)
                 {
-                    this.PutDeposit(dbreezeTransaction, (Deposit) deposit);
+                    return false;
                 }
+
+                foreach (MaturedBlockDepositsModel maturedBlockDeposit in maturedBlockDeposits)
+                {
+                    // Ensure we're not skipping any blocks
+                    if (maturedBlockDeposit.BlockInfo.BlockHeight != nextSyncNum)
+                    {
+                        return false;
+                    }
+
+                    foreach (IDeposit deposit in maturedBlockDeposit.Deposits)
+                    {
+                        // We should be able to trust input from the other node, but just in case it slips this invalid response in
+                        if (maturedBlockDeposit.BlockInfo.BlockHeight != deposit.BlockNumber)
+                        {
+                            return false;
+                        }
+
+                        this.PutDeposit(dbreezeTransaction, (Deposit)deposit);
+                    }
+
+                    nextSyncNum++;
+                }
+
+                // Update db to where we are synced to
+                this.PutSyncedBlockNumber(dbreezeTransaction, maturedBlockDeposits.Last().BlockInfo.BlockHeight);
 
                 dbreezeTransaction.Commit();
             }
+
+            return true;
         }
 
         // TODO: Use a separate object for deposits in the DepositRepository - not a shared one with what the controllers use

@@ -28,7 +28,7 @@ namespace Stratis.Sidechains.Networks.CirrusV2
 
         public PubKey SigningContractPubKey { get; }
 
-        public CirrusRegTest()
+        internal CirrusRegTest()
         {
             this.SigningContractPrivKey = new Mnemonic("lava frown leave wedding virtual ghost sibling able mammal liar wide wisdom").DeriveExtKey().PrivateKey;
             this.SigningContractPubKey = this.SigningContractPrivKey.PubKey;

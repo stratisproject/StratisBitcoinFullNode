@@ -15,7 +15,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// Save deposits to disk.
         /// </summary>
-        void SaveDeposits(IList<MaturedBlockDepositsModel> maturedBlockDeposits);
+        bool SaveDeposits(IList<MaturedBlockDepositsModel> maturedBlockDeposits);
 
         /// <summary>
         /// Get the saved deposit for a given transaction id.
