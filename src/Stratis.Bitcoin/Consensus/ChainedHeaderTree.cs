@@ -1116,16 +1116,16 @@ namespace Stratis.Bitcoin.Consensus
         private bool TryFindLastValidatedHeader(List<BlockHeader> headers, out ChainedHeader lastValidatedHeader)
         {
             lastValidatedHeader = null;
-            for (int i = 0; i < headers.Count; i++)
+            foreach (BlockHeader header in headers)
             {
-                uint256 currentBlockHash = headers[i].GetHash();
+                uint256 currentBlockHash = header.GetHash();
                 if (this.chainedHeadersByHash.TryGetValue(currentBlockHash, out ChainedHeader currentChainedHeader))
                 {
                     lastValidatedHeader = currentChainedHeader;
                 }
                 else
                 {
-                    // stop at the first header not found.
+                    // Stop at the first header not found.
                     break;
                 }
             }

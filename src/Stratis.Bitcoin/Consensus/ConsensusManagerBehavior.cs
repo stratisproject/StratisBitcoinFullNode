@@ -112,7 +112,7 @@ namespace Stratis.Bitcoin.Consensus
                     this.BestReceivedTip = result.Consumed;
                     this.UpdateBestSentHeader(this.BestReceivedTip);
 
-                    int consumedCount = this.GetConsumedHeadersCountLockedAsync(this.cachedHeaders, result.Consumed.Header);
+                    int consumedCount = this.GetConsumedHeadersCount(this.cachedHeaders, result.Consumed.Header);
 
                     this.cachedHeaders.RemoveRange(0, consumedCount);
                     int cacheSize = this.cachedHeaders.Count;
@@ -380,7 +380,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (result.Consumed.HashBlock != headers.Last().GetHash())
                 {
                     // Some headers were not consumed, add to cache.
-                    int consumedCount = this.GetConsumedHeadersCountLockedAsync(headers, result.Consumed.Header);
+                    int consumedCount = this.GetConsumedHeadersCount(headers, result.Consumed.Header);
                     this.cachedHeaders.AddRange(headers.Skip(consumedCount));
 
                     this.logger.LogDebug("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
@@ -673,7 +673,7 @@ namespace Stratis.Bitcoin.Consensus
         /// <param name="headers">List of headers to use to get the consumed count.</param>
         /// <param name="consumedHeader">The consumed header reference.</param>
         /// <returns>The number of consumed cached items.</returns>
-        private int GetConsumedHeadersCountLockedAsync(List<BlockHeader> headers, BlockHeader consumedHeader)
+        private int GetConsumedHeadersCount(List<BlockHeader> headers, BlockHeader consumedHeader)
         {
             uint256 consumedHeaderHash = consumedHeader.GetHash();
 

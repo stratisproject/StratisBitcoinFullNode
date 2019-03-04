@@ -234,9 +234,10 @@ namespace Stratis.Bitcoin.Connection
             {
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
-                string peerHeights = $"(r/s/c):{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
-                peerHeights += $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
-                peerHeights += $"/{chainHeadersBehavior.GetCachedItemsCount()}";
+                string peerHeights = $"(r/s/c):" +
+                                     $"{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
+                                     $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
+                                     $"/{chainHeadersBehavior.GetCachedItemsCount()}";
 
                 // TODO: Need a snapshot cache so that not only currently connected peers are summed
                 string peerTraffic = $"R/S MB: {peer.Counter.ReadBytes.BytesToMegaBytes()}/{peer.Counter.WrittenBytes.BytesToMegaBytes()}";
