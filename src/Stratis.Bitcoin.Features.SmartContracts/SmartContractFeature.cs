@@ -17,11 +17,6 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Receipts;
-using Stratis.SmartContracts.Core.State;
-using Stratis.SmartContracts.Core.Util;
-using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Decompilation;
@@ -29,6 +24,11 @@ using Stratis.SmartContracts.CLR.Loader;
 using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.CLR.ResultProcessors;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.CLR.Validation;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {

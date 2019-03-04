@@ -10,6 +10,7 @@ using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.ContractSigning;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
 {
@@ -63,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 try
                 {
                     object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
+                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName, methodParameters);
                 }
                 catch (MethodParameterStringSerializerException exception)
                 {
@@ -72,7 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
             else
             {
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, addressNumeric, request.MethodName);
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, addressNumeric, request.MethodName);
             }
 
             HdAddress senderAddress = null;
@@ -124,7 +125,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
                 try
                 {
                     object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
-                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
+                    txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray(), methodParameters);
                 }
                 catch (MethodParameterStringSerializerException exception)
                 {
@@ -133,7 +134,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             }
             else
             {
-                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, request.ContractCode.HexToByteArray());
+                txData = new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, request.ContractCode.HexToByteArray());
             }
 
             HdAddress senderAddress = null;
@@ -205,10 +206,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Wallet
             {
                 object[] methodParameters = this.methodParameterStringSerializer.Deserialize(request.Parameters);
 
-                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);
+                return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName, methodParameters);
             }
 
-            return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasPrice, (Stratis.SmartContracts.RuntimeObserver.Gas)request.GasLimit, contractAddress, request.MethodName);
+            return new ContractTxData(ReflectionVirtualMachine.VmVersion, (Gas)request.GasPrice, (Gas)request.GasLimit, contractAddress, request.MethodName);
         }
 
     }

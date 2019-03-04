@@ -2611,17 +2611,29 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
         public void GetAccountBalancesReturnsCorrectAccountBalances()
         {
+
             // Arrange.
             DataFolder dataFolder = CreateDataFolder(this);
 
-            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, new Mock<ConcurrentChain>().Object, new WalletSettings(NodeSettings.Default(this.Network)),
+            // Initialize chain object.
+            var chain = new ConcurrentChain(KnownNetworks.StratisMain);
+            uint nonce = RandomUtils.GetUInt32();
+            var block = this.Network.CreateBlock();
+            block.AddTransaction(new Transaction());
+            block.UpdateMerkleRoot();
+            block.Header.HashPrevBlock = chain.Genesis.HashBlock;
+            block.Header.Nonce = nonce;
+            block.Header.BlockTime = DateTimeOffset.Now;
+            chain.SetTip(block.Header);
+
+            var walletManager = new WalletManager(this.LoggerFactory.Object, this.Network, chain, new WalletSettings(NodeSettings.Default(this.Network)),
                 dataFolder, new Mock<IWalletFeePolicy>().Object, new Mock<IAsyncLoopFactory>().Object, new NodeLifetime(), DateTimeProvider.Default, new ScriptAddressReader());
 
             HdAccount account = WalletTestsHelpers.CreateAccount("account 1");
@@ -2694,8 +2706,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
             }
 
-            Assert.Equal(40, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
@@ -2719,8 +2731,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10, SpendingDetails = new SpendingDetails() });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
@@ -2750,8 +2762,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10, BlockHeight = 10 });
             }
 
-            Assert.Equal(40, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(0, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]
@@ -2781,8 +2793,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 firstAccount.ExternalAddresses.ElementAt(i).Transactions.Add(new TransactionData { Amount = 10 });
             }
 
-            Assert.Equal(0, firstAccount.GetSpendableAmount().ConfirmedAmount);
-            Assert.Equal(40, firstAccount.GetSpendableAmount().UnConfirmedAmount);
+            Assert.Equal(0, firstAccount.GetBalances().ConfirmedAmount);
+            Assert.Equal(40, firstAccount.GetBalances().UnConfirmedAmount);
         }
 
         [Fact]

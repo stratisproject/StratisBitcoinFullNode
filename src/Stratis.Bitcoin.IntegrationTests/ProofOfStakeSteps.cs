@@ -34,7 +34,7 @@ namespace Stratis.Bitcoin.IntegrationTests
 
         private readonly HashSet<uint256> transactionsBeforeStaking = new HashSet<uint256>();
 
-        private ConcurrentDictionary<uint256, TransactionData> txLookup = new ConcurrentDictionary<uint256, TransactionData>();
+        private readonly ConcurrentDictionary<uint256, TransactionData> txLookup = new ConcurrentDictionary<uint256, TransactionData>();
 
         public ProofOfStakeSteps(string displayName)
         {

@@ -75,6 +75,7 @@ namespace Stratis.SmartContracts.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(20), // 20 second block time while on testnet
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: false,
                 powNoRetargeting: false,
                 powLimit: new Target(new uint256("7fffffffffffffffffffffffffffffffffffffffffffffffffffffffffffffff")), // Set extremely low difficulty for now.
                 minimumChainWork: uint256.Zero,

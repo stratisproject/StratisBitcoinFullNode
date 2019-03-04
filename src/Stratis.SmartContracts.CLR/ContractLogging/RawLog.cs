@@ -4,8 +4,8 @@ using System.Linq;
 using System.Reflection;
 using NBitcoin;
 using Nethereum.RLP;
-using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core.Receipts;
 
 namespace Stratis.SmartContracts.CLR.ContractLogging
 {

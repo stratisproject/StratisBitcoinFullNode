@@ -6,7 +6,6 @@ using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Tests.Common;
 using Stratis.SmartContracts.Networks;
-using Stratis.SmartContracts.Tests.Common.MockChain;
 
 namespace Stratis.SmartContracts.Tests.Common
 {

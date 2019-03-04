@@ -2,6 +2,7 @@
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -18,7 +19,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             var contractBytes = RLP.EncodeList(
                 RLP.EncodeElement(contractCode),
                 RLP.EncodeElement(contractSignature));
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)5000, contractBytes);
+            var contractTxData = new ContractTxData(1, 1, (Gas)5000, contractBytes);
             var callDataResult = this.Serializer.Deserialize(this.Serializer.Serialize(contractTxData));
             var callData = callDataResult.Value;
 
@@ -27,8 +28,8 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.Equal((byte)ScOpcodeType.OP_CREATECONTRACT, callData.OpCodeType);
             Assert.Equal<byte[]>(contractCode, callData.ContractExecutionCode);
             Assert.Equal<byte[]>(contractSignature, ((SignedCodeContractTxData)callData).CodeSignature);
-            Assert.Equal((RuntimeObserver.Gas)1, callData.GasPrice);
-            Assert.Equal((RuntimeObserver.Gas)5000, callData.GasLimit);
+            Assert.Equal((Gas)1, callData.GasPrice);
+            Assert.Equal((Gas)5000, callData.GasLimit);
         }
     }
 }

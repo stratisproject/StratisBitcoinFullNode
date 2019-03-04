@@ -92,6 +92,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: true,
+                posNoRetargeting: true,
                 powNoRetargeting: true,
                 powLimit: powLimit,
                 minimumChainWork: null,
@@ -110,7 +111,7 @@ namespace Stratis.Bitcoin.Networks
             {
                 // Fake checkpoint to prevent PH to be activated.
                 // TODO: Once PH is complete, this should be removed
-               // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
+                // { 100_000 , new CheckpointInfo(uint256.Zero, uint256.Zero) }
             };
             this.DNSSeeds = new List<DNSSeedData>();
             this.SeedNodes = new List<NetworkAddress>();
