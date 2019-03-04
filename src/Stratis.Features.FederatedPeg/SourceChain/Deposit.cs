@@ -23,7 +23,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         }
 
         /// <inheritdoc />
-        public uint256 Id { get { return this.id; } }
+        public uint256 Id => this.id;
         private uint256 id;
 
         /// <inheritdoc />
