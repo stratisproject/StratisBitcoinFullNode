@@ -5,6 +5,7 @@ using System.Net;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.JsonErrors;
 using Stratis.Bitcoin.Utilities.ModelStateErrors;
@@ -169,7 +170,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
             try
             {
-                var hash = new uint256(request.HashHex);
+                var hash = new uint256(request.Hash);
 
                 this.votingManager.ScheduleVote(new VotingData()
                 {
