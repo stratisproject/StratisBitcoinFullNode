@@ -21,7 +21,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// </summary>
         /// <param name="context">The context that is used to build a new transaction.</param>
         /// <returns>The new transaction.</returns>
-        Transaction BuildTransaction(Wallet.TransactionBuildContext context);
+        Transaction BuildTransaction(TransactionBuildContext context);
     }
 
     /// <summary>
@@ -397,7 +397,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// <summary>
         /// Coins that are available to be spent.
         /// </summary>
-        public List<Wallet.UnspentOutputReference> UnspentOutputs { get; set; }
+        public List<UnspentOutputReference> UnspentOutputs { get; set; }
 
         /// <summary>
         /// The change address, where any remaining funds will be sent to.
