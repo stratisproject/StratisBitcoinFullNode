@@ -14,7 +14,7 @@ using Stratis.Features.FederatedPeg.Interfaces;
 
 namespace Stratis.Features.FederatedPeg.Wallet
 {
-    public interface IFederationWalletTransactionHandler
+    public interface IFederationWalletTransactionBuilder
     {
         /// <summary>
         /// Builds a new transaction based on information from the <see cref="TransactionBuildContext"/>.
@@ -25,7 +25,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     }
 
     /// <summary>
-    /// A handler that has various functionalities related to transaction operations.
+    /// A handler that has various functionality related to building federation transactions.
     /// </summary>
     /// <remarks>
     /// This will uses the <see cref="IWalletFeePolicy"/> and the <see cref="TransactionBuilder"/>.
@@ -33,7 +33,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     /// TODO: Implement lockUnspents
     /// TODO: Implement subtractFeeFromOutputs
     /// </remarks>
-    public class FederationWalletTransactionHandler : IFederationWalletTransactionHandler
+    public class FederationWalletTransactionBuilder : IFederationWalletTransactionBuilder
     {
         /// <summary>A threshold that if possible will limit the amount of UTXO sent to the <see cref="ICoinSelector"/>.</summary>
         /// <remarks>
@@ -52,7 +52,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
         private readonly MemoryCache privateKeyCache;
 
-        public FederationWalletTransactionHandler(
+        public FederationWalletTransactionBuilder(
             ILoggerFactory loggerFactory,
             IFederationWalletManager walletManager,
             IWalletFeePolicy walletFeePolicy,
@@ -477,7 +477,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
     }
 
     /// <summary>
-    /// Represents recipients of a payment, used in <see cref="FederationWalletTransactionHandler.BuildTransaction"/>
+    /// Represents recipients of a payment, used in <see cref="FederationWalletTransactionBuilder.BuildTransaction"/>
     /// </summary>
     public class Recipient
     {

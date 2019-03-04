@@ -13,20 +13,20 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly Network network;
 
         private readonly IFederationWalletManager federationWalletManager;
-        private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
+        private readonly IFederationWalletTransactionBuilder federationWalletTransactionBuilder;
         private readonly IFederationGatewaySettings federationGatewaySettings;
 
         public WithdrawalTransactionBuilder(
             ILoggerFactory loggerFactory,
             Network network,
             IFederationWalletManager federationWalletManager,
-            IFederationWalletTransactionHandler federationWalletTransactionHandler,
+            IFederationWalletTransactionBuilder federationWalletTransactionBuilder,
             IFederationGatewaySettings federationGatewaySettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
-            this.federationWalletTransactionHandler = federationWalletTransactionHandler;
+            this.federationWalletTransactionBuilder = federationWalletTransactionBuilder;
             this.federationGatewaySettings = federationGatewaySettings;
         }
 
@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 };
 
                 // Build the transaction.
-                Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
+                Transaction transaction = this.federationWalletTransactionBuilder.BuildTransaction(multiSigContext);
 
                 this.logger.LogInformation("transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
 

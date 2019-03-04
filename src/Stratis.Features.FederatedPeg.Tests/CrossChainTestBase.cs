@@ -39,7 +39,7 @@ namespace Stratis.Features.FederatedPeg.Tests
         protected IFederationWalletManager federationWalletManager;
         protected IFederationGatewaySettings federationGatewaySettings;
         protected IFederationWalletSyncManager federationWalletSyncManager;
-        protected IFederationWalletTransactionHandler federationWalletTransactionHandler;
+        protected IFederationWalletTransactionBuilder FederationWalletTransactionBuilder;
         protected IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
         protected DataFolder dataFolder;
         protected IWalletFeePolicy walletFeePolicy;
@@ -80,7 +80,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.withdrawalTransactionBuilder = Substitute.For<IWithdrawalTransactionBuilder>();
             this.federationWalletManager = Substitute.For<IFederationWalletManager>();
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
-            this.federationWalletTransactionHandler = Substitute.For<IFederationWalletTransactionHandler>();
+            this.FederationWalletTransactionBuilder = Substitute.For<IFederationWalletTransactionBuilder>();
             this.walletFeePolicy = Substitute.For<IWalletFeePolicy>();
             this.nodeLifetime = new NodeLifetime();
             this.connectionManager = Substitute.For<IConnectionManager>();
@@ -184,8 +184,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.wallet = this.federationWalletManager.GetWallet();
 
             // TODO: The transaction builder, cross-chain store and fed wallet tx handler should be tested individually.
-            this.federationWalletTransactionHandler = new FederationWalletTransactionHandler(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
-            this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.federationWalletTransactionHandler, this.federationGatewaySettings);
+            this.FederationWalletTransactionBuilder = new FederationWalletTransactionBuilder(this.loggerFactory, this.federationWalletManager, this.walletFeePolicy, this.network);
+            this.withdrawalTransactionBuilder = new WithdrawalTransactionBuilder(this.loggerFactory, this.network, this.federationWalletManager, this.FederationWalletTransactionBuilder, this.federationGatewaySettings);
 
             var storeSettings = (StoreSettings)FormatterServices.GetUninitializedObject(typeof(StoreSettings));
 
