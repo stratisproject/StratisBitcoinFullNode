@@ -25,10 +25,10 @@ namespace Stratis.Features.FederatedPeg.Wallet
     }
 
     /// <summary>
-    /// A handler that has various functionality related to building federation transactions.
+    /// A builder for building federation transactions.
     /// </summary>
     /// <remarks>
-    /// This will uses the <see cref="IWalletFeePolicy"/> and the <see cref="TransactionBuilder"/>.
+    /// This uses the <see cref="IWalletFeePolicy"/> and the <see cref="TransactionBuilder"/>.
     /// TODO: Move also the broadcast transaction to this class
     /// TODO: Implement lockUnspents
     /// TODO: Implement subtractFeeFromOutputs
