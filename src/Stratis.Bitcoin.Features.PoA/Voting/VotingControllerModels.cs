@@ -7,4 +7,10 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         [Required(AllowEmptyStrings = false)]
         public string PubKeyHex { get; set; }
     }
+
+    public class HashModel
+    {
+        [Required(AllowEmptyStrings = false)]
+        public string HashHex { get; set; }
+    }
 }
