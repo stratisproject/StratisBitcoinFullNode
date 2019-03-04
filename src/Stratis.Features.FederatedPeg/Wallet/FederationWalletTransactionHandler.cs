@@ -81,13 +81,13 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             // build transaction
-            context.Transaction = transactionBuilder.BuildTransaction(context.Sign);
+            var transaction = transactionBuilder.BuildTransaction(context.Sign);
 
             // If this is a multisig transaction, then by definition we only (usually) possess one of the keys
             // and can therefore not immediately construct a transaction that passes verification
             if (!context.IgnoreVerify)
             {
-                if (!transactionBuilder.Verify(context.Transaction, out TransactionPolicyError[] errors))
+                if (!transactionBuilder.Verify(transaction, out TransactionPolicyError[] errors))
                 {
                     string errorsMessage = string.Join(" - ", errors.Select(s => s.ToString()));
                     this.logger.LogError($"Build transaction failed: {errorsMessage}");
@@ -95,7 +95,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 }
             }
 
-            return context.Transaction;
+            return transaction;
         }
 
         /// <summary>
@@ -414,11 +414,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// The total fee on the transaction.
         /// </summary>
         public Money TransactionFee { get; set; }
-
-        /// <summary>
-        /// The final transaction.
-        /// </summary>
-        public Transaction Transaction { get; set; }
 
         /// <summary>
         /// The password that protects the member's seed.
