@@ -81,7 +81,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             }
 
             // build transaction
-            var transaction = transactionBuilder.BuildTransaction(context.Sign);
+            Transaction transaction = transactionBuilder.BuildTransaction(context.Sign);
 
             // If this is a multisig transaction, then by definition we only (usually) possess one of the keys
             // and can therefore not immediately construct a transaction that passes verification
