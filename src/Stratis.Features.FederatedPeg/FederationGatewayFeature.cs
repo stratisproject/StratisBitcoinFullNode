@@ -315,10 +315,8 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
                         services.AddSingleton<IWithdrawalTransactionBuilder, WithdrawalTransactionBuilder>();
-                        services.AddSingleton<ILeaderProvider, LeaderProvider>();
                         services.AddSingleton<FederationWalletController>();
                         services.AddSingleton<ICrossChainTransferStore, CrossChainTransferStore>();
-                        services.AddSingleton<ILeaderReceiver, LeaderReceiver>();
                         services.AddSingleton<ISignedMultisigTransactionBroadcaster, SignedMultisigTransactionBroadcaster>();
                         services.AddSingleton<IPartialTransactionRequester, PartialTransactionRequester>();
                         services.AddSingleton<IFederationGatewayClient, FederationGatewayClient>();
