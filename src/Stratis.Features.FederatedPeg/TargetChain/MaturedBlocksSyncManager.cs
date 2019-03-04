@@ -99,7 +99,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 // We found new deposits. Add them to the store.
                 bool success = this.depositRepository.SaveDeposits(matureBlockDeposits);
 
-                // All were pushed, so no delay needed.
+                // All were pushed, so no delay needed, just get more!
                 if (success)
                     return false;
             }
