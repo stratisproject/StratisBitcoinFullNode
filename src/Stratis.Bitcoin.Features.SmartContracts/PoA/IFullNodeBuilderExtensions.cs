@@ -32,6 +32,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
                         services.AddSingleton<VotingManager>();
+                        services.AddSingleton<WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
                         new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
@@ -60,6 +61,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
                         services.AddSingleton<VotingManager>();
+                        services.AddSingleton<WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
                         // Replace serializer
