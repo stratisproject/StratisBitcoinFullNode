@@ -91,8 +91,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                             TxOut txout = view.GetOutputFor(input);
                             checkInputs.Add(() => this.CheckInput(tx, inputIndexCopy, txout, txData, input, flags));
                         }
-
-
                     }
                 }
 
