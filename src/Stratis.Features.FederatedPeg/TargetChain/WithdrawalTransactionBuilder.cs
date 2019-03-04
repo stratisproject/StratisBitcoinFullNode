@@ -50,20 +50,11 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                     IgnoreVerify = true,
                     WalletPassword = walletPassword,
                     Sign = sign,
+                    Time = this.network.Consensus.IsProofOfStake ? blockTime : (uint?) null
                 };
 
-                Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
-
                 // Build the transaction.
-                if (this.network.Consensus.IsProofOfStake)
-                {
-                    transaction.Time = blockTime;
-
-                    if (sign)
-                    {
-                        transaction = multiSigContext.TransactionBuilder.SignTransaction(transaction);
-                    }
-                }
+                Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
 
                 this.logger.LogInformation("transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
 

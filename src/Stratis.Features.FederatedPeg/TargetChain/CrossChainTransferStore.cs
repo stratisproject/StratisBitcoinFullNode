@@ -120,7 +120,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                     this.LoadTipHashAndHeight(dbreezeTransaction);
                     this.LoadNextMatureHeight(dbreezeTransaction);
-
+                    
                     // Initialize the lookups.
                     foreach (Row<byte[], byte[]> transferRow in dbreezeTransaction.SelectForward<byte[], byte[]>(transferTableName))
                     {
