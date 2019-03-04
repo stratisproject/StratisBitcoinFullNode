@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
 
         [Route("schedulevote_removehash")]
         [HttpPost]
-        public IActionResult VoteKickFedMember([FromBody]HashModel request)
+        public IActionResult VoteRemoveHash([FromBody]HashModel request)
         {
             return this.VoteWhitelistRemoveHashMember(request, false);
         }
