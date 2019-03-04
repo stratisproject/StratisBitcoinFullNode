@@ -8,7 +8,8 @@ using Stratis.Bitcoin.Features.Wallet.Controllers;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.Tests.Common;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
+using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Tests.Common.TestFramework;
 using Xunit.Abstractions;
 
@@ -22,19 +23,24 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private const string AccountName = "account 0";
 
         private NodeBuilder builder;
+        private Network network;
         private CoreNode stratisSender;
         private CoreNode stratisReceiver;
         private Transaction transaction;
         private MempoolValidationState mempoolValidationState;
         private HdAddress receivingAddress;
 
-        public SendingTransactionWithDoubleSpend(ITestOutputHelper outputHelper) : base(outputHelper) { }
+        public SendingTransactionWithDoubleSpend(ITestOutputHelper outputHelper) : base(outputHelper)
+        {
+        }
 
         protected override void BeforeTest()
         {
             this.builder = NodeBuilder.Create(this);
-            this.stratisSender = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet().Start();
-            this.stratisReceiver = this.builder.CreateStratisPowNode(KnownNetworks.RegTest).WithWallet().Start();
+            this.network = new BitcoinRegTest();
+
+            this.stratisSender = this.builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest100Miner).Start();
+            this.stratisReceiver = this.builder.CreateStratisPowNode(this.network).WithWallet().Start();
             this.mempoolValidationState = new MempoolValidationState(true);
         }
 
@@ -46,7 +52,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         private void wallets_with_coins()
         {
             var maturity = (int)this.stratisSender.FullNode.Network.Consensus.CoinbaseMaturity;
-            TestHelper.MineBlocks(this.stratisSender, maturity + 5);
+            TestHelper.MineBlocks(this.stratisSender, 5);
 
             var total = this.stratisSender.FullNode.WalletManager().GetSpendableTransactionsInWallet(Name).Sum(s => s.Transaction.Amount);
             total.Should().Equals(Money.COIN * 6 * 50);

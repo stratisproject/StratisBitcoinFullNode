@@ -23,7 +23,6 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
         private const string password = "password";
         private const string walletName = "mywallet";
         private WalletAccountReference miningWalletAccountReference;
-        private int maturity;
         private uint256 wrongBlockId;
         private IEnumerable<uint256> retrievedBlockHashes;
         private CoreNode transactionNode;
@@ -52,12 +51,12 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void a_pow_node_running()
         {
-            this.node = this.builder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.node = this.builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(Common.ReadyData.ReadyBlockchain.BitcoinRegTest100Miner).Start();
         }
 
         private void a_pow_node_to_transact_with()
         {
-            this.transactionNode = this.builder.CreateStratisPowNode(this.network).WithWallet().Start();
+            this.transactionNode = this.builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(Common.ReadyData.ReadyBlockchain.BitcoinRegTest100Miner).Start();
             TestHelper.Connect(this.transactionNode, this.node);
             TestHelper.WaitForNodeToSync(this.node, this.transactionNode);
 
@@ -71,8 +70,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
         private void some_real_blocks_with_a_uint256_identifier()
         {
-            this.maturity = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity;
-            this.blockIds = TestHelper.MineBlocks(this.node, this.maturity + 1).BlockHashes;
+            this.blockIds = TestHelper.MineBlocks(this.node, 1).BlockHashes;
         }
 
         private void some_blocks_creating_reward()
@@ -107,7 +105,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
             var transactionBuildContext = new TransactionBuildContext(this.node.FullNode.Network)
             {
                 AccountReference = this.miningWalletAccountReference,
-                MinConfirmations = this.maturity,
+                MinConfirmations = (int)this.node.FullNode.Network.Consensus.CoinbaseMaturity,
                 WalletPassword = password,
                 Recipients = new List<Recipient>() { new Recipient() { Amount = this.transferAmount, ScriptPubKey = this.receiverAddress.ScriptPubKey } }
             };

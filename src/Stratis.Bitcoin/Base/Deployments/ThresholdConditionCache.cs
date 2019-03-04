@@ -89,6 +89,9 @@ namespace Stratis.Bitcoin.Base.Deployments
                 ChainedHeader periodStartsHeader = indexPrev.GetAncestor(indexPrev.Height - (currentHeight % period));
                 int periodEndsHeight = periodStartsHeader.Height + period;
 
+                var hexVersions = new Dictionary<string, int>();
+                int totalBlocks = 0;
+
                 while (indexPrev != periodStartsHeader)
                 {
                     if (this.Condition(indexPrev, deploymentIndex))
@@ -96,13 +99,25 @@ namespace Stratis.Bitcoin.Base.Deployments
                         votes++;
                     }
 
+                    totalBlocks++;
+
+                    string hexVersion = indexPrev.Header.Version.ToString("X8");
+
+                    if (!hexVersions.TryGetValue(hexVersion, out int count))
+                        count = 0;
+
+                    hexVersions[hexVersion] = count + 1;
+
                     indexPrev = indexPrev.Previous;
                 }
 
                 thresholdStateModels.Add(new ThresholdStateModel()
                 {
                     DeploymentIndex = deploymentIndex,
+                    ConfirmationPeriod = period,
+                    Blocks = totalBlocks,
                     Votes = votes,
+                    HexVersions = hexVersions,
                     TimeStart = timeStart,
                     TimeTimeOut = timeTimeout,
                     Threshold = threshold,

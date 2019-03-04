@@ -1,4 +1,5 @@
 ﻿using System;
+using System.Collections.Generic;
 using Newtonsoft.Json;
 
 namespace Stratis.Bitcoin.Base.Deployments.Models
@@ -33,6 +34,12 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         public int Height { get; set; }
 
         /// <summary>
+        /// The number of blocks in the each confirmation window.
+        /// </summary>
+        [JsonProperty(PropertyName = "confirmationPeriod")]
+        public int ConfirmationPeriod { get; set; }
+
+        /// <summary>
         /// Height at start of activation window.
         /// </summary>
         [JsonProperty(PropertyName = "periodStartHeight")]
@@ -49,6 +56,18 @@ namespace Stratis.Bitcoin.Base.Deployments.Models
         /// </summary>
         [JsonProperty(PropertyName = "votes")]
         public int Votes { get; set; }
+
+        /// <summary>
+        /// The total number of blocks in the last confirmation window.
+        /// </summary>
+        [JsonProperty(PropertyName = "blocks")]
+        public int Blocks { get; set; }
+
+        /// <summary>
+        /// A summary of block version counts in the last confirmation window.
+        /// </summary>
+        [JsonProperty(PropertyName = "versions")]
+        public Dictionary<string, int> HexVersions { get; set; }
 
         /// <summary>
         /// Activation vote threshold for this BIP9 deployment.

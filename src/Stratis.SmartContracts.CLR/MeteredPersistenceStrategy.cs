@@ -1,6 +1,7 @@
 using NBitcoin;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -11,10 +12,10 @@ namespace Stratis.SmartContracts.CLR
     public class MeteredPersistenceStrategy : IPersistenceStrategy
     {
         private readonly IStateRepository stateDb;
-        private readonly RuntimeObserver.IGasMeter gasMeter;
+        private readonly IGasMeter gasMeter;
         private readonly IKeyEncodingStrategy keyEncodingStrategy;
 
-        public MeteredPersistenceStrategy(IStateRepository stateDb, RuntimeObserver.IGasMeter gasMeter, IKeyEncodingStrategy keyEncodingStrategy)
+        public MeteredPersistenceStrategy(IStateRepository stateDb, IGasMeter gasMeter, IKeyEncodingStrategy keyEncodingStrategy)
         {
             Guard.NotNull(stateDb, nameof(stateDb));
             Guard.NotNull(gasMeter, nameof(gasMeter));
@@ -27,7 +28,7 @@ namespace Stratis.SmartContracts.CLR
 
         public bool ContractExists(uint160 address)
         {
-            this.gasMeter.Spend((RuntimeObserver.Gas)GasPriceList.StorageCheckContractExistsCost);
+            this.gasMeter.Spend((Gas)GasPriceList.StorageCheckContractExistsCost);
 
             return this.stateDb.IsExist(address);
         }
@@ -37,7 +38,7 @@ namespace Stratis.SmartContracts.CLR
             byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
             byte[] value = this.stateDb.GetStorageValue(address, encodedKey);
 
-            RuntimeObserver.Gas operationCost = GasPriceList.StorageRetrieveOperationCost(encodedKey, value);
+            Gas operationCost = GasPriceList.StorageRetrieveOperationCost(encodedKey, value);
             this.gasMeter.Spend(operationCost);
 
             return value;
@@ -46,7 +47,7 @@ namespace Stratis.SmartContracts.CLR
         public void StoreBytes(uint160 address, byte[] key, byte[] value)
         {
             byte[] encodedKey = this.keyEncodingStrategy.GetBytes(key);
-            RuntimeObserver.Gas operationCost = GasPriceList.StorageSaveOperationCost(
+            Gas operationCost = GasPriceList.StorageSaveOperationCost(
                 encodedKey,
                 value);
 

@@ -10,6 +10,7 @@ using Stratis.SmartContracts.CLR.Validation;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
 namespace Stratis.SmartContracts.CLR.Tests
@@ -76,7 +77,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
 
             //Call smart contract and add to transaction-------------
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas)500_000, ToAddress, "ThrowException");
+            var contractTxData = new ContractTxData(1, 1, (Gas)500_000, ToAddress, "ThrowException");
             var transactionCall = new Transaction();
             TxOut callTxOut = transactionCall.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
             callTxOut.Value = 100;
@@ -114,7 +115,7 @@ namespace Stratis.SmartContracts.CLR.Tests
         [Fact]
         public void SmartContractExecutor_CallContract_DoesNotExist_Refund()
         {
-            var contractTxData = new ContractTxData(1, 1, (RuntimeObserver.Gas) 10000, ToAddress, "TestMethod");
+            var contractTxData = new ContractTxData(1, 1, (Gas) 10000, ToAddress, "TestMethod");
 
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
@@ -142,7 +143,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.True(compilationResult.Success);
             byte[] contractCode = compilationResult.Compilation;
 
-            var contractTxData = new ContractTxData(0, (RuntimeObserver.Gas) 1, (RuntimeObserver.Gas)500_000, contractCode);
+            var contractTxData = new ContractTxData(0, (Gas) 1, (Gas)500_000, contractCode);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
 
@@ -173,7 +174,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             object[] methodParameters = { 5 };
 
-            var contractTxData = new ContractTxData(0, (RuntimeObserver.Gas)1, (RuntimeObserver.Gas)500_000, contractCode, methodParameters);
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)500_000, contractCode, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
 
@@ -202,7 +203,7 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             object[] methodParameters = { true };
 
-            var contractTxData = new ContractTxData(0, (RuntimeObserver.Gas)1, (RuntimeObserver.Gas)500_000, contractCode, methodParameters);
+            var contractTxData = new ContractTxData(0, (Gas)1, (Gas)500_000, contractCode, methodParameters);
             var tx = new Transaction();
             tx.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
 
@@ -235,7 +236,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             //-------------------------------------------------------
 
             // Add contract creation code to transaction-------------
-            var contractTxData = new ContractTxData(1, (RuntimeObserver.Gas)1, (RuntimeObserver.Gas)500_000, contractExecutionCode);
+            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractExecutionCode);
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
             txOut.Value = 100;
@@ -269,7 +270,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             //-------------------------------------------------------
 
             //Call smart contract and add to transaction-------------
-            contractTxData = new ContractTxData(1, (RuntimeObserver.Gas)1, (RuntimeObserver.Gas)500_000, contractExecutionCode);
+            contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractExecutionCode);
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
             txOut.Value = 100;
@@ -287,11 +288,11 @@ namespace Stratis.SmartContracts.CLR.Tests
 
             // Invoke infinite loop
 
-            var gasLimit = (RuntimeObserver.Gas)500_000;
+            var gasLimit = (Gas)500_000;
 
             object[] parameters = { address1.ToAddress() };
 
-            contractTxData = new ContractTxData(1, (RuntimeObserver.Gas)1, gasLimit, address2, "CallInfiniteLoop", parameters);
+            contractTxData = new ContractTxData(1, (Gas)1, gasLimit, address2, "CallInfiniteLoop", parameters);
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
             txOut.Value = 100;
@@ -348,7 +349,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             Assert.True(compilationResult.Success);
             byte[] contractExecutionCode = compilationResult.Compilation;
 
-            var contractTxData = new ContractTxData(1, (RuntimeObserver.Gas)1, (RuntimeObserver.Gas)500_000, contractExecutionCode);
+            var contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractExecutionCode);
 
             var transaction = new Transaction();
             TxOut txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
@@ -358,7 +359,7 @@ namespace Stratis.SmartContracts.CLR.Tests
             IContractExecutionResult result = executor.Execute(transactionContext);
             uint160 contractAddress = result.NewContractAddress;
 
-            contractTxData = new ContractTxData(1, (RuntimeObserver.Gas)1, (RuntimeObserver.Gas)500_000, contractAddress, methodName, methodParameters);
+            contractTxData = new ContractTxData(1, (Gas)1, (Gas)500_000, contractAddress, methodName, methodParameters);
 
             transaction = new Transaction();
             txOut = transaction.AddOutput(0, new Script(this.callDataSerializer.Serialize(contractTxData)));
