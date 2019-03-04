@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using System.Diagnostics;
 using System.Linq;
+using System.Net;
 using System.Threading;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
@@ -184,6 +185,11 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 connectedPeer.Behavior<ConsensusManagerBehavior>().ResyncAsync().GetAwaiter().GetResult();
         }
 
+        /// <summary>
+        /// Determines whether or not the node has any connections.
+        /// </summary>
+        /// <param name="node">The node to check.</param>
+        /// <returns>Returns <c>true</c> if the node does not have any connected peers.</returns>
         public static bool IsNodeConnected(CoreNode node)
         {
             return node.FullNode.ConnectionManager.ConnectedPeers.Any();
@@ -428,7 +434,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
         }
 
         /// <summary>
-        /// This connect method will only retry the connection if an RPC exception occurred.
+        /// This connect method will only retry the connection if an WebException occurred.
         /// <para>
         /// In cases where we expect the node to disconnect, this should be used.
         /// </para>
@@ -446,9 +452,13 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                     thisNode.CreateRPCClient().AddNode(connectToNode.Endpoint, true);
                     return true;
                 }
-                catch (Exception)
+                catch (WebException)
                 {
                     return false;
+                }
+                catch (Exception)
+                {
+                    return true;
                 }
             }, retryDelayInMiliseconds: 500, cancellationToken: cancellation.Token);
         }
