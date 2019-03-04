@@ -6,6 +6,7 @@ using NBitcoin;
 using Nethereum.RLP;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR
 {
@@ -39,7 +40,7 @@ namespace Stratis.SmartContracts.CLR
                 
                 int vmVersion = this.primitiveSerializer.Deserialize<int>(vmVersionBytes);
                 ulong gasPrice = this.primitiveSerializer.Deserialize<ulong>(gasPriceBytes);
-                var gasLimit = (RuntimeObserver.Gas) this.primitiveSerializer.Deserialize<ulong>(gasLimitBytes);
+                var gasLimit = (Gas) this.primitiveSerializer.Deserialize<ulong>(gasLimitBytes);
 
                 return IsCallContract(type) 
                     ? this.SerializeCallContract(smartContractBytes, vmVersion, gasPrice, gasLimit)
@@ -53,7 +54,7 @@ namespace Stratis.SmartContracts.CLR
             }
         }
 
-        protected virtual Result<ContractTxData> SerializeCreateContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, RuntimeObserver.Gas gasLimit)
+        protected virtual Result<ContractTxData> SerializeCreateContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, Gas gasLimit)
         {
             byte[] remaining = smartContractBytes.Slice(PrefixSize, (uint) (smartContractBytes.Length - PrefixSize));
 
@@ -66,7 +67,7 @@ namespace Stratis.SmartContracts.CLR
             return Result.Ok(callData);
         }
 
-        public Result<ContractTxData> SerializeCallContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, RuntimeObserver.Gas gasLimit)
+        public Result<ContractTxData> SerializeCallContract(byte[] smartContractBytes, int vmVersion, ulong gasPrice, Gas gasLimit)
         {
             byte[] contractAddressBytes = smartContractBytes.Slice(PrefixSize, AddressSize);
             var contractAddress = new uint160(contractAddressBytes);
@@ -103,7 +104,7 @@ namespace Stratis.SmartContracts.CLR
             var rlpBytes = new List<byte[]>();
 
             rlpBytes.Add(contractTxData.ContractExecutionCode);
-            
+
             this.AddMethodParams(rlpBytes, contractTxData.MethodParameters);
             
             byte[] encoded = RLP.EncodeList(rlpBytes.Select(RLP.EncodeElement).ToArray());
