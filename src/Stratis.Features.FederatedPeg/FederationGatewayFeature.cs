@@ -53,12 +53,6 @@ namespace Stratis.Features.FederatedPeg
     {
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
-        private readonly IDepositExtractor depositExtractor;
-
-        private readonly IWithdrawalExtractor withdrawalExtractor;
-
-        private readonly IWithdrawalReceiver withdrawalReceiver;
-
         private IDisposable blockSubscriberDisposable;
 
         private IDisposable transactionSubscriberDisposable;
@@ -82,10 +76,6 @@ namespace Stratis.Features.FederatedPeg
         private readonly ICrossChainTransferStore crossChainTransferStore;
 
         private readonly IPartialTransactionRequester partialTransactionRequester;
-
-        private readonly IFederationGatewayClient federationGatewayClient;
-
-        private readonly MempoolManager mempoolManager;
 
         private readonly IMaturedBlocksSyncManager maturedBlocksSyncManager;
 
@@ -114,9 +104,6 @@ namespace Stratis.Features.FederatedPeg
             IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
             this.loggerFactory = loggerFactory;
-            this.depositExtractor = depositExtractor;
-            this.withdrawalExtractor = withdrawalExtractor;
-            this.withdrawalReceiver = withdrawalReceiver;
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
             this.fullNode = fullNode;
@@ -126,8 +113,6 @@ namespace Stratis.Features.FederatedPeg
             this.network = network;
             this.crossChainTransferStore = crossChainTransferStore;
             this.partialTransactionRequester = partialTransactionRequester;
-            this.federationGatewayClient = federationGatewayClient;
-            this.mempoolManager = mempoolManager;
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
 
