@@ -46,6 +46,11 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         public DnsSeedMasterFile() { }
 
+        public DnsSeedMasterFile(IList<IResourceRecord> resourceRecords)
+        {
+            this.entries = resourceRecords;
+        }
+
         /// <summary>
         /// Identifies if the domain matches the entry.
         /// </summary>
@@ -78,15 +83,6 @@ namespace Stratis.Bitcoin.Features.Dns
             settings.Formatting = Formatting.Indented;
 
             return JsonSerializer.Create(settings);
-        }
-
-        /// <summary>
-        /// Adds a entry to the master file.
-        /// </summary>
-        /// <param name="entry">The resource record to add.</param>
-        public void Add(IResourceRecord entry)
-        {
-            this.entries.Add(entry);
         }
 
         /// <summary>
@@ -151,7 +147,7 @@ namespace Stratis.Bitcoin.Features.Dns
             if (count == 0)
             {
                 // Add SOA record for host.
-                this.Add(new StartOfAuthorityResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer), new Domain(dnsSettings.DnsMailBox.Replace('@', '.'))));
+                this.entries.Add(new StartOfAuthorityResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer), new Domain(dnsSettings.DnsMailBox.Replace('@', '.'))));
             }
 
             // Check if NS record exists for host.
@@ -159,7 +155,7 @@ namespace Stratis.Bitcoin.Features.Dns
             if (count == 0)
             {
                 // Add NS record for host.
-                this.Add(new NameServerResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer)));
+                this.entries.Add(new NameServerResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer)));
             }
         }
     }
