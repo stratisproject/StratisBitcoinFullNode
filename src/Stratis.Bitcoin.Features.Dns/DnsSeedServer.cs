@@ -431,21 +431,7 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             this.logger.LogInformation("Seeding DNS masterfile with SOA and NS resource records: Host = {0}, Nameserver = {1}, Mailbox = {2}", this.dnsSettings.DnsHostName, this.dnsSettings.DnsNameServer, this.dnsSettings.DnsMailBox);
 
-            // Check if SOA record exists for host.
-            int count = this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.SOA)).Count;
-            if (count == 0)
-            {
-                // Add SOA record for host.
-                this.MasterFile.Add(new StartOfAuthorityResourceRecord(new Domain(this.dnsSettings.DnsHostName), new Domain(this.dnsSettings.DnsNameServer), new Domain(this.dnsSettings.DnsMailBox.Replace('@', '.'))));
-            }
-
-            // Check if NS record exists for host.
-            count = this.MasterFile.Get(new Question(new Domain(this.dnsSettings.DnsHostName), RecordType.NS)).Count;
-            if (count == 0)
-            {
-                // Add NS record for host.
-                this.MasterFile.Add(new NameServerResourceRecord(new Domain(this.dnsSettings.DnsHostName), new Domain(this.dnsSettings.DnsNameServer)));
-            }
+            this.MasterFile.Seed(this.dnsSettings);
         }
 
         /// <summary>

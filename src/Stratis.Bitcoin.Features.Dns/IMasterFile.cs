@@ -34,5 +34,10 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         /// <param name="stream">The stream to write the masterfile to.</param>
         void Save(Stream stream);
+
+        /// <summary>
+        /// Seeds the masterfile with the SOA and NS DNS records with the DNS specific settings.
+        /// </summary>
+        void Seed(DnsSettings dnsSettings);
     }
 }

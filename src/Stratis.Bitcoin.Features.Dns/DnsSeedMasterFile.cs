@@ -143,5 +143,24 @@ namespace Stratis.Bitcoin.Features.Dns
             serializer.Serialize(textWriter, this.entries.ToList());
             textWriter.Flush();
         }
+
+        public void Seed(DnsSettings dnsSettings)
+        {
+            // Check if SOA record exists for host.
+            int count = this.Get(new Question(new Domain(dnsSettings.DnsHostName), RecordType.SOA)).Count;
+            if (count == 0)
+            {
+                // Add SOA record for host.
+                this.Add(new StartOfAuthorityResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer), new Domain(dnsSettings.DnsMailBox.Replace('@', '.'))));
+            }
+
+            // Check if NS record exists for host.
+            count = this.Get(new Question(new Domain(dnsSettings.DnsHostName), RecordType.NS)).Count;
+            if (count == 0)
+            {
+                // Add NS record for host.
+                this.Add(new NameServerResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer)));
+            }
+        }
     }
 }
