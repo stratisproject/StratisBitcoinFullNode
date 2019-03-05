@@ -20,7 +20,6 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
@@ -85,9 +84,6 @@ namespace Stratis.Features.FederatedPeg
 
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
-            IDepositExtractor depositExtractor,
-            IWithdrawalExtractor withdrawalExtractor,
-            IWithdrawalReceiver withdrawalReceiver,
             IConnectionManager connectionManager,
             IFederationGatewaySettings federationGatewaySettings,
             IFullNode fullNode,
@@ -98,8 +94,6 @@ namespace Stratis.Features.FederatedPeg
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore,
             IPartialTransactionRequester partialTransactionRequester,
-            IFederationGatewayClient federationGatewayClient,
-            MempoolManager mempoolManager,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
