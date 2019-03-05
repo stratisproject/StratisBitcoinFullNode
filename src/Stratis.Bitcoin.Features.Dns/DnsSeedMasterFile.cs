@@ -140,6 +140,7 @@ namespace Stratis.Bitcoin.Features.Dns
             textWriter.Flush();
         }
 
+        /// <inheritdoc />
         public void Seed(DnsSettings dnsSettings)
         {
             // Check if SOA record exists for host.
