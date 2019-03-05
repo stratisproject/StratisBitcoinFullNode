@@ -53,6 +53,20 @@ namespace Stratis.Bitcoin.Networks
 
         public bool PowAllowMinDifficultyBlocks { get; }
 
+        /// <summary>
+        /// If <c>true</c> disables checking the next block's difficulty (work required) target on a Proof-Of-Stake network.
+        /// <para>
+        /// This can be used in tests to enable fast mining of blocks.
+        /// </para>
+        /// </summary>
+        public bool PosNoRetargeting { get; }
+
+        /// <summary>
+        /// If <c>true</c> disables checking the next block's difficulty (work required) target on a Proof-Of-Work network.
+        /// <para>
+        /// This can be used in tests to enable fast mining of blocks.
+        /// </para>
+        /// </summary>
         public bool PowNoRetargeting { get; }
 
         public uint256 HashGenesisBlock { get; }
@@ -126,6 +140,7 @@ namespace Stratis.Bitcoin.Networks
             TimeSpan powTargetTimespan,
             TimeSpan powTargetSpacing,
             bool powAllowMinDifficultyBlocks,
+            bool posNoRetargeting,
             bool powNoRetargeting,
             Target powLimit,
             uint256 minimumChainWork,
@@ -161,6 +176,7 @@ namespace Stratis.Bitcoin.Networks
             this.PowTargetTimespan = powTargetTimespan;
             this.PowTargetSpacing = powTargetSpacing;
             this.PowAllowMinDifficultyBlocks = powAllowMinDifficultyBlocks;
+            this.PosNoRetargeting = posNoRetargeting;
             this.PowNoRetargeting = powNoRetargeting;
             this.HashGenesisBlock = hashGenesisBlock;
             this.MinimumChainWork = minimumChainWork;
