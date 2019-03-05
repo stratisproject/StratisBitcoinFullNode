@@ -255,17 +255,18 @@ namespace Stratis.Bitcoin.Features.Dns
         /// masterfile is swapped for efficiency, rather than applying a merge operation to the existing masterfile, or clearing the existing
         /// masterfile and re-adding the peer entries (which could cause some interim DNS resolve requests to fail).
         /// </remarks>
-        /// <param name="masterFile">The new masterfile to swap in.</param>
-        public void SwapMasterfile(IMasterFile masterFile)
+        /// <param name="newMasterFile">The new masterfile to swap in.</param>
+        public void SwapMasterfile(IMasterFile newMasterFile)
         {
-            Guard.NotNull(masterFile, nameof(masterFile));
+            Guard.NotNull(newMasterFile, nameof(newMasterFile));
 
             lock (this.masterFileLock)
             {
-                this.masterFile = masterFile;
+                // Seed the new masterfile with SOA and NS resource records.
+                this.SeedMasterFile(newMasterFile);
 
-                // Seed with SOA and NS resource records when this is a new masterfile.
-                this.SeedMasterFile(masterFile);
+                // Perform the swap after seeding to avoid modifying the current masterfile.
+                this.masterFile = newMasterFile;
             }
         }
 
