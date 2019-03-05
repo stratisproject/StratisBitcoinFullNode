@@ -181,7 +181,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 else
                 {
                     // Seed with SOA and NS resource records when this is a new masterfile.
-                    this.SeedMasterFile();
+                    this.SeedMasterFile(this.MasterFile);
                 }
             }
 
@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Features.Dns
                 this.masterFile = masterFile;
 
                 // Seed with SOA and NS resource records when this is a new masterfile.
-                this.SeedMasterFile();
+                this.SeedMasterFile(masterFile);
             }
         }
 
@@ -425,13 +425,14 @@ namespace Stratis.Bitcoin.Features.Dns
         }
 
         /// <summary>
-        /// Seeds the masterfile with the SOA and NS DNS records with the DNS specific settings.
+        /// Seeds the given masterfile with the SOA and NS DNS records with the DNS specific settings.
         /// </summary>
-        private void SeedMasterFile()
+        /// <param name="masterFile"></param>
+        private void SeedMasterFile(IMasterFile masterFile)
         {
             this.logger.LogInformation("Seeding DNS masterfile with SOA and NS resource records: Host = {0}, Nameserver = {1}, Mailbox = {2}", this.dnsSettings.DnsHostName, this.dnsSettings.DnsNameServer, this.dnsSettings.DnsMailBox);
 
-            this.MasterFile.Seed(this.dnsSettings);
+            masterFile.Seed(this.dnsSettings);
         }
 
         /// <summary>
