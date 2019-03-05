@@ -260,11 +260,11 @@ namespace Stratis.Bitcoin.Features.Dns
         {
             Guard.NotNull(newMasterFile, nameof(newMasterFile));
 
+            // Seed the new masterfile with SOA and NS resource records.
+            this.SeedMasterFile(newMasterFile);
+
             lock (this.masterFileLock)
             {
-                // Seed the new masterfile with SOA and NS resource records.
-                this.SeedMasterFile(newMasterFile);
-
                 // Perform the swap after seeding to avoid modifying the current masterfile.
                 this.masterFile = newMasterFile;
             }
