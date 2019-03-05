@@ -20,16 +20,15 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
-using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Notifications;
 using Stratis.Bitcoin.Features.PoA;
+using Stratis.Bitcoin.Features.PoA.Voting;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Features.FederatedPeg.Controllers;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -52,14 +51,6 @@ namespace Stratis.Features.FederatedPeg
     internal class FederationGatewayFeature : FullNodeFeature
     {
         public const string FederationGatewayFeatureNamespace = "federationgateway";
-
-        private readonly Signals signals;
-
-        private readonly IDepositExtractor depositExtractor;
-
-        private readonly IWithdrawalExtractor withdrawalExtractor;
-
-        private readonly IWithdrawalReceiver withdrawalReceiver;
 
         private IDisposable blockSubscriberDisposable;
 
@@ -85,10 +76,6 @@ namespace Stratis.Features.FederatedPeg
 
         private readonly IPartialTransactionRequester partialTransactionRequester;
 
-        private readonly IFederationGatewayClient federationGatewayClient;
-
-        private readonly MempoolManager mempoolManager;
-
         private readonly IMaturedBlocksSyncManager maturedBlocksSyncManager;
 
         private readonly IWithdrawalHistoryProvider withdrawalHistoryProvider;
@@ -97,10 +84,6 @@ namespace Stratis.Features.FederatedPeg
 
         public FederationGatewayFeature(
             ILoggerFactory loggerFactory,
-            Signals signals,
-            IDepositExtractor depositExtractor,
-            IWithdrawalExtractor withdrawalExtractor,
-            IWithdrawalReceiver withdrawalReceiver,
             IConnectionManager connectionManager,
             IFederationGatewaySettings federationGatewaySettings,
             IFullNode fullNode,
@@ -111,16 +94,10 @@ namespace Stratis.Features.FederatedPeg
             INodeStats nodeStats,
             ICrossChainTransferStore crossChainTransferStore,
             IPartialTransactionRequester partialTransactionRequester,
-            IFederationGatewayClient federationGatewayClient,
-            MempoolManager mempoolManager,
             IMaturedBlocksSyncManager maturedBlocksSyncManager,
             IWithdrawalHistoryProvider withdrawalHistoryProvider)
         {
             this.loggerFactory = loggerFactory;
-            this.signals = signals;
-            this.depositExtractor = depositExtractor;
-            this.withdrawalExtractor = withdrawalExtractor;
-            this.withdrawalReceiver = withdrawalReceiver;
             this.connectionManager = connectionManager;
             this.federationGatewaySettings = federationGatewaySettings;
             this.fullNode = fullNode;
@@ -130,8 +107,6 @@ namespace Stratis.Features.FederatedPeg
             this.network = network;
             this.crossChainTransferStore = crossChainTransferStore;
             this.partialTransactionRequester = partialTransactionRequester;
-            this.federationGatewayClient = federationGatewayClient;
-            this.mempoolManager = mempoolManager;
             this.maturedBlocksSyncManager = maturedBlocksSyncManager;
             this.withdrawalHistoryProvider = withdrawalHistoryProvider;
 
@@ -365,6 +340,10 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<ConsensusQuery>()
                         .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
                         .AddSingleton<IGetUnspentTransaction, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>());
+
+                    services.AddSingleton<VotingManager>();
+                    services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+
                     new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
             });
