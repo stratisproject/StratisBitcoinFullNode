@@ -10,7 +10,7 @@ Our branching strategy is simple
 Devs commit regularly to master and when a set of features are agreed on a release branch is created and we increment masters version.
 The reason master is incremented is that users often run master itself, that way versions of master on the network are also represented. 
 
-**Release stpes check list:**
+**Release steps check list:**
 
 1. Create a release branch.
 2. Increment master’s version.
