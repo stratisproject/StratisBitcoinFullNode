@@ -729,5 +729,47 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 Encoders.Hex.DecodeData(ops[1]).Should().BeEquivalentTo("some data to send".ToBytes());
             }
         }
+
+        [Fact]
+        public async Task GetBalancesAsync()
+        {
+            int sendingAccountBalanceOnStart = 98000596;
+            int receivingAccountBalanceOnStart = 0;
+
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                // Arrange.
+                // Create a sending and a receiving node.
+                CoreNode node1 = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest10Miner).Start();
+                
+                // Act.
+                WalletBalanceModel node1Balances = await $"http://localhost:{node1.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                // Assert.
+                AccountBalanceModel node1Balance = node1Balances.AccountsBalances.Single();
+                node1Balance.AmountConfirmed.Should().Be(new Money(98000036, MoneyUnit.BTC)); // premine is 98M + 9 blocks * 4.
+                node1Balance.AmountUnconfirmed.Should().Be(Money.Zero);
+                node1Balance.SpendableAmount.Should().Be(Money.Zero); // Maturity for StratisregTest is 10, so at block 10, no coin is spendable.
+
+                // Arrange.
+                // Create a sending and a receiving node.
+                CoreNode node2 = builder.CreateStratisPosNode(this.network).WithReadyBlockchainData(ReadyBlockchain.StratisRegTest100Miner).Start();
+
+                // Act.
+                WalletBalanceModel node2Balances = await $"http://localhost:{node2.ApiPort}/api"
+                    .AppendPathSegment("wallet/balance")
+                    .SetQueryParams(new { walletName = "mywallet" })
+                    .GetJsonAsync<WalletBalanceModel>();
+
+                // Assert.
+                AccountBalanceModel node2Balance = node2Balances.AccountsBalances.Single();
+                node2Balance.AmountConfirmed.Should().Be(new Money(98000396, MoneyUnit.BTC)); // premine is 98M + 99 blocks * 4.
+                node2Balance.AmountUnconfirmed.Should().Be(Money.Zero);
+                node2Balance.SpendableAmount.Should().Be(new Money(98000396 - 40, MoneyUnit.BTC)); // Maturity for StratisregTest is 10, so at block 100, the coins in the last 10 blocks (10*4) are not spendable.
+            }
+        }
     }
 }

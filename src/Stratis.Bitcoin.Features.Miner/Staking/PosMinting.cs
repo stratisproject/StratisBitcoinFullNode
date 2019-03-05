@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// but high enough to compensate for tasks' overhead.</remarks>
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
-        /// <summary>Consumes manager class.</summary>
+        /// <summary>Consensus manager class.</summary>
         private readonly IConsensusManager consensusManager;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>

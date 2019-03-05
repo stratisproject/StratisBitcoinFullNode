@@ -1,5 +1,4 @@
-﻿using System;
-using Stratis.SmartContracts;
+﻿using Stratis.SmartContracts;
 
 public class StratisCollectible : SmartContract
 {

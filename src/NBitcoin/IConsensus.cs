@@ -68,6 +68,20 @@ namespace NBitcoin
 
         bool PowAllowMinDifficultyBlocks { get; }
 
+        /// <summary>
+        /// If <c>true</c> disables checking the next block's difficulty (work required) target on a Proof-Of-Stake network.
+        /// <para>
+        /// This can be used in tests to enable fast mining of blocks.
+        /// </para>
+        /// </summary>
+        bool PosNoRetargeting { get; }
+
+        /// <summary>
+        /// If <c>true</c> disables checking the next block's difficulty (work required) target on a Proof-Of-Work network.
+        /// <para>
+        /// This can be used in tests to enable fast mining of blocks.
+        /// </para>
+        /// </summary>
         bool PowNoRetargeting { get; }
 
         uint256 HashGenesisBlock { get; }
