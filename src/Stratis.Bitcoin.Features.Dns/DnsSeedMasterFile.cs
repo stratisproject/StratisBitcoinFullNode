@@ -139,7 +139,8 @@ namespace Stratis.Bitcoin.Features.Dns
             var textWriter = new JsonTextWriter(new StreamWriter(stream));
             JsonSerializer serializer = this.CreateSerializer();
 
-            serializer.Serialize(textWriter, this.entries);
+            // Send a copy of the entries to the serializer because the collection can be modified during serialization.
+            serializer.Serialize(textWriter, this.entries.ToList());
             textWriter.Flush();
         }
     }
