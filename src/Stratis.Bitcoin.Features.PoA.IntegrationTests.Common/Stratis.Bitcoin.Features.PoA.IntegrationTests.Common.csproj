@@ -1,8 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
     <AssemblyName>Stratis.Bitcoin.Features.PoA.IntegrationTests.Common</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.PoA.IntegrationTests.Common</PackageId>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>

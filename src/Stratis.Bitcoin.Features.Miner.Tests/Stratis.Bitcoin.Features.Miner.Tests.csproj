@@ -2,11 +2,11 @@
 
   <PropertyGroup>
     <IsPackable>false</IsPackable>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
     <AssemblyName>Stratis.Bitcoin.Features.Miner.Tests</AssemblyName>
     <PackageId>Stratis.Bitcoin.Features.Miner.Tests</PackageId>
     <GenerateRuntimeConfigurationFiles>true</GenerateRuntimeConfigurationFiles>
-    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
     <GenerateAssemblyTitleAttribute>false</GenerateAssemblyTitleAttribute>
     <GenerateAssemblyDescriptionAttribute>false</GenerateAssemblyDescriptionAttribute>
     <GenerateAssemblyConfigurationAttribute>false</GenerateAssemblyConfigurationAttribute>

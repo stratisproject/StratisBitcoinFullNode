@@ -1,15 +1,8 @@
 ﻿<Project Sdk="Microsoft.NET.Sdk">
 
-  <PropertyGroup Label="Globals">
-    <SccProjectName>SAK</SccProjectName>
-    <SccProvider>SAK</SccProvider>
-    <SccAuxPath>SAK</SccAuxPath>
-    <SccLocalPath>SAK</SccLocalPath>
-  </PropertyGroup>
-
   <PropertyGroup>
-    <TargetFramework>netcoreapp2.1</TargetFramework>
-    <RuntimeFrameworkVersion>2.1.1</RuntimeFrameworkVersion>
+    <TargetFramework>netcoreapp2.2</TargetFramework>
+    <RuntimeFrameworkVersion>2.2.2</RuntimeFrameworkVersion>
     <DebugType>Full</DebugType>
     <IsPackable>false</IsPackable>
     <ApplicationIcon />

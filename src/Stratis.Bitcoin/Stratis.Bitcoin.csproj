@@ -31,17 +31,17 @@
     <PackageReference Include="Stratis.FodyNlogAdapter" Version="3.0.0.4-beta" />
     <PackageReference Include="StyleCop.Analyzers" Version="1.0.2" />
     <PackageReference Include="System.Reactive" Version="4.0.0" />
-    <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.IISIntegration" Version="2.1.1" />
-    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.1.1" />
-    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.1.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Diagnostics" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Hosting" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Core" Version="2.2.2" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.Formatters.Json" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Mvc.ViewFeatures" Version="2.2.0" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.IISIntegration" Version="2.2.1" />
+    <PackageReference Include="Microsoft.AspNetCore.Server.Kestrel" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Abstractions" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Logging.Console" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.Caching.Memory" Version="2.2.0" />
+    <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="2.2.0" />
     <PackageReference Include="Tracer.Fody" Version="2.2.0" />
 
   </ItemGroup>
