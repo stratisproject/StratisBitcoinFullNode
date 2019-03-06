@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (Wallet wallet in wallets)
             {
-                this.Wallets.Add(wallet);
+                this.Load(wallet);
                 foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType))
                 {
                     this.AddAddressesToMaintainBuffer(account, false);
