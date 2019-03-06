@@ -436,6 +436,12 @@ namespace Stratis.Bitcoin.Connection
 
         public async Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint)
         {
+            if (this.connectedPeers.Any(connectedPeer => connectedPeer.PeerEndPoint.Match(ipEndpoint)))
+            {
+                this.logger.LogDebug("{0} is already connected.");
+                throw new Exception("{0} is already connected.");
+            }
+
             NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
 
             var connectionManagerBehavior = cloneParameters.TemplateBehaviors.OfType<ConnectionManagerBehavior>().SingleOrDefault();
