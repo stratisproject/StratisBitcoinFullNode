@@ -206,7 +206,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
         {
             int maxReorg = (int) this.network.Consensus.MaxReorgLength;
 
-            Assert.Empty(this.node1.FullNode.NodeService<WhitelistedHashesRepository>().GetHashes());
+            Assert.Empty(this.node1.FullNode.NodeService<IWhitelistedHashesRepository>().GetHashes());
             TestHelper.Connect(this.node1, this.node2);
 
             await this.node1.MineBlocksAsync(1);
@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             await this.node2.MineBlocksAsync(maxReorg + 2);
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            Assert.Single(this.node1.FullNode.NodeService<WhitelistedHashesRepository>().GetHashes());
+            Assert.Single(this.node1.FullNode.NodeService<IWhitelistedHashesRepository>().GetHashes());
 
             // Node 1 votes to remove hash
             this.node1.FullNode.NodeService<VotingController>().VoteRemoveHash(model);
@@ -235,7 +235,7 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             await this.node2.MineBlocksAsync(maxReorg + 2);
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
 
-            Assert.Empty(this.node1.FullNode.NodeService<WhitelistedHashesRepository>().GetHashes());
+            Assert.Empty(this.node1.FullNode.NodeService<IWhitelistedHashesRepository>().GetHashes());
         }
 
         public void Dispose()
