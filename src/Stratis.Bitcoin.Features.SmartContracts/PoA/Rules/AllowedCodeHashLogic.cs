@@ -1,7 +1,5 @@
-using System.Collections.Generic;
 using NBitcoin;
-using NBitcoin.Crypto;
-using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 
@@ -23,7 +21,20 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
 
         public void CheckContractTransaction(ContractTxData txData, Money suppliedBudget)
         {
-            throw new System.NotImplementedException();
+            if (!txData.IsCreateContract)
+                return;
+
+            byte[] hashedCode = this.hashingStrategy.Hash(txData.ContractExecutionCode);
+
+            if (!this.whitelistedHashChecker.CheckHashWhitelisted(hashedCode))
+            {
+                ThrowInvalidCode();
+            }
+        }
+
+        private static void ThrowInvalidCode()
+        {
+            new ConsensusError("contract-code-invalid-hash", "Contract code does not have a valid hash").Throw();
         }
     }
 
