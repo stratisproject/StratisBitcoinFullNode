@@ -23,27 +23,19 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
     /// </summary>
     public sealed class SmartContractPosCoinviewRule : SmartContractCoinviewRule
     {
-        private IConsensus consensus;
-        private SmartContractPosConsensusRuleEngine smartContractPosParent;
-        private IStakeChain stakeChain;
-        private IStakeValidator stakeValidator;
+        private readonly IConsensus consensus;
+        private readonly IStakeChain stakeChain;
+        private readonly IStakeValidator stakeValidator;
         
         public SmartContractPosCoinviewRule(Network network, IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer,
-            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView) 
+            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView,
+            IStakeChain stakeChain, IStakeValidator stakeValidator) 
             : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
         {
             this.consensus = network.Consensus;
-        }
-
-        /// <inheritdoc />
-        public override void Initialize()
-        {
-            base.Initialize();
-
-            this.smartContractPosParent = (SmartContractPosConsensusRuleEngine)this.Parent;
-            this.stakeChain = this.smartContractPosParent.StakeChain;
-            this.stakeValidator = this.smartContractPosParent.StakeValidator;
+            this.stakeChain = stakeChain;
+            this.stakeValidator = stakeValidator;
         }
 
         /// <inheritdoc />
