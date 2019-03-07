@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
                         services.AddSingleton<VotingManager>();
-                        services.AddSingleton<WhitelistedHashesRepository>();
+                        services.AddSingleton<IWhitelistedHashesRepository, WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
                         services.AddSingleton<PoAConsensusRuleEngine>();
