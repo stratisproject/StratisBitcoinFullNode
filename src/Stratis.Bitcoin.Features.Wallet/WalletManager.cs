@@ -681,7 +681,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                     // Get the total balances.
                     (Money amountConfirmed, Money amountUnconfirmed) result = account.GetBalances();
-                    
+
                     balances.Add(new AccountBalance
                     {
                         Account = account,
@@ -1500,7 +1500,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public ICollection<uint256> GetFirstWalletBlockLocator()
         {
-            return this.Wallets.First().BlockLocator;
+            return this.Wallets.FirstOrDefault()?.BlockLocator ?? new[] { this.network.GenesisHash };
         }
 
         /// <inheritdoc />
