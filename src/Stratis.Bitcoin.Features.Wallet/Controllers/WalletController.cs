@@ -417,7 +417,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                     Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
                                     Id = transaction.SpendingDetails.TransactionId,
                                     Timestamp = transaction.SpendingDetails.CreationTime,
-                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight
+                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                    BlockIndex = transaction.SpendingDetails.BlockIndex
                                 };
 
                                 transactionItems.Add(stakingItem);
@@ -441,7 +442,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 Amount = transaction.Amount,
                                 Id = transaction.Id,
                                 Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight
+                                ConfirmedInBlock = transaction.BlockHeight,
+                                BlockIndex = transaction.BlockIndex
                             };
 
                             transactionItems.Add(receivedItem);
@@ -458,6 +460,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 Id = spendingTransactionId,
                                 Timestamp = transaction.SpendingDetails.CreationTime,
                                 ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                BlockIndex = transaction.SpendingDetails.BlockIndex,
                                 Amount = Money.Zero
                             };
 
