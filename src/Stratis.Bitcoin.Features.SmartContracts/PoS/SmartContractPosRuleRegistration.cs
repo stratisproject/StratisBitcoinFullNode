@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 new CheckDifficultyHybridRule(),
                 new LoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
-                new SmartContractPosCoinviewRule(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
+                new SmartContractPosCoinviewRule(this.network, this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
                 new SaveCoinviewRule()
             };
         }

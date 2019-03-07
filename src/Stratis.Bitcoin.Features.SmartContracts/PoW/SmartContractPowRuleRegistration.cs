@@ -87,7 +87,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new OpSpendRule(),
                 new CanGetSenderRule(new SenderRetriever()),
                 new P2PKHNotContractRule(this.stateRepositoryRoot),
-                new SmartContractPowCoinviewRule(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
+                new SmartContractPowCoinviewRule(this.network, this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
                 new SaveCoinviewRule()
             };
         }

@@ -24,6 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         protected uint refundCounter;
         private SmartContractCoinViewRuleLogic logic;
 
+        private readonly Network network;
         private readonly IStateRepositoryRoot stateRepositoryRoot;
         private readonly IContractExecutorFactory executorFactory;
         private readonly ICallDataSerializer callDataSerializer;
@@ -33,13 +34,15 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private readonly IList<Receipt> receipts;
         private IStateRepositoryRoot mutableStateRepository;
 
-        protected SmartContractCoinviewRule(IStateRepositoryRoot stateRepositoryRoot,
+        protected SmartContractCoinviewRule(Network network, 
+            IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
             ICoinView coinView)
         {
+            this.network = network;
             this.stateRepositoryRoot = stateRepositoryRoot;
             this.executorFactory = executorFactory;
             this.callDataSerializer = callDataSerializer;
@@ -89,10 +92,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         /// <remarks>Should someone wish to use POW only we'll need to implement subsidy halving.</remarks>
         public override Money GetProofOfWorkReward(int height)
         {
-            if (height == this.Parent.Network.Consensus.PremineHeight)
-                return this.Parent.Network.Consensus.PremineReward;
+            if (height == this.network.Consensus.PremineHeight)
+                return this.network.Consensus.PremineReward;
 
-            return this.Parent.Network.Consensus.ProofOfWorkReward;
+            return this.network.Consensus.ProofOfWorkReward;
         }
 
         /// <summary>

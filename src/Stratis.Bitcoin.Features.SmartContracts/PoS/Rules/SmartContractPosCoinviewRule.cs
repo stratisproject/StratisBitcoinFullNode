@@ -28,7 +28,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
         private IStakeChain stakeChain;
         private IStakeValidator stakeValidator;
         
-        public SmartContractPosCoinviewRule(IStateRepositoryRoot stateRepositoryRoot, IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView) : base(stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
+        public SmartContractPosCoinviewRule(Network network, IStateRepositoryRoot stateRepositoryRoot,
+            IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer,
+            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView) 
+            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
         {
         }
 

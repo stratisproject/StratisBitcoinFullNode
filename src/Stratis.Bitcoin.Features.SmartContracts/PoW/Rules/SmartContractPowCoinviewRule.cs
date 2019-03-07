@@ -1,4 +1,5 @@
-﻿using Stratis.Bitcoin.Consensus;
+﻿using NBitcoin;
+using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
@@ -11,9 +12,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW.Rules
 {
     public sealed class SmartContractPowCoinviewRule : SmartContractCoinviewRule
     {
-        public SmartContractPowCoinviewRule(IStateRepositoryRoot stateRepositoryRoot,
+        public SmartContractPowCoinviewRule(Network network, IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer,
-            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView) : base(stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
+            ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView) 
+            : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
         {
         }
     }
