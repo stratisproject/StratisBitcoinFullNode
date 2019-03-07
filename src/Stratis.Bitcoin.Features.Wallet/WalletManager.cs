@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (Wallet wallet in wallets)
             {
-                this.Wallets.Add(wallet);
+                this.Load(wallet);
                 foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType))
                 {
                     this.AddAddressesToMaintainBuffer(account, false);
@@ -1363,7 +1363,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Loads the wallet to be used by the manager.
+        /// Loads the wallet to be used by the manager if a wallet with this name has not already been loaded.
         /// </summary>
         /// <param name="wallet">The wallet to load.</param>
         private void Load(Wallet wallet)

@@ -13,7 +13,13 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         KickFederationMember = 0,
 
         /// <summary>Add new federation member.</summary>
-        AddFederationMember = 1
+        AddFederationMember = 1,
+
+        /// <summary>Add given hash to the database of hashes.</summary>
+        WhitelistHash = 2,
+
+        /// <summary>Remove given hash from the database of hashes.</summary>
+        RemoveHash = 3
     }
 
     /// <summary>Information about a single vote.</summary>
