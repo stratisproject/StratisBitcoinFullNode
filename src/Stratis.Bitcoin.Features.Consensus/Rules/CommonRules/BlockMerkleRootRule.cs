@@ -93,6 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Which position in inner is a hash that depends on the matching leaf.
             int matchLevel = -1;
             uint processedLeavesCount = 0;
+            var hash = new byte[64];
 
             // First process all leaves into subTreeHashes values.
             while (processedLeavesCount < leaves.Count)
@@ -118,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                     if (!mutated)
                         mutated = subTreeHashes[level] == currentLeaveHash;
-                    var hash = new byte[64];
+                    
                     Buffer.BlockCopy(subTreeHashes[level].ToBytes(), 0, hash, 0, 32);
                     Buffer.BlockCopy(currentLeaveHash.ToBytes(), 0, hash, 32, 32);
                     currentLeaveHash = Hashes.Hash256(hash);
@@ -145,6 +146,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 root = subTreeHashes[level];
                 bool match = matchLevel == level;
+                var hashh = new byte[64];
+
                 while (processedLeavesCount != (((uint)1) << level))
                 {
                     // If we reach this point, hash is a subTreeHashes value that is not the top.
@@ -153,9 +156,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     if (match)
                         branch.Add(root);
 
-                    var hash = new byte[64];
-                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 0, 32);
-                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 32, 32);
+                    // Line was added to allocate once and not twice
+                    var rootBytes = root.ToBytes(); 
+                    Buffer.BlockCopy(rootBytes, 0, hash, 0, 32);
+                    Buffer.BlockCopy(rootBytes, 0, hash, 32, 32);
                     root = Hashes.Hash256(hash);
 
                     // Increment processedLeavesCount to the value it would have if two entries at this
@@ -176,7 +180,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                             match = true;
                         }
 
-                        var hashh = new byte[64];
                         Buffer.BlockCopy(subTreeHashes[level].ToBytes(), 0, hashh, 0, 32);
                         Buffer.BlockCopy(root.ToBytes(), 0, hashh, 32, 32);
                         root = Hashes.Hash256(hashh);
