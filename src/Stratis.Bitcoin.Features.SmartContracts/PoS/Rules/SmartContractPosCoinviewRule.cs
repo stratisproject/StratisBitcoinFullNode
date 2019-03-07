@@ -6,10 +6,15 @@ using NBitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
+using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
 {
@@ -22,6 +27,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
         private SmartContractPosConsensusRuleEngine smartContractPosParent;
         private IStakeChain stakeChain;
         private IStakeValidator stakeValidator;
+        
+        public SmartContractPosCoinviewRule(IStateRepositoryRoot stateRepositoryRoot, IContractExecutorFactory executorFactory, ICallDataSerializer callDataSerializer, ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView) : base(stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
+        {
+        }
 
         /// <inheritdoc />
         public override void Initialize()
