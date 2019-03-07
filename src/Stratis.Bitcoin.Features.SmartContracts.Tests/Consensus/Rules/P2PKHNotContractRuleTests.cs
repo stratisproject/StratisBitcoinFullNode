@@ -65,7 +65,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             state.Setup(x => x.GetAccountState(walletAddress)).Returns<AccountState>(null);
             this.rulesEngine.OriginalStateRoot = state.Object;
 
-            var rule = new P2PKHNotContractRule();
+            var rule = new P2PKHNotContractRule(state.Object);
             rule.Parent = this.rulesEngine;
             rule.Initialize();
 
@@ -83,7 +83,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
             state.Setup(x => x.GetAccountState(contractAddress)).Returns(new AccountState()); // not null
             this.rulesEngine.OriginalStateRoot = state.Object;
 
-            var rule = new P2PKHNotContractRule();
+            var rule = new P2PKHNotContractRule(state.Object);
             rule.Parent = this.rulesEngine;
             rule.Initialize();
 

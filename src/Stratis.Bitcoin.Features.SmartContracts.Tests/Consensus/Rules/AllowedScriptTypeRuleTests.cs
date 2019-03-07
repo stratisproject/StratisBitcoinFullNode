@@ -56,7 +56,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
                 new NodeStats(new DateTimeProvider())
             );
 
-            this.rule = new AllowedScriptTypeRule
+            this.rule = new AllowedScriptTypeRule(this.network)
             {
                 Parent = this.rulesEngine
             };
