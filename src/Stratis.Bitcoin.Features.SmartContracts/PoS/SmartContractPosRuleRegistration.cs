@@ -2,13 +2,44 @@
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoS.Rules;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
+using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoS
 {
     public sealed class SmartContractPosRuleRegistration : IRuleRegistration
     {
+        private readonly Network network;
+        private readonly IStateRepositoryRoot stateRepositoryRoot;
+        private readonly IContractExecutorFactory executorFactory;
+        private readonly ICallDataSerializer callDataSerializer;
+        private readonly ISenderRetriever senderRetriever;
+        private readonly IReceiptRepository receiptRepository;
+        private readonly ICoinView coinView;
+
+        public SmartContractPosRuleRegistration(Network network,
+            IStateRepositoryRoot stateRepositoryRoot,
+            IContractExecutorFactory executorFactory,
+            ICallDataSerializer callDataSerializer,
+            ISenderRetriever senderRetriever,
+            IReceiptRepository receiptRepository,
+            ICoinView coinView)
+        {
+            this.network = network;
+            this.stateRepositoryRoot = stateRepositoryRoot;
+            this.executorFactory = executorFactory;
+            this.callDataSerializer = callDataSerializer;
+            this.senderRetriever = senderRetriever;
+            this.receiptRepository = receiptRepository;
+            this.coinView = coinView;
+        }
+
         public void RegisterRules(IConsensus consensus)
         {
             consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
@@ -55,7 +86,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS
                 new CheckDifficultyHybridRule(),
                 new LoadCoinviewRule(),
                 new TransactionDuplicationActivationRule(), // implements BIP30
-                new SmartContractPosCoinviewRule(), // implements BIP68, MaxSigOps and BlockReward calculation
+                new SmartContractPosCoinviewRule(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
                 new SaveCoinviewRule()
             };
         }
