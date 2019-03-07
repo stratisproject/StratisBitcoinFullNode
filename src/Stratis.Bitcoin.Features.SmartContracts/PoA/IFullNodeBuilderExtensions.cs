@@ -35,11 +35,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
-                        services.AddSingleton<SmartContractPoARuleEngine>();
+                        services.AddSingleton<PoAConsensusRuleEngine>();
                         services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
                         services.AddSingleton<IConsensusRuleEngine>(f =>
                         {
-                            var concreteRuleEngine = f.GetService<SmartContractPoARuleEngine>();
+                            var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
                             var ruleRegistration = f.GetService<IRuleRegistration>();
 
                             return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
@@ -74,11 +74,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         // Replace serializer
                         fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
 
-                        services.AddSingleton<SmartContractPoARuleEngine>();
+                        services.AddSingleton<PoAConsensusRuleEngine>();
                         services.AddSingleton<IRuleRegistration, SignedContractPoARuleRegistration>();
                         services.AddSingleton<IConsensusRuleEngine>(f =>
                         {
-                            var concreteRuleEngine = f.GetService<SmartContractPoARuleEngine>();
+                            var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
                             var ruleRegistration = f.GetService<IRuleRegistration>();
 
                             return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);

@@ -345,11 +345,11 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
                     // Consensus Rules
-                    services.AddSingleton<SmartContractPoARuleEngine>();
+                    services.AddSingleton<PoAConsensusRuleEngine>();
                     services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
                     services.AddSingleton<IConsensusRuleEngine>(f =>
                     {
-                        var concreteRuleEngine = f.GetService<SmartContractPoARuleEngine>();
+                        var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
                         var ruleRegistration = f.GetService<IRuleRegistration>();
 
                         return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
