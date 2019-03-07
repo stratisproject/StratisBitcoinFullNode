@@ -96,7 +96,6 @@ namespace Stratis.Bitcoin.Features.Notifications.Tests
 
             var source = new CancellationTokenSource();
             CancellationToken token = source.Token;
-            //this.signals.Setup(s => s.OnBlockConnected.Notify(It.Is<ChainedHeaderBlock>(b => b.Block.GetHash() == blocks[0].GetHash())))
             this.signals.Setup(s => s.Publish(It.Is<BlockConnected>(b => b.ConnectedBlock.Block.GetHash() == blocks[0].GetHash())))
                 .Callback(() =>
                 {
