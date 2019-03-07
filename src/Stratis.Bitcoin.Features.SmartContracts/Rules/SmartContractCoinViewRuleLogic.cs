@@ -37,8 +37,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private uint refundCounter;
         private IStateRepositoryRoot mutableStateRepository;
 
-        public SmartContractCoinViewRuleLogic(ConsensusRuleEngine parent,
-            IStateRepositoryRoot stateRepositoryRoot,
+        public SmartContractCoinViewRuleLogic(IStateRepositoryRoot stateRepositoryRoot,
             IContractExecutorFactory executorFactory,
             ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever,

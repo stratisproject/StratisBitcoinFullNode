@@ -33,6 +33,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
             ISenderRetriever senderRetriever, IReceiptRepository receiptRepository, ICoinView coinView) 
             : base(network, stateRepositoryRoot, executorFactory, callDataSerializer, senderRetriever, receiptRepository, coinView)
         {
+            this.consensus = network.Consensus;
         }
 
         /// <inheritdoc />
@@ -40,7 +41,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
         {
             base.Initialize();
 
-            this.consensus = this.Parent.Network.Consensus;
             this.smartContractPosParent = (SmartContractPosConsensusRuleEngine)this.Parent;
             this.stakeChain = this.smartContractPosParent.StakeChain;
             this.stakeValidator = this.smartContractPosParent.StakeValidator;
