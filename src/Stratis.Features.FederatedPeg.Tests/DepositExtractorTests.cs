@@ -5,7 +5,6 @@ using FluentAssertions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
-using Stratis.Bitcoin;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.Tests.Utils;
@@ -21,8 +20,6 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IOpReturnDataReader opReturnDataReader;
 
         private readonly ILoggerFactory loggerFactory;
-
-        private readonly IFullNode fullNode;
 
         private readonly DepositExtractor depositExtractor;
 
@@ -41,8 +38,6 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.settings = Substitute.For<IFederationGatewaySettings>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
-            this.fullNode = Substitute.For<IFullNode>();
-            this.fullNode.NodeService<ConcurrentChain>().Returns(this.chain);
 
             this.addressHelper = new MultisigAddressHelper(this.network);
 
@@ -54,8 +49,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.depositExtractor = new DepositExtractor(
                 this.loggerFactory,
                 this.settings,
-                this.opReturnDataReader,
-                this.fullNode);
+                this.opReturnDataReader);
         }
 
         [Fact(Skip = TestingValues.SkipTests)]
