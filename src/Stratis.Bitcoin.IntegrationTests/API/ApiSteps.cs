@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         {
             this.send_api_get_request($"{BalanceUri}?walletname={walletName}&AccountName=account {accountIndex}");
 
-            this.responseText.Should().Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0}]}");
+            this.responseText.Should().Be("{\"balances\":[{\"accountName\":\"account " + accountIndex + "\",\"accountHdPath\":\"m/44'/105'/" + accountIndex + "'\",\"coinType\":105,\"amountConfirmed\":0,\"amountUnconfirmed\":0,\"spendableAmount\":0}]}");
         }
 
         private void calling_general_info()

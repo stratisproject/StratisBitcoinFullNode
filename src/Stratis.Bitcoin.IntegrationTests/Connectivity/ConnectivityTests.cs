@@ -11,6 +11,7 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.P2P;
+using Stratis.Bitcoin.Utilities.Extensions;
 using Xunit;
 
 namespace Stratis.Bitcoin.IntegrationTests.Connectivity
@@ -35,7 +36,6 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
         /// Peer A_1 now also connects to Peer B_2
         /// </summary>
         [Fact]
-        [Trait("Unstable", "True")]
         public void Ensure_Peer_CanDiscover_Address_From_ConnectedPeers_And_Connect_ToThem()
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
@@ -44,26 +44,29 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
                 CoreNode nodeGroupB_1 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupB_1").EnablePeerDiscovery().Start();
                 CoreNode nodeGroupB_2 = builder.CreateStratisPowNode(this.powNetwork, "nodeGroupB_2").EnablePeerDiscovery().Start();
 
-                // Connect group 2 nodes.
-                TestHelper.WaitLoop(() => nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Count == 0);
+                // Connect B_1 to B_2.
                 nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_2.Endpoint, IPAddress.Loopback);
                 TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupB_1, nodeGroupB_2));
-
-                // Connect group 1 to group 2
-                // This will add all nodeGroupB_1's addresses which includes nodeGroupB_2 to nodeGroupA_1
-                nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().AddPeer(nodeGroupB_1.Endpoint, IPAddress.Loopback);
-                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_1));
-
-                // First check that B_2 now has more than the initial connection to B_1
-                TestHelper.WaitLoop(() => nodeGroupB_2.FullNode.ConnectionManager.ConnectedPeers.Count() > 1);
-
-                // Ensure that B_2 got connected to via either A_1 or A_2
                 TestHelper.WaitLoop(() =>
                 {
-                    if (TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2))
-                        return true;
-                    return false;
+                    return nodeGroupB_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_2.Endpoint));
                 });
+
+                // Connect group A_1 to B_1
+                // A_1 will receive B_1's addresses which includes B_2.
+                TestHelper.Connect(nodeGroupA_1, nodeGroupB_1);
+
+                //Wait until A_1 contains both B_1 and B_2's addresses in its address manager.
+                TestHelper.WaitLoop(() =>
+                 {
+                     var result = nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_1.Endpoint));
+                     if (result)
+                         return nodeGroupA_1.FullNode.NodeService<IPeerAddressManager>().Peers.Any(p => p.Endpoint.Match(nodeGroupB_2.Endpoint));
+                     return false;
+                 });
+
+                // Wait until A_1 connected to B_2.
+                TestHelper.WaitLoop(() => TestHelper.IsNodeConnectedTo(nodeGroupA_1, nodeGroupB_2));
             }
         }
 

@@ -195,7 +195,7 @@ namespace Stratis.Bitcoin.Features.Wallet
 
             foreach (Wallet wallet in wallets)
             {
-                this.Wallets.Add(wallet);
+                this.Load(wallet);
                 foreach (HdAccount account in wallet.GetAccountsByCoinType(this.coinType))
                 {
                     this.AddAddressesToMaintainBuffer(account, false);
@@ -671,13 +671,23 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 foreach (HdAccount account in accounts)
                 {
-                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetSpendableAmount();
+                    // Calculates the amount of spendable coins.
+                    UnspentOutputReference[] spendableBalance = account.GetSpendableTransactions(this.chain.Tip.Height, this.network.Consensus.CoinbaseMaturity).ToArray();
+                    Money spendableAmount = Money.Zero;
+                    foreach (UnspentOutputReference bal in spendableBalance)
+                    {
+                        spendableAmount += bal.Transaction.Amount;
+                    }
 
+                    // Get the total balances.
+                    (Money amountConfirmed, Money amountUnconfirmed) result = account.GetBalances();
+                    
                     balances.Add(new AccountBalance
                     {
                         Account = account,
                         AmountConfirmed = result.amountConfirmed,
-                        AmountUnconfirmed = result.amountUnconfirmed
+                        AmountUnconfirmed = result.amountUnconfirmed,
+                        SpendableAmount = spendableAmount
                     });
                 }
             }
@@ -705,7 +715,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     hdAddress = wallet.GetAllAddressesByCoinType(this.coinType).FirstOrDefault(a => a.Address == address);
                     if (hdAddress == null) continue;
 
-                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetSpendableAmount();
+                    (Money amountConfirmed, Money amountUnconfirmed) result = hdAddress.GetBalances();
 
                     balance.AmountConfirmed = result.amountConfirmed;
                     balance.AmountUnconfirmed = result.amountUnconfirmed;
@@ -849,7 +859,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                         $"Account '{walletAccountReference.AccountName}' in wallet '{walletAccountReference.WalletName}' not found.");
                 }
 
-                res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network, confirmations).ToArray();
+                res = account.GetSpendableTransactions(this.chain.Tip.Height, this.network.Consensus.CoinbaseMaturity, confirmations).ToArray();
             }
 
             return res;
@@ -1353,7 +1363,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         }
 
         /// <summary>
-        /// Loads the wallet to be used by the manager.
+        /// Loads the wallet to be used by the manager if a wallet with this name has not already been loaded.
         /// </summary>
         /// <param name="wallet">The wallet to load.</param>
         private void Load(Wallet wallet)

@@ -258,6 +258,12 @@ namespace Stratis.Bitcoin.Consensus
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
 
+                if (!this.peersByPeerId.ContainsKey(peerId))
+                {
+                    this.peersByPeerId.Add(peerId, peer);
+                    this.logger.LogTrace("New peer with ID {0} was added.", peerId);
+                }
+
                 if (connectNewHeadersResult == null)
                 {
                     this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
@@ -273,12 +279,6 @@ namespace Stratis.Bitcoin.Consensus
                 this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
-
-                if (!this.peersByPeerId.ContainsKey(peerId))
-                {
-                    this.peersByPeerId.Add(peerId, peer);
-                    this.logger.LogTrace("New peer with ID {0} was added.", peerId);
-                }
             }
 
             if (triggerDownload && (connectNewHeadersResult.DownloadTo != null))

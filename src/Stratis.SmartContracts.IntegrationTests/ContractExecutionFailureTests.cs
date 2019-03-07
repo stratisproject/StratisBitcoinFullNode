@@ -13,6 +13,7 @@ using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.Util;
+using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
@@ -43,7 +44,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             var serializer =
                 new CallDataSerializer(new ContractPrimitiveSerializer(this.node1.CoreNode.FullNode.Network));
 
-            var txData = serializer.Serialize(new ContractTxData(1, 1, (RuntimeObserver.Gas)(GasPriceList.BaseCost + 1), new uint160(1), "Test"));
+            var txData = serializer.Serialize(new ContractTxData(1, 1, (Gas)(GasPriceList.BaseCost + 1), new uint160(1), "Test"));
 
             var random = new Random();
             byte[] bytes = new byte[101];
