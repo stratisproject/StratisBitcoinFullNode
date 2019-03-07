@@ -928,6 +928,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         public uint256 BlockHash { get; set; }
 
         /// <summary>
+        /// The index of this transaction in the block in which it is contained.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? BlockIndex { get; set; }
+
+        /// <summary>
         /// Gets or sets the creation time.
         /// </summary>
         [JsonProperty(PropertyName = "creationTime")]
@@ -1061,6 +1067,12 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// </summary>
         [JsonProperty(PropertyName = "blockHeight", NullValueHandling = NullValueHandling.Ignore)]
         public int? BlockHeight { get; set; }
+
+        /// <summary>
+        /// The index of this transaction in the block in which it is contained.
+        /// </summary>
+        [JsonProperty(PropertyName = "blockIndex", NullValueHandling = NullValueHandling.Ignore)]
+        public int? BlockIndex { get; set; }
 
         /// <summary>
         /// A value indicating whether this is a coin stake transaction or not.
