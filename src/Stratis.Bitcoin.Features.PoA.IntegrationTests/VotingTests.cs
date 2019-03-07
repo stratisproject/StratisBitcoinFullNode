@@ -1,16 +1,13 @@
 ﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
 using System.Threading.Tasks;
+using DBreeze.Utils;
 using NBitcoin;
-using Stratis.Bitcoin.Connection;
-using Stratis.Bitcoin.Consensus;
+using NBitcoin.Crypto;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.Bitcoin.P2P.Peer;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
@@ -202,6 +199,43 @@ namespace Stratis.Bitcoin.Features.PoA.IntegrationTests
             await node.MineBlocksAsync(1);
 
             CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2, this.node3);
+        }
+
+        [Fact]
+        public async Task CanVoteToWhitelistAndRemoveHashesAsync()
+        {
+            int maxReorg = (int) this.network.Consensus.MaxReorgLength;
+
+            Assert.Empty(this.node1.FullNode.NodeService<WhitelistedHashesRepository>().GetHashes());
+            TestHelper.Connect(this.node1, this.node2);
+
+            await this.node1.MineBlocksAsync(1);
+
+            var model = new HashModel() { Hash = Hashes.Hash256(RandomUtils.GetUInt64().ToBytes()).ToString()};
+
+            // Node 1 votes to add hash
+            this.node1.FullNode.NodeService<VotingController>().VoteWhitelistHash(model);
+            await this.node1.MineBlocksAsync(1);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
+
+            // Node 2 votes to add hash
+            this.node2.FullNode.NodeService<VotingController>().VoteWhitelistHash(model);
+            await this.node2.MineBlocksAsync(maxReorg + 2);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
+
+            Assert.Single(this.node1.FullNode.NodeService<WhitelistedHashesRepository>().GetHashes());
+
+            // Node 1 votes to remove hash
+            this.node1.FullNode.NodeService<VotingController>().VoteRemoveHash(model);
+            await this.node1.MineBlocksAsync(1);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
+
+            // Node 2 votes to remove hash
+            this.node2.FullNode.NodeService<VotingController>().VoteRemoveHash(model);
+            await this.node2.MineBlocksAsync(maxReorg + 2);
+            CoreNodePoAExtensions.WaitTillSynced(this.node1, this.node2);
+
+            Assert.Empty(this.node1.FullNode.NodeService<WhitelistedHashesRepository>().GetHashes());
         }
 
         public void Dispose()
