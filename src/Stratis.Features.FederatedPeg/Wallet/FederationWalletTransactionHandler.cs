@@ -282,9 +282,6 @@ namespace Stratis.Features.FederatedPeg.Wallet
             if (context.Recipients.Any(a => a.Amount == Money.Zero))
                 throw new WalletException("No amount specified.");
 
-            if (context.Recipients.Any(a => a.SubtractFeeFromAmount))
-                throw new NotImplementedException("Substracting the fee from the recipient is not supported yet.");
-
             foreach (Recipient recipient in context.Recipients)
                 context.TransactionBuilder.Send(recipient.ScriptPubKey, recipient.Amount);
         }
@@ -486,10 +483,5 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// The amount that will be sent.
         /// </summary>
         public Money Amount { get; set; }
-
-        /// <summary>
-        /// An indicator if the fee is subtracted from the current recipient.
-        /// </summary>
-        public bool SubtractFeeFromAmount { get; set; }
     }
 }
