@@ -2,6 +2,8 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.EventBus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Bitcoin.Utilities;
@@ -35,6 +37,8 @@ namespace Stratis.Features.FederatedPeg.Notifications
 
         private Task pushBlockTipTask;
 
+        private SubscriptionToken blockConnectedSubscription;
+
         /// <summary>
         /// Initialize the block observer with the wallet manager and the cross chain monitor.
         /// </summary>
@@ -66,7 +70,7 @@ namespace Stratis.Features.FederatedPeg.Notifications
             this.cancellationSource = null;
             this.pushBlockTipTask = null;
 
-            this.signals.OnBlockConnected.Attach(this.OnBlockReceived);
+            this.blockConnectedSubscription = this.signals.Subscribe<BlockConnected>(ev => this.OnBlockReceived(ev.ConnectedBlock));
 
             // TODO: Dispose with Detach ??
         }

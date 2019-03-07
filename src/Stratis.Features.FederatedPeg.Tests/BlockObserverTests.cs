@@ -5,6 +5,7 @@ using NBitcoin;
 using NSubstitute;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.EventBus.CoreEvents;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
 using Stratis.Features.FederatedPeg.Interfaces;
@@ -67,11 +68,10 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.withdrawalExtractor = Substitute.For<IWithdrawalExtractor>();
             this.extractedWithdrawals = TestingValues.GetWithdrawals(2);
             this.withdrawalExtractor.ExtractWithdrawalsFromBlock(null, 0).ReturnsForAnyArgs(this.extractedWithdrawals);
-  
+
             this.withdrawalReceiver = Substitute.For<IWithdrawalReceiver>();
 
-            this.signals = Substitute.For<ISignals>();
-            this.signals.OnBlockConnected.Returns(Substitute.For<EventNotifier<ChainedHeaderBlock>>());
+            this.signals = new Signals();
 
             this.depositExtractor = new DepositExtractor(
                 this.loggerFactory,
