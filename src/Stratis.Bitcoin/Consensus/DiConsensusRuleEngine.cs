@@ -8,12 +8,12 @@ namespace Stratis.Bitcoin.Consensus
     /// Creates a ConsensusRuleEngine with the ability to use injected consensus rules.
     /// Accepts an <see cref="IRuleRegistration"/> which behaves as a rule factory whose dependencies are also injected by the DI container.
     /// </summary>
-    public abstract class DiConsensusRuleEngine : IConsensusRuleEngine
+    public class DiConsensusRuleEngine : IConsensusRuleEngine
     {
         private readonly ConsensusRuleEngine implementation;
         private readonly IRuleRegistration ruleRegistration;
 
-        protected DiConsensusRuleEngine(ConsensusRuleEngine implementation, IRuleRegistration ruleRegistration)
+        public DiConsensusRuleEngine(ConsensusRuleEngine implementation, IRuleRegistration ruleRegistration)
         {
             this.implementation = implementation;
             this.ruleRegistration = ruleRegistration;
