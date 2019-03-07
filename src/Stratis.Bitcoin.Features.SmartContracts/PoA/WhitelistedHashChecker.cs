@@ -5,6 +5,9 @@ using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
+    /// <summary>
+    /// Checks hashes against a whitelist.
+    /// </summary>
     public class WhitelistedHashChecker : IWhitelistedHashChecker
     {
         private readonly IWhitelistedHashesRepository whitelistedHashesRepository;
@@ -14,6 +17,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.whitelistedHashesRepository = whitelistedHashesRepository;
         }
 
+        /// <summary>
+        /// Checks that a supplied hash is present in the whitelisted hashes repository.
+        /// </summary>
+        /// <param name="hash">The bytes of the hash to check.</param>
+        /// <returns>True if the hash was found in the whitelisted hashes repository.</returns>
         public bool CheckHashWhitelisted(byte[] hash)
         {
             List<uint256> allowedHashes = this.whitelistedHashesRepository.GetHashes();
