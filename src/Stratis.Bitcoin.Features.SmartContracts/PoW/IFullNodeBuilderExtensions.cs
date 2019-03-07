@@ -6,6 +6,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Miner.Controllers;
@@ -38,11 +39,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                     services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
 
-                    services.AddSingleton<SmartContractPowConsensusRuleEngine>();
+                    services.AddSingleton<PowConsensusRuleEngine>();
                     services.AddSingleton<IRuleRegistration, SmartContractPowRuleRegistration>();
                     services.AddSingleton<IConsensusRuleEngine>(f =>
                     {
-                        var concreteRuleEngine = f.GetService<SmartContractPowConsensusRuleEngine>();
+                        var concreteRuleEngine = f.GetService<PowConsensusRuleEngine>();
                         var ruleRegistration = f.GetService<IRuleRegistration>();
 
                         return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
