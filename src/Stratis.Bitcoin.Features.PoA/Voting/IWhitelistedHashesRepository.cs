@@ -10,5 +10,7 @@ namespace Stratis.Bitcoin.Features.PoA.Voting
         void RemoveHash(uint256 hash);
 
         List<uint256> GetHashes();
+
+        void Initialize();
     }
 }
