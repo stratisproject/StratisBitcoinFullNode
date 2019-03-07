@@ -11,9 +11,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
     public class AllowedCodeHashLogic : IContractTransactionValidationLogic
     {
         private readonly IWhitelistedHashChecker whitelistedHashChecker;
-        private readonly IHashingStrategy hashingStrategy;
+        private readonly IContractCodeHashingStrategy hashingStrategy;
 
-        public AllowedCodeHashLogic(IWhitelistedHashChecker whitelistedHashChecker, IHashingStrategy hashingStrategy)
+        public AllowedCodeHashLogic(IWhitelistedHashChecker whitelistedHashChecker, IContractCodeHashingStrategy hashingStrategy)
         {
             this.whitelistedHashChecker = whitelistedHashChecker;
             this.hashingStrategy = hashingStrategy;
@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
         bool CheckHashWhitelisted(byte[] hash);
     }
 
-    public interface IHashingStrategy
+    public interface IContractCodeHashingStrategy
     {
         byte[] Hash(byte[] data);
     }

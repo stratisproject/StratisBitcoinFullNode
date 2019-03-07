@@ -12,12 +12,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
     public class AllowedCodeHashLogicTests
     {
         private readonly Mock<IWhitelistedHashChecker> hashChecker;
-        private readonly Mock<IHashingStrategy> hashingStrategy;
+        private readonly Mock<IContractCodeHashingStrategy> hashingStrategy;
 
         public AllowedCodeHashLogicTests()
         {
             this.hashChecker = new Mock<IWhitelistedHashChecker>();
-            this.hashingStrategy = new Mock<IHashingStrategy>();
+            this.hashingStrategy = new Mock<IContractCodeHashingStrategy>();
         }
 
         [Fact]
