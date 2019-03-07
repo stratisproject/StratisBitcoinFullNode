@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             {
                 try
                 {
-                    await this.GenerateBlocksAsync(walletSecret, this.stakeCancellationTokenSource.Token)
+                    await this.GenerateBlocksAsync(walletSecret, token)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
