@@ -8,14 +8,14 @@ namespace Stratis.Bitcoin.EventBus
     /// Base event interface.
     /// We can requires to specify a Sender if we want (who produced the event), preferably as WeakReference
     /// </summary>
-    interface IEvent
+    public interface IEvent
     {
         /// <summary>
-        /// Gets or sets the progressive id.
+        /// Gets the correlation identifier.
         /// </summary>
         /// <value>
-        /// The progressive id.
+        /// The correlation identifier.
         /// </value>
-        ulong Progressive { get; }
+        Guid CorrelationId { get; }
     }
 }

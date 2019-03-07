@@ -11,6 +11,11 @@ namespace Stratis.Bitcoin.EventBus
     public class EventBase : IEvent
     {
         /// <inheritdoc />
-        public ulong Progressive { get; internal set; }
+        public Guid CorrelationId { get; internal set; }
+
+        public override string ToString()
+        {
+            return $"{this.CorrelationId.ToString()} - {this.GetType().Name}";
+        }
     }
 }

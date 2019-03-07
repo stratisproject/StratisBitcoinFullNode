@@ -64,6 +64,9 @@ namespace Stratis.Bitcoin.EventBus
             if (eventItem == null)
                 throw new ArgumentNullException(nameof(eventItem));
 
+            // Assigns an unique id to the event.
+            eventItem.CorrelationId = Guid.NewGuid();
+
             List<ISubscription> allSubscriptions = new List<ISubscription>();
             lock (SubscriptionsLock)
             {
