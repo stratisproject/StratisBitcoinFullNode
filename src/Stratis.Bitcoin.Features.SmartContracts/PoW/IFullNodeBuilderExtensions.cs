@@ -3,6 +3,7 @@ using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
@@ -36,9 +37,16 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<IConsensusRuleEngine, SmartContractPowConsensusRuleEngine>();
 
-                    new SmartContractPowRuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                    services.AddSingleton<SmartContractPowConsensusRuleEngine>();
+                    services.AddSingleton<IRuleRegistration, SmartContractPowRuleRegistration>();
+                    services.AddSingleton<IConsensusRuleEngine>(f =>
+                    {
+                        var concreteRuleEngine = f.GetService<SmartContractPowConsensusRuleEngine>();
+                        var ruleRegistration = f.GetService<IRuleRegistration>();
+
+                        return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                    });
                 });
             });
 
