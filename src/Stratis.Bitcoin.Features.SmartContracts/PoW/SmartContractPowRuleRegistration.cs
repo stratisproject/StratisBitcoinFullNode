@@ -85,7 +85,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
-                new CanGetSenderRule(new SenderRetriever()),
+                new CanGetSenderRule(this.senderRetriever),
                 new P2PKHNotContractRule(this.stateRepositoryRoot),
                 new SmartContractPowCoinviewRule(this.network, this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
                 new SaveCoinviewRule()

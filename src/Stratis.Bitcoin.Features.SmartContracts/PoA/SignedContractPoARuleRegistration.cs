@@ -76,7 +76,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
                 new AllowedScriptTypeRule(this.network),
-                new ContractTransactionValidationRule(callDataSerializer, new List<IContractTransactionValidationLogic>()
+                new ContractTransactionValidationRule(this.callDataSerializer, new List<IContractTransactionValidationLogic>()
                 {
                     new SmartContractFormatLogic(),
                     new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey)
@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
-                new CanGetSenderRule(new SenderRetriever()),
+                new CanGetSenderRule(this.senderRetriever),
                 new P2PKHNotContractRule(this.stateRepositoryRoot),
                 new SmartContractPoACoinviewRule(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
                 new SaveCoinviewRule()
