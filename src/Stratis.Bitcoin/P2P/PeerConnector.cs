@@ -1,6 +1,7 @@
 ﻿using System;
 using System.Linq;
 using System.Net;
+using System.Net.Sockets;
 using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -260,7 +261,7 @@ namespace Stratis.Bitcoin.P2P
             }
             catch (Exception exception)
             {
-                this.logger.LogTrace("Exception occurred while connecting: {0}", exception.ToString());
+                this.logger.LogTrace("Exception occurred while connecting: {0}", exception is SocketException ? exception.Message : exception.ToString());
                 peerAddress.SetHandshakeAttempted(this.dateTimeProvider.GetUtcNow());
                 peer?.Disconnect("Error while connecting", exception);
             }

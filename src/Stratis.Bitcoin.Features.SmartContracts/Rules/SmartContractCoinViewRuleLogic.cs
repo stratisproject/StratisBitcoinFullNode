@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Base.Deployments;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.SmartContracts.CLR;
@@ -24,24 +25,35 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// </summary>
     internal sealed class SmartContractCoinViewRuleLogic
     {
+        private readonly IStateRepositoryRoot stateRepositoryRoot;
+        private readonly IContractExecutorFactory executorFactory;
+        private readonly ICallDataSerializer callDataSerializer;
+        private readonly ISenderRetriever senderRetriever;
+        private readonly IReceiptRepository receiptRepository;
+        private readonly ICoinView coinView;
         private readonly List<Transaction> blockTxsProcessed;
         private Transaction generatedTransaction;
         private readonly IList<Receipt> receipts;
         private uint refundCounter;
         private IStateRepositoryRoot mutableStateRepository;
 
-        public SmartContractCoinViewRuleLogic(ConsensusRuleEngine parent)
+        public SmartContractCoinViewRuleLogic(IStateRepositoryRoot stateRepositoryRoot,
+            IContractExecutorFactory executorFactory,
+            ICallDataSerializer callDataSerializer,
+            ISenderRetriever senderRetriever,
+            IReceiptRepository receiptRepository,
+            ICoinView coinView)
         {
+            this.stateRepositoryRoot = stateRepositoryRoot;
+            this.executorFactory = executorFactory;
+            this.callDataSerializer = callDataSerializer;
+            this.senderRetriever = senderRetriever;
+            this.receiptRepository = receiptRepository;
+            this.coinView = coinView;
             this.refundCounter = 1;
-            this.Parent = parent;
             this.blockTxsProcessed = new List<Transaction>();
-            this.receipts = new List<Receipt>();
-            this.ContractCoinviewRule = (ISmartContractCoinviewRule)this.Parent;
+            this.receipts = new List<Receipt>();            
         }
-
-        public ISmartContractCoinviewRule ContractCoinviewRule { get; }
-
-        public ConsensusRuleEngine Parent { get; }
 
         public async Task RunAsync(Func<RuleContext, Task> baseRunAsync, RuleContext context)
         {
@@ -52,7 +64,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             // Get a IStateRepositoryRoot we can alter without affecting the injected one which is used elsewhere.
             byte[] blockRoot = ((ISmartContractBlockHeader)context.ValidationContext.ChainedHeaderToValidate.Previous.Header).HashStateRoot.ToBytes();
-            this.mutableStateRepository = this.ContractCoinviewRule.OriginalStateRoot.GetSnapshotTo(blockRoot);
+            this.mutableStateRepository = this.stateRepositoryRoot.GetSnapshotTo(blockRoot);
 
             await baseRunAsync(context);
 
@@ -68,7 +80,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.mutableStateRepository.Commit();
 
             // Update the globally injected state so all services receive the updates.
-            this.ContractCoinviewRule.OriginalStateRoot.SyncToRoot(this.mutableStateRepository.Root);
+            this.stateRepositoryRoot.SyncToRoot(this.mutableStateRepository.Root);
         }
 
         /// <summary>
@@ -156,7 +168,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             IContractTransactionContext txContext = this.GetSmartContractTransactionContext(context, transaction);
             this.CheckFeeAccountsForGas(txContext.Data, txContext.MempoolFee);
-            IContractExecutor executor = this.ContractCoinviewRule.ExecutorFactory.CreateExecutor(this.mutableStateRepository, txContext);
+            IContractExecutor executor = this.executorFactory.CreateExecutor(this.mutableStateRepository, txContext);
 
             IContractExecutionResult result = executor.Execute(txContext);
 
@@ -195,7 +207,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         private void CheckFeeAccountsForGas(byte[] callData, Money totalFee)
         {
             // We can trust that deserialisation is successful thanks to SmartContractFormatRule coming before
-            Result<ContractTxData> result = this.ContractCoinviewRule.CallDataSerializer.Deserialize(callData);
+            Result<ContractTxData> result = this.callDataSerializer.Deserialize(callData);
 
             if (totalFee < new Money(result.Value.GasCostBudget))
             {
@@ -211,14 +223,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             ulong blockHeight = Convert.ToUInt64(context.ValidationContext.ChainedHeaderToValidate.Height);
 
-            GetSenderResult getSenderResult = this.ContractCoinviewRule.SenderRetriever.GetSender(transaction, ((PowConsensusRuleEngine)this.Parent).UtxoSet, this.blockTxsProcessed);
+            GetSenderResult getSenderResult = this.senderRetriever.GetSender(transaction, this.coinView, this.blockTxsProcessed);
 
             if (!getSenderResult.Success)
                 throw new ConsensusErrorException(new ConsensusError("sc-consensusvalidator-executecontracttransaction-sender", getSenderResult.Error));
 
             Script coinbaseScriptPubKey = context.ValidationContext.BlockToValidate.Transactions[0].Outputs[0].ScriptPubKey;
 
-            GetSenderResult getCoinbaseResult = this.ContractCoinviewRule.SenderRetriever.GetAddressFromScript(coinbaseScriptPubKey);
+            GetSenderResult getCoinbaseResult = this.senderRetriever.GetAddressFromScript(coinbaseScriptPubKey);
 
             uint160 coinbaseAddress = (getCoinbaseResult.Success) ? getCoinbaseResult.Sender : uint160.Zero;
 
@@ -239,7 +251,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             if (receiptRoot != expectedReceiptRoot)
                 SmartContractConsensusErrors.UnequalReceiptRoots.Throw();
 
-            this.ContractCoinviewRule.ReceiptRepository.Store(this.receipts);
+            this.receiptRepository.Store(this.receipts);
         }
 
         private void ValidateLogsBloom(Bloom blockBloom)

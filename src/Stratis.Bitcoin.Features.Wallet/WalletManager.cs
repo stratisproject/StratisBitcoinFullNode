@@ -1048,6 +1048,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true,
                     BlockHeight = blockHeight,
                     BlockHash = block?.GetHash(),
+                    BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash),
                     Id = transactionHash,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     Index = index,
@@ -1074,6 +1075,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     foundTransaction.BlockHeight = blockHeight;
                     foundTransaction.BlockHash = block?.GetHash();
+                    foundTransaction.BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash);
                 }
 
                 // Update the block time.
@@ -1111,6 +1113,8 @@ namespace Stratis.Bitcoin.Features.Wallet
             Guard.NotNull(transaction, nameof(transaction));
             Guard.NotNull(paidToOutputs, nameof(paidToOutputs));
 
+            uint256 transactionHash = transaction.GetHash();
+
             // Get the transaction being spent.
             TransactionData spentTransaction = this.scriptToAddressLookup.Values.Distinct().SelectMany(v => v.Transactions)
                 .SingleOrDefault(t => (t.Id == spendingTransactionId) && (t.Index == spendingTransactionIndex));
@@ -1146,10 +1150,11 @@ namespace Stratis.Bitcoin.Features.Wallet
 
                 var spendingDetails = new SpendingDetails
                 {
-                    TransactionId = transaction.GetHash(),
+                    TransactionId = transactionHash,
                     Payments = payments,
                     CreationTime = DateTimeOffset.FromUnixTimeSeconds(block?.Header.Time ?? transaction.Time),
                     BlockHeight = blockHeight,
+                    BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash),
                     Hex = this.walletSettings.SaveTransactionHex ? transaction.ToHex() : null,
                     IsCoinStake = transaction.IsCoinStake == false ? (bool?)null : true
                 };
@@ -1171,6 +1176,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 if (block != null)
                 {
                     spentTransaction.SpendingDetails.CreationTime = DateTimeOffset.FromUnixTimeSeconds(block.Header.Time);
+                    spentTransaction.BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == transactionHash);
                 }
             }
 
