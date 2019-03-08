@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// This rule will validate that the calculated merkle tree matches the merkle root in the header.
     /// </summary>
     /// <remarks>
-    /// Transactions in a block are hashed together using SHA256 in to a merkel tree,
+    /// Transactions in a block are hashed together using SHA256 in to a merkle tree,
     /// the root of that tree is included in the block header.
     /// </remarks>
     /// <remarks>
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadMerkleRoot">The block merkle root is different from the computed merkle root.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes of the merkle tree has a duplicate hash within the subtree.</exception>
         public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
