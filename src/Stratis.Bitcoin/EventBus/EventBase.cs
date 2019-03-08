@@ -5,13 +5,19 @@ using System.Text;
 namespace Stratis.Bitcoin.EventBus
 {
     /// <summary>
-    /// Basic implementation of <see cref="IEvent"/>.
+    /// Basic abstract implementation of <see cref="IEvent"/>.
     /// </summary>
     /// <seealso cref="Stratis.Bitcoin.EventBus.IEvent" />
-    public class EventBase : IEvent
+    public abstract class EventBase : IEvent
     {
         /// <inheritdoc />
-        public Guid CorrelationId { get; internal set; }
+        public Guid CorrelationId { get; }
+
+        public EventBase()
+        {
+            // Assigns an unique id to the event.
+            this.CorrelationId = Guid.NewGuid();
+        }
 
         public override string ToString()
         {
