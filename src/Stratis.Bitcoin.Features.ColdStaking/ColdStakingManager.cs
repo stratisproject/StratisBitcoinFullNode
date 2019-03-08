@@ -469,11 +469,10 @@ namespace Stratis.Bitcoin.Features.ColdStaking
                 changeOutput.ScriptPubKey = mapOutPointToUnspentOutput[largestInput.PrevOut].Transaction.ScriptPubKey;
             }
 
-            // Add keys for signing inputs.
-            foreach (TxIn input in transaction.Inputs)
+            // Add keys for signing inputs. This takes time so only add keys for distinct addresses.
+            foreach (HdAddress address in transaction.Inputs.Select(i => mapOutPointToUnspentOutput[i.PrevOut].Address).Distinct())
             {
-                UnspentOutputReference unspent = mapOutPointToUnspentOutput[input.PrevOut];
-                context.TransactionBuilder.AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, unspent.Address));
+                context.TransactionBuilder.AddKeys(wallet.GetExtendedPrivateKeyForAddress(walletPassword, address));
             }
 
             // Sign the transaction.
