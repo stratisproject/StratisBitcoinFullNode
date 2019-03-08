@@ -15,6 +15,7 @@ using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
+using Stratis.Bitcoin.Features.Consensus.Rules;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Fee;
 using Stratis.Bitcoin.Features.Miner;
@@ -207,26 +208,25 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 InitializeSmartContractComponents(callingMethod);
 
-                this.consensusRules = new SmartContractPowConsensusRuleEngine(
-                    this.callDataSerializer,
-                    this.chain,
-                    new Checkpoints(),
-                    consensusSettings,
-                    DateTimeProvider.Default,
-                    this.ExecutorFactory,
-                    this.loggerFactory,
-                    this.network,
-                    nodeDeployments,
-                    this.StateRoot,
-                    new PersistentReceiptRepository(new DataFolder(this.Folder)),
-                    senderRetriever,
-                    this.cachedCoinView,
-                    chainState,
-                    new InvalidBlockHashStore(DateTimeProvider.Default),
-                    new NodeStats(new DateTimeProvider()))
+                var receiptRepository = new PersistentReceiptRepository(new DataFolder(this.Folder));
+
+                this.consensusRules = new PowConsensusRuleEngine(
+                        this.network,
+                        this.loggerFactory,
+                        DateTimeProvider.Default,
+                        this.chain,
+                        nodeDeployments,
+                        consensusSettings,
+                        new Checkpoints(),
+                        this.cachedCoinView,
+                        chainState,
+                        new InvalidBlockHashStore(DateTimeProvider.Default),
+                        new NodeStats(new DateTimeProvider()))
                     .Register();
 
-                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: new SmartContractPowRuleRegistration(this.network), consensusRules: this.consensusRules);
+                var ruleRegistration = new SmartContractPowRuleRegistration(this.network, this.StateRoot,
+                    this.ExecutorFactory, this.callDataSerializer, senderRetriever, receiptRepository, this.cachedCoinView);
+                this.consensusManager = ConsensusManagerHelper.CreateConsensusManager(this.network, chainState: chainState, inMemoryCoinView: inMemoryCoinView, chain: this.chain, ruleRegistration: ruleRegistration, consensusRules: this.consensusRules);
 
                 await this.consensusManager.InitializeAsync(chainState.BlockStoreTip);
 

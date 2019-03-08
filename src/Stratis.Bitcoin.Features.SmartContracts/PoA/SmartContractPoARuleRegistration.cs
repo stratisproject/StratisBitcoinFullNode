@@ -2,13 +2,16 @@
 using NBitcoin;
 using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
+using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
 using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.Receipts;
+using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
@@ -16,10 +19,28 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
     public class SmartContractPoARuleRegistration : IRuleRegistration
     {
         private readonly Network network;
+        private readonly IStateRepositoryRoot stateRepositoryRoot;
+        private readonly IContractExecutorFactory executorFactory;
+        private readonly ICallDataSerializer callDataSerializer;
+        private readonly ISenderRetriever senderRetriever;
+        private readonly IReceiptRepository receiptRepository;
+        private readonly ICoinView coinView;
 
-        public SmartContractPoARuleRegistration(Network network)
+        public SmartContractPoARuleRegistration(Network network,
+            IStateRepositoryRoot stateRepositoryRoot,
+            IContractExecutorFactory executorFactory,
+            ICallDataSerializer callDataSerializer,
+            ISenderRetriever senderRetriever,
+            IReceiptRepository receiptRepository,
+            ICoinView coinView)
         {
             this.network = network;
+            this.stateRepositoryRoot = stateRepositoryRoot;
+            this.executorFactory = executorFactory;
+            this.callDataSerializer = callDataSerializer;
+            this.senderRetriever = senderRetriever;
+            this.receiptRepository = receiptRepository;
+            this.coinView = coinView;
         }
 
         public void RegisterRules(IConsensus consensus)
@@ -51,8 +72,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 new EnsureCoinbaseRule(),
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
-                new AllowedScriptTypeRule(),
-                new ContractTransactionValidationRule(new CallDataSerializer(new ContractPrimitiveSerializer(this.network)), new List<IContractTransactionValidationLogic>
+                new AllowedScriptTypeRule(this.network),
+                new ContractTransactionValidationRule(this.callDataSerializer, new List<IContractTransactionValidationLogic>
                 {
                     new SmartContractFormatLogic()
                 })
@@ -67,9 +88,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 new TransactionDuplicationActivationRule(), // implements BIP30
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
-                new CanGetSenderRule(new SenderRetriever()),
-                new P2PKHNotContractRule(),
-                new SmartContractPoACoinviewRule(),
+                new CanGetSenderRule(this.senderRetriever),
+                new P2PKHNotContractRule(this.stateRepositoryRoot),
+                new SmartContractPoACoinviewRule(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
                 new SaveCoinviewRule()
             };
         }
