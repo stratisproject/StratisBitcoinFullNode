@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -17,6 +16,7 @@ using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Api;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -39,9 +39,6 @@ using Stratis.Features.FederatedPeg.RestClients;
 using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
-
-[assembly: InternalsVisibleTo("Stratis.FederatedPeg.Features.FederationGateway.Tests")]
-[assembly: InternalsVisibleTo("Stratis.FederatedPeg.IntegrationTests")]
 
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
@@ -335,7 +332,6 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<DBreezeCoinView>();
                     services.AddSingleton<ICoinView, CachedCoinView>();
                     services.AddSingleton<ConsensusController>();
-                    services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
                     services.AddSingleton<IChainState, ChainState>();
                     services.AddSingleton<ConsensusQuery>()
                         .AddSingleton<INetworkDifficulty, ConsensusQuery>(provider => provider.GetService<ConsensusQuery>())
@@ -344,7 +340,16 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<VotingManager>();
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
-                    new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                    // Consensus Rules
+                    services.AddSingleton<PoAConsensusRuleEngine>();
+                    services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
+                    services.AddSingleton<IConsensusRuleEngine>(f =>
+                    {
+                        var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
+                        var ruleRegistration = f.GetService<IRuleRegistration>();
+
+                        return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                    });
                 });
             });
 
