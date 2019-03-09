@@ -114,7 +114,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 });
 
-                ParallelLoopResult loopResult = await checkInputsInParallel;
+                ParallelLoopResult loopResult = await checkInputsInParallel.ConfigureAwait(false);
 
                 if (!loopResult.IsCompleted)
                 {
