@@ -1500,7 +1500,7 @@ namespace Stratis.Bitcoin.Features.Wallet
         /// <inheritdoc />
         public ICollection<uint256> GetFirstWalletBlockLocator()
         {
-            return this.Wallets.FirstOrDefault()?.BlockLocator ?? new[] { this.network.GenesisHash };
+            return this.Wallets.First().BlockLocator;
         }
 
         /// <inheritdoc />
