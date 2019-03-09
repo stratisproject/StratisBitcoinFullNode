@@ -164,6 +164,8 @@ Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.LocalSmartContracts
 EndProject
 Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.LocalSmartContracts.NodeD", "Stratis.LocalSmartContracts.NodeD\Stratis.LocalSmartContracts.NodeD.csproj", "{BC4BB37E-9569-4876-8514-C15F774262F9}"
 EndProject
+Project("{FAE04EC0-301F-11D3-BF4B-00C04F79EFBC}") = "Stratis.SmartContracts.Examples.HelloWorld", "Stratis.SmartContracts.Examples.HelloWorld\Stratis.SmartContracts.Examples.HelloWorld.csproj", "{3CB3FCDC-485F-4A1F-9F2D-6D707D7A8DDA}"
+EndProject
 Global
 	GlobalSection(SolutionConfigurationPlatforms) = preSolution
 		Debug|Any CPU = Debug|Any CPU
@@ -426,6 +428,10 @@ Global
 		{BC4BB37E-9569-4876-8514-C15F774262F9}.Debug|Any CPU.Build.0 = Debug|Any CPU
 		{BC4BB37E-9569-4876-8514-C15F774262F9}.Release|Any CPU.ActiveCfg = Release|Any CPU
 		{BC4BB37E-9569-4876-8514-C15F774262F9}.Release|Any CPU.Build.0 = Release|Any CPU
+		{3CB3FCDC-485F-4A1F-9F2D-6D707D7A8DDA}.Debug|Any CPU.ActiveCfg = Debug|Any CPU
+		{3CB3FCDC-485F-4A1F-9F2D-6D707D7A8DDA}.Debug|Any CPU.Build.0 = Debug|Any CPU
+		{3CB3FCDC-485F-4A1F-9F2D-6D707D7A8DDA}.Release|Any CPU.ActiveCfg = Release|Any CPU
+		{3CB3FCDC-485F-4A1F-9F2D-6D707D7A8DDA}.Release|Any CPU.Build.0 = Release|Any CPU
 	EndGlobalSection
 	GlobalSection(SolutionProperties) = preSolution
 		HideSolutionNode = FALSE
