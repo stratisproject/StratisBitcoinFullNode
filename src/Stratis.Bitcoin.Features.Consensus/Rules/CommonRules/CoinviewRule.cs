@@ -102,7 +102,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 this.CheckBlockReward(context, fees, index.Height, block);
 
                 // Start the Parallel loop on a thread so its result can be awaited rather than blocking
-                var checkInputsInParallel = Task.Run(() =>
+                Task<ParallelLoopResult> checkInputsInParallel = Task.Run(() =>
                 {
                     return Parallel.ForEach(checkInputs, (checkInput, state) =>
                     {
