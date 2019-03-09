@@ -92,7 +92,7 @@ namespace Stratis.Bitcoin.Features.PoA
             IWalletManager walletManager,
             INodeStats nodeStats,
             VotingManager votingManager,
-            NodeSettings nodeSettings)
+            PoAMinerSettings poAMinerSettings)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -106,11 +106,11 @@ namespace Stratis.Bitcoin.Features.PoA
             this.integrityValidator = integrityValidator;
             this.walletManager = walletManager;
             this.votingManager = votingManager;
+            this.settings = poAMinerSettings;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
             this.votingDataEncoder = new VotingDataEncoder(loggerFactory);
-            this.settings = new PoAMinerSettings(nodeSettings);
 
             nodeStats.RegisterStats(this.AddComponentStats, StatsType.Component);
         }
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 try
                 {
-                    // Don't mine in IBD in case we are connected to any node.
+                    // Don't mine in IBD in case we are connected to any node unless bootstrapping mode is enabled.
                     if (((this.ibdState.IsInitialBlockDownload() || !this.connectionManager.ConnectedPeers.Any()) && !this.settings.BootstrappingMode)
                         || !this.federationManager.IsFederationMember)
                     {
