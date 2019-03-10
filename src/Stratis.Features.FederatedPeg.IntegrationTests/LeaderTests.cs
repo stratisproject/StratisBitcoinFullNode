@@ -1,12 +1,11 @@
 ﻿using FluentAssertions;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.FederatedPeg.Features.FederationGateway;
-using Stratis.FederatedPeg.Features.FederationGateway.Interfaces;
-using Stratis.FederatedPeg.IntegrationTests.Utils;
+using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
+using Stratis.Features.FederatedPeg.Interfaces;
 using Xunit;
 
-namespace Stratis.FederatedPeg.IntegrationTests
+namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
     public class LeaderTest
     {

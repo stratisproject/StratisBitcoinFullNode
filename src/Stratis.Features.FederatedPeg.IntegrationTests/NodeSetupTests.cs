@@ -2,14 +2,15 @@ using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.IntegrationTests.Common;
-using Stratis.FederatedPeg.IntegrationTests.Utils;
+using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Xunit;
 
-namespace Stratis.FederatedPeg.IntegrationTests
+namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
     public class NodeSetupTests
     {
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void StartBothChainsWithWallets()
         {
             using (var context = new SidechainTestContext())
@@ -21,7 +22,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void FundMainChain()
         {
             using (var context = new SidechainTestContext())
@@ -36,7 +37,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public void FundSideChain()
         {
             using (var context = new SidechainTestContext())
@@ -58,7 +59,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public async Task MainChain_To_SideChain_Transfer_And_Back()
         {
             using (var context = new SidechainTestContext())

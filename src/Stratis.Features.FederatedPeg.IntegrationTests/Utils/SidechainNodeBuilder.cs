@@ -6,7 +6,7 @@ using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 
-namespace Stratis.FederatedPeg.IntegrationTests.Utils
+namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     public class SidechainNodeBuilder : NodeBuilder
     {

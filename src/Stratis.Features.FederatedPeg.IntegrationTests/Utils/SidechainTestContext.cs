@@ -10,16 +10,14 @@ using Flurl;
 using Flurl.Http;
 using NBitcoin;
 using Newtonsoft.Json;
-using Stratis.Bitcoin.Features.Wallet;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
-using Stratis.FederatedPeg.Features.FederationGateway;
-using Stratis.FederatedPeg.Features.FederationGateway.Models;
+using Stratis.Features.FederatedPeg.Models;
 using Stratis.Sidechains.Networks;
 
-namespace Stratis.FederatedPeg.IntegrationTests.Utils
+namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     public class SidechainTestContext : IDisposable
     {

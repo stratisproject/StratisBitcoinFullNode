@@ -1,10 +1,8 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
-using System.Text;
 using NBitcoin;
 
-namespace Stratis.FederatedPeg.IntegrationTests.Utils
+namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     public static class FederatedPegTestHelper
     {

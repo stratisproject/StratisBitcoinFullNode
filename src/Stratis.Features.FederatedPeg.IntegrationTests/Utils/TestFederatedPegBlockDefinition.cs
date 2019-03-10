@@ -1,6 +1,5 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
@@ -14,7 +13,7 @@ using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
-namespace Stratis.FederatedPeg.Features.FederationGateway
+namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     /// <summary>
     /// Exact same as FederatedPegBlockDefinition, just gives the premine to a wallet for convenience.

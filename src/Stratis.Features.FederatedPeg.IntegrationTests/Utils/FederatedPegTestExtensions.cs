@@ -1,22 +1,18 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.IO;
 using System.Linq;
-using System.Text;
 using Microsoft.Extensions.DependencyInjection;
 using NBitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Builder.Feature;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
-using Stratis.FederatedPeg.Features.FederationGateway;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core.State;
 
-namespace Stratis.FederatedPeg.IntegrationTests.Utils
+namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     public static class FederatedPegTestExtensions
     {

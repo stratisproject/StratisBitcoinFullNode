@@ -1,8 +1,6 @@
-﻿using System;
-using System.Collections.Generic;
+﻿using System.Collections.Generic;
 using System.Linq;
 using System.Net.Http;
-using System.Text;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using Flurl;
@@ -20,14 +18,14 @@ using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.Networks;
 using Stratis.Bitcoin.Utilities.JsonErrors;
-using Stratis.FederatedPeg.Features.FederationGateway;
-using Stratis.FederatedPeg.IntegrationTests.Utils;
+using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
+using Stratis.Features.FederatedPeg.Tests.Utils;
 using Stratis.Sidechains.Networks;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.Core;
 using Xunit;
 
-namespace Stratis.FederatedPeg.IntegrationTests
+namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
     public class ContractExecutionTests
     {
@@ -38,7 +36,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
 
         private (Script payToMultiSig, BitcoinAddress sidechainMultisigAddress, BitcoinAddress mainchainMultisigAddress) scriptAndAddresses;
 
-        [Fact]
+        [Fact(Skip = TestingValues.SkipTests)]
         public async Task BasicTransferTest()
         {
             using (SidechainNodeBuilder nodeBuilder = SidechainNodeBuilder.CreateSidechainNodeBuilder(this))
@@ -96,7 +94,7 @@ namespace Stratis.FederatedPeg.IntegrationTests
             double amount,
             string sender,
             string[] parameters = null,
-            ulong gasLimit = SmartContractFormatRule.GasLimitMaximum / 2, // half of maximum
+            ulong gasLimit = SmartContractFormatLogic.GasLimitMaximum / 2, // half of maximum
             ulong gasPrice = SmartContractMempoolValidator.MinGasPrice,
             double feeAmount = 0.01)
         {
