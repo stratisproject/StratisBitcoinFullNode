@@ -368,9 +368,13 @@ namespace Stratis.Bitcoin.IntegrationTests
             {
                 var noValidationRulesNetwork = new BitcoinRegTestNoValidationRules();
 
-                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
+                var minerA = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
                 var minerB = builder.CreateStratisPowNode(this.powNetwork).WithDummyWallet().Start();
                 var minerC = builder.CreateStratisPowNode(noValidationRulesNetwork).NoValidation().WithDummyWallet().Start();
+
+                // Mine 10 blocks with minerA. We cannot use a premade chain as it adversely affects the max tip age calculation, causing sporadic sync errors.
+                TestHelper.MineBlocks(minerA, 10);
+                TestHelper.WaitLoop(() => minerA.FullNode.ConsensusManager().Tip.Height == 10);
 
                 // MinerB and MinerC syncs with MinerA
                 TestHelper.ConnectAndSync(minerA, minerB, minerC);
