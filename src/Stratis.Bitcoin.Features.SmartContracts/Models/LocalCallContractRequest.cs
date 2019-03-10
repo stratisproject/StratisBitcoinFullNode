@@ -39,17 +39,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public ulong GasPrice { get; set; }
 
         /// <summary>
-        /// The limit of the gas charge in Satoshi. Although the gas expenditure is theoretical rather than actual,
-        /// this limit cannot be exceeded even when the method run locally.
+        /// The maximum amount of gas (in Satoshi) that can be spent executing this transaction.
+        /// Although the gas expenditure is theoretical rather than actual,
+        /// this limit cannot be exceeded even when the method is run locally.
         /// </summary>
         [Range(SmartContractFormatLogic.GasLimitCallMinimum, SmartContractFormatLogic.GasLimitMaximum)]
         public ulong GasLimit { get; set; }
 
         /// <summary>
         /// A wallet address containing the funds to cover transaction fees, gas, and any funds specified in the
-        /// Amount field. It is recommended that you generate (using /api/SmartContractWallet/SC-account-address) or use an existing
-        /// smart contract account address to provide the funds.
-        /// Note that because the method call is local no funds are spent. However, the concept of the sender is still valid and may need to be checked.
+        /// Amount field.
+        /// Note that because the method call is local no funds are spent. However, the concept of the sender address
+        /// is still valid and may need to be checked.
         /// For example, some methods, such as a withdrawal method on an escrow smart contract, should only be executed
         /// by the deployer, and in this case, it is the Sender address that identifies the deployer.
         /// </summary>
@@ -57,8 +58,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string Sender { get; set; }
 
         /// <summary>
-        /// An array of strings containing the parameters to pass to the method when it is called. More information the
-        /// format of a parameters string is available
+        /// An array of encoded strings containing the parameters (and their type) to pass to the smart contract
+        /// method when it is called. More information on the
+        /// format of a parameter string is available
         /// <a target="_blank" href="https://academy.stratisplatform.com/SmartContracts/working-with-contracts.html#parameter-serialization">here</a>.
         /// </summary> 
         public string[] Parameters { get; set; }
