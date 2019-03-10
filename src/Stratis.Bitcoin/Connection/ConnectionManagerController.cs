@@ -69,7 +69,7 @@ namespace Stratis.Bitcoin.Connection
         /// <returns>Json formatted <c>True</c> indicating success. Returns <see cref="IActionResult"/> formatted exception if fails.</returns>
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <exception cref="ArgumentException">Thrown if either command not supported/empty or if endpoint is invalid/empty.</exception>
-        [Route("api/[controller]/send-command-to-node")]
+        [Route("api/[controller]/addnode")]
         [HttpGet]
         public IActionResult AddNodeAPI([FromQuery] string endpoint, string command)
         {
@@ -144,7 +144,7 @@ namespace Stratis.Bitcoin.Connection
         /// <see cref="https://github.com/bitcoin/bitcoin/blob/0.14/src/rpc/net.cpp"/>
         /// <remarks>This is an API implementation of an RPC call.</remarks>
         /// <returns>Json formatted <see cref="List{T}<see cref="PeerNodeModel"/>"/> of connected nodes. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
-        [Route("api/[controller]/peer-information")]
+        [Route("api/[controller]/getpeerinfo")]
         [HttpGet]
         public IActionResult GetPeerInfoAPI()
         {

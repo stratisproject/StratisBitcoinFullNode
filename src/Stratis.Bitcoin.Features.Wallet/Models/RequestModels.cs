@@ -308,7 +308,10 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         public bool AllowUnconfirmed { get; set; }
 
         /// <summary>
-        /// A flag that specifies whether to shuffle the transaction outputs for increased privacy.
+        /// A flag that specifies whether to shuffle the transaction outputs for increased privacy. Randomizing the
+        /// the order in which the outputs appear when the transaction is being built stops it being trivial to
+        /// determine whether a transaction output is payment or change. This helps defeat unsophisticated
+        /// chain analysis algorithms. 
         /// Defaults to true.
         /// </summary>         
         public bool? ShuffleOutputs { get; set; }

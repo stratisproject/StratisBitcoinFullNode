@@ -258,7 +258,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// </summary>
         /// <param name="request">An object containing the parameters used to recover a wallet using its extended public key.</param>
         /// <returns>A value of Ok if the wallet was successfully recovered.</returns>
-        [Route("recover-using-the-extended-public-key")]
+        [Route("recover-via-extpubkey")]
         [HttpPost]
         public IActionResult RecoverViaExtPubKey([FromBody]WalletExtPubRecoveryRequest request)
         {
@@ -582,7 +582,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the parameters used to retrieve the balance
         /// at a specific wallet address.</param>
         /// <returns>A JSON object containing the balance, fee, and an address for the balance.</returns>
-        [Route("address-balance")]
+        [Route("received-by-address")]
         [HttpGet]
         public IActionResult GetReceivedByAddress([FromQuery] ReceivedByAddressRequest request)
         {
@@ -619,7 +619,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// maximum spendable balance on an account.</param>
         /// <returns>A JSON object containing the maximum spendable balance for an account
         /// along with the fee required to spend it.</returns>
-        [Route("maximum-spendable-balance-for-an-account")]
+        [Route("maxbalance")]
         [HttpGet]
         public IActionResult GetMaximumSpendableBalance([FromQuery] WalletMaximumBalanceRequest request)
         {
@@ -699,7 +699,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the parameters used to estimate the fee 
         /// for a specific transaction.</param>
         /// <returns>The estimated fee for the transaction.</returns>
-        [Route("estimate-tx-fee")]
+        [Route("estimate-txfee")]
         [HttpGet]
         public IActionResult GetTransactionFeeEstimate([FromQuery]TxFeeEstimateRequest request)
         {
@@ -975,7 +975,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// <param name="request">An object containing the necessary parameters to retrieve an
         /// unused address for a wallet account.</param>
         /// <returns>A JSON object containing the last created and unused address (in Base58 format).</returns>
-        [Route("unused-address")]
+        [Route("unusedaddress")]
         [HttpGet]
         public IActionResult GetUnusedAddress([FromQuery]GetUnusedAddressModel request)
         {
@@ -1007,7 +1007,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// unused addresses for a wallet account.</param>
         /// <returns>A JSON object containing the required amount of unused addresses (in Base58 format).</returns>
         /// </summary>
-        [Route("unused-addresses")]
+        [Route("unusedaddresses")]
         [HttpGet]
         public IActionResult GetUnusedAddresses([FromQuery]GetUnusedAddressesModel request)
         {
@@ -1038,7 +1038,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// all addresses for a wallet account.</param>
         /// <returns>A JSON object containing all addresses for a wallet account (in Base58 format).</returns>
         /// </summary>
-        [Route("all-addresses")]
+        [Route("addresses")]
         [HttpGet]
         public IActionResult GetAllAddresses([FromQuery]GetAllAddressesModel request)
         {
@@ -1162,7 +1162,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// the extended public key for a wallet account.</param>
         /// <returns>A JSON object containing the extended public key for a wallet account.</returns>
         /// </summary>
-        [Route("account-extended-public-key")]
+        [Route("extpubkey")]
         [HttpGet]
         public IActionResult GetExtPubKey([FromQuery]GetExtPubKeyModel request)
         {
@@ -1190,13 +1190,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// Requests the node resyncs from a block specified by its block hash.
         /// Internally, the specified block is taken as the new wallet tip
         /// and all blocks after it are resynced.
-        /// This is for demo and testing use only. ??Confirm??
         /// </summary>
         /// <param name="request">An object containing the necessary parameters
         /// to request a resync.</param>
         /// <returns>A value of Ok if the resync was successful.</returns>
         [HttpPost]
-        [Route("resync")]
+        [Route("sync")]
         public IActionResult Sync([FromBody] HashModel model)
         {
             if (!this.ModelState.IsValid)
@@ -1224,7 +1223,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// to request a resync.</param>
         /// <returns>A value of Ok if the resync was successful.</returns>
         [HttpPost]
-        [Route("resync-from-date")]
+        [Route("sync-from-date")]
         public IActionResult SyncFromDate([FromBody] WalletSyncFromDateRequest request)
         {
             if (!this.ModelState.IsValid)

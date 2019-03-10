@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <returns>A <see cref="StatusModel"/> with information about the node.</returns>
         [HttpGet]
-        [Route("node-status")]
+        [Route("status")]
         public IActionResult Status()
         {
             // Output has been merged with RPC's GetInfo() since they provided similar functionality.
@@ -172,7 +172,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentException">Thrown if hash is empty.</exception>
         /// <exception cref="ArgumentNullException">Thrown if logger is not provided.</exception>
         /// <remarks>Binary serialization is not supported with this method.</remarks>
-        [Route("block-header")]
+        [Route("getblockheader")]
         [HttpGet]
         public IActionResult GetBlockHeader([FromQuery] string hash, bool isJsonFormat = true)
         {
@@ -213,7 +213,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <exception cref="ArgumentNullException">Thrown if fullNode, network, or chain are not available.</exception>
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid<see cref="uint256"/>.</exception>
         /// <remarks>Requires txindex=1, otherwise only txes that spend or create UTXOs for a wallet can be returned.</remarks>
-        [Route("get-raw-TX")]
+        [Route("getrawtransaction")]
         [HttpGet]
         public async Task<IActionResult> GetRawTransactionAsync([FromQuery] string trxid, bool verbose = false)
         {
@@ -262,7 +262,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <param name="rawHex">The raw hexadecimal form of the transaction.</param>
         /// <returns>The JSON representation of the transaction.</returns>
         [HttpPost]
-        [Route("decode-raw-TX")]
+        [Route("decoderawtransaction")]
         public IActionResult DecodeRawTransaction([FromBody] DecodeRawTransactionModel request)
         {
             try
@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <returns>Json formatted <see cref="ValidatedAddress"/> containing a boolean indicating address validity. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <exception cref="ArgumentException">Thrown if address provided is empty.</exception>
         /// <exception cref="ArgumentNullException">Thrown if network is not provided.</exception>
-        [Route("validate-address")]
+        [Route("validateaddress")]
         [HttpGet]
         public IActionResult ValidateAddress([FromQuery] string address)
         {
@@ -341,7 +341,7 @@ namespace Stratis.Bitcoin.Controllers
         /// <returns>Json formatted <see cref="GetTxOutModel"/>. <c>null</c> if no unspent outputs given parameters. Returns <see cref="IActionResult"/> formatted error if fails.</returns>
         /// <exception cref="ArgumentNullException">Thrown if network or chain not provided.</exception>
         /// <exception cref="ArgumentException">Thrown if trxid is empty or not a valid <see cref="uint256"/></exception>
-        [Route("get-unspent-outputs-for-a-TX-vout")]
+        [Route("gettxout")]
         [HttpGet]
         public async Task<IActionResult> GetTxOutAsync([FromQuery] string trxid, uint vout = 0, bool includeMemPool = true)
         {

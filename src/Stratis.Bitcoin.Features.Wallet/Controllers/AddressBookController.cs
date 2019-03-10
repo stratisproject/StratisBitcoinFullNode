@@ -104,7 +104,9 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// For example, specifying a value of 40 for skip and a value of 20 for take
         /// gets entries 21 to 40.
         /// If neither skip or take arguments are provided, then the entire address
-        /// book is retrieved.  
+        /// book is retrieved.
+        /// An address book can be accessed from a wallet, but it is a standalone feature,
+        /// which is not attached to any wallet.
         /// </summary>
         /// <param name="skip">A value representing how many entries to skip before retrieving the first entry.</param>
         /// <param name="take">A value representing how many entries to retrieve.</param>

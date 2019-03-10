@@ -5,7 +5,7 @@ namespace Stratis.Bitcoin.Controllers
     /// <summary>
     /// Controller providing HTML Dashboard
     /// </summary>
-    [Route("[controller]")]
+    [Route("api/[controller]")]
     public class DashboardController : Controller
     {
         private readonly IFullNode fullNode;
@@ -20,7 +20,7 @@ namespace Stratis.Bitcoin.Controllers
         /// </summary>
         /// <returns>text/html content</returns>
         [HttpGet]
-        [Route("last-log-output-for-node")]
+        [Route("Stats")]
         public IActionResult Stats()
         {
             string content = (this.fullNode as FullNode).LastLogOutput;
