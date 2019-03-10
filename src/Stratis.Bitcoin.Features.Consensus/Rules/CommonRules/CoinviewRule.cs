@@ -112,7 +112,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                 {
                     return Parallel.ForEach(inputsToCheck, (input, state) =>
                     {
-                        if (!state.ShouldExitCurrentIteration && !this.CheckInput(input.tx, input.inputIndexCopy, input.txOut, input.txData, input.input, input.flags))
+                        if (state.ShouldExitCurrentIteration)
+                            return;
+
+                        if (!this.CheckInput(input.tx, input.inputIndexCopy, input.txOut, input.txData, input.input, input.flags))
                         {
                             state.Stop();
                         }
