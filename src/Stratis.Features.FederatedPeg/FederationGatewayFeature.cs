@@ -109,7 +109,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // add our payload
+            // add our payload 
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
 
