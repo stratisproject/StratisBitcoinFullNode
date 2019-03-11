@@ -1,4 +1,5 @@
-﻿using System.Threading.Tasks;
+﻿using System;
+using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Microsoft.Extensions.Logging;
@@ -62,12 +63,24 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         }
     }
 
+    public class SmartContractOptions
+    {
+        public SmartContractOptions(IServiceCollection services, Network network)
+        {
+            this.Services = services;
+            this.Network = network;
+        }
+
+        public IServiceCollection Services { get; }
+        public Network Network { get; }
+    }
+
     public static partial class IFullNodeBuilderExtensions
     {
         /// <summary>
         /// Adds the smart contract feature to the node.
         /// </summary>
-        public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder)
+        public static IFullNodeBuilder AddSmartContracts(this IFullNodeBuilder fullNodeBuilder, Action<SmartContractOptions> options = null)
         {
             LoggingConfiguration.RegisterFeatureNamespace<SmartContractFeature>("smartcontracts");
 
@@ -113,6 +126,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                         // with SmartContractScriptAddressReader, which depends on the ScriptAddressReader concrete type.
                         services.AddSingleton<ScriptAddressReader>();
                         services.Replace(new ServiceDescriptor(typeof(IScriptAddressReader), typeof(SmartContractScriptAddressReader), ServiceLifetime.Singleton));
+
+                        // After setting up, invoke any additional options which can replace services as required.
+                        options?.Invoke(new SmartContractOptions(services, fullNodeBuilder.Network));
                     });
             });
 
