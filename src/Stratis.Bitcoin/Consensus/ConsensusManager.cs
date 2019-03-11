@@ -214,7 +214,7 @@ namespace Stratis.Bitcoin.Consensus
             // We should consider creating a consensus store class that will internally contain
             // coinview and it will abstract the methods `RewindAsync()` `GetBlockHashAsync()`
 
-            uint256 consensusTipHash = await this.ConsensusRules.GetBlockHashAsync().ConfigureAwait(false);
+            uint256 consensusTipHash = this.ConsensusRules.GetBlockHash();
 
             ChainedHeader pendingTip;
 

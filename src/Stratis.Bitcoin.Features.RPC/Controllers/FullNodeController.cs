@@ -153,7 +153,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "No such transaction found in the provided block.");
                 }
             }
-            
+
             if (verbose != 0)
             {
                 ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid);
@@ -201,11 +201,11 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             UnspentOutputs unspentOutputs = null;
             if (includeMemPool)
             {
-                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                unspentOutputs = this.pooledGetUnspentTransaction != null ? await this.pooledGetUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
             }
             else
             {
-                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid) : null;
+                unspentOutputs = this.getUnspentTransaction != null ? await this.getUnspentTransaction.GetUnspentTransactionAsync(trxid).ConfigureAwait(false) : null;
             }
 
             if (unspentOutputs == null)
