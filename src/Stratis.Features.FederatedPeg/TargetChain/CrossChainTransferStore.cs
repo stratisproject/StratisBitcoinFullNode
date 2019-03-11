@@ -65,6 +65,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private readonly CancellationTokenSource cancellation;
         private readonly IFederationWalletManager federationWalletManager;
         private readonly IWithdrawalTransactionBuilder withdrawalTransactionBuilder;
+        private readonly IFederationGatewaySettings settings;
 
         /// <summary>Provider of time functions.</summary>
         private readonly object lockObj;
@@ -97,6 +98,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             this.TipHashAndHeight = this.chain.GetBlock(0);
             this.NextMatureDepositHeight = 1;
             this.cancellation = new CancellationTokenSource();
+            this.settings = settings;
 
             // Future-proof store name.
             string depositStoreName = "federatedTransfers" + settings.MultiSigAddress.ToString();
@@ -895,8 +897,12 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         private int LoadNextMatureHeight(DBreeze.Transactions.Transaction dbreezeTransaction)
         {
             Row<byte[], int> row = dbreezeTransaction.Select<byte[], int>(commonTableName, NextMatureTipKey);
+
             if (row.Exists)
                 this.NextMatureDepositHeight = row.Value;
+
+            // We only want to sync deposits from a certain block number if the main chain is very long.
+            this.NextMatureDepositHeight = Math.Max(this.settings.CounterChainDepositStartBlock, this.NextMatureDepositHeight);
 
             return this.NextMatureDepositHeight;
         }

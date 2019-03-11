@@ -55,6 +55,11 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         Money TransactionFee { get; }
 
         /// <summary>
+        /// The block number on the other chain to start retrieving deposits from.
+        /// </summary>
+        int CounterChainDepositStartBlock { get; }
+
+        /// <summary>
         /// Address for the MultiSig script.
         /// </summary>
         BitcoinAddress MultiSigAddress { get; }

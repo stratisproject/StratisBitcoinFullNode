@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.Tests.Utils
         /// <summary>
         /// Utility to run tests when developing. Set to null to run sidechains tests.
         /// </summary>
-        public const string SkipTests = "Currently skipping all sidechains tests until they are stable. Make TestingValues.SkipTests null to prevent skipping.";
+        public const string SkipTests = null; //"Currently skipping all sidechains tests until they are stable. Make TestingValues.SkipTests null to prevent skipping.";
 
         private static readonly Random Random = new Random(DateTime.Now.Millisecond);
 

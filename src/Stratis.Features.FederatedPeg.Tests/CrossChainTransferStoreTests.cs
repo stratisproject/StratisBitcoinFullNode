@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Linq;
 using System.Net;
@@ -467,6 +468,12 @@ namespace Stratis.Features.FederatedPeg.Tests
                 peer.DidNotReceive().SendMessageAsync(Arg.Is<RequestPartialTransactionPayload>(o =>
                     o.DepositId == 1 && o.PartialTransaction.GetHash() == transactions[1].GetHash())).GetAwaiter().GetResult();
             }
+        }
+
+        [Fact]
+        public void StartsSyncingFromTimeSideChainStarted()
+        {
+            throw new NotImplementedException();
         }
 
         [Fact(Skip = "Requires main chain user to be running.")]
