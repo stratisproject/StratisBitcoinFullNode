@@ -134,7 +134,7 @@ namespace Stratis.Features.FederatedPeg
             // Synchronises the wallet and the transfer store.
             this.crossChainTransferStore.Start();
 
-            // Query our database for partially-signed transactions and send them around to be signed.
+            // Query our database for partially-signed transactions and send them around to be signed every N seconds.
             this.partialTransactionRequester.Start();
 
             // Connect the node to the other federation members.
