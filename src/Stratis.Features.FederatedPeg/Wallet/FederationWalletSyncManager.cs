@@ -54,7 +54,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
         }
 
         /// <inheritdoc />
-        public void Start()
+        public void Initialize()
         {
             // When a node is pruned it impossible to catch up
             // if the wallet falls behind the block puller.

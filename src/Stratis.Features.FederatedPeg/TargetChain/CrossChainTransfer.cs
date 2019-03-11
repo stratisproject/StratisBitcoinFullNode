@@ -146,7 +146,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 this.blockHeight = blockHeight;
             }
 
-            Guard.Assert(IsValid());
+            Guard.Assert(this.IsValid());
         }
 
         /// <summary>

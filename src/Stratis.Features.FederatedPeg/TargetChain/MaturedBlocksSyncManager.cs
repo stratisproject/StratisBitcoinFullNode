@@ -16,7 +16,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
     public interface IMaturedBlocksSyncManager : IDisposable
     {
         /// <summary>Starts requesting blocks from another chain.</summary>
-        void Initialize();
+        void Start();
     }
 
     /// <inheritdoc cref="IMaturedBlocksSyncManager"/>
@@ -52,9 +52,9 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         }
 
         /// <inheritdoc />
-        public void Initialize()
+        public void Start()
         {
-            this.blockRequestingTask = RequestMaturedBlocksContinouslyAsync();
+            this.blockRequestingTask = this.RequestMaturedBlocksContinouslyAsync();
         }
 
         /// <summary>Continuously requests matured blocks from another chain.</summary>
