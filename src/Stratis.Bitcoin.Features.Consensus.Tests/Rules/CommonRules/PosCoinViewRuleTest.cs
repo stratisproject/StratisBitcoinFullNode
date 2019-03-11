@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
 
             // Mock the coinviews "FetchCoinsAsync" method. We will use the "unspentOutputs" dictionary to track spendable outputs.
             this.coinView.Setup(d => d.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns((uint256[] txIds, CancellationToken cancel) => Task.Run(() => {
+                .Returns((uint256[] txIds, CancellationToken cancel) => {
 
                     var result = new UnspentOutputs[txIds.Length];
 
@@ -68,12 +68,12 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.CommonRules
                         result[i] = unspentOutputs.TryGetValue(txIds[i], out UnspentOutputs unspent) ? unspent : null;
 
                     return new FetchCoinsResponse(result, this.concurrentChain.Tip.HashBlock);
-                }));
+                });
 
             // Mock the coinviews "GetTipHashAsync" method.
-            this.coinView.Setup(d => d.GetTipHash(It.IsAny<CancellationToken>())).Returns(() => Task.Run(() => {
+            this.coinView.Setup(d => d.GetTipHash(It.IsAny<CancellationToken>())).Returns(() => {
                 return this.concurrentChain.Tip.HashBlock;
-            }));
+            });
 
             // Since we are mocking the stake validator ensure that GetNextTargetRequired returns something sensible. Otherwise we get the "bad-diffbits" error.
             this.stakeValidator.Setup(s => s.GetNextTargetRequired(It.IsAny<IStakeChain>(), It.IsAny<ChainedHeader>(), It.IsAny<IConsensus>(), It.IsAny<bool>()))

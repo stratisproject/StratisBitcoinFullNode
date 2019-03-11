@@ -49,7 +49,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoS.Rules
 
             await base.RunAsync(context);
 
-            await this.stakeChain.Set(context.ValidationContext.ChainedHeaderToValidate, (context as PosRuleContext).BlockStake).ConfigureAwait(false);
+            this.stakeChain.Set(context.ValidationContext.ChainedHeaderToValidate, (context as PosRuleContext).BlockStake);
         }
 
         /// <inheritdoc/>

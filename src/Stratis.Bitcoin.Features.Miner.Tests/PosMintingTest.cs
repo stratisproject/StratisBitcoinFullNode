@@ -242,7 +242,7 @@ namespace Stratis.Bitcoin.Features.Miner.Tests
                 .NotBeEmpty("otherwise we are not sure the code actually includes them");
 
             this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
-                .Returns(Task.FromResult(fetchCoinsResponse));
+                .Returns(fetchCoinsResponse);
 
             this.consensusManager.Setup(c => c.Tip).Returns(this.chain.Tip);
             this.dateTimeProvider.Setup(c => c.GetAdjustedTimeAsUnixTimestamp())
