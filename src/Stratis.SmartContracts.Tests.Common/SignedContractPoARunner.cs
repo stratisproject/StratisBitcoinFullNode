@@ -35,8 +35,11 @@ namespace Stratis.SmartContracts.Tests.Common
                 .UseBlockStore()
                 .UseMempool()
                 .AddRPC()
-                .AddSmartContracts()
-                .UseSignedContractPoAConsensus()
+                .AddSmartContracts(options =>
+                {
+                    options.UseSignedContracts();
+                })
+                .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
                 .UseReflectionExecutor()
