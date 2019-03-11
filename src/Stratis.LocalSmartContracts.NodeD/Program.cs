@@ -22,7 +22,7 @@ class Program
     {
         try
         {
-            var nodeSettings = new NodeSettings(network: new LocalSmartContracts(), protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args)
+            var nodeSettings = new NodeSettings(network: new LocalSmartContracts(), protocolVersion: ProtocolVersion.PROVEN_HEADER_VERSION, args: args, agent: "LSC_Standard_Node")
             {
                 MinProtocolVersion = ProtocolVersion.ALT_PROTOCOL_VERSION
             };
