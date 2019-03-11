@@ -31,7 +31,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string Amount { get; set; }
 
         /// <summary>
-        /// The gas price in Satoshi to use. This is used to calculate the expected expenditure
+        /// The gas price to use. This is used to calculate the expected expenditure
         /// if the method is run by a miner mining a call transaction rather than
         /// locally.  
         /// </summary>
@@ -39,7 +39,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public ulong GasPrice { get; set; }
 
         /// <summary>
-        /// The maximum amount of gas (in Satoshi) that can be spent executing this transaction.
+        /// The maximum amount of gas that can be spent executing this transaction.
         /// Although the gas expenditure is theoretical rather than actual,
         /// this limit cannot be exceeded even when the method is run locally.
         /// </summary>

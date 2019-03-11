@@ -130,8 +130,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets a single piece of smart contract data, which was stored using the
-        /// SmartContract.PersistedData property as a key–value pair.
+        /// Gets a single piece of smart contract data, which was stored as a key–value pair using the
+        /// SmartContract.PersistentState property. 
         /// The method performs a lookup in the smart contract
         /// state database for the supplied smart contract address and key.
         /// The value associated with the given key, deserialized for the specified data type, is returned.

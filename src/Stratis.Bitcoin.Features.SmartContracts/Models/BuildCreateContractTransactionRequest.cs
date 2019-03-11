@@ -54,13 +54,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string ContractCode { get; set; }
 
         /// <summary>
-        /// The gas price in Satoshi to charge when the smart contract constructor is run by the miner mining the creation transaction. 
+        /// The gas price to charge when the smart contract constructor is run by the miner mining the creation transaction. 
         /// </summary>
         [Range(SmartContractMempoolValidator.MinGasPrice, SmartContractFormatLogic.GasPriceMaximum)]
         public ulong GasPrice { get; set; }
          
         /// <summary>
-        /// The maximum amount of gas (in Satoshi) that can be spent executing this transaction.
+        /// The maximum amount of gas that can be spent executing this transaction.
         /// This limit cannot be exceeded when the method is 
         /// run by the miner mining the creation transaction. If the gas spent exceeds this value, 
         /// execution of the smart contract stops.
