@@ -68,7 +68,7 @@ namespace Stratis.Bitcoin.Features.Consensus
                 currentHeader = currentHeader.Previous;
             }
 
-            this.dBreezeCoinView.GetStakeAsync(load);
+            this.dBreezeCoinView.GetStake(load);
 
             // All block stake items should be in store.
             if (load.Any(l => l.BlockStake == null))
@@ -84,7 +84,7 @@ namespace Stratis.Bitcoin.Features.Consensus
         public async Task<BlockStake> GetAsync(uint256 blockid)
         {
             var stakeItem = new StakeItem { BlockId = blockid };
-            await this.dBreezeCoinView.GetStakeAsync(new[] { stakeItem }).ConfigureAwait(false);
+            this.dBreezeCoinView.GetStake(new[] { stakeItem });
 
             Guard.Assert(stakeItem.BlockStake != null); // if we ask for it then we expect its in store
             return stakeItem.BlockStake;

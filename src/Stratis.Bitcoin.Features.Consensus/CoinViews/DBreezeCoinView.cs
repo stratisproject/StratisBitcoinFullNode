@@ -371,30 +371,25 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// Retrieves POS blocks information from the database.
         /// </summary>
         /// <param name="blocklist">List of partially initialized POS block information that is to be fully initialized with the values from the database.</param>
-        public Task GetStakeAsync(IEnumerable<StakeItem> blocklist)
+        public void GetStake(IEnumerable<StakeItem> blocklist)
         {
-            Task task = Task.Run(() =>
+            using (DBreeze.Transactions.Transaction transaction = this.CreateTransaction())
             {
-                using (DBreeze.Transactions.Transaction transaction = this.CreateTransaction())
+                transaction.SynchronizeTables("Stake");
+                transaction.ValuesLazyLoadingIsOn = false;
+
+                foreach (StakeItem blockStake in blocklist)
                 {
-                    transaction.SynchronizeTables("Stake");
-                    transaction.ValuesLazyLoadingIsOn = false;
+                    this.logger.LogTrace("Loading POS block hash '{0}' from the database.", blockStake.BlockId);
+                    Row<byte[], byte[]> stakeRow = transaction.Select<byte[], byte[]>("Stake", blockStake.BlockId.ToBytes(false));
 
-                    foreach (StakeItem blockStake in blocklist)
+                    if (stakeRow.Exists)
                     {
-                        this.logger.LogTrace("Loading POS block hash '{0}' from the database.", blockStake.BlockId);
-                        Row<byte[], byte[]> stakeRow = transaction.Select<byte[], byte[]>("Stake", blockStake.BlockId.ToBytes(false));
-
-                        if (stakeRow.Exists)
-                        {
-                            blockStake.BlockStake = this.dBreezeSerializer.Deserialize<BlockStake>(stakeRow.Value);
-                            blockStake.InStore = true;
-                        }
+                        blockStake.BlockStake = this.dBreezeSerializer.Deserialize<BlockStake>(stakeRow.Value);
+                        blockStake.InStore = true;
                     }
                 }
-            });
-
-            return task;
+            }
         }
 
         private void AddBenchStats(StringBuilder log)
