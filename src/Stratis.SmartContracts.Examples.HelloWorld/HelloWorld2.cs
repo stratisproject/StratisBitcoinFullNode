@@ -14,7 +14,7 @@ public class HelloWorld2 : SmartContract
         }   
         set
         {
-            PersistentState.SetInt32("Index", value);
+            this.PersistentState.SetInt32("Index", value);
         }
     }    
 
@@ -26,7 +26,7 @@ public class HelloWorld2 : SmartContract
         }   
         set
         {
-            PersistentState.SetInt32("Bounds", value);
+            this.PersistentState.SetInt32("Bounds", value);
         }
     }    
     
@@ -34,18 +34,18 @@ public class HelloWorld2 : SmartContract
     {
         get
         {
-            Index++;
-            if (Index >= Bounds)
+            this.Index++;
+            if (this.Index >= this.Bounds)
             {
-                Index = 0;
+                this.Index = 0;
             }
 
-            return this.PersistentState.GetString("Greeting" + Index);
+            return this.PersistentState.GetString("Greeting" + this.Index);
         }   
         set
         {
-            PersistentState.SetString("Greeting" + Bounds, value);
-            Bounds++;
+            this.PersistentState.SetString("Greeting" + this.Bounds, value);
+            this.Bounds++;
         }
     }
 
@@ -58,13 +58,13 @@ public class HelloWorld2 : SmartContract
 
     public string SayHello()
     {
-        return Greeting;
+        return this.Greeting;
     }
 
     public string AddGreeting(string helloMessage)
     {
-        Greeting = helloMessage;
-        return "Added '" + helloMessage + "' as a Greeting";
+        this.Greeting = helloMessage;
+        return "Added '" + helloMessage + "' as a greeting.";
     }
 
 }
