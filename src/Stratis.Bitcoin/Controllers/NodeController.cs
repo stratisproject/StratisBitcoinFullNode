@@ -382,7 +382,9 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>
         /// Triggers a shutdown of this node.
         /// </summary>
-        /// <param name="corsProtection">This body parameter is here to prevent a CORS call from triggering method execution.</param>
+        /// <param name="corsProtection">This body parameter is here to prevent a Cross Origin Resource Sharing
+        /// (CORS) call from triggering method execution. CORS relaxes security and you can read more about this
+        /// <a href="https://docs.microsoft.com/en-us/aspnet/core/security/cors?view=aspnetcore-2.1">here</a>.</param>
         /// <remarks>
         /// <seealso cref="https://developer.mozilla.org/en-US/docs/Web/HTTP/CORS#Simple_requests"/>
         /// </remarks>
