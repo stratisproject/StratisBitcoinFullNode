@@ -171,12 +171,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
         }
 
         /// <summary>
-        /// Check whether the transaction is part of the protocol (Coinbase or Coinstake).
-        /// </summary>
-        /// <param name="transaction">The transaction to check.</param>
-        protected abstract bool IsProtocolTransaction(Transaction transaction);
-
-        /// <summary>
         /// Network specific updates to the context's UTXO set.
         /// <para>
         /// Refer to <see cref="UpdateUTXOSet(RuleContext, Transaction)"/>.
