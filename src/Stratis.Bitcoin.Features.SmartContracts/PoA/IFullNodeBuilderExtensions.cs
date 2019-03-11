@@ -1,4 +1,6 @@
-﻿using Microsoft.Extensions.DependencyInjection;
+﻿using System;
+using System.Linq;
+using Microsoft.Extensions.DependencyInjection;
 using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
@@ -65,6 +67,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey));
 
             return options;
+        }
+
+        public static IFullNodeBuilder UseContractWhitelist(this IFullNodeBuilder fullNodeBuilder)
+        {
+            if(fullNodeBuilder.Features.FeatureRegistrations.All(f => f.FeatureType != typeof(PoAFeature)))
+            {
+                throw new InvalidOperationException("PoAFeature must be registered to use contract whitelist!");
+            }
+
+            if (fullNodeBuilder.Features.FeatureRegistrations.All(f => f.FeatureType != typeof(SmartContractFeature)))
+            {
+                throw new InvalidOperationException("SmartContractFeature must be registered to use contract whitelist!");
+            }
+
+            IServiceCollection services = fullNodeBuilder.Services;
+
+            services.AddSingleton<IContractCodeHashingStrategy, Sha256CodeHashingStrategy>();
+            services.AddSingleton<IWhitelistedHashChecker, WhitelistedHashChecker>();
+            services.AddSingleton<IContractTransactionValidationLogic, AllowedCodeHashLogic>();
+
+            return fullNodeBuilder;
         }
 
         /// <summary>
