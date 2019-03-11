@@ -81,15 +81,6 @@ namespace Stratis.Bitcoin.Features.Consensus
                 this.items.TryAdd(stakeItem.BlockId, stakeItem);
         }
 
-        public async Task<BlockStake> GetAsync(uint256 blockid)
-        {
-            var stakeItem = new StakeItem { BlockId = blockid };
-            this.dBreezeCoinView.GetStake(new[] { stakeItem });
-
-            Guard.Assert(stakeItem.BlockStake != null); // if we ask for it then we expect its in store
-            return stakeItem.BlockStake;
-        }
-
         public virtual BlockStake Get(uint256 blockid)
         {
             if (this.network.GenesisHash == blockid)
@@ -105,8 +96,11 @@ namespace Stratis.Bitcoin.Features.Consensus
                 return block.BlockStake;
             }
 
-            BlockStake res = this.GetAsync(blockid).GetAwaiter().GetResult();
-            return res;
+            var stakeItem = new StakeItem { BlockId = blockid };
+            this.dBreezeCoinView.GetStake(new[] { stakeItem });
+
+            Guard.Assert(stakeItem.BlockStake != null); // if we ask for it then we expect its in store
+            return stakeItem.BlockStake;
         }
 
         public void Set(ChainedHeader chainedHeader, BlockStake blockStake)
