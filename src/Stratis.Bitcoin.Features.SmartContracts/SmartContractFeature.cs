@@ -196,33 +196,27 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// Should we require another executor, we will need to create a separate daemon and network.
         /// </para>
         /// </summary>
-        public static IFullNodeBuilder UseReflectionExecutor(this IFullNodeBuilder fullNodeBuilder)
+        public static SmartContractOptions UseReflectionExecutor(this SmartContractOptions options)
         {
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                    .AddFeature<ReflectionVirtualMachineFeature>()
-                    .FeatureServices(services =>
-                    {
-                        // Validator
-                        services.AddSingleton<ISmartContractValidator, SmartContractValidator>();
+            IServiceCollection services = options.Services;
 
-                        // Executor et al.
-                        services.AddSingleton<IContractRefundProcessor, ContractRefundProcessor>();
-                        services.AddSingleton<IContractTransferProcessor, ContractTransferProcessor>();
-                        services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
-                        services.AddSingleton<IContractExecutorFactory, ReflectionExecutorFactory>();
-                        services.AddSingleton<IMethodParameterSerializer, MethodParameterByteSerializer>();
-                        services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
-                        services.AddSingleton<ISerializer, Serializer>();
+            // Validator
+            services.AddSingleton<ISmartContractValidator, SmartContractValidator>();
 
-                        // Controllers + utils
-                        services.AddSingleton<CSharpContractDecompiler>();
-                        services.AddSingleton<SmartContractsController>();
-                    });
-            });
+            // Executor et al.
+            services.AddSingleton<IContractRefundProcessor, ContractRefundProcessor>();
+            services.AddSingleton<IContractTransferProcessor, ContractTransferProcessor>();
+            services.AddSingleton<IKeyEncodingStrategy, BasicKeyEncodingStrategy>();
+            services.AddSingleton<IContractExecutorFactory, ReflectionExecutorFactory>();
+            services.AddSingleton<IMethodParameterSerializer, MethodParameterByteSerializer>();
+            services.AddSingleton<IContractPrimitiveSerializer, ContractPrimitiveSerializer>();
+            services.AddSingleton<ISerializer, Serializer>();
 
-            return fullNodeBuilder;
+            // Controllers + utils
+            services.AddSingleton<CSharpContractDecompiler>();
+            services.AddSingleton<SmartContractsController>();
+
+            return options;
         }
     }
 }
