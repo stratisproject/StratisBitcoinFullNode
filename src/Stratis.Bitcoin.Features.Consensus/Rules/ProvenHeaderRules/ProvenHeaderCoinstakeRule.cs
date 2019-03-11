@@ -122,7 +122,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.ProvenHeaderRules
 
             UnspentOutputs prevUtxo = null;
 
-            FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoinsAsync(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
+            FetchCoinsResponse coins = this.PosParent.UtxoSet.FetchCoins(new[] { txIn.PrevOut.Hash }).GetAwaiter().GetResult();
             if (coins.UnspentOutputs[0] == null)
             {
                 // We did not find the previous trx in the database, look in rewind data.

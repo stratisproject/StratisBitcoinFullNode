@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // By default no utxo are setup in coinview so fetch we return nothing.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[] { null }, posBlock.GetHash()));
 
             // When we run the validation rule, we should hit coinstake read transaction error.
@@ -120,7 +120,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
             var utxoTwo = new UnspentOutputs(11, new Transaction());
 
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne, utxoTwo }, posBlock.GetHash()));
 
             // When we run the validation rule, ConsensusErrors.ReadTxPrevFailed should be thrown.
@@ -142,7 +142,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Add more null unspent output to coinstake.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { (UnspentOutputs)null }, posBlock.GetHash()));
 
             // When we run the validation rule, we should hit coinstake read transaction error.
@@ -165,7 +165,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup coinstake transaction.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()) }, posBlock.GetHash()));
 
             // Change coinstake outputs to make it invalid.
@@ -190,7 +190,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup coinstake transaction.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { new UnspentOutputs(10, new Transaction()) }, posBlock.GetHash()));
 
             // Change coinstake time to differ from header time but divisible by 16.
@@ -238,7 +238,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup coinstake transaction with an invalid stake age.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to fail stake age check.
@@ -279,7 +279,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to fail signature validation.
@@ -324,7 +324,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
@@ -370,7 +370,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
@@ -425,7 +425,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
 
             // Setup coinstake transaction with a valid stake age.
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { utxoOne }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.
@@ -485,7 +485,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 Outputs = new[] { new TxOut(new Money(100), privateKey.PubKey) }
             };
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { unspentOutputs }, posBlock.GetHash()));
 
             // Setup stake validator to pass signature validation.
@@ -551,7 +551,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.Rules.ProvenHeaderRules
                 Outputs = new[] { new TxOut(new Money(100), privateKey.PubKey) }
             };
             this.coinView
-                .Setup(m => m.FetchCoinsAsync(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
+                .Setup(m => m.FetchCoins(It.IsAny<uint256[]>(), It.IsAny<CancellationToken>()))
                 .ReturnsAsync(new FetchCoinsResponse(new[] { unspentOutputs }, posBlock.GetHash()));
 
             // Setup stake validator to pass stake age check.

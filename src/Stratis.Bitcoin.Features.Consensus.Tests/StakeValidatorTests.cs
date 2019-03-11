@@ -755,7 +755,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
 
             Assert.True(input1.IsCoinStake);
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[] { unspentoutputs }, uint256.One));
 
             var headerbits = Target.Difficulty1.ToCompact();
@@ -885,7 +885,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void CheckKernel_CoinsNotInCoinView_ThrowsConsensusError()
         {
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
              .ReturnsAsync((FetchCoinsResponse)null);
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckKernel(new PosRuleContext(), ChainedHeadersHelper.CreateGenesisChainedHeader(), 15, 15, new OutPoint(uint256.One, 12)));
@@ -896,7 +896,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
         public void CheckKernel_LessThanOneCoinsInCoinView_ThrowsConsensusError()
         {
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[0], uint256.One));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckKernel(new PosRuleContext(), ChainedHeadersHelper.CreateGenesisChainedHeader(), 15, 15, new OutPoint(uint256.One, 12)));
@@ -913,7 +913,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 new UnspentOutputs(),
             };
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, uint256.One));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckKernel(new PosRuleContext(), ChainedHeadersHelper.CreateGenesisChainedHeader(), 15, 15, new OutPoint(uint256.One, 12)));
@@ -930,7 +930,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 null
             };
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, header.HashBlock));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckKernel(new PosRuleContext(), ChainedHeadersHelper.CreateGenesisChainedHeader(), 15, 15, new OutPoint(uint256.One, 12)));
@@ -945,7 +945,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 new UnspentOutputs()
             };
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, uint256.One));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckKernel(new PosRuleContext(), ChainedHeadersHelper.CreateGenesisChainedHeader(), 15, 15, new OutPoint(uint256.One, 12)));
@@ -964,7 +964,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
                 new UnspentOutputs((uint)header.Height, header.Block.Transactions[0])
             };
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, header.HashBlock));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckKernel(new PosRuleContext(), ChainedHeadersHelper.CreateGenesisChainedHeader(), 15, 15, new OutPoint(uint256.One, 12)));
@@ -989,7 +989,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.stakeChain.Setup(s => s.Get(header.HashBlock))
                 .Returns((BlockStake)null);
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(unspentoutputs, header.HashBlock));
 
             var exception = Assert.Throws<ConsensusErrorException>(() => this.stakeValidator.CheckKernel(new PosRuleContext(), header, 15, 15, new OutPoint(uint256.One, 12)));
@@ -1012,7 +1012,7 @@ namespace Stratis.Bitcoin.Tests.Consensus
             this.stakeChain.Setup(s => s.Get(header.HashBlock))
                 .Returns(blockStake);
 
-            this.coinView.Setup(c => c.FetchCoinsAsync(It.IsAny<uint256[]>(), default(CancellationToken)))
+            this.coinView.Setup(c => c.FetchCoins(It.IsAny<uint256[]>(), default(CancellationToken)))
                 .ReturnsAsync(new FetchCoinsResponse(new UnspentOutputs[]
             {
                 new UnspentOutputs((uint)stakableHeader.Height, transaction)

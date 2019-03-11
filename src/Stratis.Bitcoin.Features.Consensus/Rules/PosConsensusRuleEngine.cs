@@ -55,14 +55,14 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             await base.InitializeAsync(chainTip).ConfigureAwait(false);
 
-            await this.StakeChain.LoadAsync().ConfigureAwait(false);
+            await this.StakeChain.Load().ConfigureAwait(false);
 
             // A temporary hack until tip manage will be introduced.
             var breezeCoinView = (DBreezeCoinView)((CachedCoinView)this.UtxoSet).Inner;
-            uint256 hash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            uint256 hash = await breezeCoinView.GetTipHash().ConfigureAwait(false);
             ChainedHeader tip = chainTip.FindAncestorOrSelf(hash);
 
-            await this.RewindDataIndexCache.InitializeAsync(tip.Height, this.UtxoSet).ConfigureAwait(false);
+            await this.RewindDataIndexCache.Initialize(tip.Height, this.UtxoSet).ConfigureAwait(false);
         }
     }
 }

@@ -44,7 +44,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         /// <inheritdoc />
         public override Task<uint256> GetBlockHashAsync()
         {
-            return this.UtxoSet.GetTipHashAsync();
+            return this.UtxoSet.GetTipHash();
         }
 
         /// <inheritdoc />
@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
         {
             return new RewindState()
             {
-                BlockHash = await this.UtxoSet.RewindAsync().ConfigureAwait(false)
+                BlockHash = await this.UtxoSet.Rewind().ConfigureAwait(false)
             };
         }
 
@@ -63,7 +63,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
 
             await breezeCoinView.InitializeAsync().ConfigureAwait(false);
 
-            uint256 consensusTipHash = await breezeCoinView.GetTipHashAsync().ConfigureAwait(false);
+            uint256 consensusTipHash = await breezeCoinView.GetTipHash().ConfigureAwait(false);
 
             while (true)
             {
@@ -75,7 +75,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
                 this.logger.LogInformation("Rewinding coin db from {0}", consensusTipHash);
                 // In case block store initialized behind, rewind until or before the block store tip.
                 // The node will complete loading before connecting to peers so the chain will never know if a reorg happened.
-                consensusTipHash = await breezeCoinView.RewindAsync().ConfigureAwait(false);
+                consensusTipHash = await breezeCoinView.Rewind().ConfigureAwait(false);
             }
         }
 
@@ -101,7 +101,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules
             if (cache != null)
             {
                 this.logger.LogInformation("Flushing Cache CoinView.");
-                cache.FlushAsync().GetAwaiter().GetResult();
+                cache.Flush().GetAwaiter().GetResult();
                 cache.Dispose();
             }
 

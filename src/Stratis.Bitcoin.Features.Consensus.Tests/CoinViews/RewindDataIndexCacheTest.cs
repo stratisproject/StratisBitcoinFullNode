@@ -36,7 +36,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             RewindDataIndexCache rewindDataIndexCache = new RewindDataIndexCache(dateTimeProviderMock.Object, this.Network);
 
-            await rewindDataIndexCache.InitializeAsync(5, coinViewMock.Object);
+            await rewindDataIndexCache.Initialize(5, coinViewMock.Object);
 
             var items = rewindDataIndexCache.GetMemberValue("items") as ConcurrentDictionary<string, int>;
 
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             RewindDataIndexCache rewindDataIndexCache = new RewindDataIndexCache(dateTimeProviderMock.Object, this.Network);
 
-            await rewindDataIndexCache.InitializeAsync(20, coinViewMock.Object);
+            await rewindDataIndexCache.Initialize(20, coinViewMock.Object);
 
             var items = rewindDataIndexCache.GetMemberValue("items") as ConcurrentDictionary<string, int>;
 
@@ -70,7 +70,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             RewindDataIndexCache rewindDataIndexCache = new RewindDataIndexCache(dateTimeProviderMock.Object, this.Network);
 
-            await rewindDataIndexCache.InitializeAsync(20, coinViewMock.Object);
+            await rewindDataIndexCache.Initialize(20, coinViewMock.Object);
 
             rewindDataIndexCache.Save(new Dictionary<string, int>() { { $"{ new uint256(21) }-{ 0 }", 21}});
             var items = rewindDataIndexCache.GetMemberValue("items") as ConcurrentDictionary<string, int>;
@@ -88,7 +88,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             RewindDataIndexCache rewindDataIndexCache = new RewindDataIndexCache(dateTimeProviderMock.Object, this.Network);
 
-            await rewindDataIndexCache.InitializeAsync(20, coinViewMock.Object);
+            await rewindDataIndexCache.Initialize(20, coinViewMock.Object);
 
             rewindDataIndexCache.Flush(15);
             var items = rewindDataIndexCache.GetMemberValue("items") as ConcurrentDictionary<string, int>;
@@ -106,7 +106,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             RewindDataIndexCache rewindDataIndexCache = new RewindDataIndexCache(dateTimeProviderMock.Object, this.Network);
 
-            await rewindDataIndexCache.InitializeAsync(20, coinViewMock.Object);
+            await rewindDataIndexCache.Initialize(20, coinViewMock.Object);
 
             await rewindDataIndexCache.Remove(19, coinViewMock.Object);
             var items = rewindDataIndexCache.GetMemberValue("items") as ConcurrentDictionary<string, int>;

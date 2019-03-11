@@ -117,17 +117,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             }
 
             /// <inheritdoc />
-            public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+            public Task<uint256> GetTipHash(CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
+            public Task<FetchCoinsResponse> FetchCoins(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public Task<uint256> RewindAsync()
+            public Task<uint256> Rewind()
             {
                 throw new NotImplementedException();
             }
@@ -137,7 +137,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
+            public Task SaveChanges(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
             {
                 throw new NotImplementedException();
             }
@@ -157,17 +157,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             public ICoinView Inner => this.inner;
 
             /// <inheritdoc />
-            public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+            public Task<uint256> GetTipHash(CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
+            public Task<FetchCoinsResponse> FetchCoins(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public Task<uint256> RewindAsync()
+            public Task<uint256> Rewind()
             {
                 throw new NotImplementedException();
             }
@@ -177,7 +177,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
+            public Task SaveChanges(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
             {
                 throw new NotImplementedException();
             }
@@ -197,17 +197,17 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
             public ICoinView Inner => this.inner;
 
             /// <inheritdoc />
-            public Task<uint256> GetTipHashAsync(CancellationToken cancellationToken = default(CancellationToken))
+            public Task<uint256> GetTipHash(CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public Task<FetchCoinsResponse> FetchCoinsAsync(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
+            public Task<FetchCoinsResponse> FetchCoins(uint256[] txIds, CancellationToken cancellationToken = default(CancellationToken))
             {
                 throw new NotImplementedException();
             }
 
-            public Task<uint256> RewindAsync()
+            public Task<uint256> Rewind()
             {
                 throw new NotImplementedException();
             }
@@ -217,7 +217,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
                 throw new NotImplementedException();
             }
 
-            public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
+            public Task SaveChanges(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
             {
                 throw new NotImplementedException();
             }
