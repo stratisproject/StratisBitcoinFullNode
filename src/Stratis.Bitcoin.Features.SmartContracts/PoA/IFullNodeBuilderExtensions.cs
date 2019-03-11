@@ -1,4 +1,5 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
@@ -75,12 +76,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
 
                         services.AddSingleton<PoAConsensusRuleEngine>();
-                        services.AddSingleton<IRuleRegistration, SignedContractPoARuleRegistration>();
+                        services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
+
                         services.AddSingleton<IConsensusRuleEngine>(f =>
                         {
                             var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
                             var ruleRegistration = f.GetService<IRuleRegistration>();
-
+                            
                             return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
                         });
                     });

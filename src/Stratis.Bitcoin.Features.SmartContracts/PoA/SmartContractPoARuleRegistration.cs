@@ -4,12 +4,13 @@ using NBitcoin.Rules;
 using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Rules.CommonRules;
-using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
+using Stratis.Bitcoin.Features.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
+using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -25,6 +26,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         private readonly ISenderRetriever senderRetriever;
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
+        private readonly PoAConsensusRulesRegistration baseRuleRegistration;
+        private readonly IEnumerable<IContractTransactionValidationLogic> validationRules;
 
         public SmartContractPoARuleRegistration(Network network,
             IStateRepositoryRoot stateRepositoryRoot,
@@ -32,8 +35,10 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             ICallDataSerializer callDataSerializer,
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
-            ICoinView coinView)
+            ICoinView coinView,
+            IEnumerable<IContractTransactionValidationLogic> validationRules)
         {
+            this.baseRuleRegistration = new PoAConsensusRulesRegistration();
             this.network = network;
             this.stateRepositoryRoot = stateRepositoryRoot;
             this.executorFactory = executorFactory;
@@ -41,58 +46,43 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.senderRetriever = senderRetriever;
             this.receiptRepository = receiptRepository;
             this.coinView = coinView;
+            this.validationRules = validationRules;
         }
 
         public void RegisterRules(IConsensus consensus)
         {
-            consensus.HeaderValidationRules = new List<IHeaderValidationConsensusRule>()
-            {
-                new HeaderTimeChecksPoARule(),
-                new StratisHeaderVersionRule(),
-                new PoAHeaderDifficultyRule(),
-                new PoAHeaderSignatureRule()
-            };
+            this.baseRuleRegistration.RegisterRules(consensus);
 
-            consensus.IntegrityValidationRules = new List<IIntegrityValidationConsensusRule>()
-            {
-                new BlockMerkleRootRule(),
-                new PoAIntegritySignatureRule()
-            };
+            var networkWithPubKey = (ISignedCodePubKeyHolder) this.network;
 
-            consensus.PartialValidationRules = new List<IPartialValidationConsensusRule>()
-            {
-                new SetActivationDeploymentsPartialValidationRule(),
-
-                // rules that are inside the method ContextualCheckBlock
-                new TransactionLocktimeActivationRule(), // implements BIP113
-                new CoinbaseHeightActivationRule(), // implements BIP34
-                new BlockSizeRule(),
-
-                // rules that are inside the method CheckBlock
-                new EnsureCoinbaseRule(),
-                new CheckPowTransactionRule(),
-                new CheckSigOpsRule(),
-                new AllowedScriptTypeRule(this.network),
+            // Add SC-Specific partial rules
+            consensus.PartialValidationRules.Add(new AllowedScriptTypeRule(this.network));
+            consensus.PartialValidationRules.Add(
                 new ContractTransactionValidationRule(this.callDataSerializer, new List<IContractTransactionValidationLogic>
                 {
-                    new SmartContractFormatLogic()
+                    new SmartContractFormatLogic(),
+                    new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey)
                 })
-            };
+            );
 
-            consensus.FullValidationRules = new List<IFullValidationConsensusRule>()
+            int existingCoinViewRule = consensus.FullValidationRules
+                .FindIndex(c => c is CoinViewRule);
+
+            // Replace coinview rule
+            consensus.FullValidationRules[existingCoinViewRule] =
+                new SmartContractPoACoinviewRule(this.stateRepositoryRoot, this.executorFactory,
+                    this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView);
+
+            // Add SC-specific full rules BEFORE the coinviewrule
+            var scRules = new List<IFullValidationConsensusRule>
             {
-                new SetActivationDeploymentsFullValidationRule(),
-
-                // rules that require the store to be loaded (coinview)
-                new LoadCoinviewRule(),
-                new TransactionDuplicationActivationRule(), // implements BIP30
                 new TxOutSmartContractExecRule(),
                 new OpSpendRule(),
                 new CanGetSenderRule(this.senderRetriever),
-                new P2PKHNotContractRule(this.stateRepositoryRoot),
-                new SmartContractPoACoinviewRule(this.stateRepositoryRoot, this.executorFactory, this.callDataSerializer, this.senderRetriever, this.receiptRepository, this.coinView), // implements BIP68, MaxSigOps and BlockReward 
-                new SaveCoinviewRule()
+                new P2PKHNotContractRule(this.stateRepositoryRoot)
             };
+
+            consensus.FullValidationRules.InsertRange(existingCoinViewRule, scRules);
         }
     }
 }
