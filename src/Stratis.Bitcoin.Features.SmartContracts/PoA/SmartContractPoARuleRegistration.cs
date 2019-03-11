@@ -10,7 +10,6 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Core.Receipts;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
@@ -53,17 +52,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         {
             this.baseRuleRegistration.RegisterRules(consensus);
 
-            var networkWithPubKey = (ISignedCodePubKeyHolder) this.network;
-
             // Add SC-Specific partial rules
+            var txValidationRules = new List<IContractTransactionValidationLogic>(this.validationRules)
+            {
+                new SmartContractFormatLogic()                
+            };
             consensus.PartialValidationRules.Add(new AllowedScriptTypeRule(this.network));
-            consensus.PartialValidationRules.Add(
-                new ContractTransactionValidationRule(this.callDataSerializer, new List<IContractTransactionValidationLogic>
-                {
-                    new SmartContractFormatLogic(),
-                    new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey)
-                })
-            );
+            consensus.PartialValidationRules.Add(new ContractTransactionValidationRule(this.callDataSerializer, txValidationRules));
 
             int existingCoinViewRule = consensus.FullValidationRules
                 .FindIndex(c => c is CoinViewRule);
