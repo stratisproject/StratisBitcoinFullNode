@@ -27,6 +27,30 @@ namespace Stratis.Bitcoin.IntegrationTests.Connectivity
             this.powNetwork = new BitcoinRegTest();
         }
 
+        [Fact]
+        public void Ensure_Node_DoesNot_ReconnectTo_SameNode()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                var nodeConfig = new NodeConfigParameters
+                {
+                    { "-debug", "1" }
+                };
+
+                CoreNode nodeA = builder.CreateStratisPowNode(this.powNetwork, "nodeA", configParameters: nodeConfig).Start();
+                CoreNode nodeB = builder.CreateStratisPowNode(this.powNetwork, "nodeB", configParameters: nodeConfig).Start();
+
+                TestHelper.Connect(nodeA, nodeB);
+                TestHelper.ConnectNoCheck(nodeA, nodeB);
+
+                TestHelper.WaitLoop(() => nodeA.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
+                TestHelper.WaitLoop(() => nodeB.FullNode.ConnectionManager.ConnectedPeers.Count() == 1);
+
+                Assert.False(nodeA.FullNode.ConnectionManager.ConnectedPeers.First().Inbound);
+                Assert.True(nodeB.FullNode.ConnectionManager.ConnectedPeers.First().Inbound);
+            }
+        }
+
         /// <summary>
         /// Peer A_1 connects to Peer A_2
         /// Peer B_1 connects to Peer B_2
