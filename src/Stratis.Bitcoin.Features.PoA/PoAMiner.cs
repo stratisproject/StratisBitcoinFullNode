@@ -6,6 +6,7 @@ using System.Threading;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Consensus.Validators;
@@ -71,6 +72,8 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly VotingDataEncoder votingDataEncoder;
 
+        private readonly PoAMinerSettings settings;
+
         private Task miningTask;
 
         public PoAMiner(
@@ -88,7 +91,8 @@ namespace Stratis.Bitcoin.Features.PoA
             IIntegrityValidator integrityValidator,
             IWalletManager walletManager,
             INodeStats nodeStats,
-            VotingManager votingManager)
+            VotingManager votingManager,
+            PoAMinerSettings poAMinerSettings)
         {
             this.consensusManager = consensusManager;
             this.dateTimeProvider = dateTimeProvider;
@@ -102,6 +106,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.integrityValidator = integrityValidator;
             this.walletManager = walletManager;
             this.votingManager = votingManager;
+            this.settings = poAMinerSettings;
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.cancellation = CancellationTokenSource.CreateLinkedTokenSource(new[] { nodeLifetime.ApplicationStopping });
@@ -125,8 +130,9 @@ namespace Stratis.Bitcoin.Features.PoA
             {
                 try
                 {
-                    // Don't mine in IBD in case we are connected to any node.
-                    if (this.ibdState.IsInitialBlockDownload() || !this.connectionManager.ConnectedPeers.Any() || !this.federationManager.IsFederationMember)
+                    // Don't mine in IBD in case we are connected to any node unless bootstrapping mode is enabled.
+                    if (((this.ibdState.IsInitialBlockDownload() || !this.connectionManager.ConnectedPeers.Any()) && !this.settings.BootstrappingMode)
+                        || !this.federationManager.IsFederationMember)
                     {
                         int attemptDelayMs = 30_000;
                         await Task.Delay(attemptDelayMs, this.cancellation.Token).ConfigureAwait(false);

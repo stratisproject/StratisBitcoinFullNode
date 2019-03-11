@@ -343,6 +343,8 @@ namespace Stratis.Features.FederatedPeg
 
                     services.AddSingleton<VotingManager>();
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                    services.AddSingleton<WhitelistedHashesRepository>();
+                    services.AddSingleton<PoAMinerSettings>();
 
                     new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
                 });
