@@ -192,7 +192,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationWalletSyncManager = new FederationWalletSyncManager(this.loggerFactory, this.federationWalletManager, this.chain, this.network,
                 this.blockRepository, storeSettings, Substitute.For<INodeLifetime>());
 
-            this.federationWalletSyncManager.Start();
+            this.federationWalletSyncManager.Initialize();
 
             // Set up the encrypted seed on the wallet.
             string encryptedSeed = this.extendedKey.PrivateKey.GetEncryptedBitcoinSecret(walletPassword, this.network).ToWif();
