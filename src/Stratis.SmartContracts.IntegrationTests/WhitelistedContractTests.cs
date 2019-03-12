@@ -70,11 +70,10 @@ namespace Stratis.SmartContracts.IntegrationTests
                 byte[] toSend = ContractCompiler.CompileFile("SmartContracts/StorageDemo.cs").Compilation;
                 var buildResult = node1.BuildCreateContractTransaction(toSend, 0);
 
-                // Replace the SC output ScriptPubKey with an invalid one.
                 Transaction tx = node1.CoreNode.FullNode.Network.CreateTransaction(buildResult.Hex);
 
                 var broadcasterManager = node1.CoreNode.FullNode.NodeService<IBroadcasterManager>();
-                // Try and broadcast invalid tx.
+
                 await broadcasterManager.BroadcastTransactionAsync(tx);
 
                 // Give it enough time to reach if it was valid.
