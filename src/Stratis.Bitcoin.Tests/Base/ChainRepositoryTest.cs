@@ -17,7 +17,7 @@ namespace Stratis.Bitcoin.Tests.Base
 
         public ChainRepositoryTest() : base(KnownNetworks.StratisRegTest)
         {
-            this.dBreezeSerializer = new DBreezeSerializer(this.Network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.Network.Consensus.ConsensusFactory);
         }
 
         [Fact]
