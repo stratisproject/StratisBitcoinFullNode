@@ -326,7 +326,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             {
                 result.IsValid = true;
             }
-            // P2PSH
+            // P2SH
             else if (BitcoinScriptAddress.IsValid(address, this.Network))
             {
                 result.IsValid = true;
