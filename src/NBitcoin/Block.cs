@@ -162,13 +162,13 @@ namespace NBitcoin
             return block;
         }
 
-        public static Block Load(byte[] bytes, Network network, ConsensusFactory consensusFactory)
+        public static Block Load(byte[] bytes, ConsensusFactory consensusFactory)
         {
             if (bytes == null)
                 throw new ArgumentNullException(nameof(bytes));
 
-            if (network == null)
-                throw new ArgumentNullException(nameof(network));
+            if (consensusFactory == null)
+                throw new ArgumentNullException(nameof(consensusFactory));
 
             Block block = consensusFactory.CreateBlock();
             block.ReadWrite(bytes, consensusFactory);

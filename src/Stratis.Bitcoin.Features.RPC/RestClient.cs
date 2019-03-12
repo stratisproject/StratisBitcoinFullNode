@@ -52,7 +52,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 throw new ArgumentNullException("blockId");
 
             byte[] result = await SendRequestAsync("block", RestResponseFormat.Bin, blockId.ToString()).ConfigureAwait(false);
-            return Block.Load(result, this.network, this.network.Consensus.ConsensusFactory);
+            return Block.Load(result, this.network.Consensus.ConsensusFactory);
         }
 
         /// <summary>

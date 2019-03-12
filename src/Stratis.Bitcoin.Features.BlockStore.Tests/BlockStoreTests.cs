@@ -156,7 +156,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         [Fact]
         public async Task BatchIsSavedAfterSizeThresholdReachedAsync()
         {
-            Block block = Block.Load(Encoders.Hex.DecodeData(this.testBlockHex), KnownNetworks.StratisMain, KnownNetworks.StratisMain.Consensus.ConsensusFactory);
+            Block block = Block.Load(Encoders.Hex.DecodeData(this.testBlockHex), KnownNetworks.StratisMain.Consensus.ConsensusFactory);
             int blockSize = block.GetSerializedSize();
             this.chainState.ConsensusTip = null;
 

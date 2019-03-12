@@ -636,7 +636,7 @@ namespace NBitcoin
 
         public Block GetGenesis()
         {
-            return Block.Load(this.Genesis.ToBytes(this.Consensus.ConsensusFactory), this, this.Consensus.ConsensusFactory);
+            return Block.Load(this.Genesis.ToBytes(this.Consensus.ConsensusFactory), this.Consensus.ConsensusFactory);
         }
 
         public uint256 GenesisHash => this.Consensus.HashGenesisBlock;

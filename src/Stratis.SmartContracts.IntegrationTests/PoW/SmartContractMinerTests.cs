@@ -276,7 +276,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                         block.Header.Nonce = ++this.Nonce;
 
                     // Serialization sets the BlockSize property.
-                    block = NBitcoin.Block.Load(block.ToBytes(), this.network, this.network.Consensus.ConsensusFactory);
+                    block = NBitcoin.Block.Load(block.ToBytes(), this.network.Consensus.ConsensusFactory);
 
                     var res = await this.consensusManager.BlockMinedAsync(block);
                     if (res == null)
