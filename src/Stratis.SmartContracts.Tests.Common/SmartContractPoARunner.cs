@@ -38,11 +38,13 @@ namespace Stratis.SmartContracts.Tests.Common
                             .UseBlockStore()
                             .UseMempool()
                             .AddRPC()
-                            .AddSmartContracts()
+                            .AddSmartContracts(options =>
+                            {
+                                options.UseReflectionExecutor();
+                            })
                             .UseSmartContractPoAConsensus()
                             .UseSmartContractPoAMining()
                             .UseSmartContractWallet()
-                            .UseReflectionExecutor()
                             .ReplaceTimeProvider(this.timeProvider)
                             .MockIBD()
                             .AddFastMiningCapability();
