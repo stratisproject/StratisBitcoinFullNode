@@ -37,7 +37,7 @@ namespace Stratis.Bitcoin.IntegrationTests
             this.loggerFactory = new LoggerFactory();
             this.network = KnownNetworks.Main;
             this.regTest = KnownNetworks.RegTest;
-            this.dBreezeSerializer = new DBreezeSerializer(this.network);
+            this.dBreezeSerializer = new DBreezeSerializer(this.network.Consensus.ConsensusFactory);
         }
 
         [Fact]

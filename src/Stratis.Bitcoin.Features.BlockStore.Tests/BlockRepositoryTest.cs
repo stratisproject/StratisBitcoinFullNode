@@ -528,7 +528,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
         private IBlockRepository SetupRepository(Network main, string dir)
         {
-            var dBreezeSerializer = new DBreezeSerializer(main);
+            var dBreezeSerializer = new DBreezeSerializer(main.Consensus.ConsensusFactory);
 
             var repository = new BlockRepository(main, dir, this.LoggerFactory.Object, dBreezeSerializer);
             repository.InitializeAsync().GetAwaiter().GetResult();
