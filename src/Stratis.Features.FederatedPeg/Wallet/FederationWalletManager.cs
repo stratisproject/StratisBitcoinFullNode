@@ -181,7 +181,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             else
             {
                 // Create the multisig wallet file if it doesn't exist
-                this.Wallet = GenerateWallet();
+                this.Wallet = this.GenerateWallet();
                 this.SaveWallet();
             }
 
@@ -384,7 +384,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (withdrawal != null)
                 {
                     // Exit if already present and included in a block.
-                    List<(Transaction, TransactionData, IWithdrawal)> walletData = FindWithdrawalTransactions(withdrawal.DepositId);
+                    List<(Transaction, TransactionData, IWithdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
                     if ((walletData.Count == 1) && (walletData[0].Item2.BlockHeight != null))
                         return false;
 
@@ -759,11 +759,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                foreach ((Transaction transaction, TransactionData transactionData, _) in FindWithdrawalTransactions(depositId)
+                foreach ((Transaction transaction, TransactionData transactionData, _) in this.FindWithdrawalTransactions(depositId)
                     .Where(w => w.Item2.BlockHash == null))
                 {
                     Guard.Assert(transactionData.SpendingDetails == null);
-                    walletUpdated |= RemoveTransaction(transaction);
+                    walletUpdated |= this.RemoveTransaction(transaction);
                 }
 
                 return walletUpdated;

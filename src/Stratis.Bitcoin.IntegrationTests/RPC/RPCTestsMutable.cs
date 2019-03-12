@@ -319,5 +319,31 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
                 action.Should().Throw<RPCException>().Which.RPCCode.Should().Be(RPCErrorCode.RPC_WALLET_ERROR);
             }
         }
+
+        [Fact]
+        public void TestRpcGetBlockInfo()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest150Miner).Start();
+                RPCClient rpcClient = node.CreateRPCClient();
+                var response = rpcClient.SendCommand(RPCOperations.getblockchaininfo);
+                response.ResultString.Should().NotBeNullOrEmpty();
+            }
+        }
+
+        [Fact]
+        public void TestRpcGetNetworkInfo()
+        {
+            using (NodeBuilder builder = NodeBuilder.Create(this))
+            {
+                Network network = new BitcoinRegTest();
+                var node = builder.CreateStratisPowNode(new BitcoinRegTest()).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest150Miner).Start();
+                RPCClient rpcClient = node.CreateRPCClient();
+                var response = rpcClient.SendCommand(RPCOperations.getnetworkinfo);
+                response.ResultString.Should().NotBeNullOrEmpty();
+            }
+        }
     }
 }

@@ -1,26 +1,26 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
 using Stratis.Bitcoin.Features.Miner;
-using Stratis.Bitcoin.Features.PoA.BasePoAFeatureConsensusRules;
-using Stratis.Bitcoin.Features.SmartContracts.PoW;
+using Stratis.Bitcoin.Features.SmartContracts;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
+using Stratis.Bitcoin.Mining;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Core.Util;
 
-namespace Stratis.Bitcoin.Features.SmartContracts.PoA
+namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
 {
     /// <summary>
-    /// Pushes everything to the <see cref="SmartContractBlockDefinition"/>, just amends the block difficulty for PoA.
+    /// Exact same as FederatedPegBlockDefinition, just gives the premine to a wallet for convenience.
     /// </summary>
-    public class SmartContractPoABlockDefinition : SmartContractBlockDefinition
+    public class TestFederatedPegBlockDefinition : SmartContractPoABlockDefinition
     {
-        public SmartContractPoABlockDefinition(
+        public TestFederatedPegBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
             ICoinView coinView,
             IConsensusManager consensusManager,
@@ -33,18 +33,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
             MinerSettings minerSettings)
-            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool,
-                mempoolLock, minerSettings, network, senderRetriever, stateRoot)
+            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, minerSettings)
         {
-            // TODO: Fix gross MinerSettings injection ^^
         }
 
-        /// <inheritdoc/>
-        public override void UpdateHeaders()
+        public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            base.UpdateHeaders();
-
-            this.block.Header.Bits = PoAHeaderDifficultyRule.PoABlockDifficulty;
+            return base.Build(chainTip, scriptPubKey);
         }
     }
 }

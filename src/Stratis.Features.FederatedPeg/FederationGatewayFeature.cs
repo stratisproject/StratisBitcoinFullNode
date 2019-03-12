@@ -49,10 +49,6 @@ namespace Stratis.Features.FederatedPeg
     {
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
-        private IDisposable blockSubscriberDisposable;
-
-        private IDisposable transactionSubscriberDisposable;
-
         private readonly IConnectionManager connectionManager;
 
         private readonly IFederationGatewaySettings federationGatewaySettings;
@@ -119,20 +115,29 @@ namespace Stratis.Features.FederatedPeg
 
         public override Task InitializeAsync()
         {
+            // Set up our database of deposit and withdrawal transactions. Needs to happen before everything else.
             this.crossChainTransferStore.Initialize();
 
-            // maturedBlocksSyncManager should be initialized only after crossChainTransferStore.
-            this.maturedBlocksSyncManager.Initialize();
-
+            // Load the federation wallet that will be used to generate transactions.
             this.federationWalletManager.Start();
-            this.walletSyncManager.Start();
+
+            // Query the other chain every N seconds for deposits. Triggers signing process if deposits are found.
+            this.maturedBlocksSyncManager.Start();
+
+            // Syncs the wallet correctly when restarting the node. i.e. deals with reorgs.
+            this.walletSyncManager.Initialize();
+
+            // Synchronises the wallet and the transfer store.
             this.crossChainTransferStore.Start();
+
+            // Query our database for partially-signed transactions and send them around to be signed every N seconds.
             this.partialTransactionRequester.Start();
 
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
 
+            // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
                 this.network, this.federationGatewaySettings, this.crossChainTransferStore));
@@ -142,9 +147,6 @@ namespace Stratis.Features.FederatedPeg
 
         public override void Dispose()
         {
-            this.blockSubscriberDisposable.Dispose();
-            this.transactionSubscriberDisposable.Dispose();
-
             // Sync manager has to be disposed BEFORE cross chain transfer store.
             this.maturedBlocksSyncManager.Dispose();
 
@@ -230,7 +232,7 @@ namespace Stratis.Features.FederatedPeg
             },
             4);
 
-            AddBenchmarkLine(benchLog,
+            this.AddBenchmarkLine(benchLog,
                 this.crossChainTransferStore.GetCrossChainTransferStatusCounter().SelectMany(item => new (string, int)[]{
                     (item.Key.ToString()+":", LoggingConfiguration.ColumnLength),
                     (item.Value.ToString(), LoggingConfiguration.ColumnLength)
@@ -339,6 +341,9 @@ namespace Stratis.Features.FederatedPeg
 
                     services.AddSingleton<VotingManager>();
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                    services.AddSingleton<WhitelistedHashesRepository>();
+                    services.AddSingleton<PoAMinerSettings>();
+                    services.AddSingleton<MinerSettings>();
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
