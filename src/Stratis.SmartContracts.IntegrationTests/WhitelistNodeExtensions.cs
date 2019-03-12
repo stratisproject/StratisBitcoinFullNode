@@ -7,11 +7,11 @@ using Stratis.SmartContracts.Tests.Common.MockChain;
 
 namespace Stratis.SmartContracts.IntegrationTests
 {
-    public static class NodeExtensions
+    public static class WhitelistNodeExtensions
     {
         public static void WhitelistCode(this IMockChain chain, byte[] code)
         {
-            foreach (var node in chain.Nodes)
+            foreach (MockChainNode node in chain.Nodes)
             {
                 var hasher = node.CoreNode.FullNode.NodeService<IContractCodeHashingStrategy>();
                 var hash = new uint256(hasher.Hash(code));
