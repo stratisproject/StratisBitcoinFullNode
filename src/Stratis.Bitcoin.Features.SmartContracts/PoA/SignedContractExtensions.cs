@@ -14,6 +14,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         /// Adds a consensus rule ensuring only contracts with hashes that are on the PoA whitelist are able to be deployed.
         /// The PoA feature must be installed for this to function correctly.
         /// </summary>
+        /// <param name="options">The smart contract options.</param>
+        /// <returns>The options provided.</returns>
         public static SmartContractOptions UsePoAWhitelistedContracts(this SmartContractOptions options)
         {
             IServiceCollection services = options.Services;
