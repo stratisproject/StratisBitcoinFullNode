@@ -30,13 +30,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Models
         public string AccountName { get; set; }
 
         /// <summary>
-        /// The amount of STRAT (or sidechain coin) to send to the smart contract address on creation.
+        /// The amount of STRAT (or the sidechain coin) to send to the smart contract address on creation.
         /// </summary>
         [Required(ErrorMessage = "An amount is required.")]
         public string Amount { get; set; }
 
         /// <summary>
-        /// The fees in STRAT (or sidechain coin) to cover the smart contract creation transaction.
+        /// The fees in STRAT (or the sidechain coin) to cover the smart contract creation transaction.
         /// </summary>
         [MoneyFormat(isRequired: false, ErrorMessage = "The fee is not in the correct format.")]
         public string FeeAmount { get; set; }

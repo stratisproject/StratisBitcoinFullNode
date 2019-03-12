@@ -113,12 +113,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         }
 
         /// <summary>
-        /// Gets the balance of a smart contract in Satoshi. This method only works for smart contract addresses. 
+        /// Gets the balance of a smart contract in STRAT (or the sidechain coin). This method only works for smart contract addresses. 
         /// </summary>
         /// 
         /// <param name="address">The address of the smart contract to retrieve the balance for.</param>
         /// 
-        /// <returns>The balance of a smart contract in Satoshi.</returns>
+        /// <returns>The balance of a smart contract in STRAT (or the sidechain coin).</returns>
         [Route("balance")]
         [HttpGet]
         public IActionResult GetBalance([FromQuery]string address)
