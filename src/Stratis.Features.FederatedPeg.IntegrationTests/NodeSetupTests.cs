@@ -10,20 +10,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
 {
     public class NodeSetupTests
     {
-        [Fact(Skip = TestingValues.SkipTests)]
-        public void StartBothChainsWithWallets()
-        {
-            using (var context = new SidechainTestContext())
-            {
-                context.StartAndConnectNodes();
-
-                context.EnableSideFedWallets();
-                context.EnableMainFedWallets();
-            }
-        }
-
-        [Fact(Skip = TestingValues.SkipTests)]
-        public void FundMainChain()
+        [Fact]
+        public void MainChainFedNodesBuildAndSync()
         {
             using (var context = new SidechainTestContext())
             {
@@ -37,8 +25,8 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
-        [Fact(Skip = TestingValues.SkipTests)]
-        public void FundSideChain()
+        [Fact]
+        public void SideChainFedNodesBuildAndSync()
         {
             using (var context = new SidechainTestContext())
             {
@@ -56,6 +44,20 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 Assert.Single(coinbase.Outputs);
                 Assert.Equal(context.SideChainNetwork.Consensus.PremineReward, coinbase.Outputs[0].Value);
                 Assert.Equal(context.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[0].ScriptPubKey);
+            }
+        }
+
+
+
+        [Fact(Skip = TestingValues.SkipTests)]
+        public void StartBothChainsWithWallets()
+        {
+            using (var context = new SidechainTestContext())
+            {
+                context.StartAndConnectNodes();
+
+                context.EnableSideFedWallets();
+                context.EnableMainFedWallets();
             }
         }
 
