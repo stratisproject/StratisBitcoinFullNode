@@ -1,5 +1,7 @@
 ﻿using System;
 using NBitcoin;
+using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.SmartContracts.Networks;
 
 namespace Stratis.SmartContracts.Tests.Common.MockChain
 {
@@ -9,7 +11,11 @@ namespace Stratis.SmartContracts.Tests.Common.MockChain
 
         public PoAMockChainFixture()
         {
-            PoAMockChain mockChain = new PoAMockChain(2).Build();
+            var network = new SmartContractsPoARegTest();
+            var builder = SmartContractNodeBuilder.Create(this);
+
+            Func<int, CoreNode> factory = (nodeIndex) => builder.CreateSmartContractPoANode(network, nodeIndex).Start();
+            PoAMockChain mockChain = new PoAMockChain(2, factory).Build();
             this.Chain = mockChain;
             MockChainNode node1 = this.Chain.Nodes[0];
             MockChainNode node2 = this.Chain.Nodes[1];
