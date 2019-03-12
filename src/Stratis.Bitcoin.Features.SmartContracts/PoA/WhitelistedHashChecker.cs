@@ -37,4 +37,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             return allowedHashes.Contains(hash256);
         }
     }
+
+    public interface IWhitelistedHashChecker
+    {
+        bool CheckHashWhitelisted(byte[] hash);
+    }
 }
