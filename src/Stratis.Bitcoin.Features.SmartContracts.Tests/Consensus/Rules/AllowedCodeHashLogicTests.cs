@@ -5,6 +5,7 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core.Hashing;
 using Stratis.SmartContracts.RuntimeObserver;
 using Xunit;
 
@@ -26,7 +27,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         {
             var code = RandomUtils.GetBytes(2048);
 
-            byte[] hash = Hashes.Hash256(code).ToBytes();
+            byte[] hash = HashHelper.Keccak256(code);
 
             this.hashingStrategy.Setup(h => h.Hash(code)).Returns(hash);
             this.hashChecker.Setup(h => h.CheckHashWhitelisted(hash)).Returns(true);
@@ -45,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
         {
             var code = RandomUtils.GetBytes(2048);
 
-            byte[] hash = Hashes.Hash256(code).ToBytes();
+            byte[] hash = HashHelper.Keccak256(code);
 
             this.hashingStrategy.Setup(h => h.Hash(code)).Returns(hash);
             this.hashChecker.Setup(h => h.CheckHashWhitelisted(hash)).Returns(false);
