@@ -44,6 +44,10 @@ namespace Stratis.Bitcoin.P2P
         public void Add(IPEndPoint ipEndPoint)
         {
             this.knownSelfEndpoints.Add(ipEndPoint);
+
+            if (this.MyExternalAddress == null)
+                this.MyExternalAddress = ipEndPoint;
+
         }
 
         /// <inheritdoc/>
