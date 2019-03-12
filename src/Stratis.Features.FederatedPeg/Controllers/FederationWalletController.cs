@@ -247,7 +247,7 @@ namespace Stratis.Features.FederatedPeg.Controllers
                     wallet.LastBlockSyncedHash = chainedHeader.HashBlock;
                     this.walletManager.SaveWallet();
 
-                    // Start the syncing process from the block before the earliest transaction was seen.
+                    // Initialize the syncing process from the block before the earliest transaction was seen.
                     this.walletSyncManager.SyncFromHeight(chainedHeader.Height - 1);
                 }
 

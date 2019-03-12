@@ -213,7 +213,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
         {
             if (crossChainTransfers == null)
             {
-                crossChainTransfers = Get(
+                crossChainTransfers = this.Get(
                     this.depositsIdsByStatus[CrossChainTransferStatus.Partial].Union(
                         this.depositsIdsByStatus[CrossChainTransferStatus.FullySigned]).ToArray());
             }

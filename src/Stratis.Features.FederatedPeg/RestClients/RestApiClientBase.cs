@@ -48,7 +48,7 @@ namespace Stratis.Features.FederatedPeg.RestClients
                         delayMs *= attemptNumber;
 
                     return TimeSpan.FromMilliseconds(delayMs);
-                }, onRetry: OnRetry);
+                }, onRetry: this.OnRetry);
         }
 
         protected async Task<HttpResponseMessage> SendPostRequestAsync<Model>(Model requestModel, string apiMethodName, CancellationToken cancellation) where Model : class
