@@ -38,10 +38,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         {
             IServiceCollection services = options.Services;
 
-            // Replace serializer
+            // Replace serializer. This is necessary because the new serialized transactions will include a signature.
             services.RemoveAll<ICallDataSerializer>();
             services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
-            services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(new ContractSigner(), signingContractPubKey));
+            services.AddSingleton<IContractSigner, ContractSigner>();
+
+            // Add consensus rule.
+            services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(f.GetService<IContractSigner>(), signingContractPubKey));
 
             return options;
         }
