@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests
         }
 
         [Fact]
-        public void Should_Swallow_Exceptions_GetHashes_Invalid_uint256()
+        public void Should_Return_False_Invalid_uint256()
         {
             var repository = new Mock<IWhitelistedHashesRepository>();
 
