@@ -81,9 +81,11 @@ namespace Stratis.CirrusPegD
 
             IFullNode node = new FullNodeBuilder()
                 .AddCommonFeatures(nodeSettings)
-                .AddSmartContracts()
+                .AddSmartContracts(options =>
+                {
+                    options.UseReflectionExecutor();
+                })
                 .UseSmartContractWallet()
-                .UseReflectionExecutor()
                 .UseFederatedPegPoAMining()
                 .Build();
 
