@@ -27,9 +27,9 @@ namespace Stratis.Bitcoin.Features.RPC
         private readonly ILogger logger;
 
         private readonly IHttpContextFactory httpContextFactory;
-        private readonly FullNode fullNode;
+        private readonly DataFolder dataFolder;
 
-        public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory, IHttpContextFactory httpContextFactory, FullNode fullNode)
+        public RPCMiddleware(RequestDelegate next, IRPCAuthorization authorization, ILoggerFactory loggerFactory, IHttpContextFactory httpContextFactory, DataFolder dataFolder)
         {
             Guard.NotNull(next, nameof(next));
             Guard.NotNull(authorization, nameof(authorization));
@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.RPC
             this.authorization = authorization;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.httpContextFactory = httpContextFactory;
-            this.fullNode = fullNode;
+            this.dataFolder = dataFolder;
         }
 
         public async Task InvokeAsync(HttpContext httpContext)
@@ -224,13 +224,13 @@ namespace Stratis.Bitcoin.Features.RPC
                 this.logger.LogWarning("No 'Authorization' header found.");
 
                 // Auth header not present, check cookie.
-                if (this.fullNode.DataFolder == null || !File.Exists(this.fullNode.DataFolder.RpcCookieFile))
+                if (this.dataFolder == null || !File.Exists(this.dataFolder.RpcCookieFile))
                 {
                     this.logger.LogWarning("No authorization cookie found.");
                     return false;
                 }
 
-                string cookie = File.ReadAllText(this.fullNode.DataFolder.RpcCookieFile);
+                string cookie = File.ReadAllText(this.dataFolder.RpcCookieFile);
 
                 if (this.authorization.IsAuthorized(cookie)) return true;
 
