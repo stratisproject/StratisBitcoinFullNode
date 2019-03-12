@@ -23,13 +23,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         /// <returns>True if the hash was found in the whitelisted hashes repository.</returns>
         public bool CheckHashWhitelisted(byte[] hash)
         {
-            List<uint256> allowedHashes = this.whitelistedHashesRepository.GetHashes();
-
             if (hash.Length != 32)
             {
                 // For this implementation, only 32 byte wide hashes are accepted.
                 return false;
             }
+
+            List<uint256> allowedHashes = this.whitelistedHashesRepository.GetHashes();
 
             // Now that we've checked the width of the byte array, we don't expect the uint256 constructor to throw any exceptions.
             var hash256 = new uint256(hash);
