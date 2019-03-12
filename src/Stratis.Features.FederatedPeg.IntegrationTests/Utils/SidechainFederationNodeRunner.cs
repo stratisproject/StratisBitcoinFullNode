@@ -33,9 +33,11 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             var builder = new FullNodeBuilder()
                 .UseNodeSettings(settings)
                 .UseBlockStore()
-                .AddSmartContracts()
-                .UseSmartContractWallet()
-                .UseReflectionExecutor()
+                .AddSmartContracts(options =>
+                {
+                    options.UseReflectionExecutor();
+                })
+                .UseSmartContractWallet()                
                 .AddFederationGateway()
                 .UseFederatedPegPoAMining()
                 .UseMempool()
