@@ -43,7 +43,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             this.random = new Random();
 
             this.listOfSavedBlocks = new Dictionary<uint256, Block>();
-            this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, KnownNetworks.StratisMain));
+            this.listOfSavedBlocks.Add(uint256.One, Block.Parse(this.testBlockHex, KnownNetworks.StratisMain.Consensus.ConsensusFactory));
 
             this.chain = CreateChain(10);
 
