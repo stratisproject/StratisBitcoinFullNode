@@ -108,7 +108,7 @@ namespace Stratis.Bitcoin.Utilities
                 return new uint256(bytes);
 
             if (type == typeof(Block))
-                return Block.Load(bytes, this.Network, this.Network.Consensus.ConsensusFactory);
+                return Block.Load(bytes, this.Network.Consensus.ConsensusFactory);
 
             if (type == typeof(BlockStake))
                 return BlockStake.Load(bytes, this.Network);

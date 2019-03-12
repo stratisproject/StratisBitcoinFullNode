@@ -288,7 +288,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common
                 block.Header.Nonce = ++nonce;
 
             // This will set the block size.
-            block = Block.Load(block.ToBytes(), coreNode.FullNode.Network, coreNode.FullNode.Network.Consensus.ConsensusFactory);
+            block = Block.Load(block.ToBytes(), coreNode.FullNode.Network.Consensus.ConsensusFactory);
 
             if (callBlockMinedAsync)
             {
