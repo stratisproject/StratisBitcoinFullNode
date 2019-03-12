@@ -2,6 +2,7 @@
 using NBitcoin;
 using NBitcoin.Crypto;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.RuntimeObserver;

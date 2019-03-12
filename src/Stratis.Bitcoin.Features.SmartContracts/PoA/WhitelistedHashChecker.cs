@@ -1,7 +1,6 @@
 using System.Collections.Generic;
 using NBitcoin;
 using Stratis.Bitcoin.Features.PoA.Voting;
-using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {

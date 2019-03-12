@@ -1,5 +1,4 @@
 using NBitcoin.Crypto;
-using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {

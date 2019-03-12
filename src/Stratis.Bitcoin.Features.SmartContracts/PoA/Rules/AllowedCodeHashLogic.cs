@@ -37,14 +37,4 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
             new ConsensusError("contract-code-invalid-hash", "Contract code does not have a valid hash").Throw();
         }
     }
-
-    public interface IWhitelistedHashChecker
-    {
-        bool CheckHashWhitelisted(byte[] hash);
-    }
-
-    public interface IContractCodeHashingStrategy
-    {
-        byte[] Hash(byte[] data);
-    }
 }
