@@ -1,6 +1,10 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
+using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core.ContractSigning;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
@@ -19,6 +23,25 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 
             // Registers an additional contract tx validation consensus rule which checks whether the hash of the contract being deployed is whitelisted.
             services.AddTransient<IContractTransactionValidationLogic, AllowedCodeHashLogic>();
+
+            return options;
+        }
+
+        /// <summary>
+        /// Adds a consensus rule ensuring that only contracts which have been signed by a signing authority can be deployed.
+        /// Must be registered after the SmartContracts feature is added.
+        /// </summary>
+        /// <param name="options">The smart contract options.</param>
+        /// <param name="signingContractPubKey">The public key of the signing authority.</param>
+        /// <returns>The options provided.</returns>
+        public static SmartContractOptions UseSignedContracts(this SmartContractOptions options, PubKey signingContractPubKey)
+        {
+            IServiceCollection services = options.Services;
+
+            // Replace serializer
+            services.RemoveAll<ICallDataSerializer>();
+            services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
+            services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(new ContractSigner(), signingContractPubKey));
 
             return options;
         }
