@@ -58,28 +58,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
         [Retry]
-        public void Create_NoWhitelist_Fails()
-        {
-            using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
-            {
-                MockChainNode node1 = chain.Nodes[0];
-                MockChainNode node2 = chain.Nodes[1];
-                this.SetupNodes(chain, node1, node2);
-
-                // Compile file
-                byte[] contractBytes = ContractCompiler.CompileFile("SmartContracts/Auction.cs").Compilation;
-
-                // Try to send create but ensure it fails because hash is not whitelisted.
-                BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(contractBytes, 30);
-                node1.WaitMempoolCount(1);
-                chain.MineBlocks(1);
-
-                Assert.Empty(node1.GetCode(sendResponse.NewContractAddress));
-            }
-        }
-
-        [Retry]
-        public async Task Create_NoHash_Mempool_Rejects()
+        public async Task Create_NoWhitelist_Mempool_Rejects()
         {
             using (var chain = new PoAMockChain(2, this.nodeFactory).Build())
             {
