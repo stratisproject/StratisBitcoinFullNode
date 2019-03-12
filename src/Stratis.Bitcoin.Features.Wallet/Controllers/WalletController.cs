@@ -689,6 +689,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
+        /// <remarks>
+        /// The OpenApi specification doesn't support arrays of objects as a query parameter so this method is not usable
+        /// by the Swagger UI.
+        /// Here is an example of how to call this endpoint:
+        /// /api/wallet/estimate-txfee?walletname=wallet1&accountname=account 0&recipients[0].destinationaddress=TMLvkmSsDJnBi8vfszHSaVQ67NxEjgsUw6&recipients[0].amount=1000255&feetype=low 
+        /// </remarks>
         /// <returns>The estimated fee for the transaction.</returns>
         [Route("estimate-txfee")]
         [HttpGet]
