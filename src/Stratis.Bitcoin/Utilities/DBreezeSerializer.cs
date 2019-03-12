@@ -111,7 +111,7 @@ namespace Stratis.Bitcoin.Utilities
                 return Block.Load(bytes, this.Network.Consensus.ConsensusFactory);
 
             if (type == typeof(BlockStake))
-                return BlockStake.Load(bytes, this.Network);
+                return BlockStake.Load(bytes, this.Network.Consensus.ConsensusFactory);
 
             if (type == typeof(ProvenBlockHeader))
             {
@@ -123,7 +123,7 @@ namespace Stratis.Bitcoin.Utilities
             }
 
             if (type == typeof(HashHeightPair))
-                return HashHeightPair.Load(bytes, this.Network);
+                return HashHeightPair.Load(bytes, this.Network.Consensus.ConsensusFactory);
 
             if (typeof(IBitcoinSerializable).IsAssignableFrom(type))
             {

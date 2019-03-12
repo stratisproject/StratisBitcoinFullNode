@@ -83,10 +83,10 @@ namespace Stratis.Bitcoin.Utilities
         }
 
         /// <summary>Constructs <see cref="HashHeightPair"/> from a set bytes and the given network.</summary>
-        public static HashHeightPair Load(byte[] bytes, Network network)
+        public static HashHeightPair Load(byte[] bytes, ConsensusFactory consensusFactory)
         {
             var hashHeight = new HashHeightPair();
-            hashHeight.ReadWrite(bytes, network.Consensus.ConsensusFactory);
+            hashHeight.ReadWrite(bytes, consensusFactory);
             return hashHeight;
         }
     }
