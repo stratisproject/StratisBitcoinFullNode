@@ -23,7 +23,6 @@ using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
 using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
-using Stratis.Bitcoin.Utilities;
 
 namespace Stratis.Bitcoin.Features.PoA
 {
@@ -54,9 +53,11 @@ namespace Stratis.Bitcoin.Features.PoA
 
         private readonly Network network;
 
+        private readonly WhitelistedHashesRepository whitelistedHashesRepository;
+
         public PoAFeature(FederationManager federationManager, PayloadProvider payloadProvider, IConnectionManager connectionManager, ConcurrentChain chain,
             IInitialBlockDownloadState initialBlockDownloadState, IConsensusManager consensusManager, IPeerBanning peerBanning, ILoggerFactory loggerFactory,
-            IPoAMiner miner, VotingManager votingManager, Network network)
+            IPoAMiner miner, VotingManager votingManager, Network network, WhitelistedHashesRepository whitelistedHashesRepository)
         {
             this.federationManager = federationManager;
             this.connectionManager = connectionManager;
@@ -67,6 +68,7 @@ namespace Stratis.Bitcoin.Features.PoA
             this.loggerFactory = loggerFactory;
             this.miner = miner;
             this.votingManager = votingManager;
+            this.whitelistedHashesRepository = whitelistedHashesRepository;
             this.network = network;
 
             payloadProvider.DiscoverPayloads(this.GetType().Assembly);
@@ -88,6 +90,7 @@ namespace Stratis.Bitcoin.Features.PoA
             connectionParameters.TemplateBehaviors.Add(new PoAConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory));
 
             this.federationManager.Initialize();
+            this.whitelistedHashesRepository.Initialize();
 
             if (((PoAConsensusOptions)this.network.Consensus.Options).VotingEnabled)
             {
@@ -174,6 +177,8 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<MinerSettings>();
+                        services.AddSingleton<PoAMinerSettings>();
                         services.AddSingleton<SlotsManager>();
                         services.AddSingleton<BlockDefinition, PoABlockDefinition>();
                     });
@@ -201,6 +206,7 @@ namespace Stratis.Bitcoin.Features.PoA
                         services.AddSingleton<VotingManager>();
                         services.AddSingleton<VotingController>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                        services.AddSingleton<WhitelistedHashesRepository>();
                     });
             });
 

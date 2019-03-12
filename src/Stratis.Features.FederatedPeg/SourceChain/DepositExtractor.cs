@@ -2,7 +2,6 @@
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Features.FederatedPeg.Interfaces;
 using Stratis.Features.FederatedPeg.Models;
@@ -22,8 +21,7 @@ namespace Stratis.Features.FederatedPeg.SourceChain
         public DepositExtractor(
             ILoggerFactory loggerFactory,
             IFederationGatewaySettings federationGatewaySettings,
-            IOpReturnDataReader opReturnDataReader,
-            IFullNode fullNode)
+            IOpReturnDataReader opReturnDataReader)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             // Note: MultiSigRedeemScript.PaymentScript equals MultiSigAddress.ScriptPubKey

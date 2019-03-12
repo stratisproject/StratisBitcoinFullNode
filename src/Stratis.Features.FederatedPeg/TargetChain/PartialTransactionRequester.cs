@@ -108,7 +108,7 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
                 if (kv.Key != null)
                 {
-                    BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value)).GetAwaiter().GetResult();
+                    this.BroadcastAsync(new RequestPartialTransactionPayload(kv.Key).AddPartial(kv.Value)).GetAwaiter().GetResult();
                     this.logger.LogInformation("Partial template requested");
                 }
 

@@ -12,7 +12,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     /// This rule will validate that the calculated merkle tree matches the merkle root in the header.
     /// </summary>
     /// <remarks>
-    /// Transactions in a block are hashed together using SHA256 in to a merkel tree,
+    /// Transactions in a block are hashed together using SHA256 in to a merkle tree,
     /// the root of that tree is included in the block header.
     /// </remarks>
     /// <remarks>
@@ -28,7 +28,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
     {
         /// <inheritdoc />
         /// <exception cref="ConsensusErrors.BadMerkleRoot">The block merkle root is different from the computed merkle root.</exception>
-        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes on the merkle tree has a duplicate hash within the subtree.</exception>
+        /// <exception cref="ConsensusErrors.BadTransactionDuplicate">One of the leaf nodes of the merkle tree has a duplicate hash within the subtree.</exception>
         public override void Run(RuleContext context)
         {
             Block block = context.ValidationContext.BlockToValidate;
@@ -93,6 +93,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             // Which position in inner is a hash that depends on the matching leaf.
             int matchLevel = -1;
             uint processedLeavesCount = 0;
+            var hash = new byte[64];
 
             // First process all leaves into subTreeHashes values.
             while (processedLeavesCount < leaves.Count)
@@ -118,7 +119,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     }
                     if (!mutated)
                         mutated = subTreeHashes[level] == currentLeaveHash;
-                    var hash = new byte[64];
+                    
                     Buffer.BlockCopy(subTreeHashes[level].ToBytes(), 0, hash, 0, 32);
                     Buffer.BlockCopy(currentLeaveHash.ToBytes(), 0, hash, 32, 32);
                     currentLeaveHash = Hashes.Hash256(hash);
@@ -145,6 +146,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
                 root = subTreeHashes[level];
                 bool match = matchLevel == level;
+                var hashh = new byte[64];
+
                 while (processedLeavesCount != (((uint)1) << level))
                 {
                     // If we reach this point, hash is a subTreeHashes value that is not the top.
@@ -153,9 +156,10 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                     if (match)
                         branch.Add(root);
 
-                    var hash = new byte[64];
-                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 0, 32);
-                    Buffer.BlockCopy(root.ToBytes(), 0, hash, 32, 32);
+                    // Line was added to allocate once and not twice
+                    var rootBytes = root.ToBytes(); 
+                    Buffer.BlockCopy(rootBytes, 0, hash, 0, 32);
+                    Buffer.BlockCopy(rootBytes, 0, hash, 32, 32);
                     root = Hashes.Hash256(hash);
 
                     // Increment processedLeavesCount to the value it would have if two entries at this
@@ -176,7 +180,6 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                             match = true;
                         }
 
-                        var hashh = new byte[64];
                         Buffer.BlockCopy(subTreeHashes[level].ToBytes(), 0, hashh, 0, 32);
                         Buffer.BlockCopy(root.ToBytes(), 0, hashh, 32, 32);
                         root = Hashes.Hash256(hashh);

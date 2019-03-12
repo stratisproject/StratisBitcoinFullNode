@@ -3,7 +3,6 @@ using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NSubstitute;
-using Stratis.Bitcoin;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Signals;
@@ -26,8 +25,6 @@ namespace Stratis.Features.FederatedPeg.Tests
         private readonly IDepositExtractor depositExtractor;
 
         private readonly IFederationGatewaySettings federationGatewaySettings;
-
-        private readonly IFullNode fullNode;
 
         private readonly ConcurrentChain chain;
 
@@ -57,10 +54,8 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.federationGatewaySettings.MinimumDepositConfirmations.Returns(this.minimumDepositConfirmations);
 
             this.federationWalletSyncManager = Substitute.For<IFederationWalletSyncManager>();
-            this.fullNode = Substitute.For<IFullNode>();
             this.federationGatewayClient = Substitute.For<IFederationGatewayClient>();
             this.chain = Substitute.ForPartsOf<ConcurrentChain>();
-            this.fullNode.NodeService<ConcurrentChain>().Returns(this.chain);
             this.loggerFactory = Substitute.For<ILoggerFactory>();
             this.opReturnDataReader = Substitute.For<IOpReturnDataReader>();
             this.consensusManager = Substitute.For<IConsensusManager>();
@@ -76,8 +71,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             this.depositExtractor = new DepositExtractor(
                 this.loggerFactory,
                 this.federationGatewaySettings,
-                this.opReturnDataReader,
-                this.fullNode);
+                this.opReturnDataReader);
 
             this.blockObserver = new BlockObserver(
                 this.federationWalletSyncManager,

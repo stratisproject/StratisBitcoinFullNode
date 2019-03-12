@@ -34,11 +34,13 @@ namespace Stratis.SmartContracts.Tests.Common
                             .UseBlockStore()
                             .UseMempool()
                             .AddRPC()
-                            .AddSmartContracts()
+                            .AddSmartContracts(options =>
+                            {
+                                options.UseReflectionExecutor();
+                            })
                             .UseSmartContractPosConsensus()
                             .UseSmartContractWallet()
                             .UseSmartContractPosPowMining()
-                            .UseReflectionExecutor()
                             .MockIBD()
                             .UseTestChainedHeaderTree()
                             .OverrideDateTimeProviderFor<MiningFeature>();

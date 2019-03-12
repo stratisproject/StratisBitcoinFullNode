@@ -1,4 +1,5 @@
-﻿using System.Collections.Generic;
+﻿using System;
+using System.Collections.Generic;
 using System.IO;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -42,7 +43,8 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
 
             long sigOpsCost = 0;
             Money fees = Money.Zero;
-            var checkInputs = new List<Task<bool>>();
+            var checkInputs = new List<Func<bool>>();
+
             for (int txIndex = 0; txIndex < block.Transactions.Count; txIndex++)
             {
                 Transaction tx = block.Transactions[txIndex];
@@ -87,9 +89,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
                             TxIn input = tx.Inputs[inputIndex];
                             int inputIndexCopy = inputIndex;
                             TxOut txout = view.GetOutputFor(input);
-                            var checkInput = new Task<bool>(() => this.CheckInput(tx, inputIndexCopy, txout, txData, input, flags));
-                            checkInput.Start();
-                            checkInputs.Add(checkInput);
+                            checkInputs.Add(() => this.CheckInput(tx, inputIndexCopy, txout, txData, input, flags));
                         }
                     }
                 }
@@ -101,12 +101,25 @@ namespace Stratis.Bitcoin.Features.Consensus.Rules.CommonRules
             {
                 this.CheckBlockReward(context, fees, index.Height, block);
 
-                foreach (Task<bool> checkInput in checkInputs)
+                // Start the Parallel loop on a thread so its result can be awaited rather than blocking
+                Task<ParallelLoopResult> checkInputsInParallel = Task.Run(() =>
                 {
-                    if (await checkInput.ConfigureAwait(false))
-                        continue;
+                    return Parallel.ForEach(checkInputs, (checkInput, state) =>
+                    {
+                        if (!checkInput())
+                        {
+                            state.Stop();
+                        }
+                    });
 
+                });
+
+                ParallelLoopResult loopResult = await checkInputsInParallel.ConfigureAwait(false);
+
+                if (!loopResult.IsCompleted)
+                {
                     this.Logger.LogTrace("(-)[BAD_TX_SCRIPT]");
+
                     ConsensusErrors.BadTransactionScriptError.Throw();
                 }
             }
