@@ -1,10 +1,10 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
-using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
+using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
 using Stratis.Bitcoin.Mining;
@@ -20,8 +20,6 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
     /// </summary>
     public class TestFederatedPegBlockDefinition : SmartContractPoABlockDefinition
     {
-
-        /// <inheritdoc />
         public TestFederatedPegBlockDefinition(
             IBlockBufferGenerator blockBufferGenerator,
             ICoinView coinView,
@@ -34,10 +32,9 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
-            NodeSettings nodeSettings)
-            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, nodeSettings)
+            MinerSettings minerSettings)
+            : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool, mempoolLock, network, senderRetriever, stateRoot, minerSettings)
         {
-            var federationGatewaySettings = new FederationGatewaySettings(nodeSettings);
         }
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
