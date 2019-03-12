@@ -56,40 +56,6 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             return fullNodeBuilder;
         }
 
-        public static SmartContractOptions UseSignedContracts(this SmartContractOptions options)
-        {           
-            IServiceCollection services = options.Services;
-            var networkWithPubKey = (ISignedCodePubKeyHolder) options.Network;
-
-            // Replace serializer
-            services.RemoveAll<ICallDataSerializer>();
-            services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
-            services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey));
-
-            return options;
-        }
-
-        public static IFullNodeBuilder UseContractWhitelist(this IFullNodeBuilder fullNodeBuilder)
-        {
-            if(fullNodeBuilder.Features.FeatureRegistrations.All(f => f.FeatureType != typeof(PoAFeature)))
-            {
-                throw new InvalidOperationException("PoAFeature must be registered to use contract whitelist!");
-            }
-
-            if (fullNodeBuilder.Features.FeatureRegistrations.All(f => f.FeatureType != typeof(SmartContractFeature)))
-            {
-                throw new InvalidOperationException("SmartContractFeature must be registered to use contract whitelist!");
-            }
-
-            IServiceCollection services = fullNodeBuilder.Services;
-
-            services.AddSingleton<IContractCodeHashingStrategy, Sha256CodeHashingStrategy>();
-            services.AddSingleton<IWhitelistedHashChecker, WhitelistedHashChecker>();
-            services.AddSingleton<IContractTransactionValidationLogic, AllowedCodeHashLogic>();
-
-            return fullNodeBuilder;
-        }
-
         /// <summary>
         /// Adds mining to the smart contract node when on a proof-of-authority network.
         /// </summary>
