@@ -49,10 +49,6 @@ namespace Stratis.Features.FederatedPeg
     {
         public const string FederationGatewayFeatureNamespace = "federationgateway";
 
-        private IDisposable blockSubscriberDisposable;
-
-        private IDisposable transactionSubscriberDisposable;
-
         private readonly IConnectionManager connectionManager;
 
         private readonly IFederationGatewaySettings federationGatewaySettings;
@@ -151,9 +147,6 @@ namespace Stratis.Features.FederatedPeg
 
         public override void Dispose()
         {
-            this.blockSubscriberDisposable.Dispose();
-            this.transactionSubscriberDisposable.Dispose();
-
             // Sync manager has to be disposed BEFORE cross chain transfer store.
             this.maturedBlocksSyncManager.Dispose();
 
@@ -350,6 +343,7 @@ namespace Stratis.Features.FederatedPeg
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
                     services.AddSingleton<WhitelistedHashesRepository>();
                     services.AddSingleton<PoAMinerSettings>();
+                    services.AddSingleton<MinerSettings>();
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();
