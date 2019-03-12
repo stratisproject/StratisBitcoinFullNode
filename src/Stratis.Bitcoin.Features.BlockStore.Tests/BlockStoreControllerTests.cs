@@ -109,7 +109,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             (Mock<IBlockStore> store, BlockStoreController controller) = GetControllerAndStore();
 
             store.Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
+                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory)));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest()
             { Hash = ValidHash, OutputJson = true });
@@ -130,7 +130,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             store
                 .Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
+                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory)));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest() { Hash = ValidHash, OutputJson = true, ShowTransactionDetails = true });
 
@@ -148,7 +148,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
 
             store
                 .Setup(c => c.GetBlockAsync(It.IsAny<uint256>()))
-                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest)));
+                .Returns(Task.FromResult(Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory)));
 
             Task<IActionResult> response = controller.GetBlockAsync(new SearchByHashRequest() { Hash = ValidHash, OutputJson = false });
 
@@ -187,7 +187,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
             logger.Setup(l => l.CreateLogger(It.IsAny<string>())).Returns(Mock.Of<ILogger>);
 
             var chain = new Mock<ChainIndexer>();
-            Block block = Block.Parse(BlockAsHex, KnownNetworks.StratisTest);
+            Block block = Block.Parse(BlockAsHex, KnownNetworks.StratisTest.Consensus.ConsensusFactory);
             chain.Setup(c => c.GetBlock(It.IsAny<uint256>())).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
             chain.Setup(x => x.Tip).Returns(new ChainedHeader(block.Header, block.Header.GetHash(), 1));
 
