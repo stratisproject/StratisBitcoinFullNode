@@ -223,7 +223,7 @@ namespace Stratis.Bitcoin.Features.RPC
             {
                 this.logger.LogWarning("No 'Authorization' header found.");
 
-                // Auth header not present, check cookie
+                // Auth header not present, check cookie.
                 if (this.fullNode.DataFolder == null || !File.Exists(this.fullNode.DataFolder.RpcCookieFile))
                 {
                     this.logger.LogWarning("No authorization cookie found.");
@@ -234,7 +234,7 @@ namespace Stratis.Bitcoin.Features.RPC
 
                 if (this.authorization.IsAuthorized(cookie)) return true;
 
-                this.logger.LogWarning("Existing cookie '{0}' is not authorised.", cookie);
+                this.logger.LogWarning("Existing cookie '{0}' is not authorized.", cookie);
                 return false;
             }
 
