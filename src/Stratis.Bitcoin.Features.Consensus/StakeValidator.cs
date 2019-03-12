@@ -1,11 +1,13 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
 using System.IO;
 using System.Linq;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
 using NBitcoin.BouncyCastle.Math;
 using NBitcoin.Crypto;
+using Secp256k1Net;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Consensus.Interfaces;
@@ -70,6 +72,9 @@ namespace Stratis.Bitcoin.Features.Consensus
         /// <inheritdoc cref="Network"/>
         private readonly Network network;
 
+        /// <summary>Optimized secp256k1 library</summary>
+        private readonly FastSecp256k1 fastSecp256k1;
+
         /// <inheritdoc />
         /// <param name="network">Specification of the network the node runs on - regtest/testnet/mainnet.</param>
         /// <param name="stakeChain">Database of stake related data for the current blockchain.</param>
@@ -83,6 +88,10 @@ namespace Stratis.Bitcoin.Features.Consensus
             this.chain = chain;
             this.coinView = coinView;
             this.network = network;
+
+            // TODO: Dispose this correctly
+            // TODO: Use DI
+            this.fastSecp256k1 = new FastSecp256k1();
         }
 
         /// <inheritdoc/>
@@ -442,7 +451,44 @@ namespace Stratis.Bitcoin.Features.Consensus
             if (PayToPubkeyTemplate.Instance.CheckScriptPubKey(txout.ScriptPubKey))
             {
                 PubKey pubKey = PayToPubkeyTemplate.Instance.ExtractScriptPubKeyParameters(txout.ScriptPubKey);
-                bool res = pubKey.Verify(blockHash, new ECDSASignature(signature.Signature));
+                
+                bool res;
+                object elapsedNew = null;
+                object elapsedOld = null;
+
+                using (new StopwatchDisposable((elapsed) =>
+                {
+                    Trace.WriteLine("new lib | elapsed: " + elapsed);
+                    elapsedNew = (double)elapsed;
+                }))
+                {                                       
+                    var blockHashBytes = blockHash.ToBytes();
+
+                    res = this.fastSecp256k1.VerifyData(pubKey.ToBytes(), blockHashBytes, signature.Signature);  
+                    Trace.WriteLine("new lib | res:     " + res);
+                }
+
+                bool res2;
+
+                using (new StopwatchDisposable((elapsed) =>
+                {
+                    Trace.WriteLine("old lib | elapsed: " + elapsed);
+                    elapsedOld = (double)elapsed;
+                }))
+                {
+                    res2 = pubKey.Verify(blockHash, new ECDSASignature(signature.Signature));
+                    Trace.WriteLine("old lib | res:     " + res2);
+                }
+
+                if (res != res2)
+                {
+                    throw new InvalidOperationException("different results");
+                }
+
+                var elapsedRatio = ((double)elapsedOld - (double)elapsedNew) / (double)elapsedOld;
+
+                this.logger.LogInformation("FastSecp.XXX;{0};{1};{2}", elapsedNew, elapsedOld, elapsedRatio);
+
                 this.logger.LogTrace("(-)[P2PK]:{0}", res);
                 return res;
             }
