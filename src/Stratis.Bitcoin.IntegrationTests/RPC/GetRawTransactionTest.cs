@@ -131,11 +131,11 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Act.
                 RPCClient rpc = node.CreateRPCClient();
-                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.TransactionsVerbose.First(), 1);
+                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First(), 1);
 
                 // Assert.
                 TransactionVerboseModel transaction = response.Result.ToObject<TransactionVerboseModel>();
-                transaction.TxId.Should().Be(tip.Transactions.First());
+                transaction.TxId.Should().Be((string)tip.Transactions.First());
                 transaction.VOut.First().ScriptPubKey.Addresses.Count.Should().Be(1);
             }
         }
@@ -243,11 +243,11 @@ namespace Stratis.Bitcoin.IntegrationTests.RPC
 
                 // Act.
                 RPCClient rpc = node.CreateRPCClient();
-                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.TransactionsVerbose.First(), 1, tip.Hash);
+                RPCResponse response = await rpc.SendCommandAsync(RPCOperations.getrawtransaction, tip.Transactions.First(), 1, tip.Hash);
 
                 // Assert.
                 TransactionVerboseModel transaction = response.Result.ToObject<TransactionVerboseModel>();
-                transaction.TxId.Should().Be(tip.Transactions.First());
+                transaction.TxId.Should().Be((string)tip.Transactions.First());
             }
         }
 

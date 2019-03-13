@@ -91,7 +91,7 @@ namespace Stratis.Bitcoin.Controllers.Models
             this.ChainWork = chainedHeader.ChainWork.ToString();
             this.NumberOfTransactions = block.Transactions.Count();
             this.PreviousBlockHash = block.Header.HashPrevBlock.ToString();
-            this.NextBlockHash = chainedHeader.Next?.First().HashBlock.ToString();
+            this.NextBlockHash = chainedHeader.Next?.FirstOrDefault()?.HashBlock.ToString();
         }
 
         /// <summary>
