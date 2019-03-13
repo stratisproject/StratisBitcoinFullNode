@@ -11,36 +11,58 @@ namespace Stratis.Bitcoin.Controllers.Models
         [JsonProperty("hash")]
         public string Hash { get; private set; }
 
+        [JsonProperty("confirmations")]
+        public int Confirmations { get; private set; }
+
         [JsonProperty("size")]
         public int Size { get; private set; }
+
+        [JsonProperty("weight")]
+        public int Weight { get; private set; }
+
+        [JsonProperty("height")]
+        public int Height { get; private set; }
 
         [JsonProperty("version")]
         public int Version { get; private set; }
 
-        [JsonProperty("bits")]
-        public string Bits { get; private set; }
+        [JsonProperty("versionhex")]
+        public string VersionHex { get; private set; }
+
+        [JsonProperty("merkleroot")]
+        public string MerkleRoot { get; private set; }
+
+        [JsonProperty("tx")]
+        public string[] Transactions { get; private set; }
 
         [JsonProperty("time")]
         [JsonConverter(typeof(DateTimeOffsetConverter))]
         public DateTimeOffset Time { get; private set; }
 
-        [JsonProperty("tx")]
-        public string[] Transactions { get; private set; }
-
-        [JsonProperty("difficulty")]
-        public double Difficulty { get; private set; }
-
-        [JsonProperty("merkleroot")]
-        public string MerkleRoot { get; private set; }
-
-        [JsonProperty("previousblockhash")]
-        public string PreviousBlockHash { get; private set; }
+        [JsonProperty("mediantime")]
+        [JsonConverter(typeof(DateTimeOffsetConverter))]
+        public DateTimeOffset MedianTime { get; private set; }
 
         [JsonProperty("nonce")]
         public uint Nonce { get; private set; }
 
-        [JsonProperty("height")]
-        public int Height { get; private set; }
+        [JsonProperty("bits")]
+        public string Bits { get; private set; }
+
+        [JsonProperty("difficulty")]
+        public double Difficulty { get; private set; }
+
+        [JsonProperty("chainwork")]
+        public string ChainWork { get; private set; }
+
+        [JsonProperty("ntx")]
+        public int NumberOfTransactions { get; private set; }
+
+        [JsonProperty("previousblockhash")]
+        public string PreviousBlockHash { get; private set; }
+
+        [JsonProperty("nextblockhash")]
+        public string NextBlockHash { get; private set; }
 
         public BlockModel(Block block, ChainBase chain)
         {
