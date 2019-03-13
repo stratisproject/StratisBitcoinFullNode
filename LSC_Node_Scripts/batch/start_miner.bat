@@ -5,7 +5,7 @@ set NodesDirectory=%APPDATA%\LocalSCNodes
 echo %Message%
 @ECHO OFF 
 cd ..\..
-git checkout release/3.0.1.0-LSC
+git checkout LSC-tutorial
 cd src\Stratis.LocalSmartContracts.MinerD
 @ECHO ON
 echo Running miner 1...

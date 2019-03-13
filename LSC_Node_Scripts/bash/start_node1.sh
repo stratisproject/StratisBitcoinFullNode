@@ -3,7 +3,7 @@ Message="Changing dir..."
 NodesDirectory="$HOME/LocalSCNodes"
 echo $Message
 cd ../..
-git checkout release/3.0.1.0-LSC
+git checkout LSC-tutorial
 cd src/Stratis.LocalSmartContracts.NodeD
 echo "Running standard node 1..."
 echo "**Data held in $NodesDirectory/node1**"
