@@ -1,7 +1,4 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using System.Threading;
+﻿using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
@@ -14,6 +11,7 @@ using Stratis.SmartContracts.CLR.ContractSigning;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
@@ -31,7 +29,7 @@ namespace Stratis.SmartContracts.IntegrationTests
         }
 
 
-        [Fact]
+        [Retry]
         public void Create_Signed_Contract()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -42,7 +40,7 @@ namespace Stratis.SmartContracts.IntegrationTests
 
                 // Compile file
                 byte[] toSend = new CSharpContractSigner(new ContractSigner()).PackageSignedCSharpFile(this.network.SigningContractPrivKey, "SmartContracts/StorageDemo.cs");
-                
+
                 // Send create with value, and ensure balance is stored.
                 BuildCreateContractTransactionResponse sendResponse = node1.SendCreateContractTransaction(toSend, 30);
                 node1.WaitMempoolCount(1);
@@ -53,7 +51,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void Create_NoSignature_Fails()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -71,7 +69,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public void Create_InvalidSignature_Fails()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -89,7 +87,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public async Task Create_NoSignature_Mempool_Rejects()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -107,7 +105,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 TxOut txOut = tx.TryGetSmartContractTxOut();
                 byte[] contractBytes = ContractCompiler.CompileFile("SmartContracts/Auction.cs").Compilation;
                 var serializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
-                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (RuntimeObserver.Gas) SmartContractMempoolValidator.MinGasPrice, contractBytes));
+                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (Gas) SmartContractMempoolValidator.MinGasPrice, contractBytes));
                 txOut.ScriptPubKey = new Script(newScript);
 
                 var broadcasterManager = node1.CoreNode.FullNode.NodeService<IBroadcasterManager>();
@@ -128,7 +126,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             }
         }
 
-        [Fact]
+        [Retry]
         public async Task Create_InvalidSignature_Mempool_Rejects()
         {
             using (SignedPoAMockChain chain = new SignedPoAMockChain(2).Build())
@@ -146,7 +144,7 @@ namespace Stratis.SmartContracts.IntegrationTests
                 TxOut txOut = tx.TryGetSmartContractTxOut();
                 byte[] incorrectlySignedBytes = new CSharpContractSigner(new ContractSigner()).PackageSignedCSharpFile(new Key(), "SmartContracts/StorageDemo.cs");
                 var serializer = new CallDataSerializer(new ContractPrimitiveSerializer(this.network));
-                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (RuntimeObserver.Gas)SmartContractMempoolValidator.MinGasPrice, incorrectlySignedBytes));
+                byte[] newScript = serializer.Serialize(new ContractTxData(1, SmartContractFormatLogic.GasLimitMaximum, (Gas)SmartContractMempoolValidator.MinGasPrice, incorrectlySignedBytes));
                 txOut.ScriptPubKey = new Script(newScript);
 
                 var broadcasterManager = node1.CoreNode.FullNode.NodeService<IBroadcasterManager>();

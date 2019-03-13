@@ -15,6 +15,7 @@ using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
+using Stratis.Bitcoin.Connection;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.RPC;
@@ -463,7 +464,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers
 
             using (INetworkPeer peer = this.CreateNetworkPeerClient())
             {
-                peer.VersionHandshakeAsync().GetAwaiter().GetResult();
+                await peer.VersionHandshakeAsync().ConfigureAwait(false);
 
                 var chain = bestBlock == this.runner.Network.GenesisHash ? new ConcurrentChain(this.runner.Network) : this.GetChain(peer);
 

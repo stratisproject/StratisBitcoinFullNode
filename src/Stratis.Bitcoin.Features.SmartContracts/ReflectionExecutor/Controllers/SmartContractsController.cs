@@ -96,7 +96,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             if (contractCode == null || !contractCode.Any())
             {
-                return Json(new GetCodeResponse
+                return this.Json(new GetCodeResponse
                 {
                     Message = string.Format("No contract execution code exists at {0}", address)
                 });
@@ -104,7 +104,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             
             Result<string> sourceResult = this.contractDecompiler.GetSource(contractCode);
 
-            return Json(new GetCodeResponse
+            return this.Json(new GetCodeResponse
             {
                 Message = string.Format("Contract execution code retrieved at {0}", address),
                 Bytecode = contractCode.ToHexString(),
@@ -125,8 +125,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
         {
             uint160 addressNumeric = address.ToUint160(this.network);
             ulong balance = this.stateRoot.GetCurrentBalance(addressNumeric);
-            
-            return Json(balance);
+            Money moneyBalance = Money.Satoshis(balance);
+            return this.Json(moneyBalance.ToString(false));
         }
 
         /// <summary>
@@ -157,18 +157,18 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             if (storageValue == null)
             {
-                return Json(new
+                return this.Json(new
                 {
                     Message = string.Format("No data at storage with key {0}", request.StorageKey)
                 });
             }
 
             // Interpret the storage bytes as an object of the given type
-            var interpretedStorageValue = InterpretStorageValue(request.DataType, storageValue);
+            object interpretedStorageValue = this.InterpretStorageValue(request.DataType, storageValue);
 
             // Use MethodParamStringSerializer to serialize the interpreted object to a string
-            var serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue, this.network);
-            return Json(serialized);
+            string serialized = MethodParameterStringSerializer.Serialize(interpretedStorageValue, this.network);
+            return this.Json(serialized);
         }
 
         /// <summary>
@@ -196,7 +196,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             var receiptResponse = new ReceiptResponse(receipt, this.network);
 
-            return Json(receiptResponse);
+            return this.Json(receiptResponse);
         }
 
         // Note: We may not know exactly how to best structure "receipt search" queries until we start building 
@@ -260,7 +260,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 }
             }
 
-            return Json(receiptResponses);
+            return this.Json(receiptResponses);
         }
 
         /// <summary>
@@ -282,7 +282,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return Json(this.smartContractTransactionService.BuildCreateTx(request));
+            return this.Json(this.smartContractTransactionService.BuildCreateTx(request));
         }
 
         /// <summary>
@@ -304,7 +304,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             if (!this.ModelState.IsValid)
                 return ModelStateErrors.BuildErrorResponse(this.ModelState);
 
-            return Json(this.smartContractTransactionService.BuildCallTx(request));
+            return this.Json(this.smartContractTransactionService.BuildCallTx(request));
         }
 
         /// <summary>
@@ -326,13 +326,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
             BuildCreateContractTransactionResponse response = this.smartContractTransactionService.BuildCreateTx(request);
 
             if (!response.Success)
-                return Json(response);
+                return this.Json(response);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-            return Json(response);
+            return this.Json(response);
         }
 
         /// <summary>
@@ -354,13 +354,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
 
             BuildCallContractTransactionResponse response = this.smartContractTransactionService.BuildCallTx(request);
             if (!response.Success)
-                return Json(response);
+                return this.Json(response);
 
             Transaction transaction = this.network.CreateTransaction(response.Hex);
             this.walletManager.ProcessTransaction(transaction, null, null, false);
             this.broadcasterManager.BroadcastTransactionAsync(transaction).GetAwaiter().GetResult();
 
-            return Json(response);
+            return this.Json(response);
         }
 
         /// <summary>
@@ -395,14 +395,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                     string.IsNullOrWhiteSpace(request.Amount) ? (Money) request.Amount : 0,
                     txData);
 
-                return Json(result, new JsonSerializerSettings
+                return this.Json(result, new JsonSerializerSettings
                 {
                     ContractResolver = new ContractParametersContractResolver(this.network)
                 });
             }
             catch (MethodParameterStringSerializerException e)
             {
-                return Json(ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message,
+                return this.Json(ErrorHelpers.BuildErrorResponse(HttpStatusCode.InternalServerError, e.Message,
                     "Error deserializing method parameters"));
             }
         }
@@ -459,7 +459,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers
                 });
             }
             
-            return Json(result);
+            return this.Json(result);
         }
 
         private object InterpretStorageValue(MethodParameterDataType dataType, byte[] bytes)

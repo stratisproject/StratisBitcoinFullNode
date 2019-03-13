@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.IO;
 using System.Linq;
 using System.Text;
 using System.Threading;
@@ -12,7 +13,6 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.CLR;
@@ -20,8 +20,8 @@ using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -90,7 +90,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
-                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+                var gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 // Create a transfer token contract.
                 var compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");
@@ -442,6 +442,40 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
                 sender.MineBlocks(1);
 
                 Assert.Equal((ulong)30 * 100_000_000, sender.GetContractBalance(sendResponse.NewContractAddress));
+            }
+        }
+
+        /// <summary>
+        /// https://github.com/jbevain/cecil/issues/555
+        /// </summary>
+        [Fact]
+        public void MockChain_AssemblyDoesntHang()
+        {
+            using (PoWMockChain chain = new PoWMockChain(2))
+            {
+                MockChainNode sender = chain.Nodes[0];
+                MockChainNode receiver = chain.Nodes[1];
+
+                // Mine some coins so we have balance
+                int maturity = (int)sender.CoreNode.FullNode.Network.Consensus.CoinbaseMaturity;
+                sender.MineBlocks(maturity + 1);
+                int spendable = GetSpendableBlocks(maturity + 1, maturity);
+                Assert.Equal(Money.COIN * spendable * 50, (long)sender.WalletSpendableBalance);
+
+                // Get hanging file
+                byte[] bytes = File.ReadAllBytes("Modules/Hang");
+
+                // Send create with value, and ensure balance is stored.
+                BuildCreateContractTransactionResponse sendResponse = sender.SendCreateContractTransaction(bytes, 30);
+                sender.WaitMempoolCount(1);
+                sender.MineBlocks(1);
+
+                // Code didn't actually deploy.
+                ReceiptResponse receipt = sender.GetReceipt(sendResponse.TransactionId.ToString());
+                Assert.False(receipt.Success);
+
+                // Can still progress - node didn't hang.
+                sender.MineBlocks(1);
             }
         }
 

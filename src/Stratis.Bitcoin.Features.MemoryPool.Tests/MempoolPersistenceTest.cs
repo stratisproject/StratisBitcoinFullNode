@@ -67,7 +67,7 @@ namespace Stratis.Bitcoin.Features.MemoryPool.Tests
             Assert.Equal(loaded, toSave.ToArray());
         }
 
-        [Fact]
+        [Fact(Skip = "Unstable on ubuntu")]
         public void LoadBadFileTest()
         {
             int numTx = 22;

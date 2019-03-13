@@ -149,9 +149,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
 
             scHeader.HashStateRoot = new uint256(this.stateSnapshot.Root);
 
-            UpdateReceiptRoot(scHeader);
+            this.UpdateReceiptRoot(scHeader);
 
-            UpdateLogsBloom(scHeader);
+            this.UpdateLogsBloom(scHeader);
         }
 
         /// <summary>

@@ -270,6 +270,8 @@ namespace Stratis.Bitcoin.Configuration
 
                 var builder = new StringBuilder();
 
+                BuildDefaultConfigurationFile(builder, this.Network);
+
                 foreach (IFeatureRegistration featureRegistration in features)
                 {
                     MethodInfo getDefaultConfiguration = featureRegistration.FeatureType.GetMethod("BuildDefaultConfigurationFile", BindingFlags.Public | BindingFlags.Static);

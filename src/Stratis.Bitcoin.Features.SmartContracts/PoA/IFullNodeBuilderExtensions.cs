@@ -1,13 +1,18 @@
 ﻿using Microsoft.Extensions.DependencyInjection;
+using Microsoft.Extensions.DependencyInjection.Extensions;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Consensus;
+using Stratis.Bitcoin.Consensus.Rules;
 using Stratis.Bitcoin.Features.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.Miner;
 using Stratis.Bitcoin.Features.PoA;
-using Stratis.SmartContracts.CLR;
 using Stratis.Bitcoin.Features.PoA.Voting;
+using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
+using Stratis.Bitcoin.Features.SmartContracts.Rules;
+using Stratis.SmartContracts.CLR;
+using Stratis.SmartContracts.Core.ContractSigning;
 
 namespace Stratis.Bitcoin.Features.SmartContracts.PoA
 {
@@ -30,46 +35,36 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<DBreezeCoinView>();
                         services.AddSingleton<ICoinView, CachedCoinView>();
                         services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
                         services.AddSingleton<VotingManager>();
+                        services.AddSingleton<WhitelistedHashesRepository>();
                         services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
 
-                        new SmartContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
+                        services.AddSingleton<PoAConsensusRuleEngine>();
+                        services.AddSingleton<IRuleRegistration, SmartContractPoARuleRegistration>();
+                        services.AddSingleton<IConsensusRuleEngine>(f =>
+                        {
+                            var concreteRuleEngine = f.GetService<PoAConsensusRuleEngine>();
+                            var ruleRegistration = f.GetService<IRuleRegistration>();
+
+                            return new DiConsensusRuleEngine(concreteRuleEngine, ruleRegistration);
+                        });
                     });
             });
 
             return fullNodeBuilder;
         }
 
-        /// <summary>
-        /// Configures the node with the smart contract proof of authority consensus model.
-        /// </summary>
-        public static IFullNodeBuilder UseSignedContractPoAConsensus(this IFullNodeBuilder fullNodeBuilder)
-        {
-            LoggingConfiguration.RegisterFeatureNamespace<ConsensusFeature>("consensus");
+        public static SmartContractOptions UseSignedContracts(this SmartContractOptions options)
+        {           
+            IServiceCollection services = options.Services;
+            var networkWithPubKey = (ISignedCodePubKeyHolder) options.Network;
 
-            fullNodeBuilder.ConfigureFeature(features =>
-            {
-                features
-                    .AddFeature<ConsensusFeature>()
-                    .DependOn<SmartContractFeature>()
-                    .FeatureServices(services =>
-                    {
-                        services.AddSingleton<DBreezeCoinView>();
-                        services.AddSingleton<ICoinView, CachedCoinView>();
-                        services.AddSingleton<ConsensusController>();
-                        services.AddSingleton<IConsensusRuleEngine, SmartContractPoARuleEngine>();
-                        services.AddSingleton<VotingManager>();
-                        services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+            // Replace serializer
+            services.RemoveAll<ICallDataSerializer>();
+            services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
+            services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(new ContractSigner(), networkWithPubKey.SigningContractPubKey));
 
-                        // Replace serializer
-                        fullNodeBuilder.Services.AddSingleton<ICallDataSerializer, SignedCodeCallDataSerializer>();
-
-                        new SignedContractPoARuleRegistration(fullNodeBuilder.Network).RegisterRules(fullNodeBuilder.Network.Consensus);
-                    });
-            });
-
-            return fullNodeBuilder;
+            return options;
         }
 
         /// <summary>
@@ -86,6 +81,8 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                         services.AddSingleton<FederationManager>();
                         services.AddSingleton<PoABlockHeaderValidator>();
                         services.AddSingleton<IPoAMiner, PoAMiner>();
+                        services.AddSingleton<PoAMinerSettings>();
+                        services.AddSingleton<MinerSettings>();
                         services.AddSingleton<SlotsManager>();
                         services.AddSingleton<BlockDefinition, SmartContractPoABlockDefinition>();
                         services.AddSingleton<IBlockBufferGenerator, BlockBufferGenerator>();

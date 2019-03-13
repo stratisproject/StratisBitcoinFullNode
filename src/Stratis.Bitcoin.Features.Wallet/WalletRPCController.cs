@@ -206,17 +206,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Get the block hash from the transaction in the wallet.
             TransactionData transactionFromWallet = null;
             uint256 blockHash = null;
-            int? blockHeight;
+            int? blockHeight, blockIndex;
 
             if (receivedTransactions.Any())
             {
                 blockHeight = receivedTransactions.First().BlockHeight;
+                blockIndex = receivedTransactions.First().BlockIndex;
                 blockHash = receivedTransactions.First().BlockHash;
                 transactionFromWallet = receivedTransactions.First();
             }
             else
             {
                 blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
+                blockIndex = sendTransactions.First().SpendingDetails.BlockIndex;
                 blockHash = blockHeight != null ? this.Chain.GetBlock(blockHeight.Value).HashBlock : null;
             }
 
@@ -258,21 +260,21 @@ namespace Stratis.Bitcoin.Features.Wallet
                 hex = null; // TODO get from mempool
             }
 
-            long amountSent = sendTransactions.Select(s => s.SpendingDetails).SelectMany(sds => sds.Payments).GroupBy(p => p.DestinationAddress).Select(g => g.First()).Sum(p => p.Amount);
-            long totalAmount = receivedTransactions.Sum(t => t.Amount) - amountSent;
+            Money amountSent = sendTransactions.Select(s => s.SpendingDetails).SelectMany(sds => sds.Payments).GroupBy(p => p.DestinationAddress).Select(g => g.First()).Sum(p => p.Amount);
+            Money totalAmount = receivedTransactions.Sum(t => t.Amount) - amountSent;
 
             var model = new GetTransactionModel
             {
-                Amount = totalAmount,
-                //Fee = TODO this still needs to be worked on.
+                Amount = totalAmount.ToDecimal(MoneyUnit.BTC),
+                Fee = null,// TODO this still needs to be worked on.
                 Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
                 Isgenerated = isGenerated ? true : (bool?) null,
                 BlockHash = blockHash,
-                BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == trxid),
-                BlockTime = block?.Header.BlockTime,
+                BlockIndex = blockIndex ?? block?.Transactions.FindIndex(t => t.GetHash() == trxid),
+                BlockTime = block?.Header.BlockTime.ToUnixTimeSeconds(),
                 TransactionId = uint256.Parse(txid),
-                TransactionTime = transactionTime,
-                TimeReceived = transactionTime,
+                TransactionTime = transactionTime.ToUnixTimeSeconds(),
+                TimeReceived = transactionTime.ToUnixTimeSeconds(),
                 Details = new List<GetTransactionDetailsModel>(),
                 Hex = hex
             };
@@ -287,8 +289,9 @@ namespace Stratis.Bitcoin.Features.Wallet
                     {
                         Address = paymentDetail.DestinationAddress,
                         Category = GetTransactionDetailsCategoryModel.Send,
-                        Amount = -paymentDetail.Amount,
-                        Fee = Money.Zero // TODO this still needs to be worked on.
+                        Amount = -paymentDetail.Amount.ToDecimal(MoneyUnit.BTC),
+                        Fee = null, // TODO this still needs to be worked on.
+                        OutputIndex = paymentDetail.OutputIndex
                     });
                 }
             }
@@ -310,7 +313,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                 {
                     Address = addresses.First(a => a.Transactions.Contains(trxInWallet)).Address,
                     Category = category,
-                    Amount = trxInWallet.Amount
+                    Amount = trxInWallet.Amount.ToDecimal(MoneyUnit.BTC),
+                    OutputIndex = trxInWallet.Index
                 });
             }
 
@@ -347,8 +351,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                             ScriptPubKeyHex = spendableTx.Transaction.ScriptPubKey.ToHex(),
                             RedeemScriptHex = null, // TODO: Currently don't support P2SH wallet addresses, review if we do.
                             Confirmations = spendableTx.Confirmations,
-                            IsSpendable = spendableTx.Transaction.IsSpendable(),
-                            IsSolvable = spendableTx.Transaction.IsSpendable() // If it's spendable we assume it's solvable.
+                            IsSpendable = !spendableTx.Transaction.IsSpent(),
+                            IsSolvable = !spendableTx.Transaction.IsSpent() // If it's spendable we assume it's solvable.
                         });
                     }
                 }
@@ -446,6 +450,10 @@ namespace Stratis.Bitcoin.Features.Wallet
                 await this.broadcasterManager.BroadcastTransactionAsync(transaction);
 
                 return transaction.GetHash();
+            }
+            catch (SecurityException exception)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_WALLET_UNLOCK_NEEDED, exception.Message);
             }
             catch (WalletException exception)
             {

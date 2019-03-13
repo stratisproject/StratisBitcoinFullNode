@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Xunit;
 
@@ -108,7 +109,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Wait for the transaction to arrive.
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), false));
+                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction1.GetHash(), null, false));
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
 
                 long receivetotal = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
@@ -141,7 +142,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
 
                 // Wait for the transaction to arrive
                 TestHelper.WaitLoop(() => stratisReceiver.CreateRPCClient().GetRawMempool().Length > 0);
-                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction2.GetHash(), false));
+                Assert.NotNull(stratisReceiver.CreateRPCClient().GetRawTransaction(transaction2.GetHash(), null, false));
                 TestHelper.WaitLoop(() => stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Any());
                 long newamount = stratisReceiver.FullNode.WalletManager().GetSpendableTransactionsInWallet(WalletName).Sum(s => s.Transaction.Amount);
                 Assert.Equal(Money.COIN * 110, newamount);
@@ -205,11 +206,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-
-                TestHelper.MineBlocks(stratisSender, 10);
 
                 // Sync all nodes.
                 TestHelper.ConnectAndSync(stratisReceiver, stratisSender);
@@ -249,11 +248,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
+                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
-
-                TestHelper.MineBlocks(stratisSender, 10);
 
                 // Sync all nodes.
                 TestHelper.ConnectAndSync(stratisReceiver, stratisSender);
@@ -293,9 +290,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisminer = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-
-                TestHelper.MineBlocks(stratisminer, 10);
+                CoreNode stratisminer = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 // Push the wallet back.
                 stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFromHeight(5);

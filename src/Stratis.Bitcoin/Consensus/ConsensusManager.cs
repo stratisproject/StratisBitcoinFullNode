@@ -257,6 +257,12 @@ namespace Stratis.Bitcoin.Consensus
 
                 connectNewHeadersResult = this.chainedHeaderTree.ConnectNewHeaders(peerId, headers);
 
+                if (!this.peersByPeerId.ContainsKey(peerId))
+                {
+                    this.peersByPeerId.Add(peerId, peer);
+                    this.logger.LogTrace("New peer with ID {0} was added.", peerId);
+                }
+
                 if (connectNewHeadersResult == null)
                 {
                     this.logger.LogTrace("(-)[NO_HEADERS_CONNECTED]:null");
@@ -272,12 +278,6 @@ namespace Stratis.Bitcoin.Consensus
                 this.chainState.IsAtBestChainTip = this.IsConsensusConsideredToBeSyncedLocked();
 
                 this.blockPuller.NewPeerTipClaimed(peer, connectNewHeadersResult.Consumed);
-
-                if (!this.peersByPeerId.ContainsKey(peerId))
-                {
-                    this.peersByPeerId.Add(peerId, peer);
-                    this.logger.LogTrace("New peer with ID {0} was added.", peerId);
-                }
             }
 
             if (triggerDownload && (connectNewHeadersResult.DownloadTo != null))
@@ -684,13 +684,7 @@ namespace Stratis.Bitcoin.Consensus
 
             while (current != fork)
             {
-                await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
-
-                lock (this.peerLock)
-                {
-                    this.SetConsensusTipInternalLocked(current.Previous);
-                }
-
+                // Access the block before rewinding.
                 Block block = current.Block;
 
                 if (block == null)
@@ -704,6 +698,13 @@ namespace Stratis.Bitcoin.Consensus
                         this.logger.LogTrace("(-)[BLOCK_NOT_FOUND]");
                         throw new Exception("Block that is about to be rewinded wasn't found in cache or database!");
                     }
+                }
+
+                await this.ConsensusRules.RewindAsync().ConfigureAwait(false);
+
+                lock (this.peerLock)
+                {
+                    this.SetConsensusTipInternalLocked(current.Previous);
                 }
 
                 var disconnectedBlock = new ChainedHeaderBlock(block, current);

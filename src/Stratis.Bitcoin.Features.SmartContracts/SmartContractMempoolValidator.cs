@@ -13,6 +13,7 @@ using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.Core.ContractSigning;
+using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
 {
@@ -34,8 +35,13 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         /// </summary>
         private readonly List<ISmartContractMempoolRule> feeTxRules;
         private readonly ICallDataSerializer callDataSerializer;
+        private readonly IStateRepositoryRoot stateRepositoryRoot;
 
-        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock, IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain, ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings, IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network)
+        public SmartContractMempoolValidator(ITxMempool memPool, MempoolSchedulerLock mempoolLock,
+            IDateTimeProvider dateTimeProvider, MempoolSettings mempoolSettings, ConcurrentChain chain,
+            ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
+            IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network,
+            IStateRepositoryRoot stateRepositoryRoot)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
             // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
@@ -43,13 +49,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             mempoolSettings.RequireStandard = false;
 
             this.callDataSerializer = callDataSerializer;
+            this.stateRepositoryRoot = stateRepositoryRoot;
 
-            var p2pkhRule = new P2PKHNotContractRule();
-            p2pkhRule.Parent = (ConsensusRuleEngine) consensusRules;
-            p2pkhRule.Initialize();
+            var p2pkhRule = new P2PKHNotContractRule(stateRepositoryRoot);
 
-            var scriptTypeRule = new AllowedScriptTypeRule();
-            scriptTypeRule.Parent = (ConsensusRuleEngine) consensusRules;
+            var scriptTypeRule = new AllowedScriptTypeRule(network);
             scriptTypeRule.Initialize();
 
             this.preTxRules = new List<ISmartContractMempoolRule>
@@ -83,7 +87,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.PreMempoolChecks(context);
 
-            foreach (ISmartContractMempoolRule rule in preTxRules)
+            foreach (ISmartContractMempoolRule rule in this.preTxRules)
             {
                 rule.CheckTransaction(context);
             }
@@ -94,12 +98,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts
         {
             base.CheckFee(context);
 
-            foreach (ISmartContractMempoolRule rule in feeTxRules)
+            foreach (ISmartContractMempoolRule rule in this.feeTxRules)
             {
                 rule.CheckTransaction(context);
             }
 
-            CheckMinGasLimit(context);
+            this.CheckMinGasLimit(context);
         }
 
         private void CheckMinGasLimit(MempoolValidationContext context)

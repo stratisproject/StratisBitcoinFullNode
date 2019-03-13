@@ -1,5 +1,6 @@
 ﻿using Microsoft.Extensions.Logging;
 using NBitcoin;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.ResultProcessors
 {
@@ -19,7 +20,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
         public (Money, TxOut) Process(ContractTxData contractTxData,
             ulong mempoolFee,
             uint160 sender,
-            RuntimeObserver.Gas gasConsumed,
+            Gas gasConsumed,
             bool outOfGas)
         {
 
@@ -38,7 +39,7 @@ namespace Stratis.SmartContracts.CLR.ResultProcessors
             if (refund > 0)
             {
                 fee -= refund;
-                ret = CreateRefund(sender, refund);
+                ret = this.CreateRefund(sender, refund);
             }
 
             return (fee, ret);

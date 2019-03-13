@@ -139,7 +139,7 @@ namespace Stratis.SmartContracts.CLR
             if (methodToInvoke.IsPrivate)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodIsPrivate);
 
-            EnsureInitialized();
+            this.EnsureInitialized();
 
             return this.InvokeInternal(methodToInvoke, invokeParams);
         }
@@ -151,7 +151,7 @@ namespace Stratis.SmartContracts.CLR
             if (this.ReceiveHandler == null)
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.MethodDoesNotExist);
 
-            EnsureInitialized();
+            this.EnsureInitialized();
 
             return this.InvokeInternal(this.ReceiveHandler, null);
         }
@@ -190,8 +190,8 @@ namespace Stratis.SmartContracts.CLR
                 // This should not happen
                 return ContractInvocationResult.Failure(ContractInvocationErrorType.ParameterTypesDontMatch);
             }
-            catch (TargetInvocationException targetException) 
-            when (!(targetException.InnerException is OutOfGasException) 
+            catch (TargetInvocationException targetException)
+            when (!(targetException.InnerException is OutOfGasException)
             && !(targetException.InnerException is MemoryConsumptionException))
             {
                 // Method threw an exception that was not an OutOfGasException or a MemoryConsumptionException
@@ -208,6 +208,11 @@ namespace Stratis.SmartContracts.CLR
             {
                 // Method threw a MemoryConsumptionException
                 return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.OverMemoryLimit, targetException.InnerException);
+            }
+            catch (Exception e)
+            {
+                // Other unexpected exceptions
+                return ContractInvocationResult.ExecutionFailure(ContractInvocationErrorType.Exception, e);
             }
         }
 

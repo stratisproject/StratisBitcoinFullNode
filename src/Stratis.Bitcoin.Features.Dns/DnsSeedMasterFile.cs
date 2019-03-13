@@ -46,6 +46,11 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         public DnsSeedMasterFile() { }
 
+        public DnsSeedMasterFile(IList<IResourceRecord> resourceRecords)
+        {
+            this.entries = resourceRecords;
+        }
+
         /// <summary>
         /// Identifies if the domain matches the entry.
         /// </summary>
@@ -78,15 +83,6 @@ namespace Stratis.Bitcoin.Features.Dns
             settings.Formatting = Formatting.Indented;
 
             return JsonSerializer.Create(settings);
-        }
-
-        /// <summary>
-        /// Adds a entry to the master file.
-        /// </summary>
-        /// <param name="entry">The resource record to add.</param>
-        public void Add(IResourceRecord entry)
-        {
-            this.entries.Add(entry);
         }
 
         /// <summary>
@@ -139,8 +135,29 @@ namespace Stratis.Bitcoin.Features.Dns
             var textWriter = new JsonTextWriter(new StreamWriter(stream));
             JsonSerializer serializer = this.CreateSerializer();
 
-            serializer.Serialize(textWriter, this.entries);
+            // Send a copy of the entries to the serializer because the collection can be modified during serialization.
+            serializer.Serialize(textWriter, this.entries.ToList());
             textWriter.Flush();
+        }
+
+        /// <inheritdoc />
+        public void Seed(DnsSettings dnsSettings)
+        {
+            // Check if SOA record exists for host.
+            int count = this.Get(new Question(new Domain(dnsSettings.DnsHostName), RecordType.SOA)).Count;
+            if (count == 0)
+            {
+                // Add SOA record for host.
+                this.entries.Add(new StartOfAuthorityResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer), new Domain(dnsSettings.DnsMailBox.Replace('@', '.'))));
+            }
+
+            // Check if NS record exists for host.
+            count = this.Get(new Question(new Domain(dnsSettings.DnsHostName), RecordType.NS)).Count;
+            if (count == 0)
+            {
+                // Add NS record for host.
+                this.entries.Add(new NameServerResourceRecord(new Domain(dnsSettings.DnsHostName), new Domain(dnsSettings.DnsNameServer)));
+            }
         }
     }
 }

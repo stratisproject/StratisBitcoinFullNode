@@ -27,9 +27,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         /// <summary><c>true</c> to require high priority for relaying free or low-fee transactions.</summary>
         public bool RelayPriority { get; set; }
 
-        /// <summary>Number of kB/minute at which free transactions (with enough priority) will be accepted.</summary>
-        public int LimitFreeRelay { get; set; }
-
         /// <summary>Maximum number of ancestors of a transaction in mempool (including itself).</summary>
         public int LimitAncestors { get; set; }
 
@@ -69,7 +66,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             this.MaxMempool = config.GetOrDefault("maxmempool", MempoolValidator.DefaultMaxMempoolSize, this.logger);
             this.MempoolExpiry = config.GetOrDefault("mempoolexpiry", MempoolValidator.DefaultMempoolExpiry, this.logger);
             this.RelayPriority = config.GetOrDefault("relaypriority", MempoolValidator.DefaultRelaypriority, this.logger);
-            this.LimitFreeRelay = config.GetOrDefault("limitfreerelay", MempoolValidator.DefaultLimitfreerelay, this.logger);
             this.LimitAncestors = config.GetOrDefault("limitancestorcount", MempoolValidator.DefaultAncestorLimit, this.logger);
             this.LimitAncestorSize = config.GetOrDefault("limitancestorsize", MempoolValidator.DefaultAncestorSizeLimit, this.logger);
             this.LimitDescendants = config.GetOrDefault("limitdescendantcount", MempoolValidator.DefaultDescendantLimit, this.logger);
@@ -89,7 +85,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"-maxmempool=<megabytes>   Maximal size of the transaction memory pool in megabytes. Defaults to { MempoolValidator.DefaultMaxMempoolSize }.");
             builder.AppendLine($"-mempoolexpiry=<hours>    Maximum number of hours to keep transactions in the mempool. Defaults to { MempoolValidator.DefaultMempoolExpiry }.");
             builder.AppendLine($"-relaypriority=<0 or 1>   Enable high priority for relaying free or low-fee transactions.");
-            builder.AppendLine($"-limitfreerelay=<kB/minute>  Number of kB/minute at which free transactions (with enough priority) will be accepted. Defaults to { MempoolValidator.DefaultLimitfreerelay }.");
             builder.AppendLine($"-limitancestorcount=<count>  Maximum number of ancestors of a transaction in mempool (including itself). Defaults to { MempoolValidator.DefaultAncestorLimit }.");
             builder.AppendLine($"-limitancestorsize=<kB>   Maximal size in kB of ancestors of a transaction in mempool (including itself). Defaults to { MempoolValidator.DefaultAncestorSizeLimit }.");
             builder.AppendLine($"-limitdescendantcount=<count>  Maximum number of descendants any ancestor can have in mempool (including itself). Defaults to { MempoolValidator.DefaultDescendantLimit }.");
@@ -116,8 +111,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
             builder.AppendLine($"#mempoolexpiry={ MempoolValidator.DefaultMempoolExpiry }");
             builder.AppendLine($"#Enable high priority for relaying free or low-fee transactions. Defaults to { (MempoolValidator.DefaultRelaypriority?1:0) }.");
             builder.AppendLine($"#relaypriority={ (MempoolValidator.DefaultRelaypriority?1:0) }");
-            builder.AppendLine($"#Number of kB/minute at which free transactions (with enough priority) will be accepted. Defaults to { MempoolValidator.DefaultLimitfreerelay }.");
-            builder.AppendLine($"#limitfreerelay={ MempoolValidator.DefaultLimitfreerelay }");
             builder.AppendLine($"#Maximum number of ancestors of a transaction in mempool (including itself). Defaults to { MempoolValidator.DefaultAncestorLimit }.");
             builder.AppendLine($"#limitancestorcount={ MempoolValidator.DefaultAncestorLimit }");
             builder.AppendLine($"#Maximal size in kB of ancestors of a transaction in mempool (including itself). Defaults to { MempoolValidator.DefaultAncestorSizeLimit }.");

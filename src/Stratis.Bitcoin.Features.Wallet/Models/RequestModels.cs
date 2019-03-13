@@ -177,6 +177,11 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
         [MinLength(1)]
         public List<RecipientModel> Recipients { get; set; }
 
+        public string OpReturnData { get; set; }
+
+        [MoneyFormat(isRequired: false, ErrorMessage = "The op return amount is not in the correct format.")]
+        public string OpReturnAmount { get; set; }
+
         public string FeeType { get; set; }
 
         public bool AllowUnconfirmed { get; set; }
@@ -223,11 +228,6 @@ namespace Stratis.Bitcoin.Features.Wallet.Models
 
         [Required(ErrorMessage = "A password is required.")]
         public string Password { get; set; }
-
-        public string OpReturnData { get; set; }
-
-        [MoneyFormat(isRequired: false, ErrorMessage = "The op return amount is not in the correct format.")]
-        public string OpReturnAmount { get; set; }
 
         /// <inheritdoc />
         public IEnumerable<ValidationResult> Validate(ValidationContext validationContext)

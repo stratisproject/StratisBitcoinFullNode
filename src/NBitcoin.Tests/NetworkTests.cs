@@ -143,7 +143,7 @@ namespace NBitcoin.Tests
             Assert.Equal(Utils.UnixTimeToDateTime(1510704000), this.networkMain.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Timeout);
             Assert.Equal(0, this.networkMain.Consensus.CoinType);
             Assert.False(this.networkMain.Consensus.IsProofOfStake);
-            Assert.Equal(new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"), this.networkMain.Consensus.DefaultAssumeValid);
+            Assert.Equal(new uint256("0x0000000000000000000f1c54590ee18d15ec70e68c8cd4cfbadb1b4f11697eee"), this.networkMain.Consensus.DefaultAssumeValid);
             Assert.Equal(100, this.networkMain.Consensus.CoinbaseMaturity);
             Assert.Equal(0, this.networkMain.Consensus.PremineReward);
             Assert.Equal(0, this.networkMain.Consensus.PremineHeight);
@@ -225,7 +225,7 @@ namespace NBitcoin.Tests
             Assert.Equal(Utils.UnixTimeToDateTime(1493596800), network.Consensus.BIP9Deployments[BitcoinBIP9Deployments.Segwit].Timeout);
             Assert.Equal(1, network.Consensus.CoinType);
             Assert.False(network.Consensus.IsProofOfStake);
-            Assert.Equal(new uint256("0x000000000000015682a21fc3b1e5420435678cba99cace2b07fe69b668467651"), network.Consensus.DefaultAssumeValid);
+            Assert.Equal(new uint256("0x0000000000000037a8cd3e06cd5edbfe9dd1dbcc5dacab279376ef7cfc2b4c75"), network.Consensus.DefaultAssumeValid);
             Assert.Equal(100, network.Consensus.CoinbaseMaturity);
             Assert.Equal(0, network.Consensus.PremineReward);
             Assert.Equal(0, network.Consensus.PremineHeight);
@@ -328,7 +328,7 @@ namespace NBitcoin.Tests
 
             Assert.Equal(30, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
-            Assert.Equal(5, network.SeedNodes.Count);
+            Assert.Equal(9, network.SeedNodes.Count);
 
             Assert.Equal("StratisMain", network.Name);
             Assert.Equal(StratisMain.StratisRootFolderName, network.RootFolderName);
@@ -383,7 +383,7 @@ namespace NBitcoin.Tests
             Assert.Equal(105, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
             Assert.Equal(new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimitV2);
-            Assert.Equal(new uint256("0x55a8205ae4bbf18f4d238c43f43005bd66e0b1f679b39e2c5c62cf6903693a5e"), network.Consensus.DefaultAssumeValid);
+            Assert.Equal(new uint256("0x50497017e7bb256df205fcbc2caccbe5b516cb33491e1a11737a3bfe83959b9f"), network.Consensus.DefaultAssumeValid);
             Assert.Equal(50, network.Consensus.CoinbaseMaturity);
             Assert.Equal(Money.Coins(98000000), network.Consensus.PremineReward);
             Assert.Equal(2, network.Consensus.PremineHeight);
@@ -405,7 +405,7 @@ namespace NBitcoin.Tests
 
             Assert.Equal(12, network.Checkpoints.Count);
             Assert.Equal(4, network.DNSSeeds.Count);
-            Assert.Equal(4, network.SeedNodes.Count);
+            Assert.Equal(3, network.SeedNodes.Count);
 
             Assert.Equal("StratisTest", network.Name);
             Assert.Equal(StratisMain.StratisRootFolderName, network.RootFolderName);
@@ -460,7 +460,7 @@ namespace NBitcoin.Tests
             Assert.Equal(105, network.Consensus.CoinType);
             Assert.Equal(new BigInteger(uint256.Parse("00000fffffffffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimit);
             Assert.Equal(new BigInteger(uint256.Parse("000000000000ffffffffffffffffffffffffffffffffffffffffffffffffffff").ToBytes(false)), network.Consensus.ProofOfStakeLimitV2);
-            Assert.Equal(new uint256("0x98fa6ef0bca5b431f15fd79dc6f879dc45b83ed4b1bbe933a383ef438321958e"), network.Consensus.DefaultAssumeValid);
+            Assert.Equal(new uint256("0xc9a15c9dd87c6219b273f93442b87fdaf9eebb4f3059d8ed8239c41a4ab3e730"), network.Consensus.DefaultAssumeValid);
             Assert.Equal(10, network.Consensus.CoinbaseMaturity);
             Assert.Equal(Money.Coins(98000000), network.Consensus.PremineReward);
             Assert.Equal(2, network.Consensus.PremineHeight);

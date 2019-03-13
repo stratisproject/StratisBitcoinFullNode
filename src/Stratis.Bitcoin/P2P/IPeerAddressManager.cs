@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Concurrent;
 using System.Collections.Generic;
 using System.Net;
 using NBitcoin;
@@ -17,7 +16,7 @@ namespace Stratis.Bitcoin.P2P
         ICollection<PeerAddress> Peers { get; }
 
         /// <summary>
-        /// Adds a peer to the <see cref="Peers"/> dictionary.
+        /// Adds a peer to the <see cref="Peers"/> dictionary if it doesn't exist yet.
         /// <para>
         /// Only routable IP addresses will be added. See <see cref="IpExtensions.IsRoutable"/>.
         /// </para>

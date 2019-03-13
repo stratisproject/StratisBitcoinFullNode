@@ -1,14 +1,12 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Text;
 using NBitcoin;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.Models;
-using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.Util;
 using Stratis.SmartContracts.CLR;
 using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Serialization;
+using Stratis.SmartContracts.Core;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
 
@@ -30,7 +28,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             this.serializer = new ContractPrimitiveSerializer(this.node1.CoreNode.FullNode.Network);
         }
 
-        [Fact]
+        [Retry]
         public void CreateContract_OneOfEachParameterType()
         {
             // Ensure fixture is funded.
@@ -123,7 +121,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.Error);
         }
 
-        [Fact]
+        [Retry]
         public void CallContract_SerializeEachParameterType()
         {
             // Ensure fixture is funded.
@@ -187,7 +185,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.Error);
         }
 
-        [Fact]
+        [Retry]
         public void Internal_CallContract_SerializeEachParameterType()
         {
             // Ensure fixture is funded.
@@ -253,7 +251,7 @@ namespace Stratis.SmartContracts.IntegrationTests
             Assert.Null(receipt.Error);
         }
 
-        [Fact]
+        [Retry]
         public void SerializeArrays_ForEachMethodParamType()
         {
             // Ensure fixture is funded.

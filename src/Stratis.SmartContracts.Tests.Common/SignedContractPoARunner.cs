@@ -1,12 +1,10 @@
-﻿using System;
-using System.Collections.Generic;
-using System.Text;
-using NBitcoin;
+﻿using NBitcoin;
 using Stratis.Bitcoin;
 using Stratis.Bitcoin.Builder;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Features.BlockStore;
 using Stratis.Bitcoin.Features.MemoryPool;
+using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.Features.RPC;
 using Stratis.Bitcoin.Features.SmartContracts;
 using Stratis.Bitcoin.Features.SmartContracts.PoA;
@@ -14,7 +12,6 @@ using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts.Tests.Common.MockChain;
 
 namespace Stratis.SmartContracts.Tests.Common
 {
@@ -22,7 +19,7 @@ namespace Stratis.SmartContracts.Tests.Common
     {
         private readonly IDateTimeProvider dateTimeProvider;
 
-        public SignedContractPoARunner(string dataDir, Network network, TargetSpacingDateTimeProvider timeProvider)
+        public SignedContractPoARunner(string dataDir, Network network, EditableTimeProvider timeProvider)
             : base(dataDir, null)
         {
             this.Network = network;
@@ -38,13 +35,17 @@ namespace Stratis.SmartContracts.Tests.Common
                 .UseBlockStore()
                 .UseMempool()
                 .AddRPC()
-                .AddSmartContracts()
-                .UseSignedContractPoAConsensus()
+                .AddSmartContracts(options =>
+                {
+                    options.UseReflectionExecutor();
+                    options.UseSignedContracts();
+                })
+                .UseSmartContractPoAConsensus()
                 .UseSmartContractPoAMining()
                 .UseSmartContractWallet()
-                .UseReflectionExecutor()
                 .ReplaceTimeProvider(this.dateTimeProvider)
                 .MockIBD()
+                .AddFastMiningCapability()
                 .Build();
         }
     }

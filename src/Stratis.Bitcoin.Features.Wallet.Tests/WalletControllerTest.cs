@@ -1281,8 +1281,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
 
             var accountsBalances = new List<AccountBalance>
             {
-                new AccountBalance { Account = account, AmountConfirmed = new Money(130000), AmountUnconfirmed = new Money(35000) },
-                new AccountBalance { Account = account2, AmountConfirmed = new Money(108000), AmountUnconfirmed = new Money(139000) }
+                new AccountBalance { Account = account, AmountConfirmed = new Money(130000), AmountUnconfirmed = new Money(35000), SpendableAmount = new Money(130000) },
+                new AccountBalance { Account = account2, AmountConfirmed = new Money(108000), AmountUnconfirmed = new Money(139000), SpendableAmount = new Money(108000) }
             };
 
             var mockWalletManager = new Mock<IWalletManager>();
@@ -1306,6 +1306,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(account.HdPath, resultingBalance.HdPath);
             Assert.Equal(new Money(130000), resultingBalance.AmountConfirmed);
             Assert.Equal(new Money(35000), resultingBalance.AmountUnconfirmed);
+            Assert.Equal(new Money(130000), resultingBalance.SpendableAmount);
 
             resultingBalance = model.AccountsBalances[1];
             Assert.Equal(this.Network.Consensus.CoinType, (int)resultingBalance.CoinType);
@@ -1313,6 +1314,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
             Assert.Equal(account2.HdPath, resultingBalance.HdPath);
             Assert.Equal(new Money(108000), resultingBalance.AmountConfirmed);
             Assert.Equal(new Money(139000), resultingBalance.AmountUnconfirmed);
+            Assert.Equal(new Money(108000), resultingBalance.SpendableAmount);
         }
 
         [Fact]

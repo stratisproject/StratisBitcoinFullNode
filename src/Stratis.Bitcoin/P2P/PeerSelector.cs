@@ -49,7 +49,8 @@ namespace Stratis.Bitcoin.P2P
         /// last 60 seconds.
         /// </para>
         /// </summary>
-        IEnumerable<PeerAddress> Connected();
+        /// <param name="throttlePeriodSeconds">Filter results that connected within this time frame.</param>
+        IEnumerable<PeerAddress> Connected(int throttlePeriodSeconds = 60);
 
         /// <summary>Returns peers that are not banned.</summary>
         IEnumerable<PeerAddress> NotBanned();
@@ -66,7 +67,8 @@ namespace Stratis.Bitcoin.P2P
         /// last 60 seconds.
         /// </para>
         /// </summary>
-        IEnumerable<PeerAddress> Handshaked();
+        /// <param name="throttlePeriodSeconds">Filter results that hand shaked within this time frame.</param>
+        IEnumerable<PeerAddress> Handshaked(int throttlePeriodSeconds = 60);
 
         /// <summary>
         /// <para>
@@ -82,7 +84,6 @@ namespace Stratis.Bitcoin.P2P
         void ResetConnectionAttemptsOnNotBannedPeers();
     }
 
-    [NoTrace]
     public sealed class PeerSelector : IPeerSelector
     {
         /// <summary>Provider of time functions.</summary>
@@ -126,6 +127,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public PeerAddress SelectPeer()
         {
             PeerAddress peerAddress = null;
@@ -135,11 +137,7 @@ namespace Stratis.Bitcoin.P2P
                 .ToList();
 
             if (peers.Any())
-            {
                 peerAddress = this.Random(peers);
-            }
-            else
-                this.logger.LogTrace("There is no peer.");
 
             return peerAddress;
         }
@@ -219,6 +217,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public bool HasAllPeersReachedConnectionThreshold()
         {
             IEnumerable<PeerAddress> notBanned = this.NotBanned();
@@ -241,6 +240,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> SelectPeersForDiscovery(int peerCount)
         {
             if (this.peerAddresses.Count == 0)
@@ -259,6 +259,7 @@ namespace Stratis.Bitcoin.P2P
         }
 
         /// <inheritdoc/>
+        [NoTrace]
         public IEnumerable<PeerAddress> SelectPeersForGetAddrPayload(int peerCount)
         {
             // If there are no peers return an empty list.
@@ -271,7 +272,7 @@ namespace Stratis.Bitcoin.P2P
 
             var peersToReturn = new List<PeerAddress>();
 
-            List<PeerAddress> connectedAndHandshaked = this.Connected().Concat(this.Handshaked()).OrderBy(p => this.random.Next()).ToList();
+            List<PeerAddress> connectedAndHandshaked = this.Connected(0).Concat(this.Handshaked(0)).OrderBy(p => this.random.Next()).ToList();
             List<PeerAddress> freshAndAttempted = this.Attempted().Concat(this.Fresh()).OrderBy(p => this.random.Next()).ToList();
 
             // If there are connected and/or handshaked peers in the address list,
@@ -351,11 +352,12 @@ namespace Stratis.Bitcoin.P2P
 
         /// <inheritdoc/>
         [NoTrace]
-        public IEnumerable<PeerAddress> Connected()
+        public IEnumerable<PeerAddress> Connected(int throttlePeriodSeconds = 60)
         {
-            return this.peerAddresses.Values.Where(p => p.Connected &&
-                                                        p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
-                                                        !this.IsBanned(p));
+            var result = this.peerAddresses.Values
+                .Where(p => p.Connected && !this.IsBanned(p))
+                .Where(p => p.LastConnectionSuccess < this.dateTimeProvider.GetUtcNow().AddSeconds(-throttlePeriodSeconds));
+            return result;
         }
 
         /// <inheritdoc/>
@@ -367,11 +369,12 @@ namespace Stratis.Bitcoin.P2P
 
         /// <inheritdoc/>
         [NoTrace]
-        public IEnumerable<PeerAddress> Handshaked()
+        public IEnumerable<PeerAddress> Handshaked(int throttlePeriodSeconds = 60)
         {
-            return this.peerAddresses.Values.Where(p => p.Handshaked &&
-                                                        p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-60) &&
-                                                        !this.IsBanned(p));
+            var result = this.peerAddresses.Values
+                .Where(p => p.Handshaked && !this.IsBanned(p))
+                .Where(p => p.LastConnectionHandshake < this.dateTimeProvider.GetUtcNow().AddSeconds(-throttlePeriodSeconds));
+            return result;
         }
 
         /// <summary>

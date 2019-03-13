@@ -51,7 +51,7 @@ namespace Stratis.SmartContracts.CLR.Serialization
 
         public static Prefix ForObject(object o)
         {
-            var type = (byte) GetPrimitiveType(o);
+            byte type = (byte) GetPrimitiveType(o);
             return new Prefix(type);
         }
 

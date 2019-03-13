@@ -10,6 +10,7 @@
         ParameterCountIncorrect,
         MethodThrewException,
         OutOfGas,
-        OverMemoryLimit
+        OverMemoryLimit,
+        Exception
     }
 }

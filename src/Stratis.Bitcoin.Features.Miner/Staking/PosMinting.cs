@@ -100,7 +100,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         /// but high enough to compensate for tasks' overhead.</remarks>
         private const int UtxoStakeDescriptionsPerCoinstakeWorker = 25;
 
-        /// <summary>Consumes manager class.</summary>
+        /// <summary>Consensus manager class.</summary>
         private readonly IConsensusManager consensusManager;
 
         /// <summary>Thread safe access to the best chain of block headers (that the node is aware of) from genesis.</summary>
@@ -285,7 +285,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
             {
                 try
                 {
-                    await this.GenerateBlocksAsync(walletSecret, this.stakeCancellationTokenSource.Token)
+                    await this.GenerateBlocksAsync(walletSecret, token)
                         .ConfigureAwait(false);
                 }
                 catch (OperationCanceledException)
@@ -487,7 +487,7 @@ namespace Stratis.Bitcoin.Features.Miner.Staking
         }
 
         /// <summary>
-        /// One a new block is staked, this method is used to verify that it
+        /// Once a new block is staked, this method is used to verify that it
         /// is a valid block and if so, it will add it to the chain.
         /// </summary>
         /// <param name="block">The new block.</param>

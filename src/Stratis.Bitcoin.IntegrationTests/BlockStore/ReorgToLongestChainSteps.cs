@@ -170,7 +170,7 @@ namespace Stratis.Bitcoin.IntegrationTests.BlockStore
 
             // Ensure that all the nodes are synced to at least coinbase maturity.
             TestHelper.WaitLoop(() => this.bobNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
-            TestHelper.WaitLoop(() => this.charlieNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
+            TestHelper.WaitLoopMessage(() => (this.charlieNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity, $"CHARLIENODE_TIP_{this.charlieNode.FullNode.ConsensusManager().Tip}"));
             TestHelper.WaitLoop(() => this.daveNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
             TestHelper.WaitLoop(() => this.jingNode.FullNode.ConsensusManager().Tip.Height >= this.charlieNode.FullNode.Network.Consensus.CoinbaseMaturity);
         }

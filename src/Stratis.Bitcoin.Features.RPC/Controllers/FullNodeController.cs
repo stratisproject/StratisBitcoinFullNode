@@ -1,16 +1,20 @@
 ﻿using System;
+using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
+using NBitcoin.DataEncoders;
 using Stratis.Bitcoin.Base;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Controllers;
 using Stratis.Bitcoin.Controllers.Models;
+using Stratis.Bitcoin.Features.RPC.Exceptions;
 using Stratis.Bitcoin.Features.RPC.Models;
 using Stratis.Bitcoin.Interfaces;
+using Stratis.Bitcoin.Primitives;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
 
@@ -91,30 +95,69 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
         /// </summary>
         /// <param name="txid">The transaction hash.</param>
         /// <param name="verbose">Non-zero if verbose model wanted.</param>
+        /// <param name="blockHash">The hash of the block in which to look for the transaction.</param>
         /// <returns>A <see cref="TransactionBriefModel"/> or <see cref="TransactionVerboseModel"/> as specified by verbose. <c>null</c> if no transaction matching the hash.</returns>
         /// <exception cref="ArgumentException">Thrown if txid is invalid uint256.</exception>"
-        /// <remarks>Requires txindex=1, otherwise only txes that spend or create UTXOs for a wallet can be returned.</remarks>
+        /// <remarks>When called with a blockhash argument, getrawtransaction will return the transaction if the specified block is available and the transaction is found in that block.
+        /// When called without a blockhash argument, getrawtransaction will return the transaction if it is in the mempool, or if -txindex is enabled and the transaction is in a block in the blockchain.</remarks>
         [ActionName("getrawtransaction")]
         [ActionDescription("Gets a raw, possibly pooled, transaction from the full node.")]
-        public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0)
+        public async Task<TransactionModel> GetRawTransactionAsync(string txid, int verbose = 0, string blockHash = null)
         {
-            uint256 trxid;
-            if (!uint256.TryParse(txid, out trxid))
-                throw new ArgumentException(nameof(txid));
+            Guard.NotEmpty(txid, nameof(txid));
 
-            Transaction trx = this.pooledTransaction != null ? await this.pooledTransaction.GetTransaction(trxid) : null;
-
-            if (trx == null)
+            if (!uint256.TryParse(txid, out uint256 trxid))
             {
-                trx = this.blockStore != null ? await this.blockStore.GetTransactionByIdAsync(trxid) : null;
+                throw new ArgumentException(nameof(trxid));
             }
 
-            if (trx == null)
-                return null;
+            uint256 hash = null;
+            if (!string.IsNullOrEmpty(blockHash) && !uint256.TryParse(blockHash, out hash))
+            {
+                throw new ArgumentException(nameof(blockHash));
+            }
 
+            // Special exception for the genesis block coinbase transaction.
+            if (trxid == this.Network.GetGenesis().GetMerkleRoot().Hash)
+            {
+                throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "The genesis block coinbase is not considered an ordinary transaction and cannot be retrieved.");
+            }
+
+            Transaction trx = null;
+            ChainedHeaderBlock chainedHeaderBlock = null;
+
+            if (hash == null)
+            {
+                // Look for the transaction in the mempool, and if not found, look in the indexed transactions.
+                trx = (this.pooledTransaction == null ? null : await this.pooledTransaction.GetTransaction(trxid)) ??
+                      await this.blockStore.GetTransactionByIdAsync(trxid).ConfigureAwait(false);
+
+                if (trx == null)
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "No such mempool transaction. Use -txindex to enable blockchain transaction queries.");
+                }
+            }
+            else
+            {
+                // Retrieve the block specified by the block hash.
+                chainedHeaderBlock = await this.ConsensusManager.GetBlockDataAsync(hash);
+
+                if (chainedHeaderBlock == null)
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "Block hash not found.");
+                }
+
+                trx = chainedHeaderBlock.Block.Transactions.SingleOrDefault(t => t.GetHash() == trxid);
+
+                if (trx == null)
+                {
+                    throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "No such transaction found in the provided block.");
+                }
+            }
+            
             if (verbose != 0)
             {
-                ChainedHeader block = await this.GetTransactionBlockAsync(trxid);
+                ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid);
                 return new TransactionVerboseModel(trx, this.Network, block, this.ChainState?.ConsensusTip);
             }
             else
@@ -307,6 +350,58 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 return block;
 
             return new BlockModel(block, this.Chain);
+        }
+
+        [ActionName("getnetworkinfo")]
+        [ActionDescription("Returns an object containing various state info regarding P2P networking.")]
+        public NetworkInfoModel GetNetworkInfo()
+        {
+            var networkInfoModel = new NetworkInfoModel
+            {
+                Version = this.FullNode?.Version?.ToUint() ?? 0,
+                SubVersion = this.Settings?.Agent,
+                ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
+                IsLocalRelay = this.ConnectionManager?.Parameters?.IsRelay ?? false,            
+                TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
+                Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
+                IsNetworkActive = true,
+                RelayFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0,
+                IncrementalFee = this.Settings?.MinRelayTxFeeRate?.FeePerK?.ToUnit(MoneyUnit.BTC) ?? 0 // set to same as min relay fee
+            };
+
+            var services = this.ConnectionManager?.Parameters?.Services;
+            if (services != null)
+            {
+                networkInfoModel.LocalServices = Encoders.Hex.EncodeData(BitConverter.GetBytes((ulong)services));
+            }
+
+            return networkInfoModel;
+        }
+
+        [ActionName("getblockchaininfo")]
+        [ActionDescription("Returns an object containing various state info regarding blockchain processing.")]
+        public BlockchainInfoModel GetBlockchainInfo()
+        {
+            var blockchainInfo = new BlockchainInfoModel
+            {
+                Chain = this.Network?.Name,
+                Blocks = (uint)(this.ChainState?.ConsensusTip?.Height ?? 0),
+                Headers = (uint)(this.Chain?.Height ?? 0),
+                BestBlockHash = this.ChainState?.ConsensusTip?.HashBlock,
+                Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
+                MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0, 
+                VerificationProgress = 0.0,
+                IsInitialBlockDownload = !this.ChainState?.IsAtBestChainTip ?? true,
+                Chainwork = this.ChainState?.ConsensusTip?.ChainWork,
+                IsPruned = false
+            };
+
+            if (blockchainInfo.Headers > 0)
+            {
+                blockchainInfo.VerificationProgress = (double)blockchainInfo.Blocks / blockchainInfo.Headers;
+            }
+
+            return blockchainInfo;
         }
 
         private async Task<ChainedHeader> GetTransactionBlockAsync(uint256 trxid)

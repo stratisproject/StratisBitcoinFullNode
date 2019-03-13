@@ -654,8 +654,14 @@ namespace Stratis.Bitcoin.Consensus
 
             if (insufficientInfo)
             {
+                if (this.TryFindLastValidatedHeader(headers, out ChainedHeader lastAlreadyValidatedHeader))
+                {
+                    this.logger.LogTrace("Some headers were already validated.");
+                    this.AddOrReplacePeerTip(networkPeerId, lastAlreadyValidatedHeader.Header.GetHash());
+                }
+
                 this.logger.LogTrace("(-)[INSUFF_INFO]");
-                return new ConnectNewHeadersResult() { Consumed = null };
+                return new ConnectNewHeadersResult() { Consumed = lastAlreadyValidatedHeader };
             }
 
             if (newChainedHeaders == null)
@@ -1101,6 +1107,30 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             return false;
+        }
+
+        /// <summary>
+        /// Find the last validated <see cref="ChainedHeader"/> header in the given list of <see cref="headers"/>.
+        /// </summary>
+        /// <remarks>Headers are supposed to be consecutive and sorted by height</remarks>
+        private bool TryFindLastValidatedHeader(List<BlockHeader> headers, out ChainedHeader lastValidatedHeader)
+        {
+            lastValidatedHeader = null;
+            foreach (BlockHeader header in headers)
+            {
+                uint256 currentBlockHash = header.GetHash();
+                if (this.chainedHeadersByHash.TryGetValue(currentBlockHash, out ChainedHeader currentChainedHeader))
+                {
+                    lastValidatedHeader = currentChainedHeader;
+                }
+                else
+                {
+                    // Stop at the first header not found.
+                    break;
+                }
+            }
+
+            return lastValidatedHeader != null;
         }
 
         /// <summary>
