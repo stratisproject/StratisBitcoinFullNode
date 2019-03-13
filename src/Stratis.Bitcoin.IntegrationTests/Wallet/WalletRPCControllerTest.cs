@@ -512,7 +512,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
                 firstDetailsReceivingWallet.Fee.Should().BeNull();
                 firstDetailsReceivingWallet.Category.Should().Be(GetTransactionDetailsCategoryModel.Receive);
                 firstDetailsReceivingWallet.OutputIndex.Should().Be(1); // Output at index 0 contains the change.
-                
+
                 GetTransactionDetailsModel secondDetailsReceivingWallet = resultReceivingWallet.Details.Single(d => d.Address == unusedaddresses.Last());
                 secondDetailsReceivingWallet.Address.Should().Be(unusedaddresses.Last());
                 secondDetailsReceivingWallet.Amount.Should().Be((decimal)1.00000000);

@@ -33,7 +33,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         public string MerkleRoot { get; private set; }
 
         [JsonProperty("tx")]
-        public string[] Transactions { get; private set; }
+        public object[] Transactions { get; private set; }
 
         [JsonProperty("time")]
         [JsonConverter(typeof(DateTimeOffsetConverter))]
@@ -64,26 +64,34 @@ namespace Stratis.Bitcoin.Controllers.Models
         [JsonProperty("nextblockhash")]
         public string NextBlockHash { get; private set; }
 
-        public BlockModel(Block block, ChainBase chain, IConsensus consensus)
+        public BlockModel(Block block, ChainBase chain, Network network, int verbosity = 1)
         {
+            var chainedHeader = chain.GetBlock(block.GetHash());
+
             this.Hash = block.GetHash().ToString();
-            this.Confirmations = chain.Tip.Height - chain.GetBlock(block.GetHash()).Height + 1;
+            this.Confirmations = chain.Tip.Height - chainedHeader.Height + 1;
             this.Size = block.ToBytes().Length;
-            this.Weight = block.GetBlockWeight(consensus);
-            this.Height = chain.GetBlock(block.GetHash()).Height;
+            this.Weight = block.GetBlockWeight(network.Consensus);
+            this.Height = chainedHeader.Height;
             this.Version = block.Header.Version;
             this.VersionHex = block.Header.Version.ToString("x8");
             this.MerkleRoot = block.Header.HashMerkleRoot.ToString();
-            this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
+
+            if (verbosity == 1)
+                this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
+
+            if (verbosity == 2)
+                this.Transactions = block.Transactions.Select(t => new TransactionVerboseModel(t, network)).ToArray();
+
             this.Time = block.Header.BlockTime;
-            this.MedianTime = chain.GetBlock(block.GetHash()).GetMedianTimePast();
+            this.MedianTime = chainedHeader.GetMedianTimePast();
             this.Nonce = block.Header.Nonce;
             this.Bits = block.Header.Bits.ToCompact().ToString("x8");
             this.Difficulty = block.Header.Bits.Difficulty;
-            this.ChainWork = chain.GetBlock(block.GetHash()).ChainWork.ToString();
-            this.NumberOfTransactions = this.Transactions.Count();
+            this.ChainWork = chainedHeader.ChainWork.ToString();
+            this.NumberOfTransactions = block.Transactions.Count();
             this.PreviousBlockHash = block.Header.HashPrevBlock.ToString();
-            this.NextBlockHash = chain.GetBlock(block.GetHash()).Next?.First().HashBlock.ToString();
+            this.NextBlockHash = chainedHeader.Next?.First().HashBlock.ToString();
         }
 
         /// <summary>

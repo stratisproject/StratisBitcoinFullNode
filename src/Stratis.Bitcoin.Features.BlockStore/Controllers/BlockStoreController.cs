@@ -86,7 +86,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Controllers
 
                 return query.ShowTransactionDetails
                     ? this.Json(new BlockTransactionDetailsModel(block, this.network, this.chain))
-                    : this.Json(new BlockModel(block, this.chain, this.network.Consensus));
+                    : this.Json(new BlockModel(block, this.chain, this.network));
             }
             catch (Exception e)
             {

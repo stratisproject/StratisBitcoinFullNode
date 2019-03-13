@@ -399,7 +399,7 @@ namespace Stratis.Bitcoin.IntegrationTests.API
         private void the_block_should_contain_the_transaction()
         {
             var blockResponse = JsonDataSerializer.Instance.Deserialize<BlockModel>(this.responseText);
-            blockResponse.Transactions[1].Should().Be(this.transaction.GetHash().ToString());
+            blockResponse.TransactionsVerbose[1].Should().Be(this.transaction.GetHash().ToString());
         }
 
         private void it_is_rejected_as_forbidden()
