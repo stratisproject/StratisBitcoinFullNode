@@ -72,7 +72,7 @@ namespace Stratis.Bitcoin.Features.Consensus.Tests.CoinViews
 
             await rewindDataIndexCache.InitializeAsync(20, coinViewMock.Object);
 
-            rewindDataIndexCache.Save(new Dictionary<string, int>() { { $"{ new uint256(21) }-{ 0 }", 21}});
+            rewindDataIndexCache.Save(new Dictionary<RewindDataIndexItem, int>() { { new RewindDataIndexItem(new uint256(21), 0), 21}});
             var items = rewindDataIndexCache.GetMemberValue("items") as ConcurrentDictionary<string, int>;
 
             items.Should().HaveCount(23);

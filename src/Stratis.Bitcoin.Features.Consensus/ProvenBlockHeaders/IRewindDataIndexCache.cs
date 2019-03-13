@@ -36,8 +36,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <summary>
         /// Saves rewind index data to cache.
         /// </summary>
-        /// <param name="indexData">The rewind index data, where key is TxId + N and value is a height of the rewind data.</param>
-        void Save(Dictionary<string, int> indexData);
+        /// <param name="indexData">The rewind index data, where key is RewindDataIndexItem (i.e. TxId + N) and value is a height of the rewind data.</param>
+        void Save(Dictionary<RewindDataIndexItem, int> indexData);
 
         /// <summary>
         /// Gets rewind data index from the cache (or if not found from the disk) by tx id and output index.
@@ -45,6 +45,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <param name="transactionId">The transaction id.</param>
         /// <param name="transactionOutputIndex">Index of the transaction output.</param>
         /// <returns>If found, rewind data index, else null.</returns>
-        int? Get(uint256 transactionId, int transactionOutputIndex);
+        int? Get(uint256 transactionId, uint transactionOutputIndex);
     }
 }

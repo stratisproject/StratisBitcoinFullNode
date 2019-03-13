@@ -375,7 +375,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                 this.blockHeight = height;
                 this.blockHash = nextBlockHash;
                 var rewindData = new RewindData(oldBlockHash);
-                var indexItems = new Dictionary<string, int>();
+                var indexItems = new Dictionary<RewindDataIndexItem, int>();
 
                 foreach (UnspentOutputs unspent in unspentOutputs)
                 {
@@ -437,10 +437,18 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
 
                     if (this.rewindDataIndexCache != null)
                     {
-                        for (int i = 0; i < unspent.Outputs.Length; i++)
+                        for (uint i = 0; i < unspent.Outputs.Length; i++)
                         {
-                            string key = $"{unspent.TransactionId}-{i}";
-                            indexItems[key] = this.blockHeight;
+                            RewindDataIndexItem itemKey = new RewindDataIndexItem(unspent.TransactionId, i);
+
+                            if (!indexItems.ContainsKey(itemKey))
+                            {
+                                indexItems.Add(itemKey, this.blockHeight);
+                            }
+                            else
+                            {
+                                indexItems[itemKey] = this.blockHeight;
+                            }
                         }
                     }
 

@@ -18,7 +18,8 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// Internal cache for rewind data index. Key is a TxId + N (N is an index of output in a transaction)
         /// and value is a rewind data index.
         /// </summary>
-        private readonly ConcurrentDictionary<string, int> items;
+        private readonly Dictionary<RewindDataIndexItem, int> items;
+        private readonly object itemsLock;
 
         /// <summary>
         /// Number of blocks to keep in cache after the flush.
@@ -31,13 +32,21 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// </summary>
         private readonly BackendPerformanceCounter performanceCounter;
 
-        public RewindDataIndexCache(IDateTimeProvider dateTimeProvider, Network network)
+        public RewindDataIndexCache()
+        {
+            this.itemsLock = new object();
+        }
+
+        public RewindDataIndexCache(IDateTimeProvider dateTimeProvider, Network network) : this()
         {
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
             this.network = network;
 
-            this.items = new ConcurrentDictionary<string, int>();
+            lock (this.itemsLock)
+            {
+                this.items = new Dictionary<RewindDataIndexItem, int>();
+            }
 
             this.performanceCounter = new BackendPerformanceCounter(dateTimeProvider);
         }
@@ -45,7 +54,10 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         /// <inheritdoc />
         public async Task InitializeAsync(int tipHeight, ICoinView coinView)
         {
-            this.items.Clear();
+            lock (this.itemsLock)
+            {
+                this.items.Clear();
+            }
 
             this.numberOfBlocksToKeep = (int)this.network.Consensus.MaxReorgLength;
 
@@ -79,10 +91,22 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
 
             foreach (UnspentOutputs unspent in rewindData.OutputsToRestore)
             {
-                for (int outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
+                for (uint outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
                 {
                     string key = $"{unspent.TransactionId}-{outputIndex}";
-                    this.items[key] = rewindHeight;
+                    RewindDataIndexItem itemKey = new RewindDataIndexItem(unspent.TransactionId, outputIndex);
+
+                    lock (this.itemsLock)
+                    {
+                        if (!this.items.ContainsKey(itemKey))
+                        {
+                            this.items.Add(itemKey, rewindHeight);
+                        }
+                        else
+                        {
+                            this.items[itemKey] = rewindHeight;
+                        }
+                    }
                 }
             }
         }
@@ -99,13 +123,23 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         }
 
         /// <inheritdoc />
-        public void Save(Dictionary<string, int> indexData)
+        public void Save(Dictionary<RewindDataIndexItem, int> indexData)
         {
             using (new StopwatchDisposable(o => this.performanceCounter.AddInsertTime(o)))
             {
-                foreach (KeyValuePair<string, int> indexRecord in indexData)
+                foreach (RewindDataIndexItem itemKey in indexData.Keys)
                 {
-                    this.items[indexRecord.Key] = indexRecord.Value;
+                    lock (this.itemsLock)
+                    {
+                        if (!this.items.ContainsKey(itemKey))
+                        {
+                            this.items.Add(itemKey, indexData[itemKey]);
+                        }
+                        else
+                        {
+                            this.items[itemKey] = indexData[itemKey];
+                        }
+                    }
                 }
             }
         }
@@ -115,23 +149,29 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
         {
             int heightToKeepItemsTo = tipHeight > this.numberOfBlocksToKeep ? tipHeight - this.numberOfBlocksToKeep : 1; ;
 
-            List<KeyValuePair<string, int>> listOfItems = this.items.ToList();
-            foreach (KeyValuePair<string, int> item in listOfItems)
+            lock (this.itemsLock)
             {
-                if ((item.Value < heightToKeepItemsTo) || (item.Value > tipHeight))
+                RewindDataIndexItem[] listOfItems = this.items.Keys.ToArray();
+                foreach (RewindDataIndexItem itemKey in listOfItems)
                 {
-                    this.items.TryRemove(item.Key, out int unused);
+                    if ((this.items[itemKey] < heightToKeepItemsTo) || (this.items[itemKey] > tipHeight))
+                    {
+                        this.items.Remove(itemKey);
+                    }
                 }
             }
         }
 
         /// <inheritdoc />
-        public int? Get(uint256 transactionId, int transactionOutputIndex)
+        public int? Get(uint256 transactionId, uint transactionOutputIndex)
         {
-            string key = $"{transactionId}-{transactionOutputIndex}";
+            RewindDataIndexItem itemKey = new RewindDataIndexItem(transactionId, transactionOutputIndex);
 
-            if (this.items.TryGetValue(key, out int rewindDataIndex))
-                return rewindDataIndex;
+            lock (this.itemsLock)
+            {
+                if (this.items.ContainsKey(itemKey))
+                    return this.items[itemKey];
+            }
 
             return null;
         }
