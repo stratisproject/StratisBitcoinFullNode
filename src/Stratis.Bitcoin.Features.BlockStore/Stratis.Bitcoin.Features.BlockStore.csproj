@@ -30,6 +30,7 @@
   <ItemGroup>
     <ProjectReference Include="..\NBitcoin\NBitcoin.csproj" />
     <ProjectReference Include="..\Stratis.Bitcoin\Stratis.Bitcoin.csproj" />
+    <ProjectReference Include="..\Stratis.DB\Stratis.DB.csproj" />
   </ItemGroup>
 
   <ItemGroup>

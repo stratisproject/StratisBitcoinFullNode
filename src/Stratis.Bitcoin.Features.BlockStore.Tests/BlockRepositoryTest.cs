@@ -6,6 +6,7 @@ using DBreeze.DataTypes;
 using NBitcoin;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Stratis.Bitcoin.Utilities;
+using Stratis.DB;
 using Xunit;
 
 namespace Stratis.Bitcoin.Features.BlockStore.Tests
@@ -530,7 +531,7 @@ namespace Stratis.Bitcoin.Features.BlockStore.Tests
         {
             var dBreezeSerializer = new DBreezeSerializer(main);
 
-            var repository = new BlockRepository(main, dir, this.LoggerFactory.Object, dBreezeSerializer);
+            var repository = new BlockRepository(main, dir, this.LoggerFactory.Object, dBreezeSerializer, new StratisDBFactory());
             repository.InitializeAsync().GetAwaiter().GetResult();
 
             return repository;
