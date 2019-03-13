@@ -68,13 +68,11 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             {
                 new SmartContractFormatLogic()
             };
-
-            var txFullValidationChecks = new List<IContractTransactionFullValidationRule>(txFullValidationRules);
-
+            
             this.feeTxRules = new List<ISmartContractMempoolRule>()
             {
                 new ContractTransactionPartialValidationRule(this.callDataSerializer, txChecks),
-                new ContractTransactionFullValidationRule(this.callDataSerializer, txFullValidationChecks)
+                new ContractTransactionFullValidationRule(this.callDataSerializer, txFullValidationRules)
             };
         }
 
