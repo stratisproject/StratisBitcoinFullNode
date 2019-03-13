@@ -1,5 +1,4 @@
 ﻿using System;
-using System.Collections.Generic;
 using System.Linq;
 using System.Threading.Tasks;
 using Microsoft.AspNetCore.Mvc;
@@ -154,7 +153,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                     throw new RPCServerException(RPCErrorCode.RPC_INVALID_ADDRESS_OR_KEY, "No such transaction found in the provided block.");
                 }
             }
-            
+
             if (verbose != 0)
             {
                 ChainedHeader block = chainedHeaderBlock != null ? chainedHeaderBlock.ChainedHeader : await this.GetTransactionBlockAsync(trxid);
@@ -349,7 +348,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
             if (!isJsonFormat)
                 return block;
 
-            return new BlockModel(block, this.Chain);
+            return new BlockModel(block, this.Chain, this.Network.Consensus);
         }
 
         [ActionName("getnetworkinfo")]
@@ -361,7 +360,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 Version = this.FullNode?.Version?.ToUint() ?? 0,
                 SubVersion = this.Settings?.Agent,
                 ProtocolVersion = (uint)(this.Settings?.ProtocolVersion ?? NodeSettings.SupportedProtocolVersion),
-                IsLocalRelay = this.ConnectionManager?.Parameters?.IsRelay ?? false,            
+                IsLocalRelay = this.ConnectionManager?.Parameters?.IsRelay ?? false,
                 TimeOffset = this.ConnectionManager?.ConnectedPeers?.GetMedianTimeOffset() ?? 0,
                 Connections = this.ConnectionManager?.ConnectedPeers?.Count(),
                 IsNetworkActive = true,
@@ -389,7 +388,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                 Headers = (uint)(this.Chain?.Height ?? 0),
                 BestBlockHash = this.ChainState?.ConsensusTip?.HashBlock,
                 Difficulty = this.GetNetworkDifficulty()?.Difficulty ?? 0.0,
-                MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0, 
+                MedianTime = this.ChainState?.ConsensusTip?.GetMedianTimePast().ToUnixTimeSeconds() ?? 0,
                 VerificationProgress = 0.0,
                 IsInitialBlockDownload = !this.ChainState?.IsAtBestChainTip ?? true,
                 Chainwork = this.ChainState?.ConsensusTip?.ChainWork,
