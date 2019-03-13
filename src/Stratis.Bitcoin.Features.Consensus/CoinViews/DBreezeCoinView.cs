@@ -199,7 +199,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         }
 
         /// <inheritdoc />
-        public Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
+        public Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, IEnumerable<RewindData> rewindDataList = null)
         {
             Task task = Task.Run(() =>
             {
@@ -265,7 +265,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                             }
                         }
 
-                        insertedEntities += unspentOutputs.Count;
+                        insertedEntities += unspentOutputs.Count();
                         transaction.Commit();
                     }
                 }

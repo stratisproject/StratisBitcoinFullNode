@@ -319,14 +319,16 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                     u.Value.ExistInInner = true;
                 }
 
-                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs).ToArray(), null, this.innerBlockHash, this.blockHash, 0, this.cachedRewindDataIndex.Select(c => c.Value).ToList()).ConfigureAwait(false);
+                await this.Inner.SaveChangesAsync(unspent.Select(u => u.Value.UnspentOutputs), null, this.innerBlockHash, this.blockHash, 0, this.cachedRewindDataIndex.Values).ConfigureAwait(false);
 
                 // Remove prunable entries from cache as they were flushed down.
-                IEnumerable<KeyValuePair<uint256, CacheItem>> prunableEntries = unspent.Where(c => (c.Value.UnspentOutputs != null) && c.Value.UnspentOutputs.IsPrunable);
-                foreach (KeyValuePair<uint256, CacheItem> entry in prunableEntries)
+                foreach (KeyValuePair<uint256, CacheItem> entry in unspent)
                 {
-                    this.cachedUtxoItems.Remove(entry.Key);
-                    this.logger.LogTrace("Removed prunable entry Transaction Id '{0}', CacheItem:'{1}'.", entry.Key, entry.Value.UnspentOutputs);
+                    if (entry.Value.UnspentOutputs != null && entry.Value.UnspentOutputs.IsPrunable)
+                    {
+                        this.cachedUtxoItems.Remove(entry.Key);
+                        this.logger.LogTrace("Removed prunable entry Transaction Id '{0}', CacheItem:'{1}'.", entry.Key, entry.Value.UnspentOutputs);
+                    }
                 }
 
                 this.cachedRewindDataIndex.Clear();
@@ -343,21 +345,23 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
         /// <remarks>Should be protected by <see cref="lockobj"/>.</remarks>
         private void EvictLocked()
         {
-            foreach (KeyValuePair<uint256, CacheItem> entry in this.cachedUtxoItems.ToList())
+            int itemsToRemove = this.cachedUtxoItems.Count / 3;
+            foreach (uint256 key in this.cachedUtxoItems.Keys.ToArray())
             {
-                if (!entry.Value.IsDirty && entry.Value.ExistInInner)
+                CacheItem cacheItem = this.cachedUtxoItems[key];
+                if (!cacheItem.IsDirty && cacheItem.ExistInInner)
                 {
-                    if ((this.random.Next() % 3) == 0)
-                    {
-                        this.logger.LogTrace("Transaction Id '{0}' selected to be removed from the cache, CacheItem:'{1}'.", entry.Key, entry.Value.UnspentOutputs);
-                        this.cachedUtxoItems.Remove(entry.Key);
-                    }
+                    this.logger.LogTrace("Transaction Id '{0}' selected to be removed from the cache, CacheItem:'{1}'.", key, cacheItem.UnspentOutputs);
+                    this.cachedUtxoItems.Remove(key);
+
+                    if (itemsToRemove-- > 0)
+                        break;
                 }
             }
         }
 
         /// <inheritdoc />
-        public async Task SaveChangesAsync(IList<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, List<RewindData> rewindDataList = null)
+        public async Task SaveChangesAsync(IEnumerable<UnspentOutputs> unspentOutputs, IEnumerable<TxOut[]> originalOutputs, uint256 oldBlockHash, uint256 nextBlockHash, int height, IEnumerable<RewindData> rewindDataList = null)
         {
             Guard.NotNull(oldBlockHash, nameof(oldBlockHash));
             Guard.NotNull(nextBlockHash, nameof(nextBlockHash));
