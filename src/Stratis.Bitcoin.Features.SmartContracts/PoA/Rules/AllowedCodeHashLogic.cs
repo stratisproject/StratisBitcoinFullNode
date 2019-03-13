@@ -8,7 +8,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA.Rules
     /// <summary>
     /// Validates that the hash of the supplied smart contract code is contained in a list of supplied hashes.
     /// </summary>
-    public class AllowedCodeHashLogic : IContractTransactionPartialValidationRule
+    public class AllowedCodeHashLogic : IContractTransactionFullValidationRule
     {
         private readonly IWhitelistedHashChecker whitelistedHashChecker;
         private readonly IContractCodeHashingStrategy hashingStrategy;

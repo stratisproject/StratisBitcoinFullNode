@@ -10,14 +10,14 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Checks that smart contract transactions are in a valid format and the data is serialized correctly.
     /// </summary>
-    public class ContractTransactionPartialValidationRule : PartialValidationConsensusRule, ISmartContractMempoolRule
+    public class ContractTransactionFullValidationRule : FullValidationConsensusRule, ISmartContractMempoolRule
     {
         private readonly ContractTransactionChecker transactionChecker;
 
         // Keep the rules in a covariant interface.
-        private readonly IEnumerable<IContractTransactionValidationRule> internalRules;
+        private readonly IEnumerable<IContractTransactionFullValidationRule> internalRules;
 
-        public ContractTransactionPartialValidationRule(ICallDataSerializer serializer, IEnumerable<IContractTransactionValidationRule> internalRules)
+        public ContractTransactionFullValidationRule(ICallDataSerializer serializer, IEnumerable<IContractTransactionFullValidationRule> internalRules)
         {
             this.transactionChecker = new ContractTransactionChecker(serializer);
 

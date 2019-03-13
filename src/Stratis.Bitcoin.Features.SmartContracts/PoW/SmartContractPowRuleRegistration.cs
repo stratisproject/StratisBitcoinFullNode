@@ -71,7 +71,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoW
                 new CheckPowTransactionRule(),
                 new CheckSigOpsRule(),
                 new AllowedScriptTypeRule(this.network),
-                new ContractTransactionPartialValidationRule(this.callDataSerializer, new List<IContractTransactionPartialValidationRule>
+                new ContractTransactionPartialValidationRule(this.callDataSerializer, new List<IContractTransactionValidationRule>
                 {
                     new SmartContractFormatLogic()
                 })

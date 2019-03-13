@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using CSharpFunctionalExtensions;
 using Microsoft.Extensions.Logging;
 using NBitcoin;
@@ -7,12 +8,10 @@ using Stratis.Bitcoin.Consensus;
 using Stratis.Bitcoin.Features.Consensus.CoinViews;
 using Stratis.Bitcoin.Features.MemoryPool;
 using Stratis.Bitcoin.Features.MemoryPool.Interfaces;
-using Stratis.Bitcoin.Features.SmartContracts.PoA.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules;
 using Stratis.Bitcoin.Features.SmartContracts.Rules;
 using Stratis.Bitcoin.Utilities;
 using Stratis.SmartContracts.CLR;
-using Stratis.SmartContracts.Core.ContractSigning;
 using Stratis.SmartContracts.Core.State;
 
 namespace Stratis.Bitcoin.Features.SmartContracts
@@ -42,8 +41,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network,
             IStateRepositoryRoot stateRepositoryRoot,
-            IEnumerable<IContractTransactionPartialValidationRule> txValidationLogic
-            )
+            IEnumerable<IContractTransactionFullValidationRule> txFullValidationRules)
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
             // Dirty hack, but due to AllowedScriptTypeRule we don't need to check for standard scripts on any network, even live.
@@ -66,14 +64,17 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 p2pkhRule
             };
 
-            var txChecks = new List<IContractTransactionPartialValidationRule>(txValidationLogic)
+            var txChecks = new List<IContractTransactionPartialValidationRule>()
             {
                 new SmartContractFormatLogic()
             };
 
+            var txFullValidationChecks = new List<IContractTransactionFullValidationRule>(txFullValidationRules);
+
             this.feeTxRules = new List<ISmartContractMempoolRule>()
             {
-                new ContractTransactionPartialValidationRule(this.callDataSerializer, txChecks)
+                new ContractTransactionPartialValidationRule(this.callDataSerializer, txChecks),
+                new ContractTransactionFullValidationRule(this.callDataSerializer, txFullValidationChecks)
             };
         }
 
