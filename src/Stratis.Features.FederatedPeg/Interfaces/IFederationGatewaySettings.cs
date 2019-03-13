@@ -47,7 +47,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// The mimimum confirmations required for coins added to withdrawals.
         /// </summary>
-        int MinCoinMaturity { get; }
+        // int MinCoinMaturity { get; }
 
         /// <summary>
         /// The transaction fee required for withdrawals.

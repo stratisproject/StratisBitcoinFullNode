@@ -43,7 +43,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -64,7 +64,7 @@ namespace Stratis.Features.FederatedPeg.Tests
             var dataFolder = new DataFolder(CreateTestDir(this));
 
             this.Init(dataFolder);
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -105,7 +105,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
@@ -202,7 +202,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
@@ -314,7 +314,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             using (ICrossChainTransferStore crossChainTransferStore = this.CreateStore())
             {
@@ -410,7 +410,7 @@ namespace Stratis.Features.FederatedPeg.Tests
 
             this.Init(dataFolder);
             this.AddFunding();
-            this.AppendBlocks(this.federationGatewaySettings.MinCoinMaturity);
+            this.AppendBlocks(WithdrawalTransactionBuilder.MinConfirmations);
 
             MultiSigAddress multiSigAddress = this.wallet.MultiSigAddress;
 
