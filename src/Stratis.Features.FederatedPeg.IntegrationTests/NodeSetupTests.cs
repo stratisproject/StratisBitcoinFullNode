@@ -1,6 +1,7 @@
 using System.Threading;
 using System.Threading.Tasks;
 using NBitcoin;
+using Stratis.Bitcoin.Features.PoA.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Features.FederatedPeg.IntegrationTests.Utils;
 using Stratis.Features.FederatedPeg.Tests.Utils;
@@ -26,7 +27,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
         }
 
         [Fact]
-        public void SideChainFedNodesBuildAndSync()
+        public async Task SideChainFedNodesBuildAndSync()
         {
             using (var context = new SidechainTestContext())
             {
@@ -35,7 +36,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 context.EnableSideFedWallets();
 
                 // Wait for node to reach premine height
-                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= context.SideChainNetwork.Consensus.PremineHeight);
+                await context.FedSide1.MineBlocksAsync((int) context.SideChainNetwork.Consensus.PremineHeight);
                 TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1, context.FedSide2, context.FedSide3);
 
                 // Ensure that coinbase contains premine reward and it goes to the fed.
@@ -66,28 +67,41 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 Assert.True(context.MainUser.GetBalance() > context.MainChainNetwork.Consensus.PremineReward);
 
                 // Let sidechain progress to point where fed has the premine
-                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= context.SideUser.FullNode.Network.Consensus.PremineHeight);
+                await context.FedSide1.MineBlocksAsync((int)context.SideChainNetwork.Consensus.PremineHeight);
                 TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1);
                 Block block = context.SideUser.FullNode.Chain.GetBlock((int)context.SideChainNetwork.Consensus.PremineHeight).Block;
                 Transaction coinbase = block.Transactions[0];
-                Assert.Single(coinbase.Outputs);
-                Assert.Equal(context.SideChainNetwork.Consensus.PremineReward, coinbase.Outputs[0].Value);
-                Assert.Equal(context.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[0].ScriptPubKey);
+                Assert.Equal(FederatedPegBlockDefinition.FederationWalletOutputs, coinbase.Outputs.Count);
 
-                // Send to sidechain
-                decimal transferValueCoins = 25;
+                // Send multiple deposits to sidechain
+                decimal transferValueCoins = 10;
                 var transferValue = new Money(transferValueCoins, MoneyUnit.BTC);
                 string sidechainAddress = context.SideUser.GetUnusedAddress();
-                await context.DepositToSideChain(context.MainUser, transferValueCoins, sidechainAddress);
-                TestHelper.WaitLoop(() => context.FedMain1.CreateRPCClient().GetRawMempool().Length == 1);
-                TestHelper.MineBlocks(context.FedMain1, 15);
 
-                var source = new CancellationTokenSource(15_000);
-                TestHelper.WaitLoop(() => context.SideUser.GetBalance() == transferValue, cancellationToken: source.Token);
+                // Lets send 3 deposits all exactly the same
+                const int toSend = 3;
+                for (int i = 0; i < toSend; i++)
+                {
+                    await context.DepositToSideChain(context.MainUser, transferValueCoins, sidechainAddress);
+                }
 
-                // Sidechain user has balance - transfer complete.
-                Assert.Equal(transferValue, context.SideUser.GetBalance());
+                TestHelper.WaitLoop(() => context.FedMain1.CreateRPCClient().GetRawMempool().Length == toSend);
 
+                // Mine enough blocks to make the deposits mature on the main chain
+                TestHelper.MineBlocks(context.FedMain1, 6);
+
+                // Wait for all the withdrawal transactions to reach the mempool on the sidechain
+                TestHelper.WaitLoop(() =>
+                {
+                    int inMempool = context.FedSide1.CreateRPCClient().GetRawMempool().Length;
+                    return context.FedSide1.CreateRPCClient().GetRawMempool().Length == toSend;
+                });
+
+                await context.FedSide2.MineBlocksAsync(1);
+                TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide2);
+
+                Block sideBlock = context.SideUser.FullNode.Chain.Tip.Block;
+                Assert.Equal(toSend + 1, sideBlock.Transactions.Count);
             }
         }
 

@@ -219,6 +219,7 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests.Utils
                     password =  WalletPassword,
                     opReturnData = sidechainDepositAddress,
                     feeAmount = "0.01",
+                    allowUnconfirmed = true,
                     recipients = new[]
                     {
                         new

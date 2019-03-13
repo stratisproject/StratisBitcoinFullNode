@@ -109,6 +109,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
 
             var transactionBuilder = new TransactionBuilder(this.network);
 
+            // We only want to send the minimum number of UTXOs at once.
+            transactionBuilder.CoinSelector = new DefaultCoinSelector
+            {
+                GroupByScriptPubKey = false
+            };
+
             this.AddRecipients(transactionBuilder, context);
             this.AddOpReturnOutput(transactionBuilder, context);
             this.AddCoins(transactionBuilder, context);
