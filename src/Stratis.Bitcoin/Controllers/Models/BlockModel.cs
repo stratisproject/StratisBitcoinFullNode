@@ -18,7 +18,7 @@ namespace Stratis.Bitcoin.Controllers.Models
         public int Size { get; private set; }
 
         [JsonProperty("weight")]
-        public int Weight { get; private set; }
+        public long Weight { get; private set; }
 
         [JsonProperty("height")]
         public int Height { get; private set; }
@@ -64,26 +64,26 @@ namespace Stratis.Bitcoin.Controllers.Models
         [JsonProperty("nextblockhash")]
         public string NextBlockHash { get; private set; }
 
-        public BlockModel(Block block, ChainBase chain)
+        public BlockModel(Block block, ChainBase chain, IConsensus consensus)
         {
             this.Hash = block.GetHash().ToString();
             this.Confirmations = chain.Tip.Height - chain.GetBlock(block.GetHash()).Height + 1;
             this.Size = block.ToBytes().Length;
-            //this.Weight =
+            this.Weight = block.GetBlockWeight(consensus);
             this.Height = chain.GetBlock(block.GetHash()).Height;
             this.Version = block.Header.Version;
-            //this.VersionHex =
+            this.VersionHex = block.Header.Version.ToString("x8");
             this.MerkleRoot = block.Header.HashMerkleRoot.ToString();
             this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
             this.Time = block.Header.BlockTime;
-            //this.MedianTime = 
+            this.MedianTime = chain.GetBlock(block.GetHash()).GetMedianTimePast();
             this.Nonce = block.Header.Nonce;
             this.Bits = block.Header.Bits.ToCompact().ToString("x8");
             this.Difficulty = block.Header.Bits.Difficulty;
-            this.ChainWork = chain.GetBlock(block.GetHash()).ChainWork;
+            this.ChainWork = chain.GetBlock(block.GetHash()).ChainWork.ToString();
             this.NumberOfTransactions = this.Transactions.Count();
             this.PreviousBlockHash = block.Header.HashPrevBlock.ToString();
-            this.NextBlockHash = chain.GetBlock(block.GetHash()).Next;
+            this.NextBlockHash = chain.GetBlock(block.GetHash()).Next?.First().HashBlock.ToString();
         }
 
         /// <summary>
