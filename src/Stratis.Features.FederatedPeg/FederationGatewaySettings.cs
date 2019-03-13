@@ -21,6 +21,8 @@ namespace Stratis.Features.FederatedPeg
 
         public const string FederationIpsParam = "federationips";
 
+        public const string CounterChainDepositBlock = "counterchaindepositblock";
+
         private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
 
         private const string TransactionFeeParam = "transactionfee";
@@ -64,7 +66,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
 
-            this.CounterChainDepositStartBlock = this.IsMainChain ? 1 : StratisMainDepositStartBlock;
+            this.CounterChainDepositStartBlock = configReader.GetOrDefault<int>(CounterChainDepositBlock, this.IsMainChain ? 1 : StratisMainDepositStartBlock);
 
             this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
                 .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort)) ?? new List<IPEndPoint>();
