@@ -27,6 +27,13 @@ namespace Stratis.Features.FederatedPeg
 
         private const string TransactionFeeParam = "transactionfee";
 
+        /// <summary>
+        /// Sidechains to STRAT don't need to check for deposits for the whole main chain. Only from when they begun.
+        ///
+        /// This block was mined on 5th Dec 2018. Further optimisations could be more specific per network.
+        /// </summary>
+        public const int StratisMainDepositStartBlock = 1_100_000;
+
         public FederationGatewaySettings(NodeSettings nodeSettings)
         {
             Guard.NotNull(nodeSettings, nameof(nodeSettings));
@@ -63,6 +70,9 @@ namespace Stratis.Features.FederatedPeg
             }
 
             this.CounterChainApiPort = configReader.GetOrDefault(CounterChainApiPortParam, 0);
+
+            this.CounterChainDepositStartBlock = this.IsMainChain ? 1 : StratisMainDepositStartBlock;
+
             this.FederationNodeIpEndPoints = configReader.GetOrDefault<string>(FederationIpsParam, null)?.Split(',')
                 .Select(a => a.ToIPEndPoint(nodeSettings.Network.DefaultPort)) ?? new List<IPEndPoint>();
 
@@ -97,6 +107,9 @@ namespace Stratis.Features.FederatedPeg
 
         /// <inheritdoc/>
         public Money TransactionFee { get; }
+
+        /// <inheritdoc/>
+        public int CounterChainDepositStartBlock { get; }
 
         /// <inheritdoc/>
         public BitcoinAddress MultiSigAddress { get; }
