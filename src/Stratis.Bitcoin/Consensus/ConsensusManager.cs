@@ -1,5 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.Logging;
@@ -115,7 +116,11 @@ namespace Stratis.Bitcoin.Consensus
         /// <remarks>All access should be protected by <see cref="peerLock"/>.</remarks>
         private readonly Dictionary<uint256, long> expectedBlockSizes;
 
-        private readonly ConcurrentChain chain;
+        private readonly Dictionary<uint256, ChainedHeader> blocksById = new Dictionary<uint256, ChainedHeader>();
+
+        private readonly Dictionary<int, ChainedHeader> blocksByHeight = new Dictionary<int, ChainedHeader>();
+
+        private readonly ReaderWriterLock lockObject = new ReaderWriterLock();
 
         private readonly ConsensusManagerPerformanceCounter performanceCounter;
 
@@ -171,7 +176,6 @@ namespace Stratis.Bitcoin.Consensus
             this.peerBanning = peerBanning;
             this.blockStore = blockStore;
             this.finalizedBlockInfo = finalizedBlockInfo;
-            this.chain = chain;
             this.connectionManager = connectionManager;
             this.nodeLifetime = nodeLifetime;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
@@ -945,7 +949,21 @@ namespace Stratis.Bitcoin.Consensus
             this.Tip = newTip;
 
             this.chainState.ConsensusTip = this.Tip;
-            this.chain.SetTip(this.Tip);
+
+            int height = this.Tip == null ? -1 : this.Tip.Height;
+            foreach (ChainedHeader orphaned in this.EnumerateThisToFork(newTip))
+            {
+                this.blocksById.Remove(orphaned.HashBlock);
+                this.blocksByHeight.Remove(orphaned.Height);
+                height--;
+            }
+
+            ChainedHeader fork = this.GetBlockLocked(height);
+            foreach (ChainedHeader newBlock in newTip.EnumerateToGenesis().TakeWhile(c => c != fork))
+            {
+                this.blocksById.AddOrReplace(newBlock.HashBlock, newBlock);
+                this.blocksByHeight.AddOrReplace(newBlock.Height, newBlock);
+            }
         }
 
         /// <summary>
@@ -985,10 +1003,10 @@ namespace Stratis.Bitcoin.Consensus
                     }
                     else
                     {
-                       if (downloadedCallbacks.Callbacks == null)
-                           downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
+                        if (downloadedCallbacks.Callbacks == null)
+                            downloadedCallbacks.Callbacks = new List<OnBlockDownloadedCallback>();
 
-                       downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
+                        downloadedCallbacks.Callbacks.Add(onBlockDownloadedCallback);
                     }
 
                     bool blockIsNotConsecutive = (previousHeader != null) && (chainedHeader.Previous.HashBlock != previousHeader.HashBlock);
@@ -1145,6 +1163,138 @@ namespace Stratis.Bitcoin.Consensus
                     foreach (OnBlockDownloadedCallback blockDownloadedCallback in downloadedCallbacks.Callbacks)
                         blockDownloadedCallback(chainedHeaderBlock);
                 }
+            }
+        }
+
+        private IEnumerable<ChainedHeader> EnumerateThisToFork(ChainedHeader block)
+        {
+            if (this.Tip == null)
+                yield break;
+
+            ChainedHeader tip = this.Tip;
+            while (true)
+            {
+                if (ReferenceEquals(null, block) || ReferenceEquals(null, tip))
+                    throw new InvalidOperationException("No fork found between the two chains");
+
+                if (tip.Height > block.Height)
+                {
+                    yield return tip;
+                    tip = tip.Previous;
+                }
+                else if (tip.Height < block.Height)
+                {
+                    block = block.Previous;
+                }
+                else if (tip.Height == block.Height)
+                {
+                    if (tip.HashBlock == block.HashBlock)
+                        break;
+
+                    yield return tip;
+
+                    block = block.Previous;
+                    tip = tip.Previous;
+                }
+            }
+        }
+
+        public virtual ChainedHeader Genesis { get { return this.GetBlock(0); } }
+
+        /// <summary>
+        /// Gets the chained block header given a block ID (hash).
+        /// </summary>
+        /// <param name="id">Block ID to retrieve.</param>
+        /// <returns>The chained block header.</returns>
+        public ChainedHeader GetBlock(uint256 id)
+        {
+            using (this.lockObject.LockRead())
+            {
+                ChainedHeader result;
+                this.blocksById.TryGetValue(id, out result);
+                return result;
+            }
+        }
+
+        private ChainedHeader GetBlockLocked(int height)
+        {
+            ChainedHeader result;
+            this.blocksByHeight.TryGetValue(height, out result);
+            return result;
+        }
+
+        public ChainedHeader GetBlock(int height)
+        {
+            using (this.lockObject.LockRead())
+            {
+                return this.GetBlockLocked(height);
+            }
+        }
+
+        /// <summary>
+        /// Enumerate chain block headers after given block hash to genesis block.
+        /// </summary>
+        /// <param name="blockHash">Block hash to enumerate after.</param>
+        /// <returns>Enumeration of chained block headers after given block hash.</returns>
+        public IEnumerable<ChainedHeader> EnumerateAfter(uint256 blockHash)
+        {
+            ChainedHeader block = this.GetBlock(blockHash);
+
+            if (block == null)
+                return new ChainedHeader[0];
+
+            return this.EnumerateAfter(block);
+        }
+
+        /// <summary>
+        /// Enumerates chain block headers from the given chained block header to tip.
+        /// </summary>
+        /// <param name="block">Chained block header to enumerate from.</param>
+        /// <returns>Enumeration of chained block headers from given chained block header to tip.</returns>
+        public IEnumerable<ChainedHeader> EnumerateToTip(ChainedHeader block)
+        {
+            if (block == null)
+                throw new ArgumentNullException("block");
+
+            return this.EnumerateToTip(block.HashBlock);
+        }
+
+        /// <summary>
+        /// Enumerates chain block headers from given block hash to tip.
+        /// </summary>
+        /// <param name="blockHash">Block hash to enumerate from.</param>
+        /// <returns>Enumeration of chained block headers from the given block hash to tip.</returns>
+        public IEnumerable<ChainedHeader> EnumerateToTip(uint256 blockHash)
+        {
+            ChainedHeader block = this.GetBlock(blockHash);
+            if (block == null)
+                yield break;
+
+            yield return block;
+
+            foreach (ChainedHeader chainedBlock in this.EnumerateAfter(blockHash))
+                yield return chainedBlock;
+        }
+
+        /// <summary>
+        /// Enumerates chain block headers after the given chained block header to genesis block.
+        /// </summary>
+        /// <param name="block">The chained block header to enumerate after.</param>
+        /// <returns>Enumeration of chained block headers after the given block.</returns>
+        public virtual IEnumerable<ChainedHeader> EnumerateAfter(ChainedHeader block)
+        {
+            int i = block.Height + 1;
+            ChainedHeader prev = block;
+
+            while (true)
+            {
+                ChainedHeader b = GetBlock(i);
+                if ((b == null) || (b.Previous != prev))
+                    yield break;
+
+                yield return b;
+                i++;
+                prev = b;
             }
         }
 
