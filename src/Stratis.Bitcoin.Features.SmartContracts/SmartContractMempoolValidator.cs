@@ -73,7 +73,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
 
             this.feeTxRules = new List<ISmartContractMempoolRule>()
             {
-                new ContractTransactionValidationRule(this.callDataSerializer, txChecks)
+                new ContractTransactionPartialValidationRule(this.callDataSerializer, txChecks)
             };
         }
 

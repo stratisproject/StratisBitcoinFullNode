@@ -58,7 +58,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
                 new SmartContractFormatLogic()                
             };
             consensus.PartialValidationRules.Add(new AllowedScriptTypeRule(this.network));
-            consensus.PartialValidationRules.Add(new ContractTransactionValidationRule(this.callDataSerializer, txValidationRules));
+            consensus.PartialValidationRules.Add(new ContractTransactionPartialValidationRule(this.callDataSerializer, txValidationRules));
 
             int existingCoinViewRule = consensus.FullValidationRules
                 .FindIndex(c => c is CoinViewRule);
