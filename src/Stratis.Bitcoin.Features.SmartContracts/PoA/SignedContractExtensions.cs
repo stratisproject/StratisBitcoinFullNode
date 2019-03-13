@@ -24,7 +24,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             services.AddSingleton<IContractCodeHashingStrategy, Keccak256CodeHashingStrategy>();
 
             // Registers an additional contract tx validation consensus rule which checks whether the hash of the contract being deployed is whitelisted.
-            services.AddSingleton<IContractTransactionValidationLogic, AllowedCodeHashLogic>();
+            services.AddSingleton<IContractTransactionPartialValidationRule, AllowedCodeHashLogic>();
 
             return options;
         }
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             services.AddSingleton<IContractSigner, ContractSigner>();
 
             // Add consensus rule.
-            services.AddSingleton<IContractTransactionValidationLogic>(f => new ContractSignedCodeLogic(f.GetService<IContractSigner>(), signingContractPubKey));
+            services.AddSingleton<IContractTransactionPartialValidationRule>(f => new ContractSignedCodeLogic(f.GetService<IContractSigner>(), signingContractPubKey));
 
             return options;
         }

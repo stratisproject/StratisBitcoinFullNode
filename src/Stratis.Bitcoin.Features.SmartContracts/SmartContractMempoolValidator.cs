@@ -42,7 +42,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
             ICoinView coinView, ILoggerFactory loggerFactory, NodeSettings nodeSettings,
             IConsensusRuleEngine consensusRules, ICallDataSerializer callDataSerializer, Network network,
             IStateRepositoryRoot stateRepositoryRoot,
-            IEnumerable<IContractTransactionValidationLogic> txValidationLogic
+            IEnumerable<IContractTransactionPartialValidationRule> txValidationLogic
             )
             : base(memPool, mempoolLock, dateTimeProvider, mempoolSettings, chain, coinView, loggerFactory, nodeSettings, consensusRules)
         {
@@ -66,7 +66,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts
                 p2pkhRule
             };
 
-            var txChecks = new List<IContractTransactionValidationLogic>(txValidationLogic)
+            var txChecks = new List<IContractTransactionPartialValidationRule>(txValidationLogic)
             {
                 new SmartContractFormatLogic()
             };

@@ -7,7 +7,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     /// <summary>
     /// Holds logic for validating a specific property of smart contract transactions.
     /// </summary>
-    public interface IContractTransactionValidationLogic
+    public interface IContractTransactionPartialValidationRule
     {
         /// <summary>
         /// Ensures that a transaction is valid, throwing a <see cref="ConsensusError"/> otherwise.

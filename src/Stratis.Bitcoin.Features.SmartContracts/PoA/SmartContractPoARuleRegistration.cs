@@ -26,7 +26,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
         private readonly IReceiptRepository receiptRepository;
         private readonly ICoinView coinView;
         private readonly PoAConsensusRulesRegistration baseRuleRegistration;
-        private readonly IEnumerable<IContractTransactionValidationLogic> validationRules;
+        private readonly IEnumerable<IContractTransactionPartialValidationRule> validationRules;
 
         public SmartContractPoARuleRegistration(Network network,
             IStateRepositoryRoot stateRepositoryRoot,
@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             ISenderRetriever senderRetriever,
             IReceiptRepository receiptRepository,
             ICoinView coinView,
-            IEnumerable<IContractTransactionValidationLogic> validationRules)
+            IEnumerable<IContractTransactionPartialValidationRule> validationRules)
         {
             this.baseRuleRegistration = new PoAConsensusRulesRegistration();
             this.network = network;
@@ -53,7 +53,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             this.baseRuleRegistration.RegisterRules(consensus);
 
             // Add SC-Specific partial rules
-            var txValidationRules = new List<IContractTransactionValidationLogic>(this.validationRules)
+            var txValidationRules = new List<IContractTransactionPartialValidationRule>(this.validationRules)
             {
                 new SmartContractFormatLogic()                
             };

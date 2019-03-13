@@ -57,7 +57,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Tests.Consensus.Rules
 
         public ContractTransactionValidationRule CreateContractValidationRule()
         {
-            var rule = new ContractTransactionValidationRule(this.CallDataSerializer, new List<IContractTransactionValidationLogic>
+            var rule = new ContractTransactionValidationRule(this.CallDataSerializer, new List<IContractTransactionPartialValidationRule>
             {
                 new SmartContractFormatLogic()
             });

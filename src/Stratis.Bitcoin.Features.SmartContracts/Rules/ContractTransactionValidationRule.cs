@@ -16,9 +16,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
     {
         private readonly ICallDataSerializer callDataSerializer;
 
-        private readonly IList<IContractTransactionValidationLogic> internalRules;
+        private readonly IList<IContractTransactionPartialValidationRule> internalRules;
 
-        public ContractTransactionValidationRule(ICallDataSerializer callDataSerializer, IList<IContractTransactionValidationLogic> internalRules)
+        public ContractTransactionValidationRule(ICallDataSerializer callDataSerializer, IList<IContractTransactionPartialValidationRule> internalRules)
         {
             this.callDataSerializer = callDataSerializer;
             this.internalRules = internalRules;
@@ -60,7 +60,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
             ContractTxData txData = callDataDeserializationResult.Value;
 
-            foreach (IContractTransactionValidationLogic internalRule in this.internalRules)
+            foreach (IContractTransactionPartialValidationRule internalRule in this.internalRules)
             {
                 internalRule.CheckContractTransaction(txData, suppliedBudget);
             }
