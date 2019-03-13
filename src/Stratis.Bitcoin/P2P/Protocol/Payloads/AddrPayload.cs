@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using NBitcoin;
 using NBitcoin.Protocol;
 
@@ -25,7 +26,8 @@ namespace Stratis.Bitcoin.P2P.Protocol.Payloads
 
         public AddrPayload(NetworkAddress[] addresses)
         {
-            this.addresses = addresses.ToArray();
+            this.addresses = new NetworkAddress[addresses.Length];
+            Array.Copy(addresses, 0, this.addresses, 0, this.addresses.Length);
         }
 
         public override void ReadWriteCore(BitcoinStream stream)

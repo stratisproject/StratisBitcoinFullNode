@@ -13,7 +13,11 @@ namespace Stratis.Bitcoin.Features.BlockStore.Models
 
         public BlockTransactionDetailsModel(Block block, Network network, ChainBase chain) : base(block, chain)
         {
-            this.Transactions = block.Transactions.Select(trx => new TransactionVerboseModel(trx, network)).ToArray();
+            this.Transactions = new TransactionVerboseModel[block.Transactions.Count];
+            for (int i = 0; i < block.Transactions.Count; i++)
+            {
+                this.Transactions[i] = new TransactionVerboseModel(block.Transactions[i], network);
+            }
         }
 
         public BlockTransactionDetailsModel()

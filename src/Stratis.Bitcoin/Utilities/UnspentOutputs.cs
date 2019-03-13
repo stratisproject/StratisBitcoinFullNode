@@ -1,4 +1,5 @@
-﻿using System.Linq;
+﻿using System;
+using System.Linq;
 using System.Text;
 using NBitcoin;
 using NBitcoin.BitcoinCore;
@@ -52,7 +53,8 @@ namespace Stratis.Bitcoin.Utilities
             this.Time = unspent.Time;
             this.Height = unspent.Height;
             this.Version = unspent.Version;
-            this.Outputs = unspent.Outputs.ToArray();
+            this.Outputs = new TxOut[unspent.Outputs.Length];
+            Array.Copy(unspent.Outputs, 0, this.Outputs, 0, this.Outputs.Length);
         }
 
         /// <summary>

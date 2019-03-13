@@ -182,7 +182,7 @@ namespace Stratis.Bitcoin.Features.RPC.Controllers
                         }
                     }
 
-                    string method = $"{descriptor.ActionName} {string.Join(" ", parameters.ToArray())}";
+                    string method = $"{descriptor.ActionName} {string.Join(" ", parameters)}";
 
                     listMethods.Add(new Models.RpcCommandModel { Command = method.Trim(), Description = description });
                 }

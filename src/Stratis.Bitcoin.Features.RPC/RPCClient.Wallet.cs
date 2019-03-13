@@ -522,11 +522,7 @@ namespace Stratis.Bitcoin.Features.RPC
             if (outpoints == null || outpoints.Length == 0)
                 return;
 
-            var parameters = new List<object>();
-            parameters.Add(unlock);
             var array = new JArray();
-            parameters.Add(array);
-
             foreach (OutPoint outp in outpoints)
             {
                 var obj = new JObject();
@@ -535,6 +531,7 @@ namespace Stratis.Bitcoin.Features.RPC
                 array.Add(obj);
             }
 
+            var parameters = new object[] { unlock, array };
             await SendCommandAsync(RPCOperations.lockunspent, parameters.ToArray()).ConfigureAwait(false);
         }
 
@@ -557,10 +554,8 @@ namespace Stratis.Bitcoin.Features.RPC
         /// <param name="timeout">Timeout in seconds</param>
         public async Task WalletPassphraseAsync(string passphrase, int timeout)
         {
-            var parameters = new List<object>();
-            parameters.Add(passphrase);
-            parameters.Add(timeout);
-            await SendCommandAsync(RPCOperations.walletpassphrase, parameters.ToArray()).ConfigureAwait(false);
+            var parameters = new object[] {passphrase, timeout};
+            await SendCommandAsync(RPCOperations.walletpassphrase, parameters).ConfigureAwait(false);
         }
     
         /// <summary>

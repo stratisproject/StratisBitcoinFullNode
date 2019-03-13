@@ -410,7 +410,7 @@ namespace Stratis.Bitcoin.Features.Consensus.CoinViews
                         UnspentOutputs clone = unspent.Clone();
 
                         // We take the original items that are in cache and put them in rewind data.
-                        clone.Outputs = cacheItem.UnspentOutputs.Outputs.ToArray();
+                        Array.Copy(cacheItem.UnspentOutputs.Outputs, 0, clone.Outputs, 0, clone.Outputs.Length);
 
                         this.logger.LogTrace("Modifying transaction '{0}' in OutputsToRestore rewind data.", unspent.TransactionId);
                         rewindData.OutputsToRestore.Add(clone);
