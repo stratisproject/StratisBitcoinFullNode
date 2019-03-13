@@ -26,12 +26,12 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
 
         public override Task RunAsync(RuleContext context)
         {
-            return this.transactionChecker.RunAsync(context, this.internalRules.ToList());
+            return this.transactionChecker.RunAsync(context, this.internalRules);
         }
 
         public void CheckTransaction(MempoolValidationContext context)
         {
-            this.transactionChecker.CheckTransaction(context, this.internalRules.ToList());
+            this.transactionChecker.CheckTransaction(context, this.internalRules);
         }
     }
 }

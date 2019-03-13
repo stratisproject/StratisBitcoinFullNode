@@ -1,4 +1,5 @@
 ﻿using System.Collections.Generic;
+using System.Linq;
 using System.Threading.Tasks;
 using CSharpFunctionalExtensions;
 using NBitcoin;
@@ -21,24 +22,26 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.callDataSerializer = callDataSerializer;
         }
 
-        public Task RunAsync(RuleContext context, IReadOnlyList<IContractTransactionValidationRule> rules)
+        public Task RunAsync(RuleContext context, IEnumerable<IContractTransactionValidationRule> rules)
         {
             Block block = context.ValidationContext.BlockToValidate;
 
+            List<IContractTransactionValidationRule> contractTransactionValidationRules = rules.ToList();
+
             foreach (Transaction transaction in block.Transactions)
             {
-                this.CheckTransaction(transaction, rules, null);
+                this.CheckTransaction(transaction, contractTransactionValidationRules, null);
             }
 
             return Task.CompletedTask;
         }
 
-        public void CheckTransaction(MempoolValidationContext context, IReadOnlyList<IContractTransactionValidationRule> rules)
+        public void CheckTransaction(MempoolValidationContext context, IEnumerable<IContractTransactionValidationRule> rules)
         {
             this.CheckTransaction(context.Transaction, rules, context.Fees);
         }
 
-        private void CheckTransaction(Transaction transaction, IReadOnlyList<IContractTransactionValidationRule> rules,
+        private void CheckTransaction(Transaction transaction, IEnumerable<IContractTransactionValidationRule> rules,
             Money suppliedBudget)
         {
             TxOut scTxOut = transaction.TryGetSmartContractTxOut();
