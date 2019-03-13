@@ -156,8 +156,8 @@ namespace Stratis.LocalSmartContracts.Networks
 
             this.StandardScriptsRegistry = new PoAStandardScriptsRegistry();
             
-            Console.WriteLine("Genesis Block Hash: '{0}'", genesisBlock.GetHash().ToString());
-            Console.WriteLine("Merkle Root Hash: '{0}'", genesisBlock.Header.HashMerkleRoot.ToString());
+            Console.WriteLine("Genesis Block Hash: 0x{0}", genesisBlock.GetHash().ToString());
+            Console.WriteLine("Merkle Root Hash: 0x{0}", genesisBlock.Header.HashMerkleRoot.ToString());
             
             Assert(this.Consensus.HashGenesisBlock == uint256.Parse("0x1228f793ede0ae6aab9c129d021be95cf233d5a73de2ca123cb920435b9e7872"));
             Assert(this.Genesis.Header.HashMerkleRoot == uint256.Parse("0x6abb8137b005211ddd2878aebd97b69c89a7115ca5020e8fb3a98cc9a8bab09c"));
