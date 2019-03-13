@@ -21,8 +21,6 @@ namespace Stratis.Features.FederatedPeg
 
         public const string FederationIpsParam = "federationips";
 
-        private const string MinCoinMaturityParam = "mincoinmaturity";
-
         private const string MinimumDepositConfirmationsParam = "mindepositconfirmations";
 
         private const string TransactionFeeParam = "transactionfee";
@@ -56,11 +54,6 @@ namespace Stratis.Features.FederatedPeg
             this.FederationPublicKeys = payToMultisigScriptParams.PubKeys;
 
             this.PublicKey = configReader.GetOrDefault<string>(PublicKeyParam, null);
-            this.MinCoinMaturity = configReader.GetOrDefault<int>(MinCoinMaturityParam, (int)nodeSettings.Network.Consensus.MaxReorgLength + 1);
-            if (this.MinCoinMaturity <= 0)
-            {
-                throw new ConfigurationException("The minimum coin maturity can't be set to zero or less.");
-            }
 
             this.TransactionFee = new Money(configReader.GetOrDefault<decimal>(TransactionFeeParam, 0.01m), MoneyUnit.BTC);
 
@@ -101,9 +94,6 @@ namespace Stratis.Features.FederatedPeg
 
         /// <inheritdoc/>
         public int MultiSigN { get; }
-
-        /// <inheritdoc/>
-        public int MinCoinMaturity { get; }
 
         /// <inheritdoc/>
         public Money TransactionFee { get; }
