@@ -50,6 +50,46 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
             }
         }
 
+        [Fact]
+        public async Task MainChain_To_SideChain_Transfer()
+        {
+            using (var context = new SidechainTestContext())
+            {
+                // Set everything up
+                context.StartAndConnectNodes();
+                context.EnableSideFedWallets();
+                context.EnableMainFedWallets();
+
+                // Fund a main chain node
+                TestHelper.MineBlocks(context.MainUser, (int)context.MainChainNetwork.Consensus.CoinbaseMaturity + (int)context.MainChainNetwork.Consensus.PremineHeight);
+                TestHelper.WaitForNodeToSync(context.MainUser, context.FedMain1);
+                Assert.True(context.MainUser.GetBalance() > context.MainChainNetwork.Consensus.PremineReward);
+
+                // Let sidechain progress to point where fed has the premine
+                TestHelper.WaitLoop(() => context.SideUser.FullNode.Chain.Height >= context.SideUser.FullNode.Network.Consensus.PremineHeight);
+                TestHelper.WaitForNodeToSync(context.SideUser, context.FedSide1);
+                Block block = context.SideUser.FullNode.Chain.GetBlock((int)context.SideChainNetwork.Consensus.PremineHeight).Block;
+                Transaction coinbase = block.Transactions[0];
+                Assert.Single(coinbase.Outputs);
+                Assert.Equal(context.SideChainNetwork.Consensus.PremineReward, coinbase.Outputs[0].Value);
+                Assert.Equal(context.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[0].ScriptPubKey);
+
+                // Send to sidechain
+                decimal transferValueCoins = 25;
+                var transferValue = new Money(transferValueCoins, MoneyUnit.BTC);
+                string sidechainAddress = context.SideUser.GetUnusedAddress();
+                await context.DepositToSideChain(context.MainUser, transferValueCoins, sidechainAddress);
+                TestHelper.WaitLoop(() => context.FedMain1.CreateRPCClient().GetRawMempool().Length == 1);
+                TestHelper.MineBlocks(context.FedMain1, 15);
+
+                var source = new CancellationTokenSource(15_000);
+                TestHelper.WaitLoop(() => context.SideUser.GetBalance() == transferValue, cancellationToken: source.Token);
+
+                // Sidechain user has balance - transfer complete.
+                Assert.Equal(transferValue, context.SideUser.GetBalance());
+
+            }
+        }
 
 
         [Fact(Skip = TestingValues.SkipTests)]
