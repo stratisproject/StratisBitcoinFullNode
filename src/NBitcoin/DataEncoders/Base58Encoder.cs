@@ -140,9 +140,9 @@ namespace NBitcoin.DataEncoders
             for(int y = i; y < encoded.Length && encoded[y] == pszBase58[0]; y++)
                 nLeadingZeros++;
 
-
             result = new byte[nLeadingZeros + vchTmp.Length];
-            Array.Copy(vchTmp.Reverse().ToArray(), 0, result, nLeadingZeros, vchTmp.Length);
+            Array.Copy(vchTmp, 0, result, nLeadingZeros, vchTmp.Length);
+            Array.Reverse(result);
             return result;
         }
     }

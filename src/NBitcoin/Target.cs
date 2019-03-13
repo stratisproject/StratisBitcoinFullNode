@@ -159,15 +159,14 @@ namespace NBitcoin
         {
             byte[] array = input.ToByteArray();
 
-            int missingZero = 32 - array.Length;
+            int destinationArrayOffset = 32 - array.Length;
+            byte[] result = new byte[32];
 
-            if(missingZero < 0)
+            if (destinationArrayOffset < 0)
                 throw new InvalidOperationException("Awful bug, this should never happen");
 
-            if(missingZero != 0)
-                return new uint256(new byte[missingZero].Concat(array), false);
-
-            return new uint256(array, false);
+           Buffer.BlockCopy(array, 0, result, destinationArrayOffset, result.Length - destinationArrayOffset);
+            return new uint256(result, false);
         }
 
         public override string ToString()
