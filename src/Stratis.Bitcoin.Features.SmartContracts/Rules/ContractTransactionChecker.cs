@@ -38,7 +38,7 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
             this.CheckTransaction(context.Transaction, rules, context.Fees);
         }
 
-        private void CheckTransaction(Transaction transaction, IReadOnlyList<IContractTransactionValidationRules> rules,
+        private void CheckTransaction(Transaction transaction, IReadOnlyList<IContractTransactionValidationRule> rules,
             Money suppliedBudget)
         {
             TxOut scTxOut = transaction.TryGetSmartContractTxOut();
