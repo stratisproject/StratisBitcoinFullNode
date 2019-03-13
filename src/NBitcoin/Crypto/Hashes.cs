@@ -215,13 +215,13 @@ namespace NBitcoin.Crypto
                 switch(position)
                 {
                     case 0:
-                        return (ulong)val.pn0 + (ulong)((ulong)val.pn1 << 32);
+                        return (ulong)val.pn[0] + (ulong)((ulong)val.pn[1] << 32);
                     case 1:
-                        return (ulong)val.pn2 + (ulong)((ulong)val.pn3 << 32);
+                        return (ulong)val.pn[2] + (ulong)((ulong)val.pn[3] << 32);
                     case 2:
-                        return (ulong)val.pn4 + (ulong)((ulong)val.pn5 << 32);
+                        return (ulong)val.pn[4] + (ulong)((ulong)val.pn[5] << 32);
                     case 3:
-                        return (ulong)val.pn6 + (ulong)((ulong)val.pn7 << 32);
+                        return (ulong)val.pn[6] + (ulong)((ulong)val.pn[7] << 32);
                     default:
                         throw new ArgumentOutOfRangeException("position should be less than 4", "position");
                 }
