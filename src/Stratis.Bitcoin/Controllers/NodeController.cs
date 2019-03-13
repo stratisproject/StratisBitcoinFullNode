@@ -69,14 +69,20 @@ namespace Stratis.Bitcoin.Controllers
         /// <summary>An interface implementation for the blockstore.</summary>
         private readonly IBlockStore blockStore;
 
-        public NodeController(IFullNode fullNode, ILoggerFactory loggerFactory,
-            IDateTimeProvider dateTimeProvider, IChainState chainState,
-            NodeSettings nodeSettings, IConnectionManager connectionManager,
-            ConcurrentChain chain, Network network, IPooledTransaction pooledTransaction = null,
-            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+        public NodeController(
+            ConcurrentChain chain,
+            IChainState chainState,
+            IConnectionManager connectionManager,
+            IDateTimeProvider dateTimeProvider,
+            IFullNode fullNode,
+            ILoggerFactory loggerFactory,
+            NodeSettings nodeSettings,
+            Network network,
+            IBlockStore blockStore = null,
             IGetUnspentTransaction getUnspentTransaction = null,
             INetworkDifficulty networkDifficulty = null,
-            IBlockStore blockStore = null)
+            IPooledGetUnspentTransaction pooledGetUnspentTransaction = null,
+            IPooledTransaction pooledTransaction = null)
         {
             Guard.NotNull(fullNode, nameof(fullNode));
             Guard.NotNull(network, nameof(network));
@@ -87,19 +93,20 @@ namespace Stratis.Bitcoin.Controllers
             Guard.NotNull(connectionManager, nameof(connectionManager));
             Guard.NotNull(dateTimeProvider, nameof(dateTimeProvider));
 
+            this.chain = chain;
+            this.chainState = chainState;
+            this.connectionManager = connectionManager;
+            this.dateTimeProvider = dateTimeProvider;
             this.fullNode = fullNode;
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
-            this.dateTimeProvider = dateTimeProvider;
-            this.chainState = chainState;
-            this.nodeSettings = nodeSettings;
-            this.connectionManager = connectionManager;
-            this.chain = chain;
             this.network = network;
-            this.pooledTransaction = pooledTransaction;
-            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.nodeSettings = nodeSettings;
+
+            this.blockStore = blockStore;
             this.getUnspentTransaction = getUnspentTransaction;
             this.networkDifficulty = networkDifficulty;
-            this.blockStore = blockStore;
+            this.pooledGetUnspentTransaction = pooledGetUnspentTransaction;
+            this.pooledTransaction = pooledTransaction;
         }
 
         /// <summary>

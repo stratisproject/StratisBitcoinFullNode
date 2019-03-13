@@ -13,6 +13,7 @@ using Stratis.Bitcoin.P2P.Protocol.Behaviors;
 using Stratis.Bitcoin.P2P.Protocol.Payloads;
 using Stratis.Bitcoin.Utilities;
 using Stratis.Bitcoin.Utilities.Extensions;
+using TracerAttributes;
 
 namespace Stratis.Bitcoin.Consensus
 {
@@ -111,7 +112,8 @@ namespace Stratis.Bitcoin.Consensus
                     this.BestReceivedTip = result.Consumed;
                     this.UpdateBestSentHeader(this.BestReceivedTip);
 
-                    int consumedCount = this.cachedHeaders.IndexOf(result.Consumed.Header) + 1;
+                    int consumedCount = this.GetConsumedHeadersCount(this.cachedHeaders, result.Consumed.Header);
+
                     this.cachedHeaders.RemoveRange(0, consumedCount);
                     int cacheSize = this.cachedHeaders.Count;
 
@@ -137,6 +139,7 @@ namespace Stratis.Bitcoin.Consensus
         /// </summary>
         /// <param name="peer">Peer from which the message was received.</param>
         /// <param name="message">Received message to process.</param>
+        [NoTrace]
         protected virtual async Task OnMessageReceivedAsync(INetworkPeer peer, IncomingMessage message)
         {
             switch (message.Message.Payload)
@@ -319,7 +322,7 @@ namespace Stratis.Bitcoin.Consensus
                     uint256 cachedHeader = this.cachedHeaders.Last().GetHash();
                     uint256 prevNewHeader = headers.First().HashPrevBlock;
 
-                    // ensure headers can connect to cached headers.
+                    // Ensure headers can connect to cached headers.
                     if (cachedHeader == prevNewHeader)
                     {
                         this.cachedHeaders.AddRange(headers);
@@ -330,21 +333,16 @@ namespace Stratis.Bitcoin.Consensus
                     }
 
                     // Workaround for special case when peer announces new block but we don't want to clean the cache.
-                    if (headers.Count == 1 && this.BestReceivedTip != null)
+                    // For example, we are busy syncing and have D E F in the cache (assume A B C are already in the
+                    // CHT). The peer now advertises new block M because we haven't completed IBD yet.
+                    // We do not want to clear the currently useful cache unnecessarily.
+                    if (this.CheckIfUnsolicitedFutureHeader(headers))
                     {
-                        // Distance of header from the peer expected tip.
-                        double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
-
-                        if (this.chain.Network.MaxTipAge < distanceSeconds)
-                        {
-                            // A single header that is not connected to last header is likely an
-                            // unsolicited header that is a result of the peer tip being extended.
-                            // If the header time is far in the future we ignore it.
-                            this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
-                            return;
-                        }
+                        this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT]");
+                        return;
                     }
 
+                    // The header(s) could not be connected and were not an unsolicited block advertisement.
                     this.cachedHeaders.Clear();
                     await this.ResyncAsync().ConfigureAwait(false);
 
@@ -377,7 +375,7 @@ namespace Stratis.Bitcoin.Consensus
                 if (result.Consumed.HashBlock != headers.Last().GetHash())
                 {
                     // Some headers were not consumed, add to cache.
-                    int consumedCount = headers.IndexOf(result.Consumed.Header) + 1;
+                    int consumedCount = this.GetConsumedHeadersCount(headers, result.Consumed.Header);
                     this.cachedHeaders.AddRange(headers.Skip(consumedCount));
 
                     this.logger.LogDebug("{0} out of {1} items were not consumed and added to cache.", headers.Count - consumedCount, headers.Count);
@@ -452,11 +450,25 @@ namespace Stratis.Bitcoin.Consensus
             }
             catch (ConnectHeaderException)
             {
+                // This is typically thrown when the first header refers to a previous block hash that is not in
+                // the header tree currently. This is not regarded as bannable, as it could be a legitimate reorg.
                 this.logger.LogDebug("Unable to connect headers.");
-                this.cachedHeaders.Clear();
 
-                // Resync in case can't connect.
-                await this.ResyncAsync().ConfigureAwait(false);
+                if (this.CheckIfUnsolicitedFutureHeader(headers))
+                {
+                    // However, during IBD it is much more likely that the unconnectable header is an unsolicited
+                    // block advertisement. In that case we just ignore the failed header and don't modify the cache.
+                    // TODO: Review more closely what Bitcoin Core does here - they seem to allow 8 unconnectable headers before
+                    // applying partial DoS points to a peer. Incorporate that into rate limiting code?
+                    this.logger.LogTrace("(-)[HEADER_FUTURE_CANT_CONNECT_2]");
+                }
+                else
+                {
+                    this.cachedHeaders.Clear();
+
+                    // Resync in case we can't connect the header.
+                    await this.ResyncAsync().ConfigureAwait(false);
+                }
             }
             catch (ConsensusRuleException exception)
             {
@@ -480,6 +492,27 @@ namespace Stratis.Bitcoin.Consensus
             }
 
             return result;
+        }
+
+        private bool CheckIfUnsolicitedFutureHeader(List<BlockHeader> headers)
+        {
+            if (headers.Count == 1 && this.BestReceivedTip != null)
+            {
+                // Distance of header from the peer expected tip.
+                double distanceSeconds = (headers[0].BlockTime - this.BestReceivedTip.Header.BlockTime).TotalSeconds;
+
+                if (this.chain.Network.MaxTipAge < distanceSeconds)
+                {
+                    // A single header that is not connected to last header is likely an
+                    // unsolicited header that is a result of the peer tip being extended.
+                    // If the header time is far in the future we ignore it.
+                    return true;
+                }
+            }
+
+            // If there was more than one header received, or the single received header was not far in the future,
+            // then we may need to take further action.
+            return false;
         }
 
         /// <summary>Sync when handshake is finished.</summary>
@@ -656,6 +689,33 @@ namespace Stratis.Bitcoin.Consensus
         public override object Clone()
         {
             return new ConsensusManagerBehavior(this.chain, this.initialBlockDownloadState, this.consensusManager, this.peerBanning, this.loggerFactory);
+        }
+
+        internal int GetCachedItemsCount()
+        {
+            return this.cachedHeaders.Count;
+        }
+
+        /// <summary>
+        /// Gets the count of consumed headers in a <paramref name="headers"/> list, giving a <paramref name="consumedHeader"/> reference.
+        /// All items up to <paramref name="consumedHeader"/> are considered consumed.
+        /// </summary>
+        /// <param name="headers">List of headers to use to get the consumed count.</param>
+        /// <param name="consumedHeader">The consumed header reference.</param>
+        /// <returns>The number of consumed cached items.</returns>
+        private int GetConsumedHeadersCount(List<BlockHeader> headers, BlockHeader consumedHeader)
+        {
+            uint256 consumedHeaderHash = consumedHeader.GetHash();
+
+            for (int i = 0; i < headers.Count; i++)
+            {
+                if (headers[i].GetHash() == consumedHeaderHash)
+                {
+                    return i + 1;
+                }
+            }
+
+            return 0;
         }
     }
 }

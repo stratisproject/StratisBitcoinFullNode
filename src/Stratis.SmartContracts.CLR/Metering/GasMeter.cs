@@ -1,30 +1,31 @@
 ﻿using Stratis.SmartContracts.CLR.Exceptions;
+using Stratis.SmartContracts.RuntimeObserver;
 
 namespace Stratis.SmartContracts.CLR.Metering
 {
     /// <inheritdoc/>
-    public sealed class GasMeter : RuntimeObserver.IGasMeter
+    public sealed class GasMeter : IGasMeter
     {
         /// <inheritdoc/>
-        public RuntimeObserver.Gas GasAvailable { get; private set; }
+        public Gas GasAvailable { get; private set; }
 
         /// <inheritdoc/>
-        public RuntimeObserver.Gas GasConsumed
+        public Gas GasConsumed
         {
-            get { return (RuntimeObserver.Gas)(this.GasLimit - this.GasAvailable); }
+            get { return (Gas)(this.GasLimit - this.GasAvailable); }
         }
 
         /// <inheritdoc/>
-        public RuntimeObserver.Gas GasLimit { get; }
+        public Gas GasLimit { get; }
 
-        public GasMeter(RuntimeObserver.Gas gasAvailable)
+        public GasMeter(Gas gasAvailable)
         {
             this.GasAvailable = gasAvailable;
             this.GasLimit = gasAvailable;
         }
 
         /// <inheritdoc/>
-        public void Spend(RuntimeObserver.Gas gasToSpend)
+        public void Spend(Gas gasToSpend)
         {
             if (this.GasAvailable >= gasToSpend)
             {
@@ -32,7 +33,7 @@ namespace Stratis.SmartContracts.CLR.Metering
                 return;
             }
 
-            this.GasAvailable = (RuntimeObserver.Gas)0;
+            this.GasAvailable = (Gas)0;
 
             throw new OutOfGasException("Went over gas limit of " + this.GasLimit);
         }

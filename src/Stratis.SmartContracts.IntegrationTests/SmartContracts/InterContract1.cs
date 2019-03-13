@@ -1,5 +1,4 @@
-﻿using System;
-using Stratis.SmartContracts;
+﻿using Stratis.SmartContracts;
 
 [Deploy]
 public class InterContract1 : SmartContract

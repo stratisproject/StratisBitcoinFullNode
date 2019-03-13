@@ -8,6 +8,7 @@ using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.Features.Wallet.Models;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
+using Stratis.Bitcoin.IntegrationTests.Common.ReadyData;
 using Stratis.Bitcoin.Networks;
 using Xunit;
 
@@ -205,11 +206,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithWallet().Start();
+                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-
-                TestHelper.MineBlocks(stratisSender, 10);
 
                 // Sync all nodes.
                 TestHelper.ConnectAndSync(stratisReceiver, stratisSender);
@@ -249,11 +248,9 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
+                CoreNode stratisSender = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
                 CoreNode stratisReceiver = builder.CreateStratisPowNode(this.network).Start();
                 CoreNode stratisReorg = builder.CreateStratisPowNode(this.network).WithDummyWallet().Start();
-
-                TestHelper.MineBlocks(stratisSender, 10);
 
                 // Sync all nodes.
                 TestHelper.ConnectAndSync(stratisReceiver, stratisSender);
@@ -293,9 +290,7 @@ namespace Stratis.Bitcoin.IntegrationTests.Wallet
         {
             using (NodeBuilder builder = NodeBuilder.Create(this))
             {
-                CoreNode stratisminer = builder.CreateStratisPowNode(this.network).WithWallet().Start();
-
-                TestHelper.MineBlocks(stratisminer, 10);
+                CoreNode stratisminer = builder.CreateStratisPowNode(this.network).WithReadyBlockchainData(ReadyBlockchain.BitcoinRegTest10Miner).Start();
 
                 // Push the wallet back.
                 stratisminer.FullNode.Services.ServiceProvider.GetService<IWalletSyncManager>().SyncFromHeight(5);

@@ -206,17 +206,19 @@ namespace Stratis.Bitcoin.Features.Wallet
             // Get the block hash from the transaction in the wallet.
             TransactionData transactionFromWallet = null;
             uint256 blockHash = null;
-            int? blockHeight;
+            int? blockHeight, blockIndex;
 
             if (receivedTransactions.Any())
             {
                 blockHeight = receivedTransactions.First().BlockHeight;
+                blockIndex = receivedTransactions.First().BlockIndex;
                 blockHash = receivedTransactions.First().BlockHash;
                 transactionFromWallet = receivedTransactions.First();
             }
             else
             {
                 blockHeight = sendTransactions.First().SpendingDetails.BlockHeight;
+                blockIndex = sendTransactions.First().SpendingDetails.BlockIndex;
                 blockHash = blockHeight != null ? this.Chain.GetBlock(blockHeight.Value).HashBlock : null;
             }
 
@@ -268,7 +270,7 @@ namespace Stratis.Bitcoin.Features.Wallet
                 Confirmations = blockHeight != null ? this.ConsensusManager.Tip.Height - blockHeight.Value + 1 : 0,
                 Isgenerated = isGenerated ? true : (bool?) null,
                 BlockHash = blockHash,
-                BlockIndex = block?.Transactions.FindIndex(t => t.GetHash() == trxid),
+                BlockIndex = blockIndex ?? block?.Transactions.FindIndex(t => t.GetHash() == trxid),
                 BlockTime = block?.Header.BlockTime.ToUnixTimeSeconds(),
                 TransactionId = uint256.Parse(txid),
                 TransactionTime = transactionTime.ToUnixTimeSeconds(),
@@ -349,8 +351,8 @@ namespace Stratis.Bitcoin.Features.Wallet
                             ScriptPubKeyHex = spendableTx.Transaction.ScriptPubKey.ToHex(),
                             RedeemScriptHex = null, // TODO: Currently don't support P2SH wallet addresses, review if we do.
                             Confirmations = spendableTx.Confirmations,
-                            IsSpendable = spendableTx.Transaction.IsSpendable(),
-                            IsSolvable = spendableTx.Transaction.IsSpendable() // If it's spendable we assume it's solvable.
+                            IsSpendable = !spendableTx.Transaction.IsSpent(),
+                            IsSolvable = !spendableTx.Transaction.IsSpent() // If it's spendable we assume it's solvable.
                         });
                     }
                 }

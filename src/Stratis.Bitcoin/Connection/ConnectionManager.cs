@@ -132,7 +132,8 @@ namespace Stratis.Bitcoin.Connection
             this.consensusManager = consensusManager;
             this.AddExternalIpToSelfEndpoints();
 
-            this.peerDiscovery.DiscoverPeers(this);
+            if (this.ConnectionSettings.Listen)
+                this.peerDiscovery.DiscoverPeers(this);
 
             foreach (IPeerConnector peerConnector in this.PeerConnectors)
             {
@@ -140,8 +141,7 @@ namespace Stratis.Bitcoin.Connection
                 peerConnector.StartConnectAsync();
             }
 
-            /// <summary>Node server is only started if there are no peers in the -connect args.</summary>
-            if (!this.ConnectionSettings.Connect.Any())
+            if (this.ConnectionSettings.Listen)
                 this.StartNodeServer();
 
             // If external IP address supplied this overrides all.
@@ -152,7 +152,7 @@ namespace Stratis.Bitcoin.Connection
             else
             {
                 // If external IP address not supplied take first routable bind address and set score to 10.
-                IPEndPoint nodeServerEndpoint = this.ConnectionSettings.Listen?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
+                IPEndPoint nodeServerEndpoint = this.ConnectionSettings.Bind?.FirstOrDefault(x => x.Endpoint.Address.IsRoutable(false))?.Endpoint;
                 if (nodeServerEndpoint != null)
                 {
                     this.selfEndpointTracker.UpdateAndAssignMyExternalAddress(nodeServerEndpoint, false, 10);
@@ -179,7 +179,7 @@ namespace Stratis.Bitcoin.Connection
             var logs = new StringBuilder();
             logs.AppendLine("Node listening on:");
 
-            foreach (NodeServerEndpoint listen in this.ConnectionSettings.Listen)
+            foreach (NodeServerEndpoint listen in this.ConnectionSettings.Bind)
             {
                 NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
                 NetworkPeerServer server = this.NetworkPeerFactory.CreateNetworkPeerServer(listen.Endpoint, this.ConnectionSettings.ExternalEndpoint, this.Parameters.Version);
@@ -234,8 +234,10 @@ namespace Stratis.Bitcoin.Connection
             {
                 var chainHeadersBehavior = peer.Behavior<ConsensusManagerBehavior>();
 
-                string peerHeights = $"(r/s):{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
-                peerHeights += $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion?.StartHeight + "*" ?? "-")}";
+                string peerHeights = $"(r/s/c):" +
+                                     $"{(chainHeadersBehavior.BestReceivedTip != null ? chainHeadersBehavior.BestReceivedTip.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
+                                     $"/{(chainHeadersBehavior.BestSentHeader != null ? chainHeadersBehavior.BestSentHeader.Height.ToString() : peer.PeerVersion != null ? peer.PeerVersion.StartHeight + "*" : "-")}" +
+                                     $"/{chainHeadersBehavior.GetCachedItemsCount()}";
 
                 // TODO: Need a snapshot cache so that not only currently connected peers are summed
                 string peerTraffic = $"R/S MB: {peer.Counter.ReadBytes.BytesToMegaBytes()}/{peer.Counter.WrittenBytes.BytesToMegaBytes()}";
@@ -244,9 +246,8 @@ namespace Stratis.Bitcoin.Connection
 
                 string agent = peer.PeerVersion != null ? peer.PeerVersion.UserAgent : "[Unknown]";
                 peerBuilder.AppendLine(
-                    "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15) +
-                    (" connected:" + (peer.Inbound ? "inbound" : "outbound") + ",").PadRight(LoggingConfiguration.ColumnLength + 7)
-                    + peerHeights.PadRight(LoggingConfiguration.ColumnLength + 7)
+                    (peer.Inbound ? "IN  " : "OUT ") + "Peer:" + (peer.RemoteSocketEndpoint + ", ").PadRight(LoggingConfiguration.ColumnLength + 15)
+                    + peerHeights.PadRight(LoggingConfiguration.ColumnLength + 14)
                     + peerTraffic.PadRight(LoggingConfiguration.ColumnLength + 7)
                     + " agent:" + agent);
             }
@@ -435,6 +436,14 @@ namespace Stratis.Bitcoin.Connection
 
         public async Task<INetworkPeer> ConnectAsync(IPEndPoint ipEndpoint)
         {
+            var existingConnection = this.connectedPeers.FirstOrDefault(connectedPeer => connectedPeer.PeerEndPoint.Match(ipEndpoint));
+
+            if (existingConnection != null)
+            {
+                this.logger.LogDebug("{0} is already connected.");
+                return existingConnection;
+            }
+
             NetworkPeerConnectionParameters cloneParameters = this.Parameters.Clone();
 
             var connectionManagerBehavior = cloneParameters.TemplateBehaviors.OfType<ConnectionManagerBehavior>().SingleOrDefault();

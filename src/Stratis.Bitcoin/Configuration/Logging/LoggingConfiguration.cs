@@ -130,6 +130,12 @@ namespace Stratis.Bitcoin.Configuration.Logging
                 FileTarget debugFileTarget = debugTarget is AsyncTargetWrapper ? (FileTarget)((debugTarget as AsyncTargetWrapper).WrappedTarget) : (FileTarget)debugTarget;
                 string currentFile = debugFileTarget.FileName.Render(new LogEventInfo { TimeStamp = DateTime.UtcNow });
                 debugFileTarget.FileName = Path.Combine(folder.LogPath, Path.GetFileName(currentFile));
+
+                if (debugFileTarget.ArchiveFileName != null)
+                {
+                    string currentArchive = debugFileTarget.ArchiveFileName.Render(new LogEventInfo {TimeStamp = DateTime.UtcNow});
+                    debugFileTarget.ArchiveFileName = Path.Combine(folder.LogPath, currentArchive);
+                }
             }
 
             // Remove rule that forbids logging before the logging is initialized.

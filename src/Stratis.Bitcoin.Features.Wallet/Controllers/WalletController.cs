@@ -375,7 +375,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                 {
                     var transactionItems = new List<TransactionItemModel>();
 
-                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.CreationTime).ToList();
+                    // Sorting the history items by descending dates. That includes received and sent dates.
+                    List<FlatHistory> items = accountHistory.History.OrderByDescending(o => o.Transaction.SpendingDetails?.CreationTime ?? o.Transaction.CreationTime).ToList();
                     items = string.IsNullOrEmpty(request.SearchQuery) ? items.Take(200).ToList() : items;
 
                     // Represents a sublist containing only the transactions that have already been spent.
@@ -383,7 +384,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
 
                     // Represents a sublist of transactions associated with receive addresses + a sublist of already spent transactions associated with change addresses.
                     // In effect, we filter out 'change' transactions that are not spent, as we don't want to show these in the history.
-                    List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && !t.Transaction.IsSpendable())).ToList();
+                    List<FlatHistory> history = items.Where(t => !t.Address.IsChangeAddress() || (t.Address.IsChangeAddress() && t.Transaction.IsSpent())).ToList();
 
                     // Represents a sublist of 'change' transactions.
                     List<FlatHistory> allchange = items.Where(t => t.Address.IsChangeAddress()).ToList();
@@ -416,7 +417,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                     Amount = relatedOutputs.Sum(o => o.Transaction.Amount) - transaction.Amount,
                                     Id = transaction.SpendingDetails.TransactionId,
                                     Timestamp = transaction.SpendingDetails.CreationTime,
-                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight
+                                    ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                    BlockIndex = transaction.SpendingDetails.BlockIndex
                                 };
 
                                 transactionItems.Add(stakingItem);
@@ -440,7 +442,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 Amount = transaction.Amount,
                                 Id = transaction.Id,
                                 Timestamp = transaction.CreationTime,
-                                ConfirmedInBlock = transaction.BlockHeight
+                                ConfirmedInBlock = transaction.BlockHeight,
+                                BlockIndex = transaction.BlockIndex
                             };
 
                             transactionItems.Add(receivedItem);
@@ -457,6 +460,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                                 Id = spendingTransactionId,
                                 Timestamp = transaction.SpendingDetails.CreationTime,
                                 ConfirmedInBlock = transaction.SpendingDetails.BlockHeight,
+                                BlockIndex = transaction.SpendingDetails.BlockIndex,
                                 Amount = Money.Zero
                             };
 
@@ -555,7 +559,8 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
                         Name = account.Name,
                         HdPath = account.HdPath,
                         AmountConfirmed = balance.AmountConfirmed,
-                        AmountUnconfirmed = balance.AmountUnconfirmed
+                        AmountUnconfirmed = balance.AmountUnconfirmed,
+                        SpendableAmount = balance.SpendableAmount
                     });
                 }
 
@@ -684,6 +689,12 @@ namespace Stratis.Bitcoin.Features.Wallet.Controllers
         /// and then building the transaction and retrieving the fee from the context.
         /// </summary>
         /// <param name="request">The transaction parameters.</param>
+        /// <remarks>
+        /// The OpenApi specification doesn't support arrays of objects as a query parameter so this method is not usable
+        /// by the Swagger UI.
+        /// Here is an example of how to call this endpoint:
+        /// /api/wallet/estimate-txfee?walletname=wallet1&accountname=account 0&recipients[0].destinationaddress=TMLvkmSsDJnBi8vfszHSaVQ67NxEjgsUw6&recipients[0].amount=1000255&feetype=low 
+        /// </remarks>
         /// <returns>The estimated fee for the transaction.</returns>
         [Route("estimate-txfee")]
         [HttpGet]

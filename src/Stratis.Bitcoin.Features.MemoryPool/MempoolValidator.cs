@@ -68,12 +68,6 @@ namespace Stratis.Bitcoin.Features.MemoryPool
         public const int DefaultMaxMempoolSize = 300;
 
         /// <summary>
-        /// Default limit free relay.
-        /// </summary>
-        /// <seealso cref = "MempoolSettings" />
-        public const int DefaultLimitfreerelay = 0;
-
-        /// <summary>
         /// Default for -limitancestorcount, max number of in-mempool ancestors.
         /// </summary>
         /// <seealso cref = "MempoolSettings" />

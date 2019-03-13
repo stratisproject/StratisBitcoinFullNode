@@ -15,7 +15,6 @@ using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.Bitcoin.IntegrationTests.Common.Runners;
 using Stratis.Bitcoin.P2P;
 using Stratis.Bitcoin.Utilities;
-using Stratis.SmartContracts.Tests.Common.MockChain;
 
 namespace Stratis.SmartContracts.Tests.Common
 {
@@ -39,11 +38,13 @@ namespace Stratis.SmartContracts.Tests.Common
                             .UseBlockStore()
                             .UseMempool()
                             .AddRPC()
-                            .AddSmartContracts()
+                            .AddSmartContracts(options =>
+                            {
+                                options.UseReflectionExecutor();
+                            })
                             .UseSmartContractPoAConsensus()
                             .UseSmartContractPoAMining()
                             .UseSmartContractWallet()
-                            .UseReflectionExecutor()
                             .ReplaceTimeProvider(this.timeProvider)
                             .MockIBD()
                             .AddFastMiningCapability();

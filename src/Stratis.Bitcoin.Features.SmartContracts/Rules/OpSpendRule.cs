@@ -17,9 +17,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.Rules
         {
             Block block = context.ValidationContext.BlockToValidate;
 
-            for (var i = 0; i < block.Transactions.Count; i++)
+            for (int i = 0; i < block.Transactions.Count; i++)
             {
-                var transaction = block.Transactions[i];
+                Transaction transaction = block.Transactions[i];
 
                 // If the inputs to the transaction do not contain an OP_SPEND, continue.
                 if (!transaction.IsSmartContractSpendTransaction())

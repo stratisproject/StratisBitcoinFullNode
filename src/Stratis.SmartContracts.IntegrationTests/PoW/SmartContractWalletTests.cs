@@ -13,7 +13,6 @@ using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Consensus.Rules
 using Stratis.Bitcoin.Features.SmartContracts.ReflectionExecutor.Controllers;
 using Stratis.Bitcoin.Features.SmartContracts.Wallet;
 using Stratis.Bitcoin.Features.Wallet;
-using Stratis.Bitcoin.Features.Wallet.Interfaces;
 using Stratis.Bitcoin.IntegrationTests.Common;
 using Stratis.Bitcoin.IntegrationTests.Common.EnvironmentMockUpHelpers;
 using Stratis.SmartContracts.CLR;
@@ -21,8 +20,8 @@ using Stratis.SmartContracts.CLR.Compilation;
 using Stratis.SmartContracts.CLR.Local;
 using Stratis.SmartContracts.CLR.Serialization;
 using Stratis.SmartContracts.Core;
-using Stratis.SmartContracts.Core.State;
 using Stratis.SmartContracts.Networks;
+using Stratis.SmartContracts.RuntimeObserver;
 using Stratis.SmartContracts.Tests.Common;
 using Stratis.SmartContracts.Tests.Common.MockChain;
 using Xunit;
@@ -91,7 +90,7 @@ namespace Stratis.SmartContracts.IntegrationTests.PoW
 
                 // Create a token contract.
                 ulong gasPrice = SmartContractMempoolValidator.MinGasPrice;
-                var gasLimit = (RuntimeObserver.Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
+                var gasLimit = (Gas)(SmartContractFormatLogic.GasLimitMaximum / 2);
 
                 // Create a transfer token contract.
                 var compilationResult = ContractCompiler.CompileFile("SmartContracts/TransferTest.cs");

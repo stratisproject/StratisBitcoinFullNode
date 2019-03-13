@@ -74,7 +74,7 @@ namespace Stratis.Bitcoin.Networks
                 ruleChangeActivationThreshold: 1916, // 95% of 2016,
                 minerConfirmationWindow: 2016, // nPowTargetTimespan / nPowTargetSpacing
                 maxReorgLength: 0,
-                defaultAssumeValid: new uint256("0x000000000000000000174f783cc20c1415f90c4d17c9a5bcd06ba67207c9bc80"), // 518180
+                defaultAssumeValid: new uint256("0x0000000000000000000f1c54590ee18d15ec70e68c8cd4cfbadb1b4f11697eee"), // 563378
                 maxMoney: 21000000 * Money.COIN,
                 coinbaseMaturity: 100,
                 premineHeight: 0,
@@ -83,6 +83,7 @@ namespace Stratis.Bitcoin.Networks
                 powTargetTimespan: TimeSpan.FromSeconds(14 * 24 * 60 * 60), // two weeks
                 powTargetSpacing: TimeSpan.FromSeconds(10 * 60),
                 powAllowMinDifficultyBlocks: false,
+                posNoRetargeting: false,
                 powNoRetargeting: false,
                 powLimit: new Target(new uint256("00000000ffffffffffffffffffffffffffffffffffffffffffffffffffffffff")),
                 minimumChainWork: new uint256("0x0000000000000000000000000000000000000000002cb971dd56d1c583c20f90"),

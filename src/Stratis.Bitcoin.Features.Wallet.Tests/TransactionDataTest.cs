@@ -35,7 +35,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 SpendingDetails = new SpendingDetails()
             };
 
-            Assert.False(transaction.IsSpendable());
+            Assert.True(transaction.IsSpent());
         }
 
         [Fact]
@@ -46,7 +46,7 @@ namespace Stratis.Bitcoin.Features.Wallet.Tests
                 SpendingDetails = null
             };
 
-            Assert.True(transaction.IsSpendable());
+            Assert.False(transaction.IsSpent());
         }
 
         [Fact]

@@ -1,17 +1,16 @@
-﻿using System.Net.Sockets;
-using System.Net;
+﻿using System.Net;
+using System.Net.Sockets;
 using System.Threading.Tasks;
 using Moq;
-using NBitcoin.Networks;
 using NBitcoin.Protocol;
 using Stratis.Bitcoin.Configuration;
 using Stratis.Bitcoin.Configuration.Logging;
 using Stratis.Bitcoin.Configuration.Settings;
 using Stratis.Bitcoin.Interfaces;
 using Stratis.Bitcoin.P2P.Peer;
+using Stratis.Bitcoin.Tests.Common;
 using Stratis.Bitcoin.Tests.Common.Logging;
 using Xunit;
-using Stratis.Bitcoin.Tests.Common;
 using Xunit.Abstractions;
 
 namespace Stratis.Bitcoin.Tests.P2P
@@ -35,11 +34,11 @@ namespace Stratis.Bitcoin.Tests.P2P
         [InlineData(true, false, true)]
         [InlineData(true, true, false)]
         public void Validate_AllowClientConnection_State(bool inIBD, bool isWhiteListed, bool closeClient)
-        {        
+        {
             // Arrange
             var networkPeerFactory = new Mock<INetworkPeerFactory>();
-            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(), 
-                It.IsAny<NetworkPeerConnectionParameters>(), 
+            networkPeerFactory.Setup(npf => npf.CreateConnectedNetworkPeerAsync(It.IsAny<IPEndPoint>(),
+                It.IsAny<NetworkPeerConnectionParameters>(),
                 It.IsAny<NetworkPeerDisposer>())).Returns(Task.FromResult(new Mock<INetworkPeer>().Object));
 
             var initialBlockDownloadState = new Mock<IInitialBlockDownloadState>();
@@ -50,8 +49,8 @@ namespace Stratis.Bitcoin.Tests.P2P
 
             var endpointAddNode = new IPEndPoint(IPAddress.Parse("::ffff:192.168.0.1"), 80);
 
-            var networkPeerServer = new NetworkPeerServer(this.Network, 
-                endpointAddNode, endpointAddNode, ProtocolVersion.PROTOCOL_VERSION, this.extendedLoggerFactory, 
+            var networkPeerServer = new NetworkPeerServer(this.Network,
+                endpointAddNode, endpointAddNode, ProtocolVersion.PROTOCOL_VERSION, this.extendedLoggerFactory,
                 networkPeerFactory.Object, initialBlockDownloadState.Object, connectionManagerSettings);
 
             // Mimic external client
@@ -64,7 +63,7 @@ namespace Stratis.Bitcoin.Tests.P2P
             var endpointDiscovered = new IPEndPoint(IPAddress.Parse(ip), portNumber);
 
             // Include the external client as a NodeServerEndpoint.
-            connectionManagerSettings.Listen.Add(new NodeServerEndpoint(endpointDiscovered, isWhiteListed));
+            connectionManagerSettings.Bind.Add(new NodeServerEndpoint(endpointDiscovered, isWhiteListed));
 
             // Act 
             var result = networkPeerServer.InvokeMethod("AllowClientConnection", client);
