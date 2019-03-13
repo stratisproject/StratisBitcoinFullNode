@@ -18,6 +18,11 @@ namespace Stratis.Features.FederatedPeg
 {
     public class FederatedPegBlockDefinition : SmartContractPoABlockDefinition
     {
+        /// <summary>
+        /// The number of outputs we break the premine reward up into, so that the federation can build more than one transaction at once.
+        /// </summary>
+        public const int FederationWalletOutputs = 10;
+
         private readonly Script payToMultisigScript;
 
         private readonly Script payToMemberScript;
@@ -46,11 +51,36 @@ namespace Stratis.Features.FederatedPeg
 
         public override BlockTemplate Build(ChainedHeader chainTip, Script scriptPubKey)
         {
-            Script rewardScript = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight
-                                   ? this.payToMultisigScript
-                                   : this.payToMemberScript;
+            // TODO: Shouldn't this be mining to a local wallet. Use this variable ^^
 
-            return base.Build(chainTip, rewardScript);
+            bool miningPremine = (chainTip.Height + 1) == this.Network.Consensus.PremineHeight;
+
+            Script rewardScript = miningPremine ? this.payToMultisigScript : this.payToMemberScript;
+
+            BlockTemplate built = base.Build(chainTip, rewardScript);
+
+            if (miningPremine)
+            {
+                this.BreakUpPremineCoinbase();
+            }
+
+            return built;
         }
+
+        private void BreakUpPremineCoinbase()
+        {
+            TxOut premineOutput = this.coinbase.Outputs[0];
+
+            Money newTxOutValues = premineOutput.Value / FederationWalletOutputs;
+            Script newTxOutScript = premineOutput.ScriptPubKey;
+
+            this.coinbase.Outputs.Clear();
+
+            for (int i = 0; i < FederationWalletOutputs; i++)
+            {
+                this.coinbase.AddOutput(newTxOutValues, newTxOutScript);
+            }
+        }
+
     }
 }

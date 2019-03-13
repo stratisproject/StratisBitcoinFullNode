@@ -41,9 +41,12 @@ namespace Stratis.Features.FederatedPeg.IntegrationTests
                 // Ensure that coinbase contains premine reward and it goes to the fed.
                 Block block = context.SideUser.FullNode.Chain.GetBlock((int)context.SideChainNetwork.Consensus.PremineHeight).Block;
                 Transaction coinbase = block.Transactions[0];
-                Assert.Single(coinbase.Outputs);
-                Assert.Equal(context.SideChainNetwork.Consensus.PremineReward, coinbase.Outputs[0].Value);
-                Assert.Equal(context.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[0].ScriptPubKey);
+                Assert.Equal(FederatedPegBlockDefinition.FederationWalletOutputs, coinbase.Outputs.Count);
+                for (int i = 0; i < FederatedPegBlockDefinition.FederationWalletOutputs; i++)
+                {
+                    Assert.Equal(context.SideChainNetwork.Consensus.PremineReward / FederatedPegBlockDefinition.FederationWalletOutputs, coinbase.Outputs[i].Value);
+                    Assert.Equal(context.scriptAndAddresses.payToMultiSig.PaymentScript, coinbase.Outputs[i].ScriptPubKey);
+                }
             }
         }
 
