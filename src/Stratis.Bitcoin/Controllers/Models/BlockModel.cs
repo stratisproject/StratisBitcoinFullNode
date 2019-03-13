@@ -67,16 +67,23 @@ namespace Stratis.Bitcoin.Controllers.Models
         public BlockModel(Block block, ChainBase chain)
         {
             this.Hash = block.GetHash().ToString();
+            this.Confirmations = chain.Tip.Height - chain.GetBlock(block.GetHash()).Height + 1;
             this.Size = block.ToBytes().Length;
-            this.Version = block.Header.Version;
-            this.Bits = block.Header.Bits.ToCompact().ToString("x8");
-            this.Time = block.Header.BlockTime;
-            this.Nonce = block.Header.Nonce;
-            this.PreviousBlockHash = block.Header.HashPrevBlock.ToString();
-            this.MerkleRoot = block.Header.HashMerkleRoot.ToString();
-            this.Difficulty = block.Header.Bits.Difficulty;
-            this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
+            //this.Weight =
             this.Height = chain.GetBlock(block.GetHash()).Height;
+            this.Version = block.Header.Version;
+            //this.VersionHex =
+            this.MerkleRoot = block.Header.HashMerkleRoot.ToString();
+            this.Transactions = block.Transactions.Select(t => t.GetHash().ToString()).ToArray();
+            this.Time = block.Header.BlockTime;
+            //this.MedianTime = 
+            this.Nonce = block.Header.Nonce;
+            this.Bits = block.Header.Bits.ToCompact().ToString("x8");
+            this.Difficulty = block.Header.Bits.Difficulty;
+            this.ChainWork = chain.GetBlock(block.GetHash()).ChainWork;
+            this.NumberOfTransactions = this.Transactions.Count();
+            this.PreviousBlockHash = block.Header.HashPrevBlock.ToString();
+            this.NextBlockHash = chain.GetBlock(block.GetHash()).Next;
         }
 
         /// <summary>
