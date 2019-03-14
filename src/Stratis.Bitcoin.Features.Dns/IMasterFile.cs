@@ -11,12 +11,6 @@ namespace Stratis.Bitcoin.Features.Dns
     public interface IMasterFile
     {
         /// <summary>
-        /// Adds <see cref="IResourceRecord"/> to the master file.
-        /// </summary>
-        /// <param name="entry">The resource record to add to the masterfile so that the IP address of the peer can be returned in a DNS resolve request.</param>
-        void Add(IResourceRecord entry);
-
-        /// <summary>
         /// Gets a list of resource records that match the question.
         /// </summary>
         /// <param name="question">The question to ask of the masterfile.</param>
@@ -34,5 +28,10 @@ namespace Stratis.Bitcoin.Features.Dns
         /// </summary>
         /// <param name="stream">The stream to write the masterfile to.</param>
         void Save(Stream stream);
+
+        /// <summary>
+        /// Seeds the masterfile with the SOA and NS DNS records with the DNS specific settings.
+        /// </summary>
+        void Seed(DnsSettings dnsSettings);
     }
 }

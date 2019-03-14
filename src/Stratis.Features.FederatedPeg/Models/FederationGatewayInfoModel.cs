@@ -35,8 +35,5 @@ namespace Stratis.Features.FederatedPeg.Models
 
         [JsonProperty(PropertyName = "minDepositConfirmations")]
         public uint MinimumDepositConfirmations { get; set; }
-
-        [JsonProperty(PropertyName = "minCoinMaturity")]
-        public int MinCoinMaturity { get; set; }
     }
 }

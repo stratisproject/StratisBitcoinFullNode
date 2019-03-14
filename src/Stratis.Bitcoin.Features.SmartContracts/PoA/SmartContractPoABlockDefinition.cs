@@ -32,9 +32,9 @@ namespace Stratis.Bitcoin.Features.SmartContracts.PoA
             Network network,
             ISenderRetriever senderRetriever,
             IStateRepositoryRoot stateRoot,
-            NodeSettings nodeSettings)
+            MinerSettings minerSettings)
             : base(blockBufferGenerator, coinView, consensusManager, dateTimeProvider, executorFactory, loggerFactory, mempool,
-                mempoolLock, new MinerSettings(nodeSettings), network, senderRetriever, stateRoot)
+                mempoolLock, minerSettings, network, senderRetriever, stateRoot)
         {
             // TODO: Fix gross MinerSettings injection ^^
         }

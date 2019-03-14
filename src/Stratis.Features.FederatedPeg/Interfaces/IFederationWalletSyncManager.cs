@@ -8,7 +8,7 @@ namespace Stratis.Features.FederatedPeg.Interfaces
         /// <summary>
         /// Starts the walletSyncManager.
         /// </summary>
-        void Start();
+        void Initialize();
 
         /// <summary>
         /// Stops the walletSyncManager.

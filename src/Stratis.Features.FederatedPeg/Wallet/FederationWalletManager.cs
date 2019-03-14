@@ -181,7 +181,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
             else
             {
                 // Create the multisig wallet file if it doesn't exist
-                this.Wallet = GenerateWallet();
+                this.Wallet = this.GenerateWallet();
                 this.SaveWallet();
             }
 
@@ -384,7 +384,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 if (withdrawal != null)
                 {
                     // Exit if already present and included in a block.
-                    List<(Transaction, TransactionData, IWithdrawal)> walletData = FindWithdrawalTransactions(withdrawal.DepositId);
+                    List<(Transaction, TransactionData, IWithdrawal)> walletData = this.FindWithdrawalTransactions(withdrawal.DepositId);
                     if ((walletData.Count == 1) && (walletData[0].Item2.BlockHeight != null))
                         return false;
 
@@ -759,11 +759,11 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 // Remove transient transactions not seen in a block yet.
                 bool walletUpdated = false;
 
-                foreach ((Transaction transaction, TransactionData transactionData, _) in FindWithdrawalTransactions(depositId)
+                foreach ((Transaction transaction, TransactionData transactionData, _) in this.FindWithdrawalTransactions(depositId)
                     .Where(w => w.Item2.BlockHash == null))
                 {
                     Guard.Assert(transactionData.SpendingDetails == null);
-                    walletUpdated |= RemoveTransaction(transaction);
+                    walletUpdated |= this.RemoveTransaction(transaction);
                 }
 
                 return walletUpdated;
@@ -844,7 +844,7 @@ namespace Stratis.Features.FederatedPeg.Wallet
                 TransactionData transactionData1 = this.outpointLookup[outPoint1];
                 TransactionData transactionData2 = this.outpointLookup[outPoint2];
 
-                return FederationWalletTransactionHandler.CompareTransactionData(transactionData1, transactionData2);
+                return FederationWalletTransactionBuilder.CompareTransactionData(transactionData1, transactionData2);
             }
         }
 
@@ -860,12 +860,12 @@ namespace Stratis.Features.FederatedPeg.Wallet
                     return false;
 
                 // Verify that there are no earlier unspent UTXOs.
-                Comparer<TransactionData> comparer = Comparer<TransactionData>.Create((x, y) => FederationWalletTransactionHandler.CompareTransactionData(x, y));
+                Comparer<TransactionData> comparer = Comparer<TransactionData>.Create((x, y) => FederationWalletTransactionBuilder.CompareTransactionData(x, y));
                 TransactionData earliestUnspent = this.Wallet.MultiSigAddress.Transactions.Where(t => t.SpendingDetails == null).OrderBy(t => t, comparer).FirstOrDefault();
                 if (earliestUnspent != null)
                 {
                     TransactionData oldestInput = transaction.Inputs.Select(i => this.outpointLookup[i.PrevOut]).OrderByDescending(t => t, comparer).FirstOrDefault();
-                    if (oldestInput != null && FederationWalletTransactionHandler.CompareTransactionData(earliestUnspent, oldestInput) < 0)
+                    if (oldestInput != null && FederationWalletTransactionBuilder.CompareTransactionData(earliestUnspent, oldestInput) < 0)
                         return false;
                 }
 

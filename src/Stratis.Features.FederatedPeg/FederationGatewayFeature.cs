@@ -4,7 +4,6 @@ using System.Linq;
 using System.Net;
 using System.Net.Http;
 using System.Net.Http.Headers;
-using System.Runtime.CompilerServices;
 using System.Text;
 using System.Threading.Tasks;
 using Microsoft.Extensions.DependencyInjection;
@@ -41,9 +40,6 @@ using Stratis.Features.FederatedPeg.SourceChain;
 using Stratis.Features.FederatedPeg.TargetChain;
 using Stratis.Features.FederatedPeg.Wallet;
 
-[assembly: InternalsVisibleTo("Stratis.FederatedPeg.Features.FederationGateway.Tests")]
-[assembly: InternalsVisibleTo("Stratis.FederatedPeg.IntegrationTests")]
-
 //todo: this is pre-refactoring code
 //todo: ensure no duplicate or fake withdrawal or deposit transactions are possible (current work underway)
 
@@ -52,10 +48,6 @@ namespace Stratis.Features.FederatedPeg
     internal class FederationGatewayFeature : FullNodeFeature
     {
         public const string FederationGatewayFeatureNamespace = "federationgateway";
-
-        private IDisposable blockSubscriberDisposable;
-
-        private IDisposable transactionSubscriberDisposable;
 
         private readonly IConnectionManager connectionManager;
 
@@ -113,7 +105,7 @@ namespace Stratis.Features.FederatedPeg
 
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
 
-            // add our payload
+            // add our payload 
             var payloadProvider = (PayloadProvider)this.fullNode.Services.ServiceProvider.GetService(typeof(PayloadProvider));
             payloadProvider.AddPayload(typeof(RequestPartialTransactionPayload));
 
@@ -123,20 +115,29 @@ namespace Stratis.Features.FederatedPeg
 
         public override Task InitializeAsync()
         {
+            // Set up our database of deposit and withdrawal transactions. Needs to happen before everything else.
             this.crossChainTransferStore.Initialize();
 
-            // maturedBlocksSyncManager should be initialized only after crossChainTransferStore.
-            this.maturedBlocksSyncManager.Initialize();
-
+            // Load the federation wallet that will be used to generate transactions.
             this.federationWalletManager.Start();
-            this.walletSyncManager.Start();
+
+            // Query the other chain every N seconds for deposits. Triggers signing process if deposits are found.
+            this.maturedBlocksSyncManager.Start();
+
+            // Syncs the wallet correctly when restarting the node. i.e. deals with reorgs.
+            this.walletSyncManager.Initialize();
+
+            // Synchronises the wallet and the transfer store.
             this.crossChainTransferStore.Start();
+
+            // Query our database for partially-signed transactions and send them around to be signed every N seconds.
             this.partialTransactionRequester.Start();
 
             // Connect the node to the other federation members.
             foreach (IPEndPoint federationMemberIp in this.federationGatewaySettings.FederationNodeIpEndPoints)
                 this.connectionManager.AddNodeAddress(federationMemberIp);
 
+            // Respond to requests to sign transactions from other nodes.
             NetworkPeerConnectionParameters networkPeerConnectionParameters = this.connectionManager.Parameters;
             networkPeerConnectionParameters.TemplateBehaviors.Add(new PartialTransactionsBehavior(this.loggerFactory, this.federationWalletManager,
                 this.network, this.federationGatewaySettings, this.crossChainTransferStore));
@@ -146,9 +147,6 @@ namespace Stratis.Features.FederatedPeg
 
         public override void Dispose()
         {
-            this.blockSubscriberDisposable.Dispose();
-            this.transactionSubscriberDisposable.Dispose();
-
             // Sync manager has to be disposed BEFORE cross chain transfer store.
             this.maturedBlocksSyncManager.Dispose();
 
@@ -234,7 +232,7 @@ namespace Stratis.Features.FederatedPeg
             },
             4);
 
-            AddBenchmarkLine(benchLog,
+            this.AddBenchmarkLine(benchLog,
                 this.crossChainTransferStore.GetCrossChainTransferStatusCounter().SelectMany(item => new (string, int)[]{
                     (item.Key.ToString()+":", LoggingConfiguration.ColumnLength),
                     (item.Value.ToString(), LoggingConfiguration.ColumnLength)
@@ -288,7 +286,7 @@ namespace Stratis.Features.FederatedPeg
                         services.AddSingleton<IWithdrawalReceiver, WithdrawalReceiver>();
                         services.AddSingleton<FederationGatewayController>();
                         services.AddSingleton<IFederationWalletSyncManager, FederationWalletSyncManager>();
-                        services.AddSingleton<IFederationWalletTransactionHandler, FederationWalletTransactionHandler>();
+                        services.AddSingleton<IFederationWalletTransactionBuilder, FederationWalletTransactionBuilder>();
                         services.AddSingleton<IFederationWalletManager, FederationWalletManager>();
                         services.AddSingleton<IWithdrawalTransactionBuilder, WithdrawalTransactionBuilder>();
                         services.AddSingleton<ILeaderProvider, LeaderProvider>();
@@ -343,6 +341,9 @@ namespace Stratis.Features.FederatedPeg
 
                     services.AddSingleton<VotingManager>();
                     services.AddSingleton<IPollResultExecutor, PollResultExecutor>();
+                    services.AddSingleton<WhitelistedHashesRepository>();
+                    services.AddSingleton<PoAMinerSettings>();
+                    services.AddSingleton<MinerSettings>();
 
                     // Consensus Rules
                     services.AddSingleton<PoAConsensusRuleEngine>();

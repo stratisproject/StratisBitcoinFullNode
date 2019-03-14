@@ -30,8 +30,8 @@ namespace Stratis.Bitcoin.Connection
         /// <summary>
         /// RPC method for adding a node connection.
         /// </summary>
-        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <param name="endpointStr">The endpoint in string format.</param>
+        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <returns><c>true</c> if successful.</returns>
         /// <exception cref="ArgumentException">Thrown if unsupported command given.</exception>
         [ActionName("addnode")]
@@ -65,8 +65,8 @@ namespace Stratis.Bitcoin.Connection
         /// Adds a node to the connection manager.
         /// API wrapper for RPC call.
         /// </summary>
-        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <param name="endpoint">The endpoint in string format.</param>
+        /// <param name="command">The command to run. {add, remove, onetry}</param>
         /// <returns>Json formatted <c>True</c> indicating success. Returns <see cref="IActionResult"/> formatted exception if fails.</returns>
         /// <exception cref="ArgumentException">Thrown if either command not supported/empty or if endpoint is invalid/empty.</exception>
         [Route("api/[controller]/addnode")]

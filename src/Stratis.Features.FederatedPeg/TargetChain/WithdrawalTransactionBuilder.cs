@@ -9,24 +9,30 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 {
     public class WithdrawalTransactionBuilder : IWithdrawalTransactionBuilder
     {
+        /// <summary>
+        /// The wallet should always consume UTXOs that have already been seen in a block. This makes it much easier to maintain
+        /// determinism across the wallets on all the nodes.
+        /// </summary>
+        public const int MinConfirmations = 1;
+
         private readonly ILogger logger;
         private readonly Network network;
 
         private readonly IFederationWalletManager federationWalletManager;
-        private readonly IFederationWalletTransactionHandler federationWalletTransactionHandler;
+        private readonly IFederationWalletTransactionBuilder federationWalletTransactionBuilder;
         private readonly IFederationGatewaySettings federationGatewaySettings;
 
         public WithdrawalTransactionBuilder(
             ILoggerFactory loggerFactory,
             Network network,
             IFederationWalletManager federationWalletManager,
-            IFederationWalletTransactionHandler federationWalletTransactionHandler,
+            IFederationWalletTransactionBuilder federationWalletTransactionBuilder,
             IFederationGatewaySettings federationGatewaySettings)
         {
             this.logger = loggerFactory.CreateLogger(this.GetType().FullName);
             this.network = network;
             this.federationWalletManager = federationWalletManager;
-            this.federationWalletTransactionHandler = federationWalletTransactionHandler;
+            this.federationWalletTransactionBuilder = federationWalletTransactionBuilder;
             this.federationGatewaySettings = federationGatewaySettings;
         }
 
@@ -45,25 +51,16 @@ namespace Stratis.Features.FederatedPeg.TargetChain
                 {
                     OrderCoinsDeterministic = true,
                     TransactionFee = this.federationGatewaySettings.TransactionFee,
-                    MinConfirmations = this.federationGatewaySettings.MinCoinMaturity,
+                    MinConfirmations = MinConfirmations,
                     Shuffle = false,
                     IgnoreVerify = true,
                     WalletPassword = walletPassword,
                     Sign = sign,
+                    Time = this.network.Consensus.IsProofOfStake ? blockTime : (uint?) null
                 };
 
-                Transaction transaction = this.federationWalletTransactionHandler.BuildTransaction(multiSigContext);
-
                 // Build the transaction.
-                if (this.network.Consensus.IsProofOfStake)
-                {
-                    transaction.Time = blockTime;
-
-                    if (sign)
-                    {
-                        transaction = multiSigContext.TransactionBuilder.SignTransaction(transaction);
-                    }
-                }
+                Transaction transaction = this.federationWalletTransactionBuilder.BuildTransaction(multiSigContext);
 
                 this.logger.LogInformation("transaction = {0}", transaction.ToString(this.network, RawFormat.BlockExplorer));
 
