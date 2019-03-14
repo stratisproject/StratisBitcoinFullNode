@@ -36,17 +36,16 @@ namespace Stratis.Bitcoin.Tests.Connection
             IPEndPoint endpointA = null;
             IPEndPoint endpointB = null;
             IPEndPoint endpointOut = null;
-            
+
             var connectionManagerSettings = new ConnectionManagerSettings(NodeSettings.Default(this.Network));
             var networkEndpoints = connectionManagerSettings.Bind.Select(x => x.Endpoint).ToList();
 
-            // IPV4: 127.0.0.1:16178 == 0.0.0.0:16178 (both are considered local endpoints)
+            // IPV4: 127.0.0.1:16178 != 0.0.0.0:16178 (both are considered local endpoints)
             endpointA = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 16178);
             endpointB = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 16178);
             networkEndpoints = new List<IPEndPoint>() { endpointB};
             connectionManagerSettings.Port = 16178;
-            Assert.True(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
-            Assert.Equal(endpointB, endpointOut);
+            Assert.False(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
 
             // IPV6: [::1]:16178 != [::]:16178
             endpointA = new IPEndPoint(IPAddress.Parse("[::1]"), 16178);
@@ -54,7 +53,7 @@ namespace Stratis.Bitcoin.Tests.Connection
             networkEndpoints = new List<IPEndPoint>() { endpointB };
             connectionManagerSettings.Port = 16178;
             Assert.False(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
-            
+
             // 127.0.0.1:16178 != 0.0.0.0:44556
             endpointA = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 16178);
             endpointB = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 44556);
@@ -110,6 +109,21 @@ namespace Stratis.Bitcoin.Tests.Connection
             networkEndpoints = new List<IPEndPoint>() { endpointB };
             connectionManagerSettings.Port = 16178;
             Assert.False(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
+
+            // Using whitebind = 0.0.0.0:16178 and connecting from local or remote IP address on port 16178 should be whitebinded.
+            endpointA = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 16178);
+            endpointB = new IPEndPoint(IPAddress.Parse("10.0.0.1"), 16178);
+            Assert.True(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
+
+            // Using whitebind = 100.64.1.1:16178 and connecting from local or remote IP address(other than 100.64.1.1) on port 16178 should not be whitebinded.
+            endpointA = new IPEndPoint(IPAddress.Parse("100.64.1.1"), 16178);
+            endpointB = new IPEndPoint(IPAddress.Parse("100.64.1.2"), 16178);
+            Assert.False(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
+
+            // Using whitebind = 0.0.0.0:16178 and connecting from local or remote IP address on port other than 16178 should be not whitebinded.
+            endpointA = new IPEndPoint(IPAddress.Parse("0.0.0.0"), 16178);
+            endpointB = new IPEndPoint(IPAddress.Parse("127.0.0.1"), 16179);
+            Assert.True(endpointA.CanBeMappedTo(networkEndpoints, out endpointOut));
         }
     }
 }

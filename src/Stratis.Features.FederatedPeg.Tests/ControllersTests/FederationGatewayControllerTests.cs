@@ -254,7 +254,6 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             model.MultiSigRedeemScript.Should().Be(redeemScript);
             string.Join(",", model.FederationNodeIpEndPoints).Should().Be(federationIps);
             model.IsActive.Should().BeTrue();
-            model.MinCoinMaturity.Should().Be(1);
             model.MinimumDepositConfirmations.Should().Be(1);
             model.MultisigPublicKey.Should().Be(multisigPubKey);
         }
@@ -294,7 +293,6 @@ namespace Stratis.Features.FederatedPeg.Tests.ControllersTests
             model.MultiSigRedeemScript.Should().Be(redeemScript);
             string.Join(",", model.FederationNodeIpEndPoints).Should().Be(federationIps);
             model.IsActive.Should().BeTrue();
-            model.MinCoinMaturity.Should().Be(1);
             model.MinimumDepositConfirmations.Should().Be(1);
             model.MultisigPublicKey.Should().Be(multisigPubKey);
         }
