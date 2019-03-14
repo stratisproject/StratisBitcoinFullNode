@@ -93,7 +93,6 @@ namespace Stratis.Bitcoin.Features.Consensus.ProvenBlockHeaders
             {
                 for (uint outputIndex = 0; outputIndex < unspent.Outputs.Length; outputIndex++)
                 {
-                    string key = $"{unspent.TransactionId}-{outputIndex}";
                     RewindDataIndexItem itemKey = new RewindDataIndexItem(unspent.TransactionId, outputIndex);
 
                     lock (this.itemsLock)
