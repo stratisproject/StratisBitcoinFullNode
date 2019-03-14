@@ -483,5 +483,18 @@ namespace Stratis.Features.FederatedPeg.Wallet
         /// The amount that will be sent.
         /// </summary>
         public Money Amount { get; set; }
+
+        /// <summary>
+        /// We need to reduce the amount being withdrawn by the fees our transaction is going to have.
+        /// </summary>
+        public Recipient WithPaymentReducedByFee(Money transactionFee)
+        {
+            Money newAmount = this.Amount - transactionFee;
+            return new Recipient
+            {
+                Amount = newAmount,
+                ScriptPubKey = this.ScriptPubKey
+            };
+        }
     }
 }

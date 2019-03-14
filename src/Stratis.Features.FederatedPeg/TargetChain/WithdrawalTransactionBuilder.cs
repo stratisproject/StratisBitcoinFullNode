@@ -37,13 +37,14 @@ namespace Stratis.Features.FederatedPeg.TargetChain
             {
                 this.logger.LogInformation("BuildDeterministicTransaction depositId(opReturnData)={0} recipient.ScriptPubKey={1} recipient.Amount={2}", depositId, recipient.ScriptPubKey, recipient.Amount);
 
-                recipient = ReduceRecipientPaymentByFee(this.federationGatewaySettings.TransactionFee, recipient);
-
                 // Build the multisig transaction template.
                 uint256 opReturnData = depositId;
                 string walletPassword = this.federationWalletManager.Secret.WalletPassword;
                 bool sign = (walletPassword ?? "") != "";
-                var multiSigContext = new TransactionBuildContext(new[] { recipient }.ToList(), opReturnData: opReturnData.ToBytes())
+                var multiSigContext = new TransactionBuildContext(new[]
+                {
+                    recipient.WithPaymentReducedByFee(this.federationGatewaySettings.TransactionFee)
+                }.ToList(), opReturnData: opReturnData.ToBytes())
                 {
                     OrderCoinsDeterministic = true,
                     TransactionFee = this.federationGatewaySettings.TransactionFee,
@@ -78,19 +79,6 @@ namespace Stratis.Features.FederatedPeg.TargetChain
 
             this.logger.LogTrace("(-)[FAIL]");
             return null;
-        }
-
-        /// <summary>
-        /// We need to reduce the amount being withdrawn by the fees our transaction is going to have.
-        /// </summary>
-        private static Recipient ReduceRecipientPaymentByFee(Money transactionFee, Recipient recipient)
-        {
-            Money newAmount = recipient.Amount - transactionFee;
-            return new Recipient
-            {
-                Amount = newAmount,
-                ScriptPubKey = recipient.ScriptPubKey
-            };
         }
     }
 }
